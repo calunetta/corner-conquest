@@ -71,7 +71,12 @@ export function GameBoard() {
       });
       newState.possibleMoves = moves;
     } else if (action === 'position') {
-      handlePositionAction(newState, currentPlayer.position.x, currentPlayer.position.y);
+      const tile = newState.map[currentPlayer.position.y][currentPlayer.position.x];
+      if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length === 1) {
+        handleSelectResourceForPosition(newState, tile.resources[0].type);
+      } else {
+        handlePositionAction(newState, currentPlayer.position.x, currentPlayer.position.y);
+      }
     } else if (action === 'collect') {
       handleCollectAction(newState);
     } else if (action === 'deploy') {
@@ -238,18 +243,6 @@ export function GameBoard() {
     const oldPos = player.position;
     newState.map[oldPos.y][oldPos.x].occupants = newState.map[oldPos.y][oldPos.x].occupants.filter(id => id !== player.id);
     
-    const positionIndex = player.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
-    if (positionIndex !== -1) {
-        const removedPosition = player.positions.splice(positionIndex, 1)[0];
-        const oldTile = newState.map[oldPos.y][oldPos.x];
-        if (oldTile.positionedBy) {
-          oldTile.positionedBy = oldTile.positionedBy.filter(p => p.playerId !== player.id);
-        }
-        const logMsg = `${player.name} moved and is no longer collecting ${removedPosition.resource} from ${oldPos.x},${oldPos.y}.`;
-        newState.log.push(logMsg);
-        setToastsToShow(prev => [...prev, { title: 'Position Abandoned', description: logMsg }]);
-    }
-
     player.position = { x, y };
     newState.map[y][x].occupants.push(player.id);
     player.lastAction = 'move';
@@ -436,7 +429,7 @@ export function GameBoard() {
     const monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
 
     let winnerId = null;
-    if (attackerScore > monsterScore) {
+    if (attackerScore >= monsterScore) {
       winnerId = attacker.id;
     }
 
@@ -562,7 +555,7 @@ export function GameBoard() {
       </div>
       <div className="grid flex-[4] grid-cols-[1fr_280px] gap-4">
         <main className="flex flex-col items-center justify-start gap-4">
-          <MapGrid map={map} players={players} onTileClick={handleTileClick} possibleMoves={possibleMoves} selectedTile={selectedTile} />
+          <MapGrid map={map} players={players} onTileClick={handleTileClick} possibleMoves={possibleMoves} selectedTile={selectedTile} currentPlayerIndex={currentPlayerIndex} />
           <div className='text-center'>
               <p className='text-lg font-semibold'>Turn {gameState.turn}: <span className='text-primary'>{currentPlayer.name}'s turn</span></p>
               {currentAction && <p className='text-muted-foreground'>Current Action: {currentAction}</p>}

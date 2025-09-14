@@ -9,6 +9,7 @@ type IslandTileProps = {
   onClick: (x: number, y: number) => void;
   isPossibleMove: boolean;
   isSelected: boolean;
+  isCurrentPlayerTile: boolean;
 };
 
 const playerColorMap = {
@@ -25,9 +26,18 @@ const playerPositionClasses = [
   'bottom-0 right-0', // Player 3
 ]
 
-export function IslandTile({ island, players, onClick, isPossibleMove, isSelected }: IslandTileProps) {
+const playerTileIndicatorClasses: Record<string, string> = {
+    blue: 'shadow-blue-500/50',
+    red: 'shadow-red-500/50',
+    green: 'shadow-green-500/50',
+    yellow: 'shadow-yellow-400/50',
+}
+
+export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile }: IslandTileProps) {
   const occupants = island.occupants.map(id => players[id]);
   const positionedBy = island.positionedBy || [];
+  const currentPlayer = occupants.find(p => isCurrentPlayerTile && p.id === island.occupants.find(id => players[id] && players[id].position.x === island.x && players[id].position.y === island.y));
+
 
   const renderResourceIcons = (resources: IslandResource[]) => {
     const icons = [];
@@ -98,6 +108,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         island.isHidden ? 'bg-muted/30 border-dashed' : 'bg-card',
         isSelected ? 'border-primary ring-2 ring-primary' : '',
         isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
+        isCurrentPlayerTile && currentPlayer ? `shadow-lg ${playerTileIndicatorClasses[currentPlayer.color]}`: ''
       )}
       aria-label={`Island at ${island.x}, ${island.y}`}
     >
