@@ -202,13 +202,9 @@ export function GameBoard() {
       setGameState(state);
       return;
     }
-
-    if (tile.resources.length === 1) {
-      handleSelectResourceForPosition(deepClone(state), tile.resources[0].type);
-    } else {
-      state.positionDialogState = { x, y, resources: tile.resources };
-      setGameState(state);
-    }
+    
+    state.positionDialogState = { x, y, resources: tile.resources };
+    setGameState(state);
   }
 
   const handleSelectResourceForPosition = (state: GameState, resource: ResourceType) => {
