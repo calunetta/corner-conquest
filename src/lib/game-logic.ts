@@ -1,7 +1,6 @@
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor } from './types';
 
 const MAP_SIZE = 8;
-const NUM_CENTRAL_ISLANDS = 10;
 const PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
 
 export function initializeGame(): GameState {
@@ -37,8 +36,9 @@ export function initializeGame(): GameState {
       name: `Player ${i + 1}`,
       color: PLAYER_COLORS[i],
       position: pos,
-      resources: { gold: 5, gems: 5, iron: 5 },
+      resources: { gold: 0, gems: 0, iron: 0, food: 0 },
       armySize: 1,
+      nextArmyCost: 5,
       victoryPoints: 0,
       lastAction: null,
       specialCards: [],
@@ -56,7 +56,7 @@ export function initializeGame(): GameState {
       map[y][x].type = islandType;
 
       if (islandType === 'resource') {
-        const resourceTypes: ResourceType[] = ['gold', 'gems', 'iron'];
+        const resourceTypes: ResourceType[] = ['gold', 'gems', 'iron', 'food'];
         const numResources = Math.random() < 0.2 ? 1 : (Math.random() < 0.8 ? 2 : 3); // 20% for 1, 64% for 2, 16% for 3
         for(let i = 0; i < numResources; i++) {
           map[y][x].resources.push(resourceTypes[Math.floor(Math.random() * resourceTypes.length)]);

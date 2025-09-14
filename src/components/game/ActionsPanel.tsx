@@ -2,7 +2,7 @@
 import type { GameAction, GameState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Move, Pickaxe, Shield, Wheat } from 'lucide-react';
+import { Move, Pickaxe, Shield, Wheat, Sword } from 'lucide-react';
 
 type ActionsPanelProps = {
   onAction: (action: GameAction) => void;
@@ -17,13 +17,15 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
 
   const canMine = currentTile.type === 'resource' && currentTile.resources.length > 0;
   const canFarm = players[currentPlayerIndex].occupiedResourceTiles.length > 0;
-  const canAttack = (currentTile.occupants.length > 1 && currentTile.type !== 'base') || currentTile.type === 'monster';
+  const canAttack = (currentTile.occupants.length > 1 && currentTile.type !== 'base') || (currentTile.type === 'monster' && !!currentTile.monsterDetails);
+  const canDeploy = currentPlayer.resources.food >= currentPlayer.nextArmyCost && currentPlayer.armySize < 5 && currentTile.type === 'base';
 
   const actions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
     { id: 'move', label: 'Move', icon: <Move className="mr-2 h-4 w-4" /> },
     { id: 'mine', label: 'Mine', icon: <Pickaxe className="mr-2 h-4 w-4" />, disabled: !canMine },
     { id: 'attack', label: 'Attack', icon: <Shield className="mr-2 h-4 w-4" />, disabled: !canAttack },
     { id: 'farm', label: 'Farm', icon: <Wheat className="mr-2 h-4 w-4" />, disabled: !canFarm },
+    { id: 'deploy', label: `Deploy (${currentPlayer.nextArmyCost} Food)`, icon: <Sword className="mr-2 h-4 w-4" />, disabled: !canDeploy },
   ];
 
   return (

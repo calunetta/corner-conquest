@@ -1,6 +1,6 @@
 import type { MonsterEncounterOutput } from "@/ai/flows/monster-encounter-generation";
 
-export type ResourceType = 'gold' | 'gems' | 'iron';
+export type ResourceType = 'gold' | 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'green' | 'yellow';
 
@@ -11,6 +11,7 @@ export type Player = {
   position: { x: number; y: number };
   resources: Record<ResourceType, number>;
   armySize: number;
+  nextArmyCost: number;
   victoryPoints: number;
   lastAction: GameAction | null;
   specialCards: any[]; // Define later

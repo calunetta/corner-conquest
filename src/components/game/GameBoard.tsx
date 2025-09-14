@@ -63,6 +63,8 @@ export function GameBoard() {
       newState.possibleMoves = farmableTiles;
     } else if (action === 'mine') {
       handleMineAction(newState);
+    } else if (action === 'deploy') {
+      handleDeployAction(newState);
     } else {
       newState.possibleMoves = [];
       newState.selectedTile = null;
@@ -70,6 +72,25 @@ export function GameBoard() {
     
     setGameState(newState);
   };
+  
+  const handleDeployAction = (state: GameState) => {
+    const { currentPlayerIndex, players } = state;
+    const player = players[currentPlayerIndex];
+    if (player.resources.food >= player.nextArmyCost && player.armySize < 5) {
+      player.resources.food -= player.nextArmyCost;
+      player.armySize += 1;
+      player.nextArmyCost += 1;
+      player.lastAction = 'deploy';
+      const logMsg = `${player.name} deployed a new army! They now have ${player.armySize} armies.`;
+      state.log.push(logMsg);
+      toast({ title: 'Army Deployed!', description: logMsg });
+      endTurn(state);
+    } else {
+      toast({ title: 'Cannot Deploy', description: 'Not enough food or at max army size.', variant: 'destructive'});
+      state.currentAction = null;
+      setGameState(state);
+    }
+  }
 
   const handleMineAction = (state: GameState) => {
     const { currentPlayerIndex, players, map } = state;
@@ -160,7 +181,7 @@ export function GameBoard() {
         const islandType: Island['type'] = Math.random() < 0.3 ? 'monster' : (Math.random() < 0.1 ? 'special' : 'resource');
         revealedIsland.type = islandType;
         if (islandType === 'resource') {
-            const resourceTypes: ResourceType[] = ['gold', 'gems', 'iron'];
+            const resourceTypes: ResourceType[] = ['gold', 'gems', 'iron', 'food'];
             const numResources = Math.random() < 0.2 ? 1 : 2;
             for(let i=0; i<numResources; i++) {
               revealedIsland.resources.push(resourceTypes[Math.floor(Math.random() * resourceTypes.length)]);
