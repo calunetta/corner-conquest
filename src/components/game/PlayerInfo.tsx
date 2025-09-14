@@ -19,12 +19,12 @@ const playerColorMap = {
 export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
   return (
     <Card className={`transition-all duration-300 ${isCurrentPlayer ? `border-accent shadow-lg shadow-accent/20` : ''}`}>
-      <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base font-medium">{player.name}</CardTitle>
+      <CardHeader className="flex-row items-center justify-between space-y-0 p-3">
+        <CardTitle className="text-sm font-medium">{player.name}</CardTitle>
         <Badge variant="outline" className={`border-2 ${playerColorMap[player.color]}`}>{player.color.toUpperCase()}</Badge>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="flex items-center justify-between text-xl font-bold">
+      <CardContent className="space-y-2 p-3 pt-0">
+        <div className="flex items-center justify-between text-lg font-bold">
           <div className="flex items-center gap-2">
             <Award className="h-5 w-5 text-yellow-400" />
             <span>{player.victoryPoints}</span>
