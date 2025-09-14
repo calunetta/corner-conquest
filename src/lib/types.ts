@@ -22,6 +22,7 @@ export type Player = {
   position: { x: number; y: number };
   resources: Record<ResourceType, number>;
   armySize: number;
+  attackPower: number;
   nextArmyCost: number;
   victoryPoints: number;
   lastAction: GameAction | null;
@@ -29,6 +30,12 @@ export type Player = {
   positions: PlayerPosition[];
   occupiedResourceTiles: { x: number; y: number }[];
 };
+
+export type Monster = {
+  id: 'little' | 'big';
+  type: 'cub' | 'huge';
+  combatPower: number;
+}
 
 export type Island = {
   id: string;
@@ -40,6 +47,7 @@ export type Island = {
   occupants: number[]; // player ids
   isFetchingMonster?: boolean;
   monsterDetails?: MonsterEncounterOutput;
+  monsters?: Monster[];
   positionedBy?: {playerId: number, resource: ResourceType}[];
 };
 
@@ -48,6 +56,15 @@ export type CombatState = {
   defenderId: number;
   attackerRolls: number[];
   defenderRolls: number[];
+  winnerId: number | null;
+  phase: 'rolling' | 'results';
+};
+
+export type MonsterCombatState = {
+  attackerId: number;
+  monster: Monster;
+  attackerRolls: number[];
+  monsterRolls: number[];
   winnerId: number | null;
   phase: 'rolling' | 'results';
 };
@@ -70,7 +87,8 @@ export type GameState = {
   currentAction: GameAction | null;
   specialCardsDeck: string[];
   combatState: CombatState | null;
+  monsterCombatState: MonsterCombatState | null;
   positionDialogState: PositionDialogState | null;
 };
 
-export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card';
+export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade';

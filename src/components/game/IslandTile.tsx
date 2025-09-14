@@ -1,7 +1,7 @@
 import type { Island, Player, GameAction, ResourceType, IslandResource } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { ResourceIcon } from '../icons';
-import { Home, HelpCircle, Skull, Star, Loader2, Anchor } from 'lucide-react';
+import { ResourceIcon, MonsterIcon } from '../icons';
+import { Home, HelpCircle, Star, Loader2, Anchor } from 'lucide-react';
 
 type IslandTileProps = {
   island: Island;
@@ -39,6 +39,13 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     return icons;
   }
 
+  const renderMonsterIcons = () => {
+    if (!island.monsters) return null;
+    return island.monsters.map((monster, i) => (
+      <MonsterIcon key={i} type={monster.type} className="h-full w-full text-destructive" />
+    ));
+  }
+
   const getIcon = () => {
     if (island.isHidden) return <HelpCircle className="h-full w-full text-muted-foreground/50" />;
     if (island.isFetchingMonster) return <Loader2 className="h-full w-full animate-spin text-destructive" />;
@@ -51,7 +58,12 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             {renderResourceIcons(island.resources.slice(0, 4))}
           </div>
         );
-      case 'monster': return <Skull className="h-full w-full text-destructive p-2" />;
+      case 'monster': 
+        return (
+          <div className="grid h-full w-full grid-cols-2 grid-rows-2 items-center justify-center gap-1 p-2">
+            {renderMonsterIcons()}
+          </div>
+        );
       case 'special': return <Star className="h-full w-full text-yellow-400 p-2" />;
       default: return null;
     }

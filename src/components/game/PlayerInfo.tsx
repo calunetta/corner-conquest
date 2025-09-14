@@ -2,7 +2,7 @@ import type { Player } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ResourceIcon } from '@/components/icons';
-import { Award, Swords } from 'lucide-react';
+import { Award, Swords, Zap } from 'lucide-react';
 
 type PlayerInfoProps = {
   player: Player;
@@ -32,6 +32,10 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
             <div className="flex items-center gap-1">
                 <Swords className="h-4 w-4 text-gray-400" />
                 <span className="text-sm font-bold">{player.armySize}</span>
+            </div>
+             <div className="flex items-center gap-1">
+                <Zap className="h-4 w-4 text-yellow-500" />
+                <span className="text-sm font-bold">{player.attackPower}</span>
             </div>
         </div>
         <div className="flex gap-2 text-xs">

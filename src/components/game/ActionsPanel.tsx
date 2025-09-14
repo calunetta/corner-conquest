@@ -2,7 +2,7 @@
 import type { GameAction, GameState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Move, Shield, Sword, ShoppingCart, Gem, Anchor } from 'lucide-react';
+import { Move, Shield, Sword, ShoppingCart, Gem, Anchor, Zap } from 'lucide-react';
 
 type ActionsPanelProps = {
   onAction: (action: GameAction) => void;
@@ -17,15 +17,17 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
 
   const canCollect = currentPlayer.positions.some(p => p.x === currentPlayer.position.x && p.y === currentPlayer.position.y);
   const canPosition = (currentTile.type === 'resource' || currentTile.type === 'base') && !currentPlayer.positions.some(p => p.x === currentPlayer.position.x && p.y === currentPlayer.position.y);
-  const canAttack = (currentTile.occupants.length > 1 && currentTile.type !== 'base') || (currentTile.type === 'monster' && !!currentTile.monsterDetails);
+  const canAttack = currentTile.occupants.length > 1 || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0);
   const canDeploy = currentPlayer.resources.food >= currentPlayer.nextArmyCost && currentPlayer.armySize < 5 && currentTile.type === 'base';
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0;
+  const canUpgrade = currentPlayer.resources.iron >= 5;
 
   const actions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean, className?: string }[] = [
     { id: 'move', label: 'Move', icon: <Move className="mr-2 h-4 w-4" /> },
     { id: 'collect', label: 'Collect', icon: <Gem className="mr-2 h-4 w-4" />, disabled: !canCollect },
     { id: 'attack', label: 'Attack', icon: <Shield className="mr-2 h-4 w-4" />, disabled: !canAttack },
     { id: 'position', label: 'Position', icon: <Anchor className="mr-2 h-4 w-4" />, disabled: !canPosition },
+    { id: 'upgrade', label: 'Upgrade (5 Iron)', icon: <Zap className="mr-2 h-4 w-4" />, disabled: !canUpgrade, className: 'col-span-2' },
     { id: 'buy-card', label: 'Buy Card (10 Gems)', icon: <ShoppingCart className="mr-2 h-4 w-4" />, disabled: !canBuyCard, className: 'col-span-2' },
     { id: 'deploy', label: `Deploy (${currentPlayer.nextArmyCost} Food)`, icon: <Sword className="mr-2 h-4 w-4" />, disabled: !canDeploy, className: 'col-span-2' },
   ];

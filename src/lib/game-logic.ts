@@ -49,6 +49,7 @@ export function initializeGame(): GameState {
       position: pos,
       resources: { gems: 0, iron: 0, food: 0 },
       armySize: 1,
+      attackPower: 0,
       nextArmyCost: 5,
       victoryPoints: 0,
       lastAction: null,
@@ -76,7 +77,7 @@ export function initializeGame(): GameState {
         const resourceTypes: ResourceType[] = ['gems', 'iron', 'food'];
         const availableResources = [...resourceTypes];
         
-        const numResourceTypes = Math.random() < 0.2 ? 1 : 2;
+        const numResourceTypes = Math.random() < 0.7 ? 2 : 1;
         
         const islandResources: IslandResource[] = [];
         for(let i = 0; i < numResourceTypes; i++) {
@@ -109,6 +110,7 @@ export function initializeGame(): GameState {
     currentAction: null,
     specialCardsDeck: [...SPECIAL_CARDS],
     combatState: null,
+    monsterCombatState: null,
     positionDialogState: null,
   };
 }

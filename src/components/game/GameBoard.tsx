@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import type { GameState, GameAction, ResourceType, IslandResource } from '@/lib/types';
+import type { GameState, GameAction, ResourceType, IslandResource, Monster } from '@/lib/types';
 import { initializeGame } from '@/lib/game-logic';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateMonsterEncounter } from '@/ai/flows/monster-encounter-generation';
 import { Loader2 } from 'lucide-react';
 import { CombatDialog } from './CombatDialog';
+import { MonsterCombatDialog } from './MonsterCombatDialog';
 import { PositionDialog } from './PositionDialog';
 
 
@@ -69,11 +70,31 @@ export function GameBoard() {
       handleDeployAction(newState);
     } else if (action === 'buy-card') {
       handleBuyCardAction(newState);
+    } else if (action === 'upgrade') {
+      handleUpgradeAction(newState);
     } else if (action === 'attack') {
       handleAttackAction(newState);
     }
     
     setGameState(newState);
+  };
+
+  const handleUpgradeAction = (state: GameState) => {
+    const { currentPlayerIndex, players } = state;
+    const player = players[currentPlayerIndex];
+    if (player.resources.iron >= 5) {
+      player.resources.iron -= 5;
+      player.attackPower += 1;
+      player.lastAction = 'upgrade';
+      const logMsg = `${player.name} upgraded their army! Attack Power is now ${player.attackPower}.`;
+      state.log.push(logMsg);
+      toast({ title: 'Army Upgraded!', description: logMsg });
+      endTurn(state);
+    } else {
+      toast({ title: 'Cannot Upgrade', description: 'Not enough iron.', variant: 'destructive'});
+      state.currentAction = null;
+      setGameState(state);
+    }
   };
   
   const handleDeployAction = (state: GameState) => {
@@ -248,8 +269,15 @@ export function GameBoard() {
               const islandToUpdate = finalState.map[y][x];
               islandToUpdate.monsterDetails = monsterDetails;
               islandToUpdate.isFetchingMonster = false;
+
+              const monsters: Monster[] = [];
+              monsters.push({id: 'little', type: monsterDetails.littleMonsterType, combatPower: monsterDetails.littleMonsterType === 'cub' ? 2 : 4});
+              if(monsterDetails.hasBigMonster) {
+                monsters.push({id: 'big', type: monsterDetails.bigMonsterType, combatPower: monsterDetails.bigMonsterType === 'cub' ? 6 : 8});
+              }
+              islandToUpdate.monsters = monsters;
               
-              const monsterLog = `${player.name} encountered a ${monsterDetails.bigMonsterType} ${monsterDetails.hasBigMonster ? 'big' : ''} monster and a ${monsterDetails.littleMonsterType} little monster!`;
+              const monsterLog = `${player.name} encountered monsters: ${monsterDetails.monsterEncounter}`;
               finalState.log.push(monsterLog);
               setToastsToShow(prev => [...prev, { title: 'Monster Encounter!', description: monsterLog, variant: 'destructive'}]);
               
@@ -280,12 +308,17 @@ export function GameBoard() {
       };
       state.currentAction = 'attack';
       setGameState(state);
-    } else if (currentTile.type === 'monster' && currentTile.monsterDetails) {
-      // For now, let's just log a monster attack attempt.
-      // We will implement monster combat later.
-      toast({ title: 'Monster Attack!', description: `You are attacking the monster! This will be implemented soon.` });
-      state.currentAction = null;
-      setGameState(state);
+    } else if (currentTile.type === 'monster' && currentTile.monsters && currentTile.monsters.length > 0) {
+      state.monsterCombatState = {
+        attackerId: attacker.id,
+        monster: currentTile.monsters[0], // For now, just a placeholder, selection logic will be in dialog
+        attackerRolls: [],
+        monsterRolls: [],
+        winnerId: null,
+        phase: 'rolling',
+      };
+      state.currentAction = 'attack';
+      setGameState(state); // This will trigger the MonsterCombatDialog
     } else {
       toast({ title: 'No one to attack', description: 'There are no other players or monsters on this island.', variant: 'destructive' });
       state.currentAction = null;
@@ -301,13 +334,13 @@ export function GameBoard() {
     const attacker = players[combatState.attackerId];
     const defender = players[combatState.defenderId];
 
-    const rollDice = (armySize: number) => {
-      const diceCount = Math.min(armySize, 4);
+    const rollDice = (armySize: number, attackPower: number) => {
+      const diceCount = Math.min(armySize + attackPower, 4);
       return Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
     };
 
-    combatState.attackerRolls = rollDice(attacker.armySize);
-    combatState.defenderRolls = rollDice(defender.armySize);
+    combatState.attackerRolls = rollDice(attacker.armySize, attacker.attackPower);
+    combatState.defenderRolls = rollDice(defender.armySize, defender.attackPower);
 
     const attackerScore = combatState.attackerRolls.reduce((a, b) => a + b, 0);
     const defenderScore = combatState.defenderRolls.reduce((a, b) => a + b, 0);
@@ -365,6 +398,95 @@ export function GameBoard() {
     endTurn(newState);
   }
 
+  const handleMonsterCombatRoll = (monster: Monster) => {
+    if (!gameState) return;
+
+    const newState = deepClone(gameState);
+    const { players } = newState;
+    const attacker = players[newState.currentPlayerIndex];
+
+    const rollDice = (count: number) => {
+      const diceCount = Math.min(count, 4);
+      return Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
+    };
+
+    const attackerRolls = rollDice(attacker.armySize + attacker.attackPower);
+    const monsterRolls = rollDice(monster.combatPower);
+
+    const attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
+    const monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
+
+    let winnerId = null;
+    if (attackerScore > monsterScore) {
+      winnerId = attacker.id;
+    }
+
+    newState.monsterCombatState = {
+      attackerId: attacker.id,
+      monster,
+      attackerRolls,
+      monsterRolls,
+      winnerId,
+      phase: 'results',
+    };
+    setGameState(newState);
+  };
+  
+  const handleCloseMonsterCombat = () => {
+    if (!gameState || !gameState.monsterCombatState) return;
+    
+    const newState = deepClone(gameState);
+    const { monsterCombatState, players, map } = newState;
+    const attacker = players[monsterCombatState.attackerId];
+    const currentTile = map[attacker.position.y][attacker.position.x];
+    
+    if (monsterCombatState.winnerId === attacker.id) {
+      // Player wins
+      const monsterVP = currentTile.monsterDetails?.victoryPoints || 0;
+      attacker.victoryPoints += monsterVP;
+      currentTile.monsters = currentTile.monsters?.filter(m => m.id !== monsterCombatState.monster.id);
+      
+      const logMsg = `${attacker.name} defeated the ${monsterCombatState.monster.id} monster and earned ${monsterVP} VP!`;
+      newState.log.push(logMsg);
+      toast({ title: 'Victory!', description: logMsg });
+
+      if (currentTile.monsters?.length === 0) {
+        currentTile.type = 'resource'; // Or make it empty
+      }
+
+    } else {
+      // Player loses
+      const basePositions = [
+        { x: 0, y: 0 },
+        { x: map.length - 1, y: 0 },
+        { x: 0, y: map.length - 1 },
+        { x: map.length - 1, y: map.length - 1 },
+      ];
+      const loserBasePosition = basePositions[attacker.id];
+      
+      const oldPos = attacker.position;
+      map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(id => id !== attacker.id);
+      
+      attacker.position = loserBasePosition;
+      map[loserBasePosition.y][loserBasePosition.x].occupants.push(attacker.id);
+      
+      attacker.positions = [];
+      map.forEach(row => row.forEach(tile => {
+        if (tile.positionedBy) {
+          tile.positionedBy = tile.positionedBy.filter(p => p.playerId !== attacker.id);
+        }
+      }));
+
+      const logMsg = `${attacker.name} was defeated by the monster and sent back to base!`;
+      newState.log.push(logMsg);
+      toast({ title: 'Defeated!', description: logMsg, variant: 'destructive' });
+    }
+    
+    newState.monsterCombatState = null;
+    attacker.lastAction = 'attack';
+    endTurn(newState);
+  }
+
   const endTurn = (state: GameState) => {
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
     if (state.currentPlayerIndex === 0) {
@@ -396,8 +518,10 @@ export function GameBoard() {
     );
   }
 
-  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, positionDialogState } = gameState;
+  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, monsterCombatState, positionDialogState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
+  const currentTile = map[currentPlayer.position.y][currentPlayer.position.x];
+
 
   return (
     <div className="flex h-screen w-screen flex-col gap-4 p-4">
@@ -424,6 +548,14 @@ export function GameBoard() {
         </aside>
       </div>
       {combatState && <CombatDialog gameState={gameState} onRoll={handleCombatRoll} onClose={handleCloseCombat} />}
+      {monsterCombatState && currentTile.monsters && (
+        <MonsterCombatDialog 
+          gameState={gameState} 
+          monsters={currentTile.monsters}
+          onRoll={handleMonsterCombatRoll} 
+          onClose={handleCloseMonsterCombat} 
+        />
+      )}
       {positionDialogState && (
         <PositionDialog 
           resources={positionDialogState.resources}
