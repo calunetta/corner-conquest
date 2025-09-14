@@ -32,6 +32,15 @@ export type Island = {
   farmedBy?: number; // player id
 };
 
+export type CombatState = {
+  attackerId: number;
+  defenderId: number;
+  attackerRolls: number[];
+  defenderRolls: number[];
+  winnerId: number | null;
+  phase: 'rolling' | 'results';
+};
+
 export type GameState = {
   map: Island[][];
   players: Player[];
@@ -43,6 +52,7 @@ export type GameState = {
   possibleMoves: { x: number, y: number }[];
   currentAction: GameAction | null;
   specialCardsDeck: string[];
+  combatState: CombatState | null;
 };
 
 export type GameAction = 'deploy' | 'mine' | 'move' | 'attack' | 'farm' | 'buy-card';

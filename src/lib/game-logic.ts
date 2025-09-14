@@ -57,13 +57,19 @@ export function initializeGame(): GameState {
   for (let y = 0; y < MAP_SIZE; y++) {
     for (let x = 0; x < MAP_SIZE; x++) {
       if (map[y][x].type === 'base') continue;
-
-      const islandType: IslandType = Math.random() < 0.2 ? 'monster' : (Math.random() < 0.1 ? 'special' : 'resource');
+      
+      let islandType: IslandType = 'resource';
+      const rand = Math.random();
+      if (rand < 0.3) {
+        islandType = 'monster';
+      } else if (rand < 0.4) {
+        islandType = 'special';
+      }
       map[y][x].type = islandType;
 
       if (islandType === 'resource') {
         const resourceTypes: ResourceType[] = ['gems', 'iron', 'food'];
-        const numResources = Math.random() < 0.2 ? 1 : (Math.random() < 0.8 ? 2 : 3); // 20% for 1, 64% for 2, 16% for 3
+        const numResources = Math.random() < 0.2 ? 1 : (Math.random() < 0.8 ? 2 : 3);
         for(let i = 0; i < numResources; i++) {
           map[y][x].resources.push(resourceTypes[Math.floor(Math.random() * resourceTypes.length)]);
         }
@@ -87,5 +93,6 @@ export function initializeGame(): GameState {
     possibleMoves: [],
     currentAction: null,
     specialCardsDeck: [...SPECIAL_CARDS],
+    combatState: null,
   };
 }

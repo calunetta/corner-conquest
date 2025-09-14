@@ -10,6 +10,7 @@ import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { generateMonsterEncounter } from '@/ai/flows/monster-encounter-generation';
 import { Loader2 } from 'lucide-react';
+import { CombatDialog } from './CombatDialog';
 
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
@@ -50,7 +51,6 @@ export function GameBoard() {
     } else if (action === 'farm') {
       newState.possibleMoves = [];
       newState.selectedTile = null;
-      // find all tiles occupied by the current player that are resource tiles
       const farmableTiles = [];
       for(let y = 0; y < map.length; y++) {
         for(let x = 0; x < map[y].length; x++) {
@@ -67,6 +67,8 @@ export function GameBoard() {
       handleDeployAction(newState);
     } else if (action === 'buy-card') {
       handleBuyCardAction(newState);
+    } else if (action === 'attack') {
+      handleAttackAction(newState);
     } else {
       newState.possibleMoves = [];
       newState.selectedTile = null;
@@ -131,7 +133,7 @@ export function GameBoard() {
       state.log.push(logMsg);
       toast({ title: 'Mined Resources!', description: logMsg });
       
-      currentTile.resources = []; // Clear resources from the island
+      currentTile.resources = [];
       player.lastAction = 'mine';
       endTurn(state);
     } else {
@@ -160,7 +162,6 @@ export function GameBoard() {
     const { currentPlayerIndex } = state;
     const player = state.players[currentPlayerIndex];
 
-    // If there was an old farm, remove its farmedBy status
     if (player.farmPosition) {
       const oldFarmTile = state.map[player.farmPosition.y][player.farmPosition.x];
       if (oldFarmTile) {
@@ -168,7 +169,6 @@ export function GameBoard() {
       }
     }
 
-    // Set new farm
     player.farmPosition = { x, y };
     state.map[y][x].farmedBy = player.id;
     player.lastAction = 'farm';
@@ -200,8 +200,15 @@ export function GameBoard() {
       toast({ title: 'Island Discovered!', description: logMsg });
       
       if (revealedIsland.type === 'empty') {
-        const islandType: Island['type'] = Math.random() < 0.3 ? 'monster' : (Math.random() < 0.1 ? 'special' : 'resource');
+        const rand = Math.random();
+        let islandType: Island['type'] = 'resource';
+        if (rand < 0.3) {
+          islandType = 'monster';
+        } else if (rand < 0.4) {
+          islandType = 'special';
+        }
         revealedIsland.type = islandType;
+
         if (islandType === 'resource') {
             const resourceTypes: ResourceType[] = ['gems', 'iron', 'food'];
             const numResources = Math.random() < 0.2 ? 1 : 2;
@@ -235,9 +242,97 @@ export function GameBoard() {
     
     endTurn(newState);
   }
+
+  const handleAttackAction = (state: GameState) => {
+    const { currentPlayerIndex, players, map } = state;
+    const attacker = players[currentPlayerIndex];
+    const currentTile = map[attacker.position.y][attacker.position.x];
+    const otherPlayers = currentTile.occupants.filter(id => id !== attacker.id);
+
+    if (otherPlayers.length > 0) {
+      const defenderId = otherPlayers[0]; // Attack the first other player on the tile
+      state.combatState = {
+        attackerId: attacker.id,
+        defenderId: defenderId,
+        attackerRolls: [],
+        defenderRolls: [],
+        winnerId: null,
+        phase: 'rolling',
+      };
+      state.currentAction = 'attack';
+      setGameState(state);
+    } else {
+      // Handle monster attack later
+      toast({ title: 'No one to attack', description: 'There are no other players on this island.', variant: 'destructive' });
+      state.currentAction = null;
+      setGameState(state);
+    }
+  };
+
+  const handleCombatRoll = () => {
+    if (!gameState || !gameState.combatState) return;
+
+    const newState = deepClone(gameState);
+    const { combatState, players } = newState;
+    const attacker = players[combatState.attackerId];
+    const defender = players[combatState.defenderId];
+
+    const rollDice = (armySize: number) => {
+      const diceCount = Math.min(armySize, 4);
+      return Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
+    };
+
+    combatState.attackerRolls = rollDice(attacker.armySize);
+    combatState.defenderRolls = rollDice(defender.armySize);
+
+    const attackerScore = combatState.attackerRolls.reduce((a, b) => a + b, 0);
+    const defenderScore = combatState.defenderRolls.reduce((a, b) => a + b, 0);
+
+    if (attackerScore > defenderScore) {
+      combatState.winnerId = combatState.attackerId;
+    } else {
+      combatState.winnerId = combatState.defenderId;
+    }
+    
+    combatState.phase = 'results';
+    setGameState(newState);
+  };
   
+  const handleCloseCombat = () => {
+    if (!gameState || !gameState.combatState) return;
+    
+    const newState = deepClone(gameState);
+    const { combatState, players, map } = newState;
+    const winnerId = combatState.winnerId;
+    const attacker = players[combatState.attackerId];
+    const defender = players[combatState.defenderId];
+    const loser = winnerId === attacker.id ? defender : attacker;
+
+    // Move loser back to base
+    const basePositions = [
+      { x: 0, y: 0 },
+      { x: map.length - 1, y: 0 },
+      { x: 0, y: map.length - 1 },
+      { x: map.length - 1, y: map.length - 1 },
+    ];
+    const loserBasePosition = basePositions[loser.id];
+    
+    const oldPos = loser.position;
+    map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(id => id !== loser.id);
+    
+    loser.position = loserBasePosition;
+    map[loserBasePosition.y][loserBasePosition.x].occupants.push(loser.id);
+
+    const logMsg = `${players[winnerId!].name} defeated ${loser.name}! ${loser.name} was sent back to their base.`;
+    newState.log.push(logMsg);
+    toast({ title: 'Combat Over!', description: logMsg });
+    
+    newState.combatState = null;
+    attacker.lastAction = 'attack';
+    endTurn(newState);
+  }
+
   const endTurn = (state: GameState) => {
-    // Resource generation from farms
     state.players.forEach(player => {
       if (player.farmPosition) {
         const farmTile = state.map[player.farmPosition.y][player.farmPosition.x];
@@ -266,7 +361,6 @@ export function GameBoard() {
     endTurn(deepClone(gameState));
   }
 
-
   if (!gameState) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
@@ -275,7 +369,7 @@ export function GameBoard() {
     );
   }
 
-  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile } = gameState;
+  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
   return (
@@ -302,6 +396,7 @@ export function GameBoard() {
           <Button onClick={handleEndTurn}>End Turn</Button>
         </aside>
       </div>
+      {combatState && <CombatDialog gameState={gameState} onRoll={handleCombatRoll} onClose={handleCloseCombat} />}
     </div>
   );
 }
