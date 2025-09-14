@@ -1,8 +1,7 @@
 'use client';
-import type { ResourceType } from '@/lib/types';
+import type { ResourceType, IslandResource } from '@/lib/types';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -14,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ResourceIcon } from '../icons';
 
 type PositionDialogProps = {
-  resources: ResourceType[];
+  resources: IslandResource[];
   onSelect: (resource: ResourceType) => void;
   onClose: () => void;
 };
@@ -33,13 +32,16 @@ export function PositionDialog({ resources, onSelect, onClose }: PositionDialogP
         <div className="flex justify-around gap-4 py-4">
           {resources.map((resource) => (
             <Button
-              key={resource}
+              key={resource.type}
               variant="outline"
               className="flex h-24 w-24 flex-col items-center justify-center gap-2"
-              onClick={() => onSelect(resource)}
+              onClick={() => onSelect(resource.type)}
             >
-              <ResourceIcon type={resource} className="h-8 w-8" />
-              <span className="capitalize">{resource}</span>
+              <div className="flex items-center gap-1">
+                <ResourceIcon type={resource.type} className="h-8 w-8" />
+                <span className="text-lg font-bold">x{resource.amount}</span>
+              </div>
+              <span className="capitalize">{resource.type}</span>
             </Button>
           ))}
         </div>

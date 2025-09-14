@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import type { GameState, GameAction, Island, ResourceType } from '@/lib/types';
+import type { GameState, GameAction, ResourceType, IslandResource } from '@/lib/types';
 import { initializeGame } from '@/lib/game-logic';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
@@ -21,11 +21,19 @@ function deepClone<T>(obj: T): T {
 export function GameBoard() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const { toast } = useToast();
+  const [toastsToShow, setToastsToShow] = useState<{ title: string; description: string; variant?: "destructive" | "default" }[]>([]);
 
   useEffect(() => {
     const newGame = initializeGame();
     setGameState(newGame);
   }, []);
+
+  useEffect(() => {
+    if (toastsToShow.length > 0) {
+      toastsToShow.forEach(t => toast(t));
+      setToastsToShow([]);
+    }
+  }, [toastsToShow, toast]);
 
   const handleAction = (action: GameAction) => {
     if (!gameState) return;
@@ -114,12 +122,20 @@ export function GameBoard() {
     const position = player.positions.find(p => p.x === player.position.x && p.y === player.position.y);
 
     if (position) {
-        player.resources[position.resource] += 1;
-        const logMsg = `${player.name} collected 1 ${position.resource}.`;
-        state.log.push(logMsg);
-        toast({ title: 'Resource Collected!', description: logMsg });
-        player.lastAction = 'collect';
-        endTurn(state);
+        const tile = map[position.y][position.x];
+        const resource = tile.resources.find(r => r.type === position.resource);
+        if (resource) {
+            player.resources[position.resource] += resource.amount;
+            const logMsg = `${player.name} collected ${resource.amount} ${position.resource}.`;
+            state.log.push(logMsg);
+            toast({ title: 'Resource Collected!', description: logMsg });
+            player.lastAction = 'collect';
+            endTurn(state);
+        } else {
+             toast({ title: 'Cannot Collect', description: 'Resource not found on this island.', variant: 'destructive'});
+             state.currentAction = null;
+             setGameState(state);
+        }
     } else {
       toast({ title: 'Cannot Collect', description: 'You have no army positioned on this island.', variant: 'destructive'});
       state.currentAction = null;
@@ -159,7 +175,7 @@ export function GameBoard() {
     }
 
     if (tile.resources.length === 1) {
-      handleSelectResourceForPosition(deepClone(state), tile.resources[0]);
+      handleSelectResourceForPosition(deepClone(state), tile.resources[0].type);
     } else {
       state.positionDialogState = { x, y, resources: tile.resources };
       setGameState(state);
@@ -206,7 +222,7 @@ export function GameBoard() {
         }
         const logMsg = `${player.name} moved and is no longer collecting ${removedPosition.resource} from ${oldPos.x},${oldPos.y}.`;
         newState.log.push(logMsg);
-        toast({ title: 'Position Abandoned', description: logMsg });
+        setToastsToShow(prev => [...prev, { title: 'Position Abandoned', description: logMsg }]);
     }
 
     player.position = { x, y };
@@ -219,7 +235,7 @@ export function GameBoard() {
       player.victoryPoints += 1;
       const logMsg = `${player.name} discovered a new island and gets 1 VP!`;
       newState.log.push(logMsg);
-      toast({ title: 'Island Discovered!', description: logMsg });
+      setToastsToShow(prev => [...prev, { title: 'Island Discovered!', description: logMsg }]);
       
       if(revealedIsland.type === 'monster' && !revealedIsland.monsterDetails) {
         revealedIsland.isFetchingMonster = true;
@@ -235,7 +251,7 @@ export function GameBoard() {
               
               const monsterLog = `${player.name} encountered a ${monsterDetails.bigMonsterType} ${monsterDetails.hasBigMonster ? 'big' : ''} monster and a ${monsterDetails.littleMonsterType} little monster!`;
               finalState.log.push(monsterLog);
-              toast({ title: 'Monster Encounter!', description: monsterLog, variant: 'destructive'});
+              setToastsToShow(prev => [...prev, { title: 'Monster Encounter!', description: monsterLog, variant: 'destructive'}]);
               
               return finalState;
             })
@@ -264,9 +280,14 @@ export function GameBoard() {
       };
       state.currentAction = 'attack';
       setGameState(state);
+    } else if (currentTile.type === 'monster' && currentTile.monsterDetails) {
+      // For now, let's just log a monster attack attempt.
+      // We will implement monster combat later.
+      toast({ title: 'Monster Attack!', description: `You are attacking the monster! This will be implemented soon.` });
+      state.currentAction = null;
+      setGameState(state);
     } else {
-      // Handle monster attack later
-      toast({ title: 'No one to attack', description: 'There are no other players on this island.', variant: 'destructive' });
+      toast({ title: 'No one to attack', description: 'There are no other players or monsters on this island.', variant: 'destructive' });
       state.currentAction = null;
       setGameState(state);
     }

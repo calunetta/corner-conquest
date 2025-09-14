@@ -1,4 +1,4 @@
-import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor } from './types';
+import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource } from './types';
 
 const MAP_SIZE = 7;
 const PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
@@ -36,7 +36,11 @@ export function initializeGame(): GameState {
       type: 'base',
       isHidden: false,
       occupants: [i],
-      resources: ['gems', 'iron', 'food'], 
+      resources: [
+        { type: 'gems', amount: 1 }, 
+        { type: 'iron', amount: 1 }, 
+        { type: 'food', amount: 1 }
+      ], 
     };
     players.push({
       id: i,
@@ -71,15 +75,16 @@ export function initializeGame(): GameState {
       if (islandType === 'resource') {
         const resourceTypes: ResourceType[] = ['gems', 'iron', 'food'];
         const availableResources = [...resourceTypes];
-
-        const numResources = Math.random() < 0.2 ? 1 : (Math.random() < 0.8 ? 2 : 3);
         
-        const islandResources: ResourceType[] = [];
-        for(let i = 0; i < numResources; i++) {
+        const numResourceTypes = Math.random() < 0.2 ? 1 : 2;
+        
+        const islandResources: IslandResource[] = [];
+        for(let i = 0; i < numResourceTypes; i++) {
           if (availableResources.length > 0) {
             const randomIndex = Math.floor(Math.random() * availableResources.length);
-            const selectedResource = availableResources.splice(randomIndex, 1)[0];
-            islandResources.push(selectedResource);
+            const selectedResourceType = availableResources.splice(randomIndex, 1)[0];
+            const amount = Math.random() < 0.7 ? 1 : 2; // 70% chance of 1 spot, 30% for 2
+            islandResources.push({ type: selectedResourceType, amount });
           }
         }
         map[y][x].resources = islandResources;

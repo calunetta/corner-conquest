@@ -4,6 +4,11 @@ export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'green' | 'yellow';
 
+export type IslandResource = {
+  type: ResourceType;
+  amount: number;
+}
+
 export type PlayerPosition = {
   x: number;
   y: number;
@@ -31,7 +36,7 @@ export type Island = {
   y: number;
   type: IslandType;
   isHidden: boolean;
-  resources: ResourceType[];
+  resources: IslandResource[];
   occupants: number[]; // player ids
   isFetchingMonster?: boolean;
   monsterDetails?: MonsterEncounterOutput;
@@ -50,7 +55,7 @@ export type CombatState = {
 export type PositionDialogState = {
   x: number;
   y: number;
-  resources: ResourceType[];
+  resources: IslandResource[];
 }
 
 export type GameState = {
