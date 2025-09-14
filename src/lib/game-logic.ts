@@ -13,6 +13,7 @@ export function initializeGame(): GameState {
       type: 'empty',
       isHidden: true,
       occupants: [],
+      resources: [],
     }))
   );
 
@@ -56,7 +57,10 @@ export function initializeGame(): GameState {
 
       if (islandType === 'resource') {
         const resourceTypes: ResourceType[] = ['gold', 'gems', 'iron'];
-        map[y][x].resourceType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+        const numResources = Math.random() < 0.2 ? 1 : (Math.random() < 0.8 ? 2 : 3); // 20% for 1, 64% for 2, 16% for 3
+        for(let i = 0; i < numResources; i++) {
+          map[y][x].resources.push(resourceTypes[Math.floor(Math.random() * resourceTypes.length)]);
+        }
       }
     }
   }

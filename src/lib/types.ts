@@ -24,7 +24,7 @@ export type Island = {
   y: number;
   type: IslandType;
   isHidden: boolean;
-  resourceType?: ResourceType;
+  resources: ResourceType[];
   occupants: number[]; // player ids
   isFetchingMonster?: boolean;
   monsterDetails?: MonsterEncounterOutput;

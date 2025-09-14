@@ -15,7 +15,7 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
   const lastAction = currentPlayer.lastAction;
   const currentTile = map[currentPlayer.position.y][currentPlayer.position.x];
 
-  const canMine = currentTile.type === 'resource';
+  const canMine = currentTile.type === 'resource' && currentTile.resources.length > 0;
   const canFarm = players[currentPlayerIndex].occupiedResourceTiles.length > 0;
   const canAttack = (currentTile.occupants.length > 1 && currentTile.type !== 'base') || currentTile.type === 'monster';
 

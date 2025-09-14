@@ -76,16 +76,23 @@ export function GameBoard() {
     const player = players[currentPlayerIndex];
     const currentTile = map[player.position.y][player.position.x];
 
-    if (currentTile.type === 'resource' && currentTile.resourceType) {
-      const amount = 2; // Can be randomized later
-      player.resources[currentTile.resourceType] += amount;
-      player.lastAction = 'mine';
-      const logMsg = `${player.name} mined ${amount} ${currentTile.resourceType}.`;
+    if (currentTile.type === 'resource' && currentTile.resources.length > 0) {
+      let minedResources: Partial<Record<ResourceType, number>> = {};
+      currentTile.resources.forEach(resource => {
+        player.resources[resource]++;
+        minedResources[resource] = (minedResources[resource] || 0) + 1;
+      });
+      
+      const logMsgs = Object.entries(minedResources).map(([resource, amount]) => `${player.name} mined ${amount} ${resource}.`);
+      const logMsg = logMsgs.join(' ');
       state.log.push(logMsg);
       toast({ title: 'Mined Resources!', description: logMsg });
+      
+      currentTile.resources = []; // Clear resources from the island
+      player.lastAction = 'mine';
       endTurn(state);
     } else {
-      toast({ title: 'Cannot Mine', description: 'You can only mine on a resource island.', variant: 'destructive'});
+      toast({ title: 'Cannot Mine', description: 'You can only mine on a resource island with available resources.', variant: 'destructive'});
       state.currentAction = null;
       setGameState(state);
     }
@@ -154,7 +161,10 @@ export function GameBoard() {
         revealedIsland.type = islandType;
         if (islandType === 'resource') {
             const resourceTypes: ResourceType[] = ['gold', 'gems', 'iron'];
-            revealedIsland.resourceType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+            const numResources = Math.random() < 0.2 ? 1 : 2;
+            for(let i=0; i<numResources; i++) {
+              revealedIsland.resources.push(resourceTypes[Math.floor(Math.random() * resourceTypes.length)]);
+            }
         }
       }
 
@@ -188,9 +198,10 @@ export function GameBoard() {
     state.players.forEach(player => {
       if (player.farmPosition) {
         const farmTile = state.map[player.farmPosition.y][player.farmPosition.x];
-        if (farmTile && farmTile.resourceType) {
-          player.resources[farmTile.resourceType] += 1;
-          const logMsg = `${player.name} gained 1 ${farmTile.resourceType} from their farm.`;
+        if (farmTile && farmTile.resources.length > 0) {
+          const resourceToGain = farmTile.resources[0];
+          player.resources[resourceToGain] += 1;
+          const logMsg = `${player.name} gained 1 ${resourceToGain} from their farm.`;
           state.log.push(logMsg);
         }
       }

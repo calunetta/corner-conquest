@@ -34,7 +34,14 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     
     switch (island.type) {
       case 'base': return <Home className="h-full w-full" style={{ color: players[island.occupants[0]]?.color }}/>;
-      case 'resource': return island.resourceType && <ResourceIcon type={island.resourceType} className="h-full w-full text-accent" />;
+      case 'resource': 
+        return (
+          <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-1">
+            {island.resources.slice(0, 4).map((resource, index) => (
+              <ResourceIcon key={index} type={resource} className="h-full w-full text-accent" />
+            ))}
+          </div>
+        );
       case 'monster': return <Skull className="h-full w-full text-destructive" />;
       case 'special': return <Star className="h-full w-full text-yellow-400" />;
       default: return null;
@@ -68,7 +75,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       <div className="h-1/2 w-1/2">{getIcon()}</div>
 
       {farmPlayer && (
-        <div className="absolute bottom-1 left-1" title={`Farmed by ${farmPlayer.name}`}>
+        <div className="absolute bottom-1 right-1" title={`Farmed by ${farmPlayer.name}`}>
           <Wheat className="h-5 w-5" style={{color: farmPlayer.color}} />
         </div>
       )}
