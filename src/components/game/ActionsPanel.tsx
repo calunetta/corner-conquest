@@ -2,7 +2,7 @@
 import type { GameAction } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Move, Pickaxe, Shield, Star, Users } from 'lucide-react';
+import { Move, Pickaxe, Shield, Wheat, Users } from 'lucide-react';
 
 type ActionsPanelProps = {
   onAction: (action: GameAction) => void;
@@ -14,7 +14,7 @@ const actions: { id: GameAction; label: string; icon: React.ReactNode }[] = [
   { id: 'move', label: 'Move', icon: <Move className="mr-2 h-4 w-4" /> },
   { id: 'mine', label: 'Mine', icon: <Pickaxe className="mr-2 h-4 w-4" /> },
   { id: 'attack', label: 'Attack', icon: <Shield className="mr-2 h-4 w-4" /> },
-  { id: 'farm', label: 'Farm Card', icon: <Star className="mr-2 h-4 w-4" /> },
+  { id: 'farm', label: 'Farm', icon: <Wheat className="mr-2 h-4 w-4" /> },
 ];
 
 export function ActionsPanel({ onAction, lastAction, currentAction }: ActionsPanelProps) {

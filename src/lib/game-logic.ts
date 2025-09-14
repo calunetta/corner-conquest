@@ -41,6 +41,7 @@ export function initializeGame(): GameState {
       victoryPoints: 0,
       lastAction: null,
       specialCards: [],
+      farmPosition: null,
     });
   });
 

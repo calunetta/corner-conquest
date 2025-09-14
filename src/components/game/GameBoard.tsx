@@ -26,28 +26,42 @@ export function GameBoard() {
 
   const handleAction = (action: GameAction) => {
     if (!gameState) return;
-    const { currentPlayerIndex, players } = gameState;
+    const { currentPlayerIndex, players, map } = gameState;
     const currentPlayer = players[currentPlayerIndex];
 
     const newState = deepClone(gameState);
     newState.currentAction = action;
 
-    if(action === 'move') {
-      const {x, y} = currentPlayer.position;
-      newState.selectedTile = {x, y};
+    if (action === 'move') {
+      const { x, y } = currentPlayer.position;
+      newState.selectedTile = { x, y };
       const moves = [];
-      for(let i = -2; i <= 2; i++) {
-        for(let j = -2; j <= 2; j++) {
-          if(Math.abs(i) + Math.abs(j) <= 2 && (i !== 0 || j !== 0)) {
+      for (let i = -2; i <= 2; i++) {
+        for (let j = -2; j <= 2; j++) {
+          if (Math.abs(i) + Math.abs(j) <= 2 && (i !== 0 || j !== 0)) {
             const newX = x + i;
             const newY = y + j;
-            if(newX >= 0 && newX < newState.map.length && newY >= 0 && newY < newState.map.length) {
-              moves.push({x: newX, y: newY});
+            if (newX >= 0 && newX < newState.map.length && newY >= 0 && newY < newState.map.length) {
+              moves.push({ x: newX, y: newY });
             }
           }
         }
       }
       newState.possibleMoves = moves;
+    } else if (action === 'farm') {
+      newState.possibleMoves = [];
+      newState.selectedTile = null;
+      // find all tiles occupied by the current player that are resource tiles
+      const farmableTiles = [];
+      for(let y = 0; y < map.length; y++) {
+        for(let x = 0; x < map[y].length; x++) {
+          const tile = map[y][x];
+          if(tile.occupants.includes(currentPlayer.id) && tile.type === 'resource') {
+            farmableTiles.push({x, y});
+          }
+        }
+      }
+      newState.possibleMoves = farmableTiles;
     } else {
       newState.possibleMoves = [];
       newState.selectedTile = null;
@@ -57,12 +71,45 @@ export function GameBoard() {
   };
 
   const handleTileClick = (x: number, y: number) => {
-    if (!gameState || gameState.currentAction !== 'move') return;
+    if (!gameState || !gameState.currentAction) return;
 
     const isPossibleMove = gameState.possibleMoves.some(p => p.x === x && p.y === y);
     if (!isPossibleMove) return;
-
+    
     const newState = deepClone(gameState);
+    
+    if (gameState.currentAction === 'move') {
+      handleMoveAction(newState, x, y);
+    } else if (gameState.currentAction === 'farm') {
+      handleFarmAction(newState, x, y);
+    }
+  };
+
+  const handleFarmAction = (state: GameState, x: number, y: number) => {
+    const { currentPlayerIndex } = state;
+    const player = state.players[currentPlayerIndex];
+
+    // If there was an old farm, remove its farmedBy status
+    if (player.farmPosition) {
+      const oldFarmTile = state.map[player.farmPosition.y][player.farmPosition.x];
+      if (oldFarmTile) {
+        oldFarmTile.farmedBy = undefined;
+      }
+    }
+
+    // Set new farm
+    player.farmPosition = { x, y };
+    state.map[y][x].farmedBy = player.id;
+    player.lastAction = 'farm';
+
+    const logMsg = `${player.name} has established a farm at ${x},${y}.`;
+    state.log.push(logMsg);
+    toast({ title: 'Farm Established!', description: logMsg });
+    
+    endTurn(state);
+  }
+
+  const handleMoveAction = (newState: GameState, x: number, y: number) => {
     const { currentPlayerIndex } = newState;
     const player = newState.players[currentPlayerIndex];
     
@@ -104,9 +151,21 @@ export function GameBoard() {
     }
     
     endTurn(newState);
-  };
+  }
   
   const endTurn = (state: GameState) => {
+    // Resource generation from farms
+    state.players.forEach(player => {
+      if (player.farmPosition) {
+        const farmTile = state.map[player.farmPosition.y][player.farmPosition.x];
+        if (farmTile && farmTile.resourceType) {
+          player.resources[farmTile.resourceType] += 1;
+          const logMsg = `${player.name} gained 1 ${farmTile.resourceType} from their farm.`;
+          state.log.push(logMsg);
+        }
+      }
+    });
+
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
     if (state.currentPlayerIndex === 0) {
       state.turn += 1;

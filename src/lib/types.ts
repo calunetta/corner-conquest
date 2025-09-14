@@ -14,6 +14,7 @@ export type Player = {
   victoryPoints: number;
   lastAction: GameAction | null;
   specialCards: any[]; // Define later
+  farmPosition: { x: number, y: number } | null;
 };
 
 export type Island = {
@@ -26,6 +27,7 @@ export type Island = {
   occupants: number[]; // player ids
   isFetchingMonster?: boolean;
   monsterDetails?: MonsterEncounterOutput;
+  farmedBy?: number; // player id
 };
 
 export type GameState = {
