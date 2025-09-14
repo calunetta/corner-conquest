@@ -34,7 +34,7 @@ export type Player = {
 export type Monster = {
   id: 'little' | 'big';
   type: 'cub' | 'huge';
-  combatPower: number;
+  level: number;
 }
 
 export type Island = {

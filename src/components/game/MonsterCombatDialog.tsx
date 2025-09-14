@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { MonsterIcon } from '../icons';
-import { Card, CardContent } from '../ui/card';
+import { Card } from '../ui/card';
 
 type MonsterCombatDialogProps = {
   gameState: GameState;
@@ -41,6 +41,10 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: Mo
     </div>
   );
 
+  const getMonsterName = (monster: Monster) => {
+    return `${monster.type} ${monster.id} Monster (Lvl ${monster.level})`;
+  }
+
   const renderSelectionScreen = () => (
     <>
       <AlertDialogHeader>
@@ -48,23 +52,23 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: Mo
         <AlertDialogDescription>Select which monster you want to fight on this island.</AlertDialogDescription>
       </AlertDialogHeader>
       <div className="grid grid-cols-2 gap-4 py-4">
-        {monsters.map(monster => (
+        {monsters.map((monster, i) => (
           <Card 
-            key={monster.id} 
+            key={i} 
             className="flex cursor-pointer flex-col items-center gap-2 p-4 transition-all hover:bg-muted"
             onClick={() => setSelectedMonster(monster)}
           >
-            <MonsterIcon type={monster.type} className="h-12 w-12 text-destructive" />
+            <MonsterIcon level={monster.level} className="h-12 w-12" />
             <div className="text-center">
-                <p className="font-bold capitalize">{monster.type} {monster.id} Monster</p>
-                <p className="text-sm text-muted-foreground">Power: {monster.combatPower}</p>
+                <p className="font-bold capitalize">{getMonsterName(monster)}</p>
+                <p className="text-sm text-muted-foreground">Power: {monster.level}</p>
             </div>
           </Card>
         ))}
       </div>
        <AlertDialogFooter>
           <Button onClick={() => onRoll(selectedMonster!)} disabled={!selectedMonster}>
-            Attack {selectedMonster?.type} {selectedMonster?.id} Monster!
+            Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}!
           </Button>
       </AlertDialogFooter>
     </>
@@ -74,9 +78,9 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: Mo
     <>
       <AlertDialogHeader>
         <AlertDialogTitle>Monster Combat!</AlertDialogTitle>
-        <AlertDialogDescription>
-          {attacker.name} is attacking the {monsterForDisplay?.type} {monsterForDisplay?.id} monster!
-        </AlertDialogDescription>
+        {monsterForDisplay && <AlertDialogDescription>
+          {attacker.name} is attacking the {getMonsterName(monsterForDisplay)}!
+        </AlertDialogDescription>}
       </AlertDialogHeader>
       
       <div className="flex justify-around gap-4">
@@ -85,11 +89,11 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: Mo
           {phase === 'results' && renderDice(attackerRolls)}
           {phase === 'results' && <p className="text-xl font-bold">Total: {attackerRolls.reduce((a, b) => a + b, 0)}</p>}
         </div>
-        <div className="flex flex-col items-center gap-2">
-            <h3 className="font-bold capitalize text-destructive">{monsterForDisplay?.type} {monsterForDisplay?.id}</h3>
+        {monsterForDisplay && <div className="flex flex-col items-center gap-2">
+            <h3 className="font-bold capitalize text-destructive">{getMonsterName(monsterForDisplay)}</h3>
             {phase === 'results' && renderDice(monsterRolls)}
             {phase === 'results' && <p className="text-xl font-bold">Total: {monsterRolls.reduce((a, b) => a + b, 0)}</p>}
-        </div>
+        </div>}
       </div>
 
       {phase === 'results' && (

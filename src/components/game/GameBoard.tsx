@@ -49,7 +49,7 @@ export function GameBoard() {
     if (action === 'move') {
       const { x, y } = currentPlayer.position;
       newState.selectedTile = { x, y };
-      const moves = [];
+      let moves = [];
       for (let i = -2; i <= 2; i++) {
         for (let j = -2; j <= 2; j++) {
           if (Math.abs(i) + Math.abs(j) <= 2 && (i !== 0 || j !== 0)) {
@@ -61,6 +61,14 @@ export function GameBoard() {
           }
         }
       }
+      // Filter out moves to other players' bases
+      moves = moves.filter(move => {
+        const tile = newState.map[move.y][move.x];
+        if (tile.type === 'base' && tile.occupants[0] !== currentPlayer.id) {
+          return false;
+        }
+        return true;
+      });
       newState.possibleMoves = moves;
     } else if (action === 'position') {
       handlePositionAction(newState, currentPlayer.position.x, currentPlayer.position.y);
@@ -271,13 +279,28 @@ export function GameBoard() {
               islandToUpdate.isFetchingMonster = false;
 
               const monsters: Monster[] = [];
-              monsters.push({id: 'little', type: monsterDetails.littleMonsterType, combatPower: monsterDetails.littleMonsterType === 'cub' ? 2 : 4});
-              if(monsterDetails.hasBigMonster) {
-                monsters.push({id: 'big', type: monsterDetails.bigMonsterType, combatPower: monsterDetails.bigMonsterType === 'cub' ? 6 : 8});
+              if (monsterDetails.hasBigMonster) {
+                // Little monster first, then big
+                monsters.push({
+                  id: 'little', 
+                  type: monsterDetails.littleMonsterType, 
+                  level: monsterDetails.littleMonsterType === 'cub' ? 1 : 2
+                });
+                monsters.push({
+                  id: 'big', 
+                  type: monsterDetails.bigMonsterType, 
+                  level: monsterDetails.bigMonsterType === 'cub' ? 3 : 4
+                });
+              } else {
+                 monsters.push({
+                  id: 'little', 
+                  type: monsterDetails.littleMonsterType, 
+                  level: monsterDetails.littleMonsterType === 'cub' ? 1 : 2
+                });
               }
               islandToUpdate.monsters = monsters;
               
-              const monsterLog = `${player.name} encountered monsters: ${monsterDetails.monsterEncounter}`;
+              const monsterLog = `${player.name} encountered monsters!`;
               finalState.log.push(monsterLog);
               setToastsToShow(prev => [...prev, { title: 'Monster Encounter!', description: monsterLog, variant: 'destructive'}]);
               
@@ -411,7 +434,7 @@ export function GameBoard() {
     };
 
     const attackerRolls = rollDice(attacker.armySize + attacker.attackPower);
-    const monsterRolls = rollDice(monster.combatPower);
+    const monsterRolls = rollDice(monster.level);
 
     const attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
     const monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
@@ -444,9 +467,9 @@ export function GameBoard() {
       // Player wins
       const monsterVP = currentTile.monsterDetails?.victoryPoints || 0;
       attacker.victoryPoints += monsterVP;
-      currentTile.monsters = currentTile.monsters?.filter(m => m.id !== monsterCombatState.monster.id);
+      currentTile.monsters = currentTile.monsters?.filter(m => m.id !== monsterCombatState.monster.id || m.level !== monsterCombatState.monster.level);
       
-      const logMsg = `${attacker.name} defeated the ${monsterCombatState.monster.id} monster and earned ${monsterVP} VP!`;
+      const logMsg = `${attacker.name} defeated the level ${monsterCombatState.monster.level} monster and earned ${monsterVP} VP!`;
       newState.log.push(logMsg);
       toast({ title: 'Victory!', description: logMsg });
 

@@ -1,4 +1,4 @@
-import { Gem, Hammer, Wheat, Skull, Angry, Icon as LucideIcon } from 'lucide-react';
+import { Gem, Hammer, Wheat, Skull, Angry, Bot, Crown, Icon as LucideIcon } from 'lucide-react';
 import type { ResourceType } from '@/lib/types';
 
 type ResourceIconProps = {
@@ -19,17 +19,20 @@ export function ResourceIcon({ type, className }: ResourceIconProps) {
 }
 
 type MonsterIconProps = {
-  type: 'cub' | 'huge';
+  level: number;
   className?: string;
 };
 
-const monsterIconMap: Record<'cub' | 'huge', LucideIcon> = {
-  cub: Skull,
-  huge: Angry,
+const monsterIconMap: Record<number, { Icon: LucideIcon, colorClass: string }> = {
+  1: { Icon: Skull, colorClass: 'text-gray-400' },
+  2: { Icon: Angry, colorClass: 'text-yellow-500' },
+  3: { Icon: Bot, colorClass: 'text-orange-500' },
+  4: { Icon: Crown, colorClass: 'text-red-600' },
 };
 
-export function MonsterIcon({ type, className }: MonsterIconProps) {
-  const Icon = monsterIconMap[type];
-  if (!Icon) return null;
-  return <Icon className={className} />;
+export function MonsterIcon({ level, className }: MonsterIconProps) {
+  const iconInfo = monsterIconMap[level];
+  if (!iconInfo) return <Skull className={className} />; // Default icon
+  const { Icon, colorClass } = iconInfo;
+  return <Icon className={`${className} ${colorClass}`} />;
 }

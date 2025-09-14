@@ -42,7 +42,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const renderMonsterIcons = () => {
     if (!island.monsters) return null;
     return island.monsters.map((monster, i) => (
-      <MonsterIcon key={i} type={monster.type} className="h-full w-full text-destructive" />
+      <MonsterIcon key={i} level={monster.level} className="h-full w-full" />
     ));
   }
 
