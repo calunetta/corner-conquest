@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import type { GameState, GameAction } from '@/lib/types';
+import type { GameState, GameAction, Island, ResourceType } from '@/lib/types';
 import { initializeGame } from '@/lib/game-logic';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
@@ -62,12 +62,34 @@ export function GameBoard() {
         }
       }
       newState.possibleMoves = farmableTiles;
+    } else if (action === 'mine') {
+      handleMineAction(newState);
     } else {
       newState.possibleMoves = [];
       newState.selectedTile = null;
     }
     
     setGameState(newState);
+  };
+
+  const handleMineAction = (state: GameState) => {
+    const { currentPlayerIndex, players, map } = state;
+    const player = players[currentPlayerIndex];
+    const currentTile = map[player.position.y][player.position.x];
+
+    if (currentTile.type === 'resource' && currentTile.resourceType) {
+      const amount = 2; // Can be randomized later
+      player.resources[currentTile.resourceType] += amount;
+      player.lastAction = 'mine';
+      const logMsg = `${player.name} mined ${amount} ${currentTile.resourceType}.`;
+      state.log.push(logMsg);
+      toast({ title: 'Mined Resources!', description: logMsg });
+      endTurn(state);
+    } else {
+      toast({ title: 'Cannot Mine', description: 'You can only mine on a resource island.', variant: 'destructive'});
+      state.currentAction = null;
+      setGameState(state);
+    }
   };
 
   const handleTileClick = (x: number, y: number) => {
@@ -127,6 +149,15 @@ export function GameBoard() {
       const logMsg = `${player.name} discovered a new island and gets 1 VP!`;
       newState.log.push(logMsg);
       toast({ title: 'Island Discovered!', description: logMsg });
+      
+      if (revealedIsland.type === 'empty') {
+        const islandType: Island['type'] = Math.random() < 0.3 ? 'monster' : (Math.random() < 0.1 ? 'special' : 'resource');
+        revealedIsland.type = islandType;
+        if (islandType === 'resource') {
+            const resourceTypes: ResourceType[] = ['gold', 'gems', 'iron'];
+            revealedIsland.resourceType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+        }
+      }
 
       if(revealedIsland.type === 'monster' && !revealedIsland.monsterDetails) {
         revealedIsland.isFetchingMonster = true;

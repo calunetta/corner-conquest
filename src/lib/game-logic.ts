@@ -45,29 +45,18 @@ export function initializeGame(): GameState {
     });
   });
 
-  const centralIslandCandidates: { x: number; y: number }[] = [];
-  for (let y = 2; y < MAP_SIZE - 2; y++) {
-    for (let x = 2; x < MAP_SIZE - 2; x++) {
-      centralIslandCandidates.push({ x, y });
-    }
-  }
+  // Assign types to all non-base islands
+  for (let y = 0; y < MAP_SIZE; y++) {
+    for (let x = 0; x < MAP_SIZE; x++) {
+      if (map[y][x].type === 'base') continue;
 
-  for (let i = 0; i < NUM_CENTRAL_ISLANDS; i++) {
-    if (centralIslandCandidates.length === 0) break;
+      const islandType: IslandType = Math.random() < 0.2 ? 'monster' : (Math.random() < 0.1 ? 'special' : 'resource');
+      map[y][x].type = islandType;
 
-    const randIndex = Math.floor(Math.random() * centralIslandCandidates.length);
-    const { x, y } = centralIslandCandidates.splice(randIndex, 1)[0];
-
-    const islandType: IslandType = Math.random() > 0.5 ? 'resource' : 'monster';
-    map[y][x].type = islandType;
-
-    if (islandType === 'resource') {
-      const resourceTypes: ResourceType[] = ['gold', 'gems', 'iron'];
-      map[y][x].resourceType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
-    }
-    // Special cards can also be a type
-    if (Math.random() < 0.2) {
-        map[y][x].type = 'special';
+      if (islandType === 'resource') {
+        const resourceTypes: ResourceType[] = ['gold', 'gems', 'iron'];
+        map[y][x].resourceType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+      }
     }
   }
   
