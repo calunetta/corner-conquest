@@ -19,10 +19,10 @@ const playerColorMap = {
 };
 
 const playerPositionClasses = [
-  'top-1 left-1', // Player 0
-  'top-1 right-1', // Player 1
-  'bottom-1 left-1', // Player 2
-  'bottom-1 right-1', // Player 3
+  'top-0 left-0', // Player 0
+  'top-0 right-0', // Player 1
+  'bottom-0 left-0', // Player 2
+  'bottom-0 right-0', // Player 3
 ]
 
 export function IslandTile({ island, players, onClick, isPossibleMove, isSelected }: IslandTileProps) {
@@ -36,14 +36,14 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       case 'base': return <Home className="h-full w-full" style={{ color: players[island.occupants[0]]?.color }}/>;
       case 'resource': 
         return (
-          <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-1">
+          <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-1 p-2">
             {island.resources.slice(0, 4).map((resource, index) => (
               <ResourceIcon key={index} type={resource} className="h-full w-full text-accent" />
             ))}
           </div>
         );
-      case 'monster': return <Skull className="h-full w-full text-destructive" />;
-      case 'special': return <Star className="h-full w-full text-yellow-400" />;
+      case 'monster': return <Skull className="h-full w-full text-destructive p-2" />;
+      case 'special': return <Star className="h-full w-full text-yellow-400 p-2" />;
       default: return null;
     }
   };
@@ -72,10 +72,10 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         ))}
       </div>
       
-      <div className="h-1/2 w-1/2">{getIcon()}</div>
+      <div className="h-full w-full">{getIcon()}</div>
 
       {farmPlayer && (
-        <div className="absolute bottom-1 right-1" title={`Farmed by ${farmPlayer.name}`}>
+        <div className="absolute -bottom-1 -right-1" title={`Farmed by ${farmPlayer.name}`}>
           <Wheat className="h-5 w-5" style={{color: farmPlayer.color}} />
         </div>
       )}

@@ -1,6 +1,6 @@
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor } from './types';
 
-const MAP_SIZE = 8;
+const MAP_SIZE = 7;
 const PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
 const SPECIAL_CARDS = [
   'Extra Move', 'Steal Resource', 'Extra VP', 'Sabatoge', 'Reinforce', 
