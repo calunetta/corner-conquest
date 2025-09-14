@@ -22,14 +22,14 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const occupants = island.occupants.map(id => players[id]);
 
   const getIcon = () => {
-    if (island.isHidden) return <HelpCircle className="h-8 w-8 text-muted-foreground/50" />;
-    if (island.isFetchingMonster) return <Loader2 className="h-8 w-8 animate-spin text-destructive" />;
+    if (island.isHidden) return <HelpCircle className="h-full w-full text-muted-foreground/50" />;
+    if (island.isFetchingMonster) return <Loader2 className="h-full w-full animate-spin text-destructive" />;
     
     switch (island.type) {
-      case 'base': return <Home className="h-8 w-8" style={{ color: players[island.occupants[0]]?.color }}/>;
-      case 'resource': return island.resourceType && <ResourceIcon type={island.resourceType} className="h-8 w-8 text-accent" />;
-      case 'monster': return <Skull className="h-8 w-8 text-destructive" />;
-      case 'special': return <Star className="h-8 w-8 text-yellow-400" />;
+      case 'base': return <Home className="h-full w-full" style={{ color: players[island.occupants[0]]?.color }}/>;
+      case 'resource': return island.resourceType && <ResourceIcon type={island.resourceType} className="h-full w-full text-accent" />;
+      case 'monster': return <Skull className="h-full w-full text-destructive" />;
+      case 'special': return <Star className="h-full w-full text-yellow-400" />;
       default: return null;
     }
   };
@@ -58,7 +58,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         ))}
       </div>
       
-      <div className="transform scale-125">{getIcon()}</div>
+      <div className="h-2/3 w-2/3">{getIcon()}</div>
 
       {farmPlayer && (
         <div className="absolute bottom-1 left-1" title={`Farmed by ${farmPlayer.name}`}>

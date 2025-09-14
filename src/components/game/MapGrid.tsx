@@ -12,7 +12,7 @@ type MapGridProps = {
 export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile }: MapGridProps) {
   return (
     <div
-      className="grid gap-1.5 p-4 bg-muted/20 rounded-xl border-2 border-muted"
+      className="grid gap-2 p-4 bg-muted/20 rounded-xl border-2 border-muted w-full max-w-[80vh] aspect-square"
       style={{
         gridTemplateColumns: `repeat(${map.length}, minmax(0, 1fr))`,
       }}

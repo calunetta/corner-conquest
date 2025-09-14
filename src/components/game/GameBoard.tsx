@@ -195,24 +195,24 @@ export function GameBoard() {
   const currentPlayer = players[currentPlayerIndex];
 
   return (
-    <div className="grid h-full w-full grid-cols-[320px_1fr_320px] grid-rows-[auto_1fr] gap-6 p-6">
+    <div className="grid h-full w-full grid-cols-[280px_1fr_280px] grid-rows-[auto_1fr] gap-4 p-4">
       <div className="col-span-3">
         <GameHeader />
       </div>
-      <aside className="col-start-1 row-start-2 flex flex-col justify-between gap-6">
+      <aside className="col-start-1 row-start-2 flex flex-col justify-between gap-4">
         <PlayerInfo player={players[0]} isCurrentPlayer={currentPlayerIndex === 0} />
         <PlayerInfo player={players[2]} isCurrentPlayer={currentPlayerIndex === 2} />
       </aside>
-      <main className="col-start-2 row-start-2 flex flex-col items-center justify-center gap-4">
+      <main className="col-start-2 row-start-2 flex flex-col items-center justify-start gap-4">
         <MapGrid map={map} players={players} onTileClick={handleTileClick} possibleMoves={possibleMoves} selectedTile={selectedTile} />
         <div className='text-center'>
             <p className='text-lg font-semibold'>Turn {gameState.turn}: <span className='text-primary'>{currentPlayer.name}'s turn</span></p>
             {currentAction && <p className='text-muted-foreground'>Current Action: {currentAction}</p>}
         </div>
       </main>
-      <aside className="col-start-3 row-start-2 flex flex-col justify-between gap-6">
+      <aside className="col-start-3 row-start-2 flex flex-col justify-between gap-4">
         <PlayerInfo player={players[1]} isCurrentPlayer={currentPlayerIndex === 1} />
-        <div className='flex flex-col gap-6'>
+        <div className='flex flex-col gap-4'>
           <ActionsPanel onAction={handleAction} lastAction={currentPlayer.lastAction} currentAction={currentAction} />
           <GameLog logs={log} />
           <Button onClick={handleEndTurn}>End Turn</Button>
