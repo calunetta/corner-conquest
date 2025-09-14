@@ -15,7 +15,7 @@ export type Player = {
   victoryPoints: number;
   lastAction: GameAction | null;
   specialCards: string[]; // Names of special cards
-  farmPosition: { x: number, y: number } | null;
+  positions: { x: number, y: number }[];
   occupiedResourceTiles: { x: number; y: number }[];
 };
 
@@ -29,7 +29,7 @@ export type Island = {
   occupants: number[]; // player ids
   isFetchingMonster?: boolean;
   monsterDetails?: MonsterEncounterOutput;
-  farmedBy?: number; // player id
+  positionedBy?: number[]; // player ids
 };
 
 export type CombatState = {
@@ -55,4 +55,4 @@ export type GameState = {
   combatState: CombatState | null;
 };
 
-export type GameAction = 'deploy' | 'mine' | 'move' | 'attack' | 'farm' | 'buy-card';
+export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card';

@@ -21,13 +21,16 @@ export function GameBoard() {
   const { toast } = useToast();
 
   useEffect(() => {
-    setGameState(initializeGame());
+    const newGame = initializeGame();
+    // At the start of the first turn, collect resources for initial positions
+    handleAutomaticCollection(newGame);
+    setGameState(newGame);
   }, []);
 
   const handleAction = (action: GameAction) => {
     if (!gameState) return;
-    const { currentPlayerIndex, players, map } = gameState;
-    const currentPlayer = players[currentPlayerIndex];
+    const { players, map } = gameState;
+    const currentPlayer = players[gameState.currentPlayerIndex];
 
     const newState = deepClone(gameState);
     newState.currentAction = action;
@@ -48,22 +51,21 @@ export function GameBoard() {
         }
       }
       newState.possibleMoves = moves;
-    } else if (action === 'farm') {
+    } else if (action === 'position') {
       newState.possibleMoves = [];
       newState.selectedTile = null;
-      const farmableTiles = [];
-      // Player can farm on any resource tile they currently occupy
+      const positionableTiles = [];
       for(let y = 0; y < map.length; y++) {
         for(let x = 0; x < map[y].length; x++) {
           const tile = map[y][x];
           if(tile.occupants.includes(currentPlayer.id) && (tile.type === 'resource' || tile.type === 'base')) {
-            farmableTiles.push({x, y});
+            positionableTiles.push({x, y});
           }
         }
       }
-      newState.possibleMoves = farmableTiles;
-    } else if (action === 'mine') {
-      handleMineAction(newState);
+      newState.possibleMoves = positionableTiles;
+    } else if (action === 'collect') {
+      handleCollectAction(newState);
     } else if (action === 'deploy') {
       handleDeployAction(newState);
     } else if (action === 'buy-card') {
@@ -117,28 +119,16 @@ export function GameBoard() {
     }
   }
 
-  const handleMineAction = (state: GameState) => {
-    const { currentPlayerIndex, players, map } = state;
+  const handleCollectAction = (state: GameState) => {
+    const { currentPlayerIndex, players } = state;
     const player = players[currentPlayerIndex];
-    const currentTile = map[player.position.y][player.position.x];
 
-    if ((currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0) {
-      let minedResources: Partial<Record<ResourceType, number>> = {};
-      currentTile.resources.forEach(resource => {
-        player.resources[resource]++;
-        minedResources[resource] = (minedResources[resource] || 0) + 1;
-      });
-      
-      const logMsgs = Object.entries(minedResources).map(([resource, amount]) => `${player.name} mined ${amount} ${resource}.`);
-      const logMsg = logMsgs.join(' ');
-      state.log.push(logMsg);
-      toast({ title: 'Mined Resources!', description: logMsg });
-      
-      currentTile.resources = [];
-      player.lastAction = 'mine';
+    if (player.positions.length > 0) {
+      handleAutomaticCollection(state, player.id);
+      player.lastAction = 'collect';
       endTurn(state);
     } else {
-      toast({ title: 'Cannot Mine', description: 'You can only mine on a resource island with available resources.', variant: 'destructive'});
+      toast({ title: 'Cannot Collect', description: 'You have no armies positioned on any resource islands.', variant: 'destructive'});
       state.currentAction = null;
       setGameState(state);
     }
@@ -154,37 +144,41 @@ export function GameBoard() {
     
     if (gameState.currentAction === 'move') {
       handleMoveAction(newState, x, y);
-    } else if (gameState.currentAction === 'farm') {
-      handleFarmAction(newState, x, y);
+    } else if (gameState.currentAction === 'position') {
+      handlePositionAction(newState, x, y);
     }
   };
 
-  const handleFarmAction = (state: GameState, x: number, y: number) => {
+  const handlePositionAction = (state: GameState, x: number, y: number) => {
     const { currentPlayerIndex } = state;
     const player = state.players[currentPlayerIndex];
     const selectedTile = state.map[y][x];
     
     if (selectedTile.type !== 'resource' && selectedTile.type !== 'base') {
-        toast({ title: 'Cannot Farm', description: 'You can only farm on resource or base islands.', variant: 'destructive'});
+        toast({ title: 'Cannot Position', description: 'You can only position on resource or base islands.', variant: 'destructive'});
         state.currentAction = null;
         setGameState(state);
         return;
     }
 
-    if (player.farmPosition) {
-      const oldFarmTile = state.map[player.farmPosition.y][player.farmPosition.x];
-      if (oldFarmTile) {
-        oldFarmTile.farmedBy = undefined;
-      }
+    // Check if player is already positioned here
+    if (player.positions.some(p => p.x === x && p.y === y)) {
+      toast({ title: 'Already Positioned', description: `You already have an army positioned at ${x},${y}.`, variant: 'destructive'});
+      state.currentAction = null;
+      setGameState(state);
+      return;
     }
+    
+    player.positions.push({ x, y });
+    if (!selectedTile.positionedBy) {
+        selectedTile.positionedBy = [];
+    }
+    selectedTile.positionedBy.push(player.id);
+    player.lastAction = 'position';
 
-    player.farmPosition = { x, y };
-    selectedTile.farmedBy = player.id;
-    player.lastAction = 'farm';
-
-    const logMsg = `${player.name} has established a farm at ${x},${y}.`;
+    const logMsg = `${player.name} has positioned an army at ${x},${y}.`;
     state.log.push(logMsg);
-    toast({ title: 'Farm Established!', description: logMsg });
+    toast({ title: 'Army Positioned!', description: logMsg });
     
     endTurn(state);
   }
@@ -196,6 +190,20 @@ export function GameBoard() {
     const oldPos = player.position;
     newState.map[oldPos.y][oldPos.x].occupants = newState.map[oldPos.y][oldPos.x].occupants.filter(id => id !== player.id);
     
+    // Check if player is moving away from a positioned tile
+    const positionIndex = player.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
+    if (positionIndex !== -1) {
+        // Player is moving from a position, so remove it
+        player.positions.splice(positionIndex, 1);
+        const oldTile = newState.map[oldPos.y][oldPos.x];
+        if (oldTile.positionedBy) {
+          oldTile.positionedBy = oldTile.positionedBy.filter(id => id !== player.id);
+        }
+        const logMsg = `${player.name} moved and is no longer collecting from ${oldPos.x},${oldPos.y}.`;
+        newState.log.push(logMsg);
+        toast({ title: 'Position Abandoned', description: logMsg });
+    }
+
     player.position = { x, y };
     newState.map[y][x].occupants.push(player.id);
     player.lastAction = 'move';
@@ -335,24 +343,46 @@ export function GameBoard() {
     endTurn(newState);
   }
 
-  const endTurn = (state: GameState) => {
-    state.players.forEach(player => {
-      if (player.farmPosition) {
-        const farmTile = state.map[player.farmPosition.y][player.farmPosition.x];
-        if (farmTile && farmTile.resources.length > 0) {
-          const resourceToGain = farmTile.resources[0];
-          player.resources[resourceToGain] += 1;
-          const logMsg = `${player.name} gained 1 ${resourceToGain} from their farm.`;
-          state.log.push(logMsg);
+  const handleAutomaticCollection = (state: GameState, playerIdToCollect?: number) => {
+    const playersToCollect = playerIdToCollect !== undefined
+      ? [state.players[playerIdToCollect]]
+      : state.players;
+
+    playersToCollect.forEach(player => {
+      if (player.positions.length > 0) {
+        let collectedSomething = false;
+        player.positions.forEach(pos => {
+          const tile = state.map[pos.y][pos.x];
+          if (tile.occupants.includes(player.id) && (tile.type === 'resource' || tile.type === 'base')) {
+            tile.resources.forEach(resource => {
+              player.resources[resource] += 1;
+              const logMsg = `${player.name} collected 1 ${resource} from their position at ${pos.x},${pos.y}.`;
+              state.log.push(logMsg);
+              collectedSomething = true;
+            });
+          }
+        });
+        if(collectedSomething) {
+           toast({ title: 'Resources Collected!', description: `${player.name} collected resources from their positions.` });
         }
       }
     });
+  };
 
+  const endTurn = (state: GameState) => {
+    handleAutomaticCollection(state, state.currentPlayerIndex);
+    
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
     if (state.currentPlayerIndex === 0) {
       state.turn += 1;
     }
-    state.log.push(`It's now ${state.players[state.currentPlayerIndex].name}'s turn.`);
+
+    const nextPlayer = state.players[state.currentPlayerIndex];
+    if (nextPlayer.lastAction === 'move') {
+        nextPlayer.lastAction = null;
+    }
+    
+    state.log.push(`It's now ${nextPlayer.name}'s turn.`);
     state.currentAction = null;
     state.possibleMoves = [];
     state.selectedTile = null;

@@ -1,7 +1,7 @@
 import type { Island, Player, GameAction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon } from '../icons';
-import { Home, HelpCircle, Skull, Star, Loader2, Wheat } from 'lucide-react';
+import { Home, HelpCircle, Skull, Star, Loader2, Anchor } from 'lucide-react';
 
 type IslandTileProps = {
   island: Island;
@@ -27,6 +27,7 @@ const playerPositionClasses = [
 
 export function IslandTile({ island, players, onClick, isPossibleMove, isSelected }: IslandTileProps) {
   const occupants = island.occupants.map(id => players[id]);
+  const positionedPlayers = island.positionedBy?.map(id => players[id]) || [];
 
   const getIcon = () => {
     if (island.isHidden) return <HelpCircle className="h-full w-full text-muted-foreground/50" />;
@@ -48,7 +49,17 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     }
   };
 
-  const farmPlayer = island.farmedBy !== undefined ? players[island.farmedBy] : undefined;
+  const getPositionedPlayerPositionClass = (playerId: number) => {
+    // This is a simple way to not overlap with the main player icons.
+    // It can be improved for more players.
+    const positions = [
+        'top-1/2 left-0 -translate-y-1/2',
+        'top-0 left-1/2 -translate-x-1/2',
+        'bottom-0 left-1/2 -translate-x-1/2',
+        'top-1/2 right-0 -translate-y-1/2',
+    ];
+    return positions[playerId];
+  }
 
   return (
     <button
@@ -58,11 +69,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         island.isHidden ? 'bg-muted/30 border-dashed' : 'bg-card',
         isSelected ? 'border-primary ring-2 ring-primary' : '',
         isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
-        farmPlayer ? `ring-2 ring-offset-2 ring-offset-background` : '',
       )}
-      style={{
-        ...(farmPlayer && { ringColor: farmPlayer.color })
-      }}
       aria-label={`Island at ${island.x}, ${island.y}`}
     >
       <div className="absolute inset-0">
@@ -74,11 +81,13 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       
       <div className="h-full w-full">{getIcon()}</div>
 
-      {farmPlayer && (
-        <div className="absolute -bottom-1 -right-1" title={`Farmed by ${farmPlayer.name}`}>
-          <Wheat className="h-5 w-5" style={{color: farmPlayer.color}} />
-        </div>
-      )}
+      <div className="absolute inset-0">
+        {positionedPlayers.map(player => (
+            <div key={`pos-${player.id}`} className={cn('absolute', getPositionedPlayerPositionClass(player.id))} title={`Positioned by ${player.name}`}>
+                <Anchor className="h-4 w-4" style={{color: player.color}} />
+            </div>
+        ))}
+       </div>
     </button>
   );
 }

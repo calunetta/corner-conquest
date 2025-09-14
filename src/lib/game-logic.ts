@@ -36,7 +36,6 @@ export function initializeGame(): GameState {
       type: 'base',
       isHidden: false,
       occupants: [i],
-      // Add one of each resource to the base
       resources: ['gems', 'iron', 'food'], 
     };
     players.push({
@@ -50,8 +49,8 @@ export function initializeGame(): GameState {
       victoryPoints: 0,
       lastAction: null,
       specialCards: [],
-      farmPosition: null,
-      occupiedResourceTiles: [],
+      positions: [],
+      occupiedResourceTiles: [{x: pos.x, y: pos.y}],
     });
   });
 
@@ -73,7 +72,6 @@ export function initializeGame(): GameState {
         const resourceTypes: ResourceType[] = ['gems', 'iron', 'food'];
         const availableResources = [...resourceTypes];
 
-        // Exceptionally 1 resource, mostly 2 or 3.
         const numResources = Math.random() < 0.2 ? 1 : (Math.random() < 0.8 ? 2 : 3);
         
         for(let i = 0; i < numResources; i++) {
@@ -81,13 +79,14 @@ export function initializeGame(): GameState {
             const randomIndex = Math.floor(Math.random() * availableResources.length);
             const selectedResource = availableResources.splice(randomIndex, 1)[0];
             
-            // Each resource type can have 1 or 2 spots
             const spots = Math.random() < 0.7 ? 2 : 1; 
             for(let j=0; j<spots; j++) {
                 map[y][x].resources.push(selectedResource);
             }
           }
         }
+        // Ensure unique resources
+        map[y][x].resources = [...new Set(map[y][x].resources)];
       }
     }
   }
