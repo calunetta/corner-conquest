@@ -110,13 +110,12 @@ export function GameBoard() {
   const handleCollectAction = (state: GameState) => {
     const { currentPlayerIndex, players, map } = state;
     const player = players[currentPlayerIndex];
-    const currentTile = map[player.position.y][player.position.x];
-
+    
     const position = player.positions.find(p => p.x === player.position.x && p.y === player.position.y);
 
     if (position) {
         player.resources[position.resource] += 1;
-        const logMsg = `${player.name} collected 1 ${position.resource} from ${position.x},${position.y}.`;
+        const logMsg = `${player.name} collected 1 ${position.resource}.`;
         state.log.push(logMsg);
         toast({ title: 'Resource Collected!', description: logMsg });
         player.lastAction = 'collect';
@@ -160,7 +159,7 @@ export function GameBoard() {
     }
 
     if (tile.resources.length === 1) {
-      handleSelectResourceForPosition(state, tile.resources[0]);
+      handleSelectResourceForPosition(deepClone(state), tile.resources[0]);
     } else {
       state.positionDialogState = { x, y, resources: tile.resources };
       setGameState(state);
@@ -198,7 +197,6 @@ export function GameBoard() {
     const oldPos = player.position;
     newState.map[oldPos.y][oldPos.x].occupants = newState.map[oldPos.y][oldPos.x].occupants.filter(id => id !== player.id);
     
-    // Check if player is moving away from a positioned tile and remove that specific position
     const positionIndex = player.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
     if (positionIndex !== -1) {
         const removedPosition = player.positions.splice(positionIndex, 1)[0];
@@ -215,18 +213,6 @@ export function GameBoard() {
     newState.map[y][x].occupants.push(player.id);
     player.lastAction = 'move';
     
-    // Update occupied resource tiles for the player
-    const occupiedResourceTiles = [];
-    for(let i=0; i < newState.map.length; i++){
-        for(let j=0; j < newState.map[i].length; j++){
-            const tile = newState.map[i][j];
-            if(tile.occupants.includes(player.id) && (tile.type === 'resource' || tile.type === 'base')){
-                occupiedResourceTiles.push({x: j, y: i});
-            }
-        }
-    }
-    player.occupiedResourceTiles = occupiedResourceTiles;
-
     const revealedIsland = newState.map[y][x];
     if(revealedIsland.isHidden) {
       revealedIsland.isHidden = false;
