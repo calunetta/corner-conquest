@@ -6,7 +6,6 @@ import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
 import { ActionsPanel } from './ActionsPanel';
 import { GameLog } from './GameLog';
-import { GameHeader } from './GameHeader';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { generateMonsterEncounter } from '@/ai/flows/monster-encounter-generation';
@@ -227,7 +226,6 @@ export function GameBoard() {
 
   return (
     <div className="flex h-screen w-screen flex-col gap-4 p-4">
-      <GameHeader />
       <div className="flex-[1]">
         <div className="grid grid-cols-2 grid-rows-2 gap-4">
           <PlayerInfo player={players[0]} isCurrentPlayer={currentPlayerIndex === 0} />
