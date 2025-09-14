@@ -42,6 +42,7 @@ export function initializeGame(): GameState {
       lastAction: null,
       specialCards: [],
       farmPosition: null,
+      occupiedResourceTiles: [],
     });
   });
 
