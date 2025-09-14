@@ -36,6 +36,8 @@ export function initializeGame(): GameState {
       type: 'base',
       isHidden: false,
       occupants: [i],
+      // Add one of each resource to the base
+      resources: ['gems', 'iron', 'food'], 
     };
     players.push({
       id: i,
@@ -69,9 +71,22 @@ export function initializeGame(): GameState {
 
       if (islandType === 'resource') {
         const resourceTypes: ResourceType[] = ['gems', 'iron', 'food'];
+        const availableResources = [...resourceTypes];
+
+        // Exceptionally 1 resource, mostly 2 or 3.
         const numResources = Math.random() < 0.2 ? 1 : (Math.random() < 0.8 ? 2 : 3);
+        
         for(let i = 0; i < numResources; i++) {
-          map[y][x].resources.push(resourceTypes[Math.floor(Math.random() * resourceTypes.length)]);
+          if (availableResources.length > 0) {
+            const randomIndex = Math.floor(Math.random() * availableResources.length);
+            const selectedResource = availableResources.splice(randomIndex, 1)[0];
+            
+            // Each resource type can have 1 or 2 spots
+            const spots = Math.random() < 0.7 ? 2 : 1; 
+            for(let j=0; j<spots; j++) {
+                map[y][x].resources.push(selectedResource);
+            }
+          }
         }
       }
     }

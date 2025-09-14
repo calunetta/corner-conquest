@@ -52,10 +52,11 @@ export function GameBoard() {
       newState.possibleMoves = [];
       newState.selectedTile = null;
       const farmableTiles = [];
+      // Player can farm on any resource tile they currently occupy
       for(let y = 0; y < map.length; y++) {
         for(let x = 0; x < map[y].length; x++) {
           const tile = map[y][x];
-          if(tile.occupants.includes(currentPlayer.id) && tile.type === 'resource') {
+          if(tile.occupants.includes(currentPlayer.id) && (tile.type === 'resource' || tile.type === 'base')) {
             farmableTiles.push({x, y});
           }
         }
@@ -121,7 +122,7 @@ export function GameBoard() {
     const player = players[currentPlayerIndex];
     const currentTile = map[player.position.y][player.position.x];
 
-    if (currentTile.type === 'resource' && currentTile.resources.length > 0) {
+    if ((currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0) {
       let minedResources: Partial<Record<ResourceType, number>> = {};
       currentTile.resources.forEach(resource => {
         player.resources[resource]++;
@@ -161,6 +162,14 @@ export function GameBoard() {
   const handleFarmAction = (state: GameState, x: number, y: number) => {
     const { currentPlayerIndex } = state;
     const player = state.players[currentPlayerIndex];
+    const selectedTile = state.map[y][x];
+    
+    if (selectedTile.type !== 'resource' && selectedTile.type !== 'base') {
+        toast({ title: 'Cannot Farm', description: 'You can only farm on resource or base islands.', variant: 'destructive'});
+        state.currentAction = null;
+        setGameState(state);
+        return;
+    }
 
     if (player.farmPosition) {
       const oldFarmTile = state.map[player.farmPosition.y][player.farmPosition.x];
@@ -170,7 +179,7 @@ export function GameBoard() {
     }
 
     player.farmPosition = { x, y };
-    state.map[y][x].farmedBy = player.id;
+    selectedTile.farmedBy = player.id;
     player.lastAction = 'farm';
 
     const logMsg = `${player.name} has established a farm at ${x},${y}.`;
@@ -191,6 +200,19 @@ export function GameBoard() {
     newState.map[y][x].occupants.push(player.id);
     player.lastAction = 'move';
     
+    // Update occupied resource tiles for the player
+    const occupiedResourceTiles = [];
+    for(let i=0; i < newState.map.length; i++){
+        for(let j=0; j < newState.map[i].length; j++){
+            const tile = newState.map[i][j];
+            if(tile.occupants.includes(player.id) && (tile.type === 'resource' || tile.type === 'base')){
+                occupiedResourceTiles.push({x: j, y: i});
+            }
+        }
+    }
+    player.occupiedResourceTiles = occupiedResourceTiles;
+
+
     const revealedIsland = newState.map[y][x];
     if(revealedIsland.isHidden) {
       revealedIsland.isHidden = false;
@@ -199,25 +221,6 @@ export function GameBoard() {
       newState.log.push(logMsg);
       toast({ title: 'Island Discovered!', description: logMsg });
       
-      if (revealedIsland.type === 'empty') {
-        const rand = Math.random();
-        let islandType: Island['type'] = 'resource';
-        if (rand < 0.3) {
-          islandType = 'monster';
-        } else if (rand < 0.4) {
-          islandType = 'special';
-        }
-        revealedIsland.type = islandType;
-
-        if (islandType === 'resource') {
-            const resourceTypes: ResourceType[] = ['gems', 'iron', 'food'];
-            const numResources = Math.random() < 0.2 ? 1 : 2;
-            for(let i=0; i<numResources; i++) {
-              revealedIsland.resources.push(resourceTypes[Math.floor(Math.random() * resourceTypes.length)]);
-            }
-        }
-      }
-
       if(revealedIsland.type === 'monster' && !revealedIsland.monsterDetails) {
         revealedIsland.isFetchingMonster = true;
         
