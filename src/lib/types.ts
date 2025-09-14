@@ -1,6 +1,6 @@
 import type { MonsterEncounterOutput } from "@/ai/flows/monster-encounter-generation";
 
-export type ResourceType = 'gold' | 'gems' | 'iron' | 'food';
+export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'green' | 'yellow';
 
@@ -14,7 +14,7 @@ export type Player = {
   nextArmyCost: number;
   victoryPoints: number;
   lastAction: GameAction | null;
-  specialCards: any[]; // Define later
+  specialCards: string[]; // Names of special cards
   farmPosition: { x: number, y: number } | null;
   occupiedResourceTiles: { x: number; y: number }[];
 };
@@ -42,6 +42,7 @@ export type GameState = {
   selectedTile: { x: number, y: number } | null;
   possibleMoves: { x: number, y: number }[];
   currentAction: GameAction | null;
+  specialCardsDeck: string[];
 };
 
-export type GameAction = 'deploy' | 'mine' | 'move' | 'attack' | 'farm';
+export type GameAction = 'deploy' | 'mine' | 'move' | 'attack' | 'farm' | 'buy-card';

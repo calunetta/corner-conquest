@@ -65,6 +65,8 @@ export function GameBoard() {
       handleMineAction(newState);
     } else if (action === 'deploy') {
       handleDeployAction(newState);
+    } else if (action === 'buy-card') {
+      handleBuyCardAction(newState);
     } else {
       newState.possibleMoves = [];
       newState.selectedTile = null;
@@ -87,6 +89,26 @@ export function GameBoard() {
       endTurn(state);
     } else {
       toast({ title: 'Cannot Deploy', description: 'Not enough food or at max army size.', variant: 'destructive'});
+      state.currentAction = null;
+      setGameState(state);
+    }
+  }
+
+  const handleBuyCardAction = (state: GameState) => {
+    const { currentPlayerIndex, players, specialCardsDeck } = state;
+    const player = players[currentPlayerIndex];
+    if (player.resources.gems >= 10 && specialCardsDeck.length > 0) {
+      player.resources.gems -= 10;
+      const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
+      const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
+      player.specialCards.push(drawnCard);
+      player.lastAction = 'buy-card';
+      const logMsg = `${player.name} bought a special card: ${drawnCard}!`;
+      state.log.push(logMsg);
+      toast({ title: 'Card Purchased!', description: logMsg });
+      endTurn(state);
+    } else {
+      toast({ title: 'Cannot Buy Card', description: 'Not enough gems or no cards left in the deck.', variant: 'destructive'});
       state.currentAction = null;
       setGameState(state);
     }
@@ -181,7 +203,7 @@ export function GameBoard() {
         const islandType: Island['type'] = Math.random() < 0.3 ? 'monster' : (Math.random() < 0.1 ? 'special' : 'resource');
         revealedIsland.type = islandType;
         if (islandType === 'resource') {
-            const resourceTypes: ResourceType[] = ['gold', 'gems', 'iron', 'food'];
+            const resourceTypes: ResourceType[] = ['gems', 'iron', 'food'];
             const numResources = Math.random() < 0.2 ? 1 : 2;
             for(let i=0; i<numResources; i++) {
               revealedIsland.resources.push(resourceTypes[Math.floor(Math.random() * resourceTypes.length)]);

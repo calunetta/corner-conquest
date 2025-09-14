@@ -2,6 +2,12 @@ import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor }
 
 const MAP_SIZE = 8;
 const PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
+const SPECIAL_CARDS = [
+  'Extra Move', 'Steal Resource', 'Extra VP', 'Sabatoge', 'Reinforce', 
+  'Scout', 'Overcome', 'Wealthy', 'Productive', 'Efficient',
+  'Master Builder', 'War Chief', 'Diplomat', 'Explorer', 'Collector'
+];
+
 
 export function initializeGame(): GameState {
   const map: Island[][] = Array.from({ length: MAP_SIZE }, (_, y) =>
@@ -36,7 +42,7 @@ export function initializeGame(): GameState {
       name: `Player ${i + 1}`,
       color: PLAYER_COLORS[i],
       position: pos,
-      resources: { gold: 0, gems: 0, iron: 0, food: 0 },
+      resources: { gems: 0, iron: 0, food: 0 },
       armySize: 1,
       nextArmyCost: 5,
       victoryPoints: 0,
@@ -56,7 +62,7 @@ export function initializeGame(): GameState {
       map[y][x].type = islandType;
 
       if (islandType === 'resource') {
-        const resourceTypes: ResourceType[] = ['gold', 'gems', 'iron', 'food'];
+        const resourceTypes: ResourceType[] = ['gems', 'iron', 'food'];
         const numResources = Math.random() < 0.2 ? 1 : (Math.random() < 0.8 ? 2 : 3); // 20% for 1, 64% for 2, 16% for 3
         for(let i = 0; i < numResources; i++) {
           map[y][x].resources.push(resourceTypes[Math.floor(Math.random() * resourceTypes.length)]);
@@ -80,5 +86,6 @@ export function initializeGame(): GameState {
     selectedTile: null,
     possibleMoves: [],
     currentAction: null,
+    specialCardsDeck: [...SPECIAL_CARDS],
   };
 }

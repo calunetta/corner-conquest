@@ -1,4 +1,4 @@
-import { Gem, Hammer, CircleDollarSign, Wheat, Icon as LucideIcon } from 'lucide-react';
+import { Gem, Hammer, Wheat, Icon as LucideIcon } from 'lucide-react';
 import type { ResourceType } from '@/lib/types';
 
 type ResourceIconProps = {
@@ -7,7 +7,6 @@ type ResourceIconProps = {
 };
 
 const iconMap: Record<ResourceType, LucideIcon> = {
-  gold: CircleDollarSign,
   gems: Gem,
   iron: Hammer,
   food: Wheat,
@@ -15,5 +14,6 @@ const iconMap: Record<ResourceType, LucideIcon> = {
 
 export function ResourceIcon({ type, className }: ResourceIconProps) {
   const Icon = iconMap[type];
+  if (!Icon) return null;
   return <Icon className={className} />;
 }
