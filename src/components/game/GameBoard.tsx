@@ -465,7 +465,15 @@ export function GameBoard() {
     
     if (monsterCombatState.winnerId === attacker.id) {
       // Player wins
-      const monsterVP = currentTile.monsterDetails?.victoryPoints || 0;
+      const monsterLevel = monsterCombatState.monster.level;
+      let monsterVP = 0;
+      switch (monsterLevel) {
+        case 1: monsterVP = 2; break;
+        case 2: monsterVP = 5; break;
+        case 3: monsterVP = 7; break;
+        case 4: monsterVP = 10; break;
+      }
+
       attacker.victoryPoints += monsterVP;
       currentTile.monsters = currentTile.monsters?.filter(m => m.id !== monsterCombatState.monster.id || m.level !== monsterCombatState.monster.level);
       

@@ -1,4 +1,4 @@
-import type { MonsterEncounterOutput } from "@/ai/flows/monster-encounter-generation";
+import type { MonsterEncounterOutput as GenkitMonsterEncounterOutput } from "@/ai/flows/monster-encounter-generation";
 
 export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
@@ -36,6 +36,8 @@ export type Monster = {
   type: 'cub' | 'huge';
   level: number;
 }
+
+export type MonsterEncounterOutput = Omit<GenkitMonsterEncounterOutput, 'victoryPoints'>;
 
 export type Island = {
   id: string;

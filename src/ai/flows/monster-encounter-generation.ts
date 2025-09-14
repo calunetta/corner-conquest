@@ -20,7 +20,6 @@ const MonsterEncounterOutputSchema = z.object({
   littleMonsterType: z.enum(['cub', 'huge']).describe('The type of little monster.'),
   bigMonsterType: z.enum(['cub', 'huge']).describe('The type of big monster.'),
   hasBigMonster: z.boolean().describe('Whether or not the island has a big monster.'),
-  victoryPoints: z.number().describe('The victory points awarded for defeating the monsters.'),
 });
 export type MonsterEncounterOutput = z.infer<typeof MonsterEncounterOutputSchema>;
 
@@ -42,8 +41,7 @@ const prompt = ai.definePrompt({
   Island Description: {{{islandDescription}}}
 
   Output the types of monsters involved (cub or huge for both little and big), 
-  whether a big monster is present, and the number of victory points awarded for defeating the monsters.
-  Make sure to generate a number of victory points based on the number of monsters and the difficulty of defeating them.
+  and whether a big monster is present.
 `,
 });
 
