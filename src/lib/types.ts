@@ -15,6 +15,7 @@ export type Player = {
   lastAction: GameAction | null;
   specialCards: any[]; // Define later
   farmPosition: { x: number, y: number } | null;
+  occupiedResourceTiles: { x: number; y: number }[];
 };
 
 export type Island = {

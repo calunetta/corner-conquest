@@ -244,7 +244,7 @@ export function GameBoard() {
       <aside className="col-start-3 row-start-2 flex flex-col justify-between gap-4">
         <PlayerInfo player={players[1]} isCurrentPlayer={currentPlayerIndex === 1} />
         <div className='flex flex-col gap-4'>
-          <ActionsPanel onAction={handleAction} lastAction={currentPlayer.lastAction} currentAction={currentAction} />
+          <ActionsPanel onAction={handleAction} gameState={gameState} />
           <GameLog logs={log} />
           <Button onClick={handleEndTurn}>End Turn</Button>
         </div>

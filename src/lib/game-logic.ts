@@ -1,6 +1,6 @@
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor } from './types';
 
-const MAP_SIZE = 12;
+const MAP_SIZE = 8;
 const NUM_CENTRAL_ISLANDS = 10;
 const PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
 

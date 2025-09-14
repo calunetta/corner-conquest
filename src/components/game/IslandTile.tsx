@@ -18,6 +18,13 @@ const playerColorMap = {
   yellow: 'bg-yellow-400 border-yellow-200',
 };
 
+const playerPositionClasses = [
+  'top-1 left-1', // Player 0
+  'top-1 right-1', // Player 1
+  'bottom-1 left-1', // Player 2
+  'bottom-1 right-1', // Player 3
+]
+
 export function IslandTile({ island, players, onClick, isPossibleMove, isSelected }: IslandTileProps) {
   const occupants = island.occupants.map(id => players[id]);
 
@@ -51,14 +58,14 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       }}
       aria-label={`Island at ${island.x}, ${island.y}`}
     >
-      <div className="absolute top-1 right-1 flex gap-1">
+      <div className="absolute inset-0">
         {occupants.map(player => (
-          <div key={player.id} className={cn('h-4 w-4 rounded-full border-2 flex items-center justify-center text-xs font-bold text-white', playerColorMap[player.color])}>
+          <div key={player.id} className={cn('absolute h-4 w-4 rounded-full border-2', playerPositionClasses[player.id], playerColorMap[player.color])}>
           </div>
         ))}
       </div>
       
-      <div className="h-2/3 w-2/3">{getIcon()}</div>
+      <div className="h-1/2 w-1/2">{getIcon()}</div>
 
       {farmPlayer && (
         <div className="absolute bottom-1 left-1" title={`Farmed by ${farmPlayer.name}`}>
