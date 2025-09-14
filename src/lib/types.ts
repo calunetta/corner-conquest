@@ -4,6 +4,12 @@ export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'green' | 'yellow';
 
+export type PlayerPosition = {
+  x: number;
+  y: number;
+  resource: ResourceType;
+}
+
 export type Player = {
   id: number;
   name: string;
@@ -15,7 +21,7 @@ export type Player = {
   victoryPoints: number;
   lastAction: GameAction | null;
   specialCards: string[]; // Names of special cards
-  positions: { x: number, y: number }[];
+  positions: PlayerPosition[];
   occupiedResourceTiles: { x: number; y: number }[];
 };
 
@@ -29,7 +35,7 @@ export type Island = {
   occupants: number[]; // player ids
   isFetchingMonster?: boolean;
   monsterDetails?: MonsterEncounterOutput;
-  positionedBy?: number[]; // player ids
+  positionedBy?: {playerId: number, resource: ResourceType}[];
 };
 
 export type CombatState = {
@@ -40,6 +46,12 @@ export type CombatState = {
   winnerId: number | null;
   phase: 'rolling' | 'results';
 };
+
+export type PositionDialogState = {
+  x: number;
+  y: number;
+  resources: ResourceType[];
+}
 
 export type GameState = {
   map: Island[][];
@@ -53,6 +65,7 @@ export type GameState = {
   currentAction: GameAction | null;
   specialCardsDeck: string[];
   combatState: CombatState | null;
+  positionDialogState: PositionDialogState | null;
 };
 
 export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card';

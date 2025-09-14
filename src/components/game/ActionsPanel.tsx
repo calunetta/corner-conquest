@@ -15,8 +15,8 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
   const lastAction = currentPlayer.lastAction;
   const currentTile = map[currentPlayer.position.y][currentPlayer.position.x];
 
-  const canCollect = currentPlayer.positions.length > 0;
-  const canPosition = currentPlayer.occupiedResourceTiles.length > 0;
+  const canCollect = currentPlayer.positions.some(p => p.x === currentPlayer.position.x && p.y === currentPlayer.position.y);
+  const canPosition = (currentTile.type === 'resource' || currentTile.type === 'base') && !currentPlayer.positions.some(p => p.x === currentPlayer.position.x && p.y === currentPlayer.position.y);
   const canAttack = (currentTile.occupants.length > 1 && currentTile.type !== 'base') || (currentTile.type === 'monster' && !!currentTile.monsterDetails);
   const canDeploy = currentPlayer.resources.food >= currentPlayer.nextArmyCost && currentPlayer.armySize < 5 && currentTile.type === 'base';
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0;

@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { generateMonsterEncounter } from '@/ai/flows/monster-encounter-generation';
 import { Loader2 } from 'lucide-react';
 import { CombatDialog } from './CombatDialog';
+import { PositionDialog } from './PositionDialog';
+
 
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
@@ -22,8 +24,6 @@ export function GameBoard() {
 
   useEffect(() => {
     const newGame = initializeGame();
-    // At the start of the first turn, collect resources for initial positions
-    handleAutomaticCollection(newGame);
     setGameState(newGame);
   }, []);
 
@@ -34,6 +34,8 @@ export function GameBoard() {
 
     const newState = deepClone(gameState);
     newState.currentAction = action;
+    newState.possibleMoves = [];
+    newState.selectedTile = null;
 
     if (action === 'move') {
       const { x, y } = currentPlayer.position;
@@ -52,18 +54,7 @@ export function GameBoard() {
       }
       newState.possibleMoves = moves;
     } else if (action === 'position') {
-      newState.possibleMoves = [];
-      newState.selectedTile = null;
-      const positionableTiles = [];
-      for(let y = 0; y < map.length; y++) {
-        for(let x = 0; x < map[y].length; x++) {
-          const tile = map[y][x];
-          if(tile.occupants.includes(currentPlayer.id) && (tile.type === 'resource' || tile.type === 'base')) {
-            positionableTiles.push({x, y});
-          }
-        }
-      }
-      newState.possibleMoves = positionableTiles;
+      handlePositionAction(newState, currentPlayer.position.x, currentPlayer.position.y);
     } else if (action === 'collect') {
       handleCollectAction(newState);
     } else if (action === 'deploy') {
@@ -72,9 +63,6 @@ export function GameBoard() {
       handleBuyCardAction(newState);
     } else if (action === 'attack') {
       handleAttackAction(newState);
-    } else {
-      newState.possibleMoves = [];
-      newState.selectedTile = null;
     }
     
     setGameState(newState);
@@ -120,15 +108,21 @@ export function GameBoard() {
   }
 
   const handleCollectAction = (state: GameState) => {
-    const { currentPlayerIndex, players } = state;
+    const { currentPlayerIndex, players, map } = state;
     const player = players[currentPlayerIndex];
+    const currentTile = map[player.position.y][player.position.x];
 
-    if (player.positions.length > 0) {
-      handleAutomaticCollection(state, player.id);
-      player.lastAction = 'collect';
-      endTurn(state);
+    const position = player.positions.find(p => p.x === player.position.x && p.y === player.position.y);
+
+    if (position) {
+        player.resources[position.resource] += 1;
+        const logMsg = `${player.name} collected 1 ${position.resource} from ${position.x},${position.y}.`;
+        state.log.push(logMsg);
+        toast({ title: 'Resource Collected!', description: logMsg });
+        player.lastAction = 'collect';
+        endTurn(state);
     } else {
-      toast({ title: 'Cannot Collect', description: 'You have no armies positioned on any resource islands.', variant: 'destructive'});
+      toast({ title: 'Cannot Collect', description: 'You have no army positioned on this island.', variant: 'destructive'});
       state.currentAction = null;
       setGameState(state);
     }
@@ -144,44 +138,58 @@ export function GameBoard() {
     
     if (gameState.currentAction === 'move') {
       handleMoveAction(newState, x, y);
-    } else if (gameState.currentAction === 'position') {
-      handlePositionAction(newState, x, y);
     }
   };
 
   const handlePositionAction = (state: GameState, x: number, y: number) => {
-    const { currentPlayerIndex } = state;
-    const player = state.players[currentPlayerIndex];
-    const selectedTile = state.map[y][x];
-    
-    if (selectedTile.type !== 'resource' && selectedTile.type !== 'base') {
-        toast({ title: 'Cannot Position', description: 'You can only position on resource or base islands.', variant: 'destructive'});
+    const player = state.players[state.currentPlayerIndex];
+    const tile = state.map[y][x];
+
+    if ((tile.type !== 'resource' && tile.type !== 'base') || tile.resources.length === 0) {
+        toast({ title: 'Cannot Position', description: 'You can only position on an island with resources.', variant: 'destructive'});
         state.currentAction = null;
         setGameState(state);
         return;
     }
-
-    // Check if player is already positioned here
+    
     if (player.positions.some(p => p.x === x && p.y === y)) {
       toast({ title: 'Already Positioned', description: `You already have an army positioned at ${x},${y}.`, variant: 'destructive'});
       state.currentAction = null;
       setGameState(state);
       return;
     }
-    
-    player.positions.push({ x, y });
-    if (!selectedTile.positionedBy) {
-        selectedTile.positionedBy = [];
+
+    if (tile.resources.length === 1) {
+      handleSelectResourceForPosition(state, tile.resources[0]);
+    } else {
+      state.positionDialogState = { x, y, resources: tile.resources };
+      setGameState(state);
     }
-    selectedTile.positionedBy.push(player.id);
+  }
+
+  const handleSelectResourceForPosition = (state: GameState, resource: ResourceType) => {
+    const { currentPlayerIndex, positionDialogState } = state;
+    const player = state.players[currentPlayerIndex];
+    const x = positionDialogState?.x ?? player.position.x;
+    const y = positionDialogState?.y ?? player.position.y;
+    const tile = state.map[y][x];
+
+    player.positions.push({ x, y, resource });
+    
+    if (!tile.positionedBy) {
+      tile.positionedBy = [];
+    }
+    tile.positionedBy.push({playerId: player.id, resource});
+
     player.lastAction = 'position';
 
-    const logMsg = `${player.name} has positioned an army at ${x},${y}.`;
+    const logMsg = `${player.name} has positioned an army on ${resource} at ${x},${y}.`;
     state.log.push(logMsg);
     toast({ title: 'Army Positioned!', description: logMsg });
     
+    state.positionDialogState = null;
     endTurn(state);
-  }
+  };
 
   const handleMoveAction = (newState: GameState, x: number, y: number) => {
     const { currentPlayerIndex } = newState;
@@ -190,16 +198,15 @@ export function GameBoard() {
     const oldPos = player.position;
     newState.map[oldPos.y][oldPos.x].occupants = newState.map[oldPos.y][oldPos.x].occupants.filter(id => id !== player.id);
     
-    // Check if player is moving away from a positioned tile
+    // Check if player is moving away from a positioned tile and remove that specific position
     const positionIndex = player.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
     if (positionIndex !== -1) {
-        // Player is moving from a position, so remove it
-        player.positions.splice(positionIndex, 1);
+        const removedPosition = player.positions.splice(positionIndex, 1)[0];
         const oldTile = newState.map[oldPos.y][oldPos.x];
         if (oldTile.positionedBy) {
-          oldTile.positionedBy = oldTile.positionedBy.filter(id => id !== player.id);
+          oldTile.positionedBy = oldTile.positionedBy.filter(p => p.playerId !== player.id);
         }
-        const logMsg = `${player.name} moved and is no longer collecting from ${oldPos.x},${oldPos.y}.`;
+        const logMsg = `${player.name} moved and is no longer collecting ${removedPosition.resource} from ${oldPos.x},${oldPos.y}.`;
         newState.log.push(logMsg);
         toast({ title: 'Position Abandoned', description: logMsg });
     }
@@ -219,7 +226,6 @@ export function GameBoard() {
         }
     }
     player.occupiedResourceTiles = occupiedResourceTiles;
-
 
     const revealedIsland = newState.map[y][x];
     if(revealedIsland.isHidden) {
@@ -319,6 +325,15 @@ export function GameBoard() {
     const defender = players[combatState.defenderId];
     const loser = winnerId === attacker.id ? defender : attacker;
 
+    // Clear all positions for the loser
+    loser.positions = [];
+    map.forEach(row => row.forEach(tile => {
+      if (tile.positionedBy) {
+        tile.positionedBy = tile.positionedBy.filter(p => p.playerId !== loser.id);
+      }
+    }));
+
+
     // Move loser back to base
     const basePositions = [
       { x: 0, y: 0 },
@@ -334,7 +349,7 @@ export function GameBoard() {
     loser.position = loserBasePosition;
     map[loserBasePosition.y][loserBasePosition.x].occupants.push(loser.id);
 
-    const logMsg = `${players[winnerId!].name} defeated ${loser.name}! ${loser.name} was sent back to their base.`;
+    const logMsg = `${players[winnerId!].name} defeated ${loser.name}! ${loser.name} was sent back to their base and lost all positions.`;
     newState.log.push(logMsg);
     toast({ title: 'Combat Over!', description: logMsg });
     
@@ -343,35 +358,7 @@ export function GameBoard() {
     endTurn(newState);
   }
 
-  const handleAutomaticCollection = (state: GameState, playerIdToCollect?: number) => {
-    const playersToCollect = playerIdToCollect !== undefined
-      ? [state.players[playerIdToCollect]]
-      : state.players;
-
-    playersToCollect.forEach(player => {
-      if (player.positions.length > 0) {
-        let collectedSomething = false;
-        player.positions.forEach(pos => {
-          const tile = state.map[pos.y][pos.x];
-          if (tile.occupants.includes(player.id) && (tile.type === 'resource' || tile.type === 'base')) {
-            tile.resources.forEach(resource => {
-              player.resources[resource] += 1;
-              const logMsg = `${player.name} collected 1 ${resource} from their position at ${pos.x},${pos.y}.`;
-              state.log.push(logMsg);
-              collectedSomething = true;
-            });
-          }
-        });
-        if(collectedSomething) {
-           toast({ title: 'Resources Collected!', description: `${player.name} collected resources from their positions.` });
-        }
-      }
-    });
-  };
-
   const endTurn = (state: GameState) => {
-    handleAutomaticCollection(state, state.currentPlayerIndex);
-    
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
     if (state.currentPlayerIndex === 0) {
       state.turn += 1;
@@ -402,7 +389,7 @@ export function GameBoard() {
     );
   }
 
-  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState } = gameState;
+  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, positionDialogState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
   return (
@@ -430,6 +417,13 @@ export function GameBoard() {
         </aside>
       </div>
       {combatState && <CombatDialog gameState={gameState} onRoll={handleCombatRoll} onClose={handleCloseCombat} />}
+      {positionDialogState && (
+        <PositionDialog 
+          resources={positionDialogState.resources}
+          onSelect={(resource) => handleSelectResourceForPosition(deepClone(gameState), resource)}
+          onClose={() => setGameState(prev => prev ? {...prev, positionDialogState: null, currentAction: null} : null)}
+        />
+      )}
     </div>
   );
 }

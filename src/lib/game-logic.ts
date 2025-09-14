@@ -74,19 +74,15 @@ export function initializeGame(): GameState {
 
         const numResources = Math.random() < 0.2 ? 1 : (Math.random() < 0.8 ? 2 : 3);
         
+        const islandResources: ResourceType[] = [];
         for(let i = 0; i < numResources; i++) {
           if (availableResources.length > 0) {
             const randomIndex = Math.floor(Math.random() * availableResources.length);
             const selectedResource = availableResources.splice(randomIndex, 1)[0];
-            
-            const spots = Math.random() < 0.7 ? 2 : 1; 
-            for(let j=0; j<spots; j++) {
-                map[y][x].resources.push(selectedResource);
-            }
+            islandResources.push(selectedResource);
           }
         }
-        // Ensure unique resources
-        map[y][x].resources = [...new Set(map[y][x].resources)];
+        map[y][x].resources = islandResources;
       }
     }
   }
@@ -108,5 +104,6 @@ export function initializeGame(): GameState {
     currentAction: null,
     specialCardsDeck: [...SPECIAL_CARDS],
     combatState: null,
+    positionDialogState: null,
   };
 }

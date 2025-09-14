@@ -1,4 +1,4 @@
-import type { Island, Player, GameAction } from '@/lib/types';
+import type { Island, Player, GameAction, ResourceType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon } from '../icons';
 import { Home, HelpCircle, Skull, Star, Loader2, Anchor } from 'lucide-react';
@@ -27,7 +27,7 @@ const playerPositionClasses = [
 
 export function IslandTile({ island, players, onClick, isPossibleMove, isSelected }: IslandTileProps) {
   const occupants = island.occupants.map(id => players[id]);
-  const positionedPlayers = island.positionedBy?.map(id => players[id]) || [];
+  const positionedBy = island.positionedBy || [];
 
   const getIcon = () => {
     if (island.isHidden) return <HelpCircle className="h-full w-full text-muted-foreground/50" />;
@@ -37,7 +37,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       case 'base': return <Home className="h-full w-full" style={{ color: players[island.occupants[0]]?.color }}/>;
       case 'resource': 
         return (
-          <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-1 p-2">
+          <div className="grid h-full w-full grid-cols-2 grid-rows-2 items-center justify-center gap-1 p-2">
             {island.resources.slice(0, 4).map((resource, index) => (
               <ResourceIcon key={index} type={resource} className="h-full w-full text-accent" />
             ))}
@@ -61,6 +61,15 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     return positions[playerId];
   }
 
+  const getPositionedResourceIcon = (resource: ResourceType) => {
+    const iconMap: Record<ResourceType, React.ReactNode> = {
+      gems: <ResourceIcon type="gems" className="h-3 w-3" />,
+      iron: <ResourceIcon type="iron" className="h-3 w-3" />,
+      food: <ResourceIcon type="food" className="h-3 w-3" />,
+    }
+    return iconMap[resource];
+  }
+
   return (
     <button
       onClick={() => onClick(island.x, island.y)}
@@ -82,11 +91,16 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       <div className="h-full w-full">{getIcon()}</div>
 
       <div className="absolute inset-0">
-        {positionedPlayers.map(player => (
-            <div key={`pos-${player.id}`} className={cn('absolute', getPositionedPlayerPositionClass(player.id))} title={`Positioned by ${player.name}`}>
-                <Anchor className="h-4 w-4" style={{color: player.color}} />
-            </div>
-        ))}
+        {positionedBy.map(pos => {
+            const player = players[pos.playerId];
+            if (!player) return null;
+            return (
+                <div key={`pos-${player.id}`} className={cn('absolute flex items-center gap-0.5', getPositionedPlayerPositionClass(player.id))} title={`Positioned by ${player.name} on ${pos.resource}`}>
+                    <Anchor className="h-4 w-4" style={{color: player.color}} />
+                    {getPositionedResourceIcon(pos.resource)}
+                </div>
+            )
+        })}
        </div>
     </button>
   );
