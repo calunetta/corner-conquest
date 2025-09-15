@@ -68,7 +68,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
 
   const getIcon = () => {
     if (island.isHidden) return <HelpCircle className="h-full w-full text-muted-foreground/50" />;
-    if (island.isFetchingMonster) return <Loader2 className="h-full w-full animate-spin text-destructive" />;
     
     switch (island.type) {
       case 'base': 

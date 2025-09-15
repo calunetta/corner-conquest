@@ -1,5 +1,3 @@
-import type { MonsterEncounterOutput as GenkitMonsterEncounterOutput } from "@/ai/flows/monster-encounter-generation";
-
 export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'green' | 'yellow';
@@ -41,8 +39,6 @@ export type Monster = {
   level: number;
 }
 
-export type MonsterEncounterOutput = Omit<GenkitMonsterEncounterOutput, 'victoryPoints'>;
-
 export type Island = {
   id: string;
   x: number;
@@ -52,8 +48,6 @@ export type Island = {
   isHidden: boolean;
   resources: IslandResource[];
   occupants: { playerId: number, armyId: number }[];
-  isFetchingMonster?: boolean;
-  monsterDetails?: MonsterEncounterOutput;
   monsters?: Monster[];
   positionedBy?: {playerId: number, resource: ResourceType}[];
 };

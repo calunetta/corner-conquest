@@ -8,7 +8,6 @@ import { ActionsPanel } from './ActionsPanel';
 import { GameLog } from './GameLog';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { generateMonsterEncounter } from '@/ai/flows/monster-encounter-generation';
 import { Loader2 } from 'lucide-react';
 import { CombatDialog } from './CombatDialog';
 import { MonsterCombatDialog } from './MonsterCombatDialog';
@@ -18,6 +17,60 @@ import { PositionDialog } from './PositionDialog';
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
+
+function generateMonsters(): Monster[] {
+    const monsters: Monster[] = [];
+    let hasBigMonster = Math.random() < 0.5;
+
+    // Determine little monster type
+    const littleMonsterRand = Math.random();
+    let littleMonsterType: 'cub' | 'huge' = littleMonsterRand < 0.5 ? 'cub' : 'huge'; // 50% cub, 50% huge
+
+    if (hasBigMonster) {
+        // Add a little monster
+        monsters.push({
+            id: 'little',
+            type: littleMonsterType,
+            level: littleMonsterType === 'cub' ? 1 : 2
+        });
+
+        // Determine big monster type based on the specified ratio
+        const rand = Math.random() * (1.5 + 0.5); // total parts for big monsters
+        let bigMonsterType: 'cub' | 'huge';
+        if (rand < 1.5) {
+            bigMonsterType = 'cub'; // 1.5 parts
+        } else {
+            bigMonsterType = 'huge'; // 0.5 parts
+        }
+        
+        monsters.push({
+            id: 'big',
+            type: bigMonsterType,
+            level: bigMonsterType === 'cub' ? 3 : 4
+        });
+
+    } else {
+        // Two little monsters
+        monsters.push({
+            id: 'little',
+            type: 'cub', // first is always cub
+            level: 1
+        });
+        
+        // second little monster based on 5:3 ratio for cub vs huge
+        const secondLittleMonsterRand = Math.random() * 8;
+        let secondLittleMonsterType: 'cub' | 'huge' = secondLittleMonsterRand < 5 ? 'cub' : 'huge';
+
+        monsters.push({
+            id: 'little',
+            type: secondLittleMonsterType,
+            level: secondLittleMonsterType === 'cub' ? 1 : 2
+        });
+    }
+
+    return monsters;
+}
+
 
 export function GameBoard() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -323,46 +376,13 @@ export function GameBoard() {
       newState.log.push(logMsg);
       setToastsToShow(prev => [...prev, { title: 'Island Discovered!', description: logMsg }]);
       
-      if(revealedIsland.type === 'monster' && !revealedIsland.monsterDetails) {
-        revealedIsland.isFetchingMonster = true;
-        
-        generateMonsterEncounter({ islandDescription: `A mysterious island at ${x},${y}`})
-          .then(monsterDetails => {
-            setGameState(prev => {
-              if(!prev) return null;
-              const finalState = deepClone(prev);
-              const islandToUpdate = finalState.map[y][x];
-              islandToUpdate.monsterDetails = monsterDetails;
-              islandToUpdate.isFetchingMonster = false;
-
-              const monsters: Monster[] = [];
-              if (monsterDetails.hasBigMonster) {
-                monsters.push({
-                  id: 'little', 
-                  type: monsterDetails.littleMonsterType, 
-                  level: monsterDetails.littleMonsterType === 'cub' ? 1 : 2
-                });
-                monsters.push({
-                  id: 'big', 
-                  type: monsterDetails.bigMonsterType, 
-                  level: monsterDetails.bigMonsterType === 'cub' ? 3 : 4
-                });
-              } else {
-                 monsters.push({
-                  id: 'little', 
-                  type: monsterDetails.littleMonsterType, 
-                  level: monsterDetails.littleMonsterType === 'cub' ? 1 : 2
-                });
-              }
-              islandToUpdate.monsters = monsters;
-              
-              const monsterLog = `${player.name} encountered monsters!`;
-              finalState.log.push(monsterLog);
-              setToastsToShow(prev => [...prev, { title: 'Monster Encounter!', description: monsterLog, variant: 'destructive'}]);
-              
-              return finalState;
-            })
-          })
+      if(revealedIsland.type === 'monster') {
+          const monsters = generateMonsters();
+          revealedIsland.monsters = monsters;
+          
+          const monsterLog = `${player.name} encountered monsters!`;
+          newState.log.push(monsterLog);
+          setToastsToShow(prev => [...prev, { title: 'Monster Encounter!', description: monsterLog, variant: 'destructive'}]);
       }
     }
     
@@ -449,8 +469,11 @@ export function GameBoard() {
     
     const winner = players[winnerId!];
     const loser = players[loserId];
-    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
-
+    
+    const attackingArmy = winnerId === attackerId 
+      ? players[attackerId].armies.find(a => a.id === selectedArmyId)
+      : players[defenderId].armies.find(a => a.id === selectedArmyId);
+    
     if (attackingArmy) {
       const tile = map[attackingArmy.position.y][attackingArmy.position.x];
       const loserOccupant = tile.occupants.find(o => o.playerId === loserId);
@@ -461,13 +484,11 @@ export function GameBoard() {
             const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
             if (baseTile) {
                 const oldPos = losingArmy.position;
-
-                // Remove from old tile, add to new
+                
                 map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.playerId === loserId && o.armyId === losingArmy.id));
                 losingArmy.position = {x: baseTile.x, y: baseTile.y};
                 map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
                 
-                // Clear positions
                 const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
                 if (positionIndex > -1) {
                     const removedPosition = loser.positions.splice(positionIndex, 1)[0];
@@ -592,7 +613,14 @@ export function GameBoard() {
     state.currentAction = null;
     state.possibleMoves = [];
     state.selectedTile = null;
-    state.selectedArmyId = null;
+    
+    // Pre-select army if only one exists
+    if (nextPlayer.armies.length === 1) {
+        state.selectedArmyId = nextPlayer.armies[0].id;
+    } else {
+        state.selectedArmyId = null;
+    }
+
     setGameState(state);
   }
 
@@ -662,5 +690,3 @@ export function GameBoard() {
     </div>
   );
 }
-
-    
