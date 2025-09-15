@@ -394,7 +394,7 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useC
 export function handleCloseMonsterCombat(state: GameState): GameState {
     const newState = { ...state };
     const { monsterCombatState, players, map } = newState;
-    if (!monsterCombatState || !monsterCombatState.winnerId) return { ...newState, monsterCombatState: null, currentAction: null };
+    if (!monsterCombatState) return { ...newState, monsterCombatState: null, currentAction: null };
 
     const attacker = players.find(p => p.id === monsterCombatState.attackerId);
     const attackingArmy = getSelectedArmy(newState);
@@ -440,9 +440,10 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     player.actionsThisTurn.push('use-card');
     player.specialCards.splice(cardIndex, 1);
 
+    newState.log.push(`${player.name} used the '${cardName}' card.`);
+
     if (cardName === 'Extra Move') {
         player.hasExtraMove = true;
-        newState.log.push(`${player.name} used the 'Extra Move' card!`);
     } else if (cardName === 'Steal Resource') {
         newState.stealResourceDialogState = { targetPlayerId: null };
     }

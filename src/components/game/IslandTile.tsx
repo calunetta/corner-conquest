@@ -3,6 +3,7 @@ import type { Island, Player, GameAction, ResourceType, IslandResource, Army } f
 import { cn } from '@/lib/utils';
 import { ResourceIcon, MonsterIcon } from '../icons';
 import { Home, HelpCircle, Star, Loader2, Anchor } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 type IslandTileProps = {
   island: Island;
@@ -110,39 +111,48 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   }
 
   return (
-    <button
-      onClick={() => onClick(island.x, island.y)}
-      className={cn(
-        'aspect-square w-full rounded-lg border-2 flex items-center justify-center relative transition-all duration-200',
-        island.isHidden ? 'bg-muted/30 border-dashed' : 'bg-card',
-        isSelected ? 'border-primary ring-2 ring-primary' : '',
-        isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
-        isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
-        isArmySelectedOnTile && 'ring-2 ring-offset-2 ring-primary'
-      )}
-      aria-label={`Island at ${island.x}, ${island.y}`}
-    >
-      <div className="absolute inset-0">
-        {occupants.map(({ player, armyId }, index) => (
-          <div key={`${player.id}-${armyId}`} className={cn('absolute h-4 w-4 rounded-full border-2', armyPositions[index % armyPositions.length], playerColorMap[player.color].bg, playerColorMap[player.color].border)}>
-          </div>
-        ))}
-      </div>
-      
-      <div className="h-full w-full p-1">{getIcon()}</div>
+    <TooltipProvider>
+      <button
+        onClick={() => onClick(island.x, island.y)}
+        className={cn(
+          'aspect-square w-full rounded-lg border-2 flex items-center justify-center relative transition-all duration-200',
+          island.isHidden ? 'bg-muted/30 border-dashed' : 'bg-card',
+          isSelected ? 'border-primary ring-2 ring-primary' : '',
+          isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
+          isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
+          isArmySelectedOnTile && 'ring-2 ring-offset-2 ring-primary'
+        )}
+        aria-label={`Island at ${island.x}, ${island.y}`}
+      >
+        <div className="absolute inset-0">
+          {occupants.map(({ player, armyId }, index) => (
+            <div key={`${player.id}-${armyId}`} className={cn('absolute h-4 w-4 rounded-full border-2', armyPositions[index % armyPositions.length], playerColorMap[player.color].bg, playerColorMap[player.color].border)}>
+            </div>
+          ))}
+        </div>
+        
+        <div className="h-full w-full p-1">{getIcon()}</div>
 
-      <div className="absolute inset-0">
-        {positionedBy.map(pos => {
-            const player = players[pos.playerId];
-            if (!player) return null;
-            return (
-                <div key={`pos-${player.id}`} className={cn('absolute flex items-center gap-0.5', getPositionedPlayerPositionClass(player.id))} title={`Positioned by ${player.name} on ${pos.resource}`}>
-                    <Anchor className="h-4 w-4" style={{color: player.color}} />
-                    {getPositionedResourceIcon(pos.resource)}
-                </div>
-            )
-        })}
-       </div>
-    </button>
+        <div className="absolute inset-0">
+          {positionedBy.map(pos => {
+              const player = players[pos.playerId];
+              if (!player) return null;
+              return (
+                  <Tooltip key={`pos-tooltip-${player.id}`}>
+                      <TooltipTrigger asChild>
+                          <div className={cn('absolute flex items-center gap-0.5', getPositionedPlayerPositionClass(player.id))} >
+                              <Anchor className="h-4 w-4" style={{color: player.color}} />
+                              {getPositionedResourceIcon(pos.resource)}
+                          </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                          <p>Positioned by {player.name} on {pos.resource}</p>
+                      </TooltipContent>
+                  </Tooltip>
+              )
+          })}
+        </div>
+      </button>
+    </TooltipProvider>
   );
 }

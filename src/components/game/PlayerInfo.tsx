@@ -76,15 +76,29 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
           </div>
           <div className="flex flex-wrap justify-end gap-2 text-xs">
             {Object.entries(player.resources).map(([type, value]) => (
-              <div key={type} className="flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5">
-                <ResourceIcon type={type as keyof Player['resources']} className="h-3 w-3 text-muted-foreground" />
-                <span className="font-semibold">{value}</span>
-              </div>
+                <Tooltip key={type}>
+                    <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5">
+                            <ResourceIcon type={type as keyof Player['resources']} className="h-3 w-3 text-muted-foreground" />
+                            <span className="font-semibold">{value}</span>
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p className='capitalize'>{type}</p>
+                    </TooltipContent>
+                </Tooltip>
             ))}
-             <div className="flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5">
-                <Album className="h-3 w-3 text-muted-foreground" />
-                <span className="font-semibold">{player.specialCards.length}</span>
-              </div>
+             <Tooltip>
+                <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5">
+                        <Album className="h-3 w-3 text-muted-foreground" />
+                        <span className="font-semibold">{player.specialCards.length}</span>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Special Cards</p>
+                </TooltipContent>
+             </Tooltip>
           </div>
         </CardContent>
       </Card>
