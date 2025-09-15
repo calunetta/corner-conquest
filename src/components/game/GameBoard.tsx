@@ -167,8 +167,16 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const currentPlayer = players[currentPlayerIndex];
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
+
+  const gridColsMap: { [key: number]: string } = {
+    1: 'md:grid-cols-1',
+    2: 'md:grid-cols-2',
+    3: 'md:grid-cols-3',
+    4: 'md:grid-cols-4',
+  };
   
-  const gridColsClass = `md:grid-cols-3 lg:grid-cols-4`;
+  const gridColsClass = `grid-cols-2 ${gridColsMap[players.length] || 'md:grid-cols-4'}`;
+
 
   return (
     <div className="relative flex h-screen w-full flex-col gap-2 overflow-auto p-2 sm:gap-4 sm:p-4">
@@ -195,7 +203,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         </div>
         <CollapsibleContent>
             <div
-              className={`mt-2 grid grid-cols-2 gap-2 sm:gap-4 ${gridColsClass}`}
+              className={`mt-2 grid gap-2 sm:gap-4 ${gridColsClass}`}
             >
               {players.map(p => (
                  <PlayerInfo key={p.id} player={p} isCurrentPlayer={currentPlayerIndex === p.id} />
@@ -251,5 +259,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   );
 }
 
+    
     
     
