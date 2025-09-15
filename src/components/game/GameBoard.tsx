@@ -235,7 +235,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     );
   }
 
-  const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers, teleportState, scoutingState } = gameState;
+  const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers, teleportState, scoutingState, armySelectionDialogState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
@@ -308,6 +308,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           <div className='text-center'>
             {status === 'waiting' ? (
               <p className='text-base font-semibold text-accent sm:text-lg'>Waiting for players... ({players.length}/{maxPlayers})</p>
+            ) : armySelectionDialogState?.isOpen ? (
+              <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>Select an army to command</p>
             ) : (
               <>
                 {isTeleporting && isMyTurn ? (

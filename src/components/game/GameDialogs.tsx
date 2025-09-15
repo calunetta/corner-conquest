@@ -13,6 +13,7 @@ import { AbilitiesDialog } from './AbilitiesDialog';
 import { SabotageDialog } from './SabotageDialog';
 import { WealthyDialog } from './WealthyDialog';
 import { CollectDialog } from './CollectDialog';
+import { ArmySelectionDialog } from './ArmySelectionDialog';
 import * as GameActions from '@/lib/game-actions';
 
 type GameDialogsProps = {
@@ -35,6 +36,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
     abilitiesShopState,
     sabotageDialogState,
     wealthyDialogState,
+    armySelectionDialogState
   } = gameState;
 
   const handleUpdate = (state: GameState) => {
@@ -105,6 +107,14 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
             state={collectDialogState}
             onConfirm={(useProductive) => handleUpdate(GameActions.handleConfirmCollection(gameState, useProductive))}
             onClose={() => handleCloseDialog('collectDialogState')}
+        />
+      )}
+      {armySelectionDialogState?.isOpen && (
+        <ArmySelectionDialog
+            state={armySelectionDialogState}
+            player={localPlayer}
+            onSelectArmy={(armyId) => handleUpdate(GameActions.handleSelectArmy(gameState, armyId))}
+            onClose={() => handleCloseDialog('armySelectionDialogState')}
         />
       )}
       {showCardsDialogForPlayer === localPlayer.id && (

@@ -219,6 +219,7 @@ export function handleUpgradeAction(state: GameState): GameState {
     const player = players[currentPlayerIndex];
 
     if (player.actionsThisTurn.includes('upgrade')) throw new Error("You can only upgrade once per turn.");
+    if (player.attackPower >= 4) throw new Error("You have reached the maximum attack power.");
 
     let cost = 6;
     if (player.masterBuilderActive) {
@@ -372,9 +373,45 @@ export function handleEndTurn(state: GameState): GameState {
 
 // --- UI Interaction Handlers ---
 
+function setPossibleMoves(state: GameState, x: number, y: number): GameState {
+    const newState = { ...state };
+    const currentPlayer = newState.players[newState.currentPlayerIndex];
+    const newlySelectedArmy = getSelectedArmy(newState);
+
+    if (newlySelectedArmy?.hasActed && !currentPlayer.hasExtraMove) {
+        newState.possibleMoves = [];
+        newState.currentAction = null;
+        return newState;
+    }
+
+    newState.currentAction = 'move';
+    let moves = [];
+    const moveRadius = 2;
+    for (let i = -moveRadius; i <= moveRadius; i++) {
+        for (let j = -moveRadius; j <= moveRadius; j++) {
+            if (Math.abs(i) + Math.abs(j) <= moveRadius && (i !== 0 || j !== 0)) {
+                const newX = x + i;
+                const newY = y + j;
+                if (newX >= 0 && newX < MAP_SIZE && newY >= 0 && newY < MAP_SIZE) {
+                    const targetTile = newState.map[newY][newX];
+                    if (targetTile.type === 'resource' && targetTile.resources.length === 0 && (!targetTile.monsters || targetTile.monsters.length === 0)) {
+                        continue;
+                    }
+                    moves.push({ x: newX, y: newY });
+                }
+            }
+        }
+    }
+    newState.possibleMoves = moves.filter(move => {
+        const tile = newState.map[move.y][move.x];
+        return tile.type !== 'base' || tile.owner === currentPlayer.id;
+    });
+    return newState;
+}
+
 export function handleTileClick(state: GameState, x: number, y: number, localPlayerId: number): GameState {
     let newState = { ...state };
-    const { players, currentPlayerIndex, selectedArmyId, possibleMoves, teleportState, scoutingState } = newState;
+    const { players, currentPlayerIndex, possibleMoves, teleportState, scoutingState } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const clickedTile = newState.map[y][x];
 
@@ -398,16 +435,21 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
     // Teleport Logic
     if (teleportState) {
         if (teleportState.armyId === null) {
-            // Phase 1: Select army to teleport
-            const armyOnTile = clickedTile.occupants.find(o => o.playerId === currentPlayer.id);
-            if (armyOnTile) {
-                newState.teleportState.armyId = armyOnTile.armyId;
+            const armiesOnTile = clickedTile.occupants
+                .filter(o => o.playerId === currentPlayer.id)
+                .map(o => currentPlayer.armies.find(a => a.id === o.armyId))
+                .filter(a => a && !a.hasActed);
+
+            if (armiesOnTile.length === 0) {
+                throw new Error("You must select a tile with one of your own armies that has not acted yet.");
+            }
+            if (armiesOnTile.length === 1) {
+                newState.teleportState.armyId = armiesOnTile[0]!.id;
                 newState.currentAction = 'teleport-initiated';
             } else {
-                throw new Error("You must select one of your own armies to teleport.");
+                 newState.armySelectionDialogState = { isOpen: true, x, y, armies: armiesOnTile as Army[] };
             }
         } else {
-            // Phase 2: Select destination
             newState = handleTeleport(newState, x, y);
         }
         return newState;
@@ -415,52 +457,51 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
 
     // Normal Move Logic
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
-    const armyOnTile = clickedTile.occupants.find(o => o.playerId === currentPlayer.id);
     const selectedArmy = getSelectedArmy(newState);
 
     if (selectedArmy && isPossibleMove) {
       return handleMoveAction(newState, x, y);
-    } else if (armyOnTile) {
-        newState.selectedArmyId = armyOnTile.armyId;
-        newState.selectedTile = {x, y};
-        const newlySelectedArmy = currentPlayer.armies.find(a => a.id === armyOnTile.armyId);
-        
-        // Allow showing moves if the army hasn't acted OR if an extra move is available
-        if (newlySelectedArmy?.hasActed && !currentPlayer.hasExtraMove) {
-            newState.possibleMoves = [];
-            newState.currentAction = null;
-            return newState;
-        }
+    } 
+    
+    const armiesOnTile = clickedTile.occupants
+        .filter(o => o.playerId === currentPlayer.id)
+        .map(o => currentPlayer.armies.find(a => a.id === o.armyId))
+        .filter((army): army is Army => !!army);
 
-        newState.currentAction = 'move';
-        let moves = [];
-        const moveRadius = 2;
-        for (let i = -moveRadius; i <= moveRadius; i++) {
-          for (let j = -moveRadius; j <= moveRadius; j++) {
-            if (Math.abs(i) + Math.abs(j) <= moveRadius && (i !== 0 || j !== 0)) {
-              const newX = x + i;
-              const newY = y + j;
-              if (newX >= 0 && newX < MAP_SIZE && newY >= 0 && newY < MAP_SIZE) {
-                const targetTile = newState.map[newY][newX];
-                // Prevent moving to an empty tile that used to have monsters
-                if (targetTile.type === 'resource' && targetTile.resources.length === 0 && (!targetTile.monsters || targetTile.monsters.length === 0)) {
-                    continue;
-                }
-                moves.push({ x: newX, y: newY });
-              }
-            }
-          }
+    if (armiesOnTile.length > 0) {
+        if (armiesOnTile.length === 1) {
+            newState.selectedArmyId = armiesOnTile[0].id;
+            newState.selectedTile = {x, y};
+            newState = setPossibleMoves(newState, x, y);
+        } else {
+            newState.armySelectionDialogState = { isOpen: true, x, y, armies: armiesOnTile };
         }
-        newState.possibleMoves = moves.filter(move => {
-          const tile = newState.map[move.y][move.x];
-          return tile.type !== 'base' || tile.owner === currentPlayer.id;
-        });
     } else {
       newState.selectedArmyId = null;
       newState.selectedTile = null;
       newState.possibleMoves = [];
       newState.currentAction = null;
     }
+    return newState;
+}
+
+export function handleSelectArmy(state: GameState, armyId: number): GameState {
+    let newState = { ...state };
+    const { armySelectionDialogState } = newState;
+    
+    if (!armySelectionDialogState) return newState;
+
+    newState.selectedArmyId = armyId;
+    newState.selectedTile = { x: armySelectionDialogState.x, y: armySelectionDialogState.y };
+
+    if (newState.teleportState) {
+        newState.teleportState.armyId = armyId;
+        newState.currentAction = 'teleport-initiated';
+    } else {
+        newState = setPossibleMoves(newState, armySelectionDialogState.x, armySelectionDialogState.y);
+    }
+    
+    newState.armySelectionDialogState = null; // Close dialog
     return newState;
 }
 
@@ -649,7 +690,6 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
             winnerId = attacker.id;
             cardUsedThisAction = true;
 
-             // --- Start of consolidated logic ---
             monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
             attacker.victoryPoints += monsterVP;
             currentTile.monsters = (currentTile.monsters || []).filter(m => m.id !== monster.id);
@@ -662,8 +702,6 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
               currentTile.resources.push({ type: randomResource, amount: 1});
               newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
             }
-            // --- End of consolidated logic ---
-
         } else {
              throw new Error("Overcome card not found, but was attempted to be used.");
         }
@@ -707,7 +745,6 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
         const monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
         winnerId = attackerScore >= monsterScore ? attacker.id : null;
 
-        // --- Start of consolidated logic ---
         if (winnerId === attacker.id) {
             monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
             attacker.victoryPoints += monsterVP;
@@ -731,7 +768,6 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
             }
             newState.log.push(`${attacker.name} was defeated by the monster!`);
         }
-        // --- End of consolidated logic ---
     }
     
     attackingArmy.hasActed = true;

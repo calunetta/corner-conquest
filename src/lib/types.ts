@@ -134,6 +134,13 @@ export type AbilitiesShopState = {
     isOpen: boolean;
 }
 
+export type ArmySelectionDialogState = {
+    isOpen: boolean;
+    x: number;
+    y: number;
+    armies: Army[];
+}
+
 export type GameState = {
   id: string;
   name: string;
@@ -163,6 +170,7 @@ export type GameState = {
   sabotageDialogState: SabotageDialogState | null;
   wealthyDialogState: WealthyDialogState | null;
   scoutingState: ScoutingState | null;
+  armySelectionDialogState: ArmySelectionDialogState | null;
 };
 
 export type FirestoreGameState = Omit<GameState, 'map'> & {
