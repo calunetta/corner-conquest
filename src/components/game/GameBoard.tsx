@@ -260,7 +260,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             map={gameState.map} 
             players={players} 
             onTileClick={handleTileClick} 
-            possibleMoves={isTeleporting && teleportState.armyId !== null ? gameState.map.flat() : possibleMoves} 
+            possibleMoves={isTeleporting && teleportState.armyId !== null ? gameState.map.flat().map(t => ({x: t.x, y: t.y})) : possibleMoves} 
             selectedTile={selectedTile} 
             currentPlayerId={currentPlayer.id} 
             selectedArmyId={selectedArmyId}
@@ -306,5 +306,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    

@@ -2,6 +2,7 @@
 
 
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army } from './types';
@@ -178,6 +179,16 @@ export function handleAttackAction(state: GameState): GameState {
 
 export function handleEndTurn(state: GameState): GameState {
     const newState = { ...state };
+    let currentPlayer = newState.players[newState.currentPlayerIndex];
+    
+    if (currentPlayer.hasExtraMove) {
+        const cardIndex = currentPlayer.specialCards.indexOf('Extra Move');
+        if (cardIndex === -1) {
+            currentPlayer.specialCards.push('Extra Move');
+            newState.log.push(`${currentPlayer.name} did not use their extra move, so the card was returned.`);
+        }
+    }
+    
     newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
     if (newState.currentPlayerIndex === 0) {
       newState.turn += 1;
@@ -314,16 +325,15 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     
     if (player.hasExtraMove) {
         player.hasExtraMove = false;
-        player.lastAction = 'move';
+        // This was the extra move, so we don't reset lastAction, we just consume the flag.
         newState.log.push(`${player.name} used their Extra Move!`);
         
         const cardIndex = player.specialCards.indexOf('Extra Move');
         if (cardIndex > -1) {
             player.specialCards.splice(cardIndex, 1);
         }
-    } else {
-        player.lastAction = 'move';
     }
+    player.lastAction = 'move';
     
     newState.currentAction = null;
     newState.possibleMoves = [];
@@ -534,19 +544,20 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     // Defer consuming the card for Extra Move
     if (cardName !== 'Extra Move') {
         player.specialCards.splice(cardIndex, 1);
+        player.actionsThisTurn.push('use-card');
     }
-    player.actionsThisTurn.push('use-card');
 
     if (cardName === 'Extra Move') {
         player.hasExtraMove = true;
         player.lastAction = null; // This allows another main action
-        newState.log.push(`${player.name} activated the 'Extra Move' card.`);
+        newState.log.push(`${player.name} activated the 'Extra Move' card! It will be consumed after your next move.`);
     } else if (cardName === 'Extra VP') {
         player.victoryPoints += 10;
         newState.log.push(`${player.name} used 'Extra VP' and gained 10 Victory Points!`);
     } else if (cardName === 'Teleport') {
         newState.teleportState = { armyId: null };
         newState.log.push(`${player.name} is using the 'Teleport' card. Select an army.`);
+        player.actionsThisTurn.push('use-card');
     } else {
         newState.log.push(`${player.name} used the '${cardName}' card.`);
     }
@@ -616,7 +627,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
 
     newState.log.push(`${player.name} used 'Teleport' to move an army!`);
 
-    return { ...newState, teleportState: null, possibleMoves: [], selectedTile: {x, y} };
+    return { ...newState, teleportState: null, possibleMoves: [], selectedTile: {x, y}, selectedArmyId: armyToMove.id };
 }
 
 // --- Player Exit Logic ---
@@ -689,5 +700,3 @@ export async function handleConfirmHostLeave(gameState: GameState, gameId: strin
     }
     onExit();
 }
-
-    

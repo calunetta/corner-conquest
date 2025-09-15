@@ -1,3 +1,4 @@
+
 import type { Island, Player, GameAction } from '@/lib/types';
 import { IslandTile } from './IslandTile';
 
@@ -15,6 +16,8 @@ type MapGridProps = {
 export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting }: MapGridProps) {
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const selectedArmy = selectedArmyId !== null && currentPlayer ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
+  const teleportingArmyId = isTeleporting && players[currentPlayerId]?.teleportState?.armyId !== null ? players[currentPlayerId]?.teleportState?.armyId : null;
+
 
   return (
     <div
@@ -27,7 +30,9 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         const isPossible = possibleMoves.some(p => p.x === island.x && p.y === island.y);
         const isSelected = selectedTile?.x === island.x && selectedTile?.y === island.y;
         const isCurrentPlayerTile = island.occupants.some(o => o.playerId === currentPlayerId);
-        const isArmySelectedOnTile = selectedArmy?.position.x === island.x && selectedArmy?.position.y === island.y;
+        
+        const armyOnTile = island.occupants.find(o => o.playerId === currentPlayerId);
+        const isArmySelectedOnTile = (isTeleporting && armyOnTile?.armyId === teleportingArmyId) || (!isTeleporting && selectedArmy?.position.x === island.x && selectedArmy?.position.y === island.y);
         
         return (
           <IslandTile
@@ -38,7 +43,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
             isPossibleMove={isPossible}
             isSelected={isSelected}
             isCurrentPlayerTile={isCurrentPlayerTile}
-            isArmySelectedOnTile={isArmySelectedOnTile}
+            isArmySelectedOnTile={!!isArmySelectedOnTile}
             isTeleporting={isTeleporting}
           />
         );

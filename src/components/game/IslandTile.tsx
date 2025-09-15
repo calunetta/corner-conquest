@@ -121,8 +121,9 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
           isSelected ? 'border-primary ring-2 ring-primary' : '',
           isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
           isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
-          isArmySelectedOnTile && 'ring-2 ring-offset-2 ring-primary',
-          isTeleporting && 'border-purple-500 hover:border-purple-400 shadow-lg shadow-purple-500/30'
+          isArmySelectedOnTile && !isTeleporting && 'ring-2 ring-offset-2 ring-primary',
+          isArmySelectedOnTile && isTeleporting && 'ring-2 ring-offset-2 ring-purple-500',
+          isTeleporting && isPossibleMove && 'border-purple-500 hover:border-purple-400 shadow-lg shadow-purple-500/30'
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
       >
