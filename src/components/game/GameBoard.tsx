@@ -87,12 +87,17 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   useEffect(() => {
     if (gameState?.teleportState && isMyTurn) {
       if (gameState.teleportState.armyId === null) {
-        toast({ title: 'Teleport: Step 1', description: 'Select an army on the map to teleport.' });
+        // This check prevents showing the toast again if it was just shown.
+        if (gameState.currentAction !== 'teleport-initiated') {
+            toast({ title: 'Teleport: Step 1', description: 'Select an army on the map to teleport.' });
+            setGameState({...gameState, currentAction: 'teleport-initiated'});
+        }
       } else {
         toast({ title: 'Teleport: Step 2', description: 'Now, select any destination tile on the map.' });
       }
     }
-  }, [gameState?.teleportState, isMyTurn, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.teleportState, isMyTurn]);
   
   const handleAction = async (action: GameAction) => {
     if (!gameState || !localPlayer) return;
@@ -318,5 +323,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
 
     

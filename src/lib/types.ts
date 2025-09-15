@@ -129,4 +129,7 @@ export type FirestoreGameState = Omit<GameState, 'map'> & {
 };
 
 
-export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards' | 'use-card' | 'end-turn' | 'teleport';
+export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards' | 'use-card' | 'end-turn' | 'teleport' | 'teleport-initiated';
+
+
+    
