@@ -95,45 +95,31 @@ export function GameBoard() {
   useEffect(() => {
     const gameDocRef = doc(db, 'games', GAME_ID);
 
-    const setupGame = async () => {
-        const docSnap = await getDoc(gameDocRef);
-
-        if (!docSnap.exists()) {
-            console.log('No game document found! Initializing new game in Firestore.');
-            const newGame = initializeGame();
-            const firestoreState: FirestoreGameState = {
-                ...newGame,
-                map: flattenMap(newGame.map),
-                mapSize: newGame.map.length,
-            };
-            await setDoc(gameDocRef, firestoreState);
-        }
-
-        const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
-            if (docSnapshot.exists()) {
-                const firestoreState = docSnapshot.data() as FirestoreGameState;
-                setGameState({
-                ...firestoreState,
-                map: unflattenMap(firestoreState.map, firestoreState.mapSize),
-                });
-            }
-        }, (error) => {
-            console.error("Firestore snapshot error:", error);
-            toast({ title: 'Connection Error', description: 'Could not connect to the game session.', variant: 'destructive'});
+    const unsubscribe = onSnapshot(gameDocRef, async (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const firestoreState = docSnapshot.data() as FirestoreGameState;
+        setGameState({
+          ...firestoreState,
+          map: unflattenMap(firestoreState.map, firestoreState.mapSize),
         });
+      } else {
+        // Doc doesn't exist, so we initialize a new game.
+        console.log('No game document found! Initializing new game in Firestore.');
+        const newGame = initializeGame();
+        const firestoreState: FirestoreGameState = {
+            ...newGame,
+            map: flattenMap(newGame.map),
+            mapSize: newGame.map.length,
+        };
+        await setDoc(gameDocRef, firestoreState);
+        // The listener will pick up this new document and set the state.
+      }
+    }, (error) => {
+      console.error("Firestore snapshot error:", error);
+      toast({ title: 'Connection Error', description: 'Could not connect to the game session.', variant: 'destructive'});
+    });
 
-        return unsubscribe;
-    };
-
-    const unsubscribePromise = setupGame();
-
-    return () => {
-        unsubscribePromise.then(unsubscribe => {
-            if (unsubscribe) {
-                unsubscribe();
-            }
-        });
-    };
+    return () => unsubscribe();
   }, [toast]);
   
   const updateGameState = async (state: GameState) => {
@@ -245,6 +231,7 @@ export function GameBoard() {
     }
     
     newState.useCardDialogState = null;
+    newState.showCardsDialog = false;
     updateGameState(newState);
   };
 
