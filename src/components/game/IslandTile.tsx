@@ -48,8 +48,9 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const baseOwner = island.type === 'base' ? players.find(p => p.id === island.owner) : null;
 
   const renderResourceIcons = (resources: IslandResource[]) => {
+    const isSingleResource = resources.length === 1;
     return resources.map((resource, index) => (
-      <div key={`resource-row-${index}`} className="flex w-full items-center justify-start gap-1">
+       <div key={`resource-row-${index}`} className={cn("flex w-full items-center gap-1", isSingleResource ? "justify-center" : "justify-start")}>
         {Array.from({ length: resource.amount }).map((_, i) => (
           <ResourceIcon key={`${resource.type}-${i}`} type={resource.type} className="h-4 w-4 text-accent" />
         ))}
@@ -82,7 +83,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         );
       case 'monster': 
         return (
-          <div className="flex h-full w-full flex-col items-start justify-center gap-1 p-1">
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1">
             {renderMonsterIcons()}
           </div>
         );

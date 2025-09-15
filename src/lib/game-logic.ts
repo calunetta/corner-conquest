@@ -75,15 +75,26 @@ export function initializeGame(): GameState {
         const availableResources = [...resourceTypes];
         
         const numResourceTypes = Math.random() < 0.7 ? 1 : 2;
-        
         const islandResources: IslandResource[] = [];
-        for(let i = 0; i < numResourceTypes; i++) {
-          if (availableResources.length > 0) {
+
+        if (numResourceTypes === 1) {
             const randomIndex = Math.floor(Math.random() * availableResources.length);
             const selectedResourceType = availableResources.splice(randomIndex, 1)[0];
-            const amount = Math.random() < 0.7 ? 1 : 2; // 70% chance of 1 spot, 30% for 2
-            islandResources.push({ type: selectedResourceType, amount });
-          }
+            islandResources.push({ type: selectedResourceType, amount: 2 });
+        } else { // numResourceTypes === 2
+            // Select two different resources
+            const firstRandomIndex = Math.floor(Math.random() * availableResources.length);
+            const firstResourceType = availableResources.splice(firstRandomIndex, 1)[0];
+            
+            const secondRandomIndex = Math.floor(Math.random() * availableResources.length);
+            const secondResourceType = availableResources.splice(secondRandomIndex, 1)[0];
+
+            // For each resource, decide between 1 or 2 spots
+            const firstResourceAmount = Math.random() < 0.5 ? 1 : 2;
+            const secondResourceAmount = Math.random() < 0.5 ? 1 : 2;
+
+            islandResources.push({ type: firstResourceType, amount: firstResourceAmount });
+            islandResources.push({ type: secondResourceType, amount: secondResourceAmount });
         }
         map[y][x].resources = islandResources;
       }
