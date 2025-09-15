@@ -87,7 +87,7 @@ export function CreateGameDialog({
                 <SelectValue placeholder="Select max players" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">1 Player</SelectItem>
+                <SelectItem value="1">1 Player (vs Bot)</SelectItem>
                 <SelectItem value="2">2 Players</SelectItem>
                 <SelectItem value="3">3 Players</SelectItem>
                 <SelectItem value="4">4 Players</SelectItem>

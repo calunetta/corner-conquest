@@ -94,6 +94,11 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleExitGame = async () => {
     if (!gameState || !localPlayer) return;
 
+    if (isHost && gameState.status === 'waiting') {
+        setGameState({ ...gameState, showHostLeaveDialog: true });
+        return;
+    }
+
     setIsExiting(true);
     const success = await GameActions.handlePlayerExit({
       gameId,
@@ -120,16 +125,18 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
+  const canStartGame = status === 'waiting' && (players.length > 1 || maxPlayers === 1);
+
   return (
     <div className="relative flex h-screen w-full flex-col gap-4 overflow-auto p-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={handleExitGame} disabled={isExiting}>
+          <Button variant="outline" size="icon" onClick={handleExitGame} disabled={isExiting || status === 'playing'}>
             {isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft />}
           </Button>
           <h1 className="text-2xl font-bold">Corner Conquest</h1>
         </div>
-        {isHost && status === 'waiting' && players.length > 1 && players.length <= maxPlayers && (
+        {isHost && canStartGame && (
           <Button onClick={handleStartGame}><Play /> Start Game Now</Button>
         )}
       </div>
@@ -148,7 +155,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
               {players.map(p => (
                  <PlayerInfo key={p.id} player={p} isCurrentPlayer={currentPlayerIndex === p.id} />
               ))}
-              {Array.from({ length: maxPlayers - players.length}).map((_, i) => (
+              {status === 'waiting' && Array.from({ length: maxPlayers - players.length}).map((_, i) => (
                   <div key={`empty-${i}`} className="flex items-center justify-center rounded-lg border-2 border-dashed bg-card p-4 text-muted-foreground">Waiting for player...</div>
               ))}
             </div>
@@ -178,7 +185,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           </div>
         </main>
         <aside className="flex flex-col justify-start gap-4">
-          <ActionsPanel onAction={handleAction} gameState={gameState} isMyTurn={isMyTurn} />
+          <ActionsPanel onAction={handleAction} gameState={gameState} isMyTurn={isMyTurn && status === 'playing'} />
           <GameLog logs={log} />
         </aside>
       </div>

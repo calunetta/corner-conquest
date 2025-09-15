@@ -112,6 +112,7 @@ export type GameState = {
   showCardsDialogForPlayer: number | null;
   stealResourceDialogState: StealResourceDialogState | null;
   useCardDialogState: UseCardDialogState | null;
+  showHostLeaveDialog?: boolean;
 };
 
 export type FirestoreGameState = Omit<GameState, 'map'> & {
