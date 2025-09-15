@@ -242,7 +242,7 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     const player = players[currentPlayerIndex];
     const army = getSelectedArmy(newState);
 
-    if (!army || player.lastAction) return state;
+    if (!army || player.lastAction === 'move') return state;
     
     const oldTile = map[army.position.y][army.position.x];
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
@@ -266,7 +266,6 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     
     if (player.hasExtraMove) {
         player.hasExtraMove = false; // Consume extra move
-        player.lastAction = null; // Allow another action
         newState.log.push(`${player.name} used their Extra Move! They can perform another action.`);
     } else {
         player.lastAction = 'move';
