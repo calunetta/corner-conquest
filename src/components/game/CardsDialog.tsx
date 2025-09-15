@@ -18,9 +18,10 @@ type CardsDialogProps = {
   player: Player;
   onClose: () => void;
   onUseCard: (cardName: string) => void;
+  canUseCards: boolean;
 };
 
-export function CardsDialog({ player, onClose, onUseCard }: CardsDialogProps) {
+export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDialogProps) {
   const cardCounts = player.specialCards.reduce((acc, card) => {
     acc[card] = (acc[card] || 0) + 1;
     return acc;
@@ -28,7 +29,7 @@ export function CardsDialog({ player, onClose, onUseCard }: CardsDialogProps) {
 
   const uniqueCards = Object.keys(cardCounts);
 
-  const canUseCard = !player.actionsThisTurn.includes('use-card');
+  const canUseCardAbility = canUseCards && !player.actionsThisTurn.includes('use-card');
   
   const handleUseCard = (cardName: string) => {
     onUseCard(cardName);
@@ -54,7 +55,7 @@ export function CardsDialog({ player, onClose, onUseCard }: CardsDialogProps) {
                         <div className="flex items-center gap-4">
                             <span className="text-sm font-bold text-muted-foreground">x{cardCounts[cardName]}</span>
                             {USABLE_CARDS.includes(cardName) && (
-                                <Button size="sm" onClick={() => handleUseCard(cardName)} disabled={!canUseCard}>Use</Button>
+                                <Button size="sm" onClick={() => handleUseCard(cardName)} disabled={!canUseCardAbility}>Use</Button>
                             )}
                         </div>
                     </CardHeader>
@@ -79,6 +80,3 @@ export function CardsDialog({ player, onClose, onUseCard }: CardsDialogProps) {
     </AlertDialog>
   );
 }
-
-    
-

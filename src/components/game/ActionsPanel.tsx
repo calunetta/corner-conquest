@@ -36,8 +36,11 @@ export function ActionsPanel({ onAction, gameState, isMyTurn }: ActionsPanelProp
     { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/5 Iron)`, icon: <Zap />, disabled: !canUpgrade },
     { id: 'buy-card', label: 'Buy Card (10 Gems)', icon: <ShoppingCart />, disabled: !canBuyCard },
     { id: 'deploy', label: `Deploy (${currentPlayer.resources.food}/${currentPlayer.nextArmyCost} Food)`, icon: <Sword />, disabled: !canDeploy },
-    { id: 'show-cards', label: 'Show Cards', icon: <Album />, disabled: false },
   ];
+  
+  const alwaysAvailableActions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
+      { id: 'show-cards', label: 'Show Cards', icon: <Album />, disabled: false },
+  ]
 
   return (
     <Card>
@@ -53,6 +56,18 @@ export function ActionsPanel({ onAction, gameState, isMyTurn }: ActionsPanelProp
                     variant={currentAction === action.id ? 'default' : 'outline'}
                     onClick={() => onAction(action.id)}
                     disabled={!isMyTurn || action.disabled}
+                    className="flex h-16 flex-col items-center justify-center gap-1 p-2 text-center"
+                >
+                    {action.icon}
+                    <span className="whitespace-normal text-sm">{action.label}</span>
+                </Button>
+            ))}
+             {alwaysAvailableActions.map((action) => (
+                <Button
+                    key={action.id}
+                    variant={currentAction === action.id ? 'default' : 'outline'}
+                    onClick={() => onAction(action.id)}
+                    disabled={action.disabled}
                     className="flex h-16 flex-col items-center justify-center gap-1 p-2 text-center"
                 >
                     {action.icon}

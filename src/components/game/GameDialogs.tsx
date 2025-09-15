@@ -60,6 +60,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
           player={localPlayer}
           onClose={() => handleCloseDialog('showCardsDialogForPlayer')}
           onUseCard={(cardName) => handleUpdate(GameActions.handleOpenUseCardDialog(gameState, cardName))}
+          canUseCards={isMyTurn}
         />
       )}
       {stealResourceDialogState && isMyTurn && (

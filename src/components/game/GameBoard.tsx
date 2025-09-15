@@ -29,52 +29,60 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [isExiting, setIsExiting] = useState(false);
   
   const handleAction = async (action: GameAction) => {
-    if (!gameState || !localPlayer || !isMyTurn) {
-        toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
-        return;
-    }
+    if (!gameState || !localPlayer) return;
     
-    try {
-        let newState = { ...gameState };
-        
-        const selectedArmy = GameActions.getSelectedArmy(newState);
-        if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'show-cards', 'end-turn'].includes(action)) {
-            toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
-            return;
-        }
+    if (isMyTurn) {
+      try {
+          let newState = { ...gameState };
+          
+          const selectedArmy = GameActions.getSelectedArmy(newState);
+          if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'show-cards', 'end-turn'].includes(action)) {
+              toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
+              return;
+          }
 
-        switch(action) {
-            case 'position':
-                newState = GameActions.handlePositionAction(newState);
-                break;
-            case 'collect':
-                newState = GameActions.handleCollectAction(newState);
-                break;
-            case 'deploy':
-                newState = GameActions.handleDeployAction(newState);
-                break;
-            case 'buy-card':
-                newState = GameActions.handleBuyCardAction(newState);
-                break;
-            case 'upgrade':
-                newState = GameActions.handleUpgradeAction(newState);
-                break;
-            case 'attack':
-                newState = GameActions.handleAttackAction(newState);
-                break;
-            case 'end-turn':
-                newState = GameActions.handleEndTurn(newState);
-                break;
-            case 'show-cards':
-                newState = { ...newState, showCardsDialogForPlayer: localPlayer.id };
-                break;
-            default:
-                newState = { ...newState, currentAction: action };
+          switch(action) {
+              case 'position':
+                  newState = GameActions.handlePositionAction(newState);
+                  break;
+              case 'collect':
+                  newState = GameActions.handleCollectAction(newState);
+                  break;
+              case 'deploy':
+                  newState = GameActions.handleDeployAction(newState);
+                  break;
+              case 'buy-card':
+                  newState = GameActions.handleBuyCardAction(newState);
+                  break;
+              case 'upgrade':
+                  newState = GameActions.handleUpgradeAction(newState);
+                  break;
+              case 'attack':
+                  newState = GameActions.handleAttackAction(newState);
+                  break;
+              case 'end-turn':
+                  newState = GameActions.handleEndTurn(newState);
+                  break;
+              case 'show-cards':
+                  // This action can be triggered by any player at any time
+                  break;
+              default:
+                  newState = { ...newState, currentAction: action };
+          }
+          if (action === 'show-cards') {
+            setGameState({ ...gameState, showCardsDialogForPlayer: localPlayer.id });
+          } else {
+            setGameState(newState);
+          }
+      } catch (error: any) {
+          toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
+      }
+    } else {
+        if (action === 'show-cards') {
+            setGameState({ ...gameState, showCardsDialogForPlayer: localPlayer.id });
+        } else {
+            toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
         }
-
-        setGameState(newState);
-    } catch (error: any) {
-        toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
     }
   };
   
