@@ -639,15 +639,18 @@ export function GameBoard() {
     const loserId = winnerId === attackerId ? defenderId : attackerId;
     const winner = players[winnerId!];
     const loser = players[loserId];
-
-    const attackingArmy = players[attackerId].armies.find(a => a.id === newState.selectedArmyId);
-    if (!attackingArmy) { 
-        newState.combatState = null;
-        endTurn(newState);
-        return;
+    
+    const attackingArmy = winnerId === attackerId 
+        ? players[attackerId].armies.find(a => a.id === newState.selectedArmyId) 
+        : players[defenderId].armies.find(a => a.position.x === map[players[attackerId].armies.find(a => a.id === newState.selectedArmyId)!.position.y][players[attackerId].armies.find(a => a.id === newState.selectedArmyId)!.position.x].x && a.position.y === map[players[attackerId].armies.find(a => a.id === newState.selectedArmyId)!.position.y][players[attackerId].armies.find(a => a.id === newState.selectedArmyId)!.position.x].y);
+    
+    if (!attackingArmy) {
+      newState.combatState = null;
+      endTurn(newState);
+      return;
     }
     
-    const combatTile = map[attackingArmy.position.y][attackingArmy.position.y];
+    const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
     const loserOccupantInfo = combatTile.occupants.find(o => o.playerId === loserId);
     
     const losingArmy = loser.armies.find(a => a.id === loserOccupantInfo?.armyId);
@@ -938,3 +941,5 @@ export function GameBoard() {
     </div>
   );
 }
+
+    
