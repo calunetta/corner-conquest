@@ -129,6 +129,15 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
       hasExtraMove: false,
       actionsThisTurn: [],
       passiveAbilities: { explorer: false, collector: false },
+      isSabotaged: false,
+      sabotageActive: false,
+      reinforceActive: false,
+      scoutActive: false,
+      wealthyActive: false,
+      productiveActive: false,
+      efficientActive: false,
+      masterBuilderActive: false,
+      warChiefActive: false,
   });
 
   const usedColors = [creator.color];
@@ -173,6 +182,15 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
             hasExtraMove: false,
             actionsThisTurn: [],
             passiveAbilities: { explorer: false, collector: false },
+            isSabotaged: false,
+            sabotageActive: false,
+            reinforceActive: false,
+            scoutActive: false,
+            wealthyActive: false,
+            productiveActive: false,
+            efficientActive: false,
+            masterBuilderActive: false,
+            warChiefActive: false,
         });
     }
   }
@@ -285,6 +303,9 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
     useCardDialogState: null,
     teleportState: null,
     abilitiesShopState: null,
+    sabotageDialogState: null,
+    wealthyDialogState: null,
+    scoutingState: null,
   };
 }
 
@@ -295,5 +316,3 @@ export function startGame(gameState: GameState, hostName: string): GameState {
     newState.log.push(`${hostName} has started the game! It's now ${newState.players[0].name}'s turn.`);
     return newState;
 }
-
-    

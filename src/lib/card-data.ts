@@ -1,3 +1,4 @@
+
 export const BASE_CARDS = [
   'Extra Move', 'Steal Resource', 'Sabatoge', 'Reinforce', 
   'Scout', 'Overcome', 'Wealthy', 'Productive', 'Efficient',
@@ -25,7 +26,19 @@ export const SPECIAL_CARDS = [
 ];
 
 
-export const USABLE_CARDS = ['Extra Move', 'Steal Resource', 'Teleport'];
+export const USABLE_CARDS = [
+    'Extra Move', 
+    'Steal Resource', 
+    'Teleport', 
+    'Sabatoge', 
+    'Reinforce', 
+    'Scout', 
+    'Wealthy', 
+    'Productive', 
+    'Efficient',
+    'Master Builder',
+    'War Chief',
+];
 
 export const SPECIAL_CARD_DESCRIPTIONS: Record<string, string> = {
     'Extra Move': 'Take an extra move action this turn.',

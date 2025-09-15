@@ -10,6 +10,8 @@ import { StealResourceDialog } from './StealResourceDialog';
 import { UseCardDialog } from './UseCardDialog';
 import { HostLeaveDialog } from './HostLeaveDialog';
 import { AbilitiesDialog } from './AbilitiesDialog';
+import { SabotageDialog } from './SabotageDialog';
+import { WealthyDialog } from './WealthyDialog';
 import * as GameActions from '@/lib/game-actions';
 
 type GameDialogsProps = {
@@ -20,7 +22,18 @@ type GameDialogsProps = {
 };
 
 export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: GameDialogsProps) {
-  const { combatState, monsterCombatState, positionDialogState, showCardsDialogForPlayer, stealResourceDialogState, useCardDialogState, showHostLeaveDialog, abilitiesShopState } = gameState;
+  const { 
+    combatState, 
+    monsterCombatState, 
+    positionDialogState, 
+    showCardsDialogForPlayer, 
+    stealResourceDialogState, 
+    useCardDialogState, 
+    showHostLeaveDialog, 
+    abilitiesShopState,
+    sabotageDialogState,
+    wealthyDialogState,
+  } = gameState;
 
   const handleUpdate = (state: GameState) => {
     setGameState(state);
@@ -40,11 +53,21 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
             newState = { ...newState, stealResourceDialogState: { targetPlayerId: null }, showCardsDialogForPlayer: null };
             break;
         case 'Extra Move':
-            newState = GameActions.handleUseCard(newState, 'Extra Move');
-            break;
         case 'Teleport':
-             newState = GameActions.handleUseCard(newState, 'Teleport');
-             break;
+        case 'Reinforce':
+        case 'Scout':
+        case 'Productive':
+        case 'Efficient':
+        case 'Master Builder':
+        case 'War Chief':
+            newState = GameActions.handleUseCard(newState, cardName);
+            break;
+        case 'Sabatoge':
+            newState = { ...newState, sabotageDialogState: { isOpen: true }, showCardsDialogForPlayer: null };
+            break;
+        case 'Wealthy':
+            newState = { ...newState, wealthyDialogState: { isOpen: true }, showCardsDialogForPlayer: null };
+            break;
         default:
             newState = GameActions.handleOpenUseCardDialog(newState, cardName);
             break;
@@ -113,8 +136,19 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
             onClose={() => handleCloseDialog('showHostLeaveDialog')}
         />
       )}
+      {sabotageDialogState?.isOpen && isMyTurn && (
+        <SabotageDialog
+          players={gameState.players.filter(p => p.id !== gameState.currentPlayerIndex)}
+          onSabotage={(targetPlayerId) => handleUpdate(GameActions.handleSabotagePlayer(gameState, targetPlayerId))}
+          onClose={() => handleCloseDialog('sabotageDialogState')}
+        />
+      )}
+      {wealthyDialogState?.isOpen && isMyTurn && (
+        <WealthyDialog
+          onSelectResource={(resource) => handleUpdate(GameActions.handleGainWealth(gameState, resource))}
+          onClose={() => handleCloseDialog('wealthyDialogState')}
+        />
+      )}
     </>
   );
 }
-
-    

@@ -234,7 +234,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     );
   }
 
-  const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers, teleportState } = gameState;
+  const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers, teleportState, scoutingState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
@@ -248,6 +248,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   
   const gridColsClass = `grid-cols-2 ${gridColsMap[players.length] || 'md:grid-cols-4'}`;
   const isTeleporting = !!teleportState;
+  const isScouting = !!scoutingState && scoutingState.count > 0;
 
 
   return (
@@ -301,6 +302,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             currentPlayerId={currentPlayer.id} 
             selectedArmyId={selectedArmyId}
             isTeleporting={isTeleporting}
+            isScouting={isScouting}
           />
           <div className='text-center'>
             {status === 'waiting' ? (
@@ -310,6 +312,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 {isTeleporting && isMyTurn ? (
                     <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
                         {teleportState.armyId === null ? 'Teleport: Select an army to move' : 'Teleport: Select a destination tile'}
+                    </p>
+                ) : isScouting && isMyTurn ? (
+                    <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
+                        Scout: Reveal a hidden tile ({scoutingState.count} remaining)
                     </p>
                 ) : (
                     <>
@@ -342,8 +348,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    
-
-    
-

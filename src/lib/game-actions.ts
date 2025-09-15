@@ -1,11 +1,4 @@
 
-
-
-
-
-
-
-
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities } from './types';
@@ -65,9 +58,15 @@ export function handleCollectAction(state: GameState): GameState {
   const resource = tile.resources.find(r => r.type === position.resource);
   if (!resource) throw new Error("Resource not found on this island.");
 
-  player.resources[position.resource] += resource.amount;
+  const amountToCollect = player.productiveActive ? resource.amount * 2 : resource.amount;
+  player.resources[position.resource] += amountToCollect;
+  if(player.productiveActive) {
+    newState.log.push(`${player.name} used 'Productive' to collect double!`);
+    player.productiveActive = false;
+  }
+  
   player.lastAction = 'collect';
-  newState.log.push(`${player.name} collected ${resource.amount} ${position.resource}.`);
+  newState.log.push(`${player.name} collected ${amountToCollect} ${position.resource}.`);
   
   // Remove the position after collecting
   player.positions.splice(positionIndex, 1);
@@ -84,21 +83,40 @@ export function handleDeployAction(state: GameState): GameState {
     const { players, currentPlayerIndex, map } = newState;
     const player = players[currentPlayerIndex];
     
-    if (player.actionsThisTurn.includes('deploy')) throw new Error("You can only deploy one army per turn.");
-    if (player.resources.food < player.nextArmyCost) throw new Error("Not enough food to deploy a new army.");
+    if (player.actionsThisTurn.includes('deploy') && !player.reinforceActive) throw new Error("You can only deploy one army per turn.");
+    
+    let cost = player.nextArmyCost;
+    if(player.efficientActive) {
+        cost = Math.ceil(cost / 2);
+    }
+    if(player.reinforceActive) {
+        cost = 0;
+    }
+
+    if (player.resources.food < cost) throw new Error(`Not enough food. Cost: ${cost}`);
     if (player.armyCount >= 5) throw new Error("You have reached the maximum army size.");
 
     const baseTile = map.flat().find(t => t.type === 'base' && t.owner === player.id);
     if (!baseTile) throw new Error("Base not found!");
 
-    player.resources.food -= player.nextArmyCost;
+    player.resources.food -= cost;
     player.armyCount += 1;
     const newArmyId = player.armies.length > 0 ? Math.max(...player.armies.map(a => a.id)) + 1 : 0;
     const newArmy: Army = { id: newArmyId, position: {x: baseTile.x, y: baseTile.y} };
     player.armies.push(newArmy);
     map[baseTile.y][baseTile.x].occupants.push({playerId: player.id, armyId: newArmy.id});
     
-    player.nextArmyCost += 1;
+    if(player.efficientActive) {
+      newState.log.push(`${player.name} used 'Efficient' for a cheaper deployment!`);
+      player.efficientActive = false;
+    }
+    if(player.reinforceActive) {
+      newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
+      player.reinforceActive = false;
+    } else {
+      player.nextArmyCost += 1;
+    }
+    
     player.actionsThisTurn.push('deploy');
     newState.log.push(`${player.name} deployed a new army!`);
     
@@ -131,10 +149,19 @@ export function handleUpgradeAction(state: GameState): GameState {
     const player = players[currentPlayerIndex];
 
     if (player.actionsThisTurn.includes('upgrade')) throw new Error("You can only upgrade once per turn.");
-    if (player.resources.iron < 5) throw new Error("Not enough iron to upgrade.");
+
+    let cost = 5;
+    if(player.masterBuilderActive) {
+        cost = Math.ceil(cost / 2);
+    }
+    if (player.resources.iron < cost) throw new Error(`Not enough iron. Cost: ${cost}`);
     
-    player.resources.iron -= 5;
+    player.resources.iron -= cost;
     player.attackPower += 1;
+    if(player.masterBuilderActive) {
+        newState.log.push(`${player.name} used 'Master Builder' for a cheaper upgrade!`);
+        player.masterBuilderActive = false;
+    }
     player.actionsThisTurn.push('upgrade');
     newState.log.push(`${player.name} upgraded their army's attack power to ${player.attackPower}.`);
     
@@ -184,41 +211,46 @@ export function handleEndTurn(state: GameState): GameState {
     let newState = { ...state };
     let currentPlayer = newState.players[newState.currentPlayerIndex];
     
-    // --- Passive Ability Logic ---
-    if (currentPlayer.passiveAbilities.explorer) {
-        const occupiedIslands = new Set<string>();
-        currentPlayer.armies.forEach(army => {
-            const tile = newState.map[army.position.y][army.position.x];
-            occupiedIslands.add(tile.id);
-        });
-        const vpGained = occupiedIslands.size;
-        if (vpGained > 0) {
-            currentPlayer.victoryPoints += vpGained;
-            newState.log.push(`${currentPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
-        }
-    }
-    
-    if (currentPlayer.passiveAbilities.collector) {
-        let resourcesCollected: Partial<Record<ResourceType, number>> = {};
-        const occupiedIslands = new Set<string>();
-        
-        currentPlayer.armies.forEach(army => {
-            const tile = newState.map[army.position.y][army.position.x];
-            // Prevent collecting from same island multiple times if multiple armies are there
-            if (occupiedIslands.has(tile.id)) return;
-            
-            if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0) {
+    if (currentPlayer.isSabotaged) {
+      currentPlayer.isSabotaged = false;
+      newState.log.push(`${currentPlayer.name}'s turn was skipped due to Sabotage!`);
+    } else {
+        // --- Passive Ability Logic ---
+        if (currentPlayer.passiveAbilities.explorer) {
+            const occupiedIslands = new Set<string>();
+            currentPlayer.armies.forEach(army => {
+                const tile = newState.map[army.position.y][army.position.x];
                 occupiedIslands.add(tile.id);
-                tile.resources.forEach(resource => {
-                    currentPlayer.resources[resource.type] += 1; // Collect 1 of each
-                    resourcesCollected[resource.type] = (resourcesCollected[resource.type] || 0) + 1;
-                });
+            });
+            const vpGained = occupiedIslands.size;
+            if (vpGained > 0) {
+                currentPlayer.victoryPoints += vpGained;
+                newState.log.push(`${currentPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
             }
-        });
+        }
+        
+        if (currentPlayer.passiveAbilities.collector) {
+            let resourcesCollected: Partial<Record<ResourceType, number>> = {};
+            const occupiedIslands = new Set<string>();
+            
+            currentPlayer.armies.forEach(army => {
+                const tile = newState.map[army.position.y][army.position.x];
+                // Prevent collecting from same island multiple times if multiple armies are there
+                if (occupiedIslands.has(tile.id)) return;
+                
+                if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0) {
+                    occupiedIslands.add(tile.id);
+                    tile.resources.forEach(resource => {
+                        currentPlayer.resources[resource.type] += 1; // Collect 1 of each
+                        resourcesCollected[resource.type] = (resourcesCollected[resource.type] || 0) + 1;
+                    });
+                }
+            });
 
-        const collectedStrings = Object.entries(resourcesCollected).map(([type, amount]) => `${amount} ${type}`);
-        if(collectedStrings.length > 0) {
-            newState.log.push(`${currentPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`);
+            const collectedStrings = Object.entries(resourcesCollected).map(([type, amount]) => `${amount} ${type}`);
+            if(collectedStrings.length > 0) {
+                newState.log.push(`${currentPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`);
+            }
         }
     }
 
@@ -254,9 +286,20 @@ export function handleEndTurn(state: GameState): GameState {
 
 export function handleTileClick(state: GameState, x: number, y: number, localPlayerId: number): GameState {
     let newState = { ...state };
-    const { players, currentPlayerIndex, selectedArmyId, possibleMoves, teleportState } = newState;
+    const { players, currentPlayerIndex, selectedArmyId, possibleMoves, teleportState, scoutingState } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const clickedTile = newState.map[y][x];
+
+    if (scoutingState && scoutingState.count > 0 && clickedTile.isHidden) {
+        clickedTile.isHidden = false;
+        scoutingState.count--;
+        newState.log.push(`${currentPlayer.name} revealed a tile at (${x},${y}) with Scout. ${scoutingState.count} reveals left.`);
+        if (scoutingState.count === 0) {
+            newState.scoutingState = null;
+            newState.log.push(`Scouting complete.`);
+        }
+        return newState;
+    }
     
     // Teleport Logic
     if (teleportState) {
@@ -415,10 +458,17 @@ export function handleCombatRoll(state: GameState): GameState {
     const attacker = players[combatState.attackerId];
     const defender = players[combatState.defenderId];
 
+    const attackerPower = attacker.attackPower + (attacker.warChiefActive ? 2 : 0);
+    if(attacker.warChiefActive) {
+        newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
+        attacker.warChiefActive = false;
+    }
+    const defenderPower = defender.attackPower;
+
     const rollDice = (count: number) => Array.from({ length: Math.min(count, 4) }, () => Math.floor(Math.random() * 6) + 1);
 
-    combatState.attackerRolls = rollDice(attacker.armyCount + attacker.attackPower);
-    combatState.defenderRolls = rollDice(defender.armyCount + defender.attackPower);
+    combatState.attackerRolls = rollDice(attacker.armyCount + attackerPower);
+    combatState.defenderRolls = rollDice(defender.armyCount + defenderPower);
     
     const attackerScore = combatState.attackerRolls.reduce((a, b) => a + b, 0);
     const defenderScore = combatState.defenderRolls.reduce((a, b) => a + b, 0);
@@ -501,9 +551,15 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
           }
         }
 
+        const attackerPower = attacker.attackPower + (attacker.warChiefActive ? 2 : 0);
+        if(attacker.warChiefActive) {
+            newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
+            attacker.warChiefActive = false;
+        }
+
         const rollDice = (count: number) => Array.from({ length: Math.min(count, 4) }, () => Math.floor(Math.random() * 6) + 1);
 
-        attackerRolls = rollDice(attacker.armyCount + attacker.attackPower);
+        attackerRolls = rollDice(attacker.armyCount + attackerPower);
         if(useDecideCard) attackerRolls[0] = decidedValue; 
 
         monsterRolls = rollDice(monster.level);
@@ -579,32 +635,87 @@ export const handleUseCard = (state: GameState, cardName: string) => {
         return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
     }
     
-    // Defer consuming the card for multi-step actions like Teleport and Extra Move
-    if (cardName !== 'Extra Move' && cardName !== 'Teleport') {
-        const cardIndex = player.specialCards.indexOf(cardName);
-        if (cardIndex === -1) {
-             newState.log.push(`Error: You do not have the ${cardName} card.`);
-             return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
-        }
-        player.specialCards.splice(cardIndex, 1);
-        player.actionsThisTurn.push('use-card');
+    const cardIndex = player.specialCards.indexOf(cardName);
+    if (cardIndex === -1) {
+         newState.log.push(`Error: You do not have the ${cardName} card.`);
+         return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
     }
 
-    if (cardName === 'Extra Move') {
-        player.hasExtraMove = true;
-        // lastAction is NOT reset here. It's reset on move, to allow move -> use card -> move
-    } else if (cardName === 'Extra VP') {
-        player.victoryPoints += 10;
-        newState.log.push(`${player.name} used 'Extra VP' and gained 10 Victory Points!`);
-    } else if (cardName === 'Teleport') {
-        newState.teleportState = { armyId: null };
-        player.actionsThisTurn.push('use-card');
-    } else {
-        newState.log.push(`${player.name} used the '${cardName}' card.`);
+    // Defer consuming the card for multi-step actions
+    const deferredCards = ['Extra Move', 'Teleport', 'Reinforce', 'Productive', 'Efficient', 'Master Builder', 'War Chief'];
+    if (!deferredCards.includes(cardName)) {
+        player.specialCards.splice(cardIndex, 1);
+    }
+    
+    player.actionsThisTurn.push('use-card');
+
+    switch (cardName) {
+        case 'Extra Move':
+            player.hasExtraMove = true;
+            break;
+        case 'Extra VP':
+            player.victoryPoints += 10;
+            newState.log.push(`${player.name} used 'Extra VP' and gained 10 Victory Points!`);
+            break;
+        case 'Teleport':
+            newState.teleportState = { armyId: null };
+            break;
+        case 'Sabatoge':
+            newState.sabotageDialogState = { isOpen: true };
+            break;
+        case 'Reinforce':
+            player.reinforceActive = true;
+            newState.log.push(`${player.name} activated 'Reinforce'. Their next deployment is free.`);
+            break;
+        case 'Scout':
+            newState.scoutingState = { count: 3 };
+            newState.log.push(`${player.name} activated 'Scout'. Click 3 hidden tiles to reveal them.`);
+            break;
+        case 'Wealthy':
+            newState.wealthyDialogState = { isOpen: true };
+            break;
+        case 'Productive':
+            player.productiveActive = true;
+            newState.log.push(`${player.name} activated 'Productive'. Their next collection will be doubled.`);
+            break;
+        case 'Efficient':
+            player.efficientActive = true;
+            newState.log.push(`${player.name} activated 'Efficient'. Their next deployment costs 50% less.`);
+            break;
+        case 'Master Builder':
+            player.masterBuilderActive = true;
+            newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
+            break;
+        case 'War Chief':
+            player.warChiefActive = true;
+            newState.log.push(`${player.name} activated 'War Chief'. Their next attack has +2 power.`);
+            break;
+        default:
+            newState.log.push(`${player.name} used the '${cardName}' card.`);
+            break;
     }
 
     return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
 };
+
+export const handleSabotagePlayer = (state: GameState, targetPlayerId: number): GameState => {
+    let newState = { ...state };
+    const targetPlayer = newState.players.find(p => p.id === targetPlayerId);
+    if (targetPlayer) {
+        targetPlayer.isSabotaged = true;
+        newState.log.push(`${newState.players[newState.currentPlayerIndex].name} sabotaged ${targetPlayer.name}! They will miss their next turn.`);
+    }
+    return { ...newState, sabotageDialogState: null };
+}
+
+export const handleGainWealth = (state: GameState, resource: ResourceType): GameState => {
+    let newState = { ...state };
+    const player = newState.players[newState.currentPlayerIndex];
+    player.resources[resource] += 5;
+    newState.log.push(`${player.name} used 'Wealthy' to gain 5 ${resource}.`);
+    return { ...newState, wealthyDialogState: null };
+}
+
 
 export const handleStealResource = (state: GameState, targetPlayerId: number, resource: ResourceType) => {
     const newState = { ...state };

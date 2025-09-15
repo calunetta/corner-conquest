@@ -1,4 +1,5 @@
 
+
 import type { Island, Player, GameAction, ResourceType, IslandResource, Army } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon, MonsterIcon } from '../icons';
@@ -14,6 +15,7 @@ type IslandTileProps = {
   isCurrentPlayerTile: boolean;
   isArmySelectedOnTile: boolean;
   isTeleporting?: boolean;
+  isScoutTarget?: boolean;
 };
 
 const playerColorMap = {
@@ -41,7 +43,7 @@ const armyPositions = [
     'top-1/2 right-1 -translate-y-1/2',
 ];
 
-export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, isTeleporting }: IslandTileProps) {
+export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, isTeleporting, isScoutTarget }: IslandTileProps) {
   const occupants = island.occupants.map(o => ({ player: players[o.playerId], armyId: o.armyId }));
   const positionedBy = island.positionedBy || [];
   
@@ -123,7 +125,8 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
           isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
           isArmySelectedOnTile && !isTeleporting && 'ring-2 ring-offset-2 ring-primary',
           isArmySelectedOnTile && isTeleporting && 'ring-2 ring-offset-2 ring-purple-500',
-          isTeleporting && isPossibleMove && 'border-purple-500 hover:border-purple-400 shadow-lg shadow-purple-500/30'
+          isTeleporting && isPossibleMove && 'border-purple-500 hover:border-purple-400 shadow-lg shadow-purple-500/30',
+          isScoutTarget && 'cursor-pointer border-blue-400 hover:border-blue-300 shadow-lg shadow-blue-500/30'
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
       >

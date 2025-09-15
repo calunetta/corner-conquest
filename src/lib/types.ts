@@ -45,6 +45,15 @@ export type Player = {
   actionsThisTurn: GameAction[];
   teleportState?: TeleportState | null; 
   passiveAbilities: PassiveAbilities;
+  isSabotaged: boolean;
+  sabotageActive: boolean;
+  reinforceActive: boolean;
+  scoutActive: boolean;
+  wealthyActive: boolean;
+  productiveActive: boolean;
+  efficientActive: boolean;
+  masterBuilderActive: boolean;
+  warChiefActive: boolean;
 };
 
 export type Monster = {
@@ -104,6 +113,18 @@ export type TeleportState = {
     armyId: number | null;
 }
 
+export type SabotageDialogState = {
+  isOpen: boolean;
+}
+
+export type WealthyDialogState = {
+    isOpen: boolean;
+}
+
+export type ScoutingState = {
+    count: number;
+}
+
 export type AbilitiesShopState = {
     isOpen: boolean;
 }
@@ -133,6 +154,9 @@ export type GameState = {
   teleportState: TeleportState | null;
   abilitiesShopState: AbilitiesShopState | null;
   showHostLeaveDialog?: boolean;
+  sabotageDialogState: SabotageDialogState | null;
+  wealthyDialogState: WealthyDialogState | null;
+  scoutingState: ScoutingState | null;
 };
 
 export type FirestoreGameState = Omit<GameState, 'map'> & {
@@ -142,6 +166,3 @@ export type FirestoreGameState = Omit<GameState, 'map'> & {
 
 
 export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards' | 'use-card' | 'end-turn' | 'teleport' | 'teleport-initiated' | 'open-abilities-shop' | 'buy-ability';
-
-
-    
