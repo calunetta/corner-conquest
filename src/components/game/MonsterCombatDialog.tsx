@@ -1,6 +1,6 @@
 'use client';
 import type { GameState, Monster } from '@/lib/types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,12 +30,20 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: Mo
   const [useCard, setUseCard] = useState(false);
   const [decidedValue, setDecidedValue] = useState(6);
 
+  useEffect(() => {
+    if (monsters.length === 1) {
+      setSelectedMonster(monsters[0]);
+    }
+  }, [monsters]);
+
   if (!monsterCombatState) return null;
 
   const { attackerId, attackerRolls, monsterRolls, winnerId, phase } = monsterCombatState;
   const attacker = players[attackerId];
   const hasDecideCard = attacker.specialCards.includes('Decide Dice Roll');
   const monsterForDisplay = phase === 'results' ? monsterCombatState.monster : selectedMonster;
+  
+  const isSelectionPhase = phase === 'rolling' && monsters.length > 1 && !selectedMonster;
 
   const renderDice = (rolls: number[]) => (
     <div className="flex gap-2">
@@ -50,28 +58,25 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: Mo
   const getMonsterName = (monster: Monster) => {
     return `${monster.type} ${monster.id} Monster (Lvl ${monster.level})`;
   }
-
-  const renderSelectionScreen = () => (
+  
+  const renderAttackScreen = () => (
     <>
       <AlertDialogHeader>
-        <AlertDialogTitle>Choose a Monster to Attack</AlertDialogTitle>
-        <AlertDialogDescription>Select which monster you want to fight on this island.</AlertDialogDescription>
+        <AlertDialogTitle>Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}</AlertDialogTitle>
+        <AlertDialogDescription>Prepare to fight the monster.</AlertDialogDescription>
       </AlertDialogHeader>
-      <div className="grid grid-cols-2 gap-4 py-4">
-        {monsters.map((monster, i) => (
-          <Card 
-            key={i} 
-            className={`flex cursor-pointer flex-col items-center gap-2 p-4 transition-all hover:bg-muted ${selectedMonster?.id === monster.id && selectedMonster.level === monster.level ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => setSelectedMonster(monster)}
-          >
-            <MonsterIcon level={monster.level} className="h-12 w-12" />
-            <div className="text-center">
-                <p className="font-bold capitalize">{getMonsterName(monster)}</p>
-                <p className="text-sm text-muted-foreground">Power: {monster.level}</p>
-            </div>
+      <div className="py-4 text-center">
+        {selectedMonster && (
+          <Card className="inline-flex flex-col items-center gap-2 p-4">
+              <MonsterIcon level={selectedMonster.level} className="h-12 w-12" />
+              <div className="text-center">
+                  <p className="font-bold capitalize">{getMonsterName(selectedMonster)}</p>
+                  <p className="text-sm text-muted-foreground">Power: {selectedMonster.level}</p>
+              </div>
           </Card>
-        ))}
+        )}
       </div>
+
       {hasDecideCard && (
         <div className="space-y-4 rounded-md border bg-muted/50 p-4">
             <div className="flex items-center space-x-2">
@@ -100,6 +105,31 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: Mo
             Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}!
           </Button>
       </AlertDialogFooter>
+    </>
+  );
+
+
+  const renderSelectionScreen = () => (
+    <>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Choose a Monster to Attack</AlertDialogTitle>
+        <AlertDialogDescription>Select which monster you want to fight on this island.</AlertDialogDescription>
+      </AlertDialogHeader>
+      <div className="grid grid-cols-2 gap-4 py-4">
+        {monsters.map((monster, i) => (
+          <Card 
+            key={i} 
+            className={`flex cursor-pointer flex-col items-center gap-2 p-4 transition-all hover:bg-muted ${selectedMonster?.id === monster.id && selectedMonster.level === monster.level ? 'ring-2 ring-primary' : ''}`}
+            onClick={() => setSelectedMonster(monster)}
+          >
+            <MonsterIcon level={monster.level} className="h-12 w-12" />
+            <div className="text-center">
+                <p className="font-bold capitalize">{getMonsterName(monster)}</p>
+                <p className="text-sm text-muted-foreground">Power: {monster.level}</p>
+            </div>
+          </Card>
+        ))}
+      </div>
     </>
   );
 
@@ -147,11 +177,20 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: Mo
     </>
   );
 
+  const renderContent = () => {
+    if (phase === 'results') {
+      return renderResultsScreen();
+    }
+    if (isSelectionPhase) {
+      return renderSelectionScreen();
+    }
+    return renderAttackScreen();
+  }
 
   return (
     <AlertDialog open={true}>
       <AlertDialogContent>
-        {phase === 'rolling' ? renderSelectionScreen() : renderResultsScreen()}
+        {renderContent()}
       </AlertDialogContent>
     </AlertDialog>
   );

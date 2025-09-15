@@ -372,22 +372,17 @@ export function GameBoard() {
 
     if (!army) return;
     
-    // Reset positions if moving
     const currentPos = army.position;
     const oldTile = newState.map[currentPos.y][currentPos.x];
     
     // Remove army from old tile occupants
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
     
-    // Remove all player positions when any army moves
-    newState.players.forEach(p => {
-        if (p.id === player.id) {
-            p.positions.forEach(pos => {
-                newState.map[pos.y][pos.x].positionedBy = newState.map[pos.y][pos.x].positionedBy?.filter(pb => pb.playerId !== player.id);
-            });
-            p.positions = [];
-        }
-    });
+    // Reset ALL of the player's positions when ANY army moves.
+    newState.map.forEach(row => row.forEach(tile => {
+        tile.positionedBy = tile.positionedBy?.filter(p => p.playerId !== player.id);
+    }));
+    player.positions = [];
     
     army.position = { x, y };
     newState.map[y][x].occupants.push({ playerId: player.id, armyId: army.id });
@@ -488,7 +483,7 @@ export function GameBoard() {
     if (!gameState || !gameState.combatState) return;
     
     const newState = deepClone(gameState);
-    const { combatState, players, map, selectedArmyId } = newState;
+    const { combatState, players, map } = newState;
     const { winnerId, attackerId, defenderId } = combatState;
     
     if (winnerId === null) {
@@ -501,8 +496,8 @@ export function GameBoard() {
     const winner = players[winnerId];
     const loser = players[loserId];
 
-    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
-    if (!attackingArmy) {
+    const attackingArmy = players[attackerId].armies.find(a => a.id === newState.selectedArmyId);
+    if (!attackingArmy) { // Should not happen
         newState.combatState = null;
         endTurn(newState);
         return;
@@ -519,7 +514,7 @@ export function GameBoard() {
                 const oldPos = losingArmy.position;
                 
                 // Remove loser from combat tile
-                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.playerId === loserId && o.armyId === losingArmy.id));
+                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== losingArmy.id);
 
                 // Move loser to base
                 losingArmy.position = {x: baseTile.x, y: baseTile.y};
@@ -561,6 +556,7 @@ export function GameBoard() {
         toast({ title: 'Card Used!', description: logMsg });
       } else {
         useCard = false; // Card not found, shouldn't happen if UI is correct
+        toast({ title: 'Card Error', description: "Decide Dice Roll card not found.", variant: 'destructive'});
       }
     }
 
