@@ -26,9 +26,9 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
   const canUpgrade = currentPlayer.resources.iron >= 5 && !currentPlayer.actionsThisTurn.includes('upgrade');
   
   const mainActions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
-    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || (lastAction !== null && lastAction !== 'move') },
-    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || (lastAction !== null && lastAction !== 'move') },
-    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || (lastAction !== null && lastAction !== 'move') },
+    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || lastAction === 'move' },
+    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || lastAction === 'move' },
+    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || lastAction === 'move' },
   ];
 
   const secondaryActions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
@@ -44,7 +44,7 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
         <CardTitle>Actions</CardTitle>
         <Button size="sm" onClick={() => onAction('end-turn')}>End Turn</Button>
       </CardHeader>
-      <CardContent className="flex flex-col gap-2">
+      <CardContent>
         <div className="grid grid-cols-2 grid-rows-2 gap-2">
             {mainActions.map((action) => (
                 <Button
