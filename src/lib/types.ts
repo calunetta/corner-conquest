@@ -108,4 +108,10 @@ export type GameState = {
   useCardDialogState: UseCardDialogState | null;
 };
 
+export type FirestoreGameState = Omit<GameState, 'map'> & {
+  map: Island[];
+  mapSize: number;
+};
+
+
 export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards' | 'use-card';

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import type { GameState, GameAction, ResourceType, IslandResource, Monster, Army } from '@/lib/types';
-import { initializeGame } from '@/lib/game-logic';
+import type { GameState, GameAction, ResourceType, IslandResource, Monster, Army, FirestoreGameState } from '@/lib/types';
+import { initializeGame, unflattenMap, flattenMap } from '@/lib/game-logic';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
 import { ActionsPanel } from './ActionsPanel';
@@ -95,7 +95,11 @@ export function GameBoard() {
 
     const unsubscribe = onSnapshot(gameDocRef, (doc) => {
         if (doc.exists()) {
-            setGameState(doc.data() as GameState);
+            const firestoreState = doc.data() as FirestoreGameState;
+            setGameState({
+                ...firestoreState,
+                map: unflattenMap(firestoreState.map, firestoreState.mapSize),
+            });
         } else {
             console.log("No such document! Initializing new game.");
             const newGame = initializeGame();
@@ -107,9 +111,14 @@ export function GameBoard() {
     return () => unsubscribe();
   }, []);
   
-  const updateGameState = async (newState: GameState) => {
+  const updateGameState = async (state: GameState) => {
     const gameDocRef = doc(db, 'games', GAME_ID);
-    await setDoc(gameDocRef, newState);
+    const firestoreState: FirestoreGameState = {
+        ...state,
+        map: flattenMap(state.map),
+        mapSize: state.map.length,
+    };
+    await setDoc(gameDocRef, firestoreState, { merge: true });
   };
 
 
@@ -150,9 +159,9 @@ export function GameBoard() {
       handleAttackAction(newState);
     } else if (action === 'show-cards') {
         newState.showCardsDialog = true;
+        updateGameState(newState);
     }
     
-    updateGameState(newState);
   };
   
   const handleOpenUseCardDialog = (cardName: string) => {
@@ -627,6 +636,8 @@ export function GameBoard() {
     
     const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
     const loserOccupantInfo = combatTile.occupants.find(o => o.playerId === loserId);
+    
+    // This is the fix: find the specific army that lost.
     const losingArmy = loser.armies.find(a => a.id === loserOccupantInfo?.armyId);
     
     if (losingArmy) {
@@ -634,11 +645,14 @@ export function GameBoard() {
         if (baseTile) {
             const oldPos = losingArmy.position;
             
+            // Remove loser from old tile
             map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== losingArmy.id || o.playerId !== loserId);
             
+            // Move loser to their base
             losingArmy.position = {x: baseTile.x, y: baseTile.y};
             map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
             
+            // Remove any positions the loser had on that tile
             const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
             if (positionIndex > -1) {
                 const removedPosition = loser.positions.splice(positionIndex, 1)[0];
@@ -716,10 +730,11 @@ export function GameBoard() {
     const newState = JSON.parse(JSON.stringify(gameState));
     const { monsterCombatState, players, map, selectedArmyId } = newState;
     const attacker = players[monsterCombatState.attackerId];
-    const army = attacker.armies.find(a => a.id === selectedArmyId);
-    if (!army) return;
+    // This is the fix: identify the specific army in combat
+    const attackingArmy = attacker.armies.find(a => a.id === selectedArmyId);
+    if (!attackingArmy) return;
 
-    const currentTile = map[army.position.y][army.position.x];
+    const currentTile = map[attackingArmy.position.y][attackingArmy.position.x];
     
     if (monsterCombatState.winnerId === attacker.id) {
       const monsterLevel = monsterCombatState.monster.level;
@@ -742,16 +757,19 @@ export function GameBoard() {
         currentTile.type = 'resource';
       }
 
-    } else {
+    } else { // Player lost
       const baseTile = map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
-      if (baseTile && army) {
-          const oldPos = army.position;
+      if (baseTile && attackingArmy) {
+          const oldPos = attackingArmy.position;
           
-          map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.playerId === attacker.id && o.armyId === army.id));
+          // Remove from old tile
+          map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.playerId === attacker.id && o.armyId === attackingArmy.id));
           
-          army.position = {x: baseTile.x, y: baseTile.y};
-          map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: army.id});
+          // Move to base
+          attackingArmy.position = {x: baseTile.x, y: baseTile.y};
+          map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
           
+          // Remove any positions
           const positionIndex = attacker.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
           if (positionIndex > -1) {
             const removedPosition = attacker.positions.splice(positionIndex, 1)[0];
@@ -773,6 +791,7 @@ export function GameBoard() {
     const currentPlayer = state.players[state.currentPlayerIndex];
     if (currentPlayer.hasExtraMove) {
         // This case is handled inside handleMoveAction, this is a safeguard
+        updateGameState(state);
         return;
     }
 
