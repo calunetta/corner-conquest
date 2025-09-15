@@ -4,73 +4,82 @@ import * as GameActions from './game-actions';
 import { MAP_SIZE } from './game-logic';
 
 /**
- * A simple Finite State Machine for the bot's turn.
- * The bot will attempt actions in a specific order of priority.
- * If an action is successful, it will end its turn.
- * If no actions are possible, it will end its turn.
+ * A simple, more robust Finite State Machine for the bot's turn.
+ * The bot will iterate through its armies and attempt the highest-priority action available.
+ * If any action is successful, the turn ends.
+ * If no actions are possible after checking everything, the turn ends.
  */
 export function takeBotTurn(gameState: GameState): GameState {
   let newState = JSON.parse(JSON.stringify(gameState)); // Deep copy
   const botPlayer = newState.players[newState.currentPlayerIndex];
   
-  console.log(`--- ${botPlayer.name}'s Turn ---`);
+  console.log(`--- Bot Turn Start: ${botPlayer.name} ---`);
 
-  // --- Decision Making FSM ---
+  // --- Bot Decision Making ---
 
-  // Priority 1: Deploy a new army if it makes sense.
+  // Create a list of all armies to check
+  const armiesToCheck = [...botPlayer.armies];
+
+  for (const army of armiesToCheck) {
+    // Set the currently selected army for action handlers
+    newState.selectedArmyId = army.id;
+    const currentTile = newState.map[army.position.y][army.position.x];
+
+    // Priority 1: Collect resources if possible (and not moved yet)
+    if (botPlayer.lastAction !== 'move') {
+      const canCollect = botPlayer.positions.some(p => p.x === army.position.x && p.y === army.position.y);
+      if (canCollect) {
+        try {
+          console.log(`${botPlayer.name} deciding: Collect with army ${army.id}`);
+          newState = GameActions.handleCollectAction(newState);
+          return GameActions.handleEndTurn(newState);
+        } catch (e) { /* ignore and continue */ }
+      }
+    }
+
+    // Priority 2: Position on a resource if possible (and not moved yet)
+    if (botPlayer.lastAction !== 'move') {
+        const canPosition = (currentTile.type === 'resource' || currentTile.type === 'base') && 
+                            currentTile.resources.length > 0 && 
+                            !botPlayer.positions.some(p => p.x === army.position.x && p.y === army.position.y);
+        if (canPosition) {
+            const availableResources = currentTile.resources.filter(resource => 
+                !(currentTile.positionedBy || []).some(p => p.resource === resource.type)
+            );
+            if (availableResources.length > 0) {
+                try {
+                    console.log(`${botPlayer.name} deciding: Position army ${army.id} on ${availableResources[0].type}`);
+                    newState = GameActions.handleSelectResourceForPosition(newState, availableResources[0].type);
+                    return GameActions.handleEndTurn(newState);
+                } catch (e) { /* ignore and continue */ }
+            }
+        }
+    }
+  }
+
+  // Priority 3: Move one of the armies if no higher priority action was taken
+  for (const army of armiesToCheck) {
+    newState.selectedArmyId = army.id;
+    const { moveTarget } = findBestMoveForArmy(newState, army);
+    if (moveTarget) {
+      try {
+        console.log(`${botPlayer.name} deciding: Move army ${army.id} to ${moveTarget.x},${moveTarget.y}`);
+        newState = GameActions.handleTileClick(newState, army.position.x, army.position.y); // Select the army
+        newState = GameActions.handleTileClick(newState, moveTarget.x, moveTarget.y); // Move to target
+        return GameActions.handleEndTurn(newState);
+      } catch (e) { /* ignore and continue */ }
+    }
+  }
+  
+  // Priority 4: Deploy a new army if possible and no other action was taken.
   const canDeploy = botPlayer.resources.food >= botPlayer.nextArmyCost && botPlayer.armyCount < 5 && !botPlayer.actionsThisTurn.includes('deploy');
   if (canDeploy) {
       try {
+        console.log(`${botPlayer.name} deciding: Deploy new army.`);
         newState = GameActions.handleDeployAction(newState);
-        console.log(`${botPlayer.name} decided to deploy.`);
         return GameActions.handleEndTurn(newState);
-      } catch (e) { /* ignore if fails, shouldn't happen with the check */ }
+      } catch (e) { /* ignore and continue */ }
   }
-  
-  // Priority 2: Iterate through armies to find any possible action (Collect, Position, Move)
-  // This is more robust than the previous logic.
-  for (const army of botPlayer.armies) {
-    newState.selectedArmyId = army.id;
-    const armyTile = newState.map[army.position.y][army.position.x];
-
-    // Check for non-move actions first, as they are disallowed after moving.
-    if (botPlayer.lastAction !== 'move') {
-        // Can we collect?
-        const canCollect = botPlayer.positions.some(p => p.x === army.position.x && p.y === army.position.y);
-        if (canCollect) {
-            try {
-                newState = GameActions.handleCollectAction(newState);
-                console.log(`${botPlayer.name} decided to collect with army ${army.id}.`);
-                return GameActions.handleEndTurn(newState);
-            } catch (e) { /* ignore */ }
-        }
-
-        // Can we position?
-        const canPosition = (armyTile.type === 'resource' || armyTile.type === 'base') && armyTile.resources.length > 0 && !botPlayer.positions.some(p => p.x === army.position.x && p.y === army.position.y);
-        if (canPosition) {
-             try {
-                const availableResources = armyTile.resources.filter(resource => {
-                    return !(armyTile.positionedBy || []).some(p => p.resource === resource.type);
-                });
-                if (availableResources.length > 0) {
-                    newState = GameActions.handleSelectResourceForPosition(newState, availableResources[0].type);
-                    console.log(`${botPlayer.name} decided to position army ${army.id} on ${availableResources[0].type}.`);
-                    return GameActions.handleEndTurn(newState);
-                }
-            } catch (e) { /* ignore */ }
-        }
-    }
-    
-    // Check for a move action for this army
-    const { moveTarget } = findBestMoveForArmy(newState, army);
-    if (moveTarget) {
-        newState = GameActions.handleTileClick(newState, army.position.x, army.position.y); // Select the army
-        newState = GameActions.handleTileClick(newState, moveTarget.x, moveTarget.y); // Move to target
-        console.log(`${botPlayer.name} decided to move army ${army.id} to ${moveTarget.x},${moveTarget.y}`);
-        return GameActions.handleEndTurn(newState);
-    }
-  }
-
 
   // Fallback: If after checking ALL armies and ALL actions, nothing can be done, end the turn.
   console.log(`${botPlayer.name} cannot perform any actions and is ending its turn.`);
@@ -82,7 +91,8 @@ function findBestMoveForArmy(gameState: GameState, army: Army): { moveTarget: { 
   const { x, y } = army.position;
   
   const potentialMoves: { x: number; y: number }[] = [];
-  const moveRadius = player.hasExtraMove ? 4 : 2;
+  // Use a simple 2-tile radius for bot moves for now.
+  const moveRadius = 2; 
 
   for (let i = -moveRadius; i <= moveRadius; i++) {
       for (let j = -moveRadius; j <= moveRadius; j++) {
@@ -100,7 +110,7 @@ function findBestMoveForArmy(gameState: GameState, army: Army): { moveTarget: { 
   const validMoves = potentialMoves.filter(move => {
       const tile = gameState.map[move.y][move.x];
       // Can't move to a base that isn't its own
-      return tile.type !== 'base' || tile.owner === player.id;
+      return !(tile.type === 'base' && tile.owner !== player.id);
   });
 
   if (validMoves.length > 0) {
