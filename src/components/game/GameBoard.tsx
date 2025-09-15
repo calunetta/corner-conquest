@@ -167,6 +167,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const currentPlayer = players[currentPlayerIndex];
 
   const canStartGame = status === 'waiting' && players.length > 1 && players.length === maxPlayers;
+  
+  const gridColsClass = `md:grid-cols-${Math.min(players.length, 4)}`;
 
   return (
     <div className="relative flex h-screen w-full flex-col gap-2 overflow-auto p-2 sm:gap-4 sm:p-4">
@@ -192,7 +194,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-            <div className="mt-2 grid grid-cols-1 gap-2 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div
+              className="mt-2 grid grid-cols-1 gap-2 sm:gap-4"
+              style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%/${Math.max(1, players.length)}, max(280px, 100%/${maxPlayers})), 1fr))` }}
+            >
               {players.map(p => (
                  <PlayerInfo key={p.id} player={p} isCurrentPlayer={currentPlayerIndex === p.id} />
               ))}
