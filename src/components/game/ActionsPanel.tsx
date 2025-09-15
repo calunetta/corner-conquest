@@ -1,3 +1,4 @@
+
 'use client';
 import type { GameAction, GameState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,41 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   
   const timerPercentage = (timeLeft / turnDuration) * 100;
 
+  const getDisabledReason = (actionId: GameAction): string => {
+    switch (actionId) {
+        case 'upgrade':
+            if (currentPlayer.resources.iron < 5) return "Not enough iron.";
+            if (currentPlayer.actionsThisTurn.includes('upgrade')) return "You've already upgraded this turn.";
+            break;
+        case 'buy-card':
+            if (currentPlayer.resources.gems < 10) return "Not enough gems.";
+            if (specialCardsDeck.length === 0) return "No cards left in the deck.";
+            if (currentPlayer.actionsThisTurn.includes('buy-card')) return "You've already bought a card this turn.";
+            break;
+        case 'deploy':
+            if (currentPlayer.resources.food < currentPlayer.nextArmyCost) return "Not enough food.";
+            if (currentPlayer.armyCount >= 5) return "Maximum army size reached.";
+            if (currentPlayer.actionsThisTurn.includes('deploy')) return "You've already deployed this turn.";
+            break;
+        case 'collect':
+            if (!selectedArmy) return "You must select an army first.";
+            if (!currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y)) return "Your selected army is not positioned on a resource.";
+            break;
+        case 'attack':
+            if (!selectedArmy) return "You must select an army first.";
+            if (!currentTile || (currentTile.occupants.length <= 1 && (!currentTile.monsters || currentTile.monsters.length === 0))) return "There is nothing to attack on this tile.";
+            break;
+        case 'position':
+            if (!selectedArmy) return "You must select an army first.";
+            if (!currentTile || (currentTile.type !== 'resource' && currentTile.type !== 'base') || currentTile.resources.length === 0) return "This tile has no resources to position on.";
+            if (currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y)) return "You are already positioned here.";
+            break;
+        default:
+            return "This action is not available.";
+    }
+    return "This action is not available.";
+  };
+
   const renderButton = (action: ActionConfig, isMain: boolean) => (
     <TooltipProvider key={action.id}>
         <Tooltip>
@@ -75,7 +111,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             <TooltipContent>
                 <p>{action.tooltip}</p>
                  {(action.disabled && isMyTurn) && <p className="mt-1 text-xs text-destructive">
-                    {!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'show-cards', 'end-turn'].includes(action.id) ? "You must select an army first." : hasMainActionCompleted ? "" : "This action is not available."}
+                    {hasMainActionCompleted && ['collect', 'attack', 'position'].includes(action.id) ? "" : getDisabledReason(action.id)}
                 </p>}
             </TooltipContent>
         </Tooltip>
