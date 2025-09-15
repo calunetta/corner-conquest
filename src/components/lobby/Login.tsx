@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 export function Login() {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] =useState(false);
-  const { setUsername } = usePlayer();
+  const { setUsername, playerId } = usePlayer();
   const { toast } = useToast();
 
   const handleLogin = async () => {
@@ -52,7 +52,7 @@ export function Login() {
           </div>
         </CardContent>
         <CardFooter>
-          <Button className="w-full" onClick={handleLogin} disabled={isLoading || !name}>
+          <Button className="w-full" onClick={handleLogin} disabled={isLoading || !name || !playerId}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Enter Lobby
           </Button>
