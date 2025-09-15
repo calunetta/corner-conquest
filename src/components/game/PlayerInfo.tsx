@@ -105,3 +105,5 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
     </TooltipProvider>
   );
 }
+
+    

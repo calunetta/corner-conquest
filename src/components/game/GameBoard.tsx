@@ -113,7 +113,11 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (!gameState || !localPlayer) return;
     
     if (action === 'cancel-action') {
-        handleCancelAction();
+        const { newState, toastMessage } = GameActions.handleCancelAction(gameState);
+        if (toastMessage) {
+            toast({ title: "Action Cancelled", description: toastMessage });
+        }
+        setGameState(newState);
         return;
     }
 
@@ -228,28 +232,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       toast({ title: "Cannot Leave", description: "You cannot leave a game that is in progress.", variant: "destructive" });
     }
   }
-
-  const handleCancelAction = () => {
-    if (!gameState) return;
-    let toastMessage = "";
-    if (gameState.teleportState) {
-        toastMessage = "Teleport cancelled. You have exited teleport mode.";
-    } else if (gameState.scoutingState) {
-        toastMessage = "Scouting cancelled.";
-    }
-
-    setGameState({
-      ...gameState,
-      teleportState: null,
-      scoutingState: null,
-      currentAction: null,
-      possibleMoves: [],
-    });
-
-    if (toastMessage) {
-        toast({ title: "Action Cancelled", description: toastMessage });
-    }
-  };
 
 
   if (isLoading || !gameState || !localPlayer) {
@@ -377,3 +359,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    

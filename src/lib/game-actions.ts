@@ -976,3 +976,28 @@ export function handleBuyAbility(state: GameState, abilityName: keyof PassiveAbi
 
     return newState;
 }
+
+// --- Generic Cancel ---
+export function handleCancelAction(state: GameState): { newState: GameState, toastMessage: string } {
+    let newState = { ...state };
+    const player = newState.players[newState.currentPlayerIndex];
+    let toastMessage = "";
+
+    if (newState.teleportState) {
+        newState.teleportState = null;
+        toastMessage = "Teleport cancelled.";
+    } else if (newState.scoutingState) {
+        newState.scoutingState = null;
+        toastMessage = "Scouting cancelled.";
+    } else if (player.hasExtraMove) {
+        player.hasExtraMove = false;
+        toastMessage = "Extra Move cancelled.";
+    }
+
+    newState.currentAction = null;
+    newState.possibleMoves = [];
+    
+    return { newState, toastMessage };
+}
+
+    

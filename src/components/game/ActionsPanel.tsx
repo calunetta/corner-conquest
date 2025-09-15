@@ -44,7 +44,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !currentPlayer.actionsThisTurn.includes('buy-card');
   const canUpgrade = currentPlayer.resources.iron >= upgradeCost && !currentPlayer.actionsThisTurn.includes('upgrade');
   
-  const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0);
+  const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0) || currentPlayer.hasExtraMove;
 
   const mainActions: ActionConfig[] = [
     { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasMainActionCompleted, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving." },
@@ -166,3 +166,5 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
     </Card>
   );
 }
+
+    
