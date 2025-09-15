@@ -30,7 +30,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setUsernameCallback = useCallback(async (name: string): Promise<boolean> => {
-    if (!playerId) return false;
+    // This is the key change. We check for playerId and if it's not ready, we fail gracefully.
+    // The UI can retry. This prevents calling Firestore functions before initialization is complete.
+    if (!playerId) {
+      console.error("Player ID not initialized yet.");
+      // You could also add a small delay and retry here, but for now, failing is safer.
+      return false;
+    }
 
     const usernameDocRef = doc(db, 'usernames', name);
     
@@ -55,6 +61,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (error) {
       console.error("Error setting username: ", error);
+      // This is where the 'client is offline' error would be caught.
+      // We return false so the UI can inform the user.
       return false;
     }
   }, [playerId, username]);
