@@ -1,16 +1,19 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { unflattenMap, flattenMap } from '@/lib/game-logic';
-import type { GameState, FirestoreGameState } from '@/lib/types';
+import type { GameState, FirestoreGameState, Player } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
+import { takeBotTurn } from '@/lib/bot-logic';
 
 export function useGameEngine(gameId: string, playerId: string | null) {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
+
+  const isProcessingBotTurn = useRef(false);
 
   useEffect(() => {
     if (!gameId) return;
@@ -26,7 +29,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
         });
       } else {
         toast({ title: "Game Over", description: "This game session no longer exists." });
-        // This will trigger a re-render on the main page, which will show the lobby
         router.push('/'); 
       }
       setIsLoading(false);
@@ -49,9 +51,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
             mapSize: newState.map.length,
         };
 
-        // We set it locally first for responsiveness
         setGameState(newState);
-        
         await setDoc(gameDocRef, firestoreState, { merge: true });
 
     } catch (error: any) {
@@ -64,10 +64,16 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     return gameState?.players.find(p => p.playerId === playerId) || null;
   }, [gameState, playerId]);
 
+  const currentPlayer = useMemo(() => {
+    if (!gameState) return null;
+    return gameState.players[gameState.currentPlayerIndex];
+  }, [gameState]);
+
+
   const isMyTurn = useMemo(() => {
-    if (!gameState || !localPlayer) return false;
-    return gameState.players[gameState.currentPlayerIndex].id === localPlayer.id;
-  }, [gameState, localPlayer]);
+    if (!currentPlayer || !localPlayer) return false;
+    return currentPlayer.id === localPlayer.id;
+  }, [currentPlayer, localPlayer]);
 
   const isHost = useMemo(() => {
     if (!gameState || !localPlayer) return false;
@@ -76,14 +82,31 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
 
   useEffect(() => {
-    // If the game state loads and the local player is not in the players list,
-    // it means they were removed or the game is invalid. Redirect them.
     if (!isLoading && gameState && !localPlayer) {
         setTimeout(() => {
             router.push('/');
         }, 3000);
     }
   }, [isLoading, gameState, localPlayer, router]);
+
+  useEffect(() => {
+    if (gameState && gameState.status === 'playing' && currentPlayer?.isBot && !isProcessingBotTurn.current) {
+      isProcessingBotTurn.current = true;
+      // Use a short delay to make the bot's turn feel more natural
+      setTimeout(async () => {
+        try {
+          const nextState = takeBotTurn(gameState);
+          await updateGameState(nextState);
+        } catch (error) {
+          console.error("Error during bot turn: ", error);
+          // If bot fails, just end its turn to not stall the game
+          await updateGameState({ ...gameState, currentPlayerIndex: (gameState.currentPlayerIndex + 1) % gameState.players.length });
+        } finally {
+            isProcessingBotTurn.current = false;
+        }
+      }, 1000);
+    }
+  }, [gameState, currentPlayer, isProcessingBotTurn]);
 
 
   return { gameState, setGameState: updateGameState, isMyTurn, localPlayer, isHost, isLoading };

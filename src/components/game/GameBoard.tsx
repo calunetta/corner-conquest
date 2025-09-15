@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { GameAction } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
@@ -21,7 +21,7 @@ type GameBoardProps = {
 };
 
 export function GameBoard({ gameId, onExit }: GameBoardProps) {
-  const { playerId, username } = usePlayer();
+  const { playerId } = usePlayer();
   const { gameState, setGameState, isMyTurn, localPlayer, isHost, isLoading } = useGameEngine(gameId, playerId);
   const { toast } = useToast();
   
@@ -125,7 +125,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
-  const canStartGame = status === 'waiting' && (players.length > 1 || maxPlayers === 1);
+  const canStartGame = status === 'waiting' && players.length > 1;
 
   return (
     <div className="relative flex h-screen w-full flex-col gap-4 overflow-auto p-4">

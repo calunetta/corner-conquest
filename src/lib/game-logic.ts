@@ -16,6 +16,9 @@ export function unflattenMap(flatMap: Island[], size: number): Island[][] {
 }
 
 export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: string, name: string }): GameState | null {
+    if (gameState.status !== 'waiting') {
+        return null; // Game has started
+    }
     if (gameState.players.length >= gameState.maxPlayers) {
         return null; // Game is full
     }
