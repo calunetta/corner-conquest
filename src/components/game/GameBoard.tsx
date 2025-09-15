@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { GameAction } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
@@ -21,6 +21,8 @@ type GameBoardProps = {
   onExit: () => void;
 };
 
+const TURN_DURATION = 120; // 2 minutes in seconds
+
 export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const { playerId } = usePlayer();
   const { gameState, setGameState, isMyTurn, localPlayer, isHost, isLoading } = useGameEngine(gameId, playerId);
@@ -29,10 +31,40 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   
   const [isPlayerInfoOpen, setIsPlayerInfoOpen] = useState(!isMobile);
   const [isExiting, setIsExiting] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(TURN_DURATION);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setIsPlayerInfoOpen(!isMobile);
   }, [isMobile]);
+
+  useEffect(() => {
+    if (gameState?.status === 'playing') {
+      setTimeLeft(TURN_DURATION); // Reset timer at the start of each turn
+
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prevTime => prevTime - 1);
+      }, 1000);
+
+    }
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [gameState?.currentPlayerIndex, gameState?.turn, gameState?.status]);
+
+  useEffect(() => {
+    if (timeLeft <= 0 && isMyTurn) {
+        toast({ title: "Time's up!", description: "Your turn has ended automatically."});
+        handleAction('end-turn');
+        setTimeLeft(TURN_DURATION); // Reset for the next player
+    }
+  }, [timeLeft, isMyTurn]);
   
   const handleAction = async (action: GameAction) => {
     if (!gameState || !localPlayer) return;
@@ -48,7 +80,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           let newState = { ...gameState };
           
           const selectedArmy = GameActions.getSelectedArmy(newState);
-          if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'end-turn'].includes(action)) {
+          if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card'].includes(action)) {
               toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
               return;
           }
@@ -82,7 +114,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       } catch (error: any) {
           toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
       }
-    } else {
+    } else if(action !== 'end-turn') { // Prevent "not your turn" toast on auto turn end
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
     }
   };
@@ -194,7 +226,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           </div>
         </main>
         <aside className="flex flex-col justify-start gap-4">
-          <ActionsPanel onAction={handleAction} gameState={gameState} isMyTurn={isMyTurn && status === 'playing'} />
+          <ActionsPanel 
+            onAction={handleAction} 
+            gameState={gameState} 
+            isMyTurn={isMyTurn && status === 'playing'}
+            timeLeft={timeLeft}
+            turnDuration={TURN_DURATION}
+           />
           <GameLog logs={log} />
         </aside>
       </div>

@@ -9,15 +9,19 @@ type ActionsPanelProps = {
   onAction: (action: GameAction) => void;
   gameState: GameState;
   isMyTurn: boolean;
+  timeLeft: number;
+  turnDuration: number;
 };
 
-export function ActionsPanel({ onAction, gameState, isMyTurn }: ActionsPanelProps) {
+export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration }: ActionsPanelProps) {
   const { currentPlayerIndex, players, map, currentAction, specialCardsDeck, selectedArmyId } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   const lastAction = currentPlayer.lastAction;
   
   const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const currentTile = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
+
+  const hasMainActionCompleted = currentPlayer.actionsThisTurn.some(action => ['collect', 'position', 'attack'].includes(action));
 
   const canCollect = selectedArmy && currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y);
   const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.x === selectedArmy!.position.x && p.y === selectedArmy!.position.y);
@@ -27,9 +31,9 @@ export function ActionsPanel({ onAction, gameState, isMyTurn }: ActionsPanelProp
   const canUpgrade = currentPlayer.resources.iron >= 5 && !currentPlayer.actionsThisTurn.includes('upgrade');
   
   const mainActions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
-    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || lastAction === 'move' },
-    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || lastAction === 'move' },
-    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || lastAction === 'move' },
+    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || lastAction === 'move' || hasMainActionCompleted },
+    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || lastAction === 'move' || hasMainActionCompleted },
+    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || lastAction === 'move' || hasMainActionCompleted },
   ];
 
   const secondaryActions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
@@ -41,12 +45,20 @@ export function ActionsPanel({ onAction, gameState, isMyTurn }: ActionsPanelProp
   const alwaysAvailableActions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
       { id: 'show-cards', label: 'Show Cards', icon: <Album />, disabled: false },
   ]
+  
+  const timerPercentage = (timeLeft / turnDuration) * 100;
 
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between p-4">
         <CardTitle className="text-lg">Actions</CardTitle>
-        <Button size="sm" onClick={() => onAction('end-turn')} disabled={!isMyTurn}>End Turn</Button>
+        <Button size="sm" onClick={() => onAction('end-turn')} disabled={!isMyTurn} className="relative overflow-hidden">
+            <span 
+                className="absolute left-0 top-0 h-full bg-primary/50 transition-all duration-1000 ease-linear"
+                style={{ width: `${isMyTurn ? 100 - timerPercentage : 0}%` }}
+            ></span>
+            <span className="relative z-10">End Turn</span>
+        </Button>
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="grid grid-cols-2 grid-rows-2 gap-2">
