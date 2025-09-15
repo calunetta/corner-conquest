@@ -93,9 +93,9 @@ export function GameBoard() {
   useEffect(() => {
     const gameDocRef = doc(db, 'games', GAME_ID);
 
-    const unsubscribe = onSnapshot(gameDocRef, (doc) => {
-        if (doc.exists()) {
-            const firestoreState = doc.data() as FirestoreGameState;
+    const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+            const firestoreState = docSnapshot.data() as FirestoreGameState;
             setGameState({
                 ...firestoreState,
                 map: unflattenMap(firestoreState.map, firestoreState.mapSize),
@@ -104,13 +104,13 @@ export function GameBoard() {
             console.log("No such document! Initializing new game.");
             const newGame = initializeGame();
             // We don't set local state here, we let the snapshot listener do it
-            const gameDocRef = doc(db, 'games', GAME_ID);
+            const newGameDocRef = doc(db, 'games', GAME_ID);
             const firestoreState: FirestoreGameState = {
                 ...newGame,
                 map: flattenMap(newGame.map),
                 mapSize: newGame.map.length,
             };
-            setDoc(gameDocRef, firestoreState);
+            setDoc(newGameDocRef, firestoreState);
         }
     });
 
@@ -503,7 +503,9 @@ export function GameBoard() {
     
     // Clear all player positions when they move
     newState.map.forEach(row => row.forEach(tile => {
-        tile.positionedBy = (tile.positionedBy || []).filter(p => p.playerId !== player.id);
+        if(tile.positionedBy) {
+            tile.positionedBy = tile.positionedBy.filter(p => p.playerId !== player.id);
+        }
     }));
     player.positions = [];
     
@@ -636,14 +638,14 @@ export function GameBoard() {
     if (!gameState || !gameState.combatState) return;
     
     const newState = JSON.parse(JSON.stringify(gameState));
-    const { combatState, players, map } = newState;
+    const { combatState, players, map, selectedArmyId } = newState;
     const { winnerId, attackerId, defenderId } = combatState;
     
     const loserId = winnerId === attackerId ? defenderId : attackerId;
     const winner = players[winnerId!];
     const loser = players[loserId];
 
-    const attackingArmy = players[attackerId].armies.find(a => a.id === newState.selectedArmyId);
+    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
     if (!attackingArmy) { 
         newState.combatState = null;
         endTurn(newState);
@@ -662,7 +664,7 @@ export function GameBoard() {
             const oldPos = losingArmy.position;
             
             // Remove loser from old tile
-            map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== losingArmy.id || o.playerId !== loserId);
+            map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.armyId === losingArmy.id && o.playerId === loserId));
             
             // Move loser to their base
             losingArmy.position = {x: baseTile.x, y: baseTile.y};
@@ -672,7 +674,9 @@ export function GameBoard() {
             const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
             if (positionIndex > -1) {
                 const removedPosition = loser.positions.splice(positionIndex, 1)[0];
-                map[oldPos.y][oldPos.x].positionedBy = (map[oldPos.y][oldPos.x].positionedBy || []).filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
+                 if (map[oldPos.y][oldPos.x].positionedBy) {
+                    map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy!.filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
+                }
             }
         }
     }
@@ -789,7 +793,9 @@ export function GameBoard() {
           const positionIndex = attacker.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
           if (positionIndex > -1) {
             const removedPosition = attacker.positions.splice(positionIndex, 1)[0];
-            map[oldPos.y][oldPos.x].positionedBy = (map[oldPos.y][oldPos.x].positionedBy || []).filter(p => !(p.playerId === attacker.id && p.resource === removedPosition.resource));
+            if (map[oldPos.y][oldPos.x].positionedBy) {
+                map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy!.filter(p => !(p.playerId === attacker.id && p.resource === removedPosition.resource));
+            }
           }
       }
 
@@ -948,3 +954,5 @@ export function GameBoard() {
     </div>
   );
 }
+
+    

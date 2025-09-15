@@ -72,3 +72,5 @@ export function CardsDialog({ player, onClose, onUseCard }: CardsDialogProps) {
     </AlertDialog>
   );
 }
+
+    
