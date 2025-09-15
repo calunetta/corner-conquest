@@ -49,11 +49,15 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
     { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || hasMainActionCompleted, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving." },
     { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || hasMainActionCompleted, tooltip: "Position your army on a resource to collect it on a future turn. Can only be done once per turn, before moving." },
   ];
+  
+  const deployLabel = currentPlayer.reinforceActive
+    ? 'Deploy'
+    : `Deploy (${currentPlayer.resources.food}/${deployCost} Food)`;
 
   const secondaryActions: ActionConfig[] = [
     { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/${upgradeCost} Iron)`, icon: <Zap />, disabled: !canUpgrade, tooltip: "Spend iron to permanently increase your army's attack power by 1. Can only be done once per turn." },
     { id: 'buy-card', label: 'Buy Card (10 Gems)', icon: <ShoppingCart />, disabled: !canBuyCard, tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn." },
-    { id: 'deploy', label: `Deploy (${currentPlayer.resources.food}/${deployCost} Food)`, icon: <Sword />, disabled: !canDeploy, tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army." },
+    { id: 'deploy', label: deployLabel, icon: <Sword />, disabled: !canDeploy, tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army." },
     { id: 'open-abilities-shop', label: 'Abilities Shop', icon: <University />, disabled: false, tooltip: "Purchase permanent passive abilities for your empire." },
   ];
   
