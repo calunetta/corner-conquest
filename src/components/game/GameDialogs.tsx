@@ -33,6 +33,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
     abilitiesShopState,
     sabotageDialogState,
     wealthyDialogState,
+    teleportState,
   } = gameState;
 
   const handleUpdate = (state: GameState) => {
@@ -106,6 +107,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
           onClose={() => handleCloseDialog('showCardsDialogForPlayer')}
           onUseCard={(cardName) => handleUseCardAction(cardName)}
           canUseCards={isMyTurn}
+          isTeleporting={!!teleportState}
         />
       )}
       {abilitiesShopState?.isOpen && (

@@ -20,9 +20,10 @@ type CardsDialogProps = {
   onClose: () => void;
   onUseCard: (cardName: string) => void;
   canUseCards: boolean;
+  isTeleporting: boolean;
 };
 
-export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDialogProps) {
+export function CardsDialog({ player, onClose, onUseCard, canUseCards, isTeleporting }: CardsDialogProps) {
   const cardCounts = player.specialCards.reduce((acc, card) => {
     acc[card] = (acc[card] || 0) + 1;
     return acc;
@@ -37,7 +38,6 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
   }
 
   const isCardUsableNow = (cardName: string): boolean => {
-    // Extend this logic if other cards become conditionally usable
     return USABLE_CARDS.includes(cardName);
   }
 
@@ -53,24 +53,36 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
         
         <ScrollArea className="h-96 pr-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {uniqueCards.length > 0 ? uniqueCards.map((cardName) => (
-                <Card key={cardName}>
-                    <CardHeader className='flex-row items-center justify-between p-4'>
-                        <CardTitle className="text-lg">{cardName}</CardTitle>
-                        <div className="flex items-center gap-4">
-                            <span className="text-sm font-bold text-muted-foreground">x{cardCounts[cardName]}</span>
-                            {isCardUsableNow(cardName) && (
-                                <Button size="sm" onClick={() => handleUseCard(cardName)} disabled={!canUseCardAbility}>Use</Button>
-                            )}
-                        </div>
-                    </CardHeader>
-                    <CardContent className='p-4 pt-0'>
-                        <p className="text-sm text-muted-foreground">
-                            {SPECIAL_CARD_DESCRIPTIONS[cardName] || 'No description available.'}
-                        </p>
-                    </CardContent>
-                </Card>
-            )) : (
+            {uniqueCards.length > 0 ? uniqueCards.map((cardName) => {
+                const isTeleportCard = cardName === 'Teleport';
+                const isCurrentlyTeleportingThisCard = isTeleportCard && isTeleporting;
+
+                return (
+                    <Card key={cardName}>
+                        <CardHeader className='flex-row items-center justify-between p-4'>
+                            <CardTitle className="text-lg">{cardName}</CardTitle>
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm font-bold text-muted-foreground">x{cardCounts[cardName]}</span>
+                                {isCardUsableNow(cardName) && (
+                                    <Button 
+                                        size="sm" 
+                                        onClick={() => handleUseCard(cardName)} 
+                                        disabled={!isCurrentlyTeleportingThisCard && !canUseCardAbility}
+                                        variant={isCurrentlyTeleportingThisCard ? 'destructive' : 'default'}
+                                    >
+                                        {isCurrentlyTeleportingThisCard ? 'Cancel' : 'Use'}
+                                    </Button>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent className='p-4 pt-0'>
+                            <p className="text-sm text-muted-foreground">
+                                {SPECIAL_CARD_DESCRIPTIONS[cardName] || 'No description available.'}
+                            </p>
+                        </CardContent>
+                    </Card>
+                )
+            }) : (
                 <p className="text-center text-muted-foreground">You have no special cards.</p>
             )}
             </div>
