@@ -548,7 +548,7 @@ export function GameBoard() {
     
     if (player.hasExtraMove) {
         player.hasExtraMove = false; // Consume the extra move
-        player.lastAction = 'move'; // Set last action to prevent repeated moves
+        player.lastAction = 'move'; // Set last action to allow another action
         const logMsg = `${player.name} used their extra move.`;
         newState.log.push(logMsg);
         toast({ title: 'Extra Move Used', description: 'You can now perform another action.'});
@@ -638,14 +638,14 @@ export function GameBoard() {
     if (!gameState || !gameState.combatState) return;
     
     const newState = JSON.parse(JSON.stringify(gameState));
-    const { combatState, players, map, selectedArmyId } = newState;
+    const { combatState, players, map } = newState;
     const { winnerId, attackerId, defenderId } = combatState;
     
     const loserId = winnerId === attackerId ? defenderId : attackerId;
     const winner = players[winnerId!];
     const loser = players[loserId];
 
-    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
+    const attackingArmy = players[attackerId].armies.find(a => a.id === newState.selectedArmyId);
     if (!attackingArmy) { 
         newState.combatState = null;
         endTurn(newState);
