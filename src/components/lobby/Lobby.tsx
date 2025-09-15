@@ -36,17 +36,21 @@ export function Lobby({ onJoinGame }: LobbyProps) {
       });
       setGames(gamesList);
       setIsLoading(false);
+    }, (error) => {
+      console.error("Lobby snapshot error:", error);
+      setIsLoading(false);
+      toast({title: "Lobby Error", description: "Could not fetch open games.", variant: "destructive"})
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
   const handleCreateGame = useCallback(async (
     gameName: string,
     maxPlayers: number,
     playerColor: PlayerColor
-  ) => {
-    if (!playerId || !username) return;
+  ): Promise<boolean> => {
+    if (!playerId || !username) return false;
 
     const newGameId = doc(collection(db, 'games')).id;
     const creator = { playerId, name: username, color: playerColor };
@@ -61,9 +65,11 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     try {
         await setDoc(doc(db, 'games', newGameId), firestoreState);
         onJoinGame(newGameId);
+        return true;
     } catch (error) {
         console.error("Error creating game: ", error);
-        toast({ title: 'Error', description: 'Could not create game.', variant: 'destructive'});
+        toast({ title: 'Error', description: 'Could not create game. Please check your connection and try again.', variant: 'destructive'});
+        return false;
     }
   }, [playerId, username, onJoinGame, toast]);
   
@@ -87,7 +93,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
         const updatedGameState = addPlayerToGame(gameState, { playerId, name: username });
 
         if (!updatedGameState) {
-             toast({ title: "Cannot Join", description: "Game is full.", variant: 'destructive' });
+             toast({ title: "Cannot Join", description: "Game is full or player color is taken.", variant: 'destructive' });
              return;
         }
         

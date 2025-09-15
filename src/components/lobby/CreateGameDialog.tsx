@@ -30,7 +30,7 @@ type CreateGameDialogProps = {
     gameName: string,
     maxPlayers: number,
     playerColor: PlayerColor
-  ) => Promise<void>;
+  ) => Promise<boolean>;
 };
 
 export function CreateGameDialog({
@@ -46,9 +46,11 @@ export function CreateGameDialog({
   const handleSubmit = async () => {
     if (!gameName || isCreating) return;
     setIsCreating(true);
-    await onCreateGame(gameName, maxPlayers, playerColor);
+    const success = await onCreateGame(gameName, maxPlayers, playerColor);
     setIsCreating(false);
-    onOpenChange(false); // Close dialog on success
+    if (success) {
+      onOpenChange(false); // Only close dialog on success
+    }
   };
 
   return (
