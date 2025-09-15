@@ -214,7 +214,7 @@ export function GameBoard() {
     }
     
     newState.useCardDialogState = null;
-    newState.showCardsDialog = false; // Close all dialogs after use
+    newState.showCardsDialog = false;
     updateGameState(newState);
   };
 
@@ -249,7 +249,7 @@ export function GameBoard() {
     currentPlayer.specialCards.splice(cardIndex, 1);
     currentPlayer.lastAction = 'use-card';
     newState.stealResourceDialogState = null;
-    endTurn(newState);
+    updateGameState(newState);
   };
 
   const handleUpgradeAction = (state: GameState) => {
@@ -647,7 +647,7 @@ export function GameBoard() {
         return;
     }
     
-    const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
+    const combatTile = map[attackingArmy.position.y][attackingArmy.position.y];
     const loserOccupantInfo = combatTile.occupants.find(o => o.playerId === loserId);
     
     const losingArmy = loser.armies.find(a => a.id === loserOccupantInfo?.armyId);
