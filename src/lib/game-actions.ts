@@ -415,6 +415,15 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
     const currentPlayer = players[currentPlayerIndex];
     const clickedTile = newState.map[y][x];
 
+    const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
+    const selectedArmy = getSelectedArmy(newState);
+
+    // Priority 1: Handle a confirmed move action.
+    if (selectedArmy && isPossibleMove) {
+        return handleMoveAction(newState, x, y);
+    }
+
+    // Priority 2: Handle special actions like scouting and teleporting.
     if (scoutingState && scoutingState.count > 0 && clickedTile.isHidden) {
         clickedTile.isHidden = false;
         scoutingState.count--;
@@ -432,9 +441,9 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
         return newState;
     }
     
-    // Teleport Logic
     if (teleportState) {
         if (teleportState.armyId === null) {
+            // First step of teleport: select an army
             const armiesOnTile = clickedTile.occupants
                 .filter(o => o.playerId === currentPlayer.id)
                 .map(o => currentPlayer.armies.find(a => a.id === o.armyId))
@@ -450,12 +459,13 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
                  newState.armySelectionDialogState = { isOpen: true, x, y, armies: armiesOnTile };
             }
         } else {
+            // Second step of teleport: select destination
             newState = handleTeleport(newState, x, y);
         }
         return newState;
     }
     
-    // --- New Prioritized Logic ---
+    // Priority 3: Handle selection of a new army.
     const armiesOnTile = clickedTile.occupants
         .filter(o => o.playerId === currentPlayer.id)
         .map(o => currentPlayer.armies.find(a => a.id === o.armyId))
@@ -473,13 +483,7 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
         return newState;
     }
     
-    const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
-    const selectedArmy = getSelectedArmy(newState);
-
-    if (selectedArmy && isPossibleMove) {
-      return handleMoveAction(newState, x, y);
-    } 
-    
+    // Fallback: If no action is taken, deselect everything.
     newState.selectedArmyId = null;
     newState.selectedTile = null;
     newState.possibleMoves = [];
@@ -1096,5 +1100,7 @@ export function handleCancelAction(state: GameState): { newState: GameState, toa
     return { newState, toastMessage };
 }
 
+
+    
 
     
