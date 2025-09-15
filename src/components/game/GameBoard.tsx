@@ -16,11 +16,6 @@ import * as GameActions from '@/lib/game-actions';
 import { startGame } from '@/lib/game-initializer';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-type GameBoardProps = {
-  gameId: string;
-  onExit: () => void;
-};
-
 const TURN_DURATION = 120; // 2 minutes in seconds
 
 export function GameBoard({ gameId, onExit }: GameBoardProps) {
@@ -39,31 +34,45 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMobile]);
 
   useEffect(() => {
-    if (gameState?.status === 'playing') {
-      setTimeLeft(TURN_DURATION); // Reset timer at the start of each turn
+    if (gameState?.status === 'playing' && isMyTurn) {
+      setTimeLeft(TURN_DURATION); // Reset timer at the start of your turn
 
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
 
       timerRef.current = setInterval(() => {
-        setTimeLeft(prevTime => prevTime - 1);
+        setTimeLeft(prevTime => {
+            if (prevTime <= 1) {
+                clearInterval(timerRef.current!);
+                return 0;
+            }
+            return prevTime - 1;
+        });
       }, 1000);
 
+    } else {
+        // Not my turn or game not playing, clear interval
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
+        setTimeLeft(TURN_DURATION);
     }
+    
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     };
-  }, [gameState?.currentPlayerIndex, gameState?.turn, gameState?.status]);
+  }, [isMyTurn, gameState?.status, gameState?.turn, gameState?.currentPlayerIndex]);
 
   useEffect(() => {
-    if (timeLeft <= 0 && isMyTurn) {
+    if (timeLeft === 0 && isMyTurn) {
         toast({ title: "Time's up!", description: "Your turn has ended automatically."});
         handleAction('end-turn');
-        setTimeLeft(TURN_DURATION); // Reset for the next player
     }
+  // handleAction is not stable, so we disable the lint rule here.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, isMyTurn]);
   
   const handleAction = async (action: GameAction) => {

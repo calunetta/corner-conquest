@@ -46,7 +46,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
       { id: 'show-cards', label: 'Show Cards', icon: <Album />, disabled: false },
   ]
   
-  const timerPercentage = (timeLeft / turnDuration) * 100;
+  const timerPercentage = isMyTurn ? (timeLeft / turnDuration) * 100 : 100;
 
   return (
     <Card>
@@ -55,7 +55,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
         <Button size="sm" onClick={() => onAction('end-turn')} disabled={!isMyTurn} className="relative overflow-hidden">
             <span 
                 className="absolute left-0 top-0 h-full bg-primary/50 transition-all duration-1000 ease-linear"
-                style={{ width: `${isMyTurn ? 100 - timerPercentage : 0}%` }}
+                style={{ width: `${100 - timerPercentage}%` }}
             ></span>
             <span className="relative z-10">End Turn</span>
         </Button>
