@@ -36,6 +36,9 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
     if (cardName === 'Steal Resource') {
         // Directly open the steal resource dialog
         handleUpdate({...gameState, stealResourceDialogState: { targetPlayerId: null }, showCardsDialogForPlayer: null });
+    } else if (cardName === 'Extra Move') {
+        // Activate extra move directly, no confirmation
+        handleUpdate(GameActions.handleActivateExtraMoveCard(gameState));
     } else {
         // For other cards, open the generic confirmation dialog
         handleUpdate(GameActions.handleOpenUseCardDialog(gameState, cardName));

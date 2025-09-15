@@ -292,6 +292,12 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
         player.hasExtraMove = false; 
         player.lastAction = 'move'; 
         newState.log.push(`${player.name} used their Extra Move!`);
+        
+        // Consume the card now that the move is complete
+        const cardIndex = player.specialCards.indexOf('Extra Move');
+        if (cardIndex > -1) {
+            player.specialCards.splice(cardIndex, 1);
+        }
     } else {
         player.lastAction = 'move';
     }
@@ -458,13 +464,30 @@ export const handleOpenUseCardDialog = (state: GameState, cardName: string) => {
     return { ...state, useCardDialogState: { cardName }, showCardsDialogForPlayer: null };
 };
 
+export const handleActivateExtraMoveCard = (state: GameState): GameState => {
+    const newState = { ...state };
+    const { players, currentPlayerIndex } = newState;
+    const player = players[currentPlayerIndex];
+
+    if (player.actionsThisTurn.includes('use-card')) {
+        newState.log.push(`Error: You can only use one card per turn.`);
+        return { ...newState, showCardsDialogForPlayer: null };
+    }
+
+    player.hasExtraMove = true;
+    player.lastAction = null; // Allow another action
+    player.actionsThisTurn.push('use-card');
+    newState.log.push(`${player.name} activated the 'Extra Move' card. They can perform another main action.`);
+
+    return { ...newState, showCardsDialogForPlayer: null };
+};
+
 export const handleUseCard = (state: GameState, cardName: string) => {
     const newState = { ...state };
     const { players, currentPlayerIndex } = newState;
     const player = players[currentPlayerIndex];
 
     if (player.actionsThisTurn.includes('use-card')) {
-        // This case should be prevented by the UI, but as a safeguard:
         newState.log.push(`Error: You can only use one card per turn.`);
         return { ...newState, useCardDialogState: null };
     }
@@ -475,14 +498,10 @@ export const handleUseCard = (state: GameState, cardName: string) => {
         return { ...newState, useCardDialogState: null };
     }
     
+    // Generic card usage logic, specific cards have their own handlers now
     player.specialCards.splice(cardIndex, 1);
     player.actionsThisTurn.push('use-card');
-    
-    if (cardName === 'Extra Move') {
-        player.hasExtraMove = true;
-        player.lastAction = null; // CRITICAL: Reset the last action to allow another one.
-        newState.log.push(`${player.name} used the '${cardName}' card. They can now perform another main action.`);
-    }
+    newState.log.push(`${player.name} used the '${cardName}' card.`);
     
     return { ...newState, useCardDialogState: null };
 };

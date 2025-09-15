@@ -34,7 +34,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
   
   const handleUseCard = (cardName: string) => {
     onUseCard(cardName);
-    // Don't close the main dialog yet, let GameDialogs handle the flow
+    // The GameDialogs component will handle closing or further interactions
   }
 
   return (
