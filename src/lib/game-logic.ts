@@ -67,10 +67,10 @@ export function initializeGame(): GameState {
       
       let islandType: IslandType = 'resource';
       const rand = Math.random();
-      // ~57% resource, ~28.5% monster, ~14.5% special
-      if (rand < 0.285) { 
+      // ~62.5% resource, ~25% monster, ~12.5% special (5:2:1 ratio)
+      if (rand < 0.25) { 
         islandType = 'monster';
-      } else if (rand < 0.285 + 0.145) {
+      } else if (rand < 0.25 + 0.125) {
         islandType = 'special';
       }
       map[y][x].type = islandType;

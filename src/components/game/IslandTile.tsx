@@ -48,7 +48,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
 
   const renderResourceIcons = (resources: IslandResource[]) => {
     return resources.map((resource, index) => (
-      <div key={`resource-row-${index}`} className={cn("flex items-center gap-1 w-full", resource.amount === 1 ? 'justify-start' : 'justify-center')}>
+      <div key={`resource-row-${index}`} className="flex w-full items-center justify-start gap-1">
         {Array.from({ length: resource.amount }).map((_, i) => (
           <ResourceIcon key={`${resource.type}-${i}`} type={resource.type} className="h-4 w-4 text-accent" />
         ))}
@@ -118,8 +118,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         isSelected ? 'border-primary ring-2 ring-primary' : '',
         isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
         isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
-        isArmySelectedOnTile && 'ring-2 ring-offset-2 ring-primary',
-        baseOwner ? `${playerColorMap[baseOwner.color].bg} opacity-70` : ''
+        isArmySelectedOnTile && 'ring-2 ring-offset-2 ring-primary'
       )}
       aria-label={`Island at ${island.x}, ${island.y}`}
     >
