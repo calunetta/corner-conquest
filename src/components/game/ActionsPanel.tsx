@@ -33,8 +33,8 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
 
   const hasArmyActed = !!selectedArmy?.hasActed;
 
-  const canCollect = selectedArmy && currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y);
-  const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.x === selectedArmy!.position.x && p.y === selectedArmy!.position.y);
+  const canCollect = selectedArmy && currentPlayer.positions.some(p => p.armyId === selectedArmy.id);
+  const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.armyId === selectedArmy.id);
   const canAttack = selectedArmy && currentTile && (currentTile.occupants.some(o => o.playerId !== currentPlayer.id) || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
   
   const upgradeCost = currentPlayer.masterBuilderActive ? 3 : 6;
@@ -87,7 +87,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             break;
         case 'collect':
             if (!selectedArmy) return "You must select an army first.";
-            if (!currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y)) return "Your selected army is not positioned on a resource.";
+            if (!currentPlayer.positions.some(p => p.armyId === selectedArmy.id)) return "Your selected army is not positioned on a resource.";
             break;
         case 'attack':
             if (!selectedArmy) return "You must select an army first.";
@@ -96,7 +96,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
         case 'position':
             if (!selectedArmy) return "You must select an army first.";
             if (!currentTile || (currentTile.type !== 'resource' && currentTile.type !== 'base') || currentTile.resources.length === 0) return "This tile has no resources to position on.";
-            if (currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y)) return "You are already positioned here.";
+            if (currentPlayer.positions.some(p => p.armyId === selectedArmy.id)) return "You are already positioned here.";
             break;
         case 'show-cards':
             if (currentPlayer.specialCards.length === 0) return "You have no special cards.";
