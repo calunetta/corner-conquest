@@ -38,7 +38,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const canAttack = selectedArmy && currentTile && (currentTile.occupants.length > 1 || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
   const canDeploy = (currentPlayer.resources.food >= currentPlayer.nextArmyCost || currentPlayer.reinforceActive) && currentPlayer.armyCount < 5 && !currentPlayer.actionsThisTurn.includes('deploy');
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !currentPlayer.actionsThisTurn.includes('buy-card');
-  const canUpgrade = currentPlayer.resources.iron >= 5 && !currentPlayer.actionsThisTurn.includes('upgrade');
+  const canUpgrade = currentPlayer.resources.iron >= 6 && !currentPlayer.actionsThisTurn.includes('upgrade');
   
   const mainActions: ActionConfig[] = [
     { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasMainActionCompleted, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving." },
@@ -47,7 +47,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   ];
 
   const secondaryActions: ActionConfig[] = [
-    { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/5 Iron)`, icon: <Zap />, disabled: !canUpgrade, tooltip: "Spend 5 iron to permanently increase your army's attack power by 1. Can only be done once per turn." },
+    { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/6 Iron)`, icon: <Zap />, disabled: !canUpgrade, tooltip: "Spend 6 iron to permanently increase your army's attack power by 1. Can only be done once per turn." },
     { id: 'buy-card', label: 'Buy Card (10 Gems)', icon: <ShoppingCart />, disabled: !canBuyCard, tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn." },
     { id: 'deploy', label: `Deploy (${currentPlayer.resources.food}/${currentPlayer.nextArmyCost} Food)`, icon: <Sword />, disabled: !canDeploy, tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army." },
     { id: 'open-abilities-shop', label: 'Abilities Shop', icon: <University />, disabled: false, tooltip: "Purchase permanent passive abilities for your empire." },
@@ -62,7 +62,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const getDisabledReason = (actionId: GameAction): string => {
     switch (actionId) {
         case 'upgrade':
-            if (currentPlayer.resources.iron < 5) return "Not enough iron.";
+            if (currentPlayer.resources.iron < 6) return "Not enough iron.";
             if (currentPlayer.actionsThisTurn.includes('upgrade')) return "You've already upgraded this turn.";
             break;
         case 'buy-card':

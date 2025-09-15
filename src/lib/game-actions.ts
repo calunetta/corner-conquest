@@ -120,7 +120,7 @@ export function handleDeployAction(state: GameState): GameState {
       const cardIndex = player.specialCards.indexOf('Reinforce');
       if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
     } else {
-      player.nextArmyCost += 1;
+      player.nextArmyCost += 2;
     }
     
     player.actionsThisTurn.push('deploy');
@@ -156,7 +156,7 @@ export function handleUpgradeAction(state: GameState): GameState {
 
     if (player.actionsThisTurn.includes('upgrade')) throw new Error("You can only upgrade once per turn.");
 
-    let cost = 5;
+    let cost = 6;
     if(player.masterBuilderActive) {
         cost = Math.ceil(cost / 2);
     }
@@ -260,35 +260,29 @@ export function handleEndTurn(state: GameState): GameState {
     if (currentPlayer.hasExtraMove) {
         currentPlayer.hasExtraMove = false;
     }
-    
+
     // Determine the next player
     let nextPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+
+    // Set up for the new current player
+    newState.currentPlayerIndex = nextPlayerIndex;
     let nextPlayer = newState.players[nextPlayerIndex];
-    
+
     // Handle turn skipping from Sabotage
     if (nextPlayer.isSabotaged) {
         nextPlayer.isSabotaged = false; // Consume the sabotage flag
         newState.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
         
-        // Reset the sabotaged player's turn state.
-        nextPlayer.lastAction = null;
-        nextPlayer.actionsThisTurn = [];
-
-        // Move to the next player
-        newState.currentPlayerIndex = (nextPlayerIndex + 1) % newState.players.length;
-        nextPlayer = newState.players[newState.currentPlayerIndex];
-    } else {
-        newState.currentPlayerIndex = nextPlayerIndex;
+        // Immediately end the skipped player's turn to move to the next one
+        return handleEndTurn(newState);
     }
     
-    // Set up the state for the new turn
     if (newState.currentPlayerIndex === 0) {
       newState.turn += 1;
     }
 
     nextPlayer.lastAction = null;
     nextPlayer.actionsThisTurn = [];
-    nextPlayer.hasExtraMove = false; 
     
     newState.log.push(`It's now ${nextPlayer.name}'s turn.`);
     
@@ -668,7 +662,7 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     }
 
     // Defer consuming the card for multi-step actions or actions that can be cancelled.
-    const deferredCards = ['Extra Move', 'Teleport', 'Reinforce', 'Scout', 'Productive', 'Efficient', 'Master Builder', 'War Chief', 'Sabatoge', 'Overcome', 'Decide Dice Roll'];
+    const deferredCards = ['Extra Move', 'Teleport', 'Reinforce', 'Scout', 'Productive', 'Efficient', 'Master Builder', 'War Chief', 'Sabatoge', 'Overcome', 'Decide Dice Roll', 'Wealthy'];
     if (!deferredCards.includes(cardName)) {
         player.specialCards.splice(cardIndex, 1);
     }

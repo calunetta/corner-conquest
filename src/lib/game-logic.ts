@@ -71,7 +71,7 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
         resources: { gems: 0, iron: 0, food: 0 },
         armyCount: 1,
         attackPower: 0,
-        nextArmyCost: 5,
+        nextArmyCost: 6,
         victoryPoints: 0,
         lastAction: null,
         specialCards: ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
