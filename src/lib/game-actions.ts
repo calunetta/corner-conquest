@@ -1,4 +1,5 @@
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army } from './types';
@@ -210,7 +211,7 @@ export function handleTileClick(state: GameState, x: number, y: number): GameSta
     if (selectedArmyId !== null && isPossibleMove) {
       // Before moving, check if a main action has been taken without an extra move card
       if (currentPlayer.lastAction && !currentPlayer.hasExtraMove) {
-          return state; // Do nothing, move is not allowed
+          throw new Error("You have already performed a main action. Use an 'Extra Move' card to move again.");
       }
       return handleMoveAction(newState, x, y);
     } else if (armyOnTile) {
@@ -225,7 +226,7 @@ export function handleTileClick(state: GameState, x: number, y: number): GameSta
         }
 
         let moves = [];
-        const moveRadius = currentPlayer.hasExtraMove ? 4 : 2;
+        const moveRadius = 2;
         for (let i = -moveRadius; i <= moveRadius; i++) {
           for (let j = -moveRadius; j <= moveRadius; j++) {
             if (Math.abs(i) + Math.abs(j) <= moveRadius && (i !== 0 || j !== 0)) {
@@ -256,9 +257,11 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     const player = players[currentPlayerIndex];
     const army = getSelectedArmy(newState);
 
-    // This is the critical check. Do not allow move if another main action was already taken.
-    if (!army || (player.lastAction && !player.hasExtraMove)) {
-        return state;
+    if (!army) return state;
+    
+    // This is the critical check. Do not allow move if another main action was already taken, UNLESS they have an extra move.
+    if (player.lastAction !== null && !player.hasExtraMove) {
+        throw new Error("You have already completed a main action this turn.");
     }
     
     const oldTile = map[army.position.y][army.position.x];
@@ -294,8 +297,8 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     // This is the corrected logic for Extra Move
     if (player.hasExtraMove) {
         player.hasExtraMove = false; // Consume extra move
-        newState.log.push(`${player.name} used their Extra Move! They can perform another main action.`);
-        // DO NOT set lastAction, allowing another action
+        player.lastAction = 'move'; // Set last action after the second move
+        newState.log.push(`${player.name} used their Extra Move!`);
     } else {
         player.lastAction = 'move';
     }
@@ -477,8 +480,9 @@ export const handleUseCard = (state: GameState, cardName: string) => {
 
     if (cardName === 'Extra Move') {
         player.hasExtraMove = true;
-        player.lastAction = null; // Allow another action
+        player.lastAction = null; // CRITICAL: Reset the last action to allow another one.
         player.specialCards.splice(cardIndex, 1); // Consume immediately
+        newState.log.push(`${player.name} can now perform another main action this turn.`);
     } else if (cardName === 'Steal Resource') {
         newState.stealResourceDialogState = { targetPlayerId: null };
         // Card will be consumed in handleStealResource
