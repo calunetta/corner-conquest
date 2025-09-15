@@ -31,6 +31,7 @@ export type Player = {
   lastAction: GameAction | null;
   specialCards: string[]; // Names of special cards
   positions: PlayerPosition[];
+  hasExtraMove: boolean;
 };
 
 export type Monster = {
@@ -78,6 +79,14 @@ export type PositionDialogState = {
   resources: IslandResource[];
 }
 
+export type StealResourceDialogState = {
+    targetPlayerId: number | null;
+}
+
+export type UseCardDialogState = {
+    cardName: string;
+}
+
 export type GameState = {
   map: Island[][];
   players: Player[];
@@ -94,6 +103,8 @@ export type GameState = {
   monsterCombatState: MonsterCombatState | null;
   positionDialogState: PositionDialogState | null;
   showCardsDialog: boolean;
+  stealResourceDialogState: StealResourceDialogState | null;
+  useCardDialogState: UseCardDialogState | null;
 };
 
-export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards';
+export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards' | 'use-card';

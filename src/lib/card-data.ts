@@ -5,6 +5,8 @@ export const SPECIAL_CARDS = [
   'Decide Dice Roll'
 ];
 
+export const USABLE_CARDS = ['Extra Move', 'Steal Resource'];
+
 export const SPECIAL_CARD_DESCRIPTIONS: Record<string, string> = {
     'Extra Move': 'Take an extra move action this turn.',
     'Steal Resource': 'Steal 2 resources of one type from another player.',

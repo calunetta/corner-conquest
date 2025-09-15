@@ -1,9 +1,8 @@
 'use client';
 import type { Player } from '@/lib/types';
-import { SPECIAL_CARD_DESCRIPTIONS } from '@/lib/card-data';
+import { SPECIAL_CARD_DESCRIPTIONS, USABLE_CARDS } from '@/lib/card-data';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -12,14 +11,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '../ui/scroll-area';
+import { Button } from '../ui/button';
 
 type CardsDialogProps = {
   player: Player;
   onClose: () => void;
+  onUseCard: (cardName: string) => void;
 };
 
-export function CardsDialog({ player, onClose }: CardsDialogProps) {
-
+export function CardsDialog({ player, onClose, onUseCard }: CardsDialogProps) {
   const cardCounts = player.specialCards.reduce((acc, card) => {
     acc[card] = (acc[card] || 0) + 1;
     return acc;
@@ -28,7 +28,7 @@ export function CardsDialog({ player, onClose }: CardsDialogProps) {
   const uniqueCards = Object.keys(cardCounts);
 
   return (
-    <AlertDialog open={true}>
+    <AlertDialog open={true} onOpenChange={onClose}>
       <AlertDialogContent className="max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle>{player.name}'s Special Cards</AlertDialogTitle>
@@ -43,7 +43,12 @@ export function CardsDialog({ player, onClose }: CardsDialogProps) {
                 <Card key={cardName}>
                     <CardHeader className='flex-row items-center justify-between p-4'>
                         <CardTitle className="text-lg">{cardName}</CardTitle>
-                        <span className="text-sm font-bold text-muted-foreground">x{cardCounts[cardName]}</span>
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm font-bold text-muted-foreground">x{cardCounts[cardName]}</span>
+                            {USABLE_CARDS.includes(cardName) && (
+                                <Button size="sm" onClick={() => onUseCard(cardName)}>Use</Button>
+                            )}
+                        </div>
                     </CardHeader>
                     <CardContent className='p-4 pt-0'>
                         <p className="text-sm text-muted-foreground">
@@ -58,7 +63,7 @@ export function CardsDialog({ player, onClose }: CardsDialogProps) {
         </ScrollArea>
 
         <AlertDialogFooter>
-          <AlertDialogAction onClick={onClose}>Close</AlertDialogAction>
+          <Button variant="outline" onClick={onClose}>Close</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

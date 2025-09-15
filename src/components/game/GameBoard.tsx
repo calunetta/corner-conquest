@@ -13,6 +13,8 @@ import { CombatDialog } from './CombatDialog';
 import { MonsterCombatDialog } from './MonsterCombatDialog';
 import { PositionDialog } from './PositionDialog';
 import { CardsDialog } from './CardsDialog';
+import { StealResourceDialog } from './StealResourceDialog';
+import { UseCardDialog } from './UseCardDialog';
 
 
 function deepClone<T>(obj: T): T {
@@ -36,7 +38,6 @@ function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
     const hasBigMonster = possibleLevels.includes(3) || possibleLevels.includes(4) ? Math.random() < 0.3 : false;
 
     if (hasBigMonster) {
-        // Add one big monster (level 3 or 4)
         const bigMonsterLevel = possibleLevels.includes(4) && Math.random() < 0.25 ? 4 : 3;
         monsters.push({
             id: 'big',
@@ -44,7 +45,6 @@ function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
             level: bigMonsterLevel
         });
 
-        // Add one small monster (level 1 or 2)
         const littleMonsterLevel = Math.random() < 0.6 ? 1 : 2;
          monsters.push({
             id: 'little',
@@ -53,10 +53,9 @@ function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
         });
 
     } else {
-        // One or two little monsters (level 1 or 2)
         const numMonsters = Math.random() < 0.7 ? 1 : 2;
         let availableLevels = possibleLevels.filter(l => l <= 2);
-        if (availableLevels.length === 0) availableLevels = [1]; // Fallback
+        if (availableLevels.length === 0) availableLevels = [1]; 
 
         if (numMonsters === 1) {
             const level = availableLevels[Math.floor(Math.random() * availableLevels.length)];
@@ -66,18 +65,15 @@ function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
                 level: level
             });
         } else {
-             // Two different little monsters
-            monsters.push({ id: 'little', type: 'cub', level: 1 });
-            if (availableLevels.includes(2)) {
-                monsters.push({ id: 'little', type: 'huge', level: 2 });
-            } else {
-                // if we can't add a level 2, we can't have 2 monsters, so just one.
-                monsters.splice(1, 1);
-            }
+             monsters.push({ id: 'little', type: 'cub', level: 1 });
+             if (availableLevels.includes(2)) {
+                 monsters.push({ id: 'little', type: 'huge', level: 2 });
+             } else {
+                 monsters.splice(1, 1);
+             }
         }
     }
 
-    // Ensure no duplicates by level
     const uniqueLevels = new Set();
     return monsters.filter(monster => {
         if (uniqueLevels.has(monster.level)) {
@@ -139,6 +135,73 @@ export function GameBoard() {
     }
     
     setGameState(newState);
+  };
+  
+  const handleOpenUseCardDialog = (cardName: string) => {
+    if (!gameState) return;
+    const newState = deepClone(gameState);
+    newState.useCardDialogState = { cardName };
+    setGameState(newState);
+  };
+
+  const handleUseCard = (cardName: string) => {
+    if (!gameState) return;
+    const newState = deepClone(gameState);
+    const { players, currentPlayerIndex } = newState;
+    const player = players[currentPlayerIndex];
+
+    const cardIndex = player.specialCards.indexOf(cardName);
+    if (cardIndex === -1) {
+        toast({ title: "Card Error", description: `You do not have the ${cardName} card.`, variant: 'destructive' });
+        return;
+    }
+
+    if (cardName === 'Extra Move') {
+        player.hasExtraMove = true;
+        player.specialCards.splice(cardIndex, 1);
+        newState.log.push(`${player.name} used the 'Extra Move' card!`);
+        toast({ title: 'Card Used!', description: 'You have an extra move this turn.' });
+    } else if (cardName === 'Steal Resource') {
+        newState.stealResourceDialogState = { targetPlayerId: null };
+    }
+    
+    newState.useCardDialogState = null;
+    newState.showCardsDialog = false; // Close card dialog after use
+    setGameState(newState);
+  };
+
+  const handleStealResource = (targetPlayerId: number, resource: ResourceType) => {
+    if (!gameState) return;
+    const newState = deepClone(gameState);
+    const { players, currentPlayerIndex } = newState;
+    const currentPlayer = players[currentPlayerIndex];
+    const targetPlayer = players.find(p => p.id === targetPlayerId);
+
+    if (!targetPlayer) return;
+
+    const cardIndex = currentPlayer.specialCards.indexOf('Steal Resource');
+    if (cardIndex === -1) return; // Should not happen
+
+    const amountToSteal = 2;
+    const stolenAmount = Math.min(targetPlayer.resources[resource], amountToSteal);
+
+    if (stolenAmount > 0) {
+        targetPlayer.resources[resource] -= stolenAmount;
+        currentPlayer.resources[resource] += stolenAmount;
+        
+        const logMsg = `${currentPlayer.name} used 'Steal Resource' on ${targetPlayer.name} and stole ${stolenAmount} ${resource}!`;
+        newState.log.push(logMsg);
+        toast({ title: "Resource Stolen!", description: logMsg});
+    } else {
+        const logMsg = `${currentPlayer.name} tried to steal ${resource} from ${targetPlayer.name}, but they had none.`;
+        newState.log.push(logMsg);
+        toast({ title: "Steal Failed", description: logMsg, variant: 'destructive' });
+    }
+
+    currentPlayer.specialCards.splice(cardIndex, 1);
+    currentPlayer.lastAction = 'use-card';
+    newState.stealResourceDialogState = null;
+    endTurn(newState);
   };
 
   const handleUpgradeAction = (state: GameState) => {
@@ -277,7 +340,6 @@ export function GameBoard() {
             }
           }
         }
-        // Filter out moves to other players' bases or empty tiles
         moves = moves.filter(move => {
           const tile = newState.map[move.y][move.x];
           if (tile.type === 'base' && tile.owner !== currentPlayer.id) {
@@ -316,7 +378,6 @@ export function GameBoard() {
       return;
     }
     
-    // Filter out resources already occupied by other players
     const availableResources = tile.resources.filter(resource => {
       return !tile.positionedBy?.some(p => p.resource === resource.type);
     });
@@ -375,10 +436,8 @@ export function GameBoard() {
     const currentPos = army.position;
     const oldTile = newState.map[currentPos.y][currentPos.x];
     
-    // Remove army from old tile occupants
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
     
-    // Reset ALL of the player's positions when ANY army moves.
     newState.map.forEach(row => row.forEach(tile => {
         tile.positionedBy = tile.positionedBy?.filter(p => p.playerId !== player.id);
     }));
@@ -386,7 +445,7 @@ export function GameBoard() {
     
     army.position = { x, y };
     newState.map[y][x].occupants.push({ playerId: player.id, armyId: army.id });
-    player.lastAction = 'move';
+    
     
     const revealedIsland = newState.map[y][x];
     if(revealedIsland.isHidden) {
@@ -406,7 +465,22 @@ export function GameBoard() {
       }
     }
     
-    endTurn(newState);
+    if (player.hasExtraMove) {
+        player.hasExtraMove = false; // Consume the extra move
+        player.lastAction = 'move'; // Set last action to prevent repeated moves
+        const logMsg = `${player.name} used their extra move.`;
+        newState.log.push(logMsg);
+        toast({ title: 'Extra Move Used', description: 'You can now perform another action.'});
+        
+        // Reset action/moves but don't end turn
+        newState.currentAction = null;
+        newState.possibleMoves = [];
+        newState.selectedTile = null;
+        setGameState(newState);
+    } else {
+        player.lastAction = 'move';
+        endTurn(newState);
+    }
   }
 
   const handleAttackAction = (state: GameState) => {
@@ -433,7 +507,7 @@ export function GameBoard() {
     } else if (currentTile.type === 'monster' && currentTile.monsters && currentTile.monsters.length > 0) {
       state.monsterCombatState = {
         attackerId: attacker.id,
-        monster: currentTile.monsters[0], // Temporary, will be selected in dialog
+        monster: currentTile.monsters[0], 
         attackerRolls: [],
         monsterRolls: [],
         winnerId: null,
@@ -483,7 +557,7 @@ export function GameBoard() {
     if (!gameState || !gameState.combatState) return;
     
     const newState = deepClone(gameState);
-    const { combatState, players, map, selectedArmyId } = newState;
+    const { combatState, players, map } = newState;
     const { winnerId, attackerId, defenderId } = combatState;
     
     if (winnerId === null) {
@@ -496,14 +570,14 @@ export function GameBoard() {
     const winner = players[winnerId];
     const loser = players[loserId];
 
-    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
-    
-    if (!attackingArmy) {
+    const attacker = players[attackerId];
+    const attackingArmy = attacker.armies.find(a => a.id === newState.selectedArmyId);
+     if (!attackingArmy) {
       newState.combatState = null;
       endTurn(newState);
       return;
     }
-    
+
     const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
     const loserOccupantInfo = combatTile.occupants.find(o => o.playerId === loserId);
 
@@ -514,23 +588,19 @@ export function GameBoard() {
             if (baseTile) {
                 const oldPos = losingArmy.position;
                 
-                // Remove loser from combat tile
-                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== losingArmy.id || o.playerId !== loserId);
+                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.armyId === losingArmy.id && o.playerId === loserId));
 
-                // Move loser to base
                 losingArmy.position = {x: baseTile.x, y: baseTile.y};
                 map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
                 
-                // Remove loser's position on the tile if they had one
                 const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
                 if (positionIndex > -1) {
                     const removedPosition = loser.positions.splice(positionIndex, 1)[0];
-                    map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy?.filter(p => p.playerId !== loserId || p.resource !== removedPosition.resource);
+                    map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy?.filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
                 }
             }
         }
     }
-
 
     const logMsg = `${winner.name} defeated ${loser.name}! ${loser.name}'s army was sent back to their base.`;
     newState.log.push(logMsg);
@@ -556,7 +626,7 @@ export function GameBoard() {
         newState.log.push(logMsg);
         toast({ title: 'Card Used!', description: logMsg });
       } else {
-        useCard = false; // Card not found, shouldn't happen if UI is correct
+        useCard = false; 
         toast({ title: 'Card Error', description: "Decide Dice Roll card not found.", variant: 'destructive'});
       }
     }
@@ -569,7 +639,7 @@ export function GameBoard() {
 
     let attackerRolls = rollDice(attacker.armyCount + attacker.attackPower);
     if(useCard) {
-        attackerRolls[0] = decidedValue; // Replace the first die roll
+        attackerRolls[0] = decidedValue; 
     }
 
     const monsterRolls = rollDice(monster.level);
@@ -578,7 +648,7 @@ export function GameBoard() {
     const monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
 
     let winnerId = null;
-    if (attackerScore >= monsterScore) { // Player wins on tie
+    if (attackerScore >= monsterScore) { 
       winnerId = attacker.id;
     }
 
@@ -632,18 +702,15 @@ export function GameBoard() {
       if (baseTile && army) {
           const oldPos = army.position;
           
-          // Remove army from monster tile
           map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.playerId === attacker.id && o.armyId === army.id));
           
-          // Move army to base
           army.position = {x: baseTile.x, y: baseTile.y};
           map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: army.id});
           
-          // Remove position if it existed
           const positionIndex = attacker.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
           if (positionIndex > -1) {
             const removedPosition = attacker.positions.splice(positionIndex, 1)[0];
-            map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy?.filter(p => p.playerId !== attacker.id || p.resource !== removedPosition.resource);
+            map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy?.filter(p => !(p.playerId === attacker.id && p.resource === removedPosition.resource));
           }
       }
 
@@ -658,6 +725,12 @@ export function GameBoard() {
   }
 
   const endTurn = (state: GameState) => {
+    const currentPlayer = state.players[state.currentPlayerIndex];
+    if (currentPlayer.hasExtraMove) {
+        // This case is handled inside handleMoveAction, this is a safeguard
+        return;
+    }
+
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
     if (state.currentPlayerIndex === 0) {
       state.turn += 1;
@@ -671,7 +744,6 @@ export function GameBoard() {
     state.possibleMoves = [];
     state.selectedTile = null;
     
-    // Pre-select army if only one exists
     if (nextPlayer.armies.length === 1) {
         state.selectedArmyId = nextPlayer.armies[0].id;
     } else {
@@ -694,7 +766,7 @@ export function GameBoard() {
     );
   }
 
-  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, monsterCombatState, positionDialogState, showCardsDialog, selectedArmyId } = gameState;
+  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, monsterCombatState, positionDialogState, showCardsDialog, selectedArmyId, stealResourceDialogState, useCardDialogState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const currentTileForMonster = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
@@ -749,6 +821,21 @@ export function GameBoard() {
         <CardsDialog 
           player={currentPlayer}
           onClose={() => setGameState(prev => prev ? {...prev, showCardsDialog: false, currentAction: null} : null)}
+          onUseCard={handleOpenUseCardDialog}
+        />
+      )}
+      {stealResourceDialogState && (
+        <StealResourceDialog
+            players={players.filter(p => p.id !== currentPlayerIndex)}
+            onSteal={handleStealResource}
+            onClose={() => setGameState(prev => prev ? {...prev, stealResourceDialogState: null} : null)}
+        />
+      )}
+      {useCardDialogState && (
+        <UseCardDialog
+            cardName={useCardDialogState.cardName}
+            onConfirm={() => handleUseCard(useCardDialogState.cardName)}
+            onClose={() => setGameState(prev => prev ? {...prev, useCardDialogState: null} : null)}
         />
       )}
     </div>

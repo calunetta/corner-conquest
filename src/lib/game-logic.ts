@@ -52,6 +52,7 @@ export function initializeGame(): GameState {
       lastAction: null,
       specialCards: ['Extra Move', 'Steal Resource', 'Decide Dice Roll'], // Mock cards
       positions: [],
+      hasExtraMove: false,
     });
   });
 
@@ -65,11 +66,23 @@ export function initializeGame(): GameState {
       const distance = Math.abs(x - center.x) + Math.abs(y - center.y);
       let islandType: IslandType;
       
-      const rand = Math.random() * 8; // 5 + 2 + 1 = 8
+      let rand = Math.random() * 8;
+      // Adjust probabilities based on distance
+      if (distance <= 1) { // Center
+        // Higher chance for monster/special
+        rand = Math.random() * 8; // 5:2:1 ratio preserved, but just an example
+      } else if (distance <= 3) { // Mid-ring
+        // Skew towards resources
+        rand = Math.random() * 8 + 1; // Increases resource chance
+      } else { // Outer ring
+        // Heavily skew towards resources
+        rand = Math.random() * 8 + 2.5; // Greatly increases resource chance
+      }
+
       if (rand < 5) islandType = 'resource';
       else if (rand < 7) islandType = 'monster';
       else islandType = 'special';
-
+      
       map[y][x].type = islandType;
 
       if (islandType === 'resource') {
@@ -77,13 +90,12 @@ export function initializeGame(): GameState {
         const availableResources = [...resourceTypes];
         
         let numResourceTypes: number;
-        // Closer to center = higher chance of 2 resource types
-        if (distance <= 1) { // Center
-            numResourceTypes = Math.random() < 0.6 ? 2 : 1; // 60% chance of 2 types
-        } else if (distance <= 3) { // Mid-ring
-            numResourceTypes = Math.random() < 0.4 ? 2 : 1; // 40% chance of 2 types
-        } else { // Outer ring
-            numResourceTypes = Math.random() < 0.2 ? 2 : 1; // 20% chance of 2 types
+        if (distance <= 1) { 
+            numResourceTypes = Math.random() < 0.6 ? 2 : 1;
+        } else if (distance <= 3) {
+            numResourceTypes = Math.random() < 0.4 ? 2 : 1;
+        } else { 
+            numResourceTypes = Math.random() < 0.2 ? 2 : 1;
         }
         
         const islandResources: IslandResource[] = [];
@@ -91,8 +103,8 @@ export function initializeGame(): GameState {
         if (numResourceTypes === 1) {
             const randomIndex = Math.floor(Math.random() * availableResources.length);
             const selectedResourceType = availableResources.splice(randomIndex, 1)[0];
-            islandResources.push({ type: selectedResourceType, amount: 2 }); // Always 2 spots for single resource
-        } else { // numResourceTypes === 2
+            islandResources.push({ type: selectedResourceType, amount: 2 });
+        } else {
             const firstRandomIndex = Math.floor(Math.random() * availableResources.length);
             const firstResourceType = availableResources.splice(firstRandomIndex, 1)[0];
             
@@ -100,18 +112,15 @@ export function initializeGame(): GameState {
             const secondResourceType = availableResources.splice(secondRandomIndex, 1)[0];
 
             let firstResourceAmount, secondResourceAmount;
-            // Closer to center = higher chance of 2 spots per resource
-            if (distance <= 1) { // Center
-                firstResourceAmount = Math.random() < 0.5 ? 2 : 1;
-                secondResourceAmount = Math.random() < 0.5 ? 2 : 1;
-            } else if (distance <= 3) { // Mid-ring
-                firstResourceAmount = Math.random() < 0.3 ? 2 : 1;
-                secondResourceAmount = Math.random() < 0.3 ? 2 : 1;
-            } else { // Outer-ring
-                firstResourceAmount = 1;
-                secondResourceAmount = 1;
+            
+            const randomAmount = () => {
+                 if (distance <= 1) return Math.random() < 0.5 ? 2 : 1;
+                 if (distance <= 3) return Math.random() < 0.3 ? 2 : 1;
+                 return 1;
             }
 
+            firstResourceAmount = randomAmount();
+            secondResourceAmount = randomAmount();
 
             islandResources.push({ type: firstResourceType, amount: firstResourceAmount });
             islandResources.push({ type: secondResourceType, amount: secondResourceAmount });
@@ -143,5 +152,7 @@ export function initializeGame(): GameState {
     monsterCombatState: null,
     positionDialogState: null,
     showCardsDialog: false,
+    stealResourceDialogState: null,
+    useCardDialogState: null,
   };
 }

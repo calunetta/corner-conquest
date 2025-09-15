@@ -3,7 +3,7 @@ import type { Player } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ResourceIcon } from '@/components/icons';
-import { Award, Swords, Zap, Album } from 'lucide-react';
+import { Award, Swords, Zap, Album, Forward } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type PlayerInfoProps = {
@@ -24,7 +24,19 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
       <Card className={`transition-all duration-300 ${isCurrentPlayer ? `border-accent shadow-lg shadow-accent/20` : ''}`}>
         <CardHeader className="flex-row items-center justify-between space-y-0 p-2">
           <CardTitle className="text-sm font-medium">{player.name}</CardTitle>
-          <Badge variant="outline" className={`border-2 ${playerColorMap[player.color]}`}>{player.color.toUpperCase()}</Badge>
+          <div className="flex items-center gap-2">
+            {player.hasExtraMove && (
+                <Tooltip>
+                    <TooltipTrigger>
+                        <Forward className="h-4 w-4 text-accent animate-pulse" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Extra Move active!</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
+            <Badge variant="outline" className={`border-2 ${playerColorMap[player.color]}`}>{player.color.toUpperCase()}</Badge>
+          </div>
         </CardHeader>
         <CardContent className="flex items-center justify-between p-2 pt-0">
           <div className="flex items-center gap-3">
