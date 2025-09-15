@@ -1,3 +1,4 @@
+
 'use client';
 import type { GameState, Player, ResourceType } from '@/lib/types';
 import { CombatDialog } from './CombatDialog';
@@ -31,9 +32,12 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
   const currentTileForMonster = selectedArmy ? gameState.map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
   const handleUseCardAction = (cardName: string) => {
+    // This is the router for card actions
     if (cardName === 'Steal Resource') {
+        // Directly open the steal resource dialog
         handleUpdate({...gameState, stealResourceDialogState: { targetPlayerId: null }, showCardsDialogForPlayer: null });
     } else {
+        // For other cards, open the generic confirmation dialog
         handleUpdate(GameActions.handleOpenUseCardDialog(gameState, cardName));
     }
   }

@@ -255,7 +255,6 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
 
     if (!army) return state;
     
-    // This is the critical check. Do not allow move if another main action was already taken, UNLESS they have an extra move.
     if (player.lastAction !== null && !player.hasExtraMove) {
         throw new Error("You have already completed a main action this turn.");
     }
@@ -263,7 +262,6 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     const oldTile = map[army.position.y][army.position.x];
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
     
-    // Check if the army was positioned and remove the position
     const positionIndex = player.positions.findIndex(p => p.x === army.position.x && p.y === army.position.y);
     if (positionIndex > -1) {
         const removedPosition = player.positions.splice(positionIndex, 1)[0];
@@ -290,10 +288,9 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
       }
     }
     
-    // This is the corrected logic for Extra Move
     if (player.hasExtraMove) {
-        player.hasExtraMove = false; // Consume extra move
-        player.lastAction = 'move'; // Set last action after the second move
+        player.hasExtraMove = false; 
+        player.lastAction = 'move'; 
         newState.log.push(`${player.name} used their Extra Move!`);
     } else {
         player.lastAction = 'move';
@@ -466,17 +463,22 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     const { players, currentPlayerIndex } = newState;
     const player = players[currentPlayerIndex];
 
-    if (player.actionsThisTurn.includes('use-card')) throw new Error("You can only use one card per turn.");
+    if (player.actionsThisTurn.includes('use-card')) {
+        // This case should be prevented by the UI, but as a safeguard:
+        newState.log.push(`Error: You can only use one card per turn.`);
+        return { ...newState, useCardDialogState: null };
+    }
     
     const cardIndex = player.specialCards.indexOf(cardName);
-    if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
+    if (cardIndex === -1) {
+        newState.log.push(`Error: You do not have the ${cardName} card.`);
+        return { ...newState, useCardDialogState: null };
+    }
     
-    // Only consume the card if the action is successful. For 'Extra Move', that happens here.
-    // For 'Steal Resource', it happens in that specific function.
+    player.specialCards.splice(cardIndex, 1);
+    player.actionsThisTurn.push('use-card');
     
     if (cardName === 'Extra Move') {
-        player.specialCards.splice(cardIndex, 1); // Consume the card
-        player.actionsThisTurn.push('use-card');
         player.hasExtraMove = true;
         player.lastAction = null; // CRITICAL: Reset the last action to allow another one.
         newState.log.push(`${player.name} used the '${cardName}' card. They can now perform another main action.`);

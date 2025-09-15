@@ -1,3 +1,4 @@
+
 'use client';
 import type { Player } from '@/lib/types';
 import { SPECIAL_CARD_DESCRIPTIONS, USABLE_CARDS } from '@/lib/card-data';
@@ -33,7 +34,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
   
   const handleUseCard = (cardName: string) => {
     onUseCard(cardName);
-    onClose();
+    // Don't close the main dialog yet, let GameDialogs handle the flow
   }
 
   return (
