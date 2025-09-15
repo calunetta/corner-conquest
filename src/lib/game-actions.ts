@@ -557,7 +557,7 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean): GameSt
     const attacker = players[combatState.attackerId];
     const defender = players[combatState.defenderId];
 
-    let attackerPower = attacker.attackPower;
+    let attackerBonusPower = 0;
     const canUseCard = !attacker.actionsThisTurn.includes('use-card');
 
     if (useWarChief && canUseCard) {
@@ -565,17 +565,15 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean): GameSt
         if (cardIndex > -1) {
             attacker.specialCards.splice(cardIndex, 1);
             attacker.actionsThisTurn.push('use-card');
-            attackerPower += 2;
+            attackerBonusPower += 2;
             newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
         }
     }
 
-    const defenderPower = defender.attackPower;
+    const rollDice = (count: number) => Array.from({ length: Math.max(1, Math.min(count, 6)) }, () => Math.floor(Math.random() * 6) + 1);
 
-    const rollDice = (count: number) => Array.from({ length: Math.min(count, 4) }, () => Math.floor(Math.random() * 6) + 1);
-
-    combatState.attackerRolls = rollDice(attacker.armyCount + attackerPower);
-    combatState.defenderRolls = rollDice(defender.armyCount + defenderPower);
+    combatState.attackerRolls = rollDice(attacker.attackPower + 1 + attackerBonusPower);
+    combatState.defenderRolls = rollDice(defender.attackPower + 1);
     
     const attackerScore = combatState.attackerRolls.reduce((a, b) => a + b, 0);
     const defenderScore = combatState.defenderRolls.reduce((a, b) => a + b, 0);
@@ -640,6 +638,7 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
     
     const canUseCard = !attacker.actionsThisTurn.includes('use-card');
     let cardUsedThisAction = false;
+    const currentTile = map[attackingArmy.position.y][attackingArmy.position.x];
 
     if (useOvercomeCard && canUseCard) {
         const cardIndex = attacker.specialCards.indexOf('Overcome');
@@ -649,20 +648,36 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
             newState.log.push(`${attacker.name} used the 'Overcome' card to win automatically!`);
             winnerId = attacker.id;
             cardUsedThisAction = true;
+
+             // --- Start of consolidated logic ---
+            monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
+            attacker.victoryPoints += monsterVP;
+            currentTile.monsters = (currentTile.monsters || []).filter(m => m.id !== monster.id);
+            newState.log.push(`${attacker.name} defeated the monster for ${monsterVP} VP!`);
+            
+            if (currentTile.monsters?.length === 0) {
+              currentTile.type = 'resource';
+              const resourceTypes: ResourceType[] = ['food', 'iron', 'gems'];
+              const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+              currentTile.resources.push({ type: randomResource, amount: 1});
+              newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
+            }
+            // --- End of consolidated logic ---
+
         } else {
              throw new Error("Overcome card not found, but was attempted to be used.");
         }
     }
 
     if (winnerId === null) { 
-        let attackerPower = attacker.attackPower;
+        let attackerBonusPower = 0;
         
         if (useWarChief && canUseCard && !cardUsedThisAction) {
              const cardIndex = attacker.specialCards.indexOf('War Chief');
              if (cardIndex > -1) {
                 attacker.specialCards.splice(cardIndex, 1);
                 attacker.actionsThisTurn.push('use-card');
-                attackerPower += 2;
+                attackerBonusPower += 2;
                 cardUsedThisAction = true;
                 newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
              }
@@ -682,44 +697,44 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
             useDecideCard = false;
         }
         
-        const rollDice = (count: number) => Array.from({ length: Math.min(count, 4) }, () => Math.floor(Math.random() * 6) + 1);
+        const rollDice = (count: number) => Array.from({ length: Math.max(1, Math.min(count, 6)) }, () => Math.floor(Math.random() * 6) + 1);
 
-        attackerRolls = rollDice(attacker.armyCount + attackerPower);
+        attackerRolls = rollDice(attacker.attackPower + 1 + attackerBonusPower);
         if(useDecideCard) attackerRolls[0] = decidedValue; 
 
         monsterRolls = rollDice(monster.level);
         const attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
         const monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
         winnerId = attackerScore >= monsterScore ? attacker.id : null;
+
+        // --- Start of consolidated logic ---
+        if (winnerId === attacker.id) {
+            monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
+            attacker.victoryPoints += monsterVP;
+            currentTile.monsters = (currentTile.monsters || []).filter(m => m.id !== monster.id);
+            newState.log.push(`${attacker.name} defeated the monster for ${monsterVP} VP!`);
+            
+            if (currentTile.monsters?.length === 0) {
+              currentTile.type = 'resource';
+              const resourceTypes: ResourceType[] = ['food', 'iron', 'gems'];
+              const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+              currentTile.resources.push({ type: randomResource, amount: 1});
+              newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
+            }
+        } else {
+            const baseTile = map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
+            if (baseTile) {
+                const oldPos = attackingArmy.position;
+                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== attackingArmy.id);
+                attackingArmy.position = {x: baseTile.x, y: baseTile.y};
+                map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
+            }
+            newState.log.push(`${attacker.name} was defeated by the monster!`);
+        }
+        // --- End of consolidated logic ---
     }
     
-    const currentTile = map[attackingArmy.position.y][attackingArmy.position.x];
-    if (winnerId === attacker.id) {
-        monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
-        attacker.victoryPoints += monsterVP;
-        currentTile.monsters = (currentTile.monsters || []).filter(m => m.id !== monster.id);
-        newState.log.push(`${attacker.name} defeated the monster for ${monsterVP} VP!`);
-        
-        if (currentTile.monsters?.length === 0) {
-          currentTile.type = 'resource';
-          const resourceTypes: ResourceType[] = ['food', 'iron', 'gems'];
-          const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
-          currentTile.resources.push({ type: randomResource, amount: 1});
-          newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
-        }
-    } else {
-      const baseTile = map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
-      if (baseTile) {
-          const oldPos = attackingArmy.position;
-          map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== attackingArmy.id);
-          attackingArmy.position = {x: baseTile.x, y: baseTile.y};
-          map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
-      }
-      newState.log.push(`${attacker.name} was defeated by the monster!`);
-    }
-
     attackingArmy.hasActed = true;
-
 
     newState.monsterCombatState = {
       attackerId: attacker.id,
