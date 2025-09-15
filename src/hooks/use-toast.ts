@@ -9,7 +9,7 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 3
-const TOAST_REMOVE_DELAY = 3000 // 3 seconds
+const TOAST_REMOVE_DELAY = 2000 // 2 seconds
 
 type ToasterToast = ToastProps & {
   id: string
@@ -151,6 +151,19 @@ function toast({ ...props }: Toast) {
       toast: { ...props, id },
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+
+  // Check for duplicates
+  const isDuplicate = memoryState.toasts.some(t => {
+      return t.title === props.title && t.description === props.description && t.variant === props.variant
+  });
+
+  if (isDuplicate) {
+      return {
+        id: '',
+        dismiss: () => {},
+        update: () => {},
+      };
+  }
 
   dispatch({
     type: "ADD_TOAST",
