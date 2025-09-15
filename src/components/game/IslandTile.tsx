@@ -1,3 +1,4 @@
+
 import type { Island, Player, GameAction, ResourceType, IslandResource, Army } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon, MonsterIcon } from '../icons';
@@ -58,8 +59,9 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
 
   const renderMonsterIcons = () => {
     if (!island.monsters) return null;
+    const isSingleMonster = island.monsters.length === 1;
     return island.monsters.map((monster, i) => (
-      <div key={`monster-row-${i}`} className="flex w-full items-center justify-between gap-1">
+      <div key={`monster-row-${i}`} className={cn("flex w-full items-center gap-1", isSingleMonster ? "justify-center" : "justify-between")}>
         <MonsterIcon level={monster.level} className="h-5 w-5" />
         <span className="text-xs font-bold text-destructive">Lvl: {monster.level}</span>
       </div>
@@ -80,7 +82,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         );
       case 'monster': 
         return (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1">
+          <div className="flex h-full w-full flex-col items-start justify-center gap-1 p-1">
             {renderMonsterIcons()}
           </div>
         );
