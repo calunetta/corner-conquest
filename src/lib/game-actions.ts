@@ -241,7 +241,7 @@ export function handleUpgradeAction(state: GameState): GameState {
     }
 
     player.actionsThisTurn.push('upgrade');
-    newState.log.push(`${player.name} upgraded their army's attack power to ${player.attackPower}.`);
+    newState.log.push(`${player.name} upgraded their army's attack power to ${player.attackPower + 1}.`);
     
     return { ...newState, currentAction: null };
 }
@@ -636,6 +636,7 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
     let attackerRolls: number[] = [];
     let monsterRolls: number[] = [];
     let winnerId: number | null = null;
+    let monsterVP = 0;
     
     const canUseCard = !attacker.actionsThisTurn.includes('use-card');
     let cardUsedThisAction = false;
@@ -649,7 +650,7 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
             winnerId = attacker.id;
             cardUsedThisAction = true;
         } else {
-            winnerId = null; 
+             throw new Error("Overcome card not found, but was attempted to be used.");
         }
     }
 
@@ -694,7 +695,7 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
     
     const currentTile = map[attackingArmy.position.y][attackingArmy.position.x];
     if (winnerId === attacker.id) {
-        const monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
+        monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
         attacker.victoryPoints += monsterVP;
         currentTile.monsters = (currentTile.monsters || []).filter(m => m.id !== monster.id);
         newState.log.push(`${attacker.name} defeated the monster for ${monsterVP} VP!`);

@@ -1,3 +1,4 @@
+
 'use client';
 import type { Player } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,7 +67,7 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1">
                       <Zap className="h-4 w-4 text-yellow-500" />
-                      <span className="text-sm font-bold">{player.attackPower}</span>
+                      <span className="text-sm font-bold">{player.attackPower + 1}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
