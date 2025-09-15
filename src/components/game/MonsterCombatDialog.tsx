@@ -99,7 +99,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         )}
          {hasWarChiefCard && (
             <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
-                <Checkbox id="use-warchief-card" checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
+                <Checkbox id="use-warchief-card" disabled={useOvercomeCard} checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
                 <Label htmlFor="use-warchief-card" className='font-bold'>Use 'War Chief' card for +2 attack power?</Label>
             </div>
         )}
