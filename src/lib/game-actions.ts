@@ -43,7 +43,7 @@ export function handlePositionAction(state: GameState): GameState {
 }
 
 export function handleCollectAction(state: GameState): GameState {
-  const newState = { ...state };
+  let newState = { ...state };
   const { players, currentPlayerIndex, map } = newState;
   const player = players[currentPlayerIndex];
   const army = getSelectedArmy(newState);
@@ -61,15 +61,30 @@ export function handleCollectAction(state: GameState): GameState {
 
   const hasProductiveCard = player.specialCards.includes('Productive') && !player.actionsThisTurn.includes('use-card');
 
-  // Open dialog instead of collecting directly
-  newState.collectDialogState = {
-    x: position.x,
-    y: position.y,
-    resource: {type: position.resource, amount: resource.amount},
-    hasProductiveCard: hasProductiveCard,
-  }
+  // If the player has the card, show the dialog. Otherwise, collect directly.
+  if (hasProductiveCard) {
+      newState.collectDialogState = {
+        x: position.x,
+        y: position.y,
+        resource: {type: position.resource, amount: resource.amount},
+        hasProductiveCard: true,
+      };
+      return newState;
+  } else {
+    // Perform collection directly
+    player.resources[resource.type] += resource.amount;
+    player.lastAction = 'collect';
+    newState.log.push(`${player.name} collected ${resource.amount} ${resource.type}.`);
 
-  return newState;
+    // Remove the position after collecting
+    player.positions.splice(positionIndex, 1);
+    if (tile.positionedBy) {
+        tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === resource.type));
+    }
+    newState.log.push(`${player.name}'s army must be repositioned to collect again.`);
+    
+    return { ...newState, currentAction: null, possibleMoves: [], selectedTile: null };
+  }
 }
 
 export function handleConfirmCollection(state: GameState, useProductive: boolean): GameState {
@@ -83,7 +98,6 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
 
     const positionIndex = player.positions.findIndex(p => p.x === x && p.y === y && p.resource === resource.type);
     if (positionIndex === -1) {
-        // This case should ideally not happen if the dialog was opened correctly
         throw new Error("Position not found to collect from.");
     }
     
@@ -98,6 +112,10 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
         if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
         player.actionsThisTurn.push('use-card');
         newState.log.push(`${player.name} used 'Productive' to collect double!`);
+    } else {
+        // This branch should technically not be hit if the dialog only opens when the card is available,
+        // but it's safe to keep it.
+        amountToCollect = resource.amount;
     }
 
     player.resources[resource.type] += amountToCollect;
@@ -124,10 +142,11 @@ export function handleDeployAction(state: GameState): GameState {
     if (player.actionsThisTurn.includes('deploy')) throw new Error("You can only deploy one army per turn.");
     
     let cost = player.nextArmyCost;
+    let cardUsed = false;
+    
     if (player.efficientActive) {
         cost = Math.ceil(cost / 2);
     }
-
     if (player.reinforceActive) {
         cost = 0;
     }
@@ -147,29 +166,26 @@ export function handleDeployAction(state: GameState): GameState {
     player.armies.push(newArmy);
     map[baseTile.y][baseTile.x].occupants.push({playerId: player.id, armyId: newArmy.id});
     
-    if (player.efficientActive) {
+    const canUseCard = !player.actionsThisTurn.includes('use-card');
+
+    if (player.efficientActive && canUseCard) {
       newState.log.push(`${player.name} used 'Efficient' for a cheaper deployment!`);
       player.efficientActive = false;
-      const canUseCard = !player.actionsThisTurn.includes('use-card');
-      if (canUseCard) {
-        player.actionsThisTurn.push('use-card');
-        const cardIndex = player.specialCards.indexOf('Efficient');
-        if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
-      }
+      player.actionsThisTurn.push('use-card');
+      const cardIndex = player.specialCards.indexOf('Efficient');
+      if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
+      cardUsed = true;
     }
 
-    if (player.reinforceActive) {
+    if (player.reinforceActive && canUseCard && !cardUsed) {
       newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
       player.reinforceActive = false;
-       const canUseCard = !player.actionsThisTurn.includes('use-card');
-      if (canUseCard) {
-        player.actionsThisTurn.push('use-card');
-        const cardIndex = player.specialCards.indexOf('Reinforce');
-        if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
-      }
+      player.actionsThisTurn.push('use-card');
+      const cardIndex = player.specialCards.indexOf('Reinforce');
+      if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
     }
 
-    if (!player.reinforceActive && !player.efficientActive) {
+    if (!player.reinforceActive) {
         player.nextArmyCost += 2;
     }
     
@@ -316,7 +332,7 @@ export function handleEndTurn(state: GameState): GameState {
     currentPlayer.hasExtraMove = false;
     currentPlayer.efficientActive = false;
     currentPlayer.masterBuilderActive = false;
-    currentPlayer.productiveActive = false;
+    // Note: productiveActive is consumed instantly, so it doesn't need a reset here.
     currentPlayer.reinforceActive = false;
 
 
@@ -410,7 +426,7 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
         newState.selectedTile = {x, y};
         
         // Allow showing moves if it's a normal move OR if an extra move is available
-        if (currentPlayer.lastAction && !currentPlayer.hasExtraMove) {
+        if (currentPlayer.lastAction !== null && !currentPlayer.hasExtraMove) {
             newState.possibleMoves = [];
             newState.currentAction = null;
             return newState;
@@ -1037,7 +1053,6 @@ export function handleCancelAction(state: GameState): { newState: GameState, toa
     // Reset any active card flags that were not consumed
     player.efficientActive = false;
     player.masterBuilderActive = false;
-    player.productiveActive = false;
     player.reinforceActive = false;
 
     newState.currentAction = null;

@@ -80,14 +80,11 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
         actionsThisTurn: [],
         passiveAbilities: { explorer: false, collector: false },
         isSabotaged: false,
-        sabotageActive: false,
         reinforceActive: false,
         scoutActive: false,
         wealthyActive: false,
-        productiveActive: false,
         efficientActive: false,
         masterBuilderActive: false,
-        warChiefActive: false,
     };
 
     newGameState.players.push(newPlayer);

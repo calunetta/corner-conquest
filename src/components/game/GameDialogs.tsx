@@ -100,7 +100,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
           onClose={() => handleCloseDialog('positionDialogState')}
         />
       )}
-      {collectDialogState && (
+      {collectDialogState?.isOpen && (
         <CollectDialog
             state={collectDialogState}
             onConfirm={(useProductive) => handleUpdate(GameActions.handleConfirmCollection(gameState, useProductive))}

@@ -46,14 +46,11 @@ export type Player = {
   teleportState?: TeleportState | null; 
   passiveAbilities: PassiveAbilities;
   isSabotaged: boolean;
-  sabotageActive: boolean;
   reinforceActive: boolean;
   scoutActive: boolean;
   wealthyActive: boolean;
-  productiveActive: boolean;
   efficientActive: boolean;
   masterBuilderActive: boolean;
-  warChiefActive: boolean;
 };
 
 export type Monster = {
@@ -102,6 +99,7 @@ export type PositionDialogState = {
 }
 
 export type CollectDialogState = {
+    isOpen: boolean;
     x: number;
     y: number;
     resource: IslandResource;
