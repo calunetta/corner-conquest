@@ -103,7 +103,6 @@ export function GameBoard() {
           map: unflattenMap(firestoreState.map, firestoreState.mapSize),
         });
       } else {
-        // Document doesn't exist, so we create it.
         console.log('No game document found! Initializing new game in Firestore.');
         const newGame = initializeGame();
         const firestoreState: FirestoreGameState = {
@@ -111,7 +110,6 @@ export function GameBoard() {
           map: flattenMap(newGame.map),
           mapSize: newGame.map.length,
         };
-        // Set the document, the onSnapshot listener will then pick it up.
         setDoc(gameDocRef, firestoreState);
       }
     });
@@ -147,6 +145,12 @@ export function GameBoard() {
 
   const handleAction = (action: GameAction) => {
     if (!gameState) return;
+    
+    if (action === 'end-turn') {
+        handleEndTurn();
+        return;
+    }
+    
     const { players, selectedArmyId } = gameState;
     const currentPlayer = players[gameState.currentPlayerIndex];
     const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
@@ -154,7 +158,7 @@ export function GameBoard() {
     const newState = JSON.parse(JSON.stringify(gameState)); // Deep clone
     newState.currentAction = action;
 
-    if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'show-cards'].includes(action)) {
+    if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'show-cards', 'end-turn'].includes(action)) {
         toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
         newState.currentAction = null;
         updateGameState(newState);
@@ -224,6 +228,7 @@ export function GameBoard() {
     }
     
     newState.useCardDialogState = null;
+    newState.showCardsDialog = false; // Ensure all dialogs are closed
     updateGameState(newState);
   };
 
@@ -511,17 +516,8 @@ export function GameBoard() {
     
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
     
-    // Clear all player positions when they move
-    newState.map.forEach(row => row.forEach(tile => {
-        if(tile.positionedBy) {
-            tile.positionedBy = tile.positionedBy.filter(p => p.playerId !== player.id);
-        }
-    }));
-    player.positions = [];
-    
     army.position = { x, y };
     newState.map[y][x].occupants.push({ playerId: player.id, armyId: army.id });
-    
     
     const revealedIsland = newState.map[y][x];
     if(revealedIsland.isHidden) {
@@ -556,13 +552,14 @@ export function GameBoard() {
       }
     }
     
-    player.lastAction = 'move';
-
     if (player.hasExtraMove) {
         player.hasExtraMove = false;
+        player.lastAction = null; // Allow another action
         const logMsg = `${player.name} used their extra move. They can perform another action.`;
         newState.log.push(logMsg);
         toast({ title: 'Extra Move Used', description: 'You can now perform another action.'});
+    } else {
+        player.lastAction = 'move';
     }
     
     newState.currentAction = null;
@@ -821,7 +818,9 @@ export function GameBoard() {
     updateGameState(newState);
   }
 
-  const endTurn = (state: GameState) => {
+  const endTurn = () => {
+    if (!gameState) return;
+    const state = JSON.parse(JSON.stringify(gameState));
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
     if (state.currentPlayerIndex === 0) {
       state.turn += 1;
@@ -846,8 +845,7 @@ export function GameBoard() {
   }
 
   const handleEndTurn = () => {
-    if (!gameState) return;
-    endTurn(JSON.parse(JSON.stringify(gameState)));
+    endTurn();
   }
 
   if (!gameState) {
@@ -865,10 +863,8 @@ export function GameBoard() {
   const currentTileForMonster = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
   return (
-    <div className="relative flex h-screen w-screen flex-col gap-4 p-4">
-      <Button onClick={handleEndTurn} className="absolute right-4 top-4 z-20">End Turn</Button>
-
-      <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen}>
+    <div className="relative flex w-full flex-col gap-4 p-4">
+      <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen} className="w-full">
         <div className="flex items-center justify-between rounded-md bg-muted/50 p-2">
             <h2 className="text-lg font-semibold">Player Information</h2>
             <CollapsibleTrigger asChild>
@@ -888,7 +884,7 @@ export function GameBoard() {
         </CollapsibleContent>
       </Collapsible>
       
-      <div className="grid flex-1 grid-cols-1 gap-4 overflow-hidden md:grid-cols-[1fr_280px]">
+      <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-[1fr_320px]">
         <main className="flex flex-col items-center justify-start gap-4 overflow-hidden">
           <MapGrid map={map} players={players} onTileClick={handleTileClick} possibleMoves={possibleMoves} selectedTile={selectedTile} currentPlayerIndex={currentPlayerIndex} selectedArmyId={selectedArmyId} />
           <div className='text-center'>

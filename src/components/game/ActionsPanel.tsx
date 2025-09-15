@@ -24,8 +24,7 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
   const canDeploy = currentPlayer.resources.food >= currentPlayer.nextArmyCost && currentPlayer.armyCount < 5 && !currentPlayer.actionsThisTurn.includes('deploy');
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !currentPlayer.actionsThisTurn.includes('buy-card');
   const canUpgrade = currentPlayer.resources.iron >= 5 && !currentPlayer.actionsThisTurn.includes('upgrade');
-  const canUseCard = !currentPlayer.actionsThisTurn.includes('use-card');
-
+  
   const mainActions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
     { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || (lastAction !== null && lastAction !== 'move') },
     { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || (lastAction !== null && lastAction !== 'move') },
@@ -41,8 +40,9 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex-row items-center justify-between">
         <CardTitle>Actions</CardTitle>
+        <Button size="sm" onClick={() => onAction('end-turn')}>End Turn</Button>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
         <div className="grid grid-cols-2 grid-rows-2 gap-2">
