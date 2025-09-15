@@ -1,5 +1,5 @@
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster } from './types';
-import { SPECIAL_CARDS } from './card-data';
+import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
 import { MAP_SIZE } from './game-logic';
 
 function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
@@ -68,7 +68,7 @@ function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
 
 const ALL_PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
 
-export function initializeGame(gameId: string, gameName: string, maxPlayers: number, creator: { playerId: string, name: string, color: PlayerColor }, numBots: number): GameState {
+export function initializeGame(gameId: string, gameName: string, maxPlayers: number, creator: { playerId: string, name: string, color: PlayerColor }, numBots: number, debugMode: boolean = false): GameState {
   const map: Island[][] = Array.from({ length: MAP_SIZE }, (_, y) =>
     Array.from({ length: MAP_SIZE }, (_, x) => ({
       id: `${x}-${y}`,
@@ -122,7 +122,7 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
       nextArmyCost: 5,
       victoryPoints: 0,
       lastAction: null,
-      specialCards: ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
+      specialCards: debugMode ? [...new Set(BASE_CARDS)] : ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
       positions: [],
       hasExtraMove: false,
       actionsThisTurn: [],
@@ -279,6 +279,7 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
     showCardsDialogForPlayer: null,
     stealResourceDialogState: null,
     useCardDialogState: null,
+    teleportDialogState: null,
   };
 }
 

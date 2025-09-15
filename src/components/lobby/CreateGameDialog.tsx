@@ -19,7 +19,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PlayerColor } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check, HelpCircle } from 'lucide-react';
+import { Switch } from '../ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 const PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
 
@@ -30,7 +32,8 @@ type CreateGameDialogProps = {
     gameName: string,
     maxPlayers: number,
     playerColor: PlayerColor,
-    numBots: number
+    numBots: number,
+    debugMode: boolean
   ) => Promise<boolean>;
 };
 
@@ -42,13 +45,14 @@ export function CreateGameDialog({
   const [gameName, setGameName] = useState('');
   const [maxPlayers, setMaxPlayers] = useState<number>(4);
   const [playerColor, setPlayerColor] = useState<PlayerColor>('blue');
+  const [debugMode, setDebugMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
   const handleSubmit = async () => {
     if (!gameName || isCreating) return;
     setIsCreating(true);
     const numBots = maxPlayers === 1 ? 1 : 0;
-    const success = await onCreateGame(gameName, maxPlayers, playerColor, numBots);
+    const success = await onCreateGame(gameName, maxPlayers, playerColor, numBots, debugMode);
     setIsCreating(false);
     if (success) {
       onOpenChange(false);
@@ -118,6 +122,28 @@ export function CreateGameDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="debugMode" className="text-right flex items-center gap-1">
+              Debug Mode
+              <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <HelpCircle className='h-4 w-4 text-muted-foreground' />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Start the game with one of every special card for easy testing.</p>
+                    </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </Label>
+            <div className="col-span-3">
+              <Switch
+                id="debugMode"
+                checked={debugMode}
+                onCheckedChange={setDebugMode}
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>

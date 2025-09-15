@@ -91,6 +91,10 @@ export type UseCardDialogState = {
     cardName: string;
 }
 
+export type TeleportDialogState = {
+    armyId: number | null;
+}
+
 export type GameState = {
   id: string;
   name: string;
@@ -113,6 +117,7 @@ export type GameState = {
   showCardsDialogForPlayer: number | null;
   stealResourceDialogState: StealResourceDialogState | null;
   useCardDialogState: UseCardDialogState | null;
+  teleportDialogState: TeleportDialogState | null;
   showHostLeaveDialog?: boolean;
 };
 
@@ -122,4 +127,4 @@ export type FirestoreGameState = Omit<GameState, 'map'> & {
 };
 
 
-export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards' | 'use-card' | 'end-turn';
+export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards' | 'use-card' | 'end-turn' | 'teleport';

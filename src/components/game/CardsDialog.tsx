@@ -34,7 +34,11 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
   
   const handleUseCard = (cardName: string) => {
     onUseCard(cardName);
-    // The GameDialogs component will handle closing or further interactions
+  }
+
+  const isCardUsableNow = (cardName: string): boolean => {
+    // Extend this logic if other cards become conditionally usable
+    return USABLE_CARDS.includes(cardName);
   }
 
   return (
@@ -55,7 +59,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
                         <CardTitle className="text-lg">{cardName}</CardTitle>
                         <div className="flex items-center gap-4">
                             <span className="text-sm font-bold text-muted-foreground">x{cardCounts[cardName]}</span>
-                            {USABLE_CARDS.includes(cardName) && (
+                            {isCardUsableNow(cardName) && (
                                 <Button size="sm" onClick={() => handleUseCard(cardName)} disabled={!canUseCardAbility}>Use</Button>
                             )}
                         </div>

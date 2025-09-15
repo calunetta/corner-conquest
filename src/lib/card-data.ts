@@ -1,16 +1,38 @@
-export const SPECIAL_CARDS = [
-  'Extra Move', 'Steal Resource', 'Extra VP', 'Sabatoge', 'Reinforce', 
+export const BASE_CARDS = [
+  'Extra Move', 'Steal Resource', 'Sabatoge', 'Reinforce', 
   'Scout', 'Overcome', 'Wealthy', 'Productive', 'Efficient',
   'Master Builder', 'War Chief', 'Diplomat', 'Explorer', 'Collector',
-  'Decide Dice Roll'
+  'Decide Dice Roll', 'Teleport'
 ];
 
-export const USABLE_CARDS = ['Extra Move', 'Steal Resource'];
+// More copies of common cards, fewer of rare ones.
+export const SPECIAL_CARDS = [
+  'Extra Move', 'Extra Move', 'Extra Move',
+  'Steal Resource', 'Steal Resource',
+  'Reinforce', 'Reinforce',
+  'Wealthy', 'Wealthy',
+  'Productive', 'Productive',
+  'Efficient',
+  'Master Builder',
+  'War Chief',
+  'Explorer',
+  'Collector',
+  'Decide Dice Roll',
+  'Scout',
+  'Overcome',
+  'Sabatoge',
+  'Diplomat',
+  'Extra VP', // Only one copy, making it rare
+  'Teleport', // Only one copy
+];
+
+
+export const USABLE_CARDS = ['Extra Move', 'Steal Resource', 'Teleport'];
 
 export const SPECIAL_CARD_DESCRIPTIONS: Record<string, string> = {
     'Extra Move': 'Take an extra move action this turn.',
     'Steal Resource': 'Steal 2 resources of one type from another player.',
-    'Extra VP': 'Gain 2 free Victory Points.',
+    'Extra VP': 'Instantly gain 10 Victory Points.',
     'Sabatoge': 'Choose an opponent to lose their next turn.',
     'Reinforce': 'Deploy a new army for free.',
     'Scout': 'Reveal any 3 hidden tiles on the map.',
@@ -23,5 +45,6 @@ export const SPECIAL_CARD_DESCRIPTIONS: Record<string, string> = {
     'Diplomat': 'Force a truce. No players can attack you for one round.',
     'Explorer': 'Gain 1 VP for each island you have a unit on.',
     'Collector': 'Gain 1 resource of each type for each island you have a unit on.',
-    'Decide Dice Roll': 'When attacking a monster, choose the value of one of your dice.'
+    'Decide Dice Roll': 'When attacking a monster, choose the value of one of your dice.',
+    'Teleport': 'Move one of your armies to any tile on the map.'
 }

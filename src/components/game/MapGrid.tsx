@@ -9,9 +9,10 @@ type MapGridProps = {
   selectedTile: { x: number, y: number } | null;
   currentPlayerId: number;
   selectedArmyId: number | null;
+  isTeleporting?: boolean;
 };
 
-export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId }: MapGridProps) {
+export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting }: MapGridProps) {
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const selectedArmy = selectedArmyId !== null && currentPlayer ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
 
@@ -38,6 +39,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
             isSelected={isSelected}
             isCurrentPlayerTile={isCurrentPlayerTile}
             isArmySelectedOnTile={isArmySelectedOnTile}
+            isTeleporting={isTeleporting}
           />
         );
       })}

@@ -1,5 +1,6 @@
 
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army } from './types';
@@ -229,6 +230,11 @@ export function handleTileClick(state: GameState, x: number, y: number): GameSta
               const newX = x + i;
               const newY = y + j;
               if (newX >= 0 && newX < MAP_SIZE && newY >= 0 && newY < MAP_SIZE) {
+                // Prevent moving to empty, already-cleared monster tiles
+                const targetTile = newState.map[newY][newX];
+                if (targetTile.type === 'resource' && targetTile.resources.length === 0 && (!targetTile.monsters || targetTile.monsters.length === 0)) {
+                    continue;
+                }
                 moves.push({ x: newX, y: newY });
               }
             }
@@ -293,7 +299,6 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
         player.lastAction = 'move'; 
         newState.log.push(`${player.name} used their Extra Move!`);
         
-        // Consume the card now that the move is complete
         const cardIndex = player.specialCards.indexOf('Extra Move');
         if (cardIndex > -1) {
             player.specialCards.splice(cardIndex, 1);
@@ -468,7 +473,6 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
       
       if (currentTile.monsters?.length === 0) {
         currentTile.type = 'resource';
-        // Add a random resource to the now-empty tile
         const resourceTypes: ResourceType[] = ['food', 'iron', 'gems'];
         const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
         currentTile.resources.push({ type: randomResource, amount: 1});
@@ -493,52 +497,37 @@ export const handleOpenUseCardDialog = (state: GameState, cardName: string) => {
     return { ...state, useCardDialogState: { cardName }, showCardsDialogForPlayer: null };
 };
 
-export const handleActivateExtraMoveCard = (state: GameState): GameState => {
-    const newState = { ...state };
-    const { players, currentPlayerIndex } = newState;
-    const player = players[currentPlayerIndex];
-
-    if (player.actionsThisTurn.includes('use-card')) {
-        newState.log.push(`Error: You can only use one card per turn.`);
-        return { ...newState, showCardsDialogForPlayer: null };
-    }
-
-    player.hasExtraMove = true;
-    player.lastAction = null; // Allow another action
-    player.actionsThisTurn.push('use-card');
-    newState.log.push(`${player.name} activated the 'Extra Move' card. They can perform another main action.`);
-
-    return { ...newState, showCardsDialogForPlayer: null };
-};
-
 export const handleUseCard = (state: GameState, cardName: string) => {
-    const newState = { ...state };
+    let newState = { ...state };
     const { players, currentPlayerIndex } = newState;
     const player = players[currentPlayerIndex];
 
     if (player.actionsThisTurn.includes('use-card')) {
         newState.log.push(`Error: You can only use one card per turn.`);
-        return { ...newState, useCardDialogState: null };
+        return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
     }
     
     const cardIndex = player.specialCards.indexOf(cardName);
     if (cardIndex === -1) {
         newState.log.push(`Error: You do not have the ${cardName} card.`);
-        return { ...newState, useCardDialogState: null };
+        return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
     }
     
+    player.actionsThisTurn.push('use-card');
+
     if (cardName === 'Extra Move') {
         player.hasExtraMove = true;
-        player.lastAction = null; // Allow another main action
-        newState.log.push(`${player.name} activated the 'Extra Move' card.`);
-        // Note: The card is only consumed after the extra move is made.
+        newState.log.push(`${player.name} activated the 'Extra Move' card. They can perform another main action.`);
+    } else if (cardName === 'Extra VP') {
+        player.victoryPoints += 10;
+        player.specialCards.splice(cardIndex, 1);
+        newState.log.push(`${player.name} used 'Extra VP' and gained 10 Victory Points!`);
     } else {
+        // For other instant-use cards, consume them.
         player.specialCards.splice(cardIndex, 1);
         newState.log.push(`${player.name} used the '${cardName}' card.`);
     }
 
-    player.actionsThisTurn.push('use-card');
-    
     return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
 };
 
@@ -576,6 +565,39 @@ export const handleStealResource = (state: GameState, targetPlayerId: number, re
 
     return { ...newState, stealResourceDialogState: null };
 };
+
+export const handleTeleport = (state: GameState, x: number, y: number): GameState => {
+    let newState = { ...state };
+    const { players, currentPlayerIndex, teleportDialogState, map } = newState;
+    const player = players[currentPlayerIndex];
+
+    if (!teleportDialogState || teleportDialogState.armyId === null) return newState;
+    
+    const armyToMove = player.armies.find(a => a.id === teleportDialogState.armyId);
+    if (!armyToMove) return newState;
+
+    const cardIndex = player.specialCards.indexOf('Teleport');
+    if (cardIndex === -1) {
+        newState.log.push('Error: Teleport card not found.');
+        return { ...newState, teleportDialogState: null };
+    }
+    
+    // Consume card and action
+    player.specialCards.splice(cardIndex, 1);
+    player.actionsThisTurn.push('use-card');
+    player.lastAction = 'teleport';
+
+    // Move army
+    const oldTile = map[armyToMove.position.y][armyToMove.position.x];
+    oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== armyToMove.id);
+
+    armyToMove.position = { x, y };
+    map[y][x].occupants.push({ playerId: player.id, armyId: armyToMove.id });
+
+    newState.log.push(`${player.name} used 'Teleport' to move an army!`);
+
+    return { ...newState, teleportDialogState: null, possibleMoves: [], selectedTile: {x, y} };
+}
 
 // --- Player Exit Logic ---
 

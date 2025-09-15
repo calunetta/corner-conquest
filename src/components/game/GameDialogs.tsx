@@ -8,6 +8,7 @@ import { CardsDialog } from './CardsDialog';
 import { StealResourceDialog } from './StealResourceDialog';
 import { UseCardDialog } from './UseCardDialog';
 import { HostLeaveDialog } from './HostLeaveDialog';
+import { TeleportDialog } from './TeleportDialog';
 import * as GameActions from '@/lib/game-actions';
 
 type GameDialogsProps = {
@@ -18,7 +19,7 @@ type GameDialogsProps = {
 };
 
 export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: GameDialogsProps) {
-  const { combatState, monsterCombatState, positionDialogState, showCardsDialogForPlayer, stealResourceDialogState, useCardDialogState, showHostLeaveDialog } = gameState;
+  const { combatState, monsterCombatState, positionDialogState, showCardsDialogForPlayer, stealResourceDialogState, useCardDialogState, teleportDialogState, showHostLeaveDialog } = gameState;
 
   const handleUpdate = (state: GameState) => {
     setGameState(state);
@@ -32,17 +33,22 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
   const currentTileForMonster = selectedArmy ? gameState.map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
   const handleUseCardAction = (cardName: string) => {
-    // This is the router for card actions
-    if (cardName === 'Steal Resource') {
-        // Directly open the steal resource dialog
-        handleUpdate({...gameState, stealResourceDialogState: { targetPlayerId: null }, showCardsDialogForPlayer: null });
-    } else if (cardName === 'Extra Move') {
-        // Activate extra move directly, no confirmation
-        handleUpdate(GameActions.handleActivateExtraMoveCard(gameState));
-    } else {
-        // For other cards, open the generic confirmation dialog
-        handleUpdate(GameActions.handleOpenUseCardDialog(gameState, cardName));
+    let newState = { ...gameState };
+    switch (cardName) {
+        case 'Steal Resource':
+            newState = { ...newState, stealResourceDialogState: { targetPlayerId: null }, showCardsDialogForPlayer: null };
+            break;
+        case 'Extra Move':
+            newState = GameActions.handleUseCard(newState, 'Extra Move');
+            break;
+        case 'Teleport':
+             newState = { ...newState, teleportDialogState: { armyId: null }, showCardsDialogForPlayer: null };
+             break;
+        default:
+            newState = GameActions.handleOpenUseCardDialog(newState, cardName);
+            break;
     }
+    handleUpdate(newState);
   }
 
   return (
@@ -58,7 +64,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
         <MonsterCombatDialog 
           gameState={gameState} 
           monsters={currentTileForMonster.monsters}
-          onRoll={(monster, useCard, decidedValue) => handleUpdate(GameActions.handleMonsterCombatRoll(gameState, monster, useCard, decidedValue))}
+          onRoll={(monster, useCard, decidedValue, useOvercome) => handleUpdate(GameActions.handleMonsterCombatRoll(gameState, monster, useCard, decidedValue, useOvercome))}
           onClose={() => handleUpdate(GameActions.handleCloseMonsterCombat(gameState))}
           onCancel={() => handleCloseDialog('monsterCombatState')}
         />
@@ -90,6 +96,13 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
           cardName={useCardDialogState.cardName}
           onConfirm={() => handleUpdate(GameActions.handleUseCard(gameState, useCardDialogState.cardName))}
           onClose={() => handleCloseDialog('useCardDialogState')}
+        />
+      )}
+      {teleportDialogState && isMyTurn && (
+        <TeleportDialog
+          player={localPlayer}
+          onSelectArmy={(armyId) => handleUpdate({ ...gameState, teleportDialogState: { armyId }})}
+          onClose={() => handleCloseDialog('teleportDialogState')}
         />
       )}
       {showHostLeaveDialog && (

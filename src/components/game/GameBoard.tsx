@@ -140,6 +140,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 // This case is handled inside the CardsDialog for now
                 // to open the confirmation dialog
                 break;
+            case 'teleport':
+                 // This action is handled by the TeleportDialog
+                 break;
             default:
                 newState = { ...newState, currentAction: action };
         }
@@ -152,6 +155,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleTileClick = (x: number, y: number) => {
     if (!gameState || !isMyTurn || gameState.status !== 'playing') return;
     try {
+        // If in teleport mode, handle teleport
+        if (gameState.teleportDialogState && gameState.teleportDialogState.armyId !== null) {
+            const newState = GameActions.handleTeleport(gameState, x, y);
+            setGameState(newState);
+            return;
+        }
+
         const newState = GameActions.handleTileClick(gameState, x, y);
         setGameState(newState);
     } catch (error: any) {
@@ -197,7 +207,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     );
   }
 
-  const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers } = gameState;
+  const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers, teleportDialogState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
@@ -210,6 +220,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   };
   
   const gridColsClass = `grid-cols-2 ${gridColsMap[players.length] || 'md:grid-cols-4'}`;
+  const isTeleporting = teleportDialogState && teleportDialogState.armyId !== null;
 
 
   return (
@@ -258,18 +269,25 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             map={gameState.map} 
             players={players} 
             onTileClick={handleTileClick} 
-            possibleMoves={possibleMoves} 
+            possibleMoves={isTeleporting ? gameState.map.flat() : possibleMoves} 
             selectedTile={selectedTile} 
             currentPlayerId={currentPlayer.id} 
-            selectedArmyId={selectedArmyId} 
+            selectedArmyId={selectedArmyId}
+            isTeleporting={isTeleporting}
           />
           <div className='text-center'>
             {status === 'waiting' ? (
               <p className='text-base font-semibold text-accent sm:text-lg'>Waiting for players... ({players.length}/{maxPlayers})</p>
             ) : (
               <>
-                <p className='text-base font-semibold sm:text-lg'>Turn {gameState.turn}: <span style={{color: currentPlayer.color}}>{currentPlayer.name}'s turn</span></p>
-                {gameState.currentAction && <p className='text-sm text-muted-foreground sm:text-base'>Current Action: {gameState.currentAction}</p>}
+                {isTeleporting ? (
+                    <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>Teleport Mode: Select any tile to move your army.</p>
+                ) : (
+                    <>
+                        <p className='text-base font-semibold sm:text-lg'>Turn {gameState.turn}: <span style={{color: currentPlayer.color}}>{currentPlayer.name}'s turn</span></p>
+                        {gameState.currentAction && <p className='text-sm text-muted-foreground sm:text-base'>Current Action: {gameState.currentAction}</p>}
+                    </>
+                )}
               </>
             )}
           </div>

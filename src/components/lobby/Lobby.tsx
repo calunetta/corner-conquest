@@ -51,13 +51,14 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     gameName: string,
     maxPlayers: number,
     playerColor: PlayerColor,
-    numBots: number
+    numBots: number,
+    debugMode: boolean
   ): Promise<boolean> => {
     if (!playerId || !username) return false;
 
     const newGameId = doc(collection(db, 'games')).id;
     const creator = { playerId, name: username, color: playerColor };
-    let newGame = initializeGame(newGameId, gameName, maxPlayers, creator, numBots);
+    let newGame = initializeGame(newGameId, gameName, maxPlayers, creator, numBots, debugMode);
     
     const isBotGame = maxPlayers === 1;
     if (isBotGame) {
