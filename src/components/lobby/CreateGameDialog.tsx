@@ -42,13 +42,13 @@ export function CreateGameDialog({
   const [gameName, setGameName] = useState('');
   const [maxPlayers, setMaxPlayers] = useState<number>(4);
   const [playerColor, setPlayerColor] = useState<PlayerColor>('blue');
-  const [numBots, setNumBots] = useState<number>(1);
   const [isCreating, setIsCreating] = useState(false);
 
   const handleSubmit = async () => {
     if (!gameName || isCreating) return;
     setIsCreating(true);
-    const success = await onCreateGame(gameName, maxPlayers, playerColor, maxPlayers === 1 ? numBots : 0);
+    const numBots = maxPlayers === 1 ? 1 : 0;
+    const success = await onCreateGame(gameName, maxPlayers, playerColor, numBots);
     setIsCreating(false);
     if (success) {
       onOpenChange(false);
@@ -89,33 +89,13 @@ export function CreateGameDialog({
                 <SelectValue placeholder="Select max players" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">Player vs. Bots</SelectItem>
+                <SelectItem value="1">Player vs. Bot</SelectItem>
                 <SelectItem value="2">2 Players</SelectItem>
                 <SelectItem value="3">3 Players</SelectItem>
                 <SelectItem value="4">4 Players</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          {maxPlayers === 1 && (
-             <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="numBots" className="text-right">
-                    Bots
-                </Label>
-                <Select
-                value={String(numBots)}
-                onValueChange={(value) => setNumBots(Number(value))}
-                >
-                <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select number of bots" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="1">1 Bot</SelectItem>
-                    <SelectItem value="2">2 Bots</SelectItem>
-                    <SelectItem value="3">3 Bots</SelectItem>
-                </SelectContent>
-                </Select>
-            </div>
-          )}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="playerColor" className="text-right">
               Your Color
