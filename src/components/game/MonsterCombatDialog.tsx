@@ -21,7 +21,7 @@ import { Slider } from '../ui/slider';
 type MonsterCombatDialogProps = {
   gameState: GameState;
   monsters: Monster[];
-  onRoll: (monster: Monster, useCard: boolean, decidedValue: number) => void;
+  onRoll: (monster: Monster, useCard: boolean, decidedValue: number, useOvercomeCard?: boolean) => void;
   onClose: () => void;
   onCancel: () => void;
 };
@@ -29,8 +29,9 @@ type MonsterCombatDialogProps = {
 export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCancel }: MonsterCombatDialogProps) {
   const { monsterCombatState, players } = gameState;
   const [selectedMonster, setSelectedMonster] = useState<Monster | null>(null);
-  const [useCard, setUseCard] = useState(false);
+  const [useDecideCard, setUseDecideCard] = useState(false);
   const [decidedValue, setDecidedValue] = useState(6);
+  const [useOvercomeCard, setUseOvercomeCard] = useState(false);
 
   useEffect(() => {
     if (monsters.length === 1) {
@@ -43,6 +44,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   const { attackerId, attackerRolls, monsterRolls, winnerId, phase } = monsterCombatState;
   const attacker = players[attackerId];
   const hasDecideCard = attacker.specialCards.includes('Decide Dice Roll');
+  const hasOvercomeCard = attacker.specialCards.includes('Overcome');
   const monsterForDisplay = phase === 'results' ? monsterCombatState.monster : selectedMonster;
   
   const isSelectionPhase = phase === 'rolling' && monsters.length > 1 && !selectedMonster;
@@ -60,6 +62,12 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   const getMonsterName = (monster: Monster) => {
     return `${monster.type} ${monster.id} Monster (Lvl ${monster.level})`;
   }
+  
+  const handleAttack = () => {
+    if (selectedMonster) {
+      onRoll(selectedMonster, useDecideCard, decidedValue, useOvercomeCard);
+    }
+  };
   
   const renderAttackScreen = () => (
     <>
@@ -79,32 +87,41 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         )}
       </div>
 
-      {hasDecideCard && (
-        <div className="space-y-4 rounded-md border bg-muted/50 p-4">
-            <div className="flex items-center space-x-2">
-                <Checkbox id="use-decide-card" checked={useCard} onCheckedChange={(checked) => setUseCard(!!checked)} />
-                <Label htmlFor="use-decide-card" className='font-bold'>Use 'Decide Dice Roll' card?</Label>
-            </div>
-            {useCard && (
-                <div className='space-y-2 pt-2'>
-                    <div className='flex justify-between'>
-                        <Label>Choose Dice Value</Label>
-                        <span className='font-bold text-primary'>{decidedValue}</span>
-                    </div>
-                    <Slider
-                        min={1}
-                        max={6}
-                        step={1}
-                        value={[decidedValue]}
-                        onValueChange={(value) => setDecidedValue(value[0])}
-                    />
-                </div>
-            )}
-        </div>
-      )}
-       <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+      <div className='space-y-4'>
+        {hasOvercomeCard && (
+           <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
+              <Checkbox id="use-overcome-card" checked={useOvercomeCard} onCheckedChange={(checked) => { setUseOvercomeCard(!!checked); if(!!checked) setUseDecideCard(false); }} />
+              <Label htmlFor="use-overcome-card" className='font-bold'>Use 'Overcome' card to win automatically?</Label>
+          </div>
+        )}
+        {hasDecideCard && (
+          <div className="space-y-4 rounded-md border bg-muted/50 p-4">
+              <div className="flex items-center space-x-2">
+                  <Checkbox id="use-decide-card" checked={useDecideCard} disabled={useOvercomeCard} onCheckedChange={(checked) => setUseDecideCard(!!checked)} />
+                  <Label htmlFor="use-decide-card" className='font-bold'>Use 'Decide Dice Roll' card?</Label>
+              </div>
+              {useDecideCard && (
+                  <div className='space-y-2 pt-2'>
+                      <div className='flex justify-between'>
+                          <Label>Choose Dice Value</Label>
+                          <span className='font-bold text-primary'>{decidedValue}</span>
+                      </div>
+                      <Slider
+                          min={1}
+                          max={6}
+                          step={1}
+                          value={[decidedValue]}
+                          onValueChange={(value) => setDecidedValue(value[0])}
+                          disabled={useOvercomeCard}
+                      />
+                  </div>
+              )}
+          </div>
+        )}
+      </div>
+       <AlertDialogFooter className="mt-4 flex-col-reverse gap-2 sm:flex-row">
           <AlertDialogCancel onClick={onCancel} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
-          <Button onClick={() => onRoll(selectedMonster!, useCard, decidedValue)} disabled={!selectedMonster} className="w-full sm:w-auto">
+          <Button onClick={handleAttack} disabled={!selectedMonster} className="w-full sm:w-auto">
             Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}!
           </Button>
       </AlertDialogFooter>

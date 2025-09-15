@@ -391,38 +391,59 @@ export function handleCloseCombat(state: GameState): GameState {
     return { ...newState, combatState: null, currentAction: null };
 }
 
-export function handleMonsterCombatRoll(state: GameState, monster: Monster, useCard: boolean, decidedValue: number): GameState {
+export function handleMonsterCombatRoll(state: GameState, monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard?: boolean): GameState {
     const newState = { ...state };
     const { players, currentPlayerIndex } = newState;
     const attacker = players[currentPlayerIndex];
 
-    if (useCard) {
-      const cardIndex = attacker.specialCards.indexOf('Decide Dice Roll');
-      if (cardIndex > -1) {
-        attacker.specialCards.splice(cardIndex, 1);
-        newState.log.push(`${attacker.name} used the 'Decide Dice Roll' card!`);
-      } else {
-        useCard = false;
-      }
+    let attackerScore = 0;
+    let monsterScore = 0;
+    let attackerRolls: number[] = [];
+    let monsterRolls: number[] = [];
+    let winnerId: number | null = null;
+    
+    if (useOvercomeCard) {
+        const cardIndex = attacker.specialCards.indexOf('Overcome');
+        if (cardIndex > -1) {
+            attacker.specialCards.splice(cardIndex, 1);
+            newState.log.push(`${attacker.name} used the 'Overcome' card to automatically win!`);
+            winnerId = attacker.id;
+        } else {
+             useOvercomeCard = false; // Card not found, proceed normally
+        }
     }
 
-    const rollDice = (count: number) => Array.from({ length: Math.min(count, 4) }, () => Math.floor(Math.random() * 6) + 1);
+    if (!useOvercomeCard) {
+        if (useDecideCard) {
+          const cardIndex = attacker.specialCards.indexOf('Decide Dice Roll');
+          if (cardIndex > -1) {
+            attacker.specialCards.splice(cardIndex, 1);
+            newState.log.push(`${attacker.name} used the 'Decide Dice Roll' card!`);
+          } else {
+            useDecideCard = false;
+          }
+        }
 
-    let attackerRolls = rollDice(attacker.armyCount + attacker.attackPower);
-    if(useCard) attackerRolls[0] = decidedValue; 
+        const rollDice = (count: number) => Array.from({ length: Math.min(count, 4) }, () => Math.floor(Math.random() * 6) + 1);
 
-    const monsterRolls = rollDice(monster.level);
-    const attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
-    const monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
+        attackerRolls = rollDice(attacker.armyCount + attacker.attackPower);
+        if(useDecideCard) attackerRolls[0] = decidedValue; 
+
+        monsterRolls = rollDice(monster.level);
+        attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
+        monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
+        winnerId = attackerScore >= monsterScore ? attacker.id : null;
+    }
+
 
     newState.monsterCombatState = {
       attackerId: attacker.id,
       monster,
       attackerRolls,
       monsterRolls,
-      winnerId: attackerScore >= monsterScore ? attacker.id : null,
+      winnerId: winnerId,
       phase: 'results',
-      useDecideDiceRollCard: useCard,
+      useDecideDiceRollCard: useDecideCard,
       decidedRollValue: decidedValue,
     };
     return newState;
@@ -444,7 +465,15 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
       attacker.victoryPoints += monsterVP;
       currentTile.monsters = (currentTile.monsters || []).filter(m => m.id !== monsterCombatState.monster.id);
       newState.log.push(`${attacker.name} defeated the monster for ${monsterVP} VP!`);
-      if (currentTile.monsters?.length === 0) currentTile.type = 'resource';
+      
+      if (currentTile.monsters?.length === 0) {
+        currentTile.type = 'resource';
+        // Add a random resource to the now-empty tile
+        const resourceTypes: ResourceType[] = ['food', 'iron', 'gems'];
+        const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+        currentTile.resources.push({ type: randomResource, amount: 1});
+        newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
+      }
     } else {
       const baseTile = map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
       if (baseTile) {
@@ -498,12 +527,19 @@ export const handleUseCard = (state: GameState, cardName: string) => {
         return { ...newState, useCardDialogState: null };
     }
     
-    // Generic card usage logic, specific cards have their own handlers now
-    player.specialCards.splice(cardIndex, 1);
+    if (cardName === 'Extra Move') {
+        player.hasExtraMove = true;
+        player.lastAction = null; // Allow another main action
+        newState.log.push(`${player.name} activated the 'Extra Move' card.`);
+        // Note: The card is only consumed after the extra move is made.
+    } else {
+        player.specialCards.splice(cardIndex, 1);
+        newState.log.push(`${player.name} used the '${cardName}' card.`);
+    }
+
     player.actionsThisTurn.push('use-card');
-    newState.log.push(`${player.name} used the '${cardName}' card.`);
     
-    return { ...newState, useCardDialogState: null };
+    return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
 };
 
 export const handleStealResource = (state: GameState, targetPlayerId: number, resource: ResourceType) => {
