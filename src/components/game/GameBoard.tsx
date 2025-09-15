@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import type { GameState, GameAction, ResourceType, IslandResource, Monster, Army, FirestoreGameState } from '@/lib/types';
+import type { GameState, GameAction, ResourceType, IslandResource, Monster, Army, FirestoreGameState, Player } from '@/lib/types';
 import { initializeGame, unflattenMap, flattenMap } from '@/lib/game-logic';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
@@ -8,18 +8,23 @@ import { ActionsPanel } from './ActionsPanel';
 import { GameLog } from './GameLog';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, ArrowLeft } from 'lucide-react';
 import { CombatDialog } from './CombatDialog';
 import { MonsterCombatDialog } from './MonsterCombatDialog';
 import { PositionDialog } from './PositionDialog';
 import { CardsDialog } from './CardsDialog';
 import { StealResourceDialog } from './StealResourceDialog';
 import { UseCardDialog } from './UseCardDialog';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { usePlayer } from '@/hooks/use-player';
 
-const GAME_ID = 'main-game'; // For now, we'll have one global game session
+type GameBoardProps = {
+  gameId: string;
+  onExit: () => void;
+};
+
 
 function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
     const monsters: Monster[] = [];
@@ -86,14 +91,16 @@ function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
 }
 
 
-export function GameBoard() {
+export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const { toast } = useToast();
   const [toastsToShow, setToastsToShow] = useState<{ title: string; description: string; variant?: "destructive" | "default" }[]>([]);
   const [isPlayerInfoOpen, setIsPlayerInfoOpen] = useState(true);
+  const { playerId, username } = usePlayer();
 
   useEffect(() => {
-    const gameDocRef = doc(db, 'games', GAME_ID);
+    if (!gameId) return;
+    const gameDocRef = doc(db, 'games', gameId);
 
     const unsubscribe = onSnapshot(gameDocRef, async (docSnapshot) => {
       if (docSnapshot.exists()) {
@@ -103,16 +110,8 @@ export function GameBoard() {
           map: unflattenMap(firestoreState.map, firestoreState.mapSize),
         });
       } else {
-        // Doc doesn't exist, so we initialize a new game.
-        console.log('No game document found! Initializing new game in Firestore.');
-        const newGame = initializeGame();
-        const firestoreState: FirestoreGameState = {
-            ...newGame,
-            map: flattenMap(newGame.map),
-            mapSize: newGame.map.length,
-        };
-        await setDoc(gameDocRef, firestoreState);
-        // The listener will pick up this new document and set the state.
+        console.warn(`Game document ${gameId} not found!`);
+        onExit(); // Game doesn't exist, go back to lobby
       }
     }, (error) => {
       console.error("Firestore snapshot error:", error);
@@ -120,11 +119,16 @@ export function GameBoard() {
     });
 
     return () => unsubscribe();
-  }, [toast]);
+  }, [gameId, toast, onExit]);
   
   const updateGameState = async (state: GameState) => {
-    const gameDocRef = doc(db, 'games', GAME_ID);
+    const gameDocRef = doc(db, 'games', gameId);
     
+    // Check if game has started
+    if (state.turn > 0 && state.status === 'waiting') {
+        state.status = 'playing';
+    }
+
     const sanitizedMap = state.map.map(row => row.map(tile => ({
         ...tile,
         positionedBy: tile.positionedBy || [],
@@ -148,7 +152,12 @@ export function GameBoard() {
   }, [toastsToShow, toast]);
 
   const handleAction = (action: GameAction) => {
-    if (!gameState) return;
+    if (!gameState || !playerId) return;
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    if (currentPlayer.id !== localPlayer?.id) {
+        toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
+        return;
+    }
     
     if (action === 'end-turn') {
         handleEndTurn();
@@ -156,7 +165,6 @@ export function GameBoard() {
     }
     
     const { players, selectedArmyId } = gameState;
-    const currentPlayer = players[gameState.currentPlayerIndex];
     const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
 
     const newState = JSON.parse(JSON.stringify(gameState)); // Deep clone
@@ -182,7 +190,7 @@ export function GameBoard() {
     } else if (action === 'attack') {
       handleAttackAction(newState);
     } else if (action === 'show-cards') {
-        newState.showCardsDialog = true;
+        newState.showCardsDialogForPlayer = currentPlayer.id;
         updateGameState(newState);
     } else {
        updateGameState(newState);
@@ -194,7 +202,7 @@ export function GameBoard() {
     if (!gameState) return;
     const newState = JSON.parse(JSON.stringify(gameState));
     newState.useCardDialogState = { cardName };
-    newState.showCardsDialog = false; // Close card list to show confirmation
+    newState.showCardsDialogForPlayer = null; // Close card list to show confirmation
     updateGameState(newState);
   };
 
@@ -231,7 +239,7 @@ export function GameBoard() {
     }
     
     newState.useCardDialogState = null;
-    newState.showCardsDialog = false;
+    newState.showCardsDialogForPlayer = null;
     updateGameState(newState);
   };
 
@@ -358,6 +366,12 @@ export function GameBoard() {
         updateGameState(state);
         return;
     }
+    if (player.lastAction === 'move') {
+      toast({ title: 'Cannot Collect', description: 'You cannot collect resources after moving in the same turn.', variant: 'destructive'});
+      state.currentAction = null;
+      updateGameState(state);
+      return;
+    }
     
     const position = player.positions.find(p => p.x === army.position.x && p.y === army.position.y);
 
@@ -385,10 +399,11 @@ export function GameBoard() {
   };
 
   const handleTileClick = (x: number, y: number) => {
-    if (!gameState) return;
+    if (!gameState || !playerId) return;
     const newState = JSON.parse(JSON.stringify(gameState));
     const { players, currentPlayerIndex, selectedArmyId, possibleMoves } = newState;
     const currentPlayer = players[currentPlayerIndex];
+    if (currentPlayer.id !== localPlayer?.id) return;
 
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
     const clickedTile = newState.map[y][x];
@@ -441,6 +456,13 @@ export function GameBoard() {
     const army = player.armies.find(a => a.id === selectedArmyId);
 
     if (!army) return;
+
+    if (player.lastAction === 'move') {
+      toast({ title: 'Cannot Position', description: 'You cannot position an army after moving in the same turn.', variant: 'destructive'});
+      state.currentAction = null;
+      updateGameState(state);
+      return;
+    }
 
     const tile = map[army.position.y][army.position.x];
 
@@ -577,6 +599,13 @@ export function GameBoard() {
     const army = attacker.armies.find(a => a.id === selectedArmyId);
     if (!army) return;
 
+    if (attacker.lastAction === 'move') {
+      toast({ title: 'Cannot Attack', description: 'You cannot attack after moving in the same turn.', variant: 'destructive'});
+      state.currentAction = null;
+      updateGameState(state);
+      return;
+    }
+
     const currentTile = map[army.position.y][army.position.x];
     const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
 
@@ -656,8 +685,15 @@ export function GameBoard() {
     }
     
     const loserId = winnerId === attackerId ? defenderId : attackerId;
-    const winner = players[winnerId];
-    const loser = players[loserId];
+    const winner = players.find(p => p.id === winnerId);
+    const loser = players.find(p => p.id === loserId);
+
+    if (!winner || !loser) {
+        newState.combatState = null;
+        newState.currentAction = null;
+        updateGameState(newState);
+        return;
+    }
     
     const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
     if (!attackingArmy) {
@@ -764,7 +800,9 @@ export function GameBoard() {
     
     const newState = JSON.parse(JSON.stringify(gameState));
     const { monsterCombatState, players, map, selectedArmyId } = newState;
-    const attacker = players[monsterCombatState.attackerId];
+    const attacker = players.find(p => p.id === monsterCombatState.attackerId);
+    if (!attacker) return;
+    
     const attackingArmy = attacker.armies.find(a => a.id === selectedArmyId);
     if (!attackingArmy) return;
 
@@ -847,22 +885,40 @@ export function GameBoard() {
     updateGameState(state);
   }
 
-  if (!gameState) {
+  if (!gameState || !playerId) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        <p className="ml-4 text-lg">Connecting to game session...</p>
+        <p className="ml-4 text-lg">Joining game session...</p>
       </div>
     );
   }
 
-  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, monsterCombatState, positionDialogState, showCardsDialog, selectedArmyId, stealResourceDialogState, useCardDialogState } = gameState;
+  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, monsterCombatState, positionDialogState, showCardsDialogForPlayer, selectedArmyId, stealResourceDialogState, useCardDialogState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
+  const localPlayer = players.find(p => p.id === playerId);
+
+  if (!localPlayer) {
+      return (
+         <div className="flex h-screen w-screen flex-col items-center justify-center gap-4">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <p className="ml-4 text-lg">You are not in this game. Returning to lobby...</p>
+         </div>
+      );
+  }
+
+  const isMyTurn = currentPlayer.id === localPlayer.id;
+
   const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const currentTileForMonster = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
   return (
     <div className="relative flex h-screen w-full flex-col gap-4 overflow-auto p-4">
+       <div className="flex items-center gap-4">
+        <Button variant="outline" size="icon" onClick={onExit}><ArrowLeft /></Button>
+        <h1 className="text-2xl font-bold">Corner Conquest</h1>
+      </div>
+      
       <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen} className="w-full">
         <div className="flex items-center justify-between rounded-md bg-muted/50 p-2">
             <h2 className="text-lg font-semibold">Player Information</h2>
@@ -875,17 +931,19 @@ export function GameBoard() {
         </div>
         <CollapsibleContent>
             <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <PlayerInfo player={players[0]} isCurrentPlayer={currentPlayerIndex === 0} />
-              <PlayerInfo player={players[1]} isCurrentPlayer={currentPlayerIndex === 1} />
-              <PlayerInfo player={players[2]} isCurrentPlayer={currentPlayerIndex === 2} />
-              <PlayerInfo player={players[3]} isCurrentPlayer={currentPlayerIndex === 3} />
+              {players.map(p => (
+                 <PlayerInfo key={p.id} player={p} isCurrentPlayer={currentPlayerIndex === p.id} />
+              ))}
+              {Array.from({ length: gameState.maxPlayers - players.length}).map((_, i) => (
+                  <div key={`empty-${i}`} className="flex items-center justify-center rounded-lg border-2 border-dashed bg-card p-4 text-muted-foreground">Waiting for player...</div>
+              ))}
             </div>
         </CollapsibleContent>
       </Collapsible>
       
       <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-[1fr_320px]">
         <main className="flex flex-col items-center justify-start gap-4 overflow-hidden">
-          <MapGrid map={map} players={players} onTileClick={handleTileClick} possibleMoves={possibleMoves} selectedTile={selectedTile} currentPlayerIndex={currentPlayerIndex} selectedArmyId={selectedArmyId} />
+          <MapGrid map={map} players={players} onTileClick={handleTileClick} possibleMoves={possibleMoves} selectedTile={selectedTile} currentPlayerId={currentPlayer.id} selectedArmyId={selectedArmyId} />
           <div className='text-center'>
               <p className='text-lg font-semibold'>Turn {gameState.turn}: <span style={{color: currentPlayer.color}}>{currentPlayer.name}'s turn</span></p>
               {currentAction && <p className='text-muted-foreground'>Current Action: {currentAction}</p>}
@@ -893,7 +951,7 @@ export function GameBoard() {
           </div>
         </main>
         <aside className="flex flex-col justify-start gap-4">
-          <ActionsPanel onAction={handleAction} gameState={gameState} />
+          <ActionsPanel onAction={handleAction} gameState={gameState} isMyTurn={isMyTurn} />
           <GameLog logs={log} />
         </aside>
       </div>
@@ -929,12 +987,12 @@ export function GameBoard() {
           }
         />
       )}
-       {showCardsDialog && (
+       {showCardsDialogForPlayer === localPlayer.id && (
         <CardsDialog 
-          player={currentPlayer}
+          player={localPlayer}
           onClose={() => {
               const newState = JSON.parse(JSON.stringify(gameState));
-              newState.showCardsDialog = false;
+              newState.showCardsDialogForPlayer = null;
               newState.currentAction = null;
               updateGameState(newState);
             }
@@ -942,7 +1000,7 @@ export function GameBoard() {
           onUseCard={handleOpenUseCardDialog}
         />
       )}
-      {stealResourceDialogState && (
+      {stealResourceDialogState && isMyTurn && (
         <StealResourceDialog
             players={players.filter(p => p.id !== currentPlayerIndex)}
             onSteal={handleStealResource}
@@ -953,7 +1011,7 @@ export function GameBoard() {
             }}
         />
       )}
-      {useCardDialogState && (
+      {useCardDialogState && isMyTurn && (
         <UseCardDialog
             cardName={useCardDialogState.cardName}
             onConfirm={() => handleUseCard(useCardDialogState.cardName)}
@@ -967,5 +1025,3 @@ export function GameBoard() {
     </div>
   );
 }
-
-    

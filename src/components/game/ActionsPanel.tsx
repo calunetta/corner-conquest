@@ -8,9 +8,10 @@ import { Separator } from '../ui/separator';
 type ActionsPanelProps = {
   onAction: (action: GameAction) => void;
   gameState: GameState;
+  isMyTurn: boolean;
 };
 
-export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
+export function ActionsPanel({ onAction, gameState, isMyTurn }: ActionsPanelProps) {
   const { currentPlayerIndex, players, map, currentAction, specialCardsDeck, selectedArmyId } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   const lastAction = currentPlayer.lastAction;
@@ -42,7 +43,7 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle>Actions</CardTitle>
-        <Button size="sm" onClick={() => onAction('end-turn')}>End Turn</Button>
+        <Button size="sm" onClick={() => onAction('end-turn')} disabled={!isMyTurn}>End Turn</Button>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 grid-rows-2 gap-2">
@@ -51,7 +52,7 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
                     key={action.id}
                     variant={currentAction === action.id ? 'default' : 'outline'}
                     onClick={() => onAction(action.id)}
-                    disabled={action.disabled}
+                    disabled={!isMyTurn || action.disabled}
                     className="flex h-16 flex-col items-center justify-center gap-1 p-2 text-center"
                 >
                     {action.icon}
@@ -66,7 +67,7 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
                     key={action.id}
                     variant={currentAction === action.id ? 'default' : 'outline'}
                     onClick={() => onAction(action.id)}
-                    disabled={action.disabled}
+                    disabled={!isMyTurn || action.disabled}
                     className="flex h-auto min-h-12 flex-col items-center justify-center gap-1 p-2 text-center text-xs sm:flex-row sm:text-sm"
                 >
                     {action.icon}

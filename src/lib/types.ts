@@ -1,6 +1,7 @@
 export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'green' | 'yellow';
+export type GameStatus = 'waiting' | 'playing' | 'finished';
 
 export type IslandResource = {
   type: ResourceType;
@@ -19,7 +20,8 @@ export type Army = {
 }
 
 export type Player = {
-  id: number;
+  id: number; // This is the player's seat index (0-3)
+  playerId: string; // This is the unique session ID from usePlayer
   name: string;
   color: PlayerColor;
   armies: Army[];
@@ -89,6 +91,10 @@ export type UseCardDialogState = {
 }
 
 export type GameState = {
+  id: string;
+  name: string;
+  status: GameStatus;
+  maxPlayers: number;
   map: Island[][];
   players: Player[];
   currentPlayerIndex: number;
@@ -103,7 +109,7 @@ export type GameState = {
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
   positionDialogState: PositionDialogState | null;
-  showCardsDialog: boolean;
+  showCardsDialogForPlayer: number | null;
   stealResourceDialogState: StealResourceDialogState | null;
   useCardDialogState: UseCardDialogState | null;
 };

@@ -2,14 +2,12 @@ import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, 
 import { SPECIAL_CARDS } from './card-data';
 
 const MAP_SIZE = 7;
-const PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
+const ALL_PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
 
-// Helper to convert 2D map to a flat array for Firestore
 export function flattenMap(map: Island[][]): Island[] {
   return map.flat();
 }
 
-// Helper to convert flat array back to 2D map
 export function unflattenMap(flatMap: Island[], size: number): Island[][] {
   const map: Island[][] = [];
   for (let i = 0; i < size; i++) {
@@ -18,7 +16,7 @@ export function unflattenMap(flatMap: Island[], size: number): Island[][] {
   return map;
 }
 
-export function initializeGame(): GameState {
+export function initializeGame(gameId: string, gameName: string, maxPlayers: number, creator: { playerId: string, name: string, color: PlayerColor }): GameState {
   const map: Island[][] = Array.from({ length: MAP_SIZE }, (_, y) =>
     Array.from({ length: MAP_SIZE }, (_, x) => ({
       id: `${x}-${y}`,
@@ -34,31 +32,36 @@ export function initializeGame(): GameState {
   );
 
   const players: Player[] = [];
+  
   const basePositions = [
     { x: 0, y: 0 },
-    { x: MAP_SIZE - 1, y: 0 },
-    { x: 0, y: MAP_SIZE - 1 },
     { x: MAP_SIZE - 1, y: MAP_SIZE - 1 },
+    { x: 0, y: MAP_SIZE - 1 },
+    { x: MAP_SIZE - 1, y: 0 },
   ];
+  
+  const creatorSeatIndex = 0;
+  const creatorPos = basePositions[creatorSeatIndex];
 
-  basePositions.forEach((pos, i) => {
-    const initialArmy = { id: 0, position: pos };
-    map[pos.y][pos.x] = {
-      ...map[pos.y][pos.x],
+  const initialArmy = { id: 0, position: creatorPos };
+  map[creatorPos.y][creatorPos.x] = {
+      ...map[creatorPos.y][creatorPos.x],
       type: 'base',
-      owner: i,
+      owner: creatorSeatIndex,
       isHidden: false,
-      occupants: [{playerId: i, armyId: initialArmy.id}],
+      occupants: [{ playerId: creatorSeatIndex, armyId: initialArmy.id }],
       resources: [
         { type: 'gems', amount: 1 }, 
         { type: 'iron', amount: 1 }, 
         { type: 'food', amount: 1 }
       ], 
-    };
-    players.push({
-      id: i,
-      name: `Player ${i + 1}`,
-      color: PLAYER_COLORS[i],
+  };
+  
+  players.push({
+      id: creatorSeatIndex, // This is the seat index
+      playerId: creator.playerId, // This is the unique session ID
+      name: creator.name,
+      color: creator.color,
       armies: [initialArmy],
       resources: { gems: 0, iron: 0, food: 0 },
       armyCount: 1,
@@ -66,41 +69,38 @@ export function initializeGame(): GameState {
       nextArmyCost: 5,
       victoryPoints: 0,
       lastAction: null,
-      specialCards: ['Extra Move', 'Steal Resource', 'Decide Dice Roll'], // Mock cards
+      specialCards: ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
       positions: [],
       hasExtraMove: false,
       actionsThisTurn: [],
-    });
   });
 
-  // --- New Distance-Based Island Generation ---
   const center = { x: Math.floor(MAP_SIZE / 2), y: Math.floor(MAP_SIZE / 2) };
 
   for (let y = 0; y < MAP_SIZE; y++) {
     for (let x = 0; x < MAP_SIZE; x++) {
-      if (map[y][x].type === 'base') continue;
+      if (map[y][x].type === 'base' && map[y][x].owner !== undefined) continue;
 
       const distance = Math.abs(x - center.x) + Math.abs(y - center.y);
       let islandType: IslandType;
       
       let rand = Math.random();
-      // Adjust probabilities based on distance
-      if (distance <= 1) { // Center
-        if (rand < 0.5) islandType = 'monster';    // 50% chance
-        else if (rand < 0.8) islandType = 'special';  // 30% chance
-        else islandType = 'resource'; // 20% chance
-      } else if (distance <= 3) { // Mid-ring
-        if (rand < 0.6) islandType = 'resource'; // 60% chance
-        else if (rand < 0.9) islandType = 'monster'; // 30% chance
-        else islandType = 'special';  // 10% chance
-      } else { // Outer ring
-        if (rand < 0.85) islandType = 'resource'; // 85% chance
-        else if (rand < 0.95) islandType = 'monster'; // 10% chance
-        else islandType = 'special';  // 5% chance
+      if (distance <= 1) { 
+        if (rand < 0.5) islandType = 'monster';    
+        else if (rand < 0.8) islandType = 'special';  
+        else islandType = 'resource'; 
+      } else if (distance <= 3) {
+        if (rand < 0.6) islandType = 'resource'; 
+        else if (rand < 0.9) islandType = 'monster'; 
+        else islandType = 'special';  
+      } else {
+        if (rand < 0.85) islandType = 'resource';
+        else if (rand < 0.95) islandType = 'monster';
+        else islandType = 'special';
       }
 
       if (x === center.x && y === center.y) {
-          islandType = 'monster'; // The very center is always a monster
+          islandType = 'monster';
       }
       
       map[y][x].type = islandType;
@@ -111,11 +111,11 @@ export function initializeGame(): GameState {
         
         let numResourceTypes: number;
         if (distance <= 1) { 
-            numResourceTypes = Math.random() < 0.7 ? 2 : 1; // 70% chance of 2 types
+            numResourceTypes = Math.random() < 0.7 ? 2 : 1;
         } else if (distance <= 3) {
-            numResourceTypes = Math.random() < 0.5 ? 2 : 1; // 50% chance of 2 types
+            numResourceTypes = Math.random() < 0.5 ? 2 : 1;
         } else { 
-            numResourceTypes = Math.random() < 0.3 ? 2 : 1; // 30% chance of 2 types
+            numResourceTypes = Math.random() < 0.3 ? 2 : 1;
         }
         
         const islandResources: IslandResource[] = [];
@@ -134,7 +134,7 @@ export function initializeGame(): GameState {
             let firstResourceAmount = 1;
             let secondResourceAmount = 1;
 
-            if (distance <= 3) { // Higher chance for more spots closer to center
+            if (distance <= 3) {
                 if (Math.random() < 0.4) firstResourceAmount = 2;
                 if (Math.random() < 0.4) secondResourceAmount = 2;
             } else {
@@ -157,22 +157,100 @@ export function initializeGame(): GameState {
   });
 
   return {
+    id: gameId,
+    name: gameName,
+    status: 'waiting',
+    maxPlayers,
     map,
     players,
     currentPlayerIndex: 0,
-    turn: 1,
-    log: ['Game started!'],
+    turn: 0, // Turn 0 means game hasn't started
+    log: [`Game '${gameName}' created by ${creator.name}! Waiting for players...`],
     winner: null,
     selectedTile: null,
-    selectedArmyId: 0, // Pre-select the first army
+    selectedArmyId: 0,
     possibleMoves: [],
     currentAction: null,
     specialCardsDeck: [...SPECIAL_CARDS],
     combatState: null,
     monsterCombatState: null,
     positionDialogState: null,
-    showCardsDialog: false,
+    showCardsDialogForPlayer: null,
     stealResourceDialogState: null,
     useCardDialogState: null,
   };
+}
+
+export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: string, name: string }): GameState | null {
+    if (gameState.players.length >= gameState.maxPlayers) {
+        return null; // Game is full
+    }
+    if (gameState.players.some(p => p.playerId === playerInfo.playerId)) {
+        return gameState; // Player is already in the game
+    }
+
+    const newGameState = JSON.parse(JSON.stringify(gameState));
+
+    const usedColors = newGameState.players.map((p: Player) => p.color);
+    const availableColors = ALL_PLAYER_COLORS.filter(c => !usedColors.includes(c));
+
+    if (availableColors.length === 0) return null; // Should not happen if maxPlayers is 4
+
+    const newPlayerColor = availableColors[0];
+    const newPlayerSeatIndex = newGameState.players.length;
+    
+    const basePositions = [
+        { x: 0, y: 0 },
+        { x: MAP_SIZE - 1, y: MAP_SIZE - 1 },
+        { x: 0, y: MAP_SIZE - 1 },
+        { x: MAP_SIZE - 1, y: 0 },
+    ];
+    const newPlayerPos = basePositions[newPlayerSeatIndex];
+
+    const newArmy = { id: 0, position: newPlayerPos };
+    
+    newGameState.map[newPlayerPos.y][newPlayerPos.x] = {
+        ...newGameState.map[newPlayerPos.y][newPlayerPos.x],
+        type: 'base',
+        owner: newPlayerSeatIndex,
+        isHidden: false,
+        occupants: [{ playerId: newPlayerSeatIndex, armyId: newArmy.id }],
+        resources: [
+            { type: 'gems', amount: 1 }, 
+            { type: 'iron', amount: 1 }, 
+            { type: 'food', amount: 1 }
+        ],
+    };
+    newGameState.map[newPlayerPos.y][newPlayerPos.x].isHidden = false;
+
+
+    const newPlayer: Player = {
+        id: newPlayerSeatIndex,
+        playerId: playerInfo.playerId,
+        name: playerInfo.name,
+        color: newPlayerColor,
+        armies: [newArmy],
+        resources: { gems: 0, iron: 0, food: 0 },
+        armyCount: 1,
+        attackPower: 0,
+        nextArmyCost: 5,
+        victoryPoints: 0,
+        lastAction: null,
+        specialCards: ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
+        positions: [],
+        hasExtraMove: false,
+        actionsThisTurn: [],
+    };
+
+    newGameState.players.push(newPlayer);
+    newGameState.log.push(`${playerInfo.name} has joined the game!`);
+
+    // If the game is now full, start it
+    if (newGameState.players.length === newGameState.maxPlayers) {
+        newGameState.log.push(`The game is full! Starting now.`);
+        newGameState.turn = 1;
+        newGameState.status = 'playing';
+    }
+
+    return newGameState;
 }
