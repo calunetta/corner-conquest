@@ -15,7 +15,8 @@ import { PositionDialog } from './PositionDialog';
 import { CardsDialog } from './CardsDialog';
 import { StealResourceDialog } from './StealResourceDialog';
 import { UseCardDialog } from './UseCardDialog';
-import { doc, onSnapshot, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { HostLeaveDialog } from './HostLeaveDialog';
+import { doc, onSnapshot, setDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { usePlayer } from '@/hooks/use-player';
@@ -97,6 +98,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [toastsToShow, setToastsToShow] = useState<{ title: string; description: string; variant?: "destructive" | "default" }[]>([]);
   const [isPlayerInfoOpen, setIsPlayerInfoOpen] = useState(true);
   const { playerId, username } = usePlayer();
+  const [showHostLeaveDialog, setShowHostLeaveDialog] = useState(false);
 
   useEffect(() => {
     if (!gameId) return;
@@ -907,6 +909,35 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     updateGameState(state);
   }
 
+  const handleExitGame = () => {
+    if (!gameState || !localPlayer) return;
+
+    if (isHost && status === 'waiting') {
+        setShowHostLeaveDialog(true);
+    } else {
+        onExit();
+    }
+  }
+
+  const handleConfirmHostLeave = async () => {
+    if (!gameState || !isHost) return;
+    
+    setShowHostLeaveDialog(false);
+
+    if (gameState.players.length === 1) {
+        const gameDocRef = doc(db, 'games', gameId);
+        try {
+            await deleteDoc(gameDocRef);
+            toast({title: 'Game Room Closed', description: 'The empty room has been deleted.'});
+        } catch (error) {
+            console.error("Error deleting game:", error);
+            toast({title: 'Error', description: 'Could not delete the game room.', variant: 'destructive'});
+        }
+    }
+    
+    onExit();
+  };
+
   if (!gameState || !playerId) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
@@ -939,7 +970,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     <div className="relative flex h-screen w-full flex-col gap-4 overflow-auto p-4">
        <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={onExit}><ArrowLeft /></Button>
+          <Button variant="outline" size="icon" onClick={handleExitGame} disabled={status === 'playing'}><ArrowLeft /></Button>
           <h1 className="text-2xl font-bold">Corner Conquest</h1>
         </div>
         {isHost && status === 'waiting' && players.length > 1 && players.length < maxPlayers && (
@@ -1054,6 +1085,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 newState.useCardDialogState = null;
                 updateGameState(newState);
             }}
+        />
+      )}
+      {showHostLeaveDialog && (
+        <HostLeaveDialog
+            isLastPlayer={players.length === 1}
+            onConfirm={handleConfirmHostLeave}
+            onClose={() => setShowHostLeaveDialog(false)}
         />
       )}
     </div>
