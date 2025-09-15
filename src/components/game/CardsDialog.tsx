@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '../ui/scroll-area';
 import { Button } from '../ui/button';
+import { AlertDialogCancel } from '@radix-ui/react-alert-dialog';
 
 type CardsDialogProps = {
   player: Player;
@@ -63,7 +64,9 @@ export function CardsDialog({ player, onClose, onUseCard }: CardsDialogProps) {
         </ScrollArea>
 
         <AlertDialogFooter>
-          <Button variant="outline" onClick={onClose}>Close</Button>
+          <AlertDialogCancel asChild>
+            <Button variant="outline" onClick={onClose}>Close</Button>
+          </AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

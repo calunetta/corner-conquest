@@ -15,11 +15,10 @@ import { PositionDialog } from './PositionDialog';
 import { CardsDialog } from './CardsDialog';
 import { StealResourceDialog } from './StealResourceDialog';
 import { UseCardDialog } from './UseCardDialog';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
-
-function deepClone<T>(obj: T): T {
-  return JSON.parse(JSON.stringify(obj));
-}
+const GAME_ID = 'main-game'; // For now, we'll have one global game session
 
 function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
     const monsters: Monster[] = [];
@@ -74,12 +73,13 @@ function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
         }
     }
 
-    const uniqueLevels = new Set();
+    const uniqueTypes = new Set<string>();
     return monsters.filter(monster => {
-        if (uniqueLevels.has(monster.level)) {
+        const signature = `${monster.id}-${monster.type}-${monster.level}`;
+        if (uniqueTypes.has(signature)) {
             return false;
         }
-        uniqueLevels.add(monster.level);
+        uniqueTypes.add(signature);
         return true;
     });
 }
@@ -91,9 +91,27 @@ export function GameBoard() {
   const [toastsToShow, setToastsToShow] = useState<{ title: string; description: string; variant?: "destructive" | "default" }[]>([]);
 
   useEffect(() => {
-    const newGame = initializeGame();
-    setGameState(newGame);
+    const gameDocRef = doc(db, 'games', GAME_ID);
+
+    const unsubscribe = onSnapshot(gameDocRef, (doc) => {
+        if (doc.exists()) {
+            setGameState(doc.data() as GameState);
+        } else {
+            console.log("No such document! Initializing new game.");
+            const newGame = initializeGame();
+            setDoc(gameDocRef, newGame); // This will also trigger the onSnapshot
+        }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
+  
+  const updateGameState = async (newState: GameState) => {
+    const gameDocRef = doc(db, 'games', GAME_ID);
+    await setDoc(gameDocRef, newState);
+  };
+
 
   useEffect(() => {
     if (toastsToShow.length > 0) {
@@ -108,13 +126,13 @@ export function GameBoard() {
     const currentPlayer = players[gameState.currentPlayerIndex];
     const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
 
-    const newState = deepClone(gameState);
+    const newState = JSON.parse(JSON.stringify(gameState)); // Deep clone
     newState.currentAction = action;
 
     if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'show-cards'].includes(action)) {
         toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
         newState.currentAction = null;
-        setGameState(newState);
+        updateGameState(newState);
         return;
     }
     
@@ -134,19 +152,19 @@ export function GameBoard() {
         newState.showCardsDialog = true;
     }
     
-    setGameState(newState);
+    updateGameState(newState);
   };
   
   const handleOpenUseCardDialog = (cardName: string) => {
     if (!gameState) return;
-    const newState = deepClone(gameState);
+    const newState = JSON.parse(JSON.stringify(gameState));
     newState.useCardDialogState = { cardName };
-    setGameState(newState);
+    updateGameState(newState);
   };
 
   const handleUseCard = (cardName: string) => {
     if (!gameState) return;
-    const newState = deepClone(gameState);
+    const newState = JSON.parse(JSON.stringify(gameState));
     const { players, currentPlayerIndex } = newState;
     const player = players[currentPlayerIndex];
 
@@ -154,7 +172,7 @@ export function GameBoard() {
         toast({ title: "Card Error", description: "You can only use one card per turn.", variant: 'destructive' });
         newState.useCardDialogState = null;
         newState.showCardsDialog = false;
-        setGameState(newState);
+        updateGameState(newState);
         return;
     }
 
@@ -177,12 +195,12 @@ export function GameBoard() {
     
     newState.useCardDialogState = null;
     newState.showCardsDialog = false; // Close card dialog after use
-    setGameState(newState);
+    updateGameState(newState);
   };
 
   const handleStealResource = (targetPlayerId: number, resource: ResourceType) => {
     if (!gameState) return;
-    const newState = deepClone(gameState);
+    const newState = JSON.parse(JSON.stringify(gameState));
     const { players, currentPlayerIndex } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const targetPlayer = players.find(p => p.id === targetPlayerId);
@@ -225,11 +243,11 @@ export function GameBoard() {
       state.log.push(logMsg);
       toast({ title: 'Army Upgraded!', description: logMsg });
       state.currentAction = null;
-      setGameState(state);
+      updateGameState(state);
     } else {
       toast({ title: 'Cannot Upgrade', description: 'Not enough iron.', variant: 'destructive'});
       state.currentAction = null;
-      setGameState(state);
+      updateGameState(state);
     }
   };
   
@@ -241,7 +259,7 @@ export function GameBoard() {
     if (!baseTile) {
       toast({ title: 'Cannot Deploy', description: 'Base not found!', variant: 'destructive'});
       state.currentAction = null;
-      setGameState(state);
+      updateGameState(state);
       return;
     }
 
@@ -259,11 +277,11 @@ export function GameBoard() {
       state.log.push(logMsg);
       toast({ title: 'Army Deployed!', description: logMsg });
       state.currentAction = null;
-      setGameState(state);
+      updateGameState(state);
     } else {
       toast({ title: 'Cannot Deploy', description: 'Not enough food or at max army size.', variant: 'destructive'});
       state.currentAction = null;
-      setGameState(state);
+      updateGameState(state);
     }
   }
 
@@ -274,7 +292,7 @@ export function GameBoard() {
     if (player.specialCards.length >= 10) {
       toast({ title: 'Cannot Buy Card', description: 'You have reached the maximum of 10 cards.', variant: 'destructive'});
       state.currentAction = null;
-      setGameState(state);
+      updateGameState(state);
       return;
     }
 
@@ -288,11 +306,11 @@ export function GameBoard() {
       state.log.push(logMsg);
       toast({ title: 'Card Purchased!', description: logMsg });
       state.currentAction = null;
-      setGameState(state);
+      updateGameState(state);
     } else {
       toast({ title: 'Cannot Buy Card', description: 'Not enough gems or no cards left in the deck.', variant: 'destructive'});
       state.currentAction = null;
-      setGameState(state);
+      updateGameState(state);
     }
   }
 
@@ -304,7 +322,7 @@ export function GameBoard() {
     if (!army) {
         toast({ title: 'Cannot Collect', description: 'No army selected.', variant: 'destructive'});
         state.currentAction = null;
-        setGameState(state);
+        updateGameState(state);
         return;
     }
     
@@ -323,18 +341,18 @@ export function GameBoard() {
         } else {
              toast({ title: 'Cannot Collect', description: 'Resource not found on this island.', variant: 'destructive'});
              state.currentAction = null;
-             setGameState(state);
+             updateGameState(state);
         }
     } else {
       toast({ title: 'Cannot Collect', description: 'You have no army positioned on this island.', variant: 'destructive'});
       state.currentAction = null;
-      setGameState(state);
+      updateGameState(state);
     }
   };
 
   const handleTileClick = (x: number, y: number) => {
     if (!gameState) return;
-    const newState = deepClone(gameState);
+    const newState = JSON.parse(JSON.stringify(gameState));
     const { players, currentPlayerIndex, selectedArmyId, possibleMoves } = newState;
     const currentPlayer = players[currentPlayerIndex];
 
@@ -372,7 +390,7 @@ export function GameBoard() {
           return true;
         });
         newState.possibleMoves = moves;
-        setGameState(newState);
+        updateGameState(newState);
     }
   };
 
@@ -388,14 +406,14 @@ export function GameBoard() {
     if ((tile.type !== 'resource' && tile.type !== 'base') || tile.resources.length === 0) {
         toast({ title: 'Cannot Position', description: 'You can only position on an island with resources.', variant: 'destructive'});
         state.currentAction = null;
-        setGameState(state);
+        updateGameState(state);
         return;
     }
     
     if (player.positions.some(p => p.x === army.position.x && p.y === army.position.y)) {
       toast({ title: 'Already Positioned', description: `You already have an army positioned at ${army.position.x},${army.position.y}.`, variant: 'destructive'});
       state.currentAction = null;
-      setGameState(state);
+      updateGameState(state);
       return;
     }
     
@@ -406,12 +424,12 @@ export function GameBoard() {
     if (availableResources.length === 0) {
       toast({ title: 'Cannot Position', description: 'All resources on this island are already occupied.', variant: 'destructive'});
       state.currentAction = null;
-      setGameState(state);
+      updateGameState(state);
       return;
     }
     
     state.positionDialogState = { x: army.position.x, y: army.position.y, resources: availableResources };
-    setGameState(state);
+    updateGameState(state);
   }
 
   const handleSelectResourceForPosition = (state: GameState, resource: ResourceType) => {
@@ -422,7 +440,7 @@ export function GameBoard() {
     if (!army || !positionDialogState) {
         state.positionDialogState = null;
         state.currentAction = null;
-        setGameState(state);
+        updateGameState(state);
         return;
     }
     
@@ -512,7 +530,7 @@ export function GameBoard() {
         newState.currentAction = null;
         newState.possibleMoves = [];
         newState.selectedTile = null;
-        setGameState(newState);
+        updateGameState(newState);
     } else {
         player.lastAction = 'move';
         endTurn(newState);
@@ -539,7 +557,7 @@ export function GameBoard() {
         phase: 'rolling',
       };
       state.currentAction = 'attack';
-      setGameState(state);
+      updateGameState(state);
     } else if (currentTile.type === 'monster' && currentTile.monsters && currentTile.monsters.length > 0) {
       state.monsterCombatState = {
         attackerId: attacker.id,
@@ -552,18 +570,18 @@ export function GameBoard() {
         decidedRollValue: 1,
       };
       state.currentAction = 'attack';
-      setGameState(state);
+      updateGameState(state);
     } else {
       toast({ title: 'No one to attack', description: 'There are no other players or monsters on this island.', variant: 'destructive' });
       state.currentAction = null;
-      setGameState(state);
+      updateGameState(state);
     }
   };
 
   const handleCombatRoll = () => {
     if (!gameState || !gameState.combatState) return;
 
-    const newState = deepClone(gameState);
+    const newState = JSON.parse(JSON.stringify(gameState));
     const { combatState, players } = newState;
     const attacker = players[combatState.attackerId];
     const defender = players[combatState.defenderId];
@@ -586,51 +604,41 @@ export function GameBoard() {
     }
     
     combatState.phase = 'results';
-    setGameState(newState);
+    updateGameState(newState);
   };
   
   const handleCloseCombat = () => {
     if (!gameState || !gameState.combatState) return;
     
-    const newState = deepClone(gameState);
-    const { combatState, players, map, selectedArmyId } = newState;
+    const newState = JSON.parse(JSON.stringify(gameState));
+    const { combatState, players, map } = newState;
     const { winnerId, attackerId, defenderId } = combatState;
     
-    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
-    if (!attackingArmy) { // Should not happen but as a safeguard
+    const loserId = winnerId === attackerId ? defenderId : attackerId;
+    const winner = players[winnerId!];
+    const loser = players[loserId];
+
+    const attackingArmy = players[attackerId].armies.find(a => a.id === newState.selectedArmyId);
+    if (!attackingArmy) { 
         newState.combatState = null;
         endTurn(newState);
         return;
     }
     
     const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
-
-    if (winnerId === null) {
-      newState.combatState = null;
-      endTurn(newState);
-      return;
-    };
-    
-    const loserId = winnerId === attackerId ? defenderId : attackerId;
-    const winner = players[winnerId];
-    const loser = players[loserId];
-
     const loserOccupantInfo = combatTile.occupants.find(o => o.playerId === loserId);
     const losingArmy = loser.armies.find(a => a.id === loserOccupantInfo?.armyId);
-
+    
     if (losingArmy) {
         const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
         if (baseTile) {
             const oldPos = losingArmy.position;
             
-            // Remove loser from combat tile occupants
             map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== losingArmy.id || o.playerId !== loserId);
-
-            // Move losing army to base
+            
             losingArmy.position = {x: baseTile.x, y: baseTile.y};
             map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
             
-            // Remove loser's position if they had one
             const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
             if (positionIndex > -1) {
                 const removedPosition = loser.positions.splice(positionIndex, 1)[0];
@@ -651,7 +659,7 @@ export function GameBoard() {
   const handleMonsterCombatRoll = (monster: Monster, useCard: boolean, decidedValue: number) => {
     if (!gameState) return;
 
-    const newState = deepClone(gameState);
+    const newState = JSON.parse(JSON.stringify(gameState));
     const { players } = newState;
     const attacker = players[newState.currentPlayerIndex];
     
@@ -699,13 +707,13 @@ export function GameBoard() {
       useDecideDiceRollCard: useCard,
       decidedRollValue: decidedValue,
     };
-    setGameState(newState);
+    updateGameState(newState);
   };
   
   const handleCloseMonsterCombat = () => {
     if (!gameState || !gameState.monsterCombatState || gameState.selectedArmyId === null) return;
     
-    const newState = deepClone(gameState);
+    const newState = JSON.parse(JSON.stringify(gameState));
     const { monsterCombatState, players, map, selectedArmyId } = newState;
     const attacker = players[monsterCombatState.attackerId];
     const army = attacker.armies.find(a => a.id === selectedArmyId);
@@ -724,7 +732,7 @@ export function GameBoard() {
       }
 
       attacker.victoryPoints += monsterVP;
-      currentTile.monsters = currentTile.monsters?.filter(m => m.id !== monsterCombatState.monster.id || m.level !== monsterCombatState.monster.level);
+      currentTile.monsters = currentTile.monsters?.filter(m => !(m.id === monsterCombatState.monster.id && m.level === monsterCombatState.monster.level));
       
       const logMsg = `${attacker.name} defeated the level ${monsterCombatState.monster.level} monster and earned ${monsterVP} VP!`;
       newState.log.push(logMsg);
@@ -788,18 +796,19 @@ export function GameBoard() {
         state.selectedArmyId = null;
     }
 
-    setGameState(state);
+    updateGameState(state);
   }
 
   const handleEndTurn = () => {
     if (!gameState) return;
-    endTurn(deepClone(gameState));
+    endTurn(JSON.parse(JSON.stringify(gameState)));
   }
 
   if (!gameState) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <p className="ml-4 text-lg">Connecting to game session...</p>
       </div>
     );
   }
@@ -841,24 +850,41 @@ export function GameBoard() {
           monsters={currentTileForMonster.monsters}
           onRoll={handleMonsterCombatRoll} 
           onClose={handleCloseMonsterCombat}
-          onCancel={() => setGameState(prev => prev ? {...prev, monsterCombatState: null, currentAction: null} : null)}
+          onCancel={() => {
+              const newState = JSON.parse(JSON.stringify(gameState));
+              newState.monsterCombatState = null;
+              newState.currentAction = null;
+              updateGameState(newState);
+            }
+          }
         />
       )}
       {positionDialogState && (
         <PositionDialog 
           resources={positionDialogState.resources}
           onSelect={(resource) => {
-            const newState = deepClone(gameState);
+            const newState = JSON.parse(JSON.stringify(gameState));
             handleSelectResourceForPosition(newState, resource)
-            setGameState(newState);
           }}
-          onClose={() => setGameState(prev => prev ? {...prev, positionDialogState: null, currentAction: null} : null)}
+          onClose={() => {
+              const newState = JSON.parse(JSON.stringify(gameState));
+              newState.positionDialogState = null;
+              newState.currentAction = null;
+              updateGameState(newState);
+            }
+          }
         />
       )}
        {showCardsDialog && (
         <CardsDialog 
           player={currentPlayer}
-          onClose={() => setGameState(prev => prev ? {...prev, showCardsDialog: false, currentAction: null} : null)}
+          onClose={() => {
+              const newState = JSON.parse(JSON.stringify(gameState));
+              newState.showCardsDialog = false;
+              newState.currentAction = null;
+              updateGameState(newState);
+            }
+          }
           onUseCard={handleOpenUseCardDialog}
         />
       )}
@@ -866,14 +892,22 @@ export function GameBoard() {
         <StealResourceDialog
             players={players.filter(p => p.id !== currentPlayerIndex)}
             onSteal={handleStealResource}
-            onClose={() => setGameState(prev => prev ? {...prev, stealResourceDialogState: null} : null)}
+            onClose={() => {
+                const newState = JSON.parse(JSON.stringify(gameState));
+                newState.stealResourceDialogState = null;
+                updateGameState(newState);
+            }}
         />
       )}
       {useCardDialogState && (
         <UseCardDialog
             cardName={useCardDialogState.cardName}
             onConfirm={() => handleUseCard(useCardDialogState.cardName)}
-            onClose={() => setGameState(prev => prev ? {...prev, useCardDialogState: null} : null)}
+            onClose={() => {
+                const newState = JSON.parse(JSON.stringify(gameState));
+                newState.useCardDialogState = null;
+                updateGameState(newState);
+            }}
         />
       )}
     </div>

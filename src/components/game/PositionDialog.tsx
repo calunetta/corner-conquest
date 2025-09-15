@@ -20,7 +20,7 @@ type PositionDialogProps = {
 
 export function PositionDialog({ resources, onSelect, onClose }: PositionDialogProps) {
   return (
-    <AlertDialog open={true}>
+    <AlertDialog open={true} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Position Your Army</AlertDialogTitle>
