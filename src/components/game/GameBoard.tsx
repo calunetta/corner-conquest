@@ -196,7 +196,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         <CollapsibleContent>
             <div
               className="mt-2 grid grid-cols-1 gap-2 sm:gap-4"
-              style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%/${Math.max(1, players.length)}, max(280px, 100%/${maxPlayers})), 1fr))` }}
+              style={{ gridTemplateColumns: `repeat(auto-fit, minmax(280px, 1fr))` }}
             >
               {players.map(p => (
                  <PlayerInfo key={p.id} player={p} isCurrentPlayer={currentPlayerIndex === p.id} />
@@ -252,4 +252,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   );
 }
 
+    
     
