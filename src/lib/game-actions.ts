@@ -64,6 +64,7 @@ export function handleCollectAction(state: GameState): GameState {
   // If the player has the card, show the dialog. Otherwise, collect directly.
   if (hasProductiveCard) {
       newState.collectDialogState = {
+        isOpen: true,
         x: position.x,
         y: position.y,
         resource: {type: position.resource, amount: resource.amount},
@@ -109,13 +110,11 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
         }
         amountToCollect *= 2;
         const cardIndex = player.specialCards.indexOf('Productive');
-        if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
-        player.actionsThisTurn.push('use-card');
+        if (cardIndex > -1) {
+            player.specialCards.splice(cardIndex, 1);
+            player.actionsThisTurn.push('use-card');
+        }
         newState.log.push(`${player.name} used 'Productive' to collect double!`);
-    } else {
-        // This branch should technically not be hit if the dialog only opens when the card is available,
-        // but it's safe to keep it.
-        amountToCollect = resource.amount;
     }
 
     player.resources[resource.type] += amountToCollect;
@@ -142,7 +141,6 @@ export function handleDeployAction(state: GameState): GameState {
     if (player.actionsThisTurn.includes('deploy')) throw new Error("You can only deploy one army per turn.");
     
     let cost = player.nextArmyCost;
-    let cardUsed = false;
     
     if (player.efficientActive) {
         cost = Math.ceil(cost / 2);
@@ -174,10 +172,9 @@ export function handleDeployAction(state: GameState): GameState {
       player.actionsThisTurn.push('use-card');
       const cardIndex = player.specialCards.indexOf('Efficient');
       if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
-      cardUsed = true;
     }
 
-    if (player.reinforceActive && canUseCard && !cardUsed) {
+    if (player.reinforceActive && canUseCard) {
       newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
       player.reinforceActive = false;
       player.actionsThisTurn.push('use-card');
@@ -548,7 +545,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     player.lastAction = 'position';
     newState.log.push(`${player.name} positioned an army on ${resource}.`);
     
-    return { ...newState, positionDialogState: null, currentAction: null, possibleMoves: [], selectedTile: null };
+    return { ...state, positionDialogState: null, currentAction: null, possibleMoves: [], selectedTile: null };
 };
 
 export function handleCombatRoll(state: GameState, useWarChief: boolean): GameState {

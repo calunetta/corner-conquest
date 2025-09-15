@@ -99,7 +99,7 @@ export type PositionDialogState = {
 }
 
 export type CollectDialogState = {
-    isOpen: boolean;
+    isOpen: true;
     x: number;
     y: number;
     resource: IslandResource;
