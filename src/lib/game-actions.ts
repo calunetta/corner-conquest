@@ -649,12 +649,11 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
             winnerId = attacker.id;
             cardUsedThisAction = true;
         } else {
-            // This case should ideally not be reached if UI is correct
             winnerId = null; 
         }
     }
 
-    if (winnerId === null) { // If not an auto-win, roll the dice
+    if (winnerId === null) { 
         let attackerPower = attacker.attackPower;
         
         if (useWarChief && canUseCard && !cardUsedThisAction) {
@@ -676,10 +675,10 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
                 newState.log.push(`${attacker.name} used the 'Decide Dice Roll' card!`);
                 cardUsedThisAction = true;
             } else {
-                useDecideCard = false; // Card not found
+                useDecideCard = false;
             }
         } else if (useDecideCard) {
-            useDecideCard = false; // Cannot use if another card was already used
+            useDecideCard = false;
         }
         
         const rollDice = (count: number) => Array.from({ length: Math.min(count, 4) }, () => Math.floor(Math.random() * 6) + 1);
@@ -693,7 +692,6 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
         winnerId = attackerScore >= monsterScore ? attacker.id : null;
     }
     
-    // --- Process Combat Outcome Immediately ---
     const currentTile = map[attackingArmy.position.y][attackingArmy.position.x];
     if (winnerId === attacker.id) {
         const monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
@@ -720,7 +718,6 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
     }
 
     attackingArmy.hasActed = true;
-    // --- End of Outcome Processing ---
 
 
     newState.monsterCombatState = {
@@ -737,7 +734,6 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
 };
 
 export function handleCloseMonsterCombat(state: GameState): GameState {
-    // This function now only closes the dialog. The outcome logic is in handleMonsterCombatRoll.
     return { ...state, monsterCombatState: null, currentAction: null };
 }
 
@@ -903,7 +899,6 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
         throw new Error('Teleport card not found.');
     }
     
-    // Consume the card now that the action is complete
     player.specialCards.splice(cardIndex, 1);
     player.actionsThisTurn.push('use-card');
     
@@ -913,10 +908,6 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     armyToMove.position = { x, y };
     map[y][x].occupants.push({ playerId: player.id, armyId: armyToMove.id });
 
-    // Mark the army as having acted.
-    armyToMove.hasActed = true;
-
-    // Reveal the new tile if it was hidden
     const revealedIsland = map[y][x];
     if(revealedIsland.isHidden) {
       revealedIsland.isHidden = false;
