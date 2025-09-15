@@ -1,3 +1,4 @@
+
 "use client"
 
 // Inspired by react-hot-toast library
@@ -154,7 +155,7 @@ function toast({ ...props }: Toast) {
 
   // Check for duplicates
   const isDuplicate = memoryState.toasts.some(t => {
-      return t.title === props.title && t.description === props.description && t.variant === props.variant
+      return t.open && t.title === props.title && t.description === props.description && t.variant === props.variant
   });
 
   if (isDuplicate) {

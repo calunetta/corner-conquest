@@ -28,12 +28,13 @@ type GameBoardProps = {
 export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const { playerId } = usePlayer();
   const { gameState, setGameState, isMyTurn, localPlayer, isHost, isLoading } = useGameEngine(gameId, playerId);
-  const { toast } = useToast();
+  const { toast, dismiss } = useToast();
   const isMobile = useIsMobile();
   
   const [isPlayerInfoOpen, setIsPlayerInfoOpen] = useState(!isMobile);
   const [isExiting, setIsExiting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TURN_DURATION);
+  const [activeInstructionToastId, setActiveInstructionToastId] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -85,15 +86,23 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   // Effect to show teleport instructions via toast
   useEffect(() => {
+    // Clean up previous toast if it exists
+    if (activeInstructionToastId) {
+        dismiss(activeInstructionToastId);
+        setActiveInstructionToastId(null);
+    }
+    
     if (gameState?.teleportState && isMyTurn) {
       if (gameState.teleportState.armyId === null) {
         // This check prevents showing the toast again if it was just shown.
         if (gameState.currentAction !== 'teleport-initiated') {
-            toast({ title: 'Teleport: Step 1', description: 'Select an army on the map to teleport.' });
+            const { id } = toast({ title: 'Teleport: Step 1', description: 'Select an army on the map to teleport.' });
+            setActiveInstructionToastId(id);
             setGameState({...gameState, currentAction: 'teleport-initiated'});
         }
       } else {
-        toast({ title: 'Teleport: Step 2', description: 'Now, select any destination tile on the map.' });
+        const { id } = toast({ title: 'Teleport: Step 2', description: 'Now, select any destination tile on the map.' });
+        setActiveInstructionToastId(id);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -171,6 +180,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (!gameState || !isMyTurn || gameState.status !== 'playing') return;
     try {
         const newState = GameActions.handleTileClick(gameState, x, y, localPlayer?.id ?? -1);
+        if (activeInstructionToastId) {
+            dismiss(activeInstructionToastId);
+            setActiveInstructionToastId(null);
+        }
         setGameState(newState);
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
@@ -288,9 +301,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
               <p className='text-base font-semibold text-accent sm:text-lg'>Waiting for players... ({players.length}/{maxPlayers})</p>
             ) : (
               <>
-                {isTeleporting ? (
-                     <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
-                        Teleport Mode Active
+                {isTeleporting && isMyTurn ? (
+                    <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
+                        {teleportState.armyId === null ? 'Teleport: Select an army to move' : 'Teleport: Select a destination tile'}
                     </p>
                 ) : (
                     <>
