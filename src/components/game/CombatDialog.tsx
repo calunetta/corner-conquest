@@ -27,7 +27,7 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
   const defender = players[defenderId];
 
   const renderDice = (rolls: number[]) => (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap justify-center gap-2">
       {rolls.map((roll, i) => (
         <div key={i} className="flex h-8 w-8 items-center justify-center rounded-md border text-lg font-bold">
           {roll}
@@ -46,7 +46,7 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        <div className="flex justify-around gap-4">
+        <div className="flex flex-col justify-around gap-4 sm:flex-row">
           <div className="flex flex-col items-center gap-2">
             <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
             {phase === 'results' && renderDice(attackerRolls)}

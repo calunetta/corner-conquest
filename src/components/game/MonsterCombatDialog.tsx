@@ -48,7 +48,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   const isSelectionPhase = phase === 'rolling' && monsters.length > 1 && !selectedMonster;
 
   const renderDice = (rolls: number[]) => (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap justify-center gap-2">
       {rolls.map((roll, i) => (
         <div key={i} className="flex h-8 w-8 items-center justify-center rounded-md border text-lg font-bold">
           {roll}
@@ -102,9 +102,9 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
             )}
         </div>
       )}
-       <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
-          <Button onClick={() => onRoll(selectedMonster!, useCard, decidedValue)} disabled={!selectedMonster}>
+       <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+          <AlertDialogCancel onClick={onCancel} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+          <Button onClick={() => onRoll(selectedMonster!, useCard, decidedValue)} disabled={!selectedMonster} className="w-full sm:w-auto">
             Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}!
           </Button>
       </AlertDialogFooter>
@@ -133,9 +133,9 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
           </Card>
         ))}
       </div>
-       <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
-          <Button onClick={() => { /* This button just closes the selection screen and moves to attack screen */ setSelectedMonster(selectedMonster)}} disabled={!selectedMonster}>
+       <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+          <AlertDialogCancel onClick={onCancel} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+          <Button onClick={() => { /* This button just closes the selection screen and moves to attack screen */ setSelectedMonster(selectedMonster)}} disabled={!selectedMonster} className="w-full sm:w-auto">
             Confirm
           </Button>
       </AlertDialogFooter>
@@ -151,7 +151,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         </AlertDialogDescription>}
       </AlertDialogHeader>
       
-      <div className="flex justify-around gap-4">
+      <div className="flex flex-col justify-around gap-4 sm:flex-row">
         <div className="flex flex-col items-center gap-2">
           <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
           {phase === 'results' && renderDice(attackerRolls)}

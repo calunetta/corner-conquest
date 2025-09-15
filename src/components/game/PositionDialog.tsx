@@ -29,7 +29,7 @@ export function PositionDialog({ resources, onSelect, onClose }: PositionDialogP
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        <div className="flex justify-around gap-4 py-4">
+        <div className="flex flex-wrap justify-center gap-4 py-4">
           {resources.map((resource) => (
             <Button
               key={resource.type}
@@ -53,5 +53,3 @@ export function PositionDialog({ resources, onSelect, onClose }: PositionDialogP
     </AlertDialog>
   );
 }
-
-    

@@ -44,11 +44,11 @@ export function ActionsPanel({ onAction, gameState, isMyTurn }: ActionsPanelProp
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle>Actions</CardTitle>
+      <CardHeader className="flex-row items-center justify-between p-4">
+        <CardTitle className="text-lg">Actions</CardTitle>
         <Button size="sm" onClick={() => onAction('end-turn')} disabled={!isMyTurn}>End Turn</Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-0">
         <div className="grid grid-cols-2 grid-rows-2 gap-2">
             {mainActions.map((action) => (
                 <Button
@@ -59,7 +59,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn }: ActionsPanelProp
                     className="flex h-16 flex-col items-center justify-center gap-1 p-2 text-center"
                 >
                     {action.icon}
-                    <span className="whitespace-normal text-sm">{action.label}</span>
+                    <span className="whitespace-normal text-xs">{action.label}</span>
                 </Button>
             ))}
              {alwaysAvailableActions.map((action) => (
@@ -71,12 +71,12 @@ export function ActionsPanel({ onAction, gameState, isMyTurn }: ActionsPanelProp
                     className="flex h-16 flex-col items-center justify-center gap-1 p-2 text-center"
                 >
                     {action.icon}
-                    <span className="whitespace-normal text-sm">{action.label}</span>
+                    <span className="whitespace-normal text-xs">{action.label}</span>
                 </Button>
             ))}
         </div>
         <Separator className="my-2" />
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 flex-wrap gap-2">
             {secondaryActions.map((action) => (
                 <Button
                     key={action.id}

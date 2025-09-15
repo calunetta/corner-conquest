@@ -36,7 +36,7 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
           Select a player to steal 2 resources from.
         </AlertDialogDescription>
       </AlertDialogHeader>
-      <div className="grid grid-cols-3 gap-2 py-4">
+      <div className="grid grid-cols-2 gap-2 py-4 sm:grid-cols-3">
         {players.map((player) => (
           <Card
             key={player.id}
@@ -69,7 +69,7 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
           Select which resource to steal. You will take 2 units.
         </AlertDialogDescription>
       </AlertDialogHeader>
-      <div className="flex justify-around gap-4 py-4">
+      <div className="flex flex-wrap justify-around gap-2 py-4 sm:gap-4">
         {(Object.keys(selectedPlayer!.resources) as ResourceType[]).map((resource) => (
           <Button
             key={resource}

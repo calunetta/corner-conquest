@@ -131,15 +131,15 @@ export function Lobby({ onJoinGame }: LobbyProps) {
   };
 
   return (
-    <div className="container mx-auto flex h-full flex-col items-center justify-center p-4">
+    <div className="container mx-auto flex h-full flex-col items-center justify-center p-2 sm:p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <CardTitle>Game Lobby</CardTitle>
                 <CardDescription>Join a game or create a new one to start playing.</CardDescription>
             </div>
-            <div className='flex items-center gap-4'>
+            <div className='flex w-full items-center justify-end gap-2 sm:w-auto'>
                 <p className='text-sm text-muted-foreground'>Welcome, <span className='font-bold text-foreground'>{username}</span></p>
                 <Button variant="outline" size="sm" onClick={logout}>Logout</Button>
             </div>
@@ -158,7 +158,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
               <p className="text-center text-muted-foreground">No open games found. Why not create one?</p>
             ) : (
               games.map((game) => (
-                <div key={game.id} className="flex items-center justify-between rounded-lg border p-4">
+                <div key={game.id} className="flex flex-col items-start gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
                   <div>
                     <h3 className="font-bold">{game.name}</h3>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -166,7 +166,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                         <span>{game.players.length} / {game.maxPlayers} players</span>
                     </div>
                   </div>
-                  <Button onClick={() => handleJoinGame(game.id)} disabled={isJoiningGame !== null || game.players.length >= game.maxPlayers}>
+                  <Button onClick={() => handleJoinGame(game.id)} disabled={isJoiningGame !== null || game.players.length >= game.maxPlayers} className="w-full sm:w-auto">
                     {isJoiningGame === game.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Join
                   </Button>
