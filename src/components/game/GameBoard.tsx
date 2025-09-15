@@ -443,11 +443,13 @@ export function GameBoard() {
     const newState = deepClone(gameState);
     const { combatState, players, map, selectedArmyId } = newState;
     const winnerId = combatState.winnerId;
-    const attacker = players[combatState.attackerId];
-    const defender = players[combatState.defenderId];
-    const loserId = winnerId === attacker.id ? defender.id : attacker.id;
+    const attackerId = combatState.attackerId;
+    const defenderId = combatState.defenderId;
+    const loserId = winnerId === attackerId ? defenderId : attackerId;
+    
+    const winner = players[winnerId!];
     const loser = players[loserId];
-    const attackingArmy = attacker.armies.find(a => a.id === selectedArmyId);
+    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
 
     if (attackingArmy) {
       const tile = map[attackingArmy.position.y][attackingArmy.position.x];
@@ -459,11 +461,13 @@ export function GameBoard() {
             const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
             if (baseTile) {
                 const oldPos = losingArmy.position;
-                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.playerId === loserId && o.armyId === losingArmy.id);
-                
+
+                // Remove from old tile, add to new
+                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.playerId === loserId && o.armyId === losingArmy.id));
                 losingArmy.position = {x: baseTile.x, y: baseTile.y};
                 map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
                 
+                // Clear positions
                 const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
                 if (positionIndex > -1) {
                     const removedPosition = loser.positions.splice(positionIndex, 1)[0];
@@ -474,13 +478,12 @@ export function GameBoard() {
       }
     }
 
-
-    const logMsg = `${players[winnerId!].name} defeated ${loser.name}! ${loser.name}'s army was sent back to their base.`;
+    const logMsg = `${winner.name} defeated ${loser.name}! ${loser.name}'s army was sent back to their base.`;
     newState.log.push(logMsg);
     toast({ title: 'Combat Over!', description: logMsg });
     
     newState.combatState = null;
-    attacker.lastAction = 'attack';
+    players[attackerId].lastAction = 'attack';
     endTurn(newState);
   }
 
