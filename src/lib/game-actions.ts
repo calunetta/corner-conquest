@@ -454,15 +454,10 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
         }
         return newState;
     }
-
-    // Normal Move Logic
-    const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
-    const selectedArmy = getSelectedArmy(newState);
-
-    if (selectedArmy && isPossibleMove) {
-      return handleMoveAction(newState, x, y);
-    } 
     
+    // --- New Prioritized Logic ---
+    // First, check if the clicked tile has the current player's armies.
+    // This should take precedence over moving a different, already-selected army.
     const armiesOnTile = clickedTile.occupants
         .filter(o => o.playerId === currentPlayer.id)
         .map(o => currentPlayer.armies.find(a => a.id === o.armyId))
@@ -474,14 +469,27 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
             newState.selectedTile = {x, y};
             newState = setPossibleMoves(newState, x, y);
         } else {
+            // Open selection dialog if multiple armies are on the same tile.
             newState.armySelectionDialogState = { isOpen: true, x, y, armies: armiesOnTile };
         }
-    } else {
-      newState.selectedArmyId = null;
-      newState.selectedTile = null;
-      newState.possibleMoves = [];
-      newState.currentAction = null;
+        return newState;
     }
+    
+    // --- Existing Move/Deselect Logic ---
+    // This part now only runs if the clicked tile does NOT contain the player's armies.
+    const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
+    const selectedArmy = getSelectedArmy(newState);
+
+    if (selectedArmy && isPossibleMove) {
+      return handleMoveAction(newState, x, y);
+    } 
+    
+    // If it's not a valid move and doesn't have selectable armies, deselect everything.
+    newState.selectedArmyId = null;
+    newState.selectedTile = null;
+    newState.possibleMoves = [];
+    newState.currentAction = null;
+
     return newState;
 }
 
@@ -689,19 +697,6 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
             newState.log.push(`${attacker.name} used the 'Overcome' card to win automatically!`);
             winnerId = attacker.id;
             cardUsedThisAction = true;
-
-            monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
-            attacker.victoryPoints += monsterVP;
-            currentTile.monsters = (currentTile.monsters || []).filter(m => m.id !== monster.id);
-            newState.log.push(`${attacker.name} defeated the monster for ${monsterVP} VP!`);
-            
-            if (currentTile.monsters?.length === 0) {
-              currentTile.type = 'resource';
-              const resourceTypes: ResourceType[] = ['food', 'iron', 'gems'];
-              const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
-              currentTile.resources.push({ type: randomResource, amount: 1});
-              newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
-            }
         } else {
              throw new Error("Overcome card not found, but was attempted to be used.");
         }
@@ -744,30 +739,32 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
         const attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
         const monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
         winnerId = attackerScore >= monsterScore ? attacker.id : null;
-
-        if (winnerId === attacker.id) {
-            monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
-            attacker.victoryPoints += monsterVP;
-            currentTile.monsters = (currentTile.monsters || []).filter(m => m.id !== monster.id);
-            newState.log.push(`${attacker.name} defeated the monster for ${monsterVP} VP!`);
-            
-            if (currentTile.monsters?.length === 0) {
-              currentTile.type = 'resource';
-              const resourceTypes: ResourceType[] = ['food', 'iron', 'gems'];
-              const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
-              currentTile.resources.push({ type: randomResource, amount: 1});
-              newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
-            }
-        } else {
-            const baseTile = map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
-            if (baseTile) {
-                const oldPos = attackingArmy.position;
-                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== attackingArmy.id);
-                attackingArmy.position = {x: baseTile.x, y: baseTile.y};
-                map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
-            }
-            newState.log.push(`${attacker.name} was defeated by the monster!`);
+    }
+    
+    // This is the consolidated outcome logic
+    if (winnerId === attacker.id) {
+        monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
+        attacker.victoryPoints += monsterVP;
+        currentTile.monsters = (currentTile.monsters || []).filter(m => m.id !== monster.id);
+        newState.log.push(`${attacker.name} defeated the monster for ${monsterVP} VP!`);
+        
+        if (currentTile.monsters?.length === 0) {
+          currentTile.type = 'resource';
+          const resourceTypes: ResourceType[] = ['food', 'iron', 'gems'];
+          const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+          currentTile.resources.push({ type: randomResource, amount: 1});
+          newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
         }
+    } else {
+        // Loser logic
+        const baseTile = map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
+        if (baseTile) {
+            const oldPos = attackingArmy.position;
+            map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== attackingArmy.id);
+            attackingArmy.position = {x: baseTile.x, y: baseTile.y};
+            map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
+        }
+        newState.log.push(`${attacker.name} was defeated by the monster!`);
     }
     
     attackingArmy.hasActed = true;
@@ -786,6 +783,8 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
 };
 
 export function handleCloseMonsterCombat(state: GameState): GameState {
+    // This function is now only responsible for closing the dialog.
+    // The outcome logic is handled in handleMonsterCombatRoll.
     return { ...state, monsterCombatState: null, currentAction: null };
 }
 
