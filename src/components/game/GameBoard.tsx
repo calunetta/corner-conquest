@@ -103,29 +103,25 @@ export function GameBoard() {
         } else {
             console.log("No such document! Initializing new game.");
             const newGame = initializeGame();
-            // We don't set local state here, we let the snapshot listener do it
-            const newGameDocRef = doc(db, 'games', GAME_ID);
             const firestoreState: FirestoreGameState = {
                 ...newGame,
                 map: flattenMap(newGame.map),
                 mapSize: newGame.map.length,
             };
-            setDoc(newGameDocRef, firestoreState);
+            setDoc(doc(db, 'games', GAME_ID), firestoreState);
         }
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
   
   const updateGameState = async (state: GameState) => {
     const gameDocRef = doc(db, 'games', GAME_ID);
     
-    // Sanitize state before sending to Firestore
     const sanitizedMap = state.map.map(row => row.map(tile => ({
         ...tile,
-        positionedBy: tile.positionedBy || [], // Ensure positionedBy is an array
-        monsters: tile.monsters || [], // Ensure monsters is an array
+        positionedBy: tile.positionedBy || [],
+        monsters: tile.monsters || [],
     })));
 
     const firestoreState: FirestoreGameState = {
@@ -218,7 +214,7 @@ export function GameBoard() {
     }
     
     newState.useCardDialogState = null;
-    newState.showCardsDialog = false; // Close card dialog after use
+    newState.showCardsDialog = false; // Close all dialogs after use
     updateGameState(newState);
   };
 
@@ -232,7 +228,7 @@ export function GameBoard() {
     if (!targetPlayer) return;
 
     const cardIndex = currentPlayer.specialCards.indexOf('Steal Resource');
-    if (cardIndex === -1) return; // Should not happen
+    if (cardIndex === -1) return;
 
     const amountToSteal = 2;
     const stolenAmount = Math.min(targetPlayer.resources[resource], amountToSteal);
@@ -547,13 +543,12 @@ export function GameBoard() {
     }
     
     if (player.hasExtraMove) {
-        player.hasExtraMove = false; // Consume the extra move
-        player.lastAction = 'move'; // Set last action to allow another action
+        player.hasExtraMove = false;
+        player.lastAction = 'move';
         const logMsg = `${player.name} used their extra move.`;
         newState.log.push(logMsg);
         toast({ title: 'Extra Move Used', description: 'You can now perform another action.'});
         
-        // Reset action/moves but don't end turn
         newState.currentAction = null;
         newState.possibleMoves = [];
         newState.selectedTile = null;
@@ -655,7 +650,6 @@ export function GameBoard() {
     const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
     const loserOccupantInfo = combatTile.occupants.find(o => o.playerId === loserId);
     
-    // Find the specific army that lost.
     const losingArmy = loser.armies.find(a => a.id === loserOccupantInfo?.armyId);
     
     if (losingArmy) {
@@ -663,14 +657,11 @@ export function GameBoard() {
         if (baseTile) {
             const oldPos = losingArmy.position;
             
-            // Remove loser from old tile
             map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.armyId === losingArmy.id && o.playerId === loserId));
             
-            // Move loser to their base
             losingArmy.position = {x: baseTile.x, y: baseTile.y};
             map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
             
-            // Remove any positions the loser had on that tile
             const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
             if (positionIndex > -1) {
                 const removedPosition = loser.positions.splice(positionIndex, 1)[0];
@@ -750,7 +741,6 @@ export function GameBoard() {
     const newState = JSON.parse(JSON.stringify(gameState));
     const { monsterCombatState, players, map, selectedArmyId } = newState;
     const attacker = players[monsterCombatState.attackerId];
-    // This is the fix: identify the specific army in combat
     const attackingArmy = attacker.armies.find(a => a.id === selectedArmyId);
     if (!attackingArmy) return;
 
@@ -782,14 +772,11 @@ export function GameBoard() {
       if (baseTile && attackingArmy) {
           const oldPos = attackingArmy.position;
           
-          // Remove from old tile
           map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.playerId === attacker.id && o.armyId === attackingArmy.id));
           
-          // Move to base
           attackingArmy.position = {x: baseTile.x, y: baseTile.y};
           map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
           
-          // Remove any positions
           const positionIndex = attacker.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
           if (positionIndex > -1) {
             const removedPosition = attacker.positions.splice(positionIndex, 1)[0];
@@ -810,10 +797,7 @@ export function GameBoard() {
   }
 
   const endTurn = (state: GameState) => {
-    const currentPlayer = state.players[state.currentPlayerIndex];
-    if (currentPlayer.hasExtraMove) {
-        // This case is handled inside handleMoveAction, this is a safeguard
-        updateGameState(state);
+    if (state.players[state.currentPlayerIndex].hasExtraMove) {
         return;
     }
 
@@ -954,5 +938,3 @@ export function GameBoard() {
     </div>
   );
 }
-
-    
