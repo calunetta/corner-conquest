@@ -48,6 +48,7 @@ export type Island = {
   x: number;
   y: number;
   type: IslandType;
+  owner?: number;
   isHidden: boolean;
   resources: IslandResource[];
   occupants: { playerId: number, armyId: number }[];

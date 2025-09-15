@@ -14,10 +14,10 @@ type IslandTileProps = {
 };
 
 const playerColorMap = {
-  blue: 'bg-blue-500 border-blue-300',
-  red: 'bg-red-500 border-red-300',
-  green: 'bg-green-500 border-green-300',
-  yellow: 'bg-yellow-400 border-yellow-200',
+  blue: { bg: 'bg-blue-500', border: 'border-blue-300' },
+  red: { bg: 'bg-red-500', border: 'border-red-300' },
+  green: { bg: 'bg-green-500', border: 'border-green-300' },
+  yellow: { bg: 'bg-yellow-400', border: 'border-yellow-200' },
 };
 
 const playerTileIndicatorClasses: Record<string, string> = {
@@ -44,10 +44,11 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   
   const currentPlayerOnTile = players.find(p => p.id === (isCurrentPlayerTile ? occupants.find(o => players[o.player.id].armies.some(a => a.position.x === island.x && a.position.y === island.y))?.player.id : -1));
 
+  const baseOwner = island.type === 'base' ? players.find(p => p.id === island.owner) : null;
 
   const renderResourceIcons = (resources: IslandResource[]) => {
     return resources.map((resource, index) => (
-      <div key={`resource-row-${index}`} className={cn("flex items-center gap-1", resource.amount === 1 ? 'justify-start' : 'justify-center', 'w-full')}>
+      <div key={`resource-row-${index}`} className={cn("flex items-center gap-1 w-full", resource.amount === 1 ? 'justify-start' : 'justify-center')}>
         {Array.from({ length: resource.amount }).map((_, i) => (
           <ResourceIcon key={`${resource.type}-${i}`} type={resource.type} className="h-4 w-4 text-accent" />
         ))}
@@ -70,7 +71,8 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     if (island.isFetchingMonster) return <Loader2 className="h-full w-full animate-spin text-destructive" />;
     
     switch (island.type) {
-      case 'base': return <Home className="h-full w-full" style={{ color: players.find(p => p.armies.some(a => a.position.x === island.x && a.position.y === island.y))?.color }}/>;
+      case 'base': 
+        return <Home className="h-full w-full p-2" style={{ color: baseOwner?.color }}/>;
       case 'resource': 
         return (
           <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1">
@@ -116,13 +118,14 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         isSelected ? 'border-primary ring-2 ring-primary' : '',
         isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
         isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
-        isArmySelectedOnTile && 'ring-2 ring-offset-2 ring-primary'
+        isArmySelectedOnTile && 'ring-2 ring-offset-2 ring-primary',
+        baseOwner ? `${playerColorMap[baseOwner.color].bg} opacity-70` : ''
       )}
       aria-label={`Island at ${island.x}, ${island.y}`}
     >
       <div className="absolute inset-0">
         {occupants.map(({ player, armyId }, index) => (
-          <div key={`${player.id}-${armyId}`} className={cn('absolute h-4 w-4 rounded-full border-2', armyPositions[index % armyPositions.length], playerColorMap[player.color])}>
+          <div key={`${player.id}-${armyId}`} className={cn('absolute h-4 w-4 rounded-full border-2', armyPositions[index % armyPositions.length], playerColorMap[player.color].bg, playerColorMap[player.color].border)}>
           </div>
         ))}
       </div>

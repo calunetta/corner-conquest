@@ -35,6 +35,7 @@ export function initializeGame(): GameState {
     map[pos.y][pos.x] = {
       ...map[pos.y][pos.x],
       type: 'base',
+      owner: i,
       isHidden: false,
       occupants: [{playerId: i, armyId: initialArmy.id}],
       resources: [
@@ -94,7 +95,6 @@ export function initializeGame(): GameState {
     }
   }
   
-  // Reveal bases
   players.forEach(p => {
     p.armies.forEach(army => {
         map[army.position.y][army.position.x].isHidden = false;
