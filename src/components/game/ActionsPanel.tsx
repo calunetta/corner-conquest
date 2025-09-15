@@ -35,7 +35,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
 
   const canCollect = selectedArmy && currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y);
   const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.x === selectedArmy!.position.x && p.y === selectedArmy!.position.y);
-  const canAttack = selectedArmy && currentTile && (currentTile.occupants.length > 1 || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
+  const canAttack = selectedArmy && currentTile && (currentTile.occupants.some(o => o.playerId !== currentPlayer.id) || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
   
   const upgradeCost = currentPlayer.masterBuilderActive ? 3 : 6;
   const deployCost = currentPlayer.efficientActive ? Math.ceil(currentPlayer.nextArmyCost / 2) : currentPlayer.nextArmyCost;
@@ -89,7 +89,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             break;
         case 'attack':
             if (!selectedArmy) return "You must select an army first.";
-            if (!currentTile || (currentTile.occupants.length <= 1 && (!currentTile.monsters || currentTile.monsters.length === 0))) return "There is nothing to attack on this tile.";
+            if (!currentTile || (!currentTile.occupants.some(o => o.playerId !== currentPlayer.id) && (!currentTile.monsters || currentTile.monsters.length === 0))) return "There is nothing to attack on this tile.";
             break;
         case 'position':
             if (!selectedArmy) return "You must select an army first.";
