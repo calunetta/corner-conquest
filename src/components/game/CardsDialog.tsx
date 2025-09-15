@@ -20,10 +20,9 @@ type CardsDialogProps = {
   onClose: () => void;
   onUseCard: (cardName: string) => void;
   canUseCards: boolean;
-  isTeleporting: boolean;
 };
 
-export function CardsDialog({ player, onClose, onUseCard, canUseCards, isTeleporting }: CardsDialogProps) {
+export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDialogProps) {
   const cardCounts = player.specialCards.reduce((acc, card) => {
     acc[card] = (acc[card] || 0) + 1;
     return acc;
@@ -54,9 +53,6 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards, isTelepor
         <ScrollArea className="h-96 pr-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {uniqueCards.length > 0 ? uniqueCards.map((cardName) => {
-                const isTeleportCard = cardName === 'Teleport';
-                const isCurrentlyTeleportingThisCard = isTeleportCard && isTeleporting;
-
                 return (
                     <Card key={cardName}>
                         <CardHeader className='flex-row items-center justify-between p-4'>
@@ -67,10 +63,9 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards, isTelepor
                                     <Button 
                                         size="sm" 
                                         onClick={() => handleUseCard(cardName)} 
-                                        disabled={!isCurrentlyTeleportingThisCard && !canUseCardAbility}
-                                        variant={isCurrentlyTeleportingThisCard ? 'destructive' : 'default'}
+                                        disabled={!canUseCardAbility}
                                     >
-                                        {isCurrentlyTeleportingThisCard ? 'Cancel' : 'Use'}
+                                        Use
                                     </Button>
                                 )}
                             </div>
