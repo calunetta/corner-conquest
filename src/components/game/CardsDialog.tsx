@@ -43,7 +43,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
 
   return (
     <AlertDialog open={true} onOpenChange={onClose}>
-      <AlertDialogContent className="max-w-lg">
+      <AlertDialogContent className="max-w-3xl">
         <AlertDialogHeader>
           <AlertDialogTitle>{player.name}'s Special Cards</AlertDialogTitle>
           <AlertDialogDescription>
@@ -51,8 +51,8 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        <ScrollArea className="h-72 pr-6">
-            <div className="grid gap-4">
+        <ScrollArea className="h-96 pr-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {uniqueCards.length > 0 ? uniqueCards.map((cardName) => (
                 <Card key={cardName}>
                     <CardHeader className='flex-row items-center justify-between p-4'>
