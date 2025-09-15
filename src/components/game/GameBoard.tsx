@@ -71,12 +71,7 @@ export function GameBoard() {
       });
       newState.possibleMoves = moves;
     } else if (action === 'position') {
-      const tile = newState.map[currentPlayer.position.y][currentPlayer.position.x];
-      if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length === 1) {
-        handleSelectResourceForPosition(newState, tile.resources[0].type);
-      } else {
-        handlePositionAction(newState, currentPlayer.position.x, currentPlayer.position.y);
-      }
+      handlePositionAction(newState, currentPlayer.position.x, currentPlayer.position.y);
     } else if (action === 'collect') {
       handleCollectAction(newState);
     } else if (action === 'deploy') {
@@ -208,7 +203,19 @@ export function GameBoard() {
       return;
     }
     
-    state.positionDialogState = { x, y, resources: tile.resources };
+    // Filter out resources already occupied by other players
+    const availableResources = tile.resources.filter(resource => {
+      return !tile.positionedBy?.some(p => p.resource === resource.type);
+    });
+
+    if (availableResources.length === 0) {
+      toast({ title: 'Cannot Position', description: 'All resources on this island are already occupied.', variant: 'destructive'});
+      state.currentAction = null;
+      setGameState(state);
+      return;
+    }
+    
+    state.positionDialogState = { x, y, resources: availableResources };
     setGameState(state);
   }
 
@@ -237,9 +244,17 @@ export function GameBoard() {
   };
 
   const handleMoveAction = (newState: GameState, x: number, y: number) => {
-    const { currentPlayerIndex } = newState;
+    const { currentPlayerIndex, map } = newState;
     const player = newState.players[currentPlayerIndex];
     
+    // Clear all previous positions when moving
+    player.positions = [];
+    map.forEach(row => row.forEach(tile => {
+        if (tile.positionedBy) {
+            tile.positionedBy = tile.positionedBy.filter(p => p.playerId !== player.id);
+        }
+    }));
+
     const oldPos = player.position;
     newState.map[oldPos.y][oldPos.x].occupants = newState.map[oldPos.y][oldPos.x].occupants.filter(id => id !== player.id);
     

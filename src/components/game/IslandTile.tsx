@@ -40,19 +40,22 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
 
 
   const renderResourceIcons = (resources: IslandResource[]) => {
-    const icons = [];
-    resources.forEach(resource => {
-      for (let i = 0; i < resource.amount; i++) {
-        icons.push(<ResourceIcon key={`${resource.type}-${i}`} type={resource.type} className="h-full w-full text-accent" />);
-      }
-    });
-    return icons;
+    return resources.map((resource, index) => (
+      <div key={`resource-row-${index}`} className="flex items-center justify-center gap-1">
+        {Array.from({ length: resource.amount }).map((_, i) => (
+          <ResourceIcon key={`${resource.type}-${i}`} type={resource.type} className="h-4 w-4 text-accent" />
+        ))}
+      </div>
+    ));
   }
 
   const renderMonsterIcons = () => {
     if (!island.monsters) return null;
     return island.monsters.map((monster, i) => (
-      <MonsterIcon key={i} level={monster.level} className="h-full w-full" />
+      <div key={`monster-row-${i}`} className="flex items-center justify-center gap-1">
+        <MonsterIcon level={monster.level} className="h-5 w-5" />
+        <span className="text-xs font-bold text-destructive">Lvl: {monster.level}</span>
+      </div>
     ));
   }
 
@@ -64,13 +67,13 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       case 'base': return <Home className="h-full w-full" style={{ color: players[island.occupants[0]]?.color }}/>;
       case 'resource': 
         return (
-          <div className="grid h-full w-full grid-cols-2 grid-rows-2 items-center justify-center gap-1 p-2">
-            {renderResourceIcons(island.resources.slice(0, 4))}
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1">
+            {renderResourceIcons(island.resources)}
           </div>
         );
       case 'monster': 
         return (
-          <div className="grid h-full w-full grid-cols-2 grid-rows-2 items-center justify-center gap-1 p-2">
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1">
             {renderMonsterIcons()}
           </div>
         );
