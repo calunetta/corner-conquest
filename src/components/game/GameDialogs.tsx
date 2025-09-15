@@ -32,7 +32,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
 
   const handleUseCardAction = (cardName: string) => {
     if (cardName === 'Steal Resource') {
-        handleUpdate({...gameState, stealResourceDialogState: { targetPlayerId: null } });
+        handleUpdate({...gameState, stealResourceDialogState: { targetPlayerId: null }, showCardsDialogForPlayer: null });
     } else {
         handleUpdate(GameActions.handleOpenUseCardDialog(gameState, cardName));
     }
