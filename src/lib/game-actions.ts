@@ -60,7 +60,7 @@ export function handleCollectAction(state: GameState): GameState {
   player.lastAction = 'collect';
   newState.log.push(`${player.name} collected ${resource.amount} ${position.resource}.`);
   
-  return { ...newState, currentAction: null };
+  return { ...newState, currentAction: null, possibleMoves: [], selectedTile: null };
 }
 
 export function handleDeployAction(state: GameState): GameState {
@@ -161,7 +161,7 @@ export function handleAttackAction(state: GameState): GameState {
     } else {
         throw new Error("There is nothing to attack on this island.");
     }
-    return { ...newState, currentAction: 'attack' };
+    return { ...newState, currentAction: 'attack', possibleMoves: [], selectedTile: null };
 }
 
 export function handleEndTurn(state: GameState): GameState {
@@ -242,11 +242,24 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     const player = players[currentPlayerIndex];
     const army = getSelectedArmy(newState);
 
-    if (!army || player.lastAction === 'move') return state;
+    if (!army || (player.lastAction && !player.hasExtraMove)) {
+        // Block move if a main action was already taken, unless they have an extra move card active
+        return state;
+    }
     
     const oldTile = map[army.position.y][army.position.x];
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
     
+    // Check if the army was positioned and remove the position
+    const positionIndex = player.positions.findIndex(p => p.x === army.position.x && p.y === army.position.y);
+    if (positionIndex > -1) {
+        const removedPosition = player.positions.splice(positionIndex, 1)[0];
+        if(oldTile.positionedBy) {
+            oldTile.positionedBy = oldTile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === removedPosition.resource));
+        }
+        newState.log.push(`${player.name}'s army moved and is no longer positioned on ${removedPosition.resource}.`);
+    }
+
     army.position = { x, y };
     map[y][x].occupants.push({ playerId: player.id, armyId: army.id });
     
@@ -297,7 +310,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     player.lastAction = 'position';
     newState.log.push(`${player.name} positioned an army on ${resource}.`);
     
-    return { ...newState, positionDialogState: null, currentAction: null };
+    return { ...newState, positionDialogState: null, currentAction: null, possibleMoves: [], selectedTile: null };
 };
 
 export function handleCombatRoll(state: GameState): GameState {
