@@ -8,7 +8,7 @@ import { ActionsPanel } from './ActionsPanel';
 import { GameLog } from './GameLog';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, ChevronUp, Loader2, ArrowLeft } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, ArrowLeft, Play } from 'lucide-react';
 import { CombatDialog } from './CombatDialog';
 import { MonsterCombatDialog } from './MonsterCombatDialog';
 import { PositionDialog } from './PositionDialog';
@@ -124,10 +124,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const updateGameState = async (state: GameState) => {
     const gameDocRef = doc(db, 'games', gameId);
     
-    // Check if game has started
-    if (state.turn > 0 && state.status === 'waiting') {
-        state.status = 'playing';
-    }
+    // This check is now handled by handleStartGame or when the lobby is full
+    // if (state.turn > 0 && state.status === 'waiting') {
+    //     state.status = 'playing';
+    // }
 
     const sanitizedMap = state.map.map(row => row.map(tile => ({
         ...tile,
@@ -153,7 +153,15 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   const handleAction = (action: GameAction) => {
     if (!gameState || !playerId) return;
-    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    
+    const { players, currentPlayerIndex, status } = gameState;
+    const currentPlayer = players[currentPlayerIndex];
+
+    if (status === 'waiting') {
+        toast({ title: "Game Not Started", description: "Waiting for more players or for the host to start the game.", variant: 'destructive' });
+        return;
+    }
+
     if (currentPlayer.playerId !== localPlayer?.playerId) {
         toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
         return;
@@ -164,7 +172,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         return;
     }
     
-    const { players, selectedArmyId } = gameState;
+    const { selectedArmyId } = gameState;
     const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
 
     const newState = JSON.parse(JSON.stringify(gameState)); // Deep clone
@@ -196,6 +204,17 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
        updateGameState(newState);
     }
     
+  };
+
+  const handleStartGame = () => {
+    if (!gameState || !isHost) return;
+
+    const newState = JSON.parse(JSON.stringify(gameState));
+    newState.status = 'playing';
+    newState.turn = 1; // Start the first turn
+    newState.log.push(`${localPlayer?.name} has started the game! It's now ${newState.players[0].name}'s turn.`);
+    toast({ title: "Game Started!", description: "Let the conquest begin!" });
+    updateGameState(newState);
   };
   
   const handleOpenUseCardDialog = (cardName: string) => {
@@ -400,6 +419,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   const handleTileClick = (x: number, y: number) => {
     if (!gameState || !playerId) return;
+    const { status } = gameState;
+     if (status === 'waiting') return;
+
     const newState = JSON.parse(JSON.stringify(gameState));
     const { players, currentPlayerIndex, selectedArmyId, possibleMoves } = newState;
     const currentPlayer = players[currentPlayerIndex];
@@ -894,7 +916,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     );
   }
 
-  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, monsterCombatState, positionDialogState, showCardsDialogForPlayer, selectedArmyId, stealResourceDialogState, useCardDialogState } = gameState;
+  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, monsterCombatState, positionDialogState, showCardsDialogForPlayer, selectedArmyId, stealResourceDialogState, useCardDialogState, status, maxPlayers } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   const localPlayer = players.find(p => p.playerId === playerId);
 
@@ -908,15 +930,21 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }
 
   const isMyTurn = currentPlayer.id === localPlayer.id;
+  const isHost = localPlayer.id === 0;
 
   const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const currentTileForMonster = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
   return (
     <div className="relative flex h-screen w-full flex-col gap-4 overflow-auto p-4">
-       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={onExit}><ArrowLeft /></Button>
-        <h1 className="text-2xl font-bold">Corner Conquest</h1>
+       <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" onClick={onExit}><ArrowLeft /></Button>
+          <h1 className="text-2xl font-bold">Corner Conquest</h1>
+        </div>
+        {isHost && status === 'waiting' && players.length > 1 && players.length < maxPlayers && (
+            <Button onClick={handleStartGame}><Play /> Start Game Now</Button>
+        )}
       </div>
       
       <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen} className="w-full">
@@ -944,11 +972,17 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-[1fr_320px]">
         <main className="flex flex-col items-center justify-start gap-4 overflow-hidden">
           <MapGrid map={map} players={players} onTileClick={handleTileClick} possibleMoves={possibleMoves} selectedTile={selectedTile} currentPlayerId={currentPlayer.id} selectedArmyId={selectedArmyId} />
-          <div className='text-center'>
-              <p className='text-lg font-semibold'>Turn {gameState.turn}: <span style={{color: currentPlayer.color}}>{currentPlayer.name}'s turn</span></p>
-              {currentAction && <p className='text-muted-foreground'>Current Action: {currentAction}</p>}
-              {selectedArmy && <p className='text-sm text-muted-foreground'>Selected Army: ID {selectedArmy.id} at ({selectedArmy.position.x}, {selectedArmy.position.y})</p>}
-          </div>
+           <div className='text-center'>
+                {status === 'waiting' ? (
+                     <p className='text-lg font-semibold text-accent'>Waiting for more players... ({players.length}/{maxPlayers})</p>
+                ) : (
+                    <>
+                        <p className='text-lg font-semibold'>Turn {gameState.turn}: <span style={{color: currentPlayer.color}}>{currentPlayer.name}'s turn</span></p>
+                        {currentAction && <p className='text-muted-foreground'>Current Action: {currentAction}</p>}
+                        {selectedArmy && <p className='text-sm text-muted-foreground'>Selected Army: ID {selectedArmy.id} at ({selectedArmy.position.x}, {selectedArmy.position.y})</p>}
+                    </>
+                )}
+           </div>
         </main>
         <aside className="flex flex-col justify-start gap-4">
           <ActionsPanel onAction={handleAction} gameState={gameState} isMyTurn={isMyTurn} />

@@ -85,6 +85,12 @@ export function Lobby({ onJoinGame }: LobbyProps) {
         }
 
         const firestoreState = gameDoc.data() as FirestoreGameState;
+        
+        if (firestoreState.status === 'playing') {
+             toast({ title: "Cannot Join", description: "This game has already started.", variant: 'destructive' });
+             return;
+        }
+
         const gameState = {
             ...firestoreState,
             map: unflattenMap(firestoreState.map, firestoreState.mapSize),
