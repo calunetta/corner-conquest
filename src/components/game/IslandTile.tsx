@@ -48,9 +48,8 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const baseOwner = island.type === 'base' ? players.find(p => p.id === island.owner) : null;
 
   const renderResourceIcons = (resources: IslandResource[]) => {
-    const isSingleResource = resources.length === 1;
     return resources.map((resource, index) => (
-       <div key={`resource-row-${index}`} className={cn("flex w-full items-center gap-1", isSingleResource ? "justify-center" : "justify-start")}>
+       <div key={`resource-row-${index}`} className="flex w-full items-center justify-center gap-1">
         {Array.from({ length: resource.amount }).map((_, i) => (
           <ResourceIcon key={`${resource.type}-${i}`} type={resource.type} className="h-4 w-4 text-accent" />
         ))}
@@ -60,9 +59,8 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
 
   const renderMonsterIcons = () => {
     if (!island.monsters) return null;
-    const isSingleMonster = island.monsters.length === 1;
     return island.monsters.map((monster, i) => (
-      <div key={`monster-row-${i}`} className={cn("flex w-full items-center gap-1", isSingleMonster ? "justify-center" : "justify-between")}>
+      <div key={`monster-row-${i}`} className="flex w-full items-center justify-between px-1">
         <MonsterIcon level={monster.level} className="h-5 w-5" />
         <span className="text-xs font-bold text-destructive">Lvl: {monster.level}</span>
       </div>
