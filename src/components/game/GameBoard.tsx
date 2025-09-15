@@ -118,7 +118,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         }
         
         if (newState.players[newState.currentPlayerIndex].lastAction !== null && !newState.players[newState.currentPlayerIndex].hasExtraMove) {
-             if (action !== 'move' || !newState.players[newState.currentPlayerIndex].hasExtraMove) {
+             // Allow secondary actions after a main action has been performed
+             if (!['move', 'deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card', 'show-cards'].includes(action)) {
                 toast({ title: 'Action Limit', description: 'You can only perform one main action (Collect, Position, Attack, or Move) per turn.', variant: 'destructive' });
                 return;
             }
@@ -317,3 +318,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
