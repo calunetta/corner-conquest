@@ -22,7 +22,7 @@ export function handlePositionAction(state: GameState): GameState {
   const army = getSelectedArmy(state);
   
   if (!army) throw new Error("No army selected.");
-  if (player.lastAction) throw new Error("You have already performed a main action this turn.");
+  if (army.hasActed) throw new Error("This army has already acted this turn.");
   
   const tile = map[army.position.y][army.position.x];
   if ((tile.type !== 'resource' && tile.type !== 'base') || tile.resources.length === 0) {
@@ -49,7 +49,7 @@ export function handleCollectAction(state: GameState): GameState {
   const army = getSelectedArmy(newState);
   
   if (!army) throw new Error("No army selected.");
-  if (player.lastAction) throw new Error("You have already performed a main action this turn.");
+  if (army.hasActed) throw new Error("This army has already acted this turn.");
 
   const positionIndex = player.positions.findIndex(p => p.x === army.position.x && p.y === army.position.y);
   if (positionIndex === -1) throw new Error("You have no army positioned on this island to collect from.");
@@ -74,7 +74,7 @@ export function handleCollectAction(state: GameState): GameState {
   } else {
     // Perform collection directly
     player.resources[resource.type] += resource.amount;
-    player.lastAction = 'collect';
+    army.hasActed = true;
     newState.log.push(`${player.name} collected ${resource.amount} ${resource.type}.`);
 
     // Remove the position after collecting
@@ -92,8 +92,9 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     const newState = { ...state };
     const { players, currentPlayerIndex, map, collectDialogState } = newState;
     const player = players[currentPlayerIndex];
+    const army = getSelectedArmy(newState);
 
-    if (!collectDialogState) return newState;
+    if (!collectDialogState || !army) return newState;
 
     const { x, y, resource } = collectDialogState;
 
@@ -118,7 +119,7 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     }
 
     player.resources[resource.type] += amountToCollect;
-    player.lastAction = 'collect';
+    army.hasActed = true;
     newState.log.push(`${player.name} collected ${amountToCollect} ${resource.type}.`);
 
     // Remove the position after collecting
@@ -155,7 +156,7 @@ export function handleDeployAction(state: GameState): GameState {
     player.resources.food -= cost;
     player.armyCount += 1;
     const newArmyId = player.armies.length > 0 ? Math.max(...player.armies.map(a => a.id)) + 1 : 0;
-    const newArmy: Army = { id: newArmyId, position: {x: 0, y: 0} }; // Default position, will be set to base
+    const newArmy: Army = { id: newArmyId, position: {x: 0, y: 0}, hasActed: true }; // New army has "acted" this turn
     
     const baseTile = map.flat().find(t => t.type === 'base' && t.owner === player.id);
     if (!baseTile) throw new Error("Base not found!");
@@ -252,7 +253,7 @@ export function handleAttackAction(state: GameState): GameState {
     const army = getSelectedArmy(newState);
 
     if (!army) throw new Error("No army selected.");
-    if (attacker.lastAction) throw new Error("You have already performed a main action this turn.");
+    if (army.hasActed) throw new Error("This army has already acted this turn.");
 
     const currentTile = map[army.position.y][army.position.x];
     const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
@@ -329,7 +330,6 @@ export function handleEndTurn(state: GameState): GameState {
     currentPlayer.hasExtraMove = false;
     currentPlayer.efficientActive = false;
     currentPlayer.masterBuilderActive = false;
-    // Note: productiveActive is consumed instantly, so it doesn't need a reset here.
     currentPlayer.reinforceActive = false;
 
 
@@ -355,7 +355,8 @@ export function handleEndTurn(state: GameState): GameState {
       newState.turn += 1;
     }
 
-    finalNextPlayer.lastAction = null;
+    // Reset action flags for the new player's armies
+    finalNextPlayer.armies.forEach(army => army.hasActed = false);
     finalNextPlayer.actionsThisTurn = [];
     
     newState.log.push(`It's now ${finalNextPlayer.name}'s turn.`);
@@ -415,15 +416,17 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
     // Normal Move Logic
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
     const armyOnTile = clickedTile.occupants.find(o => o.playerId === currentPlayer.id);
+    const selectedArmy = getSelectedArmy(newState);
 
-    if (selectedArmyId !== null && isPossibleMove) {
+    if (selectedArmy && isPossibleMove) {
       return handleMoveAction(newState, x, y);
     } else if (armyOnTile) {
         newState.selectedArmyId = armyOnTile.armyId;
         newState.selectedTile = {x, y};
+        const newlySelectedArmy = currentPlayer.armies.find(a => a.id === armyOnTile.armyId);
         
-        // Allow showing moves if it's a normal move OR if an extra move is available
-        if (currentPlayer.lastAction !== null && !currentPlayer.hasExtraMove) {
+        // Allow showing moves if the army hasn't acted OR if an extra move is available
+        if (newlySelectedArmy?.hasActed && !currentPlayer.hasExtraMove) {
             newState.possibleMoves = [];
             newState.currentAction = null;
             return newState;
@@ -469,8 +472,8 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
 
     if (!army) return state;
     
-    if (player.lastAction !== null && !player.hasExtraMove) {
-        throw new Error("You have already completed a main action this turn.");
+    if (army.hasActed && !player.hasExtraMove) {
+        throw new Error("This army has already acted this turn.");
     }
     
     const oldTile = map[army.position.y][army.position.x];
@@ -504,7 +507,6 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     
     if (player.hasExtraMove) {
         player.hasExtraMove = false; // Consume the flag
-        player.lastAction = 'move'; // Set lastAction because the turn's actions are now complete
         newState.log.push(`${player.name} used their Extra Move!`);
         
         const canUseCard = !player.actionsThisTurn.includes('use-card');
@@ -516,7 +518,7 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
             }
         }
     } else {
-        player.lastAction = 'move';
+        army.hasActed = true;
     }
     
     newState.currentAction = null;
@@ -542,7 +544,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     if (!tile.positionedBy) tile.positionedBy = [];
     tile.positionedBy.push({playerId: player.id, resource});
 
-    player.lastAction = 'position';
+    army.hasActed = true;
     newState.log.push(`${player.name} positioned an army on ${resource}.`);
     
     return { ...state, positionDialogState: null, currentAction: null, possibleMoves: [], selectedTile: null };
@@ -585,7 +587,7 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean): GameSt
 
 export function handleCloseCombat(state: GameState): GameState {
     const newState = { ...state };
-    const { combatState, players, map, selectedArmyId } = newState;
+    const { combatState, players, map } = newState;
     if (!combatState || combatState.winnerId === null) return { ...newState, combatState: null, currentAction: null };
     
     const { winnerId, attackerId, defenderId } = combatState;
@@ -593,8 +595,10 @@ export function handleCloseCombat(state: GameState): GameState {
     const winner = players.find(p => p.id === winnerId)!;
     const loser = players.find(p => p.id === loserId)!;
     
-    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
+    const attackingArmy = players[attackerId].armies.find(a => a.id === state.selectedArmyId);
     if (!attackingArmy) return { ...newState, combatState: null, currentAction: null };
+    
+    attackingArmy.hasActed = true;
 
     const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
     const loserOccupantInfo = combatTile.occupants.find(o => o.playerId === loserId);
@@ -619,7 +623,6 @@ export function handleCloseCombat(state: GameState): GameState {
     }
 
     newState.log.push(`${winner.name} defeated ${loser.name} in battle!`);
-    newState.players[attackerId].lastAction = 'attack';
     return { ...newState, combatState: null, currentAction: null };
 }
 
@@ -646,7 +649,6 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
             winnerId = attacker.id;
             cardUsedThisAction = true;
         } else {
-            // This case should not happen if UI is correct, but as a fallback:
             winnerId = null; 
         }
     }
@@ -716,7 +718,7 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
       newState.log.push(`${attacker.name} was defeated by the monster!`);
     }
 
-    attacker.lastAction = 'attack';
+    attackingArmy.hasActed = true;
     // --- End of Outcome Processing ---
 
 
@@ -734,8 +736,6 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
 };
 
 export function handleCloseMonsterCombat(state: GameState): GameState {
-    // This function now only clears the state after the results have been shown.
-    // The actual outcome is processed in handleMonsterCombatRoll.
     return { ...state, monsterCombatState: null, currentAction: null };
 }
 
@@ -903,14 +903,14 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     player.specialCards.splice(cardIndex, 1);
     player.actionsThisTurn.push('use-card');
     
-    // Set the action for the turn
-    player.lastAction = 'teleport';
-
     const oldTile = map[armyToMove.position.y][armyToMove.position.x];
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== armyToMove.id);
 
     armyToMove.position = { x, y };
     map[y][x].occupants.push({ playerId: player.id, armyId: armyToMove.id });
+
+    // Mark the army as having acted.
+    armyToMove.hasActed = true;
 
     // Reveal the new tile if it was hidden
     const revealedIsland = map[y][x];

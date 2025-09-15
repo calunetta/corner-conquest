@@ -44,7 +44,7 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
     ];
     const newPlayerPos = basePositions[newPlayerSeatIndex];
 
-    const newArmy = { id: 0, position: newPlayerPos };
+    const newArmy = { id: 0, position: newPlayerPos, hasActed: false };
     
     newGameState.map[newPlayerPos.y][newPlayerPos.x] = {
         ...newGameState.map[newPlayerPos.y][newPlayerPos.x],
@@ -73,7 +73,6 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
         attackPower: 0,
         nextArmyCost: 6,
         victoryPoints: 0,
-        lastAction: null,
         specialCards: ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
         positions: [],
         hasExtraMove: false,

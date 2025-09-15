@@ -31,7 +31,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const currentTile = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
-  const hasMainActionCompleted = !!currentPlayer.lastAction;
+  const hasArmyActed = !!selectedArmy?.hasActed;
 
   const canCollect = selectedArmy && currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y);
   const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.x === selectedArmy!.position.x && p.y === selectedArmy!.position.y);
@@ -47,9 +47,9 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0) || currentPlayer.hasExtraMove;
 
   const mainActions: ActionConfig[] = [
-    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasMainActionCompleted, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving." },
-    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || hasMainActionCompleted, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving." },
-    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || hasMainActionCompleted, tooltip: "Position your army on a resource to collect it on a future turn. Can only be done once per turn, before moving." },
+    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasArmyActed, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving." },
+    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving." },
+    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed, tooltip: "Position your army on a resource to collect it on a future turn. Can only be done once per turn, before moving." },
   ];
   
   const deployLabel = currentPlayer.reinforceActive
@@ -126,7 +126,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             <TooltipContent>
                 <p>{action.tooltip}</p>
                  {(action.disabled && isMyTurn) && <p className="mt-1 text-xs text-destructive">
-                    {hasMainActionCompleted && ['collect', 'attack', 'position'].includes(action.id) ? "" : getDisabledReason(action.id)}
+                    {hasArmyActed && ['collect', 'attack', 'position'].includes(action.id) ? "This army has already acted." : getDisabledReason(action.id)}
                 </p>}
             </TooltipContent>
         </Tooltip>

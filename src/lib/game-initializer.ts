@@ -97,7 +97,7 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
   const creatorSeatIndex = 0;
   const creatorPos = basePositions[creatorSeatIndex];
 
-  const initialArmy = { id: 0, position: creatorPos };
+  const initialArmy = { id: 0, position: creatorPos, hasActed: false };
   map[creatorPos.y][creatorPos.x] = {
       ...map[creatorPos.y][creatorPos.x],
       type: 'base',
@@ -123,7 +123,6 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
       attackPower: 0,
       nextArmyCost: 6,
       victoryPoints: 0,
-      lastAction: null,
       specialCards: debugMode ? [...new Set(BASE_CARDS)] : ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
       positions: [],
       hasExtraMove: false,
@@ -147,7 +146,7 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
         const botColor = availableColors[0];
         usedColors.push(botColor);
 
-        const botArmy = { id: 0, position: botPos };
+        const botArmy = { id: 0, position: botPos, hasActed: false };
         map[botPos.y][botPos.x] = {
             ...map[botPos.y][botPos.x],
             type: 'base',
@@ -173,7 +172,6 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
             attackPower: 0,
             nextArmyCost: 6,
             victoryPoints: 0,
-            lastAction: null,
             specialCards: [],
             positions: [],
             hasExtraMove: false,
@@ -299,7 +297,7 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
     teleportState: null,
     abilitiesShopState: null,
     sabotageDialogState: null,
-wealthyDialogState: null,
+    wealthyDialogState: null,
     scoutingState: null,
   };
 }

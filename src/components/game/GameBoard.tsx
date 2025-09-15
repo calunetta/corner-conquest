@@ -144,14 +144,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
             return;
         }
-        
-        if (newState.players[newState.currentPlayerIndex].lastAction !== null && !newState.players[newState.currentPlayerIndex].hasExtraMove) {
-             // Allow secondary actions after a main action has been performed
-             if (!['move', 'deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card', 'show-cards', 'open-abilities-shop'].includes(action)) {
-                toast({ title: 'Action Limit', description: 'You can only perform one main action (Collect, Position, Attack, or Move) per turn.', variant: 'destructive' });
-                return;
-            }
-        }
 
         switch(action) {
             case 'position':

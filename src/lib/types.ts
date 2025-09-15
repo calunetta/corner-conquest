@@ -19,6 +19,7 @@ export type PlayerPosition = {
 export type Army = {
   id: number;
   position: { x: number; y: number };
+  hasActed: boolean;
 }
 
 export type PassiveAbilities = {
@@ -38,7 +39,6 @@ export type Player = {
   attackPower: number;
   nextArmyCost: number;
   victoryPoints: number;
-  lastAction: GameAction | null;
   specialCards: string[]; // Names of special cards
   positions: PlayerPosition[];
   hasExtraMove: boolean;
@@ -99,7 +99,7 @@ export type PositionDialogState = {
 }
 
 export type CollectDialogState = {
-    isOpen: true;
+    isOpen: boolean;
     x: number;
     y: number;
     resource: IslandResource;
@@ -157,7 +157,7 @@ export type GameState = {
   showCardsDialogForPlayer: number | null;
   stealResourceDialogState: StealResourceDialogState | null;
   useCardDialogState: UseCardDialogState | null;
-TeleportState;
+  teleportState: TeleportState | null;
   abilitiesShopState: AbilitiesShopState | null;
   showHostLeaveDialog?: boolean;
   sabotageDialogState: SabotageDialogState | null;

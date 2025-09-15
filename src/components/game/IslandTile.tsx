@@ -44,10 +44,15 @@ const armyPositions = [
 ];
 
 export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, isTeleporting, isScoutTarget }: IslandTileProps) {
-  const occupants = island.occupants.map(o => ({ player: players[o.playerId], armyId: o.armyId }));
+  const occupants = island.occupants.map(o => {
+      const player = players.find(p => p.id === o.playerId);
+      const army = player?.armies.find(a => a.id === o.armyId);
+      return { player, armyId: o.armyId, army };
+  }).filter(o => o.player && o.army);
+
   const positionedBy = island.positionedBy || [];
   
-  const currentPlayerOnTile = players.find(p => p.id === (isCurrentPlayerTile ? occupants.find(o => players[o.player.id].armies.some(a => a.position.x === island.x && a.position.y === island.y))?.player.id : -1));
+  const currentPlayerOnTile = players.find(p => p.id === (isCurrentPlayerTile ? occupants.find(o => players[o.player!.id].armies.some(a => a.position.x === island.x && a.position.y === island.y))?.player!.id : -1));
 
   const baseOwner = island.type === 'base' ? players.find(p => p.id === island.owner) : null;
 
@@ -131,9 +136,12 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         aria-label={`Island at ${island.x}, ${island.y}`}
       >
         <div className="absolute inset-0">
-          {occupants.map(({ player, armyId }, index) => (
-            <div key={`${player.id}-${armyId}`} className={cn('absolute h-4 w-4 rounded-full border-2', armyPositions[index % armyPositions.length], playerColorMap[player.color].bg, playerColorMap[player.color].border)}>
-            </div>
+          {occupants.map(({ player, armyId, army }, index) => (
+             player && (
+                <div key={`${player.id}-${armyId}`} className={cn('absolute h-4 w-4 rounded-full border-2', armyPositions[index % armyPositions.length], playerColorMap[player.color].bg, playerColorMap[player.color].border)}>
+                    {army?.hasActed && <div className='absolute inset-0 bg-black/60 rounded-full'/>}
+                </div>
+            )
           ))}
         </div>
         
