@@ -1,10 +1,11 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, setDoc, getDoc, updateDoc, arrayUnion, runTransaction } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, arrayUnion, runTransaction } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
-import { initializeGame, addPlayerToGame, flattenMap, unflattenMap } from '@/lib/game-logic';
-import type { GameState, Player, PlayerColor, FirestoreGameState } from '@/lib/types';
+import { initializeGame } from '@/lib/game-initializer';
+import { addPlayerToGame, flattenMap, unflattenMap } from '@/lib/game-logic';
+import type { GameState, PlayerColor, FirestoreGameState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CreateGameDialog } from './CreateGameDialog';

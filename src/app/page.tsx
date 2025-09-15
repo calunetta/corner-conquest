@@ -13,10 +13,14 @@ export default function Home() {
     return <Login />;
   }
 
+  const handleExitGame = () => {
+    setActiveGameId(null);
+  }
+
   return (
     <div className="flex h-screen w-screen flex-col bg-background text-foreground">
       {activeGameId ? (
-        <GameBoard gameId={activeGameId} onExit={() => setActiveGameId(null)} />
+        <GameBoard gameId={activeGameId} onExit={handleExitGame} />
       ) : (
         <Lobby onJoinGame={setActiveGameId} />
       )}
