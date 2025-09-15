@@ -113,6 +113,8 @@ export function handleDeployAction(state: GameState): GameState {
     if(player.reinforceActive) {
       newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
       player.reinforceActive = false;
+      const cardIndex = player.specialCards.indexOf('Reinforce');
+      if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
     } else {
       player.nextArmyCost += 1;
     }
@@ -208,68 +210,75 @@ export function handleAttackAction(state: GameState): GameState {
 }
 
 export function handleEndTurn(state: GameState): GameState {
-    let newState = { ...state };
+    let newState = JSON.parse(JSON.stringify(state)); // Deep copy to prevent mutation issues
     let currentPlayer = newState.players[newState.currentPlayerIndex];
     
-    if (currentPlayer.isSabotaged) {
-      currentPlayer.isSabotaged = false;
-      newState.log.push(`${currentPlayer.name}'s turn was skipped due to Sabotage!`);
-    } else {
-        // --- Passive Ability Logic ---
-        if (currentPlayer.passiveAbilities.explorer) {
-            const occupiedIslands = new Set<string>();
-            currentPlayer.armies.forEach(army => {
-                const tile = newState.map[army.position.y][army.position.x];
-                occupiedIslands.add(tile.id);
-            });
-            const vpGained = occupiedIslands.size;
-            if (vpGained > 0) {
-                currentPlayer.victoryPoints += vpGained;
-                newState.log.push(`${currentPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
-            }
-        }
-        
-        if (currentPlayer.passiveAbilities.collector) {
-            let resourcesCollected: Partial<Record<ResourceType, number>> = {};
-            const occupiedIslands = new Set<string>();
-            
-            currentPlayer.armies.forEach(army => {
-                const tile = newState.map[army.position.y][army.position.x];
-                // Prevent collecting from same island multiple times if multiple armies are there
-                if (occupiedIslands.has(tile.id)) return;
-                
-                if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0) {
-                    occupiedIslands.add(tile.id);
-                    tile.resources.forEach(resource => {
-                        currentPlayer.resources[resource.type] += 1; // Collect 1 of each
-                        resourcesCollected[resource.type] = (resourcesCollected[resource.type] || 0) + 1;
-                    });
-                }
-            });
-
-            const collectedStrings = Object.entries(resourcesCollected).map(([type, amount]) => `${amount} ${type}`);
-            if(collectedStrings.length > 0) {
-                newState.log.push(`${currentPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`);
-            }
+    // --- Passive Ability Logic at end of turn ---
+    if (currentPlayer.passiveAbilities.explorer) {
+        const occupiedIslands = new Set<string>();
+        currentPlayer.armies.forEach((army: Army) => {
+            const tile = newState.map[army.position.y][army.position.x];
+            occupiedIslands.add(tile.id);
+        });
+        const vpGained = occupiedIslands.size;
+        if (vpGained > 0) {
+            currentPlayer.victoryPoints += vpGained;
+            newState.log.push(`${currentPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
         }
     }
+    
+    if (currentPlayer.passiveAbilities.collector) {
+        let resourcesCollected: Partial<Record<ResourceType, number>> = {};
+        const occupiedIslands = new Set<string>();
+        
+        currentPlayer.armies.forEach((army: Army) => {
+            const tile = newState.map[army.position.y][army.position.x];
+            if (occupiedIslands.has(tile.id)) return;
+            
+            if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0) {
+                occupiedIslands.add(tile.id);
+                tile.resources.forEach((resource: { type: ResourceType; }) => {
+                    currentPlayer.resources[resource.type] += 1;
+                    resourcesCollected[resource.type] = (resourcesCollected[resource.type] || 0) + 1;
+                });
+            }
+        });
 
-
-    // This handles the case where the player activates Extra Move but doesn't use it.
-    // The flag is simply cleared without penalty.
+        const collectedStrings = Object.entries(resourcesCollected).map(([type, amount]) => `${amount} ${type}`);
+        if(collectedStrings.length > 0) {
+            newState.log.push(`${currentPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`);
+        }
+    }
+    
+    // Reset flags for the player whose turn just ended
     if (currentPlayer.hasExtraMove) {
         currentPlayer.hasExtraMove = false;
     }
     
+    // Determine the next player
     newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+    let nextPlayer = newState.players[newState.currentPlayerIndex];
+    
+    // Handle turn skipping from Sabotage
+    if (nextPlayer.isSabotaged) {
+        nextPlayer.isSabotaged = false; // Consume the sabotage flag
+        newState.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
+        
+        // It's important to call handleEndTurn again to pass the turn to the *next* player
+        // But first, we need to reset the current (sabotaged) player's turn state.
+        nextPlayer.lastAction = null;
+        nextPlayer.actionsThisTurn = [];
+        return handleEndTurn(newState);
+    }
+    
+    // Set up the state for the new turn
     if (newState.currentPlayerIndex === 0) {
       newState.turn += 1;
     }
 
-    const nextPlayer = newState.players[newState.currentPlayerIndex];
     nextPlayer.lastAction = null;
     nextPlayer.actionsThisTurn = [];
-    nextPlayer.hasExtraMove = false; // Ensure extra move is cleared for the next player
+    nextPlayer.hasExtraMove = false; 
     
     newState.log.push(`It's now ${nextPlayer.name}'s turn.`);
     
@@ -308,6 +317,7 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
             const armyOnTile = clickedTile.occupants.find(o => o.playerId === currentPlayer.id);
             if (armyOnTile) {
                 newState.teleportState.armyId = armyOnTile.armyId;
+                newState.currentAction = 'teleport-initiated';
             } else {
                 throw new Error("You must select one of your own armies to teleport.");
             }
@@ -642,7 +652,7 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     }
 
     // Defer consuming the card for multi-step actions
-    const deferredCards = ['Extra Move', 'Teleport', 'Reinforce', 'Productive', 'Efficient', 'Master Builder', 'War Chief'];
+    const deferredCards = ['Extra Move', 'Teleport', 'Reinforce', 'Productive', 'Efficient', 'Master Builder', 'War Chief', 'Sabatoge'];
     if (!deferredCards.includes(cardName)) {
         player.specialCards.splice(cardIndex, 1);
     }
@@ -700,10 +710,18 @@ export const handleUseCard = (state: GameState, cardName: string) => {
 
 export const handleSabotagePlayer = (state: GameState, targetPlayerId: number): GameState => {
     let newState = { ...state };
+    const player = newState.players[newState.currentPlayerIndex];
     const targetPlayer = newState.players.find(p => p.id === targetPlayerId);
+
     if (targetPlayer) {
         targetPlayer.isSabotaged = true;
-        newState.log.push(`${newState.players[newState.currentPlayerIndex].name} sabotaged ${targetPlayer.name}! They will miss their next turn.`);
+
+        const cardIndex = player.specialCards.indexOf('Sabatoge');
+        if (cardIndex > -1) {
+            player.specialCards.splice(cardIndex, 1);
+        }
+
+        newState.log.push(`${player.name} sabotaged ${targetPlayer.name}! They will miss their next turn.`);
     }
     return { ...newState, sabotageDialogState: null };
 }

@@ -36,7 +36,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const canCollect = selectedArmy && currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y);
   const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.x === selectedArmy!.position.x && p.y === selectedArmy!.position.y);
   const canAttack = selectedArmy && currentTile && (currentTile.occupants.length > 1 || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
-  const canDeploy = currentPlayer.resources.food >= currentPlayer.nextArmyCost && currentPlayer.armyCount < 5 && !currentPlayer.actionsThisTurn.includes('deploy');
+  const canDeploy = (currentPlayer.resources.food >= currentPlayer.nextArmyCost || currentPlayer.reinforceActive) && currentPlayer.armyCount < 5 && !currentPlayer.actionsThisTurn.includes('deploy');
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !currentPlayer.actionsThisTurn.includes('buy-card');
   const canUpgrade = currentPlayer.resources.iron >= 5 && !currentPlayer.actionsThisTurn.includes('upgrade');
   
@@ -71,7 +71,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             if (currentPlayer.actionsThisTurn.includes('buy-card')) return "You've already bought a card this turn.";
             break;
         case 'deploy':
-            if (currentPlayer.resources.food < currentPlayer.nextArmyCost) return "Not enough food.";
+            if (!currentPlayer.reinforceActive && currentPlayer.resources.food < currentPlayer.nextArmyCost) return "Not enough food.";
             if (currentPlayer.armyCount >= 5) return "Maximum army size reached.";
             if (currentPlayer.actionsThisTurn.includes('deploy')) return "You've already deployed this turn.";
             break;
