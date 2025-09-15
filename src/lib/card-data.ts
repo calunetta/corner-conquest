@@ -1,7 +1,8 @@
 export const SPECIAL_CARDS = [
   'Extra Move', 'Steal Resource', 'Extra VP', 'Sabatoge', 'Reinforce', 
   'Scout', 'Overcome', 'Wealthy', 'Productive', 'Efficient',
-  'Master Builder', 'War Chief', 'Diplomat', 'Explorer', 'Collector'
+  'Master Builder', 'War Chief', 'Diplomat', 'Explorer', 'Collector',
+  'Decide Dice Roll'
 ];
 
 export const SPECIAL_CARD_DESCRIPTIONS: Record<string, string> = {
@@ -19,5 +20,6 @@ export const SPECIAL_CARD_DESCRIPTIONS: Record<string, string> = {
     'War Chief': 'Gain +2 attack power for your next battle.',
     'Diplomat': 'Force a truce. No players can attack you for one round.',
     'Explorer': 'Gain 1 VP for each island you have a unit on.',
-    'Collector': 'Gain 1 resource of each type for each island you have a unit on.'
+    'Collector': 'Gain 1 resource of each type for each island you have a unit on.',
+    'Decide Dice Roll': 'When attacking a monster, choose the value of one of your dice.'
 }

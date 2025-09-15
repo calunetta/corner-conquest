@@ -68,6 +68,8 @@ export type MonsterCombatState = {
   monsterRolls: number[];
   winnerId: number | null;
   phase: 'rolling' | 'results';
+  useDecideDiceRollCard: boolean;
+  decidedRollValue: number;
 };
 
 export type PositionDialogState = {

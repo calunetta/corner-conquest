@@ -13,22 +13,28 @@ import {
 import { Button } from '@/components/ui/button';
 import { MonsterIcon } from '../icons';
 import { Card } from '../ui/card';
+import { Label } from '../ui/label';
+import { Checkbox } from '../ui/checkbox';
+import { Slider } from '../ui/slider';
 
 type MonsterCombatDialogProps = {
   gameState: GameState;
   monsters: Monster[];
-  onRoll: (monster: Monster) => void;
+  onRoll: (monster: Monster, useCard: boolean, decidedValue: number) => void;
   onClose: () => void;
 };
 
 export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: MonsterCombatDialogProps) {
   const { monsterCombatState, players } = gameState;
   const [selectedMonster, setSelectedMonster] = useState<Monster | null>(null);
+  const [useCard, setUseCard] = useState(false);
+  const [decidedValue, setDecidedValue] = useState(6);
 
   if (!monsterCombatState) return null;
 
   const { attackerId, attackerRolls, monsterRolls, winnerId, phase } = monsterCombatState;
   const attacker = players[attackerId];
+  const hasDecideCard = attacker.specialCards.includes('Decide Dice Roll');
   const monsterForDisplay = phase === 'results' ? monsterCombatState.monster : selectedMonster;
 
   const renderDice = (rolls: number[]) => (
@@ -55,7 +61,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: Mo
         {monsters.map((monster, i) => (
           <Card 
             key={i} 
-            className="flex cursor-pointer flex-col items-center gap-2 p-4 transition-all hover:bg-muted"
+            className={`flex cursor-pointer flex-col items-center gap-2 p-4 transition-all hover:bg-muted ${selectedMonster?.id === monster.id && selectedMonster.level === monster.level ? 'ring-2 ring-primary' : ''}`}
             onClick={() => setSelectedMonster(monster)}
           >
             <MonsterIcon level={monster.level} className="h-12 w-12" />
@@ -66,8 +72,31 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: Mo
           </Card>
         ))}
       </div>
+      {hasDecideCard && (
+        <div className="space-y-4 rounded-md border bg-muted/50 p-4">
+            <div className="flex items-center space-x-2">
+                <Checkbox id="use-decide-card" checked={useCard} onCheckedChange={(checked) => setUseCard(!!checked)} />
+                <Label htmlFor="use-decide-card" className='font-bold'>Use 'Decide Dice Roll' card?</Label>
+            </div>
+            {useCard && (
+                <div className='space-y-2 pt-2'>
+                    <div className='flex justify-between'>
+                        <Label>Choose Dice Value</Label>
+                        <span className='font-bold text-primary'>{decidedValue}</span>
+                    </div>
+                    <Slider
+                        min={1}
+                        max={6}
+                        step={1}
+                        value={[decidedValue]}
+                        onValueChange={(value) => setDecidedValue(value[0])}
+                    />
+                </div>
+            )}
+        </div>
+      )}
        <AlertDialogFooter>
-          <Button onClick={() => onRoll(selectedMonster!)} disabled={!selectedMonster}>
+          <Button onClick={() => onRoll(selectedMonster!, useCard, decidedValue)} disabled={!selectedMonster}>
             Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}!
           </Button>
       </AlertDialogFooter>

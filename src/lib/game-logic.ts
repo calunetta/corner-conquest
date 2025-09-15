@@ -50,7 +50,7 @@ export function initializeGame(): GameState {
       nextArmyCost: 5,
       victoryPoints: 0,
       lastAction: null,
-      specialCards: ['Extra Move', 'Steal Resource', 'Extra Move'], // Mock cards
+      specialCards: ['Extra Move', 'Steal Resource', 'Decide Dice Roll'], // Mock cards
       positions: [],
     });
   });

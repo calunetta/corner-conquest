@@ -438,11 +438,13 @@ export function GameBoard() {
     } else if (currentTile.type === 'monster' && currentTile.monsters && currentTile.monsters.length > 0) {
       state.monsterCombatState = {
         attackerId: attacker.id,
-        monster: currentTile.monsters[0],
+        monster: currentTile.monsters[0], // Temporary, will be selected in dialog
         attackerRolls: [],
         monsterRolls: [],
         winnerId: null,
         phase: 'rolling',
+        useDecideDiceRollCard: false,
+        decidedRollValue: 1,
       };
       state.currentAction = 'attack';
       setGameState(state);
@@ -486,7 +488,7 @@ export function GameBoard() {
     if (!gameState || !gameState.combatState) return;
     
     const newState = deepClone(gameState);
-    const { combatState, players, map } = newState;
+    const { combatState, players, map, selectedArmyId } = newState;
     const { winnerId, attackerId, defenderId } = combatState;
     
     if (winnerId === null) {
@@ -499,7 +501,7 @@ export function GameBoard() {
     const winner = players[winnerId];
     const loser = players[loserId];
 
-    const attackingArmy = players[attackerId].armies.find(a => a.id === newState.selectedArmyId);
+    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
     if (!attackingArmy) {
         newState.combatState = null;
         endTurn(newState);
@@ -543,19 +545,36 @@ export function GameBoard() {
     endTurn(newState);
   }
 
-  const handleMonsterCombatRoll = (monster: Monster) => {
+  const handleMonsterCombatRoll = (monster: Monster, useCard: boolean, decidedValue: number) => {
     if (!gameState) return;
 
     const newState = deepClone(gameState);
     const { players } = newState;
     const attacker = players[newState.currentPlayerIndex];
+    
+    if (useCard) {
+      const cardIndex = attacker.specialCards.indexOf('Decide Dice Roll');
+      if (cardIndex > -1) {
+        attacker.specialCards.splice(cardIndex, 1);
+        const logMsg = `${attacker.name} used the 'Decide Dice Roll' card!`;
+        newState.log.push(logMsg);
+        toast({ title: 'Card Used!', description: logMsg });
+      } else {
+        useCard = false; // Card not found, shouldn't happen if UI is correct
+      }
+    }
+
 
     const rollDice = (count: number) => {
       const diceCount = Math.min(count, 4);
       return Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
     };
 
-    const attackerRolls = rollDice(attacker.armyCount + attacker.attackPower);
+    let attackerRolls = rollDice(attacker.armyCount + attacker.attackPower);
+    if(useCard) {
+        attackerRolls[0] = decidedValue; // Replace the first die roll
+    }
+
     const monsterRolls = rollDice(monster.level);
 
     const attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
@@ -573,6 +592,8 @@ export function GameBoard() {
       monsterRolls,
       winnerId,
       phase: 'results',
+      useDecideDiceRollCard: useCard,
+      decidedRollValue: decidedValue,
     };
     setGameState(newState);
   };
