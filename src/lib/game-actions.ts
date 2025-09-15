@@ -649,11 +649,12 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
             winnerId = attacker.id;
             cardUsedThisAction = true;
         } else {
+            // This case should ideally not be reached if UI is correct
             winnerId = null; 
         }
     }
 
-    if (winnerId === null) { // If not an auto-win
+    if (winnerId === null) { // If not an auto-win, roll the dice
         let attackerPower = attacker.attackPower;
         
         if (useWarChief && canUseCard && !cardUsedThisAction) {
@@ -736,6 +737,7 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
 };
 
 export function handleCloseMonsterCombat(state: GameState): GameState {
+    // This function now only closes the dialog. The outcome logic is in handleMonsterCombatRoll.
     return { ...state, monsterCombatState: null, currentAction: null };
 }
 
@@ -893,6 +895,8 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
 
     const armyToMove = player.armies.find(a => a.id === teleportState.armyId);
     if (!armyToMove) return newState;
+    if (armyToMove.hasActed) throw new Error("This army has already acted. Teleport can only be used on an army that hasn't moved.");
+
 
     const cardIndex = player.specialCards.indexOf('Teleport');
     if (cardIndex === -1) {
@@ -1056,3 +1060,6 @@ export function handleCancelAction(state: GameState): { newState: GameState, toa
     
     return { newState, toastMessage };
 }
+
+
+    
