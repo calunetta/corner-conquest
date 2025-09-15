@@ -8,7 +8,6 @@ import { CardsDialog } from './CardsDialog';
 import { StealResourceDialog } from './StealResourceDialog';
 import { UseCardDialog } from './UseCardDialog';
 import { HostLeaveDialog } from './HostLeaveDialog';
-import { TeleportDialog } from './TeleportDialog';
 import * as GameActions from '@/lib/game-actions';
 
 type GameDialogsProps = {
@@ -19,7 +18,7 @@ type GameDialogsProps = {
 };
 
 export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: GameDialogsProps) {
-  const { combatState, monsterCombatState, positionDialogState, showCardsDialogForPlayer, stealResourceDialogState, useCardDialogState, teleportDialogState, showHostLeaveDialog } = gameState;
+  const { combatState, monsterCombatState, positionDialogState, showCardsDialogForPlayer, stealResourceDialogState, useCardDialogState, showHostLeaveDialog } = gameState;
 
   const handleUpdate = (state: GameState) => {
     setGameState(state);
@@ -42,7 +41,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
             newState = GameActions.handleUseCard(newState, 'Extra Move');
             break;
         case 'Teleport':
-             newState = { ...newState, teleportDialogState: { armyId: null }, showCardsDialogForPlayer: null };
+             newState = GameActions.handleUseCard(newState, 'Teleport');
              break;
         default:
             newState = GameActions.handleOpenUseCardDialog(newState, cardName);
@@ -98,13 +97,6 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
           onClose={() => handleCloseDialog('useCardDialogState')}
         />
       )}
-      {teleportDialogState && isMyTurn && (
-        <TeleportDialog
-          player={localPlayer}
-          onSelectArmy={(armyId) => handleUpdate({ ...gameState, teleportDialogState: { armyId }})}
-          onClose={() => handleCloseDialog('teleportDialogState')}
-        />
-      )}
       {showHostLeaveDialog && (
         <HostLeaveDialog
             isLastPlayer={gameState.players.length === 1}
@@ -115,3 +107,5 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
     </>
   );
 }
+
+    

@@ -106,8 +106,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             return;
         }
         
-        const mainActionCompleted = newState.players[newState.currentPlayerIndex].lastAction !== null;
-        if (mainActionCompleted && ['collect', 'position', 'attack', 'move'].includes(action)) {
+        if (newState.players[newState.currentPlayerIndex].lastAction !== null && !newState.players[newState.currentPlayerIndex].hasExtraMove) {
              if (action !== 'move' || !newState.players[newState.currentPlayerIndex].hasExtraMove) {
                 toast({ title: 'Action Limit', description: 'You can only perform one main action (Collect, Position, Attack, or Move) per turn.', variant: 'destructive' });
                 return;
@@ -138,10 +137,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 break;
             case 'use-card':
                 // This case is handled inside the CardsDialog for now
-                // to open the confirmation dialog
                 break;
             case 'teleport':
-                 // This action is handled by the TeleportDialog
+                 // This action is handled by the CardsDialog to initiate teleport mode
                  break;
             default:
                 newState = { ...newState, currentAction: action };
@@ -155,17 +153,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleTileClick = (x: number, y: number) => {
     if (!gameState || !isMyTurn || gameState.status !== 'playing') return;
     try {
-        // If in teleport mode, handle teleport
-        if (gameState.teleportDialogState && gameState.teleportDialogState.armyId !== null) {
-            const newState = GameActions.handleTeleport(gameState, x, y);
-            setGameState(newState);
-            return;
-        }
-
-        const newState = GameActions.handleTileClick(gameState, x, y);
+        const newState = GameActions.handleTileClick(gameState, x, y, localPlayer?.id ?? -1);
         setGameState(newState);
     } catch (error: any) {
-        toast({ title: 'Move Error', description: error.message, variant: 'destructive' });
+        toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
     }
   };
   
@@ -207,7 +198,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     );
   }
 
-  const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers, teleportDialogState } = gameState;
+  const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers, teleportState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
@@ -220,7 +211,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   };
   
   const gridColsClass = `grid-cols-2 ${gridColsMap[players.length] || 'md:grid-cols-4'}`;
-  const isTeleporting = teleportDialogState && teleportDialogState.armyId !== null;
+  const isTeleporting = !!teleportState;
 
 
   return (
@@ -269,7 +260,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             map={gameState.map} 
             players={players} 
             onTileClick={handleTileClick} 
-            possibleMoves={isTeleporting ? gameState.map.flat() : possibleMoves} 
+            possibleMoves={isTeleporting && teleportState.armyId !== null ? gameState.map.flat() : possibleMoves} 
             selectedTile={selectedTile} 
             currentPlayerId={currentPlayer.id} 
             selectedArmyId={selectedArmyId}
@@ -281,7 +272,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             ) : (
               <>
                 {isTeleporting ? (
-                    <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>Teleport Mode: Select any tile to move your army.</p>
+                     <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
+                        {teleportState?.armyId === null ? 'Teleport: Select an army to move.' : 'Teleport: Select a destination tile.'}
+                    </p>
                 ) : (
                     <>
                         <p className='text-base font-semibold sm:text-lg'>Turn {gameState.turn}: <span style={{color: currentPlayer.color}}>{currentPlayer.name}'s turn</span></p>
@@ -313,3 +306,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    

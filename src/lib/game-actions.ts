@@ -1,6 +1,7 @@
 
 
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army } from './types';
@@ -195,18 +196,37 @@ export function handleEndTurn(state: GameState): GameState {
         newState.selectedArmyId = null;
     }
 
-    return { ...newState, currentAction: null, possibleMoves: [], selectedTile: null };
+    return { ...newState, currentAction: null, possibleMoves: [], selectedTile: null, teleportState: null };
 }
 
 // --- UI Interaction Handlers ---
 
-export function handleTileClick(state: GameState, x: number, y: number): GameState {
-    const newState = { ...state };
-    const { players, currentPlayerIndex, selectedArmyId, possibleMoves } = newState;
+export function handleTileClick(state: GameState, x: number, y: number, localPlayerId: number): GameState {
+    let newState = { ...state };
+    const { players, currentPlayerIndex, selectedArmyId, possibleMoves, teleportState } = newState;
     const currentPlayer = players[currentPlayerIndex];
-
-    const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
     const clickedTile = newState.map[y][x];
+    
+    // Teleport Logic
+    if (teleportState) {
+        if (teleportState.armyId === null) {
+            // Phase 1: Select army to teleport
+            const armyOnTile = clickedTile.occupants.find(o => o.playerId === currentPlayer.id);
+            if (armyOnTile) {
+                newState.teleportState.armyId = armyOnTile.armyId;
+                newState.log.push(`${currentPlayer.name} selected an army to teleport. Now, choose a destination.`);
+            } else {
+                throw new Error("You must select one of your own armies to teleport.");
+            }
+        } else {
+            // Phase 2: Select destination
+            newState = handleTeleport(newState, x, y);
+        }
+        return newState;
+    }
+
+    // Normal Move Logic
+    const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
     const armyOnTile = clickedTile.occupants.find(o => o.playerId === currentPlayer.id);
 
     if (selectedArmyId !== null && isPossibleMove) {
@@ -216,7 +236,6 @@ export function handleTileClick(state: GameState, x: number, y: number): GameSta
         newState.selectedTile = {x, y};
         newState.currentAction = 'move';
         
-        // Don't show moves if a main action has already been completed (and no extra move)
         if (currentPlayer.lastAction && !currentPlayer.hasExtraMove) {
             newState.possibleMoves = [];
             return newState;
@@ -230,7 +249,6 @@ export function handleTileClick(state: GameState, x: number, y: number): GameSta
               const newX = x + i;
               const newY = y + j;
               if (newX >= 0 && newX < MAP_SIZE && newY >= 0 && newY < MAP_SIZE) {
-                // Prevent moving to empty, already-cleared monster tiles
                 const targetTile = newState.map[newY][newX];
                 if (targetTile.type === 'resource' && targetTile.resources.length === 0 && (!targetTile.monsters || targetTile.monsters.length === 0)) {
                     continue;
@@ -295,8 +313,8 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     }
     
     if (player.hasExtraMove) {
-        player.hasExtraMove = false; 
-        player.lastAction = 'move'; 
+        player.hasExtraMove = false;
+        player.lastAction = 'move';
         newState.log.push(`${player.name} used their Extra Move!`);
         
         const cardIndex = player.specialCards.indexOf('Extra Move');
@@ -385,7 +403,7 @@ export function handleCloseCombat(state: GameState): GameState {
             if (positionIndex > -1) {
                 const removedPosition = loser.positions.splice(positionIndex, 1)[0];
                 if (map[oldPos.y][oldPos.x].positionedBy) {
-                    map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy!.filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
+                    map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x]!.filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
                 }
             }
         }
@@ -513,18 +531,23 @@ export const handleUseCard = (state: GameState, cardName: string) => {
         return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
     }
     
+    // Defer consuming the card for Extra Move
+    if (cardName !== 'Extra Move') {
+        player.specialCards.splice(cardIndex, 1);
+    }
     player.actionsThisTurn.push('use-card');
 
     if (cardName === 'Extra Move') {
         player.hasExtraMove = true;
-        newState.log.push(`${player.name} activated the 'Extra Move' card. They can perform another main action.`);
+        player.lastAction = null; // This allows another main action
+        newState.log.push(`${player.name} activated the 'Extra Move' card.`);
     } else if (cardName === 'Extra VP') {
         player.victoryPoints += 10;
-        player.specialCards.splice(cardIndex, 1);
         newState.log.push(`${player.name} used 'Extra VP' and gained 10 Victory Points!`);
+    } else if (cardName === 'Teleport') {
+        newState.teleportState = { armyId: null };
+        newState.log.push(`${player.name} is using the 'Teleport' card. Select an army.`);
     } else {
-        // For other instant-use cards, consume them.
-        player.specialCards.splice(cardIndex, 1);
         newState.log.push(`${player.name} used the '${cardName}' card.`);
     }
 
@@ -568,26 +591,23 @@ export const handleStealResource = (state: GameState, targetPlayerId: number, re
 
 export const handleTeleport = (state: GameState, x: number, y: number): GameState => {
     let newState = { ...state };
-    const { players, currentPlayerIndex, teleportDialogState, map } = newState;
+    const { players, currentPlayerIndex, teleportState, map } = newState;
     const player = players[currentPlayerIndex];
 
-    if (!teleportDialogState || teleportDialogState.armyId === null) return newState;
+    if (!teleportState || teleportState.armyId === null) return newState;
     
-    const armyToMove = player.armies.find(a => a.id === teleportDialogState.armyId);
+    const armyToMove = player.armies.find(a => a.id === teleportState.armyId);
     if (!armyToMove) return newState;
 
     const cardIndex = player.specialCards.indexOf('Teleport');
     if (cardIndex === -1) {
         newState.log.push('Error: Teleport card not found.');
-        return { ...newState, teleportDialogState: null };
+        return { ...newState, teleportState: null };
     }
     
-    // Consume card and action
     player.specialCards.splice(cardIndex, 1);
-    player.actionsThisTurn.push('use-card');
     player.lastAction = 'teleport';
 
-    // Move army
     const oldTile = map[armyToMove.position.y][armyToMove.position.x];
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== armyToMove.id);
 
@@ -596,7 +616,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
 
     newState.log.push(`${player.name} used 'Teleport' to move an army!`);
 
-    return { ...newState, teleportDialogState: null, possibleMoves: [], selectedTile: {x, y} };
+    return { ...newState, teleportState: null, possibleMoves: [], selectedTile: {x, y} };
 }
 
 // --- Player Exit Logic ---
@@ -669,3 +689,5 @@ export async function handleConfirmHostLeave(gameState: GameState, gameId: strin
     }
     onExit();
 }
+
+    

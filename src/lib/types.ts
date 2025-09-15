@@ -1,3 +1,4 @@
+
 export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'green' | 'yellow';
@@ -91,7 +92,7 @@ export type UseCardDialogState = {
     cardName: string;
 }
 
-export type TeleportDialogState = {
+export type TeleportState = {
     armyId: number | null;
 }
 
@@ -117,7 +118,7 @@ export type GameState = {
   showCardsDialogForPlayer: number | null;
   stealResourceDialogState: StealResourceDialogState | null;
   useCardDialogState: UseCardDialogState | null;
-  teleportDialogState: TeleportDialogState | null;
+  teleportState: TeleportState | null;
   showHostLeaveDialog?: boolean;
 };
 
@@ -128,3 +129,5 @@ export type FirestoreGameState = Omit<GameState, 'map'> & {
 
 
 export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards' | 'use-card' | 'end-turn' | 'teleport';
+
+    
