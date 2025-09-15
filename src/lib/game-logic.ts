@@ -66,22 +66,25 @@ export function initializeGame(): GameState {
       const distance = Math.abs(x - center.x) + Math.abs(y - center.y);
       let islandType: IslandType;
       
-      let rand = Math.random() * 8;
+      let rand = Math.random();
       // Adjust probabilities based on distance
       if (distance <= 1) { // Center
-        // Higher chance for monster/special
-        rand = Math.random() * 8; // 5:2:1 ratio preserved, but just an example
+        if (rand < 0.5) islandType = 'monster';    // 50% chance
+        else if (rand < 0.8) islandType = 'special';  // 30% chance
+        else islandType = 'resource'; // 20% chance
       } else if (distance <= 3) { // Mid-ring
-        // Skew towards resources
-        rand = Math.random() * 8 + 1; // Increases resource chance
+        if (rand < 0.6) islandType = 'resource'; // 60% chance
+        else if (rand < 0.9) islandType = 'monster'; // 30% chance
+        else islandType = 'special';  // 10% chance
       } else { // Outer ring
-        // Heavily skew towards resources
-        rand = Math.random() * 8 + 2.5; // Greatly increases resource chance
+        if (rand < 0.85) islandType = 'resource'; // 85% chance
+        else if (rand < 0.95) islandType = 'monster'; // 10% chance
+        else islandType = 'special';  // 5% chance
       }
 
-      if (rand < 5) islandType = 'resource';
-      else if (rand < 7) islandType = 'monster';
-      else islandType = 'special';
+      if (x === center.x && y === center.y) {
+          islandType = 'monster'; // The very center is always a monster
+      }
       
       map[y][x].type = islandType;
 
@@ -91,11 +94,11 @@ export function initializeGame(): GameState {
         
         let numResourceTypes: number;
         if (distance <= 1) { 
-            numResourceTypes = Math.random() < 0.6 ? 2 : 1;
+            numResourceTypes = Math.random() < 0.7 ? 2 : 1; // 70% chance of 2 types
         } else if (distance <= 3) {
-            numResourceTypes = Math.random() < 0.4 ? 2 : 1;
+            numResourceTypes = Math.random() < 0.5 ? 2 : 1; // 50% chance of 2 types
         } else { 
-            numResourceTypes = Math.random() < 0.2 ? 2 : 1;
+            numResourceTypes = Math.random() < 0.3 ? 2 : 1; // 30% chance of 2 types
         }
         
         const islandResources: IslandResource[] = [];
@@ -103,6 +106,7 @@ export function initializeGame(): GameState {
         if (numResourceTypes === 1) {
             const randomIndex = Math.floor(Math.random() * availableResources.length);
             const selectedResourceType = availableResources.splice(randomIndex, 1)[0];
+            // Single resource type always has 2 spots
             islandResources.push({ type: selectedResourceType, amount: 2 });
         } else {
             const firstRandomIndex = Math.floor(Math.random() * availableResources.length);
@@ -111,17 +115,10 @@ export function initializeGame(): GameState {
             const secondRandomIndex = Math.floor(Math.random() * availableResources.length);
             const secondResourceType = availableResources.splice(secondRandomIndex, 1)[0];
 
-            let firstResourceAmount, secondResourceAmount;
+            // Randomly determine spots for each
+            const firstResourceAmount = Math.random() < 0.5 ? 1 : 2;
+            const secondResourceAmount = Math.random() < 0.5 ? 1 : 2;
             
-            const randomAmount = () => {
-                 if (distance <= 1) return Math.random() < 0.5 ? 2 : 1;
-                 if (distance <= 3) return Math.random() < 0.3 ? 2 : 1;
-                 return 1;
-            }
-
-            firstResourceAmount = randomAmount();
-            secondResourceAmount = randomAmount();
-
             islandResources.push({ type: firstResourceType, amount: firstResourceAmount });
             islandResources.push({ type: secondResourceType, amount: secondResourceAmount });
         }

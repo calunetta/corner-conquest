@@ -258,6 +258,14 @@ export function GameBoard() {
   const handleBuyCardAction = (state: GameState) => {
     const { currentPlayerIndex, players, specialCardsDeck } = state;
     const player = players[currentPlayerIndex];
+
+    if (player.specialCards.length >= 10) {
+      toast({ title: 'Cannot Buy Card', description: 'You have reached the maximum of 10 cards.', variant: 'destructive'});
+      state.currentAction = null;
+      setGameState(state);
+      return;
+    }
+
     if (player.resources.gems >= 10 && specialCardsDeck.length > 0) {
       player.resources.gems -= 10;
       const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
@@ -427,7 +435,7 @@ export function GameBoard() {
   };
 
   const handleMoveAction = (newState: GameState, x: number, y: number) => {
-    const { currentPlayerIndex, map, selectedArmyId } = newState;
+    const { currentPlayerIndex, map, selectedArmyId, specialCardsDeck } = newState;
     const player = newState.players[currentPlayerIndex];
     const army = player.armies.find(a => a.id === selectedArmyId);
 
@@ -455,6 +463,21 @@ export function GameBoard() {
       newState.log.push(logMsg);
       setToastsToShow(prev => [...prev, { title: 'Island Discovered!', description: logMsg }]);
       
+      if (revealedIsland.type === 'special') {
+          if (player.specialCards.length < 10) {
+            const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
+            const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
+            player.specialCards.push(drawnCard);
+            const cardLogMsg = `${player.name} found a special card: ${drawnCard}!`;
+            newState.log.push(cardLogMsg);
+            setToastsToShow(prev => [...prev, { title: 'Card Found!', description: cardLogMsg }]);
+          } else {
+            const cardLogMsg = `${player.name} found a special card, but their hand is full!`;
+            newState.log.push(cardLogMsg);
+            setToastsToShow(prev => [...prev, { title: 'Hand Full!', description: cardLogMsg, variant: 'destructive' }]);
+          }
+      }
+
       if(revealedIsland.type === 'monster') {
           const monsters = generateMonsters(x, y, newState.map.length);
           revealedIsland.monsters = monsters;
@@ -560,6 +583,16 @@ export function GameBoard() {
     const { combatState, players, map } = newState;
     const { winnerId, attackerId, defenderId } = combatState;
     
+    const attacker = players[attackerId];
+    const attackingArmy = attacker.armies.find(a => a.id === newState.selectedArmyId);
+    if (!attackingArmy) {
+        newState.combatState = null;
+        endTurn(newState);
+        return;
+    }
+    
+    const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
+
     if (winnerId === null) {
       newState.combatState = null;
       endTurn(newState);
@@ -570,34 +603,23 @@ export function GameBoard() {
     const winner = players[winnerId];
     const loser = players[loserId];
 
-    const attacker = players[attackerId];
-    const attackingArmy = attacker.armies.find(a => a.id === newState.selectedArmyId);
-     if (!attackingArmy) {
-      newState.combatState = null;
-      endTurn(newState);
-      return;
-    }
-
-    const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
     const loserOccupantInfo = combatTile.occupants.find(o => o.playerId === loserId);
+    const losingArmy = loser.armies.find(a => a.id === loserOccupantInfo?.armyId);
 
-    if (loserOccupantInfo) {
-        const losingArmy = loser.armies.find(a => a.id === loserOccupantInfo.armyId);
-        if (losingArmy) {
-            const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
-            if (baseTile) {
-                const oldPos = losingArmy.position;
-                
-                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.armyId === losingArmy.id && o.playerId === loserId));
+    if (losingArmy) {
+        const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
+        if (baseTile) {
+            const oldPos = losingArmy.position;
+            
+            map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.armyId === losingArmy.id && o.playerId === loserId));
 
-                losingArmy.position = {x: baseTile.x, y: baseTile.y};
-                map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
-                
-                const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
-                if (positionIndex > -1) {
-                    const removedPosition = loser.positions.splice(positionIndex, 1)[0];
-                    map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy?.filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
-                }
+            losingArmy.position = {x: baseTile.x, y: baseTile.y};
+            map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
+            
+            const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
+            if (positionIndex > -1) {
+                const removedPosition = loser.positions.splice(positionIndex, 1)[0];
+                map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy?.filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
             }
         }
     }
