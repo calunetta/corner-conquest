@@ -298,13 +298,14 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
     combatState: null,
     monsterCombatState: null,
     positionDialogState: null,
+    collectDialogState: null,
     showCardsDialogForPlayer: null,
     stealResourceDialogState: null,
     useCardDialogState: null,
     teleportState: null,
     abilitiesShopState: null,
     sabotageDialogState: null,
-    wealthyDialogState: null,
+wealthyDialogState: null,
     scoutingState: null,
   };
 }

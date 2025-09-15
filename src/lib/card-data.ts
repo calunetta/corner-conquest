@@ -33,7 +33,6 @@ export const USABLE_CARDS = [
     'Reinforce', 
     'Scout', 
     'Wealthy', 
-    'Productive', 
     'Efficient',
     'Master Builder',
 ];

@@ -101,6 +101,13 @@ export type PositionDialogState = {
   resources: IslandResource[];
 }
 
+export type CollectDialogState = {
+    x: number;
+    y: number;
+    resource: IslandResource;
+    hasProductiveCard: boolean;
+}
+
 export type StealResourceDialogState = {
     targetPlayerId: number | null;
 }
@@ -148,10 +155,11 @@ export type GameState = {
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
   positionDialogState: PositionDialogState | null;
+  collectDialogState: CollectDialogState | null;
   showCardsDialogForPlayer: number | null;
   stealResourceDialogState: StealResourceDialogState | null;
   useCardDialogState: UseCardDialogState | null;
-  teleportState: TeleportState | null;
+TeleportState;
   abilitiesShopState: AbilitiesShopState | null;
   showHostLeaveDialog?: boolean;
   sabotageDialogState: SabotageDialogState | null;

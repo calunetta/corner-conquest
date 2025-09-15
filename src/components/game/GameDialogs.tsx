@@ -12,6 +12,7 @@ import { HostLeaveDialog } from './HostLeaveDialog';
 import { AbilitiesDialog } from './AbilitiesDialog';
 import { SabotageDialog } from './SabotageDialog';
 import { WealthyDialog } from './WealthyDialog';
+import { CollectDialog } from './CollectDialog';
 import * as GameActions from '@/lib/game-actions';
 
 type GameDialogsProps = {
@@ -26,6 +27,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
     combatState, 
     monsterCombatState, 
     positionDialogState, 
+    collectDialogState,
     showCardsDialogForPlayer, 
     stealResourceDialogState, 
     useCardDialogState, 
@@ -56,7 +58,6 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
         case 'Teleport':
         case 'Reinforce':
         case 'Scout':
-        case 'Productive':
         case 'Efficient':
         case 'Master Builder':
             newState = GameActions.handleUseCard(newState, cardName);
@@ -97,6 +98,13 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
           resources={positionDialogState.resources}
           onSelect={(resource) => handleUpdate(GameActions.handleSelectResourceForPosition(gameState, resource))}
           onClose={() => handleCloseDialog('positionDialogState')}
+        />
+      )}
+      {collectDialogState && (
+        <CollectDialog
+            state={collectDialogState}
+            onConfirm={(useProductive) => handleUpdate(GameActions.handleConfirmCollection(gameState, useProductive))}
+            onClose={() => handleCloseDialog('collectDialogState')}
         />
       )}
       {showCardsDialogForPlayer === localPlayer.id && (
