@@ -166,7 +166,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
-  const canStartGame = status === 'waiting' && players.length > 1 && players.length === maxPlayers;
+  const canStartGame = status === 'waiting' && isHost && players.length > 1;
   
   const gridColsClass = `md:grid-cols-${Math.min(players.length, 4)}`;
 
@@ -179,7 +179,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           </Button>
           <h1 className="text-xl font-bold sm:text-2xl">Corner Conquest</h1>
         </div>
-        {isHost && canStartGame && (
+        {canStartGame && (
           <Button onClick={handleStartGame}><Play /> Start Game Now</Button>
         )}
       </div>
@@ -251,3 +251,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
