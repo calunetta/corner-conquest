@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import {
@@ -123,28 +124,30 @@ export function CreateGameDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="debugMode" className="text-right flex items-center gap-1">
-              Debug Mode
-              <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <HelpCircle className='h-4 w-4 text-muted-foreground' />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Start the game with one of every special card for easy testing.</p>
-                    </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </Label>
-            <div className="col-span-3">
-              <Switch
-                id="debugMode"
-                checked={debugMode}
-                onCheckedChange={setDebugMode}
-              />
+          {maxPlayers === 1 && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="debugMode" className="text-right flex items-center gap-1">
+                Debug Mode
+                <TooltipProvider>
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <HelpCircle className='h-4 w-4 text-muted-foreground' />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                          <p>Start the game with one of every special card for easy testing.</p>
+                      </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Label>
+              <div className="col-span-3">
+                <Switch
+                  id="debugMode"
+                  checked={debugMode}
+                  onCheckedChange={setDebugMode}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
         <DialogFooter>
           <Button
