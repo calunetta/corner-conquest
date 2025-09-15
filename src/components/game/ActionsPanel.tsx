@@ -62,7 +62,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   ];
   
   const alwaysAvailableActions: ActionConfig[] = [
-      { id: 'show-cards', label: 'Show Cards', icon: <Album />, disabled: false, tooltip: "View your collected special cards. You can use one per turn." },
+      { id: 'show-cards', label: 'Show Cards', icon: <Album />, disabled: currentPlayer.specialCards.length === 0, tooltip: "View your collected special cards. You can use one per turn." },
   ]
   
   const timerPercentage = (timeLeft / turnDuration) * 100;
@@ -95,6 +95,9 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             if (!selectedArmy) return "You must select an army first.";
             if (!currentTile || (currentTile.type !== 'resource' && currentTile.type !== 'base') || currentTile.resources.length === 0) return "This tile has no resources to position on.";
             if (currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y)) return "You are already positioned here.";
+            break;
+        case 'show-cards':
+            if (currentPlayer.specialCards.length === 0) return "You have no special cards.";
             break;
         default:
             return "This action is not available.";
