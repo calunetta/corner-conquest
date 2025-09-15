@@ -29,7 +29,9 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
 
   const { attackerId, defenderId, attackerRolls, defenderRolls, winnerId, phase } = combatState;
   const attacker = players[attackerId];
-  const defender = players[defenderId];
+  const defender = players.find(p => p.id === defenderId);
+
+  if (!defender) return null;
   
   const hasWarChiefCard = attacker.specialCards.includes('War Chief');
 

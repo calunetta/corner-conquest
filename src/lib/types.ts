@@ -76,6 +76,7 @@ export type Island = {
 export type CombatState = {
   attackerId: number;
   defenderId: number;
+  defendingArmyId: number;
   attackerRolls: number[];
   defenderRolls: number[];
   winnerId: number | null;
@@ -142,6 +143,14 @@ export type ArmySelectionDialogState = {
     armies: Army[];
 }
 
+export type AttackSelectionDialogState = {
+    isOpen: boolean;
+    x: number;
+    y: number;
+    defendingPlayer: Player;
+    armies: Army[];
+}
+
 export type GameState = {
   id: string;
   name: string;
@@ -172,6 +181,7 @@ export type GameState = {
   wealthyDialogState: WealthyDialogState | null;
   scoutingState: ScoutingState | null;
   armySelectionDialogState: ArmySelectionDialogState | null;
+  attackSelectionDialogState: AttackSelectionDialogState | null;
 };
 
 export type FirestoreGameState = Omit<GameState, 'map'> & {
