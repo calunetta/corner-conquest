@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Sword, ShoppingCart, Gem, Anchor, Zap, Album } from 'lucide-react';
 import { Separator } from '../ui/separator';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 
 type ActionsPanelProps = {
   onAction: (action: GameAction) => void;
@@ -13,15 +14,22 @@ type ActionsPanelProps = {
   turnDuration: number;
 };
 
+type ActionConfig = {
+  id: GameAction;
+  label: string;
+  icon: React.ReactNode;
+  disabled?: boolean;
+  tooltip: string;
+};
+
 export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration }: ActionsPanelProps) {
   const { currentPlayerIndex, players, map, currentAction, specialCardsDeck, selectedArmyId } = gameState;
   const currentPlayer = players[currentPlayerIndex];
-  const lastAction = currentPlayer.lastAction;
   
   const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const currentTile = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
-  const hasMainActionCompleted = currentPlayer.actionsThisTurn.some(action => ['collect', 'position', 'attack'].includes(action));
+  const hasMainActionCompleted = !!currentPlayer.lastAction;
 
   const canCollect = selectedArmy && currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y);
   const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.x === selectedArmy!.position.x && p.y === selectedArmy!.position.y);
@@ -30,23 +38,49 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !currentPlayer.actionsThisTurn.includes('buy-card');
   const canUpgrade = currentPlayer.resources.iron >= 5 && !currentPlayer.actionsThisTurn.includes('upgrade');
   
-  const mainActions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
-    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || lastAction === 'move' || hasMainActionCompleted },
-    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || lastAction === 'move' || hasMainActionCompleted },
-    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || lastAction === 'move' || hasMainActionCompleted },
+  const mainActions: ActionConfig[] = [
+    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasMainActionCompleted, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving." },
+    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || hasMainActionCompleted, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving." },
+    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || hasMainActionCompleted, tooltip: "Position your army on a resource to collect it on a future turn. Can only be done once per turn, before moving." },
   ];
 
-  const secondaryActions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
-    { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/5 Iron)`, icon: <Zap />, disabled: !canUpgrade },
-    { id: 'buy-card', label: 'Buy Card (10 Gems)', icon: <ShoppingCart />, disabled: !canBuyCard },
-    { id: 'deploy', label: `Deploy (${currentPlayer.resources.food}/${currentPlayer.nextArmyCost} Food)`, icon: <Sword />, disabled: !canDeploy },
+  const secondaryActions: ActionConfig[] = [
+    { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/5 Iron)`, icon: <Zap />, disabled: !canUpgrade, tooltip: "Spend 5 iron to permanently increase your army's attack power by 1. Can only be done once per turn." },
+    { id: 'buy-card', label: 'Buy Card (10 Gems)', icon: <ShoppingCart />, disabled: !canBuyCard, tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn." },
+    { id: 'deploy', label: `Deploy (${currentPlayer.resources.food}/${currentPlayer.nextArmyCost} Food)`, icon: <Sword />, disabled: !canDeploy, tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army." },
   ];
   
-  const alwaysAvailableActions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
-      { id: 'show-cards', label: 'Show Cards', icon: <Album />, disabled: false },
+  const alwaysAvailableActions: ActionConfig[] = [
+      { id: 'show-cards', label: 'Show Cards', icon: <Album />, disabled: false, tooltip: "View your collected special cards. You can use one per turn." },
   ]
   
   const timerPercentage = (timeLeft / turnDuration) * 100;
+
+  const renderButton = (action: ActionConfig, isMain: boolean) => (
+    <TooltipProvider key={action.id}>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <div className={isMain ? "w-full" : ""}>
+                    <Button
+                        variant={currentAction === action.id ? 'default' : 'outline'}
+                        onClick={() => onAction(action.id)}
+                        disabled={!isMyTurn || action.disabled}
+                        className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}
+                    >
+                        {action.icon}
+                        <span className="whitespace-normal">{action.label}</span>
+                    </Button>
+                </div>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>{action.tooltip}</p>
+                 {(action.disabled && isMyTurn) && <p className="mt-1 text-xs text-destructive">
+                    {hasMainActionCompleted ? "You have already performed a main action this turn." : !selectedArmy ? "You must select an army first." : "This action is not available on this tile."}
+                </p>}
+            </TooltipContent>
+        </Tooltip>
+    </TooltipProvider>
+  );
 
   return (
     <Card>
@@ -62,45 +96,12 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="grid grid-cols-2 grid-rows-2 gap-2">
-            {mainActions.map((action) => (
-                <Button
-                    key={action.id}
-                    variant={currentAction === action.id ? 'default' : 'outline'}
-                    onClick={() => onAction(action.id)}
-                    disabled={!isMyTurn || action.disabled}
-                    className="flex h-16 flex-col items-center justify-center gap-1 p-2 text-center"
-                >
-                    {action.icon}
-                    <span className="whitespace-normal text-xs">{action.label}</span>
-                </Button>
-            ))}
-             {alwaysAvailableActions.map((action) => (
-                <Button
-                    key={action.id}
-                    variant={currentAction === action.id ? 'default' : 'outline'}
-                    onClick={() => onAction(action.id)}
-                    disabled={action.disabled}
-                    className="flex h-16 flex-col items-center justify-center gap-1 p-2 text-center"
-                >
-                    {action.icon}
-                    <span className="whitespace-normal text-xs">{action.label}</span>
-                </Button>
-            ))}
+            {mainActions.map((action) => renderButton(action, true))}
+            {alwaysAvailableActions.map((action) => renderButton(action, true))}
         </div>
         <Separator className="my-2" />
         <div className="grid grid-cols-2 flex-wrap gap-2">
-            {secondaryActions.map((action) => (
-                <Button
-                    key={action.id}
-                    variant={currentAction === action.id ? 'default' : 'outline'}
-                    onClick={() => onAction(action.id)}
-                    disabled={!isMyTurn || action.disabled}
-                    className="flex h-auto min-h-12 flex-col items-center justify-center gap-1 p-2 text-center text-xs sm:flex-row sm:text-sm"
-                >
-                    {action.icon}
-                    <span className="whitespace-normal">{action.label}</span>
-                </Button>
-            ))}
+            {secondaryActions.map((action) => renderButton(action, false))}
         </div>
       </CardContent>
     </Card>

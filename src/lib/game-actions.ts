@@ -20,7 +20,7 @@ export function handlePositionAction(state: GameState): GameState {
   const army = getSelectedArmy(state);
   
   if (!army) throw new Error("No army selected.");
-  if (player.lastAction === 'move') throw new Error("You cannot position an army after moving.");
+  if (player.lastAction) throw new Error("You have already performed a main action this turn.");
   
   const tile = map[army.position.y][army.position.x];
   if ((tile.type !== 'resource' && tile.type !== 'base') || tile.resources.length === 0) {
@@ -47,7 +47,7 @@ export function handleCollectAction(state: GameState): GameState {
   const army = getSelectedArmy(newState);
   
   if (!army) throw new Error("No army selected.");
-  if (player.lastAction === 'move') throw new Error("You cannot collect resources after moving.");
+  if (player.lastAction) throw new Error("You have already performed a main action this turn.");
 
   const position = player.positions.find(p => p.x === army.position.x && p.y === army.position.y);
   if (!position) throw new Error("You have no army positioned on this island to collect from.");
@@ -84,7 +84,7 @@ export function handleDeployAction(state: GameState): GameState {
     
     player.nextArmyCost += 1;
     player.actionsThisTurn.push('deploy');
-    newState.log.push(`${player.name} deployed a new army at their base!`);
+    newState.log.push(`${player.name} deployed a new army!`);
     
     return { ...newState, currentAction: null };
 }
@@ -104,7 +104,7 @@ export function handleBuyCardAction(state: GameState): GameState {
     const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
     player.specialCards.push(drawnCard);
     player.actionsThisTurn.push('buy-card');
-    newState.log.push(`${player.name} bought a special card: ${drawnCard}!`);
+    newState.log.push(`${player.name} bought a special card: "${drawnCard}"!`);
 
     return { ...newState, currentAction: null };
 }
@@ -120,7 +120,7 @@ export function handleUpgradeAction(state: GameState): GameState {
     player.resources.iron -= 5;
     player.attackPower += 1;
     player.actionsThisTurn.push('upgrade');
-    newState.log.push(`${player.name} upgraded their army! Attack Power is now ${player.attackPower}.`);
+    newState.log.push(`${player.name} upgraded their army's attack power to ${player.attackPower}.`);
     
     return { ...newState, currentAction: null };
 }
@@ -132,7 +132,7 @@ export function handleAttackAction(state: GameState): GameState {
     const army = getSelectedArmy(newState);
 
     if (!army) throw new Error("No army selected.");
-    if (attacker.lastAction === 'move') throw new Error("You cannot attack after moving.");
+    if (attacker.lastAction) throw new Error("You have already performed a main action this turn.");
 
     const currentTile = map[army.position.y][army.position.x];
     const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
@@ -204,10 +204,17 @@ export function handleTileClick(state: GameState, x: number, y: number): GameSta
         newState.selectedTile = {x, y};
         newState.currentAction = 'move';
         
+        // Don't show moves if a main action has already been completed
+        if (currentPlayer.lastAction) {
+            newState.possibleMoves = [];
+            return newState;
+        }
+
         let moves = [];
-        for (let i = -2; i <= 2; i++) {
-          for (let j = -2; j <= 2; j++) {
-            if (Math.abs(i) + Math.abs(j) <= 2 && (i !== 0 || j !== 0)) {
+        const moveRadius = currentPlayer.hasExtraMove ? 4 : 2;
+        for (let i = -moveRadius; i <= moveRadius; i++) {
+          for (let j = -moveRadius; j <= moveRadius; j++) {
+            if (Math.abs(i) + Math.abs(j) <= moveRadius && (i !== 0 || j !== 0)) {
               const newX = x + i;
               const newY = y + j;
               if (newX >= 0 && newX < MAP_SIZE && newY >= 0 && newY < MAP_SIZE) {
@@ -235,7 +242,7 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     const player = players[currentPlayerIndex];
     const army = getSelectedArmy(newState);
 
-    if (!army) return state;
+    if (!army || player.lastAction) return state;
     
     const oldTile = map[army.position.y][army.position.x];
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
@@ -247,20 +254,20 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     if(revealedIsland.isHidden) {
       revealedIsland.isHidden = false;
       player.victoryPoints += 1;
-      newState.log.push(`${player.name} discovered a new island and gets 1 VP!`);
+      newState.log.push(`${player.name} discovered a new island and gains 1 VP!`);
       
       if (revealedIsland.type === 'special' && player.specialCards.length < 10) {
         const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
         const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
         player.specialCards.push(drawnCard);
-        newState.log.push(`${player.name} found a special card: ${drawnCard}!`);
+        newState.log.push(`${player.name} found a special card: "${drawnCard}"!`);
       }
     }
     
     if (player.hasExtraMove) {
-        player.hasExtraMove = false;
-        player.lastAction = null;
-        newState.log.push(`${player.name} used their extra move.`);
+        player.hasExtraMove = false; // Consume extra move
+        player.lastAction = null; // Allow another action
+        newState.log.push(`${player.name} used their Extra Move! They can perform another action.`);
     } else {
         player.lastAction = 'move';
     }
@@ -289,7 +296,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     tile.positionedBy.push({playerId: player.id, resource});
 
     player.lastAction = 'position';
-    newState.log.push(`${player.name} has positioned an army on ${resource} at ${x},${y}.`);
+    newState.log.push(`${player.name} positioned an army on ${resource}.`);
     
     return { ...newState, positionDialogState: null, currentAction: null };
 };
@@ -349,7 +356,7 @@ export function handleCloseCombat(state: GameState): GameState {
         }
     }
 
-    newState.log.push(`${winner.name} defeated ${loser.name}!`);
+    newState.log.push(`${winner.name} defeated ${loser.name} in battle!`);
     newState.players[attackerId].lastAction = 'attack';
     return { ...newState, combatState: null, currentAction: null };
 }
@@ -438,14 +445,19 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
     
     player.actionsThisTurn.push('use-card');
-    player.specialCards.splice(cardIndex, 1);
-
+    // Don't remove the card yet, wait for the action to complete if it has multiple steps
+    
     newState.log.push(`${player.name} used the '${cardName}' card.`);
 
     if (cardName === 'Extra Move') {
         player.hasExtraMove = true;
+        player.specialCards.splice(cardIndex, 1); // Consume immediately
     } else if (cardName === 'Steal Resource') {
         newState.stealResourceDialogState = { targetPlayerId: null };
+        // Card will be consumed in handleStealResource
+    } else {
+        // For other instant-use cards, consume them here
+        player.specialCards.splice(cardIndex, 1);
     }
     
     return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
@@ -459,6 +471,12 @@ export const handleStealResource = (state: GameState, targetPlayerId: number, re
 
     if (!targetPlayer) return { ...newState, stealResourceDialogState: null };
     
+    // Consume the card now
+    const cardIndex = currentPlayer.specialCards.indexOf('Steal Resource');
+    if (cardIndex > -1) {
+        currentPlayer.specialCards.splice(cardIndex, 1);
+    }
+
     const stolenAmount = Math.min(targetPlayer.resources[resource], 2);
 
     if (stolenAmount > 0) {
@@ -469,7 +487,6 @@ export const handleStealResource = (state: GameState, targetPlayerId: number, re
         newState.log.push(`${currentPlayer.name} tried to steal ${resource} from ${targetPlayer.name}, but they had none.`);
     }
 
-    currentPlayer.lastAction = 'use-card';
     return { ...newState, stealResourceDialogState: null };
 };
 
