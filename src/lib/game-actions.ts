@@ -4,6 +4,7 @@
 
 
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army } from './types';
@@ -602,7 +603,7 @@ export const handleStealResource = (state: GameState, targetPlayerId: number, re
 
 export const handleTeleport = (state: GameState, x: number, y: number): GameState => {
     let newState = { ...state };
-    const { players, currentPlayerIndex, teleportState, map } = newState;
+    const { players, currentPlayerIndex, teleportState, map, specialCardsDeck } = newState;
     const player = players[currentPlayerIndex];
 
     if (!teleportState || teleportState.armyId === null) return newState;
@@ -612,8 +613,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
 
     const cardIndex = player.specialCards.indexOf('Teleport');
     if (cardIndex === -1) {
-        newState.log.push('Error: Teleport card not found.'); // This log should now be a toast from the UI
-        return { ...newState, teleportState: null };
+        throw new Error('Teleport card not found.');
     }
     
     // Consume the card now that the action is complete
@@ -628,6 +628,21 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     armyToMove.position = { x, y };
     map[y][x].occupants.push({ playerId: player.id, armyId: armyToMove.id });
 
+    // Reveal the new tile if it was hidden
+    const revealedIsland = map[y][x];
+    if(revealedIsland.isHidden) {
+      revealedIsland.isHidden = false;
+      player.victoryPoints += 1;
+      newState.log.push(`${player.name} discovered a new island and gains 1 VP!`);
+      
+      if (revealedIsland.type === 'special' && player.specialCards.length < 10 && specialCardsDeck.length > 0) {
+        const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
+        const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
+        player.specialCards.push(drawnCard);
+        newState.log.push(`${player.name} found a special card: "${drawnCard}"!`);
+      }
+    }
+    
     newState.log.push(`${player.name} used 'Teleport' to move an army!`);
 
     return { ...newState, teleportState: null, possibleMoves: [], selectedTile: {x, y}, selectedArmyId: armyToMove.id };
