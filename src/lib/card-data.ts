@@ -1,4 +1,5 @@
 
+
 export const BASE_CARDS = [
   'Extra Move', 'Steal Resource', 'Sabatoge', 'Reinforce', 
   'Scout', 'Overcome', 'Wealthy', 'Productive', 'Efficient',
@@ -35,7 +36,6 @@ export const USABLE_CARDS = [
     'Productive', 
     'Efficient',
     'Master Builder',
-    'War Chief',
 ];
 
 export const SPECIAL_CARD_DESCRIPTIONS: Record<string, string> = {

@@ -1,3 +1,4 @@
+
 'use client';
 import type { GameState, Monster } from '@/lib/types';
 import { useState, useEffect } from 'react';
@@ -21,7 +22,7 @@ import { Slider } from '../ui/slider';
 type MonsterCombatDialogProps = {
   gameState: GameState;
   monsters: Monster[];
-  onRoll: (monster: Monster, useCard: boolean, decidedValue: number, useOvercomeCard?: boolean) => void;
+  onRoll: (monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean) => void;
   onClose: () => void;
   onCancel: () => void;
 };
@@ -32,6 +33,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   const [useDecideCard, setUseDecideCard] = useState(false);
   const [decidedValue, setDecidedValue] = useState(6);
   const [useOvercomeCard, setUseOvercomeCard] = useState(false);
+  const [useWarChief, setUseWarChief] = useState(false);
 
   useEffect(() => {
     if (monsters.length === 1) {
@@ -45,6 +47,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   const attacker = players[attackerId];
   const hasDecideCard = attacker.specialCards.includes('Decide Dice Roll');
   const hasOvercomeCard = attacker.specialCards.includes('Overcome');
+  const hasWarChiefCard = attacker.specialCards.includes('War Chief');
   const monsterForDisplay = phase === 'results' ? monsterCombatState.monster : selectedMonster;
   
   const isSelectionPhase = phase === 'rolling' && monsters.length > 1 && !selectedMonster;
@@ -65,7 +68,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   
   const handleAttack = () => {
     if (selectedMonster) {
-      onRoll(selectedMonster, useDecideCard, decidedValue, useOvercomeCard);
+      onRoll(selectedMonster, useDecideCard, decidedValue, useOvercomeCard, useWarChief);
     }
   };
   
@@ -93,6 +96,12 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
               <Checkbox id="use-overcome-card" checked={useOvercomeCard} onCheckedChange={(checked) => { setUseOvercomeCard(!!checked); if(!!checked) setUseDecideCard(false); }} />
               <Label htmlFor="use-overcome-card" className='font-bold'>Use 'Overcome' card to win automatically?</Label>
           </div>
+        )}
+         {hasWarChiefCard && (
+            <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
+                <Checkbox id="use-warchief-card" checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
+                <Label htmlFor="use-warchief-card" className='font-bold'>Use 'War Chief' card for +2 attack power?</Label>
+            </div>
         )}
         {hasDecideCard && (
           <div className="space-y-4 rounded-md border bg-muted/50 p-4">

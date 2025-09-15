@@ -59,7 +59,6 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
         case 'Productive':
         case 'Efficient':
         case 'Master Builder':
-        case 'War Chief':
             newState = GameActions.handleUseCard(newState, cardName);
             break;
         case 'Sabatoge':
@@ -80,7 +79,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
       {combatState && (
         <CombatDialog
           gameState={gameState}
-          onRoll={() => handleUpdate(GameActions.handleCombatRoll(gameState))}
+          onRoll={(useWarChief) => handleUpdate(GameActions.handleCombatRoll(gameState, useWarChief))}
           onClose={() => handleUpdate(GameActions.handleCloseCombat(gameState))}
         />
       )}
@@ -88,7 +87,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
         <MonsterCombatDialog 
           gameState={gameState} 
           monsters={currentTileForMonster.monsters}
-          onRoll={(monster, useCard, decidedValue, useOvercome) => handleUpdate(GameActions.handleMonsterCombatRoll(gameState, monster, useCard, decidedValue, useOvercome))}
+          onRoll={(monster, useDecideCard, decidedValue, useOvercome, useWarChief) => handleUpdate(GameActions.handleMonsterCombatRoll(gameState, monster, useDecideCard, decidedValue, useOvercome, useWarChief))}
           onClose={() => handleUpdate(GameActions.handleCloseMonsterCombat(gameState))}
           onCancel={() => handleCloseDialog('monsterCombatState')}
         />

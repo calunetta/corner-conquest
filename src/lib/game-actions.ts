@@ -497,23 +497,27 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     return { ...newState, positionDialogState: null, currentAction: null, possibleMoves: [], selectedTile: null };
 };
 
-export function handleCombatRoll(state: GameState): GameState {
+export function handleCombatRoll(state: GameState, useWarChief: boolean): GameState {
     if (!state.combatState) return state;
     const newState = { ...state };
     const { combatState, players } = newState;
     const attacker = players[combatState.attackerId];
     const defender = players[combatState.defenderId];
 
-    const attackerPower = attacker.attackPower + (attacker.warChiefActive ? 2 : 0);
-    if(attacker.warChiefActive) {
-      newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
-      attacker.warChiefActive = false;
-      if (!attacker.actionsThisTurn.includes('use-card')) {
-          attacker.actionsThisTurn.push('use-card');
-          const cardIndex = attacker.specialCards.indexOf('War Chief');
-          if (cardIndex > -1) attacker.specialCards.splice(cardIndex, 1);
-      }
+    let attackerPower = attacker.attackPower;
+    if (useWarChief) {
+        if (attacker.actionsThisTurn.includes('use-card')) {
+            throw new Error("You have already used a card this turn.");
+        }
+        const cardIndex = attacker.specialCards.indexOf('War Chief');
+        if (cardIndex > -1) {
+            attacker.specialCards.splice(cardIndex, 1);
+            attacker.actionsThisTurn.push('use-card');
+            attackerPower += 2;
+            newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
+        }
     }
+
     const defenderPower = defender.attackPower;
 
     const rollDice = (count: number) => Array.from({ length: Math.min(count, 4) }, () => Math.floor(Math.random() * 6) + 1);
@@ -569,7 +573,7 @@ export function handleCloseCombat(state: GameState): GameState {
     return { ...newState, combatState: null, currentAction: null };
 }
 
-export function handleMonsterCombatRoll(state: GameState, monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard?: boolean): GameState {
+export function handleMonsterCombatRoll(state: GameState, monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean): GameState {
     const newState = { ...state };
     const { players, currentPlayerIndex } = newState;
     const attacker = players[currentPlayerIndex];
@@ -580,10 +584,9 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
     let monsterRolls: number[] = [];
     let winnerId: number | null = null;
     
-    if (useOvercomeCard) {
-        if (attacker.actionsThisTurn.includes('use-card')) {
-            throw new Error("You have already used a card this turn.");
-        }
+    const canUseCard = !attacker.actionsThisTurn.includes('use-card');
+
+    if (useOvercomeCard && canUseCard) {
         const cardIndex = attacker.specialCards.indexOf('Overcome');
         if (cardIndex > -1) {
             attacker.specialCards.splice(cardIndex, 1);
@@ -595,32 +598,36 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
         }
     }
 
-    if (!useOvercomeCard) {
-        if (useDecideCard) {
-          if (attacker.actionsThisTurn.includes('use-card')) {
-            throw new Error("You have already used a card this turn.");
-          }
-          const cardIndex = attacker.specialCards.indexOf('Decide Dice Roll');
-          if (cardIndex > -1) {
-            attacker.specialCards.splice(cardIndex, 1);
-            attacker.actionsThisTurn.push('use-card');
-            newState.log.push(`${attacker.name} used the 'Decide Dice Roll' card!`);
-          } else {
-            useDecideCard = false;
-          }
+    if (!winnerId) { // If not an auto-win
+        let attackerPower = attacker.attackPower;
+        let cardUsedThisAction = false;
+        
+        if (useWarChief && canUseCard) {
+             const cardIndex = attacker.specialCards.indexOf('War Chief');
+             if (cardIndex > -1) {
+                attacker.specialCards.splice(cardIndex, 1);
+                attacker.actionsThisTurn.push('use-card');
+                attackerPower += 2;
+                cardUsedThisAction = true;
+                newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
+             }
         }
 
-        const attackerPower = attacker.attackPower + (attacker.warChiefActive ? 2 : 0);
-        if(attacker.warChiefActive) {
-          newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
-          attacker.warChiefActive = false;
+        if (useDecideCard && (canUseCard || !cardUsedThisAction)) {
           if (!attacker.actionsThisTurn.includes('use-card')) {
-              attacker.actionsThisTurn.push('use-card');
-              const cardIndex = attacker.specialCards.indexOf('War Chief');
-              if (cardIndex > -1) attacker.specialCards.splice(cardIndex, 1);
+            const cardIndex = attacker.specialCards.indexOf('Decide Dice Roll');
+            if (cardIndex > -1) {
+                attacker.specialCards.splice(cardIndex, 1);
+                attacker.actionsThisTurn.push('use-card');
+                newState.log.push(`${attacker.name} used the 'Decide Dice Roll' card!`);
+            } else {
+                useDecideCard = false;
+            }
+          } else {
+              useDecideCard = false; // can't use a second card
           }
         }
-
+        
         const rollDice = (count: number) => Array.from({ length: Math.min(count, 4) }, () => Math.floor(Math.random() * 6) + 1);
 
         attackerRolls = rollDice(attacker.armyCount + attackerPower);
@@ -738,10 +745,6 @@ export const handleUseCard = (state: GameState, cardName: string) => {
         case 'Master Builder':
             player.masterBuilderActive = true;
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
-            break;
-        case 'War Chief':
-            player.warChiefActive = true;
-            newState.log.push(`${player.name} activated 'War Chief'. Their next attack has +2 power.`);
             break;
         default:
             newState.log.push(`${player.name} used the '${cardName}' card.`);
@@ -993,6 +996,12 @@ export function handleCancelAction(state: GameState): { newState: GameState, toa
         player.hasExtraMove = false;
         toastMessage = "Extra Move cancelled.";
     }
+
+    // Reset any active card flags that were not consumed
+    if (player.efficientActive) player.efficientActive = false;
+    if (player.masterBuilderActive) player.masterBuilderActive = false;
+    if (player.productiveActive) player.productiveActive = false;
+    if (player.reinforceActive) player.reinforceActive = false;
 
     newState.currentAction = null;
     newState.possibleMoves = [];
