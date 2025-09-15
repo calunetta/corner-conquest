@@ -47,10 +47,10 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
             variant={currentAction === action.id ? 'default' : 'outline'}
             onClick={() => onAction(action.id)}
             disabled={action.disabled || (lastAction !== null && !['move', 'show-cards'].includes(action.id))}
-            className={`flex h-12 flex-col justify-center gap-1 px-2 text-xs sm:flex-row sm:text-sm ${action.className || ''}`}
+            className={`flex h-auto min-h-12 flex-col items-center justify-center gap-1 p-2 text-center text-xs sm:flex-row sm:text-sm ${action.className || ''}`}
           >
             {action.icon}
-            <span>{action.label}</span>
+            <span className="whitespace-normal">{action.label}</span>
           </Button>
         ))}
       </CardContent>
