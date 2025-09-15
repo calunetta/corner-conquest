@@ -16,7 +16,7 @@ import { CardsDialog } from './CardsDialog';
 import { StealResourceDialog } from './StealResourceDialog';
 import { UseCardDialog } from './UseCardDialog';
 import { HostLeaveDialog } from './HostLeaveDialog';
-import { doc, onSnapshot, setDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { usePlayer } from '@/hooks/use-player';
@@ -99,6 +99,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [isPlayerInfoOpen, setIsPlayerInfoOpen] = useState(true);
   const { playerId, username } = usePlayer();
   const [showHostLeaveDialog, setShowHostLeaveDialog] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+
 
   useEffect(() => {
     if (!gameId) return;
@@ -113,6 +115,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         });
       } else {
         console.warn(`Game document ${gameId} not found!`);
+        toast({ title: "Game Over", description: "This game session no longer exists." });
         onExit(); // Game doesn't exist, go back to lobby
       }
     }, (error) => {
@@ -909,13 +912,36 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     updateGameState(state);
   }
 
-  const handleExitGame = () => {
+  const handleExitGame = async () => {
     if (!gameState || !localPlayer) return;
+    
+    if (gameState.status === 'playing') {
+      toast({ title: "Cannot Leave", description: "You cannot leave a game that is in progress.", variant: "destructive" });
+      return;
+    }
 
-    if (isHost && status === 'waiting') {
+    if (isHost) {
         setShowHostLeaveDialog(true);
     } else {
+      setIsExiting(true);
+      try {
+        const gameDocRef = doc(db, 'games', gameId);
+        await runTransaction(db, async (transaction) => {
+          const gameDoc = await transaction.get(gameDocRef);
+          if (!gameDoc.exists()) return;
+
+          const currentState = gameDoc.data() as FirestoreGameState;
+          const updatedPlayers = currentState.players.filter(p => p.playerId !== localPlayer.playerId);
+          
+          transaction.update(gameDocRef, { players: updatedPlayers, log: arrayUnion(`${localPlayer.name} has left the room.`) });
+        });
         onExit();
+      } catch (error) {
+        console.error("Error leaving game:", error);
+        toast({ title: "Error", description: "Could not leave the game. Please try again.", variant: "destructive" });
+      } finally {
+        setIsExiting(false);
+      }
     }
   }
 
@@ -923,19 +949,33 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (!gameState || !isHost) return;
     
     setShowHostLeaveDialog(false);
+    setIsExiting(true);
 
-    if (gameState.players.length === 1) {
+    try {
         const gameDocRef = doc(db, 'games', gameId);
-        try {
+        if (gameState.players.length === 1) {
             await deleteDoc(gameDocRef);
             toast({title: 'Game Room Closed', description: 'The empty room has been deleted.'});
-        } catch (error) {
-            console.error("Error deleting game:", error);
-            toast({title: 'Error', description: 'Could not delete the game room.', variant: 'destructive'});
+        } else {
+            // If host leaves, just remove them from the game. The game can continue.
+            // A more complex implementation could assign a new host.
+            await runTransaction(db, async (transaction) => {
+              const gameDoc = await transaction.get(gameDocRef);
+              if (!gameDoc.exists()) return;
+              
+              const currentState = gameDoc.data() as FirestoreGameState;
+              const updatedPlayers = currentState.players.filter(p => p.playerId !== localPlayer?.playerId);
+              
+              transaction.update(gameDocRef, { players: updatedPlayers, log: arrayUnion(`${localPlayer?.name} (host) has left the room.`) });
+            });
         }
+        onExit();
+    } catch (error) {
+        console.error("Error managing game on host leave:", error);
+        toast({title: 'Error', description: 'Could not manage the game room.', variant: 'destructive'});
+    } finally {
+        setIsExiting(false);
     }
-    
-    onExit();
   };
 
   if (!gameState || !playerId) {
@@ -952,10 +992,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const localPlayer = players.find(p => p.playerId === playerId);
 
   if (!localPlayer) {
+      // This can happen briefly if the player has just left the game
+      // and the component hasn't unmounted yet.
       return (
          <div className="flex h-screen w-screen flex-col items-center justify-center gap-4">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <p className="ml-4 text-lg">You are not in this game. Returning to lobby...</p>
+            <p className="ml-4 text-lg">Returning to lobby...</p>
          </div>
       );
   }
@@ -970,10 +1012,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     <div className="relative flex h-screen w-full flex-col gap-4 overflow-auto p-4">
        <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={handleExitGame} disabled={status === 'playing'}><ArrowLeft /></Button>
+          <Button variant="outline" size="icon" onClick={handleExitGame} disabled={isExiting}>
+            {isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft />}
+          </Button>
           <h1 className="text-2xl font-bold">Corner Conquest</h1>
         </div>
-        {isHost && status === 'waiting' && players.length > 1 && players.length < maxPlayers && (
+        {isHost && status === 'waiting' && players.length > 1 && players.length <= maxPlayers && (
             <Button onClick={handleStartGame}><Play /> Start Game Now</Button>
         )}
       </div>

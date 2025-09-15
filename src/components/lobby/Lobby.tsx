@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, setDoc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, getDoc, updateDoc, arrayUnion, runTransaction } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
 import { initializeGame, addPlayerToGame, flattenMap, unflattenMap } from '@/lib/game-logic';
@@ -19,6 +19,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
   const [games, setGames] = useState<GameState[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingGame, setIsCreatingGame] = useState(false);
+  const [isJoiningGame, setIsJoiningGame] = useState<string | null>(null);
   const { playerId, username, logout } = usePlayer();
   const { toast } = useToast();
 
@@ -75,46 +76,49 @@ export function Lobby({ onJoinGame }: LobbyProps) {
   
   const handleJoinGame = async (gameId: string) => {
       if (!playerId || !username) return;
+      setIsJoiningGame(gameId);
 
-      const gameDocRef = doc(db, 'games', gameId);
       try {
-        const gameDoc = await getDoc(gameDocRef);
-        if (!gameDoc.exists()) {
-            toast({ title: "Error", description: "Game not found.", variant: 'destructive' });
-            return;
-        }
+        const gameDocRef = doc(db, 'games', gameId);
+        await runTransaction(db, async (transaction) => {
+            const gameDoc = await transaction.get(gameDocRef);
+            if (!gameDoc.exists()) {
+                throw new Error("Game not found.");
+            }
 
-        const firestoreState = gameDoc.data() as FirestoreGameState;
+            const firestoreState = gameDoc.data() as FirestoreGameState;
+            
+            if (firestoreState.status === 'playing') {
+                 throw new Error("This game has already started.");
+            }
+
+            const gameState = {
+                ...firestoreState,
+                map: unflattenMap(firestoreState.map, firestoreState.mapSize),
+            };
+            
+            const updatedGameState = addPlayerToGame(gameState, { playerId, name: username });
+
+            if (!updatedGameState) {
+                 throw new Error("Game is full or your chosen color is unavailable.");
+            }
+            
+            const updatedFirestoreState: FirestoreGameState = {
+                ...updatedGameState,
+                map: flattenMap(updatedGameState.map),
+                mapSize: updatedGameState.map.length,
+            };
+
+            transaction.set(gameDocRef, updatedFirestoreState);
+        });
         
-        if (firestoreState.status === 'playing') {
-             toast({ title: "Cannot Join", description: "This game has already started.", variant: 'destructive' });
-             return;
-        }
-
-        const gameState = {
-            ...firestoreState,
-            map: unflattenMap(firestoreState.map, firestoreState.mapSize),
-        };
-
-        const updatedGameState = addPlayerToGame(gameState, { playerId, name: username });
-
-        if (!updatedGameState) {
-             toast({ title: "Cannot Join", description: "Game is full or player color is taken.", variant: 'destructive' });
-             return;
-        }
-        
-        const updatedFirestoreState: FirestoreGameState = {
-            ...updatedGameState,
-            map: flattenMap(updatedGameState.map),
-            mapSize: updatedGameState.map.length,
-        };
-
-        await setDoc(gameDocRef, updatedFirestoreState);
         onJoinGame(gameId);
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error joining game: ", error);
-        toast({ title: 'Error', description: 'Could not join game.', variant: 'destructive'});
+        toast({ title: 'Could Not Join', description: error.message || 'An unknown error occurred.', variant: 'destructive'});
+      } finally {
+        setIsJoiningGame(null);
       }
   };
 
@@ -154,7 +158,10 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                         <span>{game.players.length} / {game.maxPlayers} players</span>
                     </div>
                   </div>
-                  <Button onClick={() => handleJoinGame(game.id)} disabled={game.players.length >= game.maxPlayers}>Join</Button>
+                  <Button onClick={() => handleJoinGame(game.id)} disabled={isJoiningGame !== null || game.players.length >= game.maxPlayers}>
+                    {isJoiningGame === game.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Join
+                  </Button>
                 </div>
               ))
             )}
