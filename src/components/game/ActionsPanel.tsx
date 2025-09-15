@@ -75,7 +75,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             <TooltipContent>
                 <p>{action.tooltip}</p>
                  {(action.disabled && isMyTurn) && <p className="mt-1 text-xs text-destructive">
-                    {hasMainActionCompleted ? "You have already performed a main action this turn." : !selectedArmy ? "You must select an army first." : "This action is not available on this tile."}
+                    {!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'show-cards', 'end-turn'].includes(action.id) ? "You must select an army first." : hasMainActionCompleted ? "" : "This action is not available."}
                 </p>}
             </TooltipContent>
         </Tooltip>
