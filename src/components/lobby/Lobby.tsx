@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, arrayUnion, runTransaction } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
-import { initializeGame } from '@/lib/game-initializer';
+import { initializeGame, startGame } from '@/lib/game-initializer';
 import { addPlayerToGame, flattenMap, unflattenMap } from '@/lib/game-logic';
 import type { GameState, PlayerColor, FirestoreGameState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -57,7 +57,13 @@ export function Lobby({ onJoinGame }: LobbyProps) {
 
     const newGameId = doc(collection(db, 'games')).id;
     const creator = { playerId, name: username, color: playerColor };
-    const newGame = initializeGame(newGameId, gameName, maxPlayers, creator, numBots);
+    let newGame = initializeGame(newGameId, gameName, maxPlayers, creator, numBots);
+    
+    const isBotGame = maxPlayers === 1;
+    if (isBotGame) {
+      newGame = startGame(newGame, creator.name);
+      newGame.log = [`Game '${gameName}' created by ${creator.name}! The game has started.`];
+    }
     
     const firestoreState: FirestoreGameState = {
         ...newGame,
