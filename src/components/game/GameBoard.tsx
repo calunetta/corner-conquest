@@ -150,11 +150,21 @@ export function GameBoard() {
     const { players, currentPlayerIndex } = newState;
     const player = players[currentPlayerIndex];
 
+    if (player.actionsThisTurn.includes('use-card')) {
+        toast({ title: "Card Error", description: "You can only use one card per turn.", variant: 'destructive' });
+        newState.useCardDialogState = null;
+        newState.showCardsDialog = false;
+        setGameState(newState);
+        return;
+    }
+
     const cardIndex = player.specialCards.indexOf(cardName);
     if (cardIndex === -1) {
         toast({ title: "Card Error", description: `You do not have the ${cardName} card.`, variant: 'destructive' });
         return;
     }
+    
+    player.actionsThisTurn.push('use-card');
 
     if (cardName === 'Extra Move') {
         player.hasExtraMove = true;
@@ -210,11 +220,12 @@ export function GameBoard() {
     if (player.resources.iron >= 5) {
       player.resources.iron -= 5;
       player.attackPower += 1;
-      player.lastAction = 'upgrade';
+      player.actionsThisTurn.push('upgrade');
       const logMsg = `${player.name} upgraded their army! Attack Power is now ${player.attackPower}.`;
       state.log.push(logMsg);
       toast({ title: 'Army Upgraded!', description: logMsg });
-      endTurn(state);
+      state.currentAction = null;
+      setGameState(state);
     } else {
       toast({ title: 'Cannot Upgrade', description: 'Not enough iron.', variant: 'destructive'});
       state.currentAction = null;
@@ -243,11 +254,12 @@ export function GameBoard() {
       map[baseTile.y][baseTile.x].occupants.push({playerId: player.id, armyId: newArmy.id});
       
       player.nextArmyCost += 1;
-      player.lastAction = 'deploy';
+      player.actionsThisTurn.push('deploy');
       const logMsg = `${player.name} deployed a new army at their base! They now have ${player.armyCount} armies.`;
       state.log.push(logMsg);
       toast({ title: 'Army Deployed!', description: logMsg });
-      endTurn(state);
+      state.currentAction = null;
+      setGameState(state);
     } else {
       toast({ title: 'Cannot Deploy', description: 'Not enough food or at max army size.', variant: 'destructive'});
       state.currentAction = null;
@@ -271,11 +283,12 @@ export function GameBoard() {
       const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
       const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
       player.specialCards.push(drawnCard);
-      player.lastAction = 'buy-card';
+      player.actionsThisTurn.push('buy-card');
       const logMsg = `${player.name} bought a special card: ${drawnCard}!`;
       state.log.push(logMsg);
       toast({ title: 'Card Purchased!', description: logMsg });
-      endTurn(state);
+      state.currentAction = null;
+      setGameState(state);
     } else {
       toast({ title: 'Cannot Buy Card', description: 'Not enough gems or no cards left in the deck.', variant: 'destructive'});
       state.currentAction = null;
@@ -580,12 +593,11 @@ export function GameBoard() {
     if (!gameState || !gameState.combatState) return;
     
     const newState = deepClone(gameState);
-    const { combatState, players, map } = newState;
+    const { combatState, players, map, selectedArmyId } = newState;
     const { winnerId, attackerId, defenderId } = combatState;
     
-    const attacker = players[attackerId];
-    const attackingArmy = attacker.armies.find(a => a.id === newState.selectedArmyId);
-    if (!attackingArmy) {
+    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
+    if (!attackingArmy) { // Should not happen but as a safeguard
         newState.combatState = null;
         endTurn(newState);
         return;
@@ -611,11 +623,14 @@ export function GameBoard() {
         if (baseTile) {
             const oldPos = losingArmy.position;
             
-            map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.armyId === losingArmy.id && o.playerId === loserId));
+            // Remove loser from combat tile occupants
+            map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== losingArmy.id || o.playerId !== loserId);
 
+            // Move losing army to base
             losingArmy.position = {x: baseTile.x, y: baseTile.y};
             map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
             
+            // Remove loser's position if they had one
             const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
             if (positionIndex > -1) {
                 const removedPosition = loser.positions.splice(positionIndex, 1)[0];
@@ -760,6 +775,7 @@ export function GameBoard() {
 
     const nextPlayer = state.players[state.currentPlayerIndex];
     nextPlayer.lastAction = null;
+    nextPlayer.actionsThisTurn = [];
     
     state.log.push(`It's now ${nextPlayer.name}'s turn.`);
     state.currentAction = null;

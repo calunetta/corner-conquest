@@ -53,6 +53,7 @@ export function initializeGame(): GameState {
       specialCards: ['Extra Move', 'Steal Resource', 'Decide Dice Roll'], // Mock cards
       positions: [],
       hasExtraMove: false,
+      actionsThisTurn: [],
     });
   });
 

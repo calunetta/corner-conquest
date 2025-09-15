@@ -32,6 +32,7 @@ export type Player = {
   specialCards: string[]; // Names of special cards
   positions: PlayerPosition[];
   hasExtraMove: boolean;
+  actionsThisTurn: GameAction[];
 };
 
 export type Monster = {
