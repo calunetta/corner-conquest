@@ -15,7 +15,7 @@ import { PositionDialog } from './PositionDialog';
 import { CardsDialog } from './CardsDialog';
 import { StealResourceDialog } from './StealResourceDialog';
 import { UseCardDialog } from './UseCardDialog';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const GAME_ID = 'main-game'; // For now, we'll have one global game session
@@ -94,22 +94,24 @@ export function GameBoard() {
     const gameDocRef = doc(db, 'games', GAME_ID);
 
     const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
-        if (docSnapshot.exists()) {
-            const firestoreState = docSnapshot.data() as FirestoreGameState;
-            setGameState({
-                ...firestoreState,
-                map: unflattenMap(firestoreState.map, firestoreState.mapSize),
-            });
-        } else {
-            console.log("No such document! Initializing new game.");
-            const newGame = initializeGame();
-            const firestoreState: FirestoreGameState = {
-                ...newGame,
-                map: flattenMap(newGame.map),
-                mapSize: newGame.map.length,
-            };
-            setDoc(doc(db, 'games', GAME_ID), firestoreState);
-        }
+      if (docSnapshot.exists()) {
+        const firestoreState = docSnapshot.data() as FirestoreGameState;
+        setGameState({
+          ...firestoreState,
+          map: unflattenMap(firestoreState.map, firestoreState.mapSize),
+        });
+      } else {
+        // Document doesn't exist, so we create it.
+        console.log('No game document found! Initializing new game in Firestore.');
+        const newGame = initializeGame();
+        const firestoreState: FirestoreGameState = {
+          ...newGame,
+          map: flattenMap(newGame.map),
+          mapSize: newGame.map.length,
+        };
+        // Set the document, the onSnapshot listener will then pick it up.
+        setDoc(gameDocRef, firestoreState);
+      }
     });
 
     return () => unsubscribe();
@@ -118,6 +120,7 @@ export function GameBoard() {
   const updateGameState = async (state: GameState) => {
     const gameDocRef = doc(db, 'games', GAME_ID);
     
+    // Sanitize the map to ensure 'positionedBy' and 'monsters' are always arrays
     const sanitizedMap = state.map.map(row => row.map(tile => ({
         ...tile,
         positionedBy: tile.positionedBy || [],
@@ -633,47 +636,53 @@ export function GameBoard() {
     if (!gameState || !gameState.combatState) return;
     
     const newState = JSON.parse(JSON.stringify(gameState));
-    const { combatState, players, map } = newState;
+    const { combatState, players, map, selectedArmyId } = newState;
     const { winnerId, attackerId, defenderId } = combatState;
     
+    if (winnerId === null) {
+        newState.combatState = null;
+        endTurn(newState);
+        return;
+    }
+    
     const loserId = winnerId === attackerId ? defenderId : attackerId;
-    const winner = players[winnerId!];
+    const winner = players[winnerId];
     const loser = players[loserId];
     
-    const attackingArmy = winnerId === attackerId 
-        ? players[attackerId].armies.find(a => a.id === newState.selectedArmyId) 
-        : players[defenderId].armies.find(a => a.position.x === map[players[attackerId].armies.find(a => a.id === newState.selectedArmyId)!.position.y][players[attackerId].armies.find(a => a.id === newState.selectedArmyId)!.position.x].x && a.position.y === map[players[attackerId].armies.find(a => a.id === newState.selectedArmyId)!.position.y][players[attackerId].armies.find(a => a.id === newState.selectedArmyId)!.position.x].y);
-    
+    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
     if (!attackingArmy) {
       newState.combatState = null;
       endTurn(newState);
       return;
     }
-    
+
     const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
     const loserOccupantInfo = combatTile.occupants.find(o => o.playerId === loserId);
     
-    const losingArmy = loser.armies.find(a => a.id === loserOccupantInfo?.armyId);
-    
-    if (losingArmy) {
-        const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
-        if (baseTile) {
-            const oldPos = losingArmy.position;
-            
-            map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.armyId === losingArmy.id && o.playerId === loserId));
-            
-            losingArmy.position = {x: baseTile.x, y: baseTile.y};
-            map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
-            
-            const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
-            if (positionIndex > -1) {
-                const removedPosition = loser.positions.splice(positionIndex, 1)[0];
-                 if (map[oldPos.y][oldPos.x].positionedBy) {
-                    map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy!.filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
+    if (loserOccupantInfo) {
+        const losingArmy = loser.armies.find(a => a.id === loserOccupantInfo.armyId);
+        
+        if (losingArmy) {
+            const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
+            if (baseTile) {
+                const oldPos = losingArmy.position;
+                
+                combatTile.occupants = combatTile.occupants.filter(o => !(o.armyId === losingArmy.id && o.playerId === loserId));
+                
+                losingArmy.position = {x: baseTile.x, y: baseTile.y};
+                map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
+                
+                const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
+                if (positionIndex > -1) {
+                    const removedPosition = loser.positions.splice(positionIndex, 1)[0];
+                     if (map[oldPos.y][oldPos.x].positionedBy) {
+                        map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy!.filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
+                    }
                 }
             }
         }
     }
+
 
     const logMsg = `${winner.name} defeated ${loser.name}! ${loser.name}'s army was sent back to their base.`;
     newState.log.push(logMsg);
@@ -800,9 +809,11 @@ export function GameBoard() {
   }
 
   const endTurn = (state: GameState) => {
-    if (state.players[state.currentPlayerIndex].hasExtraMove) {
-        return;
-    }
+    // This check is removed because extra move is handled differently now.
+    // A move action with hasExtraMove does not call endTurn.
+    // if (state.players[state.currentPlayerIndex].hasExtraMove) {
+    //     return;
+    // }
 
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
     if (state.currentPlayerIndex === 0) {
@@ -941,5 +952,3 @@ export function GameBoard() {
     </div>
   );
 }
-
-    
