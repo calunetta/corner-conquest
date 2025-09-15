@@ -75,47 +75,54 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         return;
     }
 
-    if (isMyTurn) {
-      try {
-          let newState = { ...gameState };
-          
-          const selectedArmy = GameActions.getSelectedArmy(newState);
-          if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card'].includes(action)) {
-              toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
-              return;
-          }
-
-          switch(action) {
-              case 'position':
-                  newState = GameActions.handlePositionAction(newState);
-                  break;
-              case 'collect':
-                  newState = GameActions.handleCollectAction(newState);
-                  break;
-              case 'deploy':
-                  newState = GameActions.handleDeployAction(newState);
-                  break;
-              case 'buy-card':
-                  newState = GameActions.handleBuyCardAction(newState);
-                  break;
-              case 'upgrade':
-                  newState = GameActions.handleUpgradeAction(newState);
-                  break;
-              case 'attack':
-                  newState = GameActions.handleAttackAction(newState);
-                  break;
-              case 'end-turn':
-                  newState = GameActions.handleEndTurn(newState);
-                  break;
-              default:
-                  newState = { ...newState, currentAction: action };
-          }
-          setGameState(newState);
-      } catch (error: any) {
-          toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
-      }
-    } else if(action !== 'end-turn') { // Prevent "not your turn" toast on auto turn end
+    if (!isMyTurn && action !== 'end-turn') {
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
+      return;
+    }
+    
+    try {
+        let newState = { ...gameState };
+        
+        const selectedArmy = GameActions.getSelectedArmy(newState);
+        if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card'].includes(action)) {
+            toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
+            return;
+        }
+        
+        const mainActionCompleted = newState.players[newState.currentPlayerIndex].lastAction !== null;
+        if (mainActionCompleted && ['collect', 'position', 'attack', 'move'].includes(action)) {
+            toast({ title: 'Action Limit', description: 'You can only perform one main action (Collect, Position, Attack, or Move) per turn.', variant: 'destructive' });
+            return;
+        }
+
+        switch(action) {
+            case 'position':
+                newState = GameActions.handlePositionAction(newState);
+                break;
+            case 'collect':
+                newState = GameActions.handleCollectAction(newState);
+                break;
+            case 'deploy':
+                newState = GameActions.handleDeployAction(newState);
+                break;
+            case 'buy-card':
+                newState = GameActions.handleBuyCardAction(newState);
+                break;
+            case 'upgrade':
+                newState = GameActions.handleUpgradeAction(newState);
+                break;
+            case 'attack':
+                newState = GameActions.handleAttackAction(newState);
+                break;
+            case 'end-turn':
+                newState = GameActions.handleEndTurn(newState);
+                break;
+            default:
+                newState = { ...newState, currentAction: action };
+        }
+        setGameState(newState);
+    } catch (error: any) {
+        toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
     }
   };
   
@@ -180,17 +187,20 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   return (
     <div className="relative flex h-screen w-full flex-col gap-2 overflow-auto p-2 sm:gap-4 sm:p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 sm:gap-4">
-          <Button variant="outline" size="icon" onClick={handleExitGame} disabled={isExiting || status === 'playing'}>
-            {isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft />}
-          </Button>
-          <h1 className="text-xl font-bold sm:text-2xl">Corner Conquest</h1>
+      {status === 'waiting' && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Button variant="outline" size="icon" onClick={handleExitGame} disabled={isExiting}>
+              {isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft />}
+            </Button>
+            <h1 className="text-xl font-bold sm:text-2xl">Corner Conquest</h1>
+          </div>
+          {canStartGame && (
+            <Button onClick={handleStartGame}><Play /> Start Game Now</Button>
+          )}
         </div>
-        {canStartGame && (
-          <Button onClick={handleStartGame}><Play /> Start Game Now</Button>
-        )}
-      </div>
+      )}
+
 
       <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen} className="w-full">
         <div className="flex items-center justify-between rounded-md bg-muted/50 p-2">
@@ -258,7 +268,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    
-    
-    
