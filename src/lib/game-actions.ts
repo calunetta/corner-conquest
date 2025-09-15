@@ -28,8 +28,8 @@ export function handlePositionAction(state: GameState): GameState {
   if ((tile.type !== 'resource' && tile.type !== 'base') || tile.resources.length === 0) {
     throw new Error("You can only position on an island with resources.");
   }
-  if (player.positions.some(p => p.x === army.position.x && p.y === army.position.y)) {
-    throw new Error("You already have an army positioned here.");
+  if (player.positions.some(p => p.armyId === army.id)) {
+    throw new Error("This army is already positioned.");
   }
   
   const availableResources = tile.resources.filter(resource => {
@@ -51,8 +51,8 @@ export function handleCollectAction(state: GameState): GameState {
   if (!army) throw new Error("No army selected.");
   if (army.hasActed) throw new Error("This army has already acted this turn.");
 
-  const positionIndex = player.positions.findIndex(p => p.x === army.position.x && p.y === army.position.y);
-  if (positionIndex === -1) throw new Error("You have no army positioned on this island to collect from.");
+  const positionIndex = player.positions.findIndex(p => p.armyId === army.id);
+  if (positionIndex === -1) throw new Error("This army is not positioned on a resource.");
 
   const position = player.positions[positionIndex];
   const tile = map[position.y][position.x];
@@ -96,9 +96,9 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
 
     if (!collectDialogState || !army) return newState;
 
-    const { x, y, resource } = collectDialogState;
+    const { resource } = collectDialogState;
 
-    const positionIndex = player.positions.findIndex(p => p.x === x && p.y === y && p.resource === resource.type);
+    const positionIndex = player.positions.findIndex(p => p.armyId === army.id);
     if (positionIndex === -1) {
         throw new Error("Position not found to collect from.");
     }
@@ -124,7 +124,7 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
 
     // Remove the position after collecting
     player.positions.splice(positionIndex, 1);
-    const tile = map[y][x];
+    const tile = map[army.position.y][army.position.x];
     if (tile.positionedBy) {
         tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === resource.type));
     }
@@ -438,16 +438,16 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
             const armiesOnTile = clickedTile.occupants
                 .filter(o => o.playerId === currentPlayer.id)
                 .map(o => currentPlayer.armies.find(a => a.id === o.armyId))
-                .filter(a => a && !a.hasActed);
+                .filter((a): a is Army => !!a);
 
             if (armiesOnTile.length === 0) {
-                throw new Error("You must select a tile with one of your own armies that has not acted yet.");
+                throw new Error("You must select a tile with one of your own armies.");
             }
             if (armiesOnTile.length === 1) {
                 newState.teleportState.armyId = armiesOnTile[0]!.id;
                 newState.currentAction = 'teleport-initiated';
             } else {
-                 newState.armySelectionDialogState = { isOpen: true, x, y, armies: armiesOnTile as Army[] };
+                 newState.armySelectionDialogState = { isOpen: true, x, y, armies: armiesOnTile };
             }
         } else {
             newState = handleTeleport(newState, x, y);
@@ -456,8 +456,6 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
     }
     
     // --- New Prioritized Logic ---
-    // First, check if the clicked tile has the current player's armies.
-    // This should take precedence over moving a different, already-selected army.
     const armiesOnTile = clickedTile.occupants
         .filter(o => o.playerId === currentPlayer.id)
         .map(o => currentPlayer.armies.find(a => a.id === o.armyId))
@@ -475,8 +473,6 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
         return newState;
     }
     
-    // --- Existing Move/Deselect Logic ---
-    // This part now only runs if the clicked tile does NOT contain the player's armies.
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
     const selectedArmy = getSelectedArmy(newState);
 
@@ -484,7 +480,6 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
       return handleMoveAction(newState, x, y);
     } 
     
-    // If it's not a valid move and doesn't have selectable armies, deselect everything.
     newState.selectedArmyId = null;
     newState.selectedTile = null;
     newState.possibleMoves = [];
@@ -528,7 +523,7 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     const oldTile = map[army.position.y][army.position.x];
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
     
-    const positionIndex = player.positions.findIndex(p => p.x === army.position.x && p.y === army.position.y);
+    const positionIndex = player.positions.findIndex(p => p.armyId === army.id);
     if (positionIndex > -1) {
         const removedPosition = player.positions.splice(positionIndex, 1)[0];
         if(oldTile.positionedBy) {
@@ -587,7 +582,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     if (!army || !positionDialogState) return { ...state, positionDialogState: null, currentAction: null };
     
     const { x, y } = army.position;
-    player.positions.push({ x, y, resource });
+    player.positions.push({ x, y, resource, armyId: army.id });
     
     const tile = newState.map[y][x];
     if (!tile.positionedBy) tile.positionedBy = [];
@@ -659,7 +654,7 @@ export function handleCloseCombat(state: GameState): GameState {
             losingArmy.position = {x: baseTile.x, y: baseTile.y};
             map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
             
-            const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
+            const positionIndex = loser.positions.findIndex(p => p.armyId === losingArmy.id);
             if (positionIndex > -1) {
                 const removedPosition = loser.positions.splice(positionIndex, 1)[0];
                 if (map[oldPos.y][oldPos.x].positionedBy) {
@@ -942,8 +937,6 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
 
     const armyToMove = player.armies.find(a => a.id === teleportState.armyId);
     if (!armyToMove) return newState;
-    if (armyToMove.hasActed) throw new Error("This army has already acted. Teleport can only be used on an army that hasn't moved.");
-
 
     const cardIndex = player.specialCards.indexOf('Teleport');
     if (cardIndex === -1) {

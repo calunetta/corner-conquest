@@ -28,7 +28,7 @@ export function ArmySelectionDialog({ state, player, onSelectArmy, onClose }: Ar
         if (army.hasActed) {
             return { text: "Acted", icon: <CheckCircle className="h-4 w-4 text-green-500" /> };
         }
-        const position = player.positions.find(p => p.x === army.position.x && p.y === army.position.y);
+        const position = player.positions.find(p => p.armyId === army.id);
         if (position) {
             return { text: `Positioned`, icon: <Anchor className="h-4 w-4 text-blue-400" /> };
         }
