@@ -42,11 +42,11 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1">
                       <Swords className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm font-bold">{player.armySize}</span>
+                      <span className="text-sm font-bold">{player.armyCount}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Army Size</p>
+                  <p>Army Count</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>

@@ -31,11 +31,12 @@ export function initializeGame(): GameState {
   ];
 
   basePositions.forEach((pos, i) => {
+    const initialArmy = { id: 0, position: pos };
     map[pos.y][pos.x] = {
       ...map[pos.y][pos.x],
       type: 'base',
       isHidden: false,
-      occupants: [i],
+      occupants: [{playerId: i, armyId: initialArmy.id}],
       resources: [
         { type: 'gems', amount: 1 }, 
         { type: 'iron', amount: 1 }, 
@@ -46,16 +47,15 @@ export function initializeGame(): GameState {
       id: i,
       name: `Player ${i + 1}`,
       color: PLAYER_COLORS[i],
-      position: pos,
+      armies: [initialArmy],
       resources: { gems: 0, iron: 0, food: 0 },
-      armySize: 1,
+      armyCount: 1,
       attackPower: 0,
       nextArmyCost: 5,
       victoryPoints: 0,
       lastAction: null,
       specialCards: [],
       positions: [],
-      occupiedResourceTiles: [{x: pos.x, y: pos.y}],
     });
   });
 
@@ -95,7 +95,9 @@ export function initializeGame(): GameState {
   
   // Reveal bases
   players.forEach(p => {
-    map[p.position.y][p.position.x].isHidden = false;
+    p.armies.forEach(army => {
+        map[army.position.y][army.position.x].isHidden = false;
+    })
   });
 
   return {
@@ -106,6 +108,7 @@ export function initializeGame(): GameState {
     log: ['Game started!'],
     winner: null,
     selectedTile: null,
+    selectedArmyId: null,
     possibleMoves: [],
     currentAction: null,
     specialCardsDeck: [...SPECIAL_CARDS],

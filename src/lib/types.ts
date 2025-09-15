@@ -15,20 +15,24 @@ export type PlayerPosition = {
   resource: ResourceType;
 }
 
+export type Army = {
+  id: number;
+  position: { x: number; y: number };
+}
+
 export type Player = {
   id: number;
   name: string;
   color: PlayerColor;
-  position: { x: number; y: number };
+  armies: Army[];
   resources: Record<ResourceType, number>;
-  armySize: number;
+  armyCount: number;
   attackPower: number;
   nextArmyCost: number;
   victoryPoints: number;
   lastAction: GameAction | null;
   specialCards: string[]; // Names of special cards
   positions: PlayerPosition[];
-  occupiedResourceTiles: { x: number; y: number }[];
 };
 
 export type Monster = {
@@ -46,7 +50,7 @@ export type Island = {
   type: IslandType;
   isHidden: boolean;
   resources: IslandResource[];
-  occupants: number[]; // player ids
+  occupants: { playerId: number, armyId: number }[];
   isFetchingMonster?: boolean;
   monsterDetails?: MonsterEncounterOutput;
   monsters?: Monster[];
@@ -85,6 +89,7 @@ export type GameState = {
   log: string[];
   winner: Player | null;
   selectedTile: { x: number, y: number } | null;
+  selectedArmyId: number | null;
   possibleMoves: { x: number, y: number }[];
   currentAction: GameAction | null;
   specialCardsDeck: string[];

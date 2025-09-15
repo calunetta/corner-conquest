@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import type { GameState, GameAction, ResourceType, IslandResource, Monster } from '@/lib/types';
+import type { GameState, GameAction, ResourceType, IslandResource, Monster, Army } from '@/lib/types';
 import { initializeGame } from '@/lib/game-logic';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
@@ -38,40 +38,22 @@ export function GameBoard() {
 
   const handleAction = (action: GameAction) => {
     if (!gameState) return;
-    const { players, map } = gameState;
+    const { players, selectedArmyId } = gameState;
     const currentPlayer = players[gameState.currentPlayerIndex];
+    const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
 
     const newState = deepClone(gameState);
     newState.currentAction = action;
-    newState.possibleMoves = [];
-    newState.selectedTile = null;
 
-    if (action === 'move') {
-      const { x, y } = currentPlayer.position;
-      newState.selectedTile = { x, y };
-      let moves = [];
-      for (let i = -2; i <= 2; i++) {
-        for (let j = -2; j <= 2; j++) {
-          if (Math.abs(i) + Math.abs(j) <= 2 && (i !== 0 || j !== 0)) {
-            const newX = x + i;
-            const newY = y + j;
-            if (newX >= 0 && newX < newState.map.length && newY >= 0 && newY < newState.map.length) {
-              moves.push({ x: newX, y: newY });
-            }
-          }
-        }
-      }
-      // Filter out moves to other players' bases
-      moves = moves.filter(move => {
-        const tile = newState.map[move.y][move.x];
-        if (tile.type === 'base' && tile.occupants[0] !== currentPlayer.id) {
-          return false;
-        }
-        return true;
-      });
-      newState.possibleMoves = moves;
-    } else if (action === 'position') {
-      handlePositionAction(newState, currentPlayer.position.x, currentPlayer.position.y);
+    if (!selectedArmy && action !== 'deploy' && action !== 'buy-card' && action !== 'upgrade') {
+        toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
+        newState.currentAction = null;
+        setGameState(newState);
+        return;
+    }
+    
+    if (action === 'position') {
+      handlePositionAction(newState, selectedArmy!.position.x, selectedArmy!.position.y);
     } else if (action === 'collect') {
       handleCollectAction(newState);
     } else if (action === 'deploy') {
@@ -106,14 +88,29 @@ export function GameBoard() {
   };
   
   const handleDeployAction = (state: GameState) => {
-    const { currentPlayerIndex, players } = state;
+    const { currentPlayerIndex, players, map } = state;
     const player = players[currentPlayerIndex];
-    if (player.resources.food >= player.nextArmyCost && player.armySize < 5) {
+    const basePosition = {x: 0, y: 0}; // Find the actual base position
+    const baseTile = map.flat().find(t => t.type === 'base' && t.occupants.some(o => o.playerId === player.id));
+
+    if (!baseTile) {
+      toast({ title: 'Cannot Deploy', description: 'Base not found!', variant: 'destructive'});
+      state.currentAction = null;
+      setGameState(state);
+      return;
+    }
+
+    if (player.resources.food >= player.nextArmyCost && player.armyCount < 5) {
       player.resources.food -= player.nextArmyCost;
-      player.armySize += 1;
+      player.armyCount += 1;
+      const newArmyId = player.armies.length > 0 ? Math.max(...player.armies.map(a => a.id)) + 1 : 0;
+      const newArmy: Army = { id: newArmyId, position: {x: baseTile.x, y: baseTile.y} };
+      player.armies.push(newArmy);
+      map[baseTile.y][baseTile.x].occupants.push({playerId: player.id, armyId: newArmy.id});
+      
       player.nextArmyCost += 1;
       player.lastAction = 'deploy';
-      const logMsg = `${player.name} deployed a new army! They now have ${player.armySize} armies.`;
+      const logMsg = `${player.name} deployed a new army at their base! They now have ${player.armyCount} armies.`;
       state.log.push(logMsg);
       toast({ title: 'Army Deployed!', description: logMsg });
       endTurn(state);
@@ -145,10 +142,18 @@ export function GameBoard() {
   }
 
   const handleCollectAction = (state: GameState) => {
-    const { currentPlayerIndex, players, map } = state;
+    const { currentPlayerIndex, players, map, selectedArmyId } = state;
     const player = players[currentPlayerIndex];
+    const army = player.armies.find(a => a.id === selectedArmyId);
     
-    const position = player.positions.find(p => p.x === player.position.x && p.y === player.position.y);
+    if (!army) {
+        toast({ title: 'Cannot Collect', description: 'No army selected.', variant: 'destructive'});
+        state.currentAction = null;
+        setGameState(state);
+        return;
+    }
+    
+    const position = player.positions.find(p => p.x === army.position.x && p.y === army.position.y);
 
     if (position) {
         const tile = map[position.y][position.x];
@@ -173,15 +178,44 @@ export function GameBoard() {
   };
 
   const handleTileClick = (x: number, y: number) => {
-    if (!gameState || !gameState.currentAction) return;
-
-    const isPossibleMove = gameState.possibleMoves.some(p => p.x === x && p.y === y);
-    if (!isPossibleMove) return;
-    
+    if (!gameState) return;
     const newState = deepClone(gameState);
-    
-    if (gameState.currentAction === 'move') {
+    const { players, currentPlayerIndex, selectedArmyId, possibleMoves } = newState;
+    const currentPlayer = players[currentPlayerIndex];
+
+    const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
+    const clickedTile = newState.map[y][x];
+    const armyOnTile = clickedTile.occupants.find(o => o.playerId === currentPlayer.id);
+
+    if (selectedArmyId !== null && isPossibleMove) {
       handleMoveAction(newState, x, y);
+    } else if (armyOnTile) {
+        newState.selectedArmyId = armyOnTile.armyId;
+        newState.selectedTile = {x, y};
+        newState.currentAction = 'move';
+        
+        let moves = [];
+        for (let i = -2; i <= 2; i++) {
+          for (let j = -2; j <= 2; j++) {
+            if (Math.abs(i) + Math.abs(j) <= 2 && (i !== 0 || j !== 0)) {
+              const newX = x + i;
+              const newY = y + j;
+              if (newX >= 0 && newX < newState.map.length && newY >= 0 && newY < newState.map.length) {
+                moves.push({ x: newX, y: newY });
+              }
+            }
+          }
+        }
+        // Filter out moves to other players' bases
+        moves = moves.filter(move => {
+          const tile = newState.map[move.y][move.x];
+          if (tile.type === 'base' && !tile.occupants.some(o => o.playerId === currentPlayer.id)) {
+            return false;
+          }
+          return true;
+        });
+        newState.possibleMoves = moves;
+        setGameState(newState);
     }
   };
 
@@ -215,15 +249,29 @@ export function GameBoard() {
       return;
     }
     
+    if (availableResources.length === 1) {
+      handleSelectResourceForPosition(state, availableResources[0].type);
+      return;
+    }
+
     state.positionDialogState = { x, y, resources: availableResources };
     setGameState(state);
   }
 
   const handleSelectResourceForPosition = (state: GameState, resource: ResourceType) => {
-    const { currentPlayerIndex, positionDialogState } = state;
+    const { currentPlayerIndex, positionDialogState, selectedArmyId } = state;
     const player = state.players[currentPlayerIndex];
-    const x = positionDialogState?.x ?? player.position.x;
-    const y = positionDialogState?.y ?? player.position.y;
+    const army = player.armies.find(a => a.id === selectedArmyId);
+
+    if (!army) {
+        state.positionDialogState = null;
+        state.currentAction = null;
+        setGameState(state);
+        return;
+    }
+    
+    const x = army.position.x;
+    const y = army.position.y;
     const tile = state.map[y][x];
 
     player.positions.push({ x, y, resource });
@@ -244,22 +292,23 @@ export function GameBoard() {
   };
 
   const handleMoveAction = (newState: GameState, x: number, y: number) => {
-    const { currentPlayerIndex, map } = newState;
+    const { currentPlayerIndex, map, selectedArmyId } = newState;
     const player = newState.players[currentPlayerIndex];
-    
-    // Clear all previous positions when moving
-    player.positions = [];
-    map.forEach(row => row.forEach(tile => {
-        if (tile.positionedBy) {
-            tile.positionedBy = tile.positionedBy.filter(p => p.playerId !== player.id);
-        }
-    }));
+    const army = player.armies.find(a => a.id === selectedArmyId);
 
-    const oldPos = player.position;
-    newState.map[oldPos.y][oldPos.x].occupants = newState.map[oldPos.y][oldPos.x].occupants.filter(id => id !== player.id);
+    if (!army) return;
     
-    player.position = { x, y };
-    newState.map[y][x].occupants.push(player.id);
+    // Reset positions if moving
+    const currentPos = army.position;
+    if (newState.map[currentPos.y][currentPos.x].type === 'resource') {
+        player.positions = player.positions.filter(p => p.x !== currentPos.x || p.y !== currentPos.y);
+        newState.map[currentPos.y][currentPos.x].positionedBy = newState.map[currentPos.y][currentPos.x].positionedBy?.filter(p => p.playerId !== player.id);
+    }
+    
+    newState.map[currentPos.y][currentPos.x].occupants = newState.map[currentPos.y][currentPos.x].occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
+    
+    army.position = { x, y };
+    newState.map[y][x].occupants.push({ playerId: player.id, armyId: army.id });
     player.lastAction = 'move';
     
     const revealedIsland = newState.map[y][x];
@@ -318,13 +367,16 @@ export function GameBoard() {
   }
 
   const handleAttackAction = (state: GameState) => {
-    const { currentPlayerIndex, players, map } = state;
+    const { currentPlayerIndex, players, map, selectedArmyId } = state;
     const attacker = players[currentPlayerIndex];
-    const currentTile = map[attacker.position.y][attacker.position.x];
-    const otherPlayers = currentTile.occupants.filter(id => id !== attacker.id);
+    const army = attacker.armies.find(a => a.id === selectedArmyId);
+    if (!army) return;
 
-    if (otherPlayers.length > 0) {
-      const defenderId = otherPlayers[0]; // Attack the first other player on the tile
+    const currentTile = map[army.position.y][army.position.x];
+    const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
+
+    if (otherPlayersOccupants.length > 0) {
+      const defenderId = otherPlayersOccupants[0].playerId; 
       state.combatState = {
         attackerId: attacker.id,
         defenderId: defenderId,
@@ -338,7 +390,7 @@ export function GameBoard() {
     } else if (currentTile.type === 'monster' && currentTile.monsters && currentTile.monsters.length > 0) {
       state.monsterCombatState = {
         attackerId: attacker.id,
-        monster: currentTile.monsters[0], // For now, just a placeholder, selection logic will be in dialog
+        monster: currentTile.monsters[0], // Placeholder, selection logic is in dialog
         attackerRolls: [],
         monsterRolls: [],
         winnerId: null,
@@ -361,13 +413,13 @@ export function GameBoard() {
     const attacker = players[combatState.attackerId];
     const defender = players[combatState.defenderId];
 
-    const rollDice = (armySize: number, attackPower: number) => {
-      const diceCount = Math.min(armySize + attackPower, 4);
+    const rollDice = (armyCount: number, attackPower: number) => {
+      const diceCount = Math.min(armyCount + attackPower, 4);
       return Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
     };
 
-    combatState.attackerRolls = rollDice(attacker.armySize, attacker.attackPower);
-    combatState.defenderRolls = rollDice(defender.armySize, defender.attackPower);
+    combatState.attackerRolls = rollDice(attacker.armyCount, attacker.attackPower);
+    combatState.defenderRolls = rollDice(defender.armyCount, defender.attackPower);
 
     const attackerScore = combatState.attackerRolls.reduce((a, b) => a + b, 0);
     const defenderScore = combatState.defenderRolls.reduce((a, b) => a + b, 0);
@@ -391,6 +443,25 @@ export function GameBoard() {
     const attacker = players[combatState.attackerId];
     const defender = players[combatState.defenderId];
     const loser = winnerId === attacker.id ? defender : attacker;
+    
+    const loserArmyOnTile = map[attacker.armies.find(a=>a.id === newState.selectedArmyId)!.position.y][attacker.armies.find(a=>a.id === newState.selectedArmyId)!.position.x].occupants.find(o => o.playerId === loser.id);
+
+    if (loserArmyOnTile) {
+      // Find the specific army that lost
+      const losingArmy = loser.armies.find(a => a.id === loserArmyOnTile.armyId);
+      if (losingArmy) {
+          // Move loser's army back to base
+          const baseTile = map.flat().find(t => t.type === 'base' && t.occupants.some(o => o.playerId === loser.id));
+          if (baseTile) {
+              const oldPos = losingArmy.position;
+              map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.playerId !== loser.id || o.armyId !== losingArmy.id);
+              
+              losingArmy.position = {x: baseTile.x, y: baseTile.y};
+              map[baseTile.y][baseTile.x].occupants.push({playerId: loser.id, armyId: losingArmy.id});
+          }
+      }
+    }
+
 
     // Clear all positions for the loser
     loser.positions = [];
@@ -400,23 +471,7 @@ export function GameBoard() {
       }
     }));
 
-
-    // Move loser back to base
-    const basePositions = [
-      { x: 0, y: 0 },
-      { x: map.length - 1, y: 0 },
-      { x: 0, y: map.length - 1 },
-      { x: map.length - 1, y: map.length - 1 },
-    ];
-    const loserBasePosition = basePositions[loser.id];
-    
-    const oldPos = loser.position;
-    map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(id => id !== loser.id);
-    
-    loser.position = loserBasePosition;
-    map[loserBasePosition.y][loserBasePosition.x].occupants.push(loser.id);
-
-    const logMsg = `${players[winnerId!].name} defeated ${loser.name}! ${loser.name} was sent back to their base and lost all positions.`;
+    const logMsg = `${players[winnerId!].name} defeated ${loser.name}! ${loser.name}'s army was sent back to their base.`;
     newState.log.push(logMsg);
     toast({ title: 'Combat Over!', description: logMsg });
     
@@ -437,7 +492,7 @@ export function GameBoard() {
       return Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
     };
 
-    const attackerRolls = rollDice(attacker.armySize + attacker.attackPower);
+    const attackerRolls = rollDice(attacker.armyCount + attacker.attackPower);
     const monsterRolls = rollDice(monster.level);
 
     const attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
@@ -460,12 +515,15 @@ export function GameBoard() {
   };
   
   const handleCloseMonsterCombat = () => {
-    if (!gameState || !gameState.monsterCombatState) return;
+    if (!gameState || !gameState.monsterCombatState || gameState.selectedArmyId === null) return;
     
     const newState = deepClone(gameState);
-    const { monsterCombatState, players, map } = newState;
+    const { monsterCombatState, players, map, selectedArmyId } = newState;
     const attacker = players[monsterCombatState.attackerId];
-    const currentTile = map[attacker.position.y][attacker.position.x];
+    const army = attacker.armies.find(a => a.id === selectedArmyId);
+    if (!army) return;
+
+    const currentTile = map[army.position.y][army.position.x];
     
     if (monsterCombatState.winnerId === attacker.id) {
       // Player wins
@@ -491,28 +549,19 @@ export function GameBoard() {
 
     } else {
       // Player loses
-      const basePositions = [
-        { x: 0, y: 0 },
-        { x: map.length - 1, y: 0 },
-        { x: 0, y: map.length - 1 },
-        { x: map.length - 1, y: map.length - 1 },
-      ];
-      const loserBasePosition = basePositions[attacker.id];
+      const baseTile = map.flat().find(t => t.type === 'base' && t.occupants.some(o => o.playerId === attacker.id));
+      if (baseTile) {
+          const oldPos = army.position;
+          map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.playerId !== attacker.id || o.armyId !== army.id);
+          
+          army.position = {x: baseTile.x, y: baseTile.y};
+          map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: army.id});
+      }
       
-      const oldPos = attacker.position;
-      map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(id => id !== attacker.id);
-      
-      attacker.position = loserBasePosition;
-      map[loserBasePosition.y][loserBasePosition.x].occupants.push(attacker.id);
-      
-      attacker.positions = [];
-      map.forEach(row => row.forEach(tile => {
-        if (tile.positionedBy) {
-          tile.positionedBy = tile.positionedBy.filter(p => p.playerId !== attacker.id);
-        }
-      }));
+      attacker.positions = attacker.positions.filter(p => p.x !== army.position.x || p.y !== army.position.y);
+      map[army.position.y][army.position.x].positionedBy = map[army.position.y][army.position.x].positionedBy?.filter(p => p.playerId !== attacker.id);
 
-      const logMsg = `${attacker.name} was defeated by the monster and sent back to base!`;
+      const logMsg = `${attacker.name} was defeated by the monster and their army sent back to base!`;
       newState.log.push(logMsg);
       toast({ title: 'Defeated!', description: logMsg, variant: 'destructive' });
     }
@@ -529,14 +578,13 @@ export function GameBoard() {
     }
 
     const nextPlayer = state.players[state.currentPlayerIndex];
-    if (nextPlayer.lastAction === 'move') {
-        nextPlayer.lastAction = null;
-    }
+    nextPlayer.lastAction = null;
     
     state.log.push(`It's now ${nextPlayer.name}'s turn.`);
     state.currentAction = null;
     state.possibleMoves = [];
     state.selectedTile = null;
+    state.selectedArmyId = null;
     setGameState(state);
   }
 
@@ -553,10 +601,10 @@ export function GameBoard() {
     );
   }
 
-  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, monsterCombatState, positionDialogState } = gameState;
+  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, monsterCombatState, positionDialogState, selectedArmyId } = gameState;
   const currentPlayer = players[currentPlayerIndex];
-  const currentTile = map[currentPlayer.position.y][currentPlayer.position.x];
-
+  const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
+  const currentTileForMonster = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
   return (
     <div className="flex h-screen w-screen flex-col gap-4 p-4">
@@ -570,10 +618,11 @@ export function GameBoard() {
       </div>
       <div className="grid flex-[4] grid-cols-[1fr_280px] gap-4">
         <main className="flex flex-col items-center justify-start gap-4">
-          <MapGrid map={map} players={players} onTileClick={handleTileClick} possibleMoves={possibleMoves} selectedTile={selectedTile} currentPlayerIndex={currentPlayerIndex} />
+          <MapGrid map={map} players={players} onTileClick={handleTileClick} possibleMoves={possibleMoves} selectedTile={selectedTile} currentPlayerIndex={currentPlayerIndex} selectedArmyId={selectedArmyId} />
           <div className='text-center'>
               <p className='text-lg font-semibold'>Turn {gameState.turn}: <span className='text-primary'>{currentPlayer.name}'s turn</span></p>
               {currentAction && <p className='text-muted-foreground'>Current Action: {currentAction}</p>}
+              {selectedArmy && <p className='text-sm text-muted-foreground'>Selected Army: ID {selectedArmy.id} at ({selectedArmy.position.x}, {selectedArmy.position.y})</p>}
           </div>
         </main>
         <aside className="flex flex-col justify-start gap-4">
@@ -583,10 +632,10 @@ export function GameBoard() {
         </aside>
       </div>
       {combatState && <CombatDialog gameState={gameState} onRoll={handleCombatRoll} onClose={handleCloseCombat} />}
-      {monsterCombatState && currentTile.monsters && (
+      {monsterCombatState && currentTileForMonster?.monsters && (
         <MonsterCombatDialog 
           gameState={gameState} 
-          monsters={currentTile.monsters}
+          monsters={currentTileForMonster.monsters}
           onRoll={handleMonsterCombatRoll} 
           onClose={handleCloseMonsterCombat} 
         />

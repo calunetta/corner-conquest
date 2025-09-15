@@ -1,4 +1,4 @@
-import type { Island, Player, GameAction, ResourceType, IslandResource } from '@/lib/types';
+import type { Island, Player, GameAction, ResourceType, IslandResource, Army } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon, MonsterIcon } from '../icons';
 import { Home, HelpCircle, Star, Loader2, Anchor } from 'lucide-react';
@@ -10,6 +10,7 @@ type IslandTileProps = {
   isPossibleMove: boolean;
   isSelected: boolean;
   isCurrentPlayerTile: boolean;
+  isArmySelectedOnTile: boolean;
 };
 
 const playerColorMap = {
@@ -19,13 +20,6 @@ const playerColorMap = {
   yellow: 'bg-yellow-400 border-yellow-200',
 };
 
-const playerPositionClasses = [
-  'top-0 left-0', // Player 0
-  'top-0 right-0', // Player 1
-  'bottom-0 left-0', // Player 2
-  'bottom-0 right-0', // Player 3
-]
-
 const playerTileIndicatorClasses: Record<string, string> = {
     blue: 'shadow-blue-500/50',
     red: 'shadow-red-500/50',
@@ -33,10 +27,22 @@ const playerTileIndicatorClasses: Record<string, string> = {
     yellow: 'shadow-yellow-400/50',
 }
 
-export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile }: IslandTileProps) {
-  const occupants = island.occupants.map(id => players[id]);
+const armyPositions = [
+    'top-1 left-1',
+    'top-1 right-1',
+    'bottom-1 right-1',
+    'bottom-1 left-1',
+    'top-1/2 left-1 -translate-y-1/2',
+    'top-1 left-1/2 -translate-x-1/2',
+    'bottom-1 left-1/2 -translate-x-1/2',
+    'top-1/2 right-1 -translate-y-1/2',
+];
+
+export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile }: IslandTileProps) {
+  const occupants = island.occupants.map(o => ({ player: players[o.playerId], armyId: o.armyId }));
   const positionedBy = island.positionedBy || [];
-  const currentPlayer = occupants.find(p => isCurrentPlayerTile && p.id === island.occupants.find(id => players[id] && players[id].position.x === island.x && players[id].position.y === island.y));
+  
+  const currentPlayerOnTile = players.find(p => p.id === (isCurrentPlayerTile ? occupants.find(o => players[o.player.id].armies.some(a => a.position.x === island.x && a.position.y === island.y))?.player.id : -1));
 
 
   const renderResourceIcons = (resources: IslandResource[]) => {
@@ -64,7 +70,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     if (island.isFetchingMonster) return <Loader2 className="h-full w-full animate-spin text-destructive" />;
     
     switch (island.type) {
-      case 'base': return <Home className="h-full w-full" style={{ color: players[island.occupants[0]]?.color }}/>;
+      case 'base': return <Home className="h-full w-full" style={{ color: players.find(p => p.armies.some(a => a.position.x === island.x && a.position.y === island.y))?.color }}/>;
       case 'resource': 
         return (
           <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1">
@@ -83,8 +89,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   };
 
   const getPositionedPlayerPositionClass = (playerId: number) => {
-    // This is a simple way to not overlap with the main player icons.
-    // It can be improved for more players.
     const positions = [
         'top-1/2 left-0 -translate-y-1/2',
         'top-0 left-1/2 -translate-x-1/2',
@@ -111,13 +115,14 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         island.isHidden ? 'bg-muted/30 border-dashed' : 'bg-card',
         isSelected ? 'border-primary ring-2 ring-primary' : '',
         isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
-        isCurrentPlayerTile && currentPlayer ? `shadow-lg ${playerTileIndicatorClasses[currentPlayer.color]}`: ''
+        isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
+        isArmySelectedOnTile && 'ring-2 ring-offset-2 ring-primary'
       )}
       aria-label={`Island at ${island.x}, ${island.y}`}
     >
       <div className="absolute inset-0">
-        {occupants.map(player => (
-          <div key={player.id} className={cn('absolute h-4 w-4 rounded-full border-2', playerPositionClasses[player.id], playerColorMap[player.color])}>
+        {occupants.map(({ player, armyId }, index) => (
+          <div key={`${player.id}-${armyId}`} className={cn('absolute h-4 w-4 rounded-full border-2', armyPositions[index % armyPositions.length], playerColorMap[player.color])}>
           </div>
         ))}
       </div>
