@@ -95,29 +95,45 @@ export function GameBoard() {
   useEffect(() => {
     const gameDocRef = doc(db, 'games', GAME_ID);
 
-    const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
-      if (docSnapshot.exists()) {
-        const firestoreState = docSnapshot.data() as FirestoreGameState;
-        setGameState({
-          ...firestoreState,
-          map: unflattenMap(firestoreState.map, firestoreState.mapSize),
-        });
-      } else {
-        console.log('No game document found! Initializing new game in Firestore.');
-        const newGame = initializeGame();
-        const firestoreState: FirestoreGameState = {
-          ...newGame,
-          map: flattenMap(newGame.map),
-          mapSize: newGame.map.length,
-        };
-        setDoc(gameDocRef, firestoreState);
-      }
-    }, (error) => {
-        console.error("Firestore snapshot error:", error);
-        toast({ title: 'Connection Error', description: 'Could not connect to the game session.', variant: 'destructive'});
-    });
+    const setupGame = async () => {
+        const docSnap = await getDoc(gameDocRef);
 
-    return () => unsubscribe();
+        if (!docSnap.exists()) {
+            console.log('No game document found! Initializing new game in Firestore.');
+            const newGame = initializeGame();
+            const firestoreState: FirestoreGameState = {
+                ...newGame,
+                map: flattenMap(newGame.map),
+                mapSize: newGame.map.length,
+            };
+            await setDoc(gameDocRef, firestoreState);
+        }
+
+        const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
+            if (docSnapshot.exists()) {
+                const firestoreState = docSnapshot.data() as FirestoreGameState;
+                setGameState({
+                ...firestoreState,
+                map: unflattenMap(firestoreState.map, firestoreState.mapSize),
+                });
+            }
+        }, (error) => {
+            console.error("Firestore snapshot error:", error);
+            toast({ title: 'Connection Error', description: 'Could not connect to the game session.', variant: 'destructive'});
+        });
+
+        return unsubscribe;
+    };
+
+    const unsubscribePromise = setupGame();
+
+    return () => {
+        unsubscribePromise.then(unsubscribe => {
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        });
+    };
   }, [toast]);
   
   const updateGameState = async (state: GameState) => {
@@ -218,19 +234,17 @@ export function GameBoard() {
     }
     
     player.actionsThisTurn.push('use-card');
+    player.specialCards.splice(cardIndex, 1);
 
     if (cardName === 'Extra Move') {
         player.hasExtraMove = true;
-        player.specialCards.splice(cardIndex, 1);
         newState.log.push(`${player.name} used the 'Extra Move' card!`);
         toast({ title: 'Card Used!', description: 'You have an extra move this turn.' });
     } else if (cardName === 'Steal Resource') {
-        player.specialCards.splice(cardIndex, 1);
         newState.stealResourceDialogState = { targetPlayerId: null };
     }
     
     newState.useCardDialogState = null;
-    newState.showCardsDialog = false; // Ensure all dialogs are closed
     updateGameState(newState);
   };
 

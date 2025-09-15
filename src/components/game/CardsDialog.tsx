@@ -29,6 +29,11 @@ export function CardsDialog({ player, onClose, onUseCard }: CardsDialogProps) {
   const uniqueCards = Object.keys(cardCounts);
 
   const canUseCard = !player.actionsThisTurn.includes('use-card');
+  
+  const handleUseCard = (cardName: string) => {
+    onUseCard(cardName);
+    onClose();
+  }
 
   return (
     <AlertDialog open={true} onOpenChange={onClose}>
@@ -49,7 +54,7 @@ export function CardsDialog({ player, onClose, onUseCard }: CardsDialogProps) {
                         <div className="flex items-center gap-4">
                             <span className="text-sm font-bold text-muted-foreground">x{cardCounts[cardName]}</span>
                             {USABLE_CARDS.includes(cardName) && (
-                                <Button size="sm" onClick={() => onUseCard(cardName)} disabled={!canUseCard}>Use</Button>
+                                <Button size="sm" onClick={() => handleUseCard(cardName)} disabled={!canUseCard}>Use</Button>
                             )}
                         </div>
                     </CardHeader>
@@ -76,3 +81,4 @@ export function CardsDialog({ player, onClose, onUseCard }: CardsDialogProps) {
 }
 
     
+
