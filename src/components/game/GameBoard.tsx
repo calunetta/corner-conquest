@@ -154,7 +154,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleAction = (action: GameAction) => {
     if (!gameState || !playerId) return;
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-    if (currentPlayer.id !== localPlayer?.id) {
+    if (currentPlayer.playerId !== localPlayer?.playerId) {
         toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
         return;
     }
@@ -403,7 +403,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     const newState = JSON.parse(JSON.stringify(gameState));
     const { players, currentPlayerIndex, selectedArmyId, possibleMoves } = newState;
     const currentPlayer = players[currentPlayerIndex];
-    if (currentPlayer.id !== localPlayer?.id) return;
+    if (currentPlayer.playerId !== localPlayer?.playerId) return;
 
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
     const clickedTile = newState.map[y][x];
@@ -896,7 +896,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, monsterCombatState, positionDialogState, showCardsDialogForPlayer, selectedArmyId, stealResourceDialogState, useCardDialogState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
-  const localPlayer = players.find(p => p.id === playerId);
+  const localPlayer = players.find(p => p.playerId === playerId);
 
   if (!localPlayer) {
       return (
