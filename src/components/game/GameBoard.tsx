@@ -9,7 +9,7 @@ import { ActionsPanel } from './ActionsPanel';
 import { GameLog } from './GameLog';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, ChevronUp, Loader2, ArrowLeft, Play, XCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, ArrowLeft, Play } from 'lucide-react';
 import { GameDialogs } from './GameDialogs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { usePlayer } from '@/hooks/use-player';
@@ -112,7 +112,11 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleAction = async (action: GameAction) => {
     if (!gameState || !localPlayer) return;
     
-    // Allow showing cards anytime
+    if (action === 'cancel-action') {
+        handleCancelAction();
+        return;
+    }
+
     if (action === 'show-cards') {
         setGameState({ ...gameState, showCardsDialogForPlayer: localPlayer.id });
         return;
@@ -225,15 +229,26 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     }
   }
 
-  const handleCancelTeleport = () => {
+  const handleCancelAction = () => {
     if (!gameState) return;
+    let toastMessage = "";
+    if (gameState.teleportState) {
+        toastMessage = "Teleport cancelled. You have exited teleport mode.";
+    } else if (gameState.scoutingState) {
+        toastMessage = "Scouting cancelled.";
+    }
+
     setGameState({
       ...gameState,
       teleportState: null,
+      scoutingState: null,
       currentAction: null,
       possibleMoves: [],
     });
-    toast({ title: "Teleport Cancelled", description: "You have exited teleport mode." });
+
+    if (toastMessage) {
+        toast({ title: "Action Cancelled", description: toastMessage });
+    }
   };
 
 
@@ -326,10 +341,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                         <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
                             {teleportState.armyId === null ? 'Teleport: Select an army to move' : 'Teleport: Select a destination tile'}
                         </p>
-                        <Button variant="destructive" size="sm" onClick={handleCancelTeleport}>
-                            <XCircle />
-                            Cancel Teleport
-                        </Button>
                     </div>
                 ) : isScouting && isMyTurn ? (
                     <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>

@@ -4,7 +4,7 @@
 import type { GameAction, GameState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Sword, ShoppingCart, Gem, Anchor, Zap, Album, University } from 'lucide-react';
+import { Shield, Sword, ShoppingCart, Gem, Anchor, Zap, Album, University, XCircle } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 
@@ -25,7 +25,7 @@ type ActionConfig = {
 };
 
 export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration }: ActionsPanelProps) {
-  const { currentPlayerIndex, players, map, currentAction, specialCardsDeck, selectedArmyId } = gameState;
+  const { currentPlayerIndex, players, map, currentAction, specialCardsDeck, selectedArmyId, teleportState, scoutingState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   
   const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
@@ -44,6 +44,8 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !currentPlayer.actionsThisTurn.includes('buy-card');
   const canUpgrade = currentPlayer.resources.iron >= upgradeCost && !currentPlayer.actionsThisTurn.includes('upgrade');
   
+  const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0);
+
   const mainActions: ActionConfig[] = [
     { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasMainActionCompleted, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving." },
     { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || hasMainActionCompleted, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving." },
@@ -135,13 +137,21 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
     <Card>
       <CardHeader className="flex-row items-center justify-between p-4">
         <CardTitle className="text-lg">Actions</CardTitle>
-        <Button size="sm" onClick={() => onAction('end-turn')} disabled={!isMyTurn} className="relative overflow-hidden">
-            <span 
-                className="absolute left-0 top-0 h-full bg-primary/50 transition-all duration-1000 ease-linear"
-                style={{ width: `${isMyTurn ? timerPercentage : 100}%` }}
-            ></span>
-            <span className="relative z-10">End Turn</span>
-        </Button>
+        <div className="flex items-center gap-2">
+            {isCancellableActionInProgress && (
+                 <Button variant="destructive" size="sm" onClick={() => onAction('cancel-action')} disabled={!isMyTurn}>
+                    <XCircle />
+                    Cancel
+                </Button>
+            )}
+            <Button size="sm" onClick={() => onAction('end-turn')} disabled={!isMyTurn} className="relative overflow-hidden">
+                <span 
+                    className="absolute left-0 top-0 h-full bg-primary/50 transition-all duration-1000 ease-linear"
+                    style={{ width: `${isMyTurn ? timerPercentage : 100}%` }}
+                ></span>
+                <span className="relative z-10">End Turn</span>
+            </Button>
+        </div>
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <div className="grid grid-cols-2 grid-rows-2 gap-2">
