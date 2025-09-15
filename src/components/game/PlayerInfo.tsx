@@ -38,7 +38,7 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
             <Badge variant="outline" className={`border-2 ${playerColorMap[player.color]}`}>{player.color.toUpperCase()}</Badge>
           </div>
         </CardHeader>
-        <CardContent className="flex items-center justify-between p-2 pt-0">
+        <CardContent className="flex flex-wrap items-center justify-between gap-y-2 p-2 pt-0">
           <div className="flex items-center gap-3">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -74,7 +74,7 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
                 </TooltipContent>
               </Tooltip>
           </div>
-          <div className="flex gap-2 text-xs">
+          <div className="flex flex-wrap justify-end gap-2 text-xs">
             {Object.entries(player.resources).map(([type, value]) => (
               <div key={type} className="flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5">
                 <ResourceIcon type={type as keyof Player['resources']} className="h-3 w-3 text-muted-foreground" />
