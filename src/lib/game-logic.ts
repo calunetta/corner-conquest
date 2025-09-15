@@ -55,19 +55,33 @@ export function initializeGame(): GameState {
     });
   });
 
-  // Assign types to all non-base islands
+  // --- New Distance-Based Island Generation ---
+  const center = { x: Math.floor(MAP_SIZE / 2), y: Math.floor(MAP_SIZE / 2) };
+
   for (let y = 0; y < MAP_SIZE; y++) {
     for (let x = 0; x < MAP_SIZE; x++) {
       if (map[y][x].type === 'base') continue;
-      
-      let islandType: IslandType = 'resource';
-      const rand = Math.random();
-      // ~62.5% resource, ~25% monster, ~12.5% special (5:2:1 ratio)
-      if (rand < 0.25) { 
-        islandType = 'monster';
-      } else if (rand < 0.25 + 0.125) {
-        islandType = 'special';
+
+      const distance = Math.abs(x - center.x) + Math.abs(y - center.y);
+      let islandType: IslandType;
+
+      // Tiered generation based on distance from center
+      if (distance <= 1) { // Center Zone (distance 0-1)
+        const rand = Math.random();
+        if (rand < 0.5) islandType = 'monster';       // 50% monster
+        else if (rand < 0.75) islandType = 'special'; // 25% special
+        else islandType = 'resource';                 // 25% resource
+      } else if (distance <= 3) { // Mid Zone (distance 2-3)
+        const rand = Math.random();
+        if (rand < 0.3) islandType = 'monster';      // 30% monster
+        else if (rand < 0.35) islandType = 'special'; // 5% special
+        else islandType = 'resource';                // 65% resource
+      } else { // Outer Zone (distance > 3)
+        const rand = Math.random();
+        if (rand < 0.1) islandType = 'monster';      // 10% monster
+        else islandType = 'resource';                // 90% resource
       }
+      
       map[y][x].type = islandType;
 
       if (islandType === 'resource') {
@@ -80,16 +94,15 @@ export function initializeGame(): GameState {
         if (numResourceTypes === 1) {
             const randomIndex = Math.floor(Math.random() * availableResources.length);
             const selectedResourceType = availableResources.splice(randomIndex, 1)[0];
-            islandResources.push({ type: selectedResourceType, amount: 2 });
+            islandResources.push({ type: selectedResourceType, amount: 2 }); // Always 2 spots for single resource
         } else { // numResourceTypes === 2
-            // Select two different resources
             const firstRandomIndex = Math.floor(Math.random() * availableResources.length);
             const firstResourceType = availableResources.splice(firstRandomIndex, 1)[0];
             
             const secondRandomIndex = Math.floor(Math.random() * availableResources.length);
             const secondResourceType = availableResources.splice(secondRandomIndex, 1)[0];
 
-            // For each resource, decide between 1 or 2 spots
+            // Randomize amounts between 1 and 2 for each
             const firstResourceAmount = Math.random() < 0.5 ? 1 : 2;
             const secondResourceAmount = Math.random() < 0.5 ? 1 : 2;
 
