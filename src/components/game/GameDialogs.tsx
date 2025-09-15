@@ -59,7 +59,8 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
         <CardsDialog 
           player={localPlayer}
           onClose={() => handleCloseDialog('showCardsDialogForPlayer')}
-          onUseCard={(cardName) => handleUpdate(GameActions.handleOpenUseCardDialog(gameState, cardName))}
+          onConfirmUse={(cardName) => handleUpdate(GameActions.handleOpenUseCardDialog(gameState, cardName))}
+          onUseCard={(cardName) => handleUpdate(GameActions.handleUseCard(gameState, cardName))}
           canUseCards={isMyTurn}
         />
       )}
