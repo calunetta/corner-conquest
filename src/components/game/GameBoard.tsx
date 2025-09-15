@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import type { GameAction } from '@/lib/types';
@@ -17,6 +18,12 @@ import { startGame } from '@/lib/game-initializer';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
+
+type GameBoardProps = {
+    gameId: string;
+    onExit: () => void;
+};
+
 
 export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const { playerId } = usePlayer();
@@ -45,6 +52,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setTimeLeft(prevTime => {
             if (prevTime <= 1) {
                 clearInterval(timerRef.current!);
+                handleAction('end-turn');
                 return 0;
             }
             return prevTime - 1;
@@ -64,12 +72,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         clearInterval(timerRef.current);
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMyTurn, gameState?.status, gameState?.turn, gameState?.currentPlayerIndex]);
 
   useEffect(() => {
     if (timeLeft === 0 && isMyTurn) {
         toast({ title: "Time's up!", description: "Your turn has ended automatically."});
-        handleAction('end-turn');
     }
   // handleAction is not stable, so we disable the lint rule here.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,7 +92,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         return;
     }
 
-    if (!isMyTurn && action !== 'end-turn') {
+    if (!isMyTurn && !['end-turn', 'show-cards'].includes(action)) {
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
       return;
     }
@@ -93,15 +101,17 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         let newState = { ...gameState };
         
         const selectedArmy = GameActions.getSelectedArmy(newState);
-        if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card'].includes(action)) {
+        if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card', 'show-cards'].includes(action)) {
             toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
             return;
         }
         
         const mainActionCompleted = newState.players[newState.currentPlayerIndex].lastAction !== null;
         if (mainActionCompleted && ['collect', 'position', 'attack', 'move'].includes(action)) {
-            toast({ title: 'Action Limit', description: 'You can only perform one main action (Collect, Position, Attack, or Move) per turn.', variant: 'destructive' });
-            return;
+             if (action !== 'move' || !newState.players[newState.currentPlayerIndex].hasExtraMove) {
+                toast({ title: 'Action Limit', description: 'You can only perform one main action (Collect, Position, Attack, or Move) per turn.', variant: 'destructive' });
+                return;
+            }
         }
 
         switch(action) {
@@ -126,6 +136,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             case 'end-turn':
                 newState = GameActions.handleEndTurn(newState);
                 break;
+            case 'use-card':
+                // This case is handled inside the CardsDialog for now
+                // to open the confirmation dialog
+                break;
             default:
                 newState = { ...newState, currentAction: action };
         }
@@ -137,8 +151,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   
   const handleTileClick = (x: number, y: number) => {
     if (!gameState || !isMyTurn || gameState.status !== 'playing') return;
-    const newState = GameActions.handleTileClick(gameState, x, y);
-    setGameState(newState);
+    try {
+        const newState = GameActions.handleTileClick(gameState, x, y);
+        setGameState(newState);
+    } catch (error: any) {
+        toast({ title: 'Move Error', description: error.message, variant: 'destructive' });
+    }
   };
   
   const handleStartGame = async () => {

@@ -1,3 +1,4 @@
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army } from './types';
@@ -49,9 +50,10 @@ export function handleCollectAction(state: GameState): GameState {
   if (!army) throw new Error("No army selected.");
   if (player.lastAction) throw new Error("You have already performed a main action this turn.");
 
-  const position = player.positions.find(p => p.x === army.position.x && p.y === army.position.y);
-  if (!position) throw new Error("You have no army positioned on this island to collect from.");
+  const positionIndex = player.positions.findIndex(p => p.x === army.position.x && p.y === army.position.y);
+  if (positionIndex === -1) throw new Error("You have no army positioned on this island to collect from.");
 
+  const position = player.positions[positionIndex];
   const tile = map[position.y][position.x];
   const resource = tile.resources.find(r => r.type === position.resource);
   if (!resource) throw new Error("Resource not found on this island.");
@@ -60,6 +62,13 @@ export function handleCollectAction(state: GameState): GameState {
   player.lastAction = 'collect';
   newState.log.push(`${player.name} collected ${resource.amount} ${position.resource}.`);
   
+  // Remove the position after collecting
+  player.positions.splice(positionIndex, 1);
+  if(tile.positionedBy) {
+      tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === position.resource));
+  }
+  newState.log.push(`${player.name}'s army must be repositioned to collect again.`);
+
   return { ...newState, currentAction: null, possibleMoves: [], selectedTile: null };
 }
 
@@ -174,6 +183,7 @@ export function handleEndTurn(state: GameState): GameState {
     const nextPlayer = newState.players[newState.currentPlayerIndex];
     nextPlayer.lastAction = null;
     nextPlayer.actionsThisTurn = [];
+    nextPlayer.hasExtraMove = false; // Ensure extra move is cleared at turn end
     
     newState.log.push(`It's now ${nextPlayer.name}'s turn.`);
     
@@ -198,14 +208,18 @@ export function handleTileClick(state: GameState, x: number, y: number): GameSta
     const armyOnTile = clickedTile.occupants.find(o => o.playerId === currentPlayer.id);
 
     if (selectedArmyId !== null && isPossibleMove) {
+      // Before moving, check if a main action has been taken without an extra move card
+      if (currentPlayer.lastAction && !currentPlayer.hasExtraMove) {
+          return state; // Do nothing, move is not allowed
+      }
       return handleMoveAction(newState, x, y);
     } else if (armyOnTile) {
         newState.selectedArmyId = armyOnTile.armyId;
         newState.selectedTile = {x, y};
         newState.currentAction = 'move';
         
-        // Don't show moves if a main action has already been completed
-        if (currentPlayer.lastAction) {
+        // Don't show moves if a main action has already been completed (and no extra move)
+        if (currentPlayer.lastAction && !currentPlayer.hasExtraMove) {
             newState.possibleMoves = [];
             return newState;
         }
@@ -242,8 +256,8 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     const player = players[currentPlayerIndex];
     const army = getSelectedArmy(newState);
 
+    // This is the critical check. Do not allow move if another main action was already taken.
     if (!army || (player.lastAction && !player.hasExtraMove)) {
-        // Block move if a main action was already taken, unless they have an extra move card active
         return state;
     }
     
@@ -269,7 +283,7 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
       player.victoryPoints += 1;
       newState.log.push(`${player.name} discovered a new island and gains 1 VP!`);
       
-      if (revealedIsland.type === 'special' && player.specialCards.length < 10) {
+      if (revealedIsland.type === 'special' && player.specialCards.length < 10 && specialCardsDeck.length > 0) {
         const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
         const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
         player.specialCards.push(drawnCard);
@@ -277,9 +291,11 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
       }
     }
     
+    // This is the corrected logic for Extra Move
     if (player.hasExtraMove) {
         player.hasExtraMove = false; // Consume extra move
-        newState.log.push(`${player.name} used their Extra Move! They can perform another action.`);
+        newState.log.push(`${player.name} used their Extra Move! They can perform another main action.`);
+        // DO NOT set lastAction, allowing another action
     } else {
         player.lastAction = 'move';
     }
@@ -457,12 +473,11 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
     
     player.actionsThisTurn.push('use-card');
-    // Don't remove the card yet, wait for the action to complete if it has multiple steps
-    
     newState.log.push(`${player.name} used the '${cardName}' card.`);
 
     if (cardName === 'Extra Move') {
         player.hasExtraMove = true;
+        player.lastAction = null; // Allow another action
         player.specialCards.splice(cardIndex, 1); // Consume immediately
     } else if (cardName === 'Steal Resource') {
         newState.stealResourceDialogState = { targetPlayerId: null };
