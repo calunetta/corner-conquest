@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -48,6 +48,14 @@ export function CreateGameDialog({
   const [playerColor, setPlayerColor] = useState<PlayerColor>('blue');
   const [debugMode, setDebugMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    if (maxPlayers === 1) {
+      setDebugMode(true);
+    } else {
+      setDebugMode(false);
+    }
+  }, [maxPlayers]);
 
   const handleSubmit = async () => {
     if (!gameName || isCreating) return;
