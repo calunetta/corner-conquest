@@ -63,6 +63,8 @@ export function handleCollectAction(state: GameState): GameState {
   if(player.productiveActive) {
     newState.log.push(`${player.name} used 'Productive' to collect double!`);
     player.productiveActive = false;
+    const cardIndex = player.specialCards.indexOf('Productive');
+    if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
   }
   
   player.lastAction = 'collect';
@@ -109,6 +111,8 @@ export function handleDeployAction(state: GameState): GameState {
     if(player.efficientActive) {
       newState.log.push(`${player.name} used 'Efficient' for a cheaper deployment!`);
       player.efficientActive = false;
+      const cardIndex = player.specialCards.indexOf('Efficient');
+      if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
     }
     if(player.reinforceActive) {
       newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
@@ -163,6 +167,8 @@ export function handleUpgradeAction(state: GameState): GameState {
     if(player.masterBuilderActive) {
         newState.log.push(`${player.name} used 'Master Builder' for a cheaper upgrade!`);
         player.masterBuilderActive = false;
+        const cardIndex = player.specialCards.indexOf('Master Builder');
+        if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
     }
     player.actionsThisTurn.push('upgrade');
     newState.log.push(`${player.name} upgraded their army's attack power to ${player.attackPower}.`);
@@ -256,19 +262,23 @@ export function handleEndTurn(state: GameState): GameState {
     }
     
     // Determine the next player
-    newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
-    let nextPlayer = newState.players[newState.currentPlayerIndex];
+    let nextPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+    let nextPlayer = newState.players[nextPlayerIndex];
     
     // Handle turn skipping from Sabotage
     if (nextPlayer.isSabotaged) {
         nextPlayer.isSabotaged = false; // Consume the sabotage flag
         newState.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
         
-        // It's important to call handleEndTurn again to pass the turn to the *next* player
-        // But first, we need to reset the current (sabotaged) player's turn state.
+        // Reset the sabotaged player's turn state.
         nextPlayer.lastAction = null;
         nextPlayer.actionsThisTurn = [];
-        return handleEndTurn(newState);
+
+        // Move to the next player
+        newState.currentPlayerIndex = (nextPlayerIndex + 1) % newState.players.length;
+        nextPlayer = newState.players[newState.currentPlayerIndex];
+    } else {
+        newState.currentPlayerIndex = nextPlayerIndex;
     }
     
     // Set up the state for the new turn
@@ -306,6 +316,8 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
         if (scoutingState.count === 0) {
             newState.scoutingState = null;
             newState.log.push(`Scouting complete.`);
+            const cardIndex = currentPlayer.specialCards.indexOf('Scout');
+            if (cardIndex > -1) currentPlayer.specialCards.splice(cardIndex, 1);
         }
         return newState;
     }
@@ -472,6 +484,8 @@ export function handleCombatRoll(state: GameState): GameState {
     if(attacker.warChiefActive) {
         newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
         attacker.warChiefActive = false;
+        const cardIndex = attacker.specialCards.indexOf('War Chief');
+        if (cardIndex > -1) attacker.specialCards.splice(cardIndex, 1);
     }
     const defenderPower = defender.attackPower;
 
@@ -565,6 +579,8 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
         if(attacker.warChiefActive) {
             newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
             attacker.warChiefActive = false;
+            const cardIndex = attacker.specialCards.indexOf('War Chief');
+            if (cardIndex > -1) attacker.specialCards.splice(cardIndex, 1);
         }
 
         const rollDice = (count: number) => Array.from({ length: Math.min(count, 4) }, () => Math.floor(Math.random() * 6) + 1);
@@ -651,8 +667,8 @@ export const handleUseCard = (state: GameState, cardName: string) => {
          return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
     }
 
-    // Defer consuming the card for multi-step actions
-    const deferredCards = ['Extra Move', 'Teleport', 'Reinforce', 'Productive', 'Efficient', 'Master Builder', 'War Chief', 'Sabatoge'];
+    // Defer consuming the card for multi-step actions or actions that can be cancelled.
+    const deferredCards = ['Extra Move', 'Teleport', 'Reinforce', 'Scout', 'Productive', 'Efficient', 'Master Builder', 'War Chief', 'Sabatoge', 'Overcome', 'Decide Dice Roll'];
     if (!deferredCards.includes(cardName)) {
         player.specialCards.splice(cardIndex, 1);
     }
@@ -682,6 +698,7 @@ export const handleUseCard = (state: GameState, cardName: string) => {
             newState.log.push(`${player.name} activated 'Scout'. Click 3 hidden tiles to reveal them.`);
             break;
         case 'Wealthy':
+            // This card opens a dialog. The card is consumed when a resource is selected.
             newState.wealthyDialogState = { isOpen: true };
             break;
         case 'Productive':
@@ -730,6 +747,12 @@ export const handleGainWealth = (state: GameState, resource: ResourceType): Game
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     player.resources[resource] += 5;
+    
+    const cardIndex = player.specialCards.indexOf('Wealthy');
+    if (cardIndex > -1) {
+        player.specialCards.splice(cardIndex, 1);
+    }
+    
     newState.log.push(`${player.name} used 'Wealthy' to gain 5 ${resource}.`);
     return { ...newState, wealthyDialogState: null };
 }
