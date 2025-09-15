@@ -18,8 +18,8 @@ export function unflattenMap(flatMap: Island[], size: number): Island[][] {
   return map;
 }
 
-export function initializeGame(): FirestoreGameState {
-  const map2D: Island[][] = Array.from({ length: MAP_SIZE }, (_, y) =>
+export function initializeGame(): GameState {
+  const map: Island[][] = Array.from({ length: MAP_SIZE }, (_, y) =>
     Array.from({ length: MAP_SIZE }, (_, x) => ({
       id: `${x}-${y}`,
       x,
@@ -28,6 +28,8 @@ export function initializeGame(): FirestoreGameState {
       isHidden: true,
       occupants: [],
       resources: [],
+      positionedBy: [],
+      monsters: [],
     }))
   );
 
@@ -41,8 +43,8 @@ export function initializeGame(): FirestoreGameState {
 
   basePositions.forEach((pos, i) => {
     const initialArmy = { id: 0, position: pos };
-    map2D[pos.y][pos.x] = {
-      ...map2D[pos.y][pos.x],
+    map[pos.y][pos.x] = {
+      ...map[pos.y][pos.x],
       type: 'base',
       owner: i,
       isHidden: false,
@@ -76,7 +78,7 @@ export function initializeGame(): FirestoreGameState {
 
   for (let y = 0; y < MAP_SIZE; y++) {
     for (let x = 0; x < MAP_SIZE; x++) {
-      if (map2D[y][x].type === 'base') continue;
+      if (map[y][x].type === 'base') continue;
 
       const distance = Math.abs(x - center.x) + Math.abs(y - center.y);
       let islandType: IslandType;
@@ -101,7 +103,7 @@ export function initializeGame(): FirestoreGameState {
           islandType = 'monster'; // The very center is always a monster
       }
       
-      map2D[y][x].type = islandType;
+      map[y][x].type = islandType;
 
       if (islandType === 'resource') {
         const resourceTypes: ResourceType[] = ['gems', 'iron', 'food'];
@@ -143,19 +145,19 @@ export function initializeGame(): FirestoreGameState {
             islandResources.push({ type: firstResourceType, amount: firstResourceAmount });
             islandResources.push({ type: secondResourceType, amount: secondResourceAmount });
         }
-        map2D[y][x].resources = islandResources;
+        map[y][x].resources = islandResources;
       }
     }
   }
   
   players.forEach(p => {
     p.armies.forEach(army => {
-        map2D[army.position.y][army.position.x].isHidden = false;
+        map[army.position.y][army.position.x].isHidden = false;
     })
   });
 
   return {
-    map: flattenMap(map2D),
+    map,
     players,
     currentPlayerIndex: 0,
     turn: 1,
@@ -172,6 +174,5 @@ export function initializeGame(): FirestoreGameState {
     showCardsDialog: false,
     stealResourceDialogState: null,
     useCardDialogState: null,
-    mapSize: MAP_SIZE,
   };
 }

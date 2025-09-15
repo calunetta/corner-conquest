@@ -103,7 +103,14 @@ export function GameBoard() {
         } else {
             console.log("No such document! Initializing new game.");
             const newGame = initializeGame();
-            setDoc(gameDocRef, newGame); // This will also trigger the onSnapshot
+            // We don't set local state here, we let the snapshot listener do it
+            const gameDocRef = doc(db, 'games', GAME_ID);
+            const firestoreState: FirestoreGameState = {
+                ...newGame,
+                map: flattenMap(newGame.map),
+                mapSize: newGame.map.length,
+            };
+            setDoc(gameDocRef, firestoreState);
         }
     });
 
@@ -113,9 +120,17 @@ export function GameBoard() {
   
   const updateGameState = async (state: GameState) => {
     const gameDocRef = doc(db, 'games', GAME_ID);
+    
+    // Sanitize state before sending to Firestore
+    const sanitizedMap = state.map.map(row => row.map(tile => ({
+        ...tile,
+        positionedBy: tile.positionedBy || [], // Ensure positionedBy is an array
+        monsters: tile.monsters || [], // Ensure monsters is an array
+    })));
+
     const firestoreState: FirestoreGameState = {
         ...state,
-        map: flattenMap(state.map),
+        map: flattenMap(sanitizedMap),
         mapSize: state.map.length,
     };
     await setDoc(gameDocRef, firestoreState, { merge: true });
@@ -244,7 +259,7 @@ export function GameBoard() {
   const handleUpgradeAction = (state: GameState) => {
     const { currentPlayerIndex, players } = state;
     const player = players[currentPlayerIndex];
-    if (player.resources.iron >= 5) {
+    if (player.resources.iron >= 5 && !player.actionsThisTurn.includes('upgrade')) {
       player.resources.iron -= 5;
       player.attackPower += 1;
       player.actionsThisTurn.push('upgrade');
@@ -254,7 +269,7 @@ export function GameBoard() {
       state.currentAction = null;
       updateGameState(state);
     } else {
-      toast({ title: 'Cannot Upgrade', description: 'Not enough iron.', variant: 'destructive'});
+      toast({ title: 'Cannot Upgrade', description: 'Not enough iron or you already upgraded this turn.', variant: 'destructive'});
       state.currentAction = null;
       updateGameState(state);
     }
@@ -272,7 +287,7 @@ export function GameBoard() {
       return;
     }
 
-    if (player.resources.food >= player.nextArmyCost && player.armyCount < 5) {
+    if (player.resources.food >= player.nextArmyCost && player.armyCount < 5 && !player.actionsThisTurn.includes('deploy')) {
       player.resources.food -= player.nextArmyCost;
       player.armyCount += 1;
       const newArmyId = player.armies.length > 0 ? Math.max(...player.armies.map(a => a.id)) + 1 : 0;
@@ -288,7 +303,7 @@ export function GameBoard() {
       state.currentAction = null;
       updateGameState(state);
     } else {
-      toast({ title: 'Cannot Deploy', description: 'Not enough food or at max army size.', variant: 'destructive'});
+      toast({ title: 'Cannot Deploy', description: 'Not enough food, at max army size, or you already deployed this turn.', variant: 'destructive'});
       state.currentAction = null;
       updateGameState(state);
     }
@@ -305,7 +320,7 @@ export function GameBoard() {
       return;
     }
 
-    if (player.resources.gems >= 10 && specialCardsDeck.length > 0) {
+    if (player.resources.gems >= 10 && specialCardsDeck.length > 0 && !player.actionsThisTurn.includes('buy-card')) {
       player.resources.gems -= 10;
       const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
       const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
@@ -317,7 +332,7 @@ export function GameBoard() {
       state.currentAction = null;
       updateGameState(state);
     } else {
-      toast({ title: 'Cannot Buy Card', description: 'Not enough gems or no cards left in the deck.', variant: 'destructive'});
+      toast({ title: 'Cannot Buy Card', description: 'Not enough gems, no cards left, or you already bought a card this turn.', variant: 'destructive'});
       state.currentAction = null;
       updateGameState(state);
     }
@@ -427,7 +442,7 @@ export function GameBoard() {
     }
     
     const availableResources = tile.resources.filter(resource => {
-      return !tile.positionedBy?.some(p => p.resource === resource.type);
+      return !(tile.positionedBy || []).some(p => p.resource === resource.type);
     });
 
     if (availableResources.length === 0) {
@@ -486,8 +501,9 @@ export function GameBoard() {
     
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
     
+    // Clear all player positions when they move
     newState.map.forEach(row => row.forEach(tile => {
-        tile.positionedBy = tile.positionedBy?.filter(p => p.playerId !== player.id);
+        tile.positionedBy = (tile.positionedBy || []).filter(p => p.playerId !== player.id);
     }));
     player.positions = [];
     
@@ -637,7 +653,7 @@ export function GameBoard() {
     const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
     const loserOccupantInfo = combatTile.occupants.find(o => o.playerId === loserId);
     
-    // This is the fix: find the specific army that lost.
+    // Find the specific army that lost.
     const losingArmy = loser.armies.find(a => a.id === loserOccupantInfo?.armyId);
     
     if (losingArmy) {
@@ -656,7 +672,7 @@ export function GameBoard() {
             const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
             if (positionIndex > -1) {
                 const removedPosition = loser.positions.splice(positionIndex, 1)[0];
-                map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy?.filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
+                map[oldPos.y][oldPos.x].positionedBy = (map[oldPos.y][oldPos.x].positionedBy || []).filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
             }
         }
     }
@@ -747,7 +763,7 @@ export function GameBoard() {
       }
 
       attacker.victoryPoints += monsterVP;
-      currentTile.monsters = currentTile.monsters?.filter(m => !(m.id === monsterCombatState.monster.id && m.level === monsterCombatState.monster.level));
+      currentTile.monsters = (currentTile.monsters || []).filter(m => !(m.id === monsterCombatState.monster.id && m.level === monsterCombatState.monster.level));
       
       const logMsg = `${attacker.name} defeated the level ${monsterCombatState.monster.level} monster and earned ${monsterVP} VP!`;
       newState.log.push(logMsg);
@@ -773,7 +789,7 @@ export function GameBoard() {
           const positionIndex = attacker.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
           if (positionIndex > -1) {
             const removedPosition = attacker.positions.splice(positionIndex, 1)[0];
-            map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x].positionedBy?.filter(p => !(p.playerId === attacker.id && p.resource === removedPosition.resource));
+            map[oldPos.y][oldPos.x].positionedBy = (map[oldPos.y][oldPos.x].positionedBy || []).filter(p => !(p.playerId === attacker.id && p.resource === removedPosition.resource));
           }
       }
 
