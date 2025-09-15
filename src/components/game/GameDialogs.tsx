@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { GameState, Player, ResourceType } from '@/lib/types';
 import { CombatDialog } from './CombatDialog';
@@ -8,6 +9,7 @@ import { CardsDialog } from './CardsDialog';
 import { StealResourceDialog } from './StealResourceDialog';
 import { UseCardDialog } from './UseCardDialog';
 import { HostLeaveDialog } from './HostLeaveDialog';
+import { AbilitiesDialog } from './AbilitiesDialog';
 import * as GameActions from '@/lib/game-actions';
 
 type GameDialogsProps = {
@@ -18,7 +20,7 @@ type GameDialogsProps = {
 };
 
 export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: GameDialogsProps) {
-  const { combatState, monsterCombatState, positionDialogState, showCardsDialogForPlayer, stealResourceDialogState, useCardDialogState, showHostLeaveDialog } = gameState;
+  const { combatState, monsterCombatState, positionDialogState, showCardsDialogForPlayer, stealResourceDialogState, useCardDialogState, showHostLeaveDialog, abilitiesShopState } = gameState;
 
   const handleUpdate = (state: GameState) => {
     setGameState(state);
@@ -81,6 +83,13 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
           onClose={() => handleCloseDialog('showCardsDialogForPlayer')}
           onUseCard={(cardName) => handleUseCardAction(cardName)}
           canUseCards={isMyTurn}
+        />
+      )}
+      {abilitiesShopState?.isOpen && (
+        <AbilitiesDialog
+          player={localPlayer}
+          onClose={() => handleCloseDialog('abilitiesShopState')}
+          onBuyAbility={(abilityName) => handleUpdate(GameActions.handleBuyAbility(gameState, abilityName))}
         />
       )}
       {stealResourceDialogState && isMyTurn && (

@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import type { GameAction } from '@/lib/types';
@@ -116,6 +117,11 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setGameState({ ...gameState, showCardsDialogForPlayer: localPlayer.id });
         return;
     }
+    
+    if (action === 'open-abilities-shop') {
+        setGameState(GameActions.handleOpenAbilitiesShop(gameState));
+        return;
+    }
 
     if (!isMyTurn) {
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
@@ -126,14 +132,14 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         let newState = { ...gameState };
         
         const selectedArmy = GameActions.getSelectedArmy(newState);
-        if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card', 'show-cards'].includes(action)) {
+        if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card', 'show-cards', 'open-abilities-shop'].includes(action)) {
             toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
             return;
         }
         
         if (newState.players[newState.currentPlayerIndex].lastAction !== null && !newState.players[newState.currentPlayerIndex].hasExtraMove) {
              // Allow secondary actions after a main action has been performed
-             if (!['move', 'deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card', 'show-cards'].includes(action)) {
+             if (!['move', 'deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card', 'show-cards', 'open-abilities-shop'].includes(action)) {
                 toast({ title: 'Action Limit', description: 'You can only perform one main action (Collect, Position, Attack, or Move) per turn.', variant: 'destructive' });
                 return;
             }
@@ -340,3 +346,4 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     
 
     
+

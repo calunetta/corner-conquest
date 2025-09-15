@@ -78,6 +78,7 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
         positions: [],
         hasExtraMove: false,
         actionsThisTurn: [],
+        passiveAbilities: { explorer: false, collector: false },
     };
 
     newGameState.players.push(newPlayer);

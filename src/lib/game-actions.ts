@@ -5,9 +5,10 @@
 
 
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { GameState, GameAction, ResourceType, Monster, Army } from './types';
+import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities } from './types';
 import { MAP_SIZE } from './game-logic';
 
 // --- Action Helpers ---
@@ -180,9 +181,48 @@ export function handleAttackAction(state: GameState): GameState {
 }
 
 export function handleEndTurn(state: GameState): GameState {
-    const newState = { ...state };
+    let newState = { ...state };
     let currentPlayer = newState.players[newState.currentPlayerIndex];
     
+    // --- Passive Ability Logic ---
+    if (currentPlayer.passiveAbilities.explorer) {
+        const occupiedIslands = new Set<string>();
+        currentPlayer.armies.forEach(army => {
+            const tile = newState.map[army.position.y][army.position.x];
+            occupiedIslands.add(tile.id);
+        });
+        const vpGained = occupiedIslands.size;
+        if (vpGained > 0) {
+            currentPlayer.victoryPoints += vpGained;
+            newState.log.push(`${currentPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
+        }
+    }
+    
+    if (currentPlayer.passiveAbilities.collector) {
+        let resourcesCollected: Partial<Record<ResourceType, number>> = {};
+        const occupiedIslands = new Set<string>();
+        
+        currentPlayer.armies.forEach(army => {
+            const tile = newState.map[army.position.y][army.position.x];
+            // Prevent collecting from same island multiple times if multiple armies are there
+            if (occupiedIslands.has(tile.id)) return;
+            
+            if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0) {
+                occupiedIslands.add(tile.id);
+                tile.resources.forEach(resource => {
+                    currentPlayer.resources[resource.type] += 1; // Collect 1 of each
+                    resourcesCollected[resource.type] = (resourcesCollected[resource.type] || 0) + 1;
+                });
+            }
+        });
+
+        const collectedStrings = Object.entries(resourcesCollected).map(([type, amount]) => `${amount} ${type}`);
+        if(collectedStrings.length > 0) {
+            newState.log.push(`${currentPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`);
+        }
+    }
+
+
     // This handles the case where the player activates Extra Move but doesn't use it.
     // The flag is simply cleared without penalty.
     if (currentPlayer.hasExtraMove) {
@@ -717,4 +757,30 @@ export async function handleConfirmHostLeave(gameState: GameState, gameId: strin
         });
     }
     onExit();
+}
+
+
+// --- Abilities Shop ---
+export function handleOpenAbilitiesShop(state: GameState): GameState {
+    return { ...state, abilitiesShopState: { isOpen: true } };
+}
+
+export function handleBuyAbility(state: GameState, abilityName: keyof PassiveAbilities): GameState {
+    const newState = { ...state };
+    const player = newState.players[newState.currentPlayerIndex];
+    const cost = 15;
+
+    if (player.resources.gems < cost) {
+        throw new Error("Not enough gems to buy this ability.");
+    }
+
+    if (player.passiveAbilities[abilityName]) {
+        throw new Error("You already have this ability.");
+    }
+
+    player.resources.gems -= cost;
+    player.passiveAbilities[abilityName] = true;
+    newState.log.push(`${player.name} has acquired the '${abilityName.charAt(0).toUpperCase() + abilityName.slice(1)}' passive ability!`);
+
+    return newState;
 }

@@ -1,4 +1,5 @@
 
+
 export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'green' | 'yellow';
@@ -20,6 +21,11 @@ export type Army = {
   position: { x: number; y: number };
 }
 
+export type PassiveAbilities = {
+    explorer: boolean;
+    collector: boolean;
+}
+
 export type Player = {
   id: number; // This is the player's seat index (0-3)
   playerId: string; // This is the unique session ID from usePlayer
@@ -38,6 +44,7 @@ export type Player = {
   hasExtraMove: boolean;
   actionsThisTurn: GameAction[];
   teleportState?: TeleportState | null; 
+  passiveAbilities: PassiveAbilities;
 };
 
 export type Monster = {
@@ -97,6 +104,10 @@ export type TeleportState = {
     armyId: number | null;
 }
 
+export type AbilitiesShopState = {
+    isOpen: boolean;
+}
+
 export type GameState = {
   id: string;
   name: string;
@@ -120,6 +131,7 @@ export type GameState = {
   stealResourceDialogState: StealResourceDialogState | null;
   useCardDialogState: UseCardDialogState | null;
   teleportState: TeleportState | null;
+  abilitiesShopState: AbilitiesShopState | null;
   showHostLeaveDialog?: boolean;
 };
 
@@ -129,7 +141,7 @@ export type FirestoreGameState = Omit<GameState, 'map'> & {
 };
 
 
-export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards' | 'use-card' | 'end-turn' | 'teleport' | 'teleport-initiated';
+export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards' | 'use-card' | 'end-turn' | 'teleport' | 'teleport-initiated' | 'open-abilities-shop' | 'buy-ability';
 
 
     

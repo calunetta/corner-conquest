@@ -1,7 +1,7 @@
 export const BASE_CARDS = [
   'Extra Move', 'Steal Resource', 'Sabatoge', 'Reinforce', 
   'Scout', 'Overcome', 'Wealthy', 'Productive', 'Efficient',
-  'Master Builder', 'War Chief', 'Diplomat', 'Explorer', 'Collector',
+  'Master Builder', 'War Chief', 'Diplomat',
   'Decide Dice Roll', 'Teleport'
 ];
 
@@ -15,8 +15,6 @@ export const SPECIAL_CARDS = [
   'Efficient',
   'Master Builder',
   'War Chief',
-  'Explorer',
-  'Collector',
   'Decide Dice Roll',
   'Scout',
   'Overcome',
@@ -43,8 +41,8 @@ export const SPECIAL_CARD_DESCRIPTIONS: Record<string, string> = {
     'Master Builder': 'Your next upgrade costs 50% less iron.',
     'War Chief': 'Gain +2 attack power for your next battle.',
     'Diplomat': 'Force a truce. No players can attack you for one round.',
-    'Explorer': 'Gain 1 VP for each island you have a unit on.',
-    'Collector': 'Gain 1 resource of each type for each island you have a unit on.',
+    'Explorer': 'Passively gain 1 VP per turn for each island you have a unit on.',
+    'Collector': 'Passively gain 1 resource of each type from each island you have a unit on.',
     'Decide Dice Roll': 'When attacking a monster, choose the value of one of your dice.',
     'Teleport': 'Move one of your armies to any tile on the map.'
 }

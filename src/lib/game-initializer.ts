@@ -1,4 +1,5 @@
 
+
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster } from './types';
 import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
 import { MAP_SIZE } from './game-logic';
@@ -127,6 +128,7 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
       positions: [],
       hasExtraMove: false,
       actionsThisTurn: [],
+      passiveAbilities: { explorer: false, collector: false },
   });
 
   const usedColors = [creator.color];
@@ -170,6 +172,7 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
             positions: [],
             hasExtraMove: false,
             actionsThisTurn: [],
+            passiveAbilities: { explorer: false, collector: false },
         });
     }
   }
@@ -280,7 +283,8 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
     showCardsDialogForPlayer: null,
     stealResourceDialogState: null,
     useCardDialogState: null,
-    teleportDialogState: null,
+    teleportState: null,
+    abilitiesShopState: null,
   };
 }
 

@@ -1,9 +1,10 @@
 
+
 'use client';
 import type { GameAction, GameState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Sword, ShoppingCart, Gem, Anchor, Zap, Album } from 'lucide-react';
+import { Shield, Sword, ShoppingCart, Gem, Anchor, Zap, Album, University } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 
@@ -49,6 +50,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
     { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/5 Iron)`, icon: <Zap />, disabled: !canUpgrade, tooltip: "Spend 5 iron to permanently increase your army's attack power by 1. Can only be done once per turn." },
     { id: 'buy-card', label: 'Buy Card (10 Gems)', icon: <ShoppingCart />, disabled: !canBuyCard, tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn." },
     { id: 'deploy', label: `Deploy (${currentPlayer.resources.food}/${currentPlayer.nextArmyCost} Food)`, icon: <Sword />, disabled: !canDeploy, tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army." },
+    { id: 'open-abilities-shop', label: 'Abilities Shop', icon: <University />, disabled: false, tooltip: "Purchase permanent passive abilities for your empire." },
   ];
   
   const alwaysAvailableActions: ActionConfig[] = [
