@@ -66,9 +66,10 @@ export function initializeGame(): GameState {
       
       let islandType: IslandType = 'resource';
       const rand = Math.random();
-      if (rand < 0.3) {
+      // ~57% resource, ~28.5% monster, ~14.5% special
+      if (rand < 0.285) { 
         islandType = 'monster';
-      } else if (rand < 0.4) {
+      } else if (rand < 0.285 + 0.145) {
         islandType = 'special';
       }
       map[y][x].type = islandType;
@@ -77,7 +78,7 @@ export function initializeGame(): GameState {
         const resourceTypes: ResourceType[] = ['gems', 'iron', 'food'];
         const availableResources = [...resourceTypes];
         
-        const numResourceTypes = Math.random() < 0.7 ? 2 : 1;
+        const numResourceTypes = Math.random() < 0.7 ? 1 : 2;
         
         const islandResources: IslandResource[] = [];
         for(let i = 0; i < numResourceTypes; i++) {

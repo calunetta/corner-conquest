@@ -249,11 +249,6 @@ export function GameBoard() {
       return;
     }
     
-    if (availableResources.length === 1) {
-      handleSelectResourceForPosition(state, availableResources[0].type);
-      return;
-    }
-
     state.positionDialogState = { x, y, resources: availableResources };
     setGameState(state);
   }
@@ -438,27 +433,30 @@ export function GameBoard() {
     if (!gameState || !gameState.combatState) return;
     
     const newState = deepClone(gameState);
-    const { combatState, players, map } = newState;
+    const { combatState, players, map, selectedArmyId } = newState;
     const winnerId = combatState.winnerId;
     const attacker = players[combatState.attackerId];
     const defender = players[combatState.defenderId];
     const loser = winnerId === attacker.id ? defender : attacker;
-    
-    const loserArmyOnTile = map[attacker.armies.find(a=>a.id === newState.selectedArmyId)!.position.y][attacker.armies.find(a=>a.id === newState.selectedArmyId)!.position.x].occupants.find(o => o.playerId === loser.id);
+    const armyOnTile = attacker.armies.find(a => a.id === selectedArmyId);
 
-    if (loserArmyOnTile) {
-      // Find the specific army that lost
-      const losingArmy = loser.armies.find(a => a.id === loserArmyOnTile.armyId);
-      if (losingArmy) {
-          // Move loser's army back to base
-          const baseTile = map.flat().find(t => t.type === 'base' && t.occupants.some(o => o.playerId === loser.id));
-          if (baseTile) {
-              const oldPos = losingArmy.position;
-              map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.playerId !== loser.id || o.armyId !== losingArmy.id);
-              
-              losingArmy.position = {x: baseTile.x, y: baseTile.y};
-              map[baseTile.y][baseTile.x].occupants.push({playerId: loser.id, armyId: losingArmy.id});
-          }
+    if (armyOnTile) {
+      const loserArmyOnTile = map[armyOnTile.position.y][armyOnTile.position.x].occupants.find(o => o.playerId === loser.id);
+
+      if (loserArmyOnTile) {
+        // Find the specific army that lost
+        const losingArmy = loser.armies.find(a => a.id === loserArmyOnTile.armyId);
+        if (losingArmy) {
+            // Move loser's army back to base
+            const baseTile = map.flat().find(t => t.type === 'base' && t.occupants.some(o => o.playerId === loser.id));
+            if (baseTile) {
+                const oldPos = losingArmy.position;
+                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.playerId !== loser.id || o.armyId !== losingArmy.id);
+                
+                losingArmy.position = {x: baseTile.x, y: baseTile.y};
+                map[baseTile.y][baseTile.x].occupants.push({playerId: loser.id, armyId: losingArmy.id});
+            }
+        }
       }
     }
 

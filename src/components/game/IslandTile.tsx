@@ -47,7 +47,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
 
   const renderResourceIcons = (resources: IslandResource[]) => {
     return resources.map((resource, index) => (
-      <div key={`resource-row-${index}`} className="flex items-center justify-center gap-1">
+      <div key={`resource-row-${index}`} className={cn("flex items-center gap-1", resource.amount === 1 ? 'justify-start' : 'justify-center', 'w-full')}>
         {Array.from({ length: resource.amount }).map((_, i) => (
           <ResourceIcon key={`${resource.type}-${i}`} type={resource.type} className="h-4 w-4 text-accent" />
         ))}
@@ -58,7 +58,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const renderMonsterIcons = () => {
     if (!island.monsters) return null;
     return island.monsters.map((monster, i) => (
-      <div key={`monster-row-${i}`} className="flex items-center justify-center gap-1">
+      <div key={`monster-row-${i}`} className="flex w-full items-center justify-between gap-1">
         <MonsterIcon level={monster.level} className="h-5 w-5" />
         <span className="text-xs font-bold text-destructive">Lvl: {monster.level}</span>
       </div>
@@ -127,7 +127,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         ))}
       </div>
       
-      <div className="h-full w-full">{getIcon()}</div>
+      <div className="h-full w-full p-1">{getIcon()}</div>
 
       <div className="absolute inset-0">
         {positionedBy.map(pos => {
