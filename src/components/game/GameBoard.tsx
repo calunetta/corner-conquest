@@ -103,7 +103,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         return;
     }
 
-    if (!isMyTurn && !['end-turn', 'show-cards'].includes(action)) {
+    if (!isMyTurn) {
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
       return;
     }
