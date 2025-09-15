@@ -30,6 +30,14 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
   const selectedArmy = GameActions.getSelectedArmy(gameState);
   const currentTileForMonster = selectedArmy ? gameState.map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
+  const handleUseCardAction = (cardName: string) => {
+    if (cardName === 'Steal Resource') {
+        handleUpdate({...gameState, stealResourceDialogState: { targetPlayerId: null } });
+    } else {
+        handleUpdate(GameActions.handleOpenUseCardDialog(gameState, cardName));
+    }
+  }
+
   return (
     <>
       {combatState && (
@@ -59,8 +67,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
         <CardsDialog 
           player={localPlayer}
           onClose={() => handleCloseDialog('showCardsDialogForPlayer')}
-          onConfirmUse={(cardName) => handleUpdate(GameActions.handleOpenUseCardDialog(gameState, cardName))}
-          onUseCard={(cardName) => handleUpdate(GameActions.handleUseCard(gameState, cardName))}
+          onUseCard={(cardName) => handleUseCardAction(cardName)}
           canUseCards={isMyTurn}
         />
       )}

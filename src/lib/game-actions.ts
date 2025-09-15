@@ -476,20 +476,15 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
     
     player.actionsThisTurn.push('use-card');
+    player.specialCards.splice(cardIndex, 1); // Consume the card
     newState.log.push(`${player.name} used the '${cardName}' card.`);
 
     if (cardName === 'Extra Move') {
         player.hasExtraMove = true;
         player.lastAction = null; // CRITICAL: Reset the last action to allow another one.
-        player.specialCards.splice(cardIndex, 1); // Consume immediately
         newState.log.push(`${player.name} can now perform another main action this turn.`);
-    } else if (cardName === 'Steal Resource') {
-        newState.stealResourceDialogState = { targetPlayerId: null };
-        // Card will be consumed in handleStealResource
-    } else {
-        // For other instant-use cards, consume them here
-        player.specialCards.splice(cardIndex, 1);
     }
+    // Other instant-use cards would have their logic here.
     
     return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
 };
@@ -506,8 +501,13 @@ export const handleStealResource = (state: GameState, targetPlayerId: number, re
     const cardIndex = currentPlayer.specialCards.indexOf('Steal Resource');
     if (cardIndex > -1) {
         currentPlayer.specialCards.splice(cardIndex, 1);
+    } else {
+        // This case should not happen if the dialog flow is correct
+        newState.log.push(`Error: ${currentPlayer.name} tried to steal without the card.`);
+        return { ...newState, stealResourceDialogState: null };
     }
 
+    currentPlayer.actionsThisTurn.push('use-card');
     const stolenAmount = Math.min(targetPlayer.resources[resource], 2);
 
     if (stolenAmount > 0) {

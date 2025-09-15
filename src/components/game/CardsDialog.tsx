@@ -18,11 +18,10 @@ type CardsDialogProps = {
   player: Player;
   onClose: () => void;
   onUseCard: (cardName: string) => void;
-  onConfirmUse: (cardName: string) => void;
   canUseCards: boolean;
 };
 
-export function CardsDialog({ player, onClose, onUseCard, onConfirmUse, canUseCards }: CardsDialogProps) {
+export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDialogProps) {
   const cardCounts = player.specialCards.reduce((acc, card) => {
     acc[card] = (acc[card] || 0) + 1;
     return acc;
@@ -33,11 +32,7 @@ export function CardsDialog({ player, onClose, onUseCard, onConfirmUse, canUseCa
   const canUseCardAbility = canUseCards && !player.actionsThisTurn.includes('use-card');
   
   const handleUseCard = (cardName: string) => {
-    if (cardName === 'Steal Resource') {
-        onUseCard(cardName);
-    } else {
-        onConfirmUse(cardName);
-    }
+    onUseCard(cardName);
     onClose();
   }
 
