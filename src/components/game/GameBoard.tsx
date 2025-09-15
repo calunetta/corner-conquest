@@ -53,7 +53,7 @@ export function GameBoard() {
     }
     
     if (action === 'position') {
-      handlePositionAction(newState, selectedArmy!.position.x, selectedArmy!.position.y);
+      handlePositionAction(newState);
     } else if (action === 'collect') {
       handleCollectAction(newState);
     } else if (action === 'deploy') {
@@ -218,9 +218,14 @@ export function GameBoard() {
     }
   };
 
-  const handlePositionAction = (state: GameState, x: number, y: number) => {
-    const player = state.players[state.currentPlayerIndex];
-    const tile = state.map[y][x];
+  const handlePositionAction = (state: GameState) => {
+    const { selectedArmyId, players, currentPlayerIndex, map } = state;
+    const player = players[currentPlayerIndex];
+    const army = player.armies.find(a => a.id === selectedArmyId);
+
+    if (!army) return;
+
+    const tile = map[army.position.y][army.position.x];
 
     if ((tile.type !== 'resource' && tile.type !== 'base') || tile.resources.length === 0) {
         toast({ title: 'Cannot Position', description: 'You can only position on an island with resources.', variant: 'destructive'});
@@ -229,8 +234,8 @@ export function GameBoard() {
         return;
     }
     
-    if (player.positions.some(p => p.x === x && p.y === y)) {
-      toast({ title: 'Already Positioned', description: `You already have an army positioned at ${x},${y}.`, variant: 'destructive'});
+    if (player.positions.some(p => p.x === army.position.x && p.y === army.position.y)) {
+      toast({ title: 'Already Positioned', description: `You already have an army positioned at ${army.position.x},${army.position.y}.`, variant: 'destructive'});
       state.currentAction = null;
       setGameState(state);
       return;
@@ -248,7 +253,7 @@ export function GameBoard() {
       return;
     }
     
-    state.positionDialogState = { x, y, resources: availableResources };
+    state.positionDialogState = { x: army.position.x, y: army.position.y, resources: availableResources };
     setGameState(state);
   }
 
@@ -257,7 +262,7 @@ export function GameBoard() {
     const player = state.players[currentPlayerIndex];
     const army = player.armies.find(a => a.id === selectedArmyId);
 
-    if (!army) {
+    if (!army || !positionDialogState) {
         state.positionDialogState = null;
         state.currentAction = null;
         setGameState(state);
@@ -445,7 +450,7 @@ export function GameBoard() {
     const attackingArmy = attacker.armies.find(a => a.id === selectedArmyId);
 
     if (attackingArmy) {
-      const tile = map[attackingArmy.position.y][attackingArmy.position.y];
+      const tile = map[attackingArmy.position.y][attackingArmy.position.x];
       const loserOccupant = tile.occupants.find(o => o.playerId === loserId);
 
       if (loserOccupant) {
@@ -454,12 +459,11 @@ export function GameBoard() {
             const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
             if (baseTile) {
                 const oldPos = losingArmy.position;
-                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.playerId !== loserId || o.armyId !== losingArmy.id);
+                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.playerId === loserId && o.armyId === losingArmy.id);
                 
                 losingArmy.position = {x: baseTile.x, y: baseTile.y};
                 map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
                 
-                // Clear positions for the moved army
                 const positionIndex = loser.positions.findIndex(p => p.x === oldPos.x && p.y === oldPos.y);
                 if (positionIndex > -1) {
                     const removedPosition = loser.positions.splice(positionIndex, 1)[0];
@@ -550,7 +554,7 @@ export function GameBoard() {
       const baseTile = map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
       if (baseTile) {
           const oldPos = army.position;
-          map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.playerId !== attacker.id || o.armyId !== army.id);
+          map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.playerId === attacker.id && o.armyId === army.id);
           
           army.position = {x: baseTile.x, y: baseTile.y};
           map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: army.id});
@@ -644,10 +648,16 @@ export function GameBoard() {
       {positionDialogState && (
         <PositionDialog 
           resources={positionDialogState.resources}
-          onSelect={(resource) => handleSelectResourceForPosition(deepClone(gameState), resource)}
+          onSelect={(resource) => {
+            const newState = deepClone(gameState);
+            handleSelectResourceForPosition(newState, resource)
+            setGameState(newState);
+          }}
           onClose={() => setGameState(prev => prev ? {...prev, positionDialogState: null, currentAction: null} : null)}
         />
       )}
     </div>
   );
 }
+
+    
