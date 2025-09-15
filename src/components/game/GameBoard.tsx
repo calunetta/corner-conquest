@@ -112,15 +112,17 @@ export function GameBoard() {
         };
         setDoc(gameDocRef, firestoreState);
       }
+    }, (error) => {
+        console.error("Firestore snapshot error:", error);
+        toast({ title: 'Connection Error', description: 'Could not connect to the game session.', variant: 'destructive'});
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
   
   const updateGameState = async (state: GameState) => {
     const gameDocRef = doc(db, 'games', GAME_ID);
     
-    // Sanitize the map to ensure 'positionedBy' and 'monsters' are always arrays
     const sanitizedMap = state.map.map(row => row.map(tile => ({
         ...tile,
         positionedBy: tile.positionedBy || [],
@@ -818,7 +820,7 @@ export function GameBoard() {
     updateGameState(newState);
   }
 
-  const endTurn = () => {
+  const handleEndTurn = () => {
     if (!gameState) return;
     const state = JSON.parse(JSON.stringify(gameState));
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
@@ -844,10 +846,6 @@ export function GameBoard() {
     updateGameState(state);
   }
 
-  const handleEndTurn = () => {
-    endTurn();
-  }
-
   if (!gameState) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
@@ -863,7 +861,7 @@ export function GameBoard() {
   const currentTileForMonster = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
   return (
-    <div className="relative flex w-full flex-col gap-4 p-4">
+    <div className="relative flex h-screen w-full flex-col gap-4 overflow-auto p-4">
       <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen} className="w-full">
         <div className="flex items-center justify-between rounded-md bg-muted/50 p-2">
             <h2 className="text-lg font-semibold">Player Information</h2>
@@ -968,3 +966,5 @@ export function GameBoard() {
     </div>
   );
 }
+
+    
