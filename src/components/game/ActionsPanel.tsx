@@ -3,6 +3,7 @@ import type { GameAction, GameState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Sword, ShoppingCart, Gem, Anchor, Zap, Album } from 'lucide-react';
+import { Separator } from '../ui/separator';
 
 type ActionsPanelProps = {
   onAction: (action: GameAction) => void;
@@ -18,21 +19,24 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
   const currentTile = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
   const canCollect = selectedArmy && currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y);
-  const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.x === army.position.x && p.y === army.position.y);
+  const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.x === selectedArmy!.position.x && p.y === selectedArmy!.position.y);
   const canAttack = selectedArmy && currentTile && (currentTile.occupants.length > 1 || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
   const canDeploy = currentPlayer.resources.food >= currentPlayer.nextArmyCost && currentPlayer.armyCount < 5 && !currentPlayer.actionsThisTurn.includes('deploy');
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !currentPlayer.actionsThisTurn.includes('buy-card');
   const canUpgrade = currentPlayer.resources.iron >= 5 && !currentPlayer.actionsThisTurn.includes('upgrade');
   const canUseCard = !currentPlayer.actionsThisTurn.includes('use-card');
 
-  const actions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean, className?: string }[] = [
-    { id: 'collect', label: 'Collect', icon: <Gem className="mr-2 h-4 w-4" />, disabled: !canCollect || lastAction !== null },
-    { id: 'attack', label: 'Attack', icon: <Shield className="mr-2 h-4 w-4" />, disabled: !canAttack || lastAction !== null },
-    { id: 'position', label: 'Position', icon: <Anchor className="mr-2 h-4 w-4" />, disabled: !canPosition || lastAction !== null },
-    { id: 'upgrade', label: 'Upgrade (5 Iron)', icon: <Zap className="mr-2 h-4 w-4" />, disabled: !canUpgrade },
-    { id: 'buy-card', label: 'Buy Card (10 Gems)', icon: <ShoppingCart className="mr-2 h-4 w-4" />, disabled: !canBuyCard },
-    { id: 'deploy', label: `Deploy (${currentPlayer.nextArmyCost} Food)`, icon: <Sword className="mr-2 h-4 w-4" />, disabled: !canDeploy },
-    { id: 'show-cards', label: 'Show Cards', icon: <Album className="mr-2 h-4 w-4" />, disabled: !canUseCard },
+  const mainActions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
+    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || (lastAction !== null && lastAction !== 'move') },
+    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || (lastAction !== null && lastAction !== 'move') },
+    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || (lastAction !== null && lastAction !== 'move') },
+  ];
+
+  const secondaryActions: { id: GameAction; label: string; icon: React.ReactNode, disabled?: boolean }[] = [
+    { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/5 Iron)`, icon: <Zap />, disabled: !canUpgrade },
+    { id: 'buy-card', label: 'Buy Card (10 Gems)', icon: <ShoppingCart />, disabled: !canBuyCard },
+    { id: 'deploy', label: `Deploy (${currentPlayer.resources.food}/${currentPlayer.nextArmyCost} Food)`, icon: <Sword />, disabled: !canDeploy },
+    { id: 'show-cards', label: 'Show Cards', icon: <Album />, disabled: false },
   ];
 
   return (
@@ -40,19 +44,36 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
       <CardHeader>
         <CardTitle>Actions</CardTitle>
       </CardHeader>
-      <CardContent className="grid grid-cols-2 gap-2">
-        {actions.map((action) => (
-          <Button
-            key={action.id}
-            variant={currentAction === action.id ? 'default' : 'outline'}
-            onClick={() => onAction(action.id)}
-            disabled={action.disabled || (lastAction !== null && !['move', 'show-cards'].includes(action.id))}
-            className={`flex h-auto min-h-12 flex-col items-center justify-center gap-1 p-2 text-center text-xs sm:flex-row sm:text-sm ${action.className || ''}`}
-          >
-            {action.icon}
-            <span className="whitespace-normal">{action.label}</span>
-          </Button>
-        ))}
+      <CardContent className="flex flex-col gap-2">
+        <div className="grid grid-cols-2 grid-rows-2 gap-2">
+            {mainActions.map((action) => (
+                <Button
+                    key={action.id}
+                    variant={currentAction === action.id ? 'default' : 'outline'}
+                    onClick={() => onAction(action.id)}
+                    disabled={action.disabled}
+                    className="flex h-16 flex-col items-center justify-center gap-1 p-2 text-center"
+                >
+                    {action.icon}
+                    <span className="whitespace-normal text-sm">{action.label}</span>
+                </Button>
+            ))}
+        </div>
+        <Separator className="my-2" />
+        <div className="grid grid-cols-2 gap-2">
+            {secondaryActions.map((action) => (
+                <Button
+                    key={action.id}
+                    variant={currentAction === action.id ? 'default' : 'outline'}
+                    onClick={() => onAction(action.id)}
+                    disabled={action.disabled}
+                    className="flex h-auto min-h-12 flex-col items-center justify-center gap-1 p-2 text-center text-xs sm:flex-row sm:text-sm"
+                >
+                    {action.icon}
+                    <span className="whitespace-normal">{action.label}</span>
+                </Button>
+            ))}
+        </div>
       </CardContent>
     </Card>
   );
