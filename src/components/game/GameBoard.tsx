@@ -82,6 +82,17 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   // handleAction is not stable, so we disable the lint rule here.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, isMyTurn]);
+
+  // Effect to show teleport instructions via toast
+  useEffect(() => {
+    if (gameState?.teleportState && isMyTurn) {
+      if (gameState.teleportState.armyId === null) {
+        toast({ title: 'Teleport: Step 1', description: 'Select an army on the map to teleport.' });
+      } else {
+        toast({ title: 'Teleport: Step 2', description: 'Now, select any destination tile on the map.' });
+      }
+    }
+  }, [gameState?.teleportState, isMyTurn, toast]);
   
   const handleAction = async (action: GameAction) => {
     if (!gameState || !localPlayer) return;
@@ -273,7 +284,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
               <>
                 {isTeleporting ? (
                      <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
-                        {teleportState?.armyId === null ? 'Teleport: Select an army to move.' : 'Teleport: Select a destination tile.'}
+                        Teleport Mode Active
                     </p>
                 ) : (
                     <>
