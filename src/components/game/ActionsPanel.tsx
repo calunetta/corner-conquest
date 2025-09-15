@@ -2,7 +2,7 @@
 import type { GameAction, GameState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Sword, ShoppingCart, Gem, Anchor, Zap } from 'lucide-react';
+import { Shield, Sword, ShoppingCart, Gem, Anchor, Zap, Album } from 'lucide-react';
 
 type ActionsPanelProps = {
   onAction: (action: GameAction) => void;
@@ -31,6 +31,7 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
     { id: 'upgrade', label: 'Upgrade (5 Iron)', icon: <Zap className="mr-2 h-4 w-4" />, disabled: !canUpgrade, className: 'col-span-2' },
     { id: 'buy-card', label: 'Buy Card (10 Gems)', icon: <ShoppingCart className="mr-2 h-4 w-4" />, disabled: !canBuyCard, className: 'col-span-2' },
     { id: 'deploy', label: `Deploy (${currentPlayer.nextArmyCost} Food)`, icon: <Sword className="mr-2 h-4 w-4" />, disabled: !canDeploy, className: 'col-span-2' },
+    { id: 'show-cards', label: 'Show Cards', icon: <Album className="mr-2 h-4 w-4" />, disabled: false, className: 'col-span-2' },
   ];
 
   return (
@@ -44,7 +45,7 @@ export function ActionsPanel({ onAction, gameState }: ActionsPanelProps) {
             key={action.id}
             variant={currentAction === action.id ? 'default' : 'outline'}
             onClick={() => onAction(action.id)}
-            disabled={action.disabled || (lastAction !== null && action.id !== 'move')}
+            disabled={action.disabled || (lastAction !== null && action.id !== 'move' && action.id !== 'show-cards')}
             className={`flex h-12 flex-col justify-center gap-1 px-2 text-xs sm:flex-row sm:text-sm ${action.className || ''}`}
           >
             {action.icon}

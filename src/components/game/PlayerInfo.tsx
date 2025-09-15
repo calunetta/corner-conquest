@@ -1,8 +1,9 @@
+'use client';
 import type { Player } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ResourceIcon } from '@/components/icons';
-import { Award, Swords, Zap } from 'lucide-react';
+import { Award, Swords, Zap, Album } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type PlayerInfoProps = {
@@ -68,6 +69,10 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
                 <span className="font-semibold">{value}</span>
               </div>
             ))}
+             <div className="flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5">
+                <Album className="h-3 w-3 text-muted-foreground" />
+                <span className="font-semibold">{player.specialCards.length}</span>
+              </div>
           </div>
         </CardContent>
       </Card>

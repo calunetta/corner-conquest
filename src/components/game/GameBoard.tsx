@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { CombatDialog } from './CombatDialog';
 import { MonsterCombatDialog } from './MonsterCombatDialog';
 import { PositionDialog } from './PositionDialog';
+import { CardsDialog } from './CardsDialog';
 
 
 function deepClone<T>(obj: T): T {
@@ -97,7 +98,7 @@ export function GameBoard() {
     const newState = deepClone(gameState);
     newState.currentAction = action;
 
-    if (!selectedArmy && action !== 'deploy' && action !== 'buy-card' && action !== 'upgrade') {
+    if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'show-cards'].includes(action)) {
         toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
         newState.currentAction = null;
         setGameState(newState);
@@ -116,6 +117,8 @@ export function GameBoard() {
       handleUpgradeAction(newState);
     } else if (action === 'attack') {
       handleAttackAction(newState);
+    } else if (action === 'show-cards') {
+        newState.showCardsDialog = true;
     }
     
     setGameState(newState);
@@ -483,6 +486,7 @@ export function GameBoard() {
     
     if (attackingArmy) {
       const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
+      
       const loserOccupant = combatTile.occupants.find(o => o.playerId === loserId);
 
       if (loserOccupant) {
@@ -493,6 +497,7 @@ export function GameBoard() {
                 const oldPos = losingArmy.position;
                 
                 map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.playerId === loserId && o.armyId === losingArmy.id));
+
                 losingArmy.position = {x: baseTile.x, y: baseTile.y};
                 map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
                 
@@ -644,7 +649,7 @@ export function GameBoard() {
     );
   }
 
-  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, monsterCombatState, positionDialogState, selectedArmyId } = gameState;
+  const { players, currentPlayerIndex, map, log, currentAction, possibleMoves, selectedTile, combatState, monsterCombatState, positionDialogState, showCardsDialog, selectedArmyId } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const currentTileForMonster = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
@@ -692,6 +697,12 @@ export function GameBoard() {
             setGameState(newState);
           }}
           onClose={() => setGameState(prev => prev ? {...prev, positionDialogState: null, currentAction: null} : null)}
+        />
+      )}
+       {showCardsDialog && (
+        <CardsDialog 
+          player={currentPlayer}
+          onClose={() => setGameState(prev => prev ? {...prev, showCardsDialog: false, currentAction: null} : null)}
         />
       )}
     </div>

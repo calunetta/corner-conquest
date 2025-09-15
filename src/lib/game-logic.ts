@@ -1,13 +1,8 @@
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource } from './types';
+import { SPECIAL_CARDS } from './card-data';
 
 const MAP_SIZE = 7;
 const PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
-const SPECIAL_CARDS = [
-  'Extra Move', 'Steal Resource', 'Extra VP', 'Sabatoge', 'Reinforce', 
-  'Scout', 'Overcome', 'Wealthy', 'Productive', 'Efficient',
-  'Master Builder', 'War Chief', 'Diplomat', 'Explorer', 'Collector'
-];
-
 
 export function initializeGame(): GameState {
   const map: Island[][] = Array.from({ length: MAP_SIZE }, (_, y) =>
@@ -55,7 +50,7 @@ export function initializeGame(): GameState {
       nextArmyCost: 5,
       victoryPoints: 0,
       lastAction: null,
-      specialCards: [],
+      specialCards: ['Extra Move', 'Steal Resource', 'Extra Move'], // Mock cards
       positions: [],
     });
   });
@@ -109,12 +104,13 @@ export function initializeGame(): GameState {
     log: ['Game started!'],
     winner: null,
     selectedTile: null,
-    selectedArmyId: null,
+    selectedArmyId: 0, // Pre-select the first army
     possibleMoves: [],
     currentAction: null,
     specialCardsDeck: [...SPECIAL_CARDS],
     combatState: null,
     monsterCombatState: null,
     positionDialogState: null,
+    showCardsDialog: false,
   };
 }
