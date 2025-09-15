@@ -625,11 +625,11 @@ export function handleCloseCombat(state: GameState): GameState {
 
 export function handleMonsterCombatRoll(state: GameState, monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean): GameState {
     const newState = { ...state };
-    const { players, currentPlayerIndex } = newState;
+    const { players, currentPlayerIndex, map } = newState;
     const attacker = players[currentPlayerIndex];
+    const attackingArmy = getSelectedArmy(newState);
+    if (!attackingArmy) return newState;
 
-    let attackerScore = 0;
-    let monsterScore = 0;
     let attackerRolls: number[] = [];
     let monsterRolls: number[] = [];
     let winnerId: number | null = null;
@@ -645,10 +645,13 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
             newState.log.push(`${attacker.name} used the 'Overcome' card to win automatically!`);
             winnerId = attacker.id;
             cardUsedThisAction = true;
+        } else {
+            // This case should not happen if UI is correct, but as a fallback:
+            winnerId = null; 
         }
     }
 
-    if (!winnerId) { // If not an auto-win
+    if (winnerId === null) { // If not an auto-win
         let attackerPower = attacker.attackPower;
         
         if (useWarChief && canUseCard && !cardUsedThisAction) {
@@ -668,7 +671,7 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
                 attacker.specialCards.splice(cardIndex, 1);
                 attacker.actionsThisTurn.push('use-card');
                 newState.log.push(`${attacker.name} used the 'Decide Dice Roll' card!`);
-                cardUsedThisAction = true; // Mark as used
+                cardUsedThisAction = true;
             } else {
                 useDecideCard = false; // Card not found
             }
@@ -682,10 +685,39 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
         if(useDecideCard) attackerRolls[0] = decidedValue; 
 
         monsterRolls = rollDice(monster.level);
-        attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
-        monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
+        const attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
+        const monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
         winnerId = attackerScore >= monsterScore ? attacker.id : null;
     }
+    
+    // --- Process Combat Outcome Immediately ---
+    const currentTile = map[attackingArmy.position.y][attackingArmy.position.x];
+    if (winnerId === attacker.id) {
+        const monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
+        attacker.victoryPoints += monsterVP;
+        currentTile.monsters = (currentTile.monsters || []).filter(m => m.id !== monster.id);
+        newState.log.push(`${attacker.name} defeated the monster for ${monsterVP} VP!`);
+        
+        if (currentTile.monsters?.length === 0) {
+          currentTile.type = 'resource';
+          const resourceTypes: ResourceType[] = ['food', 'iron', 'gems'];
+          const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+          currentTile.resources.push({ type: randomResource, amount: 1});
+          newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
+        }
+    } else {
+      const baseTile = map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
+      if (baseTile) {
+          const oldPos = attackingArmy.position;
+          map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== attackingArmy.id);
+          attackingArmy.position = {x: baseTile.x, y: baseTile.y};
+          map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
+      }
+      newState.log.push(`${attacker.name} was defeated by the monster!`);
+    }
+
+    attacker.lastAction = 'attack';
+    // --- End of Outcome Processing ---
 
 
     newState.monsterCombatState = {
@@ -702,42 +734,9 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
 };
 
 export function handleCloseMonsterCombat(state: GameState): GameState {
-    const newState = { ...state };
-    const { monsterCombatState, players, map } = newState;
-    if (!monsterCombatState) return { ...newState, monsterCombatState: null, currentAction: null };
-
-    const attacker = players.find(p => p.id === monsterCombatState.attackerId);
-    const attackingArmy = getSelectedArmy(newState);
-    if (!attacker || !attackingArmy) return { ...newState, monsterCombatState: null, currentAction: null };
-    
-    const currentTile = map[attackingArmy.position.y][attackingArmy.position.x];
-
-    if (monsterCombatState.winnerId === attacker.id) {
-      const monsterVP = [0, 2, 5, 7, 10][monsterCombatState.monster.level] || 0;
-      attacker.victoryPoints += monsterVP;
-      currentTile.monsters = (currentTile.monsters || []).filter(m => m.id !== monsterCombatState.monster.id);
-      newState.log.push(`${attacker.name} defeated the monster for ${monsterVP} VP!`);
-      
-      if (currentTile.monsters?.length === 0) {
-        currentTile.type = 'resource';
-        const resourceTypes: ResourceType[] = ['food', 'iron', 'gems'];
-        const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
-        currentTile.resources.push({ type: randomResource, amount: 1});
-        newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
-      }
-    } else {
-      const baseTile = map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
-      if (baseTile) {
-          const oldPos = attackingArmy.position;
-          map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== attackingArmy.id);
-          attackingArmy.position = {x: baseTile.x, y: baseTile.y};
-          map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
-      }
-      newState.log.push(`${attacker.name} was defeated by the monster!`);
-    }
-    
-    attacker.lastAction = 'attack';
-    return { ...newState, monsterCombatState: null, currentAction: null };
+    // This function now only clears the state after the results have been shown.
+    // The actual outcome is processed in handleMonsterCombatRoll.
+    return { ...state, monsterCombatState: null, currentAction: null };
 }
 
 export const handleOpenUseCardDialog = (state: GameState, cardName: string) => {
