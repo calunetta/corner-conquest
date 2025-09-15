@@ -1,3 +1,4 @@
+
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster } from './types';
 import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
 import { MAP_SIZE } from './game-logic';
@@ -159,7 +160,7 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
             color: botColor,
             isBot: true,
             armies: [botArmy],
-            resources: { gems: 0, iron: 0, food: 0 },
+            resources: debugMode ? { gems: 20, iron: 20, food: 20 } : { gems: 0, iron: 0, food: 0 },
             armyCount: 1,
             attackPower: 0,
             nextArmyCost: 5,
@@ -290,3 +291,5 @@ export function startGame(gameState: GameState, hostName: string): GameState {
     newState.log.push(`${hostName} has started the game! It's now ${newState.players[0].name}'s turn.`);
     return newState;
 }
+
+    
