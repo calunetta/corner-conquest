@@ -36,9 +36,13 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const canCollect = selectedArmy && currentPlayer.positions.some(p => p.x === selectedArmy.position.x && p.y === selectedArmy.position.y);
   const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.x === selectedArmy!.position.x && p.y === selectedArmy!.position.y);
   const canAttack = selectedArmy && currentTile && (currentTile.occupants.length > 1 || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
-  const canDeploy = (currentPlayer.resources.food >= currentPlayer.nextArmyCost || currentPlayer.reinforceActive) && currentPlayer.armyCount < 5 && !currentPlayer.actionsThisTurn.includes('deploy');
+  
+  const upgradeCost = currentPlayer.masterBuilderActive ? 3 : 6;
+  const deployCost = currentPlayer.efficientActive ? Math.ceil(currentPlayer.nextArmyCost / 2) : currentPlayer.nextArmyCost;
+
+  const canDeploy = (currentPlayer.resources.food >= deployCost || currentPlayer.reinforceActive) && currentPlayer.armyCount < 5 && !currentPlayer.actionsThisTurn.includes('deploy');
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !currentPlayer.actionsThisTurn.includes('buy-card');
-  const canUpgrade = currentPlayer.resources.iron >= 6 && !currentPlayer.actionsThisTurn.includes('upgrade');
+  const canUpgrade = currentPlayer.resources.iron >= upgradeCost && !currentPlayer.actionsThisTurn.includes('upgrade');
   
   const mainActions: ActionConfig[] = [
     { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasMainActionCompleted, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving." },
@@ -47,9 +51,9 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   ];
 
   const secondaryActions: ActionConfig[] = [
-    { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/6 Iron)`, icon: <Zap />, disabled: !canUpgrade, tooltip: "Spend 6 iron to permanently increase your army's attack power by 1. Can only be done once per turn." },
+    { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/${upgradeCost} Iron)`, icon: <Zap />, disabled: !canUpgrade, tooltip: "Spend iron to permanently increase your army's attack power by 1. Can only be done once per turn." },
     { id: 'buy-card', label: 'Buy Card (10 Gems)', icon: <ShoppingCart />, disabled: !canBuyCard, tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn." },
-    { id: 'deploy', label: `Deploy (${currentPlayer.resources.food}/${currentPlayer.nextArmyCost} Food)`, icon: <Sword />, disabled: !canDeploy, tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army." },
+    { id: 'deploy', label: `Deploy (${currentPlayer.resources.food}/${deployCost} Food)`, icon: <Sword />, disabled: !canDeploy, tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army." },
     { id: 'open-abilities-shop', label: 'Abilities Shop', icon: <University />, disabled: false, tooltip: "Purchase permanent passive abilities for your empire." },
   ];
   
@@ -62,7 +66,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const getDisabledReason = (actionId: GameAction): string => {
     switch (actionId) {
         case 'upgrade':
-            if (currentPlayer.resources.iron < 6) return "Not enough iron.";
+            if (currentPlayer.resources.iron < upgradeCost) return "Not enough iron.";
             if (currentPlayer.actionsThisTurn.includes('upgrade')) return "You've already upgraded this turn.";
             break;
         case 'buy-card':
@@ -71,7 +75,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             if (currentPlayer.actionsThisTurn.includes('buy-card')) return "You've already bought a card this turn.";
             break;
         case 'deploy':
-            if (!currentPlayer.reinforceActive && currentPlayer.resources.food < currentPlayer.nextArmyCost) return "Not enough food.";
+            if (!currentPlayer.reinforceActive && currentPlayer.resources.food < deployCost) return "Not enough food.";
             if (currentPlayer.armyCount >= 5) return "Maximum army size reached.";
             if (currentPlayer.actionsThisTurn.includes('deploy')) return "You've already deployed this turn.";
             break;
