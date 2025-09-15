@@ -24,6 +24,7 @@ export type Player = {
   playerId: string; // This is the unique session ID from usePlayer
   name: string;
   color: PlayerColor;
+  isBot: boolean;
   armies: Army[];
   resources: Record<ResourceType, number>;
   armyCount: number;

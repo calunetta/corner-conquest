@@ -63,6 +63,7 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
         playerId: playerInfo.playerId,
         name: playerInfo.name,
         color: newPlayerColor,
+        isBot: false,
         armies: [newArmy],
         resources: { gems: 0, iron: 0, food: 0 },
         armyCount: 1,

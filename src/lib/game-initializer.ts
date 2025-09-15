@@ -66,7 +66,9 @@ function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
     });
 }
 
-export function initializeGame(gameId: string, gameName: string, maxPlayers: number, creator: { playerId: string, name: string, color: PlayerColor }): GameState {
+const ALL_PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
+
+export function initializeGame(gameId: string, gameName: string, maxPlayers: number, creator: { playerId: string, name: string, color: PlayerColor }, numBots: number): GameState {
   const map: Island[][] = Array.from({ length: MAP_SIZE }, (_, y) =>
     Array.from({ length: MAP_SIZE }, (_, x) => ({
       id: `${x}-${y}`,
@@ -108,10 +110,11 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
   };
   
   players.push({
-      id: creatorSeatIndex, // This is the seat index
-      playerId: creator.playerId, // This is the unique session ID
+      id: creatorSeatIndex,
+      playerId: creator.playerId,
       name: creator.name,
       color: creator.color,
+      isBot: false,
       armies: [initialArmy],
       resources: { gems: 0, iron: 0, food: 0 },
       armyCount: 1,
@@ -124,6 +127,52 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
       hasExtraMove: false,
       actionsThisTurn: [],
   });
+
+  const usedColors = [creator.color];
+
+  if (maxPlayers === 1 && numBots > 0) {
+    for (let i = 0; i < numBots; i++) {
+        const botSeatIndex = players.length;
+        const botPos = basePositions[botSeatIndex];
+        const availableColors = ALL_PLAYER_COLORS.filter(c => !usedColors.includes(c));
+        const botColor = availableColors[0];
+        usedColors.push(botColor);
+
+        const botArmy = { id: 0, position: botPos };
+        map[botPos.y][botPos.x] = {
+            ...map[botPos.y][botPos.x],
+            type: 'base',
+            owner: botSeatIndex,
+            isHidden: false,
+            occupants: [{playerId: botSeatIndex, armyId: botArmy.id}],
+            resources: [
+                { type: 'gems', amount: 1 }, 
+                { type: 'iron', amount: 1 }, 
+                { type: 'food', amount: 1 }
+            ], 
+        };
+
+        players.push({
+            id: botSeatIndex,
+            playerId: `bot_${i+1}`,
+            name: `Bot ${i+1}`,
+            color: botColor,
+            isBot: true,
+            armies: [botArmy],
+            resources: { gems: 0, iron: 0, food: 0 },
+            armyCount: 1,
+            attackPower: 0,
+            nextArmyCost: 5,
+            victoryPoints: 0,
+            lastAction: null,
+            specialCards: [],
+            positions: [],
+            hasExtraMove: false,
+            actionsThisTurn: [],
+        });
+    }
+  }
+
 
   const center = { x: Math.floor(MAP_SIZE / 2), y: Math.floor(MAP_SIZE / 2) };
 
@@ -212,7 +261,7 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
     id: gameId,
     name: gameName,
     status: 'waiting',
-    maxPlayers,
+    maxPlayers: maxPlayers === 1 ? numBots + 1 : maxPlayers,
     map,
     players,
     currentPlayerIndex: 0,

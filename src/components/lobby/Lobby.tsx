@@ -50,13 +50,14 @@ export function Lobby({ onJoinGame }: LobbyProps) {
   const handleCreateGame = useCallback(async (
     gameName: string,
     maxPlayers: number,
-    playerColor: PlayerColor
+    playerColor: PlayerColor,
+    numBots: number
   ): Promise<boolean> => {
     if (!playerId || !username) return false;
 
     const newGameId = doc(collection(db, 'games')).id;
     const creator = { playerId, name: username, color: playerColor };
-    const newGame = initializeGame(newGameId, gameName, maxPlayers, creator);
+    const newGame = initializeGame(newGameId, gameName, maxPlayers, creator, numBots);
     
     const firestoreState: FirestoreGameState = {
         ...newGame,
