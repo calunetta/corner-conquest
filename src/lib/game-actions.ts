@@ -1,4 +1,5 @@
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities } from './types';
@@ -63,6 +64,7 @@ export function handleCollectAction(state: GameState): GameState {
   if(player.productiveActive) {
     newState.log.push(`${player.name} used 'Productive' to collect double!`);
     player.productiveActive = false;
+    player.actionsThisTurn.push('use-card');
     const cardIndex = player.specialCards.indexOf('Productive');
     if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
   }
@@ -111,12 +113,14 @@ export function handleDeployAction(state: GameState): GameState {
     if(player.efficientActive) {
       newState.log.push(`${player.name} used 'Efficient' for a cheaper deployment!`);
       player.efficientActive = false;
+      player.actionsThisTurn.push('use-card');
       const cardIndex = player.specialCards.indexOf('Efficient');
       if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
     }
     if(player.reinforceActive) {
       newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
       player.reinforceActive = false;
+      player.actionsThisTurn.push('use-card');
       const cardIndex = player.specialCards.indexOf('Reinforce');
       if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
     } else {
@@ -167,6 +171,7 @@ export function handleUpgradeAction(state: GameState): GameState {
     if(player.masterBuilderActive) {
         newState.log.push(`${player.name} used 'Master Builder' for a cheaper upgrade!`);
         player.masterBuilderActive = false;
+        player.actionsThisTurn.push('use-card');
         const cardIndex = player.specialCards.indexOf('Master Builder');
         if (cardIndex > -1) player.specialCards.splice(cardIndex, 1);
     }
@@ -310,6 +315,7 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
         if (scoutingState.count === 0) {
             newState.scoutingState = null;
             newState.log.push(`Scouting complete.`);
+            player.actionsThisTurn.push('use-card');
             const cardIndex = currentPlayer.specialCards.indexOf('Scout');
             if (cardIndex > -1) currentPlayer.specialCards.splice(cardIndex, 1);
         }
@@ -429,7 +435,7 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
         player.lastAction = 'move'; // Set lastAction because the turn's actions are now complete
         newState.log.push(`${player.name} used their Extra Move!`);
         
-        // Consume the card now that the move is complete
+        player.actionsThisTurn.push('use-card');
         const cardIndex = player.specialCards.indexOf('Extra Move');
         if (cardIndex > -1) {
             player.specialCards.splice(cardIndex, 1);
@@ -478,6 +484,7 @@ export function handleCombatRoll(state: GameState): GameState {
     if(attacker.warChiefActive) {
         newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
         attacker.warChiefActive = false;
+        attacker.actionsThisTurn.push('use-card');
         const cardIndex = attacker.specialCards.indexOf('War Chief');
         if (cardIndex > -1) attacker.specialCards.splice(cardIndex, 1);
     }
@@ -548,9 +555,13 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
     let winnerId: number | null = null;
     
     if (useOvercomeCard) {
+        if (attacker.actionsThisTurn.includes('use-card')) {
+            throw new Error("You have already used a card this turn.");
+        }
         const cardIndex = attacker.specialCards.indexOf('Overcome');
         if (cardIndex > -1) {
             attacker.specialCards.splice(cardIndex, 1);
+            attacker.actionsThisTurn.push('use-card');
             newState.log.push(`${attacker.name} used the 'Overcome' card to win automatically!`);
             winnerId = attacker.id;
         } else {
@@ -560,9 +571,13 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
 
     if (!useOvercomeCard) {
         if (useDecideCard) {
+          if (attacker.actionsThisTurn.includes('use-card')) {
+            throw new Error("You have already used a card this turn.");
+          }
           const cardIndex = attacker.specialCards.indexOf('Decide Dice Roll');
           if (cardIndex > -1) {
             attacker.specialCards.splice(cardIndex, 1);
+            attacker.actionsThisTurn.push('use-card');
             newState.log.push(`${attacker.name} used the 'Decide Dice Roll' card!`);
           } else {
             useDecideCard = false;
@@ -571,8 +586,12 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
 
         const attackerPower = attacker.attackPower + (attacker.warChiefActive ? 2 : 0);
         if(attacker.warChiefActive) {
+            if (attacker.actionsThisTurn.includes('use-card')) {
+                throw new Error("You have already used a card this turn.");
+            }
             newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
             attacker.warChiefActive = false;
+            attacker.actionsThisTurn.push('use-card');
             const cardIndex = attacker.specialCards.indexOf('War Chief');
             if (cardIndex > -1) attacker.specialCards.splice(cardIndex, 1);
         }
@@ -662,16 +681,18 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     }
 
     // Defer consuming the card for multi-step actions or actions that can be cancelled.
-    const deferredCards = ['Extra Move', 'Teleport', 'Reinforce', 'Scout', 'Productive', 'Efficient', 'Master Builder', 'War Chief', 'Sabatoge', 'Overcome', 'Decide Dice Roll', 'Wealthy'];
-    if (!deferredCards.includes(cardName)) {
+    // The 'use-card' action flag is also deferred.
+    const immediateUseCards = ['Extra VP'];
+
+    if (immediateUseCards.includes(cardName)) {
         player.specialCards.splice(cardIndex, 1);
+        player.actionsThisTurn.push('use-card');
     }
     
-    player.actionsThisTurn.push('use-card');
-
     switch (cardName) {
         case 'Extra Move':
             player.hasExtraMove = true;
+            newState.log.push(`${player.name} activated 'Extra Move'. Their next move is an extra action.`);
             break;
         case 'Extra VP':
             player.victoryPoints += 10;
@@ -692,7 +713,6 @@ export const handleUseCard = (state: GameState, cardName: string) => {
             newState.log.push(`${player.name} activated 'Scout'. Click 3 hidden tiles to reveal them.`);
             break;
         case 'Wealthy':
-            // This card opens a dialog. The card is consumed when a resource is selected.
             newState.wealthyDialogState = { isOpen: true };
             break;
         case 'Productive':
@@ -725,8 +745,11 @@ export const handleSabotagePlayer = (state: GameState, targetPlayerId: number): 
     const targetPlayer = newState.players.find(p => p.id === targetPlayerId);
 
     if (targetPlayer) {
+        if (player.actionsThisTurn.includes('use-card')) {
+            throw new Error("You have already used a card this turn.");
+        }
         targetPlayer.isSabotaged = true;
-
+        player.actionsThisTurn.push('use-card');
         const cardIndex = player.specialCards.indexOf('Sabatoge');
         if (cardIndex > -1) {
             player.specialCards.splice(cardIndex, 1);
@@ -740,7 +763,13 @@ export const handleSabotagePlayer = (state: GameState, targetPlayerId: number): 
 export const handleGainWealth = (state: GameState, resource: ResourceType): GameState => {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
+    
+    if (player.actionsThisTurn.includes('use-card')) {
+        throw new Error("You have already used a card this turn.");
+    }
+    
     player.resources[resource] += 5;
+    player.actionsThisTurn.push('use-card');
     
     const cardIndex = player.specialCards.indexOf('Wealthy');
     if (cardIndex > -1) {
@@ -794,6 +823,10 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
 
     if (!teleportState || teleportState.armyId === null) return newState;
     
+    if (player.actionsThisTurn.includes('use-card')) {
+        throw new Error("You have already used a card this turn.");
+    }
+
     const armyToMove = player.armies.find(a => a.id === teleportState.armyId);
     if (!armyToMove) return newState;
 
@@ -804,6 +837,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     
     // Consume the card now that the action is complete
     player.specialCards.splice(cardIndex, 1);
+    player.actionsThisTurn.push('use-card');
     
     // Set the action for the turn
     player.lastAction = 'teleport';
@@ -930,3 +964,4 @@ export function handleBuyAbility(state: GameState, abilityName: keyof PassiveAbi
 
     return newState;
 }
+
