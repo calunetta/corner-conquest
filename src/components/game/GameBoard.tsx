@@ -8,7 +8,7 @@ import { ActionsPanel } from './ActionsPanel';
 import { GameLog } from './GameLog';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { CombatDialog } from './CombatDialog';
 import { MonsterCombatDialog } from './MonsterCombatDialog';
 import { PositionDialog } from './PositionDialog';
@@ -17,6 +17,7 @@ import { StealResourceDialog } from './StealResourceDialog';
 import { UseCardDialog } from './UseCardDialog';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 
 const GAME_ID = 'main-game'; // For now, we'll have one global game session
 
@@ -89,6 +90,7 @@ export function GameBoard() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const { toast } = useToast();
   const [toastsToShow, setToastsToShow] = useState<{ title: string; description: string; variant?: "destructive" | "default" }[]>([]);
+  const [isPlayerInfoOpen, setIsPlayerInfoOpen] = useState(true);
 
   useEffect(() => {
     const gameDocRef = doc(db, 'games', GAME_ID);
@@ -174,6 +176,8 @@ export function GameBoard() {
     } else if (action === 'show-cards') {
         newState.showCardsDialog = true;
         updateGameState(newState);
+    } else {
+       updateGameState(newState);
     }
     
   };
@@ -182,6 +186,7 @@ export function GameBoard() {
     if (!gameState) return;
     const newState = JSON.parse(JSON.stringify(gameState));
     newState.useCardDialogState = { cardName };
+    newState.showCardsDialog = false; // Close card list to show confirmation
     updateGameState(newState);
   };
 
@@ -194,7 +199,6 @@ export function GameBoard() {
     if (player.actionsThisTurn.includes('use-card')) {
         toast({ title: "Card Error", description: "You can only use one card per turn.", variant: 'destructive' });
         newState.useCardDialogState = null;
-        newState.showCardsDialog = false;
         updateGameState(newState);
         return;
     }
@@ -202,6 +206,8 @@ export function GameBoard() {
     const cardIndex = player.specialCards.indexOf(cardName);
     if (cardIndex === -1) {
         toast({ title: "Card Error", description: `You do not have the ${cardName} card.`, variant: 'destructive' });
+        newState.useCardDialogState = null;
+        updateGameState(newState);
         return;
     }
     
@@ -213,11 +219,11 @@ export function GameBoard() {
         newState.log.push(`${player.name} used the 'Extra Move' card!`);
         toast({ title: 'Card Used!', description: 'You have an extra move this turn.' });
     } else if (cardName === 'Steal Resource') {
+        player.specialCards.splice(cardIndex, 1);
         newState.stealResourceDialogState = { targetPlayerId: null };
     }
     
     newState.useCardDialogState = null;
-    newState.showCardsDialog = false;
     updateGameState(newState);
   };
 
@@ -229,10 +235,7 @@ export function GameBoard() {
     const targetPlayer = players.find(p => p.id === targetPlayerId);
 
     if (!targetPlayer) return;
-
-    const cardIndex = currentPlayer.specialCards.indexOf('Steal Resource');
-    if (cardIndex === -1) return;
-
+    
     const amountToSteal = 2;
     const stolenAmount = Math.min(targetPlayer.resources[resource], amountToSteal);
 
@@ -249,7 +252,6 @@ export function GameBoard() {
         toast({ title: "Steal Failed", description: logMsg, variant: 'destructive' });
     }
 
-    currentPlayer.specialCards.splice(cardIndex, 1);
     currentPlayer.lastAction = 'use-card';
     newState.stealResourceDialogState = null;
     updateGameState(newState);
@@ -360,7 +362,8 @@ export function GameBoard() {
             state.log.push(logMsg);
             toast({ title: 'Resource Collected!', description: logMsg });
             player.lastAction = 'collect';
-            endTurn(state);
+            state.currentAction = null;
+            updateGameState(state);
         } else {
              toast({ title: 'Cannot Collect', description: 'Resource not found on this island.', variant: 'destructive'});
              state.currentAction = null;
@@ -414,6 +417,13 @@ export function GameBoard() {
         });
         newState.possibleMoves = moves;
         updateGameState(newState);
+    } else {
+      // clear selection
+      newState.selectedArmyId = null;
+      newState.selectedTile = null;
+      newState.possibleMoves = [];
+      newState.currentAction = null;
+      updateGameState(newState);
     }
   };
 
@@ -485,7 +495,8 @@ export function GameBoard() {
     toast({ title: 'Army Positioned!', description: logMsg });
     
     state.positionDialogState = null;
-    endTurn(state);
+    state.currentAction = null;
+    updateGameState(state);
   };
 
   const handleMoveAction = (newState: GameState, x: number, y: number) => {
@@ -545,21 +556,19 @@ export function GameBoard() {
       }
     }
     
+    player.lastAction = 'move';
+
     if (player.hasExtraMove) {
         player.hasExtraMove = false;
-        player.lastAction = 'move';
-        const logMsg = `${player.name} used their extra move.`;
+        const logMsg = `${player.name} used their extra move. They can perform another action.`;
         newState.log.push(logMsg);
         toast({ title: 'Extra Move Used', description: 'You can now perform another action.'});
-        
-        newState.currentAction = null;
-        newState.possibleMoves = [];
-        newState.selectedTile = null;
-        updateGameState(newState);
-    } else {
-        player.lastAction = 'move';
-        endTurn(newState);
     }
+    
+    newState.currentAction = null;
+    newState.possibleMoves = [];
+    newState.selectedTile = {x, y}; // Keep tile selected after move
+    updateGameState(newState);
   }
 
   const handleAttackAction = (state: GameState) => {
@@ -641,7 +650,8 @@ export function GameBoard() {
     
     if (winnerId === null) {
         newState.combatState = null;
-        endTurn(newState);
+        newState.currentAction = null;
+        updateGameState(newState);
         return;
     }
     
@@ -652,7 +662,8 @@ export function GameBoard() {
     const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
     if (!attackingArmy) {
       newState.combatState = null;
-      endTurn(newState);
+      newState.currentAction = null;
+      updateGameState(newState);
       return;
     }
 
@@ -689,8 +700,9 @@ export function GameBoard() {
     toast({ title: 'Combat Over!', description: logMsg });
     
     newState.combatState = null;
+    newState.currentAction = null;
     players[attackerId].lastAction = 'attack';
-    endTurn(newState);
+    updateGameState(newState);
   }
 
   const handleMonsterCombatRoll = (monster: Monster, useCard: boolean, decidedValue: number) => {
@@ -804,17 +816,12 @@ export function GameBoard() {
     }
     
     newState.monsterCombatState = null;
+    newState.currentAction = null;
     attacker.lastAction = 'attack';
-    endTurn(newState);
+    updateGameState(newState);
   }
 
   const endTurn = (state: GameState) => {
-    // This check is removed because extra move is handled differently now.
-    // A move action with hasExtraMove does not call endTurn.
-    // if (state.players[state.currentPlayerIndex].hasExtraMove) {
-    //     return;
-    // }
-
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
     if (state.currentPlayerIndex === 0) {
       state.turn += 1;
@@ -858,17 +865,31 @@ export function GameBoard() {
   const currentTileForMonster = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
   return (
-    <div className="flex h-screen w-screen flex-col gap-4 p-4">
-      <div className="flex-[1]">
-        <div className="grid grid-cols-2 grid-rows-2 gap-4">
-          <PlayerInfo player={players[0]} isCurrentPlayer={currentPlayerIndex === 0} />
-          <PlayerInfo player={players[1]} isCurrentPlayer={currentPlayerIndex === 1} />
-          <PlayerInfo player={players[2]} isCurrentPlayer={currentPlayerIndex === 2} />
-          <PlayerInfo player={players[3]} isCurrentPlayer={currentPlayerIndex === 3} />
+    <div className="relative flex h-screen w-screen flex-col gap-4 p-4">
+      <Button onClick={handleEndTurn} className="absolute right-4 top-4 z-20">End Turn</Button>
+
+      <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen}>
+        <div className="flex items-center justify-between rounded-md bg-muted/50 p-2">
+            <h2 className="text-lg font-semibold">Player Information</h2>
+            <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm">
+                    {isPlayerInfoOpen ? <ChevronUp /> : <ChevronDown />}
+                    <span className="sr-only">Toggle Player Info</span>
+                </Button>
+            </CollapsibleTrigger>
         </div>
-      </div>
-      <div className="grid flex-[4] grid-cols-[1fr_280px] gap-4">
-        <main className="flex flex-col items-center justify-start gap-4">
+        <CollapsibleContent>
+            <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <PlayerInfo player={players[0]} isCurrentPlayer={currentPlayerIndex === 0} />
+              <PlayerInfo player={players[1]} isCurrentPlayer={currentPlayerIndex === 1} />
+              <PlayerInfo player={players[2]} isCurrentPlayer={currentPlayerIndex === 2} />
+              <PlayerInfo player={players[3]} isCurrentPlayer={currentPlayerIndex === 3} />
+            </div>
+        </CollapsibleContent>
+      </Collapsible>
+      
+      <div className="grid flex-1 grid-cols-1 gap-4 overflow-hidden md:grid-cols-[1fr_280px]">
+        <main className="flex flex-col items-center justify-start gap-4 overflow-hidden">
           <MapGrid map={map} players={players} onTileClick={handleTileClick} possibleMoves={possibleMoves} selectedTile={selectedTile} currentPlayerIndex={currentPlayerIndex} selectedArmyId={selectedArmyId} />
           <div className='text-center'>
               <p className='text-lg font-semibold'>Turn {gameState.turn}: <span style={{color: currentPlayer.color}}>{currentPlayer.name}'s turn</span></p>
@@ -879,7 +900,6 @@ export function GameBoard() {
         <aside className="flex flex-col justify-start gap-4">
           <ActionsPanel onAction={handleAction} gameState={gameState} />
           <GameLog logs={log} />
-          <Button onClick={handleEndTurn}>End Turn</Button>
         </aside>
       </div>
       {combatState && <CombatDialog gameState={gameState} onRoll={handleCombatRoll} onClose={handleCloseCombat} />}

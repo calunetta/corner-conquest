@@ -28,13 +28,15 @@ export function CardsDialog({ player, onClose, onUseCard }: CardsDialogProps) {
 
   const uniqueCards = Object.keys(cardCounts);
 
+  const canUseCard = !player.actionsThisTurn.includes('use-card');
+
   return (
     <AlertDialog open={true} onOpenChange={onClose}>
       <AlertDialogContent className="max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle>{player.name}'s Special Cards</AlertDialogTitle>
           <AlertDialogDescription>
-            These are the special cards you have collected.
+            These are the special cards you have collected. You can use one card per turn.
           </AlertDialogDescription>
         </AlertDialogHeader>
         
@@ -47,7 +49,7 @@ export function CardsDialog({ player, onClose, onUseCard }: CardsDialogProps) {
                         <div className="flex items-center gap-4">
                             <span className="text-sm font-bold text-muted-foreground">x{cardCounts[cardName]}</span>
                             {USABLE_CARDS.includes(cardName) && (
-                                <Button size="sm" onClick={() => onUseCard(cardName)}>Use</Button>
+                                <Button size="sm" onClick={() => onUseCard(cardName)} disabled={!canUseCard}>Use</Button>
                             )}
                         </div>
                     </CardHeader>
