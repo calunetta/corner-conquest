@@ -20,52 +20,51 @@ function deepClone<T>(obj: T): T {
 
 function generateMonsters(): Monster[] {
     const monsters: Monster[] = [];
-    let hasBigMonster = Math.random() < 0.5;
-
-    // Determine little monster type
-    const littleMonsterRand = Math.random();
-    let littleMonsterType: 'cub' | 'huge' = littleMonsterRand < 0.5 ? 'cub' : 'huge'; // 50% cub, 50% huge
+    const hasBigMonster = Math.random() < 0.2; // 20% chance for a big monster scenario
 
     if (hasBigMonster) {
-        // Add a little monster
-        monsters.push({
-            id: 'little',
-            type: littleMonsterType,
-            level: littleMonsterType === 'cub' ? 1 : 2
-        });
-
-        // Determine big monster type based on the specified ratio
-        const rand = Math.random() * (1.5 + 0.5); // total parts for big monsters
-        let bigMonsterType: 'cub' | 'huge';
-        if (rand < 1.5) {
-            bigMonsterType = 'cub'; // 1.5 parts
-        } else {
-            bigMonsterType = 'huge'; // 0.5 parts
-        }
-        
+        // Add one big monster and one small monster, ensuring they are different
+        const bigMonsterRand = Math.random();
+        const bigMonsterType = bigMonsterRand < 0.75 ? 'cub' : 'huge'; // 3:1 cub vs huge for big
         monsters.push({
             id: 'big',
             type: bigMonsterType,
             level: bigMonsterType === 'cub' ? 3 : 4
         });
 
-    } else {
-        // Two little monsters
+        const littleMonsterRand = Math.random();
+        const littleMonsterType = littleMonsterRand < 0.625 ? 'cub' : 'huge'; // 5:3 cub vs huge for little
         monsters.push({
             id: 'little',
-            type: 'cub', // first is always cub
-            level: 1
+            type: littleMonsterType,
+            level: littleMonsterType === 'cub' ? 1 : 2
         });
-        
-        // second little monster based on 5:3 ratio for cub vs huge
-        const secondLittleMonsterRand = Math.random() * 8;
-        let secondLittleMonsterType: 'cub' | 'huge' = secondLittleMonsterRand < 5 ? 'cub' : 'huge';
 
-        monsters.push({
-            id: 'little',
-            type: secondLittleMonsterType,
-            level: secondLittleMonsterType === 'cub' ? 1 : 2
-        });
+    } else {
+        // One or two little monsters
+        const numMonsters = Math.random() < 0.7 ? 1 : 2; // 70% for 1 monster, 30% for 2
+
+        if (numMonsters === 1) {
+            const littleMonsterRand = Math.random();
+            const littleMonsterType = littleMonsterRand < 0.625 ? 'cub' : 'huge';
+            monsters.push({
+                id: 'little',
+                type: littleMonsterType,
+                level: littleMonsterType === 'cub' ? 1 : 2
+            });
+        } else {
+            // Two different little monsters
+            monsters.push({
+                id: 'little',
+                type: 'cub',
+                level: 1
+            });
+            monsters.push({
+                id: 'little',
+                type: 'huge',
+                level: 2
+            });
+        }
     }
 
     return monsters;
@@ -258,10 +257,13 @@ export function GameBoard() {
             }
           }
         }
-        // Filter out moves to other players' bases
+        // Filter out moves to other players' bases or empty tiles
         moves = moves.filter(move => {
           const tile = newState.map[move.y][move.x];
           if (tile.type === 'base' && tile.owner !== currentPlayer.id) {
+            return false;
+          }
+          if (tile.type === 'empty') {
             return false;
           }
           return true;
@@ -357,12 +359,15 @@ export function GameBoard() {
     // Remove army from old tile occupants
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
     
-    // Remove position if army moves from a positioned tile
-    const positionIndex = player.positions.findIndex(p => p.x === currentPos.x && p.y === currentPos.y);
-    if (positionIndex > -1) {
-      const removedPosition = player.positions.splice(positionIndex, 1)[0];
-      oldTile.positionedBy = oldTile.positionedBy?.filter(p => p.playerId !== player.id || p.resource !== removedPosition.resource);
-    }
+    // Remove all player positions when any army moves
+    newState.players.forEach(p => {
+        if (p.id === player.id) {
+            p.positions.forEach(pos => {
+                newState.map[pos.y][pos.x].positionedBy = newState.map[pos.y][pos.x].positionedBy?.filter(pb => pb.playerId !== player.id);
+            });
+            p.positions = [];
+        }
+    });
     
     army.position = { x, y };
     newState.map[y][x].occupants.push({ playerId: player.id, armyId: army.id });
@@ -462,21 +467,23 @@ export function GameBoard() {
     
     const newState = deepClone(gameState);
     const { combatState, players, map, selectedArmyId } = newState;
-    const winnerId = combatState.winnerId;
-    const attackerId = combatState.attackerId;
-    const defenderId = combatState.defenderId;
-    const loserId = winnerId === attackerId ? defenderId : attackerId;
+    const { winnerId, attackerId, defenderId } = combatState;
+
+    if (winnerId === null) {
+      newState.combatState = null;
+      endTurn(newState);
+      return;
+    };
     
-    const winner = players[winnerId!];
+    const loserId = winnerId === attackerId ? defenderId : attackerId;
+    const winner = players[winnerId];
     const loser = players[loserId];
     
-    const attackingArmy = winnerId === attackerId 
-      ? players[attackerId].armies.find(a => a.id === selectedArmyId)
-      : players[defenderId].armies.find(a => a.id === selectedArmyId);
+    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
     
     if (attackingArmy) {
-      const tile = map[attackingArmy.position.y][attackingArmy.position.x];
-      const loserOccupant = tile.occupants.find(o => o.playerId === loserId);
+      const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
+      const loserOccupant = combatTile.occupants.find(o => o.playerId === loserId);
 
       if (loserOccupant) {
         const losingArmy = loser.armies.find(a => a.id === loserOccupant.armyId);
