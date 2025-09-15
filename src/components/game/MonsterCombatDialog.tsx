@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -22,9 +23,10 @@ type MonsterCombatDialogProps = {
   monsters: Monster[];
   onRoll: (monster: Monster, useCard: boolean, decidedValue: number) => void;
   onClose: () => void;
+  onCancel: () => void;
 };
 
-export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: MonsterCombatDialogProps) {
+export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCancel }: MonsterCombatDialogProps) {
   const { monsterCombatState, players } = gameState;
   const [selectedMonster, setSelectedMonster] = useState<Monster | null>(null);
   const [useCard, setUseCard] = useState(false);
@@ -101,6 +103,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: Mo
         </div>
       )}
        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
           <Button onClick={() => onRoll(selectedMonster!, useCard, decidedValue)} disabled={!selectedMonster}>
             Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}!
           </Button>
@@ -130,6 +133,12 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose }: Mo
           </Card>
         ))}
       </div>
+       <AlertDialogFooter>
+          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          <Button onClick={() => { /* This button just closes the selection screen and moves to attack screen */ setSelectedMonster(selectedMonster)}} disabled={!selectedMonster}>
+            Confirm
+          </Button>
+      </AlertDialogFooter>
     </>
   );
 

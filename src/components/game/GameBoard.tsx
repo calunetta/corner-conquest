@@ -483,7 +483,7 @@ export function GameBoard() {
     if (!gameState || !gameState.combatState) return;
     
     const newState = deepClone(gameState);
-    const { combatState, players, map } = newState;
+    const { combatState, players, map, selectedArmyId } = newState;
     const { winnerId, attackerId, defenderId } = combatState;
     
     if (winnerId === null) {
@@ -496,25 +496,26 @@ export function GameBoard() {
     const winner = players[winnerId];
     const loser = players[loserId];
 
-    const attackingArmy = players[attackerId].armies.find(a => a.id === newState.selectedArmyId);
-    if (!attackingArmy) { // Should not happen
-        newState.combatState = null;
-        endTurn(newState);
-        return;
+    const attackingArmy = players[attackerId].armies.find(a => a.id === selectedArmyId);
+    
+    if (!attackingArmy) {
+      newState.combatState = null;
+      endTurn(newState);
+      return;
     }
     
     const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
-    const loserOccupant = combatTile.occupants.find(o => o.playerId === loserId);
+    const loserOccupantInfo = combatTile.occupants.find(o => o.playerId === loserId);
 
-    if (loserOccupant) {
-        const losingArmy = loser.armies.find(a => a.id === loserOccupant.armyId);
+    if (loserOccupantInfo) {
+        const losingArmy = loser.armies.find(a => a.id === loserOccupantInfo.armyId);
         if (losingArmy) {
             const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
             if (baseTile) {
                 const oldPos = losingArmy.position;
                 
                 // Remove loser from combat tile
-                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== losingArmy.id);
+                map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== losingArmy.id || o.playerId !== loserId);
 
                 // Move loser to base
                 losingArmy.position = {x: baseTile.x, y: baseTile.y};
@@ -628,8 +629,9 @@ export function GameBoard() {
 
     } else {
       const baseTile = map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
-      if (baseTile) {
+      if (baseTile && army) {
           const oldPos = army.position;
+          
           // Remove army from monster tile
           map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => !(o.playerId === attacker.id && o.armyId === army.id));
           
@@ -728,7 +730,8 @@ export function GameBoard() {
           gameState={gameState} 
           monsters={currentTileForMonster.monsters}
           onRoll={handleMonsterCombatRoll} 
-          onClose={handleCloseMonsterCombat} 
+          onClose={handleCloseMonsterCombat}
+          onCancel={() => setGameState(prev => prev ? {...prev, monsterCombatState: null, currentAction: null} : null)}
         />
       )}
       {positionDialogState && (
