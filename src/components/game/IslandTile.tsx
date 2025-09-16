@@ -101,22 +101,14 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
 
   const getPositionedPlayerPositionClass = (playerId: number) => {
     const positions = [
-        'top-1/2 left-0 -translate-y-1/2',
-        'top-0 left-1/2 -translate-x-1/2',
-        'bottom-0 left-1/2 -translate-x-1/2',
-        'top-1/2 right-0 -translate-y-1/2',
+        'bottom-1.5 left-1/2 -translate-x-1/2 justify-center', // Player 0
+        'bottom-1.5 left-1/2 -translate-x-1/2 justify-center', // Player 1
+        'bottom-1.5 left-1/2 -translate-x-1/2 justify-center', // Player 2
+        'bottom-1.5 left-1/2 -translate-x-1/2 justify-center', // Player 3
     ];
     return positions[playerId];
   }
 
-  const getPositionedResourceIcon = (resource: ResourceType) => {
-    const iconMap: Record<ResourceType, React.ReactNode> = {
-      gems: <ResourceIcon type="gems" className="h-3 w-3" />,
-      iron: <ResourceIcon type="iron" className="h-3 w-3" />,
-      food: <ResourceIcon type="food" className="h-3 w-3" />,
-    }
-    return iconMap[resource];
-  }
 
   return (
     <TooltipProvider>
@@ -151,12 +143,13 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
           {positionedBy.map(pos => {
               const player = players[pos.playerId];
               if (!player) return null;
+              const playerColorClass = playerColorMap[player.color]?.bg || 'bg-gray-500';
               return (
-                  <Tooltip key={`pos-tooltip-${player.id}`}>
+                  <Tooltip key={`pos-tooltip-${player.id}-${pos.armyId}`}>
                       <TooltipTrigger asChild>
-                          <div className={cn('absolute flex items-center gap-0.5', getPositionedPlayerPositionClass(player.id))} >
-                              <Anchor className="h-4 w-4" style={{color: player.color}} />
-                              {getPositionedResourceIcon(pos.resource)}
+                          <div className={cn('absolute flex items-center gap-1', getPositionedPlayerPositionClass(player.id))} >
+                             <div className={cn('h-1.5 w-1.5 rounded-full', playerColorClass)} />
+                             <div className={cn('h-1.5 w-1.5 rounded-full', playerColorClass)} />
                           </div>
                       </TooltipTrigger>
                       <TooltipContent>
