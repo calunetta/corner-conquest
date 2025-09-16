@@ -1,6 +1,3 @@
-
-
-
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player } from './types';
@@ -56,8 +53,11 @@ export function handleCollectAction(state: GameState): GameState {
 
   const position = player.positions[positionIndex];
   const tile = map[position.y][position.x];
-  const resource = tile.resources.find(r => r.type === position.resource);
-  if (!resource) throw new Error("Resource not found on this island.");
+  const resourceSpot = tile.resources.find(r => r.type === position.resource);
+  if (!resourceSpot) throw new Error("Resource not found on this island.");
+  
+  const resourceYield = newState.settings.baseResourceAmount;
+  const resourceToCollect = { type: resourceSpot.type, amount: resourceSpot.amount * resourceYield };
 
   const hasProductiveCard = player.specialCards.includes('Productive') && !player.actionsThisTurn.includes('use-card');
 
@@ -67,20 +67,20 @@ export function handleCollectAction(state: GameState): GameState {
         isOpen: true,
         x: position.x,
         y: position.y,
-        resource: {type: position.resource, amount: resource.amount},
+        resource: resourceToCollect,
         hasProductiveCard: true,
       };
       return newState;
   } else {
     // Perform collection directly
-    player.resources[resource.type] += resource.amount;
+    player.resources[resourceToCollect.type] += resourceToCollect.amount;
     army.hasActed = true;
-    newState.log.push(`${player.name} collected ${resource.amount} ${resource.type}.`);
+    newState.log.push(`${player.name} collected ${resourceToCollect.amount} ${resourceToCollect.type}.`);
 
     // Remove the position after collecting
     player.positions.splice(positionIndex, 1);
     if (tile.positionedBy) {
-        tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === resource.type));
+        tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === resourceToCollect.type));
     }
     newState.log.push(`${player.name}'s army must be repositioned to collect again.`);
     
@@ -843,7 +843,7 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
           currentTile.type = 'resource';
           const resourceTypes: ResourceType[] = ['food', 'iron', 'gems'];
           const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
-          currentTile.resources.push({ type: randomResource, amount: state.settings.baseResourceAmount});
+          currentTile.resources.push({ type: randomResource, amount: 1 });
           newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
         }
     } else {

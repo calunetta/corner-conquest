@@ -1,6 +1,3 @@
-
-
-
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings } from './types';
 import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
 
@@ -129,9 +126,9 @@ export function initializeGame(
       isHidden: false,
       occupants: [{ playerId: creatorSeatIndex, armyId: initialArmy.id }],
       resources: [
-        { type: 'gems', amount: settings.baseResourceAmount }, 
-        { type: 'iron', amount: settings.baseResourceAmount }, 
-        { type: 'food', amount: settings.baseResourceAmount }
+        { type: 'gems', amount: 1 }, 
+        { type: 'iron', amount: 1 }, 
+        { type: 'food', amount: 1 }
       ], 
   };
   
@@ -178,9 +175,9 @@ export function initializeGame(
             isHidden: false,
             occupants: [{playerId: botSeatIndex, armyId: botArmy.id}],
             resources: [
-                { type: 'gems', amount: settings.baseResourceAmount }, 
-                { type: 'iron', amount: settings.baseResourceAmount }, 
-                { type: 'food', amount: settings.baseResourceAmount }
+                { type: 'gems', amount: 1 }, 
+                { type: 'iron', amount: 1 }, 
+                { type: 'food', amount: 1 }
             ], 
         };
 
@@ -248,7 +245,7 @@ export function initializeGame(
         for(let i=0; i < numResourceTypes; i++) {
             const randomIndex = Math.floor(Math.random() * availableResources.length);
             const selectedResourceType = availableResources.splice(randomIndex, 1)[0];
-            const amount = settings.baseResourceAmount + (Math.random() < 0.3 ? 1 : 0);
+            const amount = (Math.random() < 0.3 ? 2 : 1);
             islandResources.push({ type: selectedResourceType, amount });
         }
         map[y][x].resources = islandResources;
