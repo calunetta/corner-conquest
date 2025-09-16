@@ -57,13 +57,33 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const baseOwner = island.type === 'base' ? players.find(p => p.id === island.owner) : null;
 
   const renderResourceIcons = (resources: IslandResource[]) => {
-    return resources.map((resource, index) => (
-       <div key={`resource-row-${index}`} className="flex w-full items-center justify-center gap-1">
-        {Array.from({ length: resource.amount }).map((_, i) => (
-          <ResourceIcon key={`${resource.type}-${i}`} type={resource.type} className="h-4 w-4 text-accent" />
-        ))}
-      </div>
-    ));
+    return resources.map((resource, index) => {
+        const positionInfo = positionedBy.find(p => p.resource === resource.type);
+        const positionedPlayer = positionInfo ? players[positionInfo.playerId] : null;
+
+        return (
+            <div key={`resource-group-${index}`} className="relative flex flex-col items-center">
+                <div className="flex items-center justify-center gap-1">
+                    {Array.from({ length: resource.amount }).map((_, i) => (
+                        <ResourceIcon key={`${resource.type}-${i}`} type={resource.type} className="h-4 w-4 text-accent" />
+                    ))}
+                </div>
+                 {positionedPlayer && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="mt-1 flex items-center gap-1">
+                                <div className={cn('h-1.5 w-1.5 rounded-full', playerColorMap[positionedPlayer.color].bg)} />
+                                <div className={cn('h-1.5 w-1.5 rounded-full', playerColorMap[positionedPlayer.color].bg)} />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Positioned by {positionedPlayer.name}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+            </div>
+        );
+    });
   }
 
   const renderMonsterIcons = () => {
@@ -99,17 +119,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     }
   };
 
-  const getPositionedPlayerPositionClass = (playerId: number) => {
-    const positions = [
-        'bottom-1.5 left-1/2 -translate-x-1/2 justify-center', // Player 0
-        'bottom-1.5 left-1/2 -translate-x-1/2 justify-center', // Player 1
-        'bottom-1.5 left-1/2 -translate-x-1/2 justify-center', // Player 2
-        'bottom-1.5 left-1/2 -translate-x-1/2 justify-center', // Player 3
-    ];
-    return positions[playerId];
-  }
-
-
   return (
     <TooltipProvider>
       <button
@@ -138,27 +147,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         </div>
         
         <div className="h-full w-full p-1">{getIcon()}</div>
-
-        <div className="absolute inset-0">
-          {positionedBy.map(pos => {
-              const player = players[pos.playerId];
-              if (!player) return null;
-              const playerColorClass = playerColorMap[player.color]?.bg || 'bg-gray-500';
-              return (
-                  <Tooltip key={`pos-tooltip-${player.id}-${pos.armyId}`}>
-                      <TooltipTrigger asChild>
-                          <div className={cn('absolute flex items-center gap-1', getPositionedPlayerPositionClass(player.id))} >
-                             <div className={cn('h-1.5 w-1.5 rounded-full', playerColorClass)} />
-                             <div className={cn('h-1.5 w-1.5 rounded-full', playerColorClass)} />
-                          </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          <p>Positioned by {player.name} on {pos.resource}</p>
-                      </TooltipContent>
-                  </Tooltip>
-              )
-          })}
-        </div>
       </button>
     </TooltipProvider>
   );
