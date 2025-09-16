@@ -1,6 +1,5 @@
 
 
-
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import type { GameAction, GameState } from '@/lib/types';
@@ -256,14 +255,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
 
-  const gridColsMap: { [key: number]: string } = {
-    1: 'md:grid-cols-1',
-    2: 'md:grid-cols-2',
-    3: 'md:grid-cols-3',
-    4: 'md:grid-cols-4',
-  };
-  
-  const gridColsClass = `grid-cols-2 ${gridColsMap[players.length] || 'md:grid-cols-4'}`;
   const isTeleporting = !!teleportState;
   const isScouting = !!scoutingState && scoutingState.count > 0;
 
@@ -311,7 +302,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 </div>
                 <CollapsibleContent>
                     <div
-                    className={`mt-2 grid gap-2 sm:gap-4 ${gridColsClass}`}
+                    className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4"
                     >
                     {players.map(p => (
                         <PlayerInfo key={p.id} player={p} isCurrentPlayer={currentPlayerIndex === p.id} />

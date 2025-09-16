@@ -42,7 +42,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
 
   return (
     <AlertDialog open={true} onOpenChange={onClose}>
-      <AlertDialogContent className="max-w-3xl">
+      <AlertDialogContent className="max-w-md sm:max-w-3xl">
         <AlertDialogHeader>
           <AlertDialogTitle>{player.name}'s Special Cards</AlertDialogTitle>
           <AlertDialogDescription>
