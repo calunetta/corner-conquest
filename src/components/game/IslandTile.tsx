@@ -6,7 +6,7 @@ import { ResourceIcon, MonsterIcon } from '../icons';
 import { Home, HelpCircle, Star, Loader2, Anchor } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import Image from 'next/image';
-import { PLAYER_SPRITES } from '@/lib/player-data';
+import { PLAYER_DATA } from '@/lib/player-data';
 
 type IslandTileProps = {
   island: Island;
@@ -33,17 +33,6 @@ const playerTileIndicatorClasses: Record<string, string> = {
     purple: 'shadow-purple-500/50',
     yellow: 'shadow-yellow-400/50',
 }
-
-const armyPositions = [
-    'top-1 left-1',
-    'top-1 right-1',
-    'bottom-1 right-1',
-    'bottom-1 left-1',
-    'top-1/2 left-1 -translate-y-1/2',
-    'top-1 left-1/2 -translate-x-1/2',
-    'bottom-1 left-1/2 -translate-x-1/2',
-    'top-1/2 right-1 -translate-y-1/2',
-];
 
 export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, isTeleporting, isScoutTarget }: IslandTileProps) {
   const occupants = island.occupants.map(o => {
@@ -106,7 +95,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       case 'base': 
         return baseOwner?.color ? (
             <Image 
-                src={PLAYER_SPRITES[baseOwner.color].base}
+                src={PLAYER_DATA[baseOwner.color].base}
                 alt={`${baseOwner.color} base`}
                 width={64}
                 height={64}
@@ -152,23 +141,22 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             {occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
-                const sprite = PLAYER_SPRITES[player.color];
+                const sprite = PLAYER_DATA[player.color].sprite;
                 if (!sprite) return null;
                 
-                // Dynamic positioning for up to 4 armies
                 const positions = [
-                    { top: '0%', left: '0%' },
-                    { top: '0%', left: '50%' },
-                    { top: '50%', left: '0%' },
-                    { top: '50%', left: '50%' }
+                    { top: '0', left: '0', origin: 'origin-top-left' },
+                    { top: '0', right: '0', origin: 'origin-top-right' },
+                    { bottom: '0', left: '0', origin: 'origin-bottom-left' },
+                    { bottom: '0', right: '0', origin: 'origin-bottom-right' }
                 ];
                 const pos = positions[index % 4];
 
                 return (
                     <div 
                         key={`${player.id}-${army.id}`} 
-                        className={cn('absolute w-1/2 h-1/2')}
-                        style={{ top: pos.top, left: pos.left }}
+                        className={cn('absolute w-1/2 h-1/2', pos.origin)}
+                        style={{ top: pos.top, left: pos.left, right: pos.right, bottom: pos.bottom }}
                     >
                         <Image
                             src={sprite.idle}
@@ -176,7 +164,12 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                             width={32}
                             height={32}
                             className={cn(
-                                "absolute bottom-0 right-0 h-auto w-full max-w-[32px] origin-bottom-right drop-shadow-lg",
+                                "absolute h-auto w-full max-w-[48px] drop-shadow-lg",
+                                'bottom-0 right-0', 
+                                pos.origin.includes('top') && 'top-0',
+                                pos.origin.includes('bottom') && 'bottom-0',
+                                pos.origin.includes('left') && 'left-0',
+                                pos.origin.includes('right') && 'right-0',
                                 army.hasActed ? 'opacity-50' : ''
                             )}
                             unoptimized
