@@ -62,7 +62,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         const positionedPlayer = positionInfo ? players[positionInfo.playerId] : null;
 
         return (
-            <div key={`resource-group-${index}`} className="relative flex flex-col items-center">
+            <div key={`resource-group-${index}`} className="flex flex-col items-center gap-1">
                 <div className="flex items-center justify-center gap-1">
                     {Array.from({ length: resource.amount }).map((_, i) => (
                         <ResourceIcon key={`${resource.type}-${i}`} type={resource.type} className="h-4 w-4 text-accent" />
@@ -71,9 +71,10 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                  {positionedPlayer && (
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div className="mt-1 flex items-center gap-1">
-                                <div className={cn('h-1.5 w-1.5 rounded-full', playerColorMap[positionedPlayer.color].bg)} />
-                                <div className={cn('h-1.5 w-1.5 rounded-full', playerColorMap[positionedPlayer.color].bg)} />
+                            <div className="flex items-center justify-center gap-1">
+                                {Array.from({ length: resource.amount }).map((_, i) => (
+                                    <div key={`dot-${i}`} className={cn('h-1.5 w-1.5 rounded-full', playerColorMap[positionedPlayer.color].bg)} />
+                                ))}
                             </div>
                         </TooltipTrigger>
                         <TooltipContent>
