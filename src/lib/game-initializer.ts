@@ -276,6 +276,7 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
     name: gameName,
     status: 'waiting',
     maxPlayers: maxPlayers === 1 ? numBots + 1 : maxPlayers,
+    debugMode,
     map,
     players,
     currentPlayerIndex: 0,
@@ -298,7 +299,9 @@ export function initializeGame(gameId: string, gameName: string, maxPlayers: num
     abilitiesShopState: null,
     sabotageDialogState: null,
     wealthyDialogState: null,
-    scoutingState: null,
+scoutingState: null,
+armySelectionDialogState: null,
+attackSelectionDialogState: null,
   };
 }
 

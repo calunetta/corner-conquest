@@ -208,7 +208,7 @@ export function handleBuyCardAction(state: GameState): GameState {
     if (player.actionsThisTurn.includes('buy-card')) throw new Error("You can only buy one card per turn.");
     if (player.resources.gems < 10) throw new Error("Not enough gems to buy a card.");
     if (specialCardsDeck.length === 0) throw new Error("There are no special cards left in the deck.");
-    if (player.specialCards.length >= 10) throw new Error("You have reached the maximum of 10 cards.");
+    if (player.specialCards.length >= 10 && !newState.debugMode) throw new Error("You have reached the maximum of 10 cards.");
 
     player.resources.gems -= 10;
     const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
@@ -441,7 +441,7 @@ function setPossibleMoves(state: GameState, x: number, y: number): GameState {
 }
 
 function revealIsland(state: GameState, x: number, y: number, player: Player): GameState {
-    const newState = { ...state };
+    let newState = { ...state };
     const tile = newState.map[y][x];
 
     if (!tile.isHidden) return newState;
@@ -449,6 +449,15 @@ function revealIsland(state: GameState, x: number, y: number, player: Player): G
     tile.isHidden = false;
     player.victoryPoints += 1;
     newState.log.push(`${player.name} discovered a new island and gains 1 VP!`);
+
+    if (tile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && newState.specialCardsDeck.length > 0) {
+        const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
+        const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
+        player.specialCards.push(drawnCard);
+        newState.log.push(`${player.name} discovered a special island and found a card: "${drawnCard}"!`);
+    } else if (tile.type === 'special') {
+        newState.log.push(`${player.name} discovered a special island, but their hand was full!`);
+    }
     
     return newState;
 }
@@ -590,11 +599,13 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     const targetTile = newState.map[y][x];
     targetTile.occupants.push({ playerId: player.id, armyId: army.id });
     
-    if (targetTile.type === 'special' && player.specialCards.length < 10 && newState.specialCardsDeck.length > 0) {
+    if (targetTile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && newState.specialCardsDeck.length > 0) {
         const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
         const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
         player.specialCards.push(drawnCard);
         newState.log.push(`${player.name} landed on a special island and found a card: "${drawnCard}"!`);
+    } else if (targetTile.type === 'special') {
+        newState.log.push(`${player.name} landed on a special island, but their hand was full!`);
     }
     
     newState = revealIsland(newState, x, y, player);
@@ -1039,11 +1050,13 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     const targetTile = map[y][x];
     targetTile.occupants.push({ playerId: player.id, armyId: armyToMove.id });
     
-    if (targetTile.type === 'special' && player.specialCards.length < 10 && newState.specialCardsDeck.length > 0) {
+    if (targetTile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && newState.specialCardsDeck.length > 0) {
         const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
         const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
         player.specialCards.push(drawnCard);
         newState.log.push(`${player.name} teleported to a special island and found a card: "${drawnCard}"!`);
+    } else if (targetTile.type === 'special') {
+        newState.log.push(`${player.name} teleported to a special island, but their hand was full!`);
     }
     
     newState = revealIsland(newState, x, y, player);

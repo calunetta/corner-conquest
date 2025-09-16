@@ -156,6 +156,7 @@ export type GameState = {
   name: string;
   status: GameStatus;
   maxPlayers: number;
+  debugMode: boolean;
   map: Island[][];
   players: Player[];
   currentPlayerIndex: number;
