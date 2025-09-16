@@ -161,10 +161,10 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                         <Image
                             src={sprite.idle}
                             alt={`${player.color} army`}
-                            width={40}
-                            height={40}
+                            width={64}
+                            height={64}
                             className={cn(
-                                "absolute h-auto w-full max-w-[56px] drop-shadow-lg",
+                                "absolute h-auto w-full max-w-[72px] drop-shadow-lg",
                                 'bottom-0 right-0', 
                                 pos.origin.includes('top') && 'top-0',
                                 pos.origin.includes('bottom') && 'bottom-0',

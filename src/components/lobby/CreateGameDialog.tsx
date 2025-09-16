@@ -133,7 +133,7 @@ export function CreateGameDialog({
                 <SelectTrigger className="col-span-3">
                    <SelectValue>
                       <span className="flex items-center gap-2">
-                        <Image src={PLAYER_DATA[playerColor].sprite.idle} alt={PLAYER_DATA[playerColor].name} width={32} height={32} unoptimized />
+                        <Image src={PLAYER_DATA[playerColor].sprite.idle} alt={PLAYER_DATA[playerColor].name} width={40} height={40} unoptimized />
                         <span>{PLAYER_DATA[playerColor].name}</span>
                       </span>
                     </SelectValue>
@@ -142,7 +142,7 @@ export function CreateGameDialog({
                   {PLAYER_COLORS.map((color) => (
                     <SelectItem key={color} value={color}>
                       <span className="flex items-center gap-2">
-                        <Image src={PLAYER_DATA[color].sprite.idle} alt={PLAYER_DATA[color].name} width={32} height={32} unoptimized/>
+                        <Image src={PLAYER_DATA[color].sprite.idle} alt={PLAYER_DATA[color].name} width={40} height={40} unoptimized/>
                         <span>{PLAYER_DATA[color].name}</span>
                       </span>
                     </SelectItem>
