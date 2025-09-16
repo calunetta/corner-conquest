@@ -2,7 +2,7 @@
 
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities } from './types';
+import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player } from './types';
 import { MAP_SIZE } from './game-logic';
 
 // --- Action Helpers ---
@@ -440,6 +440,27 @@ function setPossibleMoves(state: GameState, x: number, y: number): GameState {
     return newState;
 }
 
+function revealIsland(state: GameState, x: number, y: number, player: Player): GameState {
+    const newState = { ...state };
+    const tile = newState.map[y][x];
+
+    if (!tile.isHidden) return newState;
+    
+    tile.isHidden = false;
+    player.victoryPoints += 1;
+    newState.log.push(`${player.name} discovered a new island and gains 1 VP!`);
+
+    if (tile.type === 'special' && player.specialCards.length < 10 && newState.specialCardsDeck.length > 0) {
+        const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
+        const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
+        player.specialCards.push(drawnCard);
+        newState.log.push(`${player.name} found a special card: "${drawnCard}"!`);
+    }
+    
+    return newState;
+}
+
+
 export function handleTileClick(state: GameState, x: number, y: number, localPlayerId: number): GameState {
     let newState = { ...state };
     const { players, currentPlayerIndex, possibleMoves, teleportState, scoutingState } = newState;
@@ -448,15 +469,10 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
 
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
     const selectedArmy = getSelectedArmy(newState);
-
-    // Priority 1: Handle a confirmed move action.
-    if (selectedArmy && isPossibleMove) {
-        return handleMoveAction(newState, x, y);
-    }
     
-    // Priority 2: Handle special actions like scouting and teleporting.
+    // Priority 1: Handle scouting.
     if (scoutingState && scoutingState.count > 0 && clickedTile.isHidden) {
-        clickedTile.isHidden = false;
+        newState = revealIsland(newState, x, y, currentPlayer);
         scoutingState.count--;
         newState.log.push(`${currentPlayer.name} revealed a tile at (${x},${y}) with Scout. ${scoutingState.count} reveals left.`);
         if (scoutingState.count === 0) {
@@ -464,17 +480,23 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
             newState.log.push(`Scouting complete.`);
             const canUseCard = !currentPlayer.actionsThisTurn.includes('use-card');
             if (canUseCard) {
-                player.actionsThisTurn.push('use-card');
-                const cardIndex = player.specialCards.indexOf('Scout');
+                currentPlayer.actionsThisTurn.push('use-card');
+                const cardIndex = currentPlayer.specialCards.indexOf('Scout');
                 if (cardIndex > -1) {
-                    const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+                    const usedCard = currentPlayer.specialCards.splice(cardIndex, 1)[0];
                     newState.specialCardsDeck.push(usedCard);
                 }
             }
         }
         return newState;
     }
+
+    // Priority 2: Handle a confirmed move action.
+    if (selectedArmy && isPossibleMove) {
+        return handleMoveAction(newState, x, y);
+    }
     
+    // Priority 3: Handle special actions like teleporting.
     if (teleportState) {
         if (teleportState.armyId === null) {
             // First step of teleport: select an army
@@ -499,7 +521,7 @@ export function handleTileClick(state: GameState, x: number, y: number, localPla
         return newState;
     }
     
-    // Priority 3: Handle selection of a new army.
+    // Priority 4: Handle selection of a new army.
     const armiesOnTile = clickedTile.occupants
         .filter(o => o.playerId === currentPlayer.id)
         .map(o => currentPlayer.armies.find(a => a.id === o.armyId))
@@ -548,7 +570,7 @@ export function handleSelectArmy(state: GameState, armyId: number): GameState {
 }
 
 function handleMoveAction(state: GameState, x: number, y: number): GameState {
-    const newState = { ...state };
+    let newState = { ...state };
     const { players, currentPlayerIndex, map, specialCardsDeck } = newState;
     const player = players[currentPlayerIndex];
     const army = getSelectedArmy(newState);
@@ -574,20 +596,7 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     army.position = { x, y };
     map[y][x].occupants.push({ playerId: player.id, armyId: army.id });
     
-    const targetIsland = map[y][x];
-    
-    if(targetIsland.isHidden) {
-      targetIsland.isHidden = false;
-      player.victoryPoints += 1;
-      newState.log.push(`${player.name} discovered a new island and gains 1 VP!`);
-    }
-    
-    if (targetIsland.type === 'special' && player.specialCards.length < 10 && specialCardsDeck.length > 0) {
-        const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
-        const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
-        player.specialCards.push(drawnCard);
-        newState.log.push(`${player.name} found a special card: "${drawnCard}"!`);
-    }
+    newState = revealIsland(newState, x, y, player);
     
     if (player.hasExtraMove) {
         player.hasExtraMove = false; // Consume the flag
@@ -1027,21 +1036,8 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
 
     armyToMove.position = { x, y };
     map[y][x].occupants.push({ playerId: player.id, armyId: armyToMove.id });
-
-    const targetIsland = map[y][x];
-
-    if(targetIsland.isHidden) {
-      targetIsland.isHidden = false;
-      player.victoryPoints += 1;
-      newState.log.push(`${player.name} discovered a new island and gains 1 VP!`);
-    }
     
-    if (targetIsland.type === 'special' && player.specialCards.length < 10 && specialCardsDeck.length > 0) {
-        const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
-        const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
-        player.specialCards.push(drawnCard);
-        newState.log.push(`${player.name} found a special card: "${drawnCard}"!`);
-    }
+    newState = revealIsland(newState, x, y, player);
     
     newState.log.push(`${player.name} used 'Teleport' to move an army!`);
     
