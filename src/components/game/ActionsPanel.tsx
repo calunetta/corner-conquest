@@ -42,7 +42,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
 
   const canDeploy = (currentPlayer.resources.food >= deployCost || currentPlayer.reinforceActive) && currentPlayer.armyCount < 5 && !currentPlayer.actionsThisTurn.includes('deploy');
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !currentPlayer.actionsThisTurn.includes('buy-card');
-  const canUpgrade = currentPlayer.resources.iron >= upgradeCost && !currentPlayer.actionsThisTurn.includes('upgrade');
+  const canUpgrade = currentPlayer.resources.iron >= upgradeCost && !currentPlayer.actionsThisTurn.includes('upgrade') && currentPlayer.attackPower < 4;
   
   const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0) || currentPlayer.hasExtraMove;
 
@@ -56,9 +56,11 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
     ? 'Deploy'
     : `Deploy (${currentPlayer.resources.food}/${deployCost} Food)`;
 
+  const buyCardLabel = `Buy Card (${specialCardsDeck.length} left)`;
+
   const secondaryActions: ActionConfig[] = [
     { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/${upgradeCost} Iron)`, icon: <Zap />, disabled: !canUpgrade, tooltip: "Spend iron to permanently increase your army's attack power by 1. Can only be done once per turn." },
-    { id: 'buy-card', label: 'Buy Card (10 Gems)', icon: <ShoppingCart />, disabled: !canBuyCard, tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn." },
+    { id: 'buy-card', label: buyCardLabel, icon: <ShoppingCart />, disabled: !canBuyCard, tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn." },
     { id: 'deploy', label: deployLabel, icon: <Sword />, disabled: !canDeploy, tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army." },
     { id: 'open-abilities-shop', label: 'Abilities Shop', icon: <University />, disabled: false, tooltip: "Purchase permanent passive abilities for your empire." },
   ];
@@ -72,6 +74,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const getDisabledReason = (actionId: GameAction): string => {
     switch (actionId) {
         case 'upgrade':
+            if (currentPlayer.attackPower >= 4) return "Maximum attack power reached.";
             if (currentPlayer.resources.iron < upgradeCost) return "Not enough iron.";
             if (currentPlayer.actionsThisTurn.includes('upgrade')) return "You've already upgraded this turn.";
             break;
@@ -166,5 +169,3 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
     </Card>
   );
 }
-
-    
