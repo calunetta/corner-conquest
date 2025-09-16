@@ -1,5 +1,6 @@
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings } from './types';
 import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
+import { PLAYER_COLORS } from './player-data';
 
 export const defaultGameSettings: GameSettings = {
     victoryPointGoal: 30,
@@ -79,8 +80,6 @@ function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
         return true;
     });
 }
-
-const ALL_PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
 
 export function initializeGame(
     gameId: string, 
@@ -163,7 +162,7 @@ export function initializeGame(
     for (let i = 0; i < numBots; i++) {
         const botSeatIndex = players.length;
         const botPos = basePositions[botSeatIndex];
-        const availableColors = ALL_PLAYER_COLORS.filter(c => !usedColors.includes(c));
+        const availableColors = PLAYER_COLORS.filter(c => !usedColors.includes(c));
         const botColor = availableColors[0];
         usedColors.push(botColor);
 

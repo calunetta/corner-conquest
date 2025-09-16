@@ -2,7 +2,7 @@
 
 export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
-export type PlayerColor = 'blue' | 'red' | 'green' | 'yellow';
+export type PlayerColor = 'blue' | 'red' | 'purple' | 'yellow';
 export type GameStatus = 'waiting' | 'playing' | 'finished';
 
 export type GameSettings = {

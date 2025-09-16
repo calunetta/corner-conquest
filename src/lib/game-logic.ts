@@ -1,6 +1,6 @@
 import type { GameState, Island, Player, PlayerColor, FirestoreGameState } from './types';
+import { PLAYER_COLORS } from './player-data';
 
-const ALL_PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
 export const MAP_SIZE = 7;
 
 export function flattenMap(map: Island[][]): Island[] {
@@ -29,7 +29,7 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
     const newGameState = JSON.parse(JSON.stringify(gameState));
 
     const usedColors = newGameState.players.map((p: Player) => p.color);
-    const availableColors = ALL_PLAYER_COLORS.filter(c => !usedColors.includes(c));
+    const availableColors = PLAYER_COLORS.filter(c => !usedColors.includes(c));
 
     if (availableColors.length === 0) return null; // Should not happen if maxPlayers is 4
 
@@ -38,9 +38,9 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
     
     const basePositions = [
         { x: 0, y: 0 },
-        { x: MAP_SIZE - 1, y: MAP_SIZE - 1 },
-        { x: 0, y: MAP_SIZE - 1 },
-        { x: MAP_SIZE - 1, y: 0 },
+        { x: newGameState.settings.mapSize - 1, y: newGameState.settings.mapSize - 1 },
+        { x: 0, y: newGameState.settings.mapSize - 1 },
+        { x: newGameState.settings.mapSize - 1, y: 0 },
     ];
     const newPlayerPos = basePositions[newPlayerSeatIndex];
 
@@ -71,7 +71,7 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
         resources: { gems: 0, iron: 0, food: 0 },
         armyCount: 1,
         attackPower: 0,
-        nextArmyCost: 6,
+        nextArmyCost: newGameState.settings.initialDeployCost,
         victoryPoints: 0,
         specialCards: ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
         positions: [],

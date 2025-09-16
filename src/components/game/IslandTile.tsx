@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { ResourceIcon, MonsterIcon } from '../icons';
 import { Home, HelpCircle, Star, Loader2, Anchor } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import Image from 'next/image';
+import { PLAYER_SPRITES } from '@/lib/player-data';
 
 type IslandTileProps = {
   island: Island;
@@ -21,14 +23,14 @@ type IslandTileProps = {
 const playerColorMap = {
   blue: { bg: 'bg-blue-500', border: 'border-blue-300' },
   red: { bg: 'bg-red-500', border: 'border-red-300' },
-  green: { bg: 'bg-green-500', border: 'border-green-300' },
+  purple: { bg: 'bg-purple-500', border: 'border-purple-300' },
   yellow: { bg: 'bg-yellow-400', border: 'border-yellow-200' },
 };
 
 const playerTileIndicatorClasses: Record<string, string> = {
     blue: 'shadow-blue-500/50',
     red: 'shadow-red-500/50',
-    green: 'shadow-green-500/50',
+    purple: 'shadow-purple-500/50',
     yellow: 'shadow-yellow-400/50',
 }
 
@@ -137,14 +139,36 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
       >
-        <div className="absolute inset-0">
-          {occupants.map(({ player, armyId, army }, index) => (
-             player && (
-                <div key={`${player.id}-${armyId}`} className={cn('absolute h-4 w-4 rounded-full border-2', armyPositions[index % armyPositions.length], playerColorMap[player.color].bg, playerColorMap[player.color].border)}>
-                    {army?.hasActed && <div className='absolute inset-0 bg-black/60 rounded-full'/>}
-                </div>
-            )
-          ))}
+        <div className="absolute inset-0 z-10 grid grid-cols-2 grid-rows-2">
+            {occupants.map(({ player, army }, index) => {
+                if (!player || !army) return null;
+                
+                const sprite = PLAYER_SPRITES[player.color];
+                if (!sprite) return null;
+                
+                // Simple grid positioning for up to 4 armies
+                const positionClasses = [
+                    'top-0 left-0', 
+                    'top-0 right-0', 
+                    'bottom-0 left-0', 
+                    'bottom-0 right-0'
+                ];
+
+                return (
+                    <div key={`${player.id}-${army.id}`} className={cn('absolute h-1/2 w-1/2', positionClasses[index % 4])}>
+                        <Image
+                            src={sprite.idle}
+                            alt={`${player.color} army`}
+                            width={24}
+                            height={24}
+                            className={cn(
+                                "absolute bottom-0 right-0 h-auto w-full max-w-[24px] origin-bottom-right drop-shadow-lg",
+                                army.hasActed ? 'opacity-50' : ''
+                            )}
+                        />
+                    </div>
+                )
+            })}
         </div>
         
         <div className="h-full w-full p-1">{getIcon()}</div>

@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { Player } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,7 @@ type PlayerInfoProps = {
 const playerColorMap = {
   blue: 'border-blue-500',
   red: 'border-red-500',
-  green: 'border-green-500',
+  purple: 'border-purple-500',
   yellow: 'border-yellow-400',
 }
 

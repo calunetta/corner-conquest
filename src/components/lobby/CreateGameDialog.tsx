@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect } from 'react';
 import {
@@ -25,8 +26,8 @@ import { Switch } from '../ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { CustomSettingsSheet } from './CustomSettingsSheet';
 import { defaultGameSettings } from '@/lib/game-initializer';
-
-const PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'green', 'yellow'];
+import { PLAYER_COLORS, PLAYER_DATA } from '@/lib/player-data';
+import Image from 'next/image';
 
 type CreateGameDialogProps = {
   open: boolean;
@@ -123,21 +124,26 @@ export function CreateGameDialog({
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="playerColor" className="text-right">
-                Your Color
+                Your Army
               </Label>
               <Select
                 value={playerColor}
                 onValueChange={(value) => setPlayerColor(value as PlayerColor)}
               >
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select your color" />
+                   <SelectValue>
+                      <span className="flex items-center gap-2">
+                        <Image src={PLAYER_DATA[playerColor].sprite.idle} alt={PLAYER_DATA[playerColor].name} width={20} height={20} unoptimized />
+                        <span>{PLAYER_DATA[playerColor].name}</span>
+                      </span>
+                    </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {PLAYER_COLORS.map((color) => (
                     <SelectItem key={color} value={color}>
                       <span className="flex items-center gap-2">
-                        <div className={`h-4 w-4 rounded-full bg-${color}-500`} />
-                        <span className="capitalize">{color}</span>
+                        <Image src={PLAYER_DATA[color].sprite.idle} alt={PLAYER_DATA[color].name} width={20} height={20} unoptimized/>
+                        <span>{PLAYER_DATA[color].name}</span>
                       </span>
                     </SelectItem>
                   ))}
