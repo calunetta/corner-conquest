@@ -104,7 +104,16 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     
     switch (island.type) {
       case 'base': 
-        return <Home className="h-full w-full p-2" style={{ color: baseOwner?.color }}/>;
+        return baseOwner?.color ? (
+            <Image 
+                src={PLAYER_SPRITES[baseOwner.color].base}
+                alt={`${baseOwner.color} base`}
+                width={64}
+                height={64}
+                className="h-full w-full object-contain p-1"
+                unoptimized
+            />
+        ) : <Home className="h-full w-full p-2" />;
       case 'resource': 
         return (
           <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1">
@@ -139,32 +148,38 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
       >
-        <div className="absolute inset-0 z-10 grid grid-cols-2 grid-rows-2">
+        <div className="absolute inset-0 z-10">
             {occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
                 const sprite = PLAYER_SPRITES[player.color];
                 if (!sprite) return null;
                 
-                // Simple grid positioning for up to 4 armies
-                const positionClasses = [
-                    'top-0 left-0', 
-                    'top-0 right-0', 
-                    'bottom-0 left-0', 
-                    'bottom-0 right-0'
+                // Dynamic positioning for up to 4 armies
+                const positions = [
+                    { top: '0%', left: '0%' },
+                    { top: '0%', left: '50%' },
+                    { top: '50%', left: '0%' },
+                    { top: '50%', left: '50%' }
                 ];
+                const pos = positions[index % 4];
 
                 return (
-                    <div key={`${player.id}-${army.id}`} className={cn('absolute h-1/2 w-1/2', positionClasses[index % 4])}>
+                    <div 
+                        key={`${player.id}-${army.id}`} 
+                        className={cn('absolute w-1/2 h-1/2')}
+                        style={{ top: pos.top, left: pos.left }}
+                    >
                         <Image
                             src={sprite.idle}
                             alt={`${player.color} army`}
-                            width={24}
-                            height={24}
+                            width={32}
+                            height={32}
                             className={cn(
-                                "absolute bottom-0 right-0 h-auto w-full max-w-[24px] origin-bottom-right drop-shadow-lg",
+                                "absolute bottom-0 right-0 h-auto w-full max-w-[32px] origin-bottom-right drop-shadow-lg",
                                 army.hasActed ? 'opacity-50' : ''
                             )}
+                            unoptimized
                         />
                     </div>
                 )
