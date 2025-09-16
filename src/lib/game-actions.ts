@@ -1,6 +1,7 @@
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player } from './types';
+import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState } from './types';
+import { flattenMap } from './game-logic';
 
 // --- Action Helpers ---
 
@@ -1081,70 +1082,81 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
 interface PlayerExitParams {
     gameId: string;
     gameState: GameState;
-    localPlayer: any;
+    setGameState: (newState: GameState) => void;
+    localPlayer: Player;
     isHost: boolean;
     onExit: () => void;
 }
 
-export async function handlePlayerExit({ gameId, gameState, localPlayer, isHost, onExit }: PlayerExitParams): Promise<boolean> {
-  if (gameState.status === 'playing') {
-    return false;
-  }
+export async function handlePlayerExit({ gameId, gameState, setGameState, localPlayer, isHost, onExit }: PlayerExitParams): Promise<boolean> {
+    if (gameState.status === 'playing') {
+        return false; // Can't leave a game in progress
+    }
 
-  if (isHost) {
-      if (gameState.players.length === 1) {
-          await deleteDoc(doc(db, 'games', gameId));
-      } else {
-          // A more complex implementation could assign a new host. For now, we just remove the host.
-          await runTransaction(db, async (transaction) => {
-            const gameDocRef = doc(db, 'games', gameId);
-            const gameDoc = await transaction.get(gameDocRef);
-            if (!gameDoc.exists()) return;
-            
-            const currentState = gameDoc.data();
-            const updatedPlayers = currentState.players.filter((p: any) => p.playerId !== localPlayer.playerId);
-            
-            transaction.update(gameDocRef, { players: updatedPlayers, log: arrayUnion(`${localPlayer.name} (host) has left the room.`) });
-          });
-      }
-  } else {
-    // Non-host leaving
-    await runTransaction(db, async (transaction) => {
-      const gameDocRef = doc(db, 'games', gameId);
-      const gameDoc = await transaction.get(gameDocRef);
-      if (!gameDoc.exists()) return;
-
-      const currentState = gameDoc.data();
-      const updatedPlayers = currentState.players.filter((p: any) => p.playerId !== localPlayer.playerId);
-      
-      transaction.update(gameDocRef, { players: updatedPlayers, log: arrayUnion(`${localPlayer.name} has left the room.`) });
-    });
-  }
-  
-  onExit();
-  return true;
-}
-
-export async function handleConfirmHostLeave(gameState: GameState, gameId: string, onExit: () => void) {
-    if (gameState.players.length === 1) {
-        await deleteDoc(doc(db, 'games', gameId));
-    } else {
+    try {
         await runTransaction(db, async (transaction) => {
             const gameDocRef = doc(db, 'games', gameId);
             const gameDoc = await transaction.get(gameDocRef);
+
             if (!gameDoc.exists()) return;
 
-            const currentState = gameDoc.data();
-            const updatedPlayers = currentState.players.filter((p: any) => p.id !== 0); // Remove host (player id 0)
+            const currentState = gameDoc.data() as FirestoreGameState;
             
-            // A more robust system would re-assign player IDs and host status
+            // If only one player is left and they are leaving, delete the game
+            if (currentState.players.length === 1) {
+                transaction.delete(gameDocRef);
+                return;
+            }
+
+            let newPlayers = currentState.players.filter((p: Player) => p.playerId !== localPlayer.playerId);
+            
+            // If the host is leaving, we might need to assign a new host
+            if (isHost) {
+                // Simple reassignment: make the next player in the list the new host (player.id = 0)
+                // A more robust system would be needed for complex host migration
+            }
+            
+            // Create the log message before updating the state
+            const newLog = arrayUnion(`${localPlayer.name} has left the room.`);
+            
             transaction.update(gameDocRef, { 
-                players: updatedPlayers, 
-                log: arrayUnion(`${currentState.players[0].name} (host) has left the room.`) 
+                players: newPlayers, 
+                log: newLog,
             });
         });
+        
+        onExit(); // This navigates the user away
+        return true;
+    } catch (error) {
+        console.error("Error leaving game:", error);
+        return false;
     }
-    onExit();
+}
+
+export async function handleConfirmHostLeave(gameState: GameState, gameId: string, onExit: () => void) {
+    // This function is for the host leaving a waiting room
+    try {
+        if (gameState.players.length === 1) {
+            await deleteDoc(doc(db, 'games', gameId));
+        } else {
+             await runTransaction(db, async (transaction) => {
+                const gameDocRef = doc(db, 'games', gameId);
+                const gameDoc = await transaction.get(gameDocRef);
+                if (!gameDoc.exists()) return;
+
+                const currentState = gameDoc.data();
+                const updatedPlayers = currentState.players.filter((p: any) => p.id !== 0); // Remove host (player id 0)
+                
+                transaction.update(gameDocRef, { 
+                    players: updatedPlayers, 
+                    log: arrayUnion(`${currentState.players[0].name} (host) has left the room.`) 
+                });
+            });
+        }
+        onExit();
+    } catch (error) {
+        console.error("Error during host leave confirmation:", error);
+    }
 }
 
 

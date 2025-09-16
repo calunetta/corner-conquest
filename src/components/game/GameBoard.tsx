@@ -221,23 +221,27 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleExitGame = async () => {
     if (!gameState || !localPlayer) return;
 
+    // Special handling for host wanting to leave a waiting room
     if (isHost && gameState.status === 'waiting') {
         setGameState({ ...gameState, showHostLeaveDialog: true });
         return;
     }
-
+    
+    // Standard leave logic for players or host in started game
     setIsExiting(true);
     const success = await GameActions.handlePlayerExit({
       gameId,
       gameState,
+      setGameState,
       localPlayer,
       isHost,
       onExit,
     });
-    setIsExiting(false);
+    
     if (!success) {
       toast({ title: "Cannot Leave", description: "You cannot leave a game that is in progress.", variant: "destructive" });
     }
+    setIsExiting(false);
   }
 
 
@@ -272,7 +276,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                         <h1 className="text-xl font-bold sm:text-2xl">Corner Conquest</h1>
                     </div>
                     {canStartGame && (
-                        <Button onClick={handleStartGame}><Play /> Start Game Now</Button>
+                        <Button onClick={handleStartGame}><Play /> Start Game</Button>
                     )}
                 </div>
             ) : (
@@ -302,7 +306,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 </div>
                 <CollapsibleContent>
                     <div
-                    className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4"
+                    className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4"
                     >
                     {players.map(p => (
                         <PlayerInfo key={p.id} player={p} isCurrentPlayer={currentPlayerIndex === p.id} />
