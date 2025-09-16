@@ -71,7 +71,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                  {positionedPlayer && (
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="mt-0.5 flex items-center justify-center gap-1">
                                 {Array.from({ length: resource.amount }).map((_, i) => (
                                     <div key={`dot-${i}`} className={cn('h-1.5 w-1.5 rounded-full', playerColorMap[positionedPlayer.color].bg)} />
                                 ))}
