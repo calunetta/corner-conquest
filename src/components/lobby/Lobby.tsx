@@ -1,6 +1,7 @@
+
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, arrayUnion, runTransaction } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, runTransaction } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
 import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
@@ -102,10 +103,12 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             if (firestoreState.status === 'playing') {
                  throw new Error("This game has already started.");
             }
+            
+            const mapSize = firestoreState.mapSize || defaultGameSettings.mapSize;
 
             const gameState = {
                 ...firestoreState,
-                map: unflattenMap(firestoreState.map, firestoreState.mapSize),
+                map: unflattenMap(firestoreState.map, mapSize),
             };
             
             const updatedGameState = addPlayerToGame(gameState, { playerId, name: username });
