@@ -3,9 +3,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, arrayUnion, runTransaction } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
-import { initializeGame, startGame } from '@/lib/game-initializer';
+import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
 import { addPlayerToGame, flattenMap, unflattenMap } from '@/lib/game-logic';
-import type { GameState, PlayerColor, FirestoreGameState } from '@/lib/types';
+import type { GameState, PlayerColor, FirestoreGameState, GameSettings } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CreateGameDialog } from './CreateGameDialog';
@@ -34,6 +34,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             ...firestoreState,
             id: doc.id,
             map: [], // Don't need the full map data in the lobby
+            settings: firestoreState.settings || defaultGameSettings,
         });
       });
       setGames(gamesList);
@@ -52,13 +53,14 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     maxPlayers: number,
     playerColor: PlayerColor,
     numBots: number,
-    debugMode: boolean
+    debugMode: boolean,
+    settings: GameSettings,
   ): Promise<boolean> => {
     if (!playerId || !username) return false;
 
     const newGameId = doc(collection(db, 'games')).id;
     const creator = { playerId, name: username, color: playerColor };
-    let newGame = initializeGame(newGameId, gameName, maxPlayers, creator, numBots, debugMode);
+    let newGame = initializeGame(newGameId, gameName, maxPlayers, creator, numBots, debugMode, settings);
     
     const isBotGame = maxPlayers === 1;
     if (isBotGame) {

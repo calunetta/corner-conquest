@@ -1,6 +1,7 @@
 
+
 'use client';
-import type { Player, PassiveAbilities } from '@/lib/types';
+import type { Player, PassiveAbilities, GameState } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -20,22 +21,26 @@ type AbilitiesDialogProps = {
   player: Player;
   onClose: () => void;
   onBuyAbility: (abilityName: keyof PassiveAbilities) => void;
+  gameState: GameState;
 };
 
 type AbilityInfo = {
   name: keyof PassiveAbilities;
   title: string;
   description: string;
-  cost: number;
 }
 
-const ABILITIES: AbilityInfo[] = [
-    { name: 'explorer', title: 'Explorer', description: 'Passively gain 1 VP per turn for each island you have an army on.', cost: 15 },
-    { name: 'collector', title: 'Collector', description: 'Passively collect 1 of each available resource from every island you have an army on at the end of your turn.', cost: 15 },
+const ALL_ABILITIES: AbilityInfo[] = [
+    { name: 'explorer', title: 'Explorer', description: 'Passively gain 1 VP per turn for each island you have an army on.' },
+    { name: 'collector', title: 'Collector', description: 'Passively collect 1 of each available resource from every island you have an army on at the end of your turn.' },
 ]
 
-export function AbilitiesDialog({ player, onClose, onBuyAbility }: AbilitiesDialogProps) {
+export function AbilitiesDialog({ player, onClose, onBuyAbility, gameState }: AbilitiesDialogProps) {
   const { toast } = useToast();
+  const { settings } = gameState;
+  const cost = settings.abilityCost;
+  
+  const availableAbilities = ALL_ABILITIES.filter(a => settings.availableAbilities.includes(a.name));
 
   const handleBuy = (ability: AbilityInfo) => {
     try {
@@ -58,9 +63,9 @@ export function AbilitiesDialog({ player, onClose, onBuyAbility }: AbilitiesDial
         
         <ScrollArea className="h-72 pr-6">
             <div className="grid gap-4">
-            {ABILITIES.map((ability) => {
+            {availableAbilities.map((ability) => {
                 const hasAbility = player.passiveAbilities[ability.name];
-                const canAfford = player.resources.gems >= ability.cost;
+                const canAfford = player.resources.gems >= cost;
 
                 return (
                     <Card key={ability.name}>
@@ -74,7 +79,7 @@ export function AbilitiesDialog({ player, onClose, onBuyAbility }: AbilitiesDial
                             ) : (
                                 <Button size="sm" onClick={() => handleBuy(ability)} disabled={!canAfford}>
                                     <Gem className="mr-2 h-4 w-4" />
-                                    Purchase ({ability.cost})
+                                    Purchase ({cost})
                                 </Button>
                             )}
                         </CardHeader>

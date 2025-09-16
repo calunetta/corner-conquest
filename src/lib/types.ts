@@ -5,6 +5,20 @@ export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'green' | 'yellow';
 export type GameStatus = 'waiting' | 'playing' | 'finished';
 
+export type GameSettings = {
+    victoryPointGoal: number;
+    vpPerIslandDiscovery: number;
+    initialDeployCost: number;
+    deployCostIncrement: number;
+    upgradeCost: number;
+    abilityCost: number;
+    mapSize: number;
+    baseResourceAmount: number;
+    resourceDensity: number; // 0-1, likelihood of resource vs monster
+    availableCards: string[];
+    availableAbilities: string[];
+};
+
 export type IslandResource = {
   type: ResourceType;
   amount: number;
@@ -157,6 +171,7 @@ export type GameState = {
   status: GameStatus;
   maxPlayers: number;
   debugMode: boolean;
+  settings: GameSettings;
   map: Island[][];
   players: Player[];
   currentPlayerIndex: number;

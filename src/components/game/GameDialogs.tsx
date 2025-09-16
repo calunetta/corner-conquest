@@ -1,5 +1,6 @@
 
 
+
 'use client';
 import type { GameState, Player, ResourceType } from '@/lib/types';
 import { CombatDialog } from './CombatDialog';
@@ -139,6 +140,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
           player={localPlayer}
           onClose={() => handleCloseDialog('abilitiesShopState')}
           onBuyAbility={(abilityName) => handleUpdate(GameActions.handleBuyAbility(gameState, abilityName))}
+          gameState={gameState}
         />
       )}
       {stealResourceDialogState && isMyTurn && (

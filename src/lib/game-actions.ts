@@ -1,9 +1,9 @@
 
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player } from './types';
-import { MAP_SIZE } from './game-logic';
 
 // --- Action Helpers ---
 
@@ -137,7 +137,7 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
 
 export function handleDeployAction(state: GameState): GameState {
     const newState = { ...state };
-    const { players, currentPlayerIndex, map, specialCardsDeck } = newState;
+    const { players, currentPlayerIndex, map, specialCardsDeck, settings } = newState;
     const player = players[currentPlayerIndex];
     
     if (player.actionsThisTurn.includes('deploy')) throw new Error("You can only deploy one army per turn.");
@@ -191,7 +191,7 @@ export function handleDeployAction(state: GameState): GameState {
     }
 
     if (!player.reinforceActive) {
-        player.nextArmyCost += 2;
+        player.nextArmyCost += settings.deployCostIncrement;
     }
     
     player.actionsThisTurn.push('deploy');
@@ -222,13 +222,13 @@ export function handleBuyCardAction(state: GameState): GameState {
 
 export function handleUpgradeAction(state: GameState): GameState {
     const newState = { ...state };
-    const { players, currentPlayerIndex, specialCardsDeck } = newState;
+    const { players, currentPlayerIndex, specialCardsDeck, settings } = newState;
     const player = players[currentPlayerIndex];
 
     if (player.actionsThisTurn.includes('upgrade')) throw new Error("You can only upgrade once per turn.");
     if (player.attackPower >= 4) throw new Error("You have reached the maximum attack power.");
 
-    let cost = 6;
+    let cost = settings.upgradeCost;
     if (player.masterBuilderActive) {
         cost = Math.ceil(cost / 2);
     }
@@ -406,6 +406,8 @@ export function handleEndTurn(state: GameState): GameState {
 
 function setPossibleMoves(state: GameState, x: number, y: number): GameState {
     const newState = { ...state };
+    const { settings } = newState;
+    const mapSize = settings.mapSize;
     const currentPlayer = newState.players[newState.currentPlayerIndex];
     const newlySelectedArmy = getSelectedArmy(newState);
 
@@ -423,7 +425,7 @@ function setPossibleMoves(state: GameState, x: number, y: number): GameState {
             if (Math.abs(i) + Math.abs(j) <= moveRadius && (i !== 0 || j !== 0)) {
                 const newX = x + i;
                 const newY = y + j;
-                if (newX >= 0 && newX < MAP_SIZE && newY >= 0 && newY < MAP_SIZE) {
+                if (newX >= 0 && newX < mapSize && newY >= 0 && newY < mapSize) {
                     const targetTile = newState.map[newY][newX];
                     if (targetTile.type === 'resource' && targetTile.resources.length === 0 && (!targetTile.monsters || targetTile.monsters.length === 0)) {
                         continue;
@@ -447,8 +449,10 @@ function revealIsland(state: GameState, x: number, y: number, player: Player): G
     if (!tile.isHidden) return newState;
     
     tile.isHidden = false;
-    player.victoryPoints += 1;
-    newState.log.push(`${player.name} discovered a new island and gains 1 VP!`);
+    player.victoryPoints += state.settings.vpPerIslandDiscovery;
+    if (state.settings.vpPerIslandDiscovery > 0) {
+        newState.log.push(`${player.name} discovered a new island and gains ${state.settings.vpPerIslandDiscovery} VP!`);
+    }
 
     if (tile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && newState.specialCardsDeck.length > 0) {
         const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
@@ -456,7 +460,7 @@ function revealIsland(state: GameState, x: number, y: number, player: Player): G
         player.specialCards.push(drawnCard);
         newState.log.push(`${player.name} discovered a special island and found a card: "${drawnCard}"!`);
     } else if (tile.type === 'special') {
-        newState.log.push(`${player.name} discovered a special island, but their hand was full!`);
+        newState.log.push(`${player.name} discovered a special island, but their hand was full or no cards were left!`);
     }
     
     return newState;
@@ -599,16 +603,19 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
     const targetTile = newState.map[y][x];
     targetTile.occupants.push({ playerId: player.id, armyId: army.id });
     
+    const wasHidden = targetTile.isHidden;
+    if (wasHidden) {
+        newState = revealIsland(newState, x, y, player);
+    }
+    
     if (targetTile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && newState.specialCardsDeck.length > 0) {
         const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
         const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
         player.specialCards.push(drawnCard);
         newState.log.push(`${player.name} landed on a special island and found a card: "${drawnCard}"!`);
     } else if (targetTile.type === 'special') {
-        newState.log.push(`${player.name} landed on a special island, but their hand was full!`);
+        newState.log.push(`${player.name} landed on a special island, but their hand was full or no cards were left!`);
     }
-    
-    newState = revealIsland(newState, x, y, player);
     
     if (player.hasExtraMove) {
         player.hasExtraMove = false; // Consume the flag
@@ -836,7 +843,7 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
           currentTile.type = 'resource';
           const resourceTypes: ResourceType[] = ['food', 'iron', 'gems'];
           const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
-          currentTile.resources.push({ type: randomResource, amount: 1});
+          currentTile.resources.push({ type: randomResource, amount: state.settings.baseResourceAmount});
           newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
         }
     } else {
@@ -878,7 +885,7 @@ export const handleOpenUseCardDialog = (state: GameState, cardName: string) => {
 
 export const handleUseCard = (state: GameState, cardName: string) => {
     let newState = { ...state };
-    const { players, currentPlayerIndex } = newState;
+    const { players, currentPlayerIndex, specialCardsDeck } = newState;
     const player = players[currentPlayerIndex];
 
     const canUseCard = !player.actionsThisTurn.includes('use-card');
@@ -925,13 +932,13 @@ export const handleUseCard = (state: GameState, cardName: string) => {
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
             break;
         default:
+            // For cards with no immediate state change, we still need to recycle them.
+            const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+            specialCardsDeck.push(usedCard);
+            player.actionsThisTurn.push('use-card');
             newState.log.push(`${player.name} used the '${cardName}' card.`);
             break;
     }
-
-    // Do not return card to deck here, it's done where the effect is consumed.
-    // Except for instant-use cards that don't have a follow-up action.
-    // For now, let's keep it simple and assume most cards are consumed in their specific handlers.
 
     return { ...newState, useCardDialogState: null, showCardsDialogForPlayer: null };
 };
@@ -1050,16 +1057,19 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     const targetTile = map[y][x];
     targetTile.occupants.push({ playerId: player.id, armyId: armyToMove.id });
     
+    const wasHidden = targetTile.isHidden;
+    if (wasHidden) {
+        newState = revealIsland(newState, x, y, player);
+    }
+    
     if (targetTile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && newState.specialCardsDeck.length > 0) {
         const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
         const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
         player.specialCards.push(drawnCard);
         newState.log.push(`${player.name} teleported to a special island and found a card: "${drawnCard}"!`);
     } else if (targetTile.type === 'special') {
-        newState.log.push(`${player.name} teleported to a special island, but their hand was full!`);
+        newState.log.push(`${player.name} teleported to a special island, but their hand was full or no cards were left!`);
     }
-    
-    newState = revealIsland(newState, x, y, player);
     
     newState.log.push(`${player.name} used 'Teleport' to move an army!`);
     
@@ -1140,13 +1150,17 @@ export async function handleConfirmHostLeave(gameState: GameState, gameId: strin
 
 // --- Abilities Shop ---
 export function handleOpenAbilitiesShop(state: GameState): GameState {
+    const availableAbilities = state.settings.availableAbilities;
+    if (availableAbilities.length === 0) {
+        throw new Error("The host has disabled all passive abilities for this match.");
+    }
     return { ...state, abilitiesShopState: { isOpen: true } };
 }
 
 export function handleBuyAbility(state: GameState, abilityName: keyof PassiveAbilities): GameState {
     const newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
-    const cost = 15;
+    const cost = newState.settings.abilityCost;
 
     if (player.resources.gems < cost) {
         throw new Error("Not enough gems to buy this ability.");
@@ -1154,6 +1168,10 @@ export function handleBuyAbility(state: GameState, abilityName: keyof PassiveAbi
 
     if (player.passiveAbilities[abilityName]) {
         throw new Error("You already have this ability.");
+    }
+    
+    if (!newState.settings.availableAbilities.includes(abilityName)) {
+        throw new Error("This ability is not available in this match.");
     }
 
     player.resources.gems -= cost;

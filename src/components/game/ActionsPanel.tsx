@@ -1,5 +1,6 @@
 
 
+
 'use client';
 import type { GameAction, GameState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,7 @@ type ActionConfig = {
 };
 
 export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration }: ActionsPanelProps) {
-  const { currentPlayerIndex, players, map, currentAction, specialCardsDeck, selectedArmyId, teleportState, scoutingState } = gameState;
+  const { currentPlayerIndex, players, map, currentAction, specialCardsDeck, selectedArmyId, teleportState, scoutingState, settings } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   
   const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
@@ -37,7 +38,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.armyId === selectedArmy.id);
   const canAttack = selectedArmy && currentTile && (currentTile.occupants.some(o => o.playerId !== currentPlayer.id) || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
   
-  const upgradeCost = currentPlayer.masterBuilderActive ? 3 : 6;
+  const upgradeCost = currentPlayer.masterBuilderActive ? Math.ceil(settings.upgradeCost / 2) : settings.upgradeCost;
   const deployCost = currentPlayer.efficientActive ? Math.ceil(currentPlayer.nextArmyCost / 2) : currentPlayer.nextArmyCost;
 
   const canDeploy = (currentPlayer.resources.food >= deployCost || currentPlayer.reinforceActive) && currentPlayer.armyCount < 5 && !currentPlayer.actionsThisTurn.includes('deploy');
@@ -56,7 +57,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
     ? 'Deploy'
     : `Deploy (${currentPlayer.resources.food}/${deployCost} Food)`;
 
-  const buyCardLabel = `Buy Card (${specialCardsDeck.length} left)`;
+  const buyCardLabel = `Buy Card`;
 
   const secondaryActions: ActionConfig[] = [
     { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/${upgradeCost} Iron)`, icon: <Zap />, disabled: !canUpgrade, tooltip: "Spend iron to permanently increase your army's attack power by 1. Can only be done once per turn." },
@@ -164,6 +165,9 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
         <Separator className="my-2" />
         <div className="grid grid-cols-2 flex-wrap gap-2">
             {secondaryActions.map((action) => renderButton(action, false))}
+        </div>
+        <div className='text-center mt-2 text-sm text-muted-foreground'>
+            Cards in deck: {specialCardsDeck.length}
         </div>
       </CardContent>
     </Card>
