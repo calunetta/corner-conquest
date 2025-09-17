@@ -1,6 +1,4 @@
 
-
-
 import type { Island, Player, GameAction } from '@/lib/types';
 import { IslandTile } from './IslandTile';
 import { useMemo } from 'react';
