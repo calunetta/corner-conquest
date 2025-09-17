@@ -145,10 +145,10 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                 if (!sprite) return null;
                 
                 const positions = [
-                    { top: '0', left: '0', origin: 'origin-top-left' },
-                    { top: '0', right: '0', origin: 'origin-top-right' },
                     { bottom: '0', left: '0', origin: 'origin-bottom-left' },
-                    { bottom: '0', right: '0', origin: 'origin-bottom-right' }
+                    { bottom: '0', right: '0', origin: 'origin-bottom-right' },
+                    { top: '0', left: '0', origin: 'origin-top-left' },
+                    { top: '0', right: '0', origin: 'origin-top-right' }
                 ];
                 const pos = positions[index % 4];
 
@@ -164,7 +164,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                             width={64}
                             height={64}
                             className={cn(
-                                "absolute h-auto w-full max-w-[72px] drop-shadow-lg",
+                                "absolute h-auto w-full max-w-[86px] drop-shadow-lg",
                                 'bottom-0 right-0', 
                                 pos.origin.includes('top') && 'top-0',
                                 pos.origin.includes('bottom') && 'bottom-0',
