@@ -23,7 +23,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
 
   return (
     <div
-      className="grid gap-2 p-4 bg-muted/20 rounded-xl border-2 border-muted w-full h-full"
+      className="grid gap-2 p-4 bg-water-pattern bg-repeat rounded-xl border-2 border-muted w-full h-full"
       style={{
         gridTemplateColumns: `repeat(${map.length}, minmax(0, 1fr))`,
       }}
