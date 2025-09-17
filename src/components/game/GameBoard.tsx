@@ -221,15 +221,18 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleExitGame = async () => {
     if (!gameState || !localPlayer) return;
 
-    // Special handling for host wanting to leave a waiting room
     if (isHost && gameState.status === 'waiting') {
         setGameState({ ...gameState, showHostLeaveDialog: true });
         return;
     }
+
+    if (gameState.status === 'playing') {
+        toast({ title: "Cannot Leave", description: "You cannot leave a game that is in progress.", variant: "destructive" });
+        return;
+    }
     
-    // Standard leave logic for players or host in started game
     setIsExiting(true);
-    const success = await GameActions.handlePlayerExit({
+    await GameActions.handlePlayerExit({
       gameId,
       gameState,
       setGameState,
@@ -237,11 +240,14 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       isHost,
       onExit,
     });
-    
-    if (!success) {
-      toast({ title: "Cannot Leave", description: "You cannot leave a game that is in progress.", variant: "destructive" });
-    }
     setIsExiting(false);
+  };
+
+  const handleConfirmHostLeaveGame = async () => {
+      if (!gameState) return;
+      setIsExiting(true);
+      await GameActions.handleConfirmHostLeave(gameState, gameId, onExit);
+      setIsExiting(false);
   }
 
 
@@ -396,6 +402,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setGameState={setGameState} 
         localPlayer={localPlayer}
         isMyTurn={isMyTurn}
+        onConfirmHostLeave={handleConfirmHostLeaveGame}
       />
     </div>
   );

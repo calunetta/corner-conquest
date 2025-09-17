@@ -1,6 +1,5 @@
 
 
-
 'use client';
 import type { GameState, Player, ResourceType } from '@/lib/types';
 import { CombatDialog } from './CombatDialog';
@@ -23,9 +22,10 @@ type GameDialogsProps = {
   setGameState: (state: GameState) => void;
   localPlayer: Player;
   isMyTurn: boolean;
+  onConfirmHostLeave: () => void;
 };
 
-export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: GameDialogsProps) {
+export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, onConfirmHostLeave }: GameDialogsProps) {
   const { 
     combatState, 
     monsterCombatState, 
@@ -160,7 +160,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn }: 
       {showHostLeaveDialog && (
         <HostLeaveDialog
             isLastPlayer={gameState.players.length === 1}
-            onConfirm={() => GameActions.handleConfirmHostLeave(gameState, gameState.id, () => {})}
+            onConfirm={onConfirmHostLeave}
             onClose={() => handleCloseDialog('showHostLeaveDialog')}
         />
       )}

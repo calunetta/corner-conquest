@@ -1134,30 +1134,31 @@ export async function handlePlayerExit({ gameId, gameState, setGameState, localP
 }
 
 export async function handleConfirmHostLeave(gameState: GameState, gameId: string, onExit: () => void) {
-    // This function is for the host leaving a waiting room
     try {
-        if (gameState.players.length === 1) {
-            await deleteDoc(doc(db, 'games', gameId));
+      await runTransaction(db, async (transaction) => {
+        const gameDocRef = doc(db, 'games', gameId);
+        const gameDoc = await transaction.get(gameDocRef);
+        if (!gameDoc.exists()) return;
+  
+        const currentState = gameDoc.data() as FirestoreGameState;
+  
+        // If host is the last player, delete the game.
+        if (currentState.players.length === 1 && currentState.players[0].id === 0) {
+          transaction.delete(gameDocRef);
         } else {
-             await runTransaction(db, async (transaction) => {
-                const gameDocRef = doc(db, 'games', gameId);
-                const gameDoc = await transaction.get(gameDocRef);
-                if (!gameDoc.exists()) return;
-
-                const currentState = gameDoc.data();
-                const updatedPlayers = currentState.players.filter((p: any) => p.id !== 0); // Remove host (player id 0)
-                
-                transaction.update(gameDocRef, { 
-                    players: updatedPlayers, 
-                    log: arrayUnion(`${currentState.players[0].name} (host) has left the room.`) 
-                });
-            });
+          // Otherwise, just remove the host.
+          const updatedPlayers = currentState.players.filter((p: Player) => p.id !== 0);
+          const newLog = arrayUnion(`${currentState.players[0].name} (host) has left the room.`);
+          transaction.update(gameDocRef, { players: updatedPlayers, log: newLog });
         }
-        onExit();
+      });
+  
+      onExit(); // Navigate away after the transaction is successful
     } catch (error) {
-        console.error("Error during host leave confirmation:", error);
+      console.error("Error during host leave confirmation:", error);
+      // Optionally, show a toast to the user here.
     }
-}
+  }
 
 
 // --- Abilities Shop ---
