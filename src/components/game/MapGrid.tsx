@@ -16,8 +16,6 @@ type MapGridProps = {
   isScouting?: boolean;
 };
 
-const ROCK_SPRITES = ['/sprites/mini_rock.gif', '/sprites/small_rock.gif', '/sprites/medium_rock.gif', '/sprites/big_rock.gif'];
-
 export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting, isScouting }: MapGridProps) {
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const selectedArmy = selectedArmyId !== null && currentPlayer ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
@@ -27,7 +25,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
 
   return (
     <div
-      className="relative grid bg-water-pattern bg-repeat rounded-xl border-2 border-muted w-full h-full p-2"
+      className="relative grid rounded-xl border-2 border-muted bg-repeat p-2 bg-water-pattern w-full h-full"
       style={{
         gridTemplateColumns: `repeat(${mapSize}, 1fr)`,
         gridTemplateRows: `repeat(${mapSize}, 1fr)`,
