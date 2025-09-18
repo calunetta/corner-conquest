@@ -18,12 +18,12 @@ const generateDecorations = (isMobile: boolean) => {
     if (isMobile) return [];
     
     const decorations: { src: string; style: React.CSSProperties }[] = [];
-    const tileSize = TILE_SIZE / 2;
-    const tileGap = TILE_GAP / 2;
+    const tileSize = 75;
+    const tileGap = 16;
     const totalGridWidth = (MAP_COLS * tileSize) + ((MAP_COLS) * tileGap);
     const totalGridHeight = (MAP_ROWS * tileSize) + ((MAP_ROWS) * tileGap);
 
-    const rockCount = 50; 
+    const rockCount = isMobile ? 0 : 50; 
 
     for (let i = 0; i < rockCount; i++) {
         const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
@@ -68,8 +68,8 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
 
   if (!map || map.length === 0) return null;
 
-  const tileSize = TILE_SIZE / 2;
-  const tileGap = TILE_GAP / 2;
+  const tileSize = 75;
+  const tileGap = 16;
 
   return (
     <div
@@ -91,6 +91,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         style={{
           gridTemplateColumns: `repeat(${MAP_COLS}, ${tileSize}px)`,
           gap: `${tileGap}px`,
+          marginLeft: isMobile ? '150px' : '0',
         }}
       >
         {map.flat().filter(island => !!island).map((island) => {
