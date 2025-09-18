@@ -63,7 +63,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
   const isMobile = useIsMobile();
   const decorations = useMemo(() => generateDecorations(), []);
 
-  if (!map || map.length === 0 || map.flat().some(tile => !tile)) return null;
+  if (!map || map.length === 0) return null;
 
   return (
     <div
@@ -87,7 +87,8 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
           gap: `${TILE_GAP}px`,
         }}
       >
-        {map.flat().filter(island => !!island).map((island) => {
+        {map.flat().map((island) => {
+          if (!island) return null; // Defensive check
           const isPossible = possibleMoves.some(p => p.x === island.x && p.y === island.y);
           const isSelected = !!selectedTile && selectedTile.x === island.x && selectedTile.y === island.y;
           const isCurrentPlayerTile = island.occupants.some(o => o.playerId === currentPlayerId);
@@ -117,5 +118,3 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
     </div>
   );
 }
-
-    
