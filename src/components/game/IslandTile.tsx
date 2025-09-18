@@ -56,7 +56,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
 
         return (
             <div key={`resource-group-${index}`} className="flex flex-col items-center gap-1">
-                <div className={cn("flex items-center justify-center gap-1", isBase ? 'flex-col' : '')}>
+                <div className={cn("flex items-center justify-center gap-1", isBase ? 'flex-row' : '')}>
                     {Array.from({ length: resource.amount }).map((_, i) => (
                         <ResourceIcon key={`${resource.type}-${i}`} type={resource.type} className="h-4 w-4 text-accent" />
                     ))}

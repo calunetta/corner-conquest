@@ -42,8 +42,8 @@ const generateDecorations = (map: Island[][]) => {
                 height: `${size}px`,
             };
             
-            const islandLeft = island.x * totalSize;
-            const islandTop = island.y * totalSize;
+            const islandLeft = island.x * totalSize + PADDING;
+            const islandTop = island.y * totalSize + PADDING;
 
             switch(side) {
                 case 0: style.top = `${islandTop - size * 0.7}px`; style.left = `${islandLeft + TILE_SIZE/2 + offset}px`; break; // Top
@@ -55,52 +55,6 @@ const generateDecorations = (map: Island[][]) => {
             decorations.push({ src: rockSrc, x: island.x, y: island.y, size, style });
         }
     });
-
-    const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP);
-    const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP);
-    
-    const numPaddingRocks = Math.floor(mapSize * 2.5);
-    for (let i = 0; i < numPaddingRocks; i++) {
-        const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
-        const size = Math.random() * 24 + 15;
-        const side = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
-        
-        let xPos, yPos;
-        const margin = PADDING * 0.8;
-
-        switch(side) {
-            case 0: // Top padding
-                xPos = Math.random() * totalMapWidth;
-                yPos = -PADDING + Math.random() * margin;
-                break;
-            case 1: // Right padding
-                xPos = totalMapWidth - (Math.random() * margin);
-                yPos = Math.random() * totalMapHeight;
-                break;
-            case 2: // Bottom padding
-                xPos = Math.random() * totalMapWidth;
-                yPos = totalMapHeight - (Math.random() * margin);
-                break;
-            case 3: // Left padding
-                xPos = -PADDING + Math.random() * margin;
-                yPos = Math.random() * totalMapHeight;
-                break;
-            default:
-                xPos = 0; yPos = 0;
-        }
-
-        decorations.push({ 
-            src: rockSrc, 
-            x: -1, y: -1, size, 
-            style: { 
-                position: 'absolute', 
-                left: `${xPos - size/2}px`, 
-                top: `${yPos - size/2}px`, 
-                width: `${size}px`, height: `${size}px`,
-                zIndex: 5, pointerEvents: 'none'
-            } 
-        });
-    }
     
     return decorations;
 };
@@ -125,7 +79,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
   const selectedArmy = selectedArmyId !== null && currentPlayer ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const teleportingArmyId = isTeleporting && players[currentPlayerId]?.teleportState?.armyId !== null ? players[currentPlayerId]?.teleportState?.armyId : null;
   
-  const decorations = useMemo(() => generateDecorations(map), []);
+  const decorations = useMemo(() => generateDecorations(map), [map]);
 
   const totalSize = TILE_SIZE + TILE_GAP;
   const mapSize = map.length;
@@ -148,15 +102,6 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
                 height: `${totalMapHeight}px`,
             }}
         />
-        <div 
-          className="absolute"
-          style={{
-            width: `${totalMapWidth - PADDING * 2}px`,
-            height: `${totalMapHeight - PADDING * 2}px`,
-            left: `${PADDING}px`,
-            top: `${PADDING}px`,
-          }}
-        >
         {decorations.map((deco, index) => (
             <Image
                 key={`deco-${index}`}
@@ -168,6 +113,13 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
                 unoptimized
             />
         ))}
+        <div 
+          className="absolute"
+          style={{
+            width: `${totalMapWidth}px`,
+            height: `${totalMapHeight}px`,
+          }}
+        >
       {map.flat().map((island) => {
         const isPossible = possibleMoves.some(p => p.x === island.x && p.y === island.y);
         const isSelected = selectedTile?.x === island.x && selectedTile?.y === island.y;
@@ -189,8 +141,8 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
             style={{
               width: `${currentTileSize}px`,
               height: `${currentTileSize}px`,
-              left: `${island.x * totalSize - offset}px`,
-              top: `${island.y * totalSize - offset}px`,
+              left: `${PADDING + island.x * totalSize - (isBase ? offset : 0)}px`,
+              top: `${PADDING + island.y * totalSize - (isBase ? offset : 0)}px`,
             }}
           >
             <IslandTile
