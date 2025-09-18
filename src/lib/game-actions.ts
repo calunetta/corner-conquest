@@ -1,4 +1,5 @@
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation } from './types';
@@ -587,6 +588,7 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
 
     if (!army) return state;
     
+    // An army that has acted can only move again if the 'Extra Move' card is active.
     if (army.hasActed && !player.hasExtraMove) {
         throw new Error("This army has already acted this turn.");
     }
@@ -635,14 +637,8 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
             }
         }
         
-        // After the extra move, mark all other armies as having acted.
-        player.armies.forEach(a => {
-            if (a.id !== army.id) {
-                a.hasActed = true;
-            } else {
-                a.hasActed = false; // The army that moved gets to act again
-            }
-        });
+        // After the extra move, mark all armies as having acted. This consumes the one extra action.
+        player.armies.forEach(a => a.hasActed = true);
 
     } else {
         army.hasActed = true;
@@ -976,9 +972,7 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     switch (cardName) {
         case 'Extra Move':
             player.hasExtraMove = true;
-            // Reset hasActed for all armies of the current player
-            player.armies.forEach(army => army.hasActed = false);
-            newState.log.push(`${player.name} activated 'Extra Move'. Their armies are ready again!`);
+            newState.log.push(`${player.name} activated 'Extra Move'. One army can move again.`);
             break;
         case 'Teleport':
             newState.teleportState = { armyId: null };
