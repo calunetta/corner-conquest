@@ -116,6 +116,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [activeInstructionToastId, setActiveInstructionToastId] = useState<string | null>(null);
   
   const [zoom, setZoom] = useState(1);
+  const [minZoom, setMinZoom] = useState(0.2);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [startPan, setStartPan] = useState({ x: 0, y: 0 });
@@ -147,6 +148,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       const widthRatio = clientWidth / totalMapWidth;
       const heightRatio = clientHeight / totalMapHeight;
       const initialZoom = Math.min(widthRatio, heightRatio);
+      setMinZoom(initialZoom);
 
       const initialPanX = (clientWidth - (totalMapWidth * initialZoom)) / 2;
       const initialPanY = (clientHeight - (totalMapHeight * initialZoom)) / 2;
@@ -373,7 +375,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     const rect = mapContainerRef.current.getBoundingClientRect();
     const zoomFactor = 1.1;
     const newZoom = e.deltaY < 0 ? zoom * zoomFactor : zoom / zoomFactor;
-    const clampedZoom = Math.max(0.2, Math.min(2, newZoom)); // Clamp zoom level
+    const clampedZoom = Math.max(minZoom, Math.min(2, newZoom)); // Clamp zoom level
 
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
@@ -582,3 +584,4 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
