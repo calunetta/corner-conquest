@@ -1,4 +1,5 @@
 
+
 import type { GameState, Island, Player, PlayerColor, FirestoreGameState } from './types';
 import { PLAYER_COLORS } from './player-data';
 
@@ -13,14 +14,14 @@ export function flattenMap(map: Island[][]): Island[] {
   return map.flat();
 }
 
-export function unflattenMap(flatMap: Island[], rows: number, cols: number): Island[][] {
+export function unflattenMap(flatMap: Island[]): Island[][] {
   const map: Island[][] = [];
   if (!flatMap || flatMap.length === 0) {
     // Return an empty map of the correct dimensions if flatMap is empty
-    return Array.from({ length: rows }, () => Array(cols).fill(null));
+    return Array.from({ length: MAP_ROWS }, () => Array(MAP_COLS).fill(null));
   }
-  for (let i = 0; i < rows; i++) {
-    map.push(flatMap.slice(i * cols, (i + 1) * cols));
+  for (let i = 0; i < MAP_ROWS; i++) {
+    map.push(flatMap.slice(i * MAP_COLS, (i + 1) * MAP_COLS));
   }
   return map;
 }

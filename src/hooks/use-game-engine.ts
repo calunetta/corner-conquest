@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -7,6 +8,7 @@ import type { GameState, FirestoreGameState, Player } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
+import * as GameActions from '@/lib/game-actions';
 
 export function useGameEngine(gameId: string, playerId: string | null) {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -26,7 +28,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
         const firestoreState = docSnapshot.data() as FirestoreGameState;
         setGameState({
           ...firestoreState,
-          map: unflattenMap(firestoreState.map, MAP_ROWS, MAP_COLS),
+          map: unflattenMap(firestoreState.map),
         });
       } else {
         toast({ title: "Game Over", description: "This game session no longer exists." });

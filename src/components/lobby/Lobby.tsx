@@ -1,17 +1,19 @@
 
+
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, runTransaction } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
 import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
 import { addPlayerToGame, flattenMap, unflattenMap } from '@/lib/game-logic';
-import type { GameState, PlayerColor, FirestoreGameState, GameSettings } from '@/lib/types';
+import type { GameState, PlayerColor, FirestoreGameState, GameSettings, Player } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CreateGameDialog } from './CreateGameDialog';
 import { Loader2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { PLAYER_COLORS } from '@/lib/player-data';
 
 type LobbyProps = {
   onJoinGame: (gameId: string) => void;
@@ -72,7 +74,6 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     const firestoreState: FirestoreGameState = {
         ...newGame,
         map: flattenMap(newGame.map),
-        mapSize: newGame.map.length,
     };
 
     try {
@@ -103,24 +104,23 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             if (firestoreState.status === 'playing') {
                  throw new Error("This game has already started.");
             }
-            
-            const mapSize = firestoreState.mapSize || defaultGameSettings.mapSize;
+            if (firestoreState.players.length >= firestoreState.maxPlayers) {
+                throw new Error("This game is full.");
+            }
+            if (firestoreState.players.some(p => p.playerId === playerId)) {
+                // Player is already in, just let them proceed
+                return;
+            }
 
-            const gameState = {
-                ...firestoreState,
-                map: unflattenMap(firestoreState.map, mapSize),
-            };
-            
-            const updatedGameState = addPlayerToGame(gameState, { playerId, name: username });
+            const newGameState = addPlayerToGame({ ...firestoreState, map: unflattenMap(firestoreState.map) }, { playerId, name: username });
 
-            if (!updatedGameState) {
-                 throw new Error("Game is full or your chosen color is unavailable.");
+            if (!newGameState) {
+                 throw new Error("Could not add player to game. The room might be full or color unavailable.");
             }
             
             const updatedFirestoreState: FirestoreGameState = {
-                ...updatedGameState,
-                map: flattenMap(updatedGameState.map),
-                mapSize: updatedGameState.map.length,
+                ...newGameState,
+                map: flattenMap(newGameState.map),
             };
 
             transaction.set(gameDocRef, updatedFirestoreState);
