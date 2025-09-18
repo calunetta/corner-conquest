@@ -18,10 +18,12 @@ const generateDecorations = (isMobile: boolean) => {
     if (isMobile) return [];
     
     const decorations: { src: string; style: React.CSSProperties }[] = [];
-    const totalGridWidth = (MAP_COLS * TILE_SIZE) + ((MAP_COLS) * TILE_GAP);
-    const totalGridHeight = (MAP_ROWS * TILE_SIZE) + ((MAP_ROWS) * TILE_GAP);
+    const tileSize = TILE_SIZE / 2;
+    const tileGap = TILE_GAP / 2;
+    const totalGridWidth = (MAP_COLS * tileSize) + ((MAP_COLS) * tileGap);
+    const totalGridHeight = (MAP_ROWS * tileSize) + ((MAP_ROWS) * tileGap);
 
-    const rockCount = 30;
+    const rockCount = 30; // Increased rock count
 
     for (let i = 0; i < rockCount; i++) {
         const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
@@ -66,14 +68,14 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
 
   if (!map || map.length === 0) return null;
 
-  const tileSize = isMobile ? TILE_SIZE / 2 : TILE_SIZE;
-  const tileGap = isMobile ? TILE_GAP / 2 : TILE_GAP;
+  const tileSize = TILE_SIZE / 2;
+  const tileGap = TILE_GAP / 2;
 
   return (
     <div
       className="relative bg-water-pattern bg-repeat p-8 rounded-xl shadow-lg"
     >
-      {decorations.map((deco, index) => (
+      {!isMobile && decorations.map((deco, index) => (
             <Image
                 key={`deco-${index}`}
                 src={deco.src}
