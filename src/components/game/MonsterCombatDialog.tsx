@@ -74,76 +74,82 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
     }
   };
   
-  const renderAttackScreen = () => (
-    <>
-      <AlertDialogHeader>
-        <AlertDialogTitle>Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}</AlertDialogTitle>
-        <AlertDialogDescription>Prepare to fight the monster.</AlertDialogDescription>
-      </AlertDialogHeader>
-      <div className="py-4 text-center">
-        {selectedMonster && (
-          <Card className="inline-flex flex-col items-center gap-2 p-4">
-              <div className='relative h-24 w-24'>
-                <Image src={selectedMonster.sprite.attack} alt={selectedMonster.name} width={96} height={96} className='-scale-x-100'/>
-              </div>
-              <div className="text-center">
-                  <p className="font-bold capitalize">{getMonsterName(selectedMonster)}</p>
-                  <p className="text-sm text-muted-foreground">Power: {selectedMonster.level}</p>
-              </div>
-          </Card>
-        )}
-      </div>
+  const renderAttackScreen = () => {
+    const attackerSprite = PLAYER_DATA[attacker.color].sprite.attack;
+    
+    return (
+        <>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}</AlertDialogTitle>
+                <AlertDialogDescription>Prepare to fight the monster.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex flex-col justify-around gap-4 py-4 sm:flex-row">
+                 <div className="flex flex-col items-center gap-2">
+                    <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
+                    <Image src={attackerSprite} alt={`${attacker.name} attacking`} width={64} height={64} />
+                    <p className="text-sm font-bold">Attack Power: {attacker.attackPower + 1}</p>
+                 </div>
 
-      <div className='space-y-4'>
-        {hasOvercomeCard && isAttacker && (
-           <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
-              <Checkbox id="use-overcome-card" checked={useOvercomeCard} onCheckedChange={(checked) => { setUseOvercomeCard(!!checked); if(!!checked) setUseDecideCard(false); }} />
-              <Label htmlFor="use-overcome-card" className='font-bold'>Use 'Overcome' card to win automatically?</Label>
-          </div>
-        )}
-         {hasWarChiefCard && isAttacker && (
-            <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
-                <Checkbox id="use-warchief-card" disabled={useOvercomeCard} checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
-                <Label htmlFor="use-warchief-card" className='font-bold'>Use 'War Chief' card for +2 attack power?</Label>
+                {selectedMonster && (
+                    <div className="flex flex-col items-center gap-2">
+                        <h3 className="font-bold capitalize text-destructive">{getMonsterName(selectedMonster)}</h3>
+                        <Image src={selectedMonster.sprite.attack} alt={selectedMonster.name} width={64} height={64} className='-scale-x-100'/>
+                        <p className="text-sm font-bold">Power: {selectedMonster.level}</p>
+                    </div>
+                )}
             </div>
-        )}
-        {hasDecideCard && isAttacker && (
-          <div className="space-y-4 rounded-md border bg-muted/50 p-4">
-              <div className="flex items-center space-x-2">
-                  <Checkbox id="use-decide-card" checked={useDecideCard} disabled={useOvercomeCard} onCheckedChange={(checked) => setUseDecideCard(!!checked)} />
-                  <Label htmlFor="use-decide-card" className='font-bold'>Use 'Decide Dice Roll' card?</Label>
-              </div>
-              {useDecideCard && (
-                  <div className='space-y-2 pt-2'>
-                      <div className='flex justify-between'>
-                          <Label>Choose Dice Value</Label>
-                          <span className='font-bold text-primary'>{decidedValue}</span>
-                      </div>
-                      <Slider
-                          min={1}
-                          max={6}
-                          step={1}
-                          value={[decidedValue]}
-                          onValueChange={(value) => setDecidedValue(value[0])}
-                          disabled={useOvercomeCard}
-                      />
-                  </div>
-              )}
-          </div>
-        )}
-      </div>
-       <AlertDialogFooter className="mt-4 flex-col-reverse gap-2 sm:flex-row">
-        {isAttacker && (
-            <>
-                <AlertDialogCancel onClick={onCancel} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
-                <Button onClick={handleAttack} disabled={!selectedMonster} className="w-full sm:w-auto">
-                    Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}!
-                </Button>
-            </>
-        )}
-      </AlertDialogFooter>
-    </>
-  );
+
+            <div className='space-y-4'>
+                {hasOvercomeCard && isAttacker && (
+                <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
+                    <Checkbox id="use-overcome-card" checked={useOvercomeCard} onCheckedChange={(checked) => { setUseOvercomeCard(!!checked); if(!!checked) setUseDecideCard(false); }} />
+                    <Label htmlFor="use-overcome-card" className='font-bold'>Use 'Overcome' card to win automatically?</Label>
+                </div>
+                )}
+                {hasWarChiefCard && isAttacker && (
+                    <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
+                        <Checkbox id="use-warchief-card" disabled={useOvercomeCard} checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
+                        <Label htmlFor="use-warchief-card" className='font-bold'>Use 'War Chief' card for +2 attack power?</Label>
+                    </div>
+                )}
+                {hasDecideCard && isAttacker && (
+                <div className="space-y-4 rounded-md border bg-muted/50 p-4">
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="use-decide-card" checked={useDecideCard} disabled={useOvercomeCard} onCheckedChange={(checked) => setUseDecideCard(!!checked)} />
+                        <Label htmlFor="use-decide-card" className='font-bold'>Use 'Decide Dice Roll' card?</Label>
+                    </div>
+                    {useDecideCard && (
+                        <div className='space-y-2 pt-2'>
+                            <div className='flex justify-between'>
+                                <Label>Choose Dice Value</Label>
+                                <span className='font-bold text-primary'>{decidedValue}</span>
+                            </div>
+                            <Slider
+                                min={1}
+                                max={6}
+                                step={1}
+                                value={[decidedValue]}
+                                onValueChange={(value) => setDecidedValue(value[0])}
+                                disabled={useOvercomeCard}
+                            />
+                        </div>
+                    )}
+                </div>
+                )}
+            </div>
+            <AlertDialogFooter className="mt-4 flex-col-reverse gap-2 sm:flex-row">
+                {isAttacker && (
+                    <>
+                        <AlertDialogCancel onClick={onCancel} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                        <Button onClick={handleAttack} disabled={!selectedMonster} className="w-full sm:w-auto">
+                            Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}!
+                        </Button>
+                    </>
+                )}
+            </AlertDialogFooter>
+        </>
+    );
+};
 
 
   const renderSelectionScreen = () => (
