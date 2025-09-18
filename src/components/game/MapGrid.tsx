@@ -29,13 +29,12 @@ const generateDecorations = (map: Island[][]) => {
 
     map.flat().forEach(island => {
         const rockCount = 1 + Math.floor(Math.random() * 3); // 1 to 3 rocks per island
-        const usedSides: number[] = [];
         
-        const possibleSides = [0, 1, 2, 3]; // 0: top, 1: right, 2: bottom, 3: left
-        if (island.y === 0) possibleSides.splice(possibleSides.indexOf(0), 1);
-        if (island.x === mapSize - 1) possibleSides.splice(possibleSides.indexOf(1), 1);
-        if (island.y === mapSize - 1) possibleSides.splice(possibleSides.indexOf(2), 1);
-        if (island.x === 0) possibleSides.splice(possibleSides.indexOf(3), 1);
+        let possibleSides = [0, 1, 2, 3]; // 0: top, 1: right, 2: bottom, 3: left
+        if (island.y === 0) possibleSides = possibleSides.filter(s => s !== 0);
+        if (island.x === mapSize - 1) possibleSides = possibleSides.filter(s => s !== 1);
+        if (island.y === mapSize - 1) possibleSides = possibleSides.filter(s => s !== 2);
+        if (island.x === 0) possibleSides = possibleSides.filter(s => s !== 3);
 
 
         for (let i = 0; i < rockCount; i++) {
@@ -43,9 +42,8 @@ const generateDecorations = (map: Island[][]) => {
 
             const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
             
-            const sideIndex = Math.floor(Math.random() * possibleSides.length);
-            const side = possibleSides.splice(sideIndex, 1)[0];
-            usedSides.push(side);
+            // Allow rocks to cluster by not removing the side after selection
+            const side = possibleSides[Math.floor(Math.random() * possibleSides.length)];
 
             const offset = (Math.random() - 0.5) * 50; // -25% to +25% offset along the side
             const size = Math.random() * 24 + 16; // Random size between 16px and 40px
