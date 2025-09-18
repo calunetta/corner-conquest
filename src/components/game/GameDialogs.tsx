@@ -51,7 +51,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
   };
   
   const selectedArmy = GameActions.getSelectedArmy(gameState);
-  const currentTileForMonster = selectedArmy ? gameState.map[selectedArmy.position.y][selectedArmy.position.x] : null;
+  const currentTileForMonster = (selectedArmy && gameState.map && gameState.map[selectedArmy.position.y]) ? gameState.map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
   const handleUseCardAction = (cardName: string) => {
     let newState = { ...gameState };
