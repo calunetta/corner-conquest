@@ -282,25 +282,20 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                         <Button onClick={handleStartGame}><Play /> Start Game</Button>
                     )}
                 </div>
-            ) : (
-                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 sm:gap-4">
-                        <Button variant="outline" size="icon" onClick={onExit} disabled={isExiting}>
-                            {isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft />}
-                        </Button>
-                        <h1 className="text-xl font-bold sm:text-2xl">{gameState.name}</h1>
-                    </div>
-                    <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-sm font-semibold">
-                       <Trophy className="h-4 w-4 text-yellow-400" />
-                       <span>VP Goal: {settings.victoryPointGoal}</span>
-                    </div>
-                </div>
-            )}
+            ) : null}
 
 
             <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen} className="w-full">
                 <div className="flex items-center justify-between rounded-md bg-muted/50 p-2">
-                    <h2 className="text-base font-semibold sm:text-lg">Player Information</h2>
+                    <div className='flex items-center gap-4'>
+                        <h2 className="text-base font-semibold sm:text-lg">Player Information</h2>
+                        {status === 'playing' && (
+                            <div className="flex items-center gap-2 rounded-md bg-background/70 px-3 py-1 text-sm font-semibold">
+                               <Trophy className="h-4 w-4 text-yellow-400" />
+                               <span>VP Goal: {settings.victoryPointGoal}</span>
+                            </div>
+                        )}
+                    </div>
                     <CollapsibleTrigger asChild>
                         <Button variant="ghost" size="sm">
                             {isPlayerInfoOpen ? <ChevronUp /> : <ChevronDown />}
