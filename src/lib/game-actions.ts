@@ -634,6 +634,16 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
                 specialCardsDeck.push(usedCard);
             }
         }
+        
+        // After the extra move, mark all other armies as having acted.
+        player.armies.forEach(a => {
+            if (a.id !== army.id) {
+                a.hasActed = true;
+            } else {
+                a.hasActed = false; // The army that moved gets to act again
+            }
+        });
+
     } else {
         army.hasActed = true;
     }
