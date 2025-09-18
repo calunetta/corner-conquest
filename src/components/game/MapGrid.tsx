@@ -23,7 +23,7 @@ const generateDecorations = (isMobile: boolean) => {
     const totalGridWidth = (MAP_COLS * tileSize) + ((MAP_COLS) * tileGap);
     const totalGridHeight = (MAP_ROWS * tileSize) + ((MAP_ROWS) * tileGap);
 
-    const rockCount = 30; // Increased rock count
+    const rockCount = 50; 
 
     for (let i = 0; i < rockCount; i++) {
         const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
