@@ -21,40 +21,39 @@ const generateDecorations = (map: Island[][]) => {
     const mapSize = map.length;
     const totalSize = TILE_SIZE + TILE_GAP;
 
-    // Generate rocks around islands
-    map.flat().forEach(island => {
-        const rockCount = 1 + Math.floor(Math.random() * 2); 
-        let possibleSides = [0, 1, 2, 3]; // 0: top, 1: right, 2: bottom, 3: left
+    // Generate rocks around islands and in padding
+    for (let y = -1; y <= mapSize; y++) {
+        for (let x = -1; x <= mapSize; x++) {
+            const isPaddingArea = x < 0 || x >= mapSize || y < 0 || y >= mapSize;
+            const island = !isPaddingArea ? map[y][x] : null;
 
-        for (let i = 0; i < rockCount; i++) {
-            const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
-            const sideIndex = Math.floor(Math.random() * possibleSides.length);
-            const side = possibleSides.splice(sideIndex, 1)[0];
+            if (island || isPaddingArea) {
+                 const rockCount = Math.random() > 0.6 ? 1 : 0; 
+                for (let i = 0; i < rockCount; i++) {
+                    const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
+                    const size = Math.random() * 20 + 12;
+                    
+                    const randomOffsetX = (Math.random() - 0.5) * (totalSize);
+                    const randomOffsetY = (Math.random() - 0.5) * (totalSize);
 
-            const offset = (Math.random() - 0.5) * TILE_SIZE * 0.7;
-            const size = Math.random() * 20 + 12;
+                    const tileCenterX = (x * totalSize) + (TILE_SIZE / 2);
+                    const tileCenterY = (y * totalSize) + (TILE_SIZE / 2);
+                    
+                    let style: React.CSSProperties = {
+                        position: 'absolute',
+                        zIndex: 5,
+                        pointerEvents: 'none',
+                        width: `${size}px`,
+                        height: `${size}px`,
+                        left: `${PADDING + tileCenterX + randomOffsetX}px`,
+                        top: `${PADDING + tileCenterY + randomOffsetY}px`,
+                    };
 
-            let style: React.CSSProperties = {
-                position: 'absolute',
-                zIndex: 5,
-                pointerEvents: 'none',
-                width: `${size}px`,
-                height: `${size}px`,
-            };
-            
-            const islandLeft = island.x * totalSize + PADDING;
-            const islandTop = island.y * totalSize + PADDING;
-
-            switch(side) {
-                case 0: style.top = `${islandTop - size * 0.7}px`; style.left = `${islandLeft + TILE_SIZE/2 + offset}px`; break; // Top
-                case 1: style.top = `${islandTop + TILE_SIZE/2 + offset}px`; style.left = `${islandLeft + TILE_SIZE + size * 0.3}px`; break; // Right
-                case 2: style.top = `${islandTop + TILE_SIZE + size * 0.3}px`; style.left = `${islandLeft + TILE_SIZE/2 + offset}px`; break; // Bottom
-                case 3: style.top = `${islandTop + TILE_SIZE/2 + offset}px`; style.left = `${islandLeft - size * 0.7}px`; break; // Left
+                    decorations.push({ src: rockSrc, x, y, size, style });
+                }
             }
-
-            decorations.push({ src: rockSrc, x: island.x, y: island.y, size, style });
         }
-    });
+    }
     
     return decorations;
 };
@@ -132,7 +131,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         
         const isBase = island.type === 'base';
         const currentTileSize = isBase ? BASE_TILE_SIZE : TILE_SIZE;
-        const offset = (currentTileSize - TILE_SIZE) / 2;
+        const offset = isBase ? (BASE_TILE_SIZE - TILE_SIZE) / 2 : 0;
 
         return (
           <div 
@@ -141,8 +140,8 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
             style={{
               width: `${currentTileSize}px`,
               height: `${currentTileSize}px`,
-              left: `${PADDING + island.x * totalSize - (isBase ? offset : 0)}px`,
-              top: `${PADDING + island.y * totalSize - (isBase ? offset : 0)}px`,
+              left: `${PADDING + island.x * totalSize - offset}px`,
+              top: `${PADDING + island.y * totalSize - offset}px`,
             }}
           >
             <IslandTile
@@ -164,3 +163,4 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
     </div>
   );
 }
+
