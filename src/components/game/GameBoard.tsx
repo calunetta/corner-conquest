@@ -320,7 +320,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     e.preventDefault();
     const newPanX = e.clientX - startPan.x;
     const newPanY = e.clientY - startPan.y;
-
+    
     const { clientWidth, clientHeight } = mapContainerRef.current;
     const mapSize = gameState.settings.mapSize;
     
@@ -525,5 +525,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
 
     
