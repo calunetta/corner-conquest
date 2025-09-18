@@ -130,10 +130,9 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         
         const size = island.type === 'base' ? BASE_TILE_SIZE : TILE_SIZE;
         const totalSize = TILE_SIZE + TILE_GAP;
-        const baseTotalSize = BASE_TILE_SIZE + TILE_GAP;
 
-        const left = PADDING + island.x * (size === BASE_TILE_SIZE ? baseTotalSize : totalSize);
-        const top = PADDING + island.y * (size === BASE_TILE_SIZE ? baseTotalSize : totalSize);
+        const left = PADDING + island.x * totalSize;
+        const top = PADDING + island.y * totalSize;
 
         return (
           <div 
