@@ -23,24 +23,31 @@ const ROCK_SPRITES = [
     '/sprites/big_rock.gif',
 ];
 
-// We'll memoize this so the rocks don't change on every re-render
 const generateDecorations = (map: Island[][]) => {
     const decorations: { src: string; x: number; y: number; size: number, style: React.CSSProperties }[] = [];
-    const mapSize = map.length;
 
     map.flat().forEach(island => {
-        // Give a 30% chance for an island to have rocks
-        if (Math.random() < 0.3) {
+        const rockCount = 1 + Math.floor(Math.random() * 3); // 1 to 3 rocks per island
+        const usedSides: number[] = [];
+
+        for (let i = 0; i < rockCount; i++) {
             const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
             
-            // Randomize position around the island edge
-            const side = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
-            const offset = (Math.random() - 0.5) * 40; // -20% to +20% offset
+            let side = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
+            // Ensure we don't put two rocks on the exact same side unless we run out of options
+            if (usedSides.length < 4) {
+                while(usedSides.includes(side)) {
+                    side = Math.floor(Math.random() * 4);
+                }
+                usedSides.push(side);
+            }
+
+            const offset = (Math.random() - 0.5) * 50; // -25% to +25% offset along the side
             const size = Math.random() * 24 + 16; // Random size between 16px and 40px
 
             let style: React.CSSProperties = {
                 position: 'absolute',
-                zIndex: 5, // Below islands (z-10) but above water (z-0)
+                zIndex: 5,
                 pointerEvents: 'none',
                 width: `${size}px`,
                 height: `${size}px`,
@@ -48,23 +55,23 @@ const generateDecorations = (map: Island[][]) => {
 
             switch(side) {
                 case 0: // Top
-                    style.top = '-15%';
+                    style.top = '-20%';
                     style.left = `${50 + offset}%`;
                     style.transform = 'translateX(-50%)';
                     break;
                 case 1: // Right
                     style.top = `${50 + offset}%`;
-                    style.right = '-15%';
+                    style.right = '-20%';
                     style.transform = 'translateY(-50%)';
                     break;
                 case 2: // Bottom
-                    style.bottom = '-15%';
+                    style.bottom = '-20%';
                     style.left = `${50 + offset}%`;
                     style.transform = 'translateX(-50%)';
                     break;
                 case 3: // Left
                     style.top = `${50 + offset}%`;
-                    style.left = '-15%';
+                    style.left = '-20%';
                     style.transform = 'translateY(-50%)';
                     break;
             }
@@ -98,7 +105,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
       style={{
         gridTemplateColumns: `repeat(${mapSize}, 1fr)`,
         gridTemplateRows: `repeat(${mapSize}, 1fr)`,
-        gap: '0.5rem',
+        gap: '1rem',
       }}
     >
       {map.flat().map((island) => {
