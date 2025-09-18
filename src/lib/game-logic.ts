@@ -2,6 +2,7 @@ import type { GameState, Island, Player, PlayerColor, FirestoreGameState } from 
 import { PLAYER_COLORS } from './player-data';
 
 export const TILE_SIZE = 128; // Fixed size for each island tile in pixels
+export const BASE_TILE_SIZE = 192; // 1.5x the size of a normal tile
 export const TILE_GAP = 32;   // Fixed gap between island tiles in pixels
 
 

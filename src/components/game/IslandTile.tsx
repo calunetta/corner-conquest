@@ -49,13 +49,14 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const baseOwner = island.type === 'base' ? players.find(p => p.id === island.owner) : null;
 
   const renderResourceIcons = (resources: IslandResource[]) => {
+    const isBase = island.type === 'base';
     return resources.map((resource, index) => {
         const positionInfo = positionedBy.find(p => p.resource === resource.type);
         const positionedPlayer = positionInfo ? players[positionInfo.playerId] : null;
 
         return (
             <div key={`resource-group-${index}`} className="flex flex-col items-center gap-1">
-                <div className="flex items-center justify-center gap-1">
+                <div className={cn("flex items-center justify-center gap-1", isBase ? 'flex-col' : '')}>
                     {Array.from({ length: resource.amount }).map((_, i) => (
                         <ResourceIcon key={`${resource.type}-${i}`} type={resource.type} className="h-4 w-4 text-accent" />
                     ))}
@@ -94,16 +95,23 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     
     switch (island.type) {
       case 'base': 
-        return baseOwner?.color ? (
-            <Image 
-                src={PLAYER_DATA[baseOwner.color].base}
-                alt={`${baseOwner.color} base`}
-                width={64}
-                height={64}
-                className="h-full w-full object-contain p-1"
-                unoptimized
-            />
-        ) : <Home className="h-full w-full p-2" />;
+        return (
+            <div className='relative h-full w-full'>
+                {baseOwner?.color ? (
+                    <Image 
+                        src={PLAYER_DATA[baseOwner.color].base}
+                        alt={`${baseOwner.color} base`}
+                        layout="fill"
+                        objectFit='contain'
+                        className="p-1"
+                        unoptimized
+                    />
+                ) : <Home className="h-full w-full p-2" />}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-end justify-center gap-4">
+                    {renderResourceIcons(island.resources)}
+                </div>
+            </div>
+        );
       case 'resource': 
         return (
           <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1">

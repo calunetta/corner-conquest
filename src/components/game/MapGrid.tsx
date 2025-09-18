@@ -4,7 +4,7 @@ import type { Island, Player, GameAction } from '@/lib/types';
 import { IslandTile } from './IslandTile';
 import { useMemo } from 'react';
 import Image from 'next/image';
-import { TILE_GAP, TILE_SIZE } from '@/lib/game-logic';
+import { TILE_GAP, TILE_SIZE, BASE_TILE_SIZE } from '@/lib/game-logic';
 import { PADDING } from './GameBoard';
 
 const ROCK_SPRITES = [
@@ -15,8 +15,8 @@ const ROCK_SPRITES = [
 ];
 
 const generateDecorations = (map: Island[][]) => {
-    const decorations: { src: string; x: number; y: number; size: number, style: React.CSSProperties }[] = [];
     if (!map || map.length === 0) return [];
+    const decorations: { src: string; x: number; y: number; size: number, style: React.CSSProperties }[] = [];
     
     const mapSize = map.length;
     const totalSize = TILE_SIZE + TILE_GAP;
@@ -42,8 +42,8 @@ const generateDecorations = (map: Island[][]) => {
                 height: `${size}px`,
             };
             
-            const islandLeft = island.x * totalSize + PADDING;
-            const islandTop = island.y * totalSize + PADDING;
+            const islandLeft = island.x * totalSize;
+            const islandTop = island.y * totalSize;
 
             switch(side) {
                 case 0: style.top = `${islandTop - size * 0.7}px`; style.left = `${islandLeft + TILE_SIZE/2 + offset}px`; break; // Top
@@ -56,10 +56,9 @@ const generateDecorations = (map: Island[][]) => {
         }
     });
 
-    const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
-    const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
+    const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP);
+    const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP);
     
-    // Generate rocks in the padding area
     const numPaddingRocks = Math.floor(mapSize * 2.5);
     for (let i = 0; i < numPaddingRocks; i++) {
         const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
@@ -72,7 +71,7 @@ const generateDecorations = (map: Island[][]) => {
         switch(side) {
             case 0: // Top padding
                 xPos = Math.random() * totalMapWidth;
-                yPos = Math.random() * margin;
+                yPos = -PADDING + Math.random() * margin;
                 break;
             case 1: // Right padding
                 xPos = totalMapWidth - (Math.random() * margin);
@@ -83,7 +82,7 @@ const generateDecorations = (map: Island[][]) => {
                 yPos = totalMapHeight - (Math.random() * margin);
                 break;
             case 3: // Left padding
-                xPos = Math.random() * margin;
+                xPos = -PADDING + Math.random() * margin;
                 yPos = Math.random() * totalMapHeight;
                 break;
             default:
@@ -126,10 +125,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
   const selectedArmy = selectedArmyId !== null && currentPlayer ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const teleportingArmyId = isTeleporting && players[currentPlayerId]?.teleportState?.armyId !== null ? players[currentPlayerId]?.teleportState?.armyId : null;
   
-  const decorations = useMemo(() => {
-    if (!map) return [];
-    return generateDecorations(map);
-  }, []);
+  const decorations = useMemo(() => generateDecorations(map), []);
 
   const totalSize = TILE_SIZE + TILE_GAP;
   const mapSize = map.length;
@@ -141,19 +137,26 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
     <div
       className="absolute"
       style={{
-        width: `${totalMapWidth}px`,
-        height: `${totalMapHeight}px`,
         transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
         transformOrigin: '0 0',
       }}
     >
         <div
-            className="absolute inset-0 bg-water-pattern bg-repeat"
+            className="absolute bg-water-pattern bg-repeat"
             style={{
                 width: `${totalMapWidth}px`,
                 height: `${totalMapHeight}px`,
             }}
         />
+        <div 
+          className="absolute"
+          style={{
+            width: `${totalMapWidth - PADDING * 2}px`,
+            height: `${totalMapHeight - PADDING * 2}px`,
+            left: `${PADDING}px`,
+            top: `${PADDING}px`,
+          }}
+        >
         {decorations.map((deco, index) => (
             <Image
                 key={`deco-${index}`}
@@ -174,16 +177,20 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         const isArmySelectedOnTile = (isTeleporting && armyOnTile?.armyId === teleportingArmyId) || (!isTeleporting && selectedArmy?.position.x === island.x && selectedArmy?.position.y === island.y);
         
         const isScoutTarget = isScouting && island.isHidden;
+        
+        const isBase = island.type === 'base';
+        const currentTileSize = isBase ? BASE_TILE_SIZE : TILE_SIZE;
+        const offset = (currentTileSize - TILE_SIZE) / 2;
 
         return (
           <div 
             key={island.id} 
             className="absolute z-10"
             style={{
-              width: `${TILE_SIZE}px`,
-              height: `${TILE_SIZE}px`,
-              left: `${island.x * totalSize + PADDING}px`,
-              top: `${island.y * totalSize + PADDING}px`,
+              width: `${currentTileSize}px`,
+              height: `${currentTileSize}px`,
+              left: `${island.x * totalSize - offset}px`,
+              top: `${island.y * totalSize - offset}px`,
             }}
           >
             <IslandTile
@@ -201,6 +208,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
