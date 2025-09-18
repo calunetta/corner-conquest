@@ -1,8 +1,9 @@
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState } from './types';
-import { flattenMap } from './game-logic';
+import { flattenMap, MAP_COLS, MAP_ROWS } from './game-logic';
 
 // --- Action Helpers ---
 
@@ -907,7 +908,9 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     switch (cardName) {
         case 'Extra Move':
             player.hasExtraMove = true;
-            newState.log.push(`${player.name} activated 'Extra Move'.`);
+            // Reset hasActed for all armies of the current player
+            player.armies.forEach(army => army.hasActed = false);
+            newState.log.push(`${player.name} activated 'Extra Move'. Their armies are ready again!`);
             break;
         case 'Teleport':
             newState.teleportState = { armyId: null };
