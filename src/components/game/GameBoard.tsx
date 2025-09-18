@@ -27,6 +27,13 @@ type GameBoardProps = {
     onExit: () => void;
 };
 
+const ROCK_SPRITES = [
+    '/sprites/small_rock.gif',
+    '/sprites/mini_rock.gif',
+    '/sprites/medium_rock.gif',
+    '/sprites/big_rock.gif',
+];
+
 const generateDecorations = (map: Island[][]) => {
     const decorations: { src: string; x: number; y: number; size: number, style: React.CSSProperties }[] = [];
     if (!map || map.length === 0) return [];
@@ -96,13 +103,6 @@ const generateDecorations = (map: Island[][]) => {
 
     return decorations;
 };
-
-const ROCK_SPRITES = [
-    '/sprites/small_rock.gif',
-    '/sprites/mini_rock.gif',
-    '/sprites/medium_rock.gif',
-    '/sprites/big_rock.gif',
-];
 
 
 export function GameBoard({ gameId, onExit }: GameBoardProps) {
@@ -375,7 +375,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     const rect = mapContainerRef.current.getBoundingClientRect();
     const zoomFactor = 1.1;
     const newZoom = e.deltaY < 0 ? zoom * zoomFactor : zoom / zoomFactor;
-    const clampedZoom = Math.max(minZoom, Math.min(2, newZoom)); // Clamp zoom level
+    const clampedZoom = Math.max(minZoom, Math.min(2, newZoom)); 
 
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
@@ -415,13 +415,18 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     const mapWidthWithZoom = totalMapWidth * zoom;
     const mapHeightWithZoom = totalMapHeight * zoom;
 
+    const rightBoundary = 0;
+    const leftBoundary = clientWidth - mapWidthWithZoom;
+    const bottomBoundary = 0;
+    const topBoundary = clientHeight - mapHeightWithZoom;
+
     const clampedX = Math.min(
-      0, // Right boundary
-      Math.max(clientWidth - mapWidthWithZoom, newPanX) // Left boundary
+      rightBoundary, 
+      Math.max(leftBoundary, newPanX)
     );
     const clampedY = Math.min(
-      0, // Bottom boundary
-      Math.max(clientHeight - mapHeightWithZoom, newPanY) // Top boundary
+      bottomBoundary, 
+      Math.max(topBoundary, newPanY)
     );
 
     setPan({ x: clampedX, y: clampedY });
@@ -602,6 +607,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-
-
