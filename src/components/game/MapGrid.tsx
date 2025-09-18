@@ -46,7 +46,7 @@ const generateDecorations = (map: Island[][]) => {
             const side = possibleSides[Math.floor(Math.random() * possibleSides.length)];
 
             const offset = (Math.random() - 0.5) * 50; // -25% to +25% offset along the side
-            const size = Math.random() * 24 + 16; // Random size between 16px and 40px
+            const size = Math.random() * 20 + 12; // Random size between 12px and 32px
 
             let style: React.CSSProperties = {
                 position: 'absolute',
@@ -58,23 +58,23 @@ const generateDecorations = (map: Island[][]) => {
 
             switch(side) {
                 case 0: // Top
-                    style.top = '-20%';
+                    style.top = '-25%';
                     style.left = `${50 + offset}%`;
                     style.transform = 'translateX(-50%)';
                     break;
                 case 1: // Right
                     style.top = `${50 + offset}%`;
-                    style.right = '-20%';
+                    style.right = '-25%';
                     style.transform = 'translateY(-50%)';
                     break;
                 case 2: // Bottom
-                    style.bottom = '-20%';
+                    style.bottom = '-25%';
                     style.left = `${50 + offset}%`;
                     style.transform = 'translateX(-50%)';
                     break;
                 case 3: // Left
                     style.top = `${50 + offset}%`;
-                    style.left = '-20%';
+                    style.left = '-25%';
                     style.transform = 'translateY(-50%)';
                     break;
             }
@@ -108,7 +108,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
       style={{
         gridTemplateColumns: `repeat(${mapSize}, 1fr)`,
         gridTemplateRows: `repeat(${mapSize}, 1fr)`,
-        gap: '1rem',
+        gap: '2rem',
       }}
     >
       {map.flat().map((island) => {
