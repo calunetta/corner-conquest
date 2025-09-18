@@ -2,6 +2,7 @@
 
 
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation } from './types';
@@ -793,6 +794,9 @@ export function handleCloseCombat(state: GameState): GameState {
     const { combatState, players, map } = newState;
     if (!combatState) return { ...newState, combatState: null, currentAction: null };
 
+    const { phase } = combatState;
+    if (phase !== 'results') return newState;
+
     if (combatState.winnerId === null) return { ...newState, combatState: null, currentAction: null };
     
     const { winnerId, attackerId, defenderId, defendingArmyId } = combatState;
@@ -808,6 +812,9 @@ export function handleCloseCombat(state: GameState): GameState {
     const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
 
     if (loserId === defenderId) {
+        winner.victoryPoints += 5;
+        newState.log.push(`${winner.name} receives 5 VP for defeating ${loser.name}!`);
+
         const losingArmy = loser.armies.find(a => a.id === defendingArmyId);
         const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
 
@@ -834,6 +841,9 @@ export function handleCloseCombat(state: GameState): GameState {
             }
         }
     } else { // Attacker lost
+        winner.victoryPoints += 5;
+        newState.log.push(`${winner.name} receives 5 VP for defeating ${loser.name}!`);
+        
         const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
          if (attackingArmy && baseTile) {
             const deathAnim: DeathAnimation = {
@@ -850,11 +860,11 @@ export function handleCloseCombat(state: GameState): GameState {
          }
     }
 
-
     newState.log.push(`${winner.name} defeated ${loser.name} in battle!`);
     const finalState = { ...newState, combatState: null, currentAction: null };
     return checkAndEndTurnIfNoActions(finalState);
 }
+
 
 export function handleMonsterCombatRoll(state: GameState, monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean): GameState {
     const newState = { ...state };
@@ -942,7 +952,11 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
 
 export function handleCloseMonsterCombat(state: GameState): GameState {
     let newState = { ...state };
-    if (!newState.monsterCombatState) return { ...newState, monsterCombatState: null, currentAction: null };
+    const { monsterCombatState } = newState;
+    if (!monsterCombatState) return { ...newState, monsterCombatState: null, currentAction: null };
+
+    const { phase } = monsterCombatState;
+    if (phase !== 'results') return newState;
     
     const { winnerId, monster, attackerId } = newState.monsterCombatState;
     const attacker = newState.players[attackerId];
@@ -995,6 +1009,7 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
     const finalState = { ...newState, monsterCombatState: null, currentAction: null };
     return checkAndEndTurnIfNoActions(finalState);
 }
+
 
 export const handleOpenUseCardDialog = (state: GameState, cardName: string) => {
     return { ...state, useCardDialogState: { cardName }, showCardsDialogForPlayer: null };
