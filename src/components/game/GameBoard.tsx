@@ -27,83 +27,6 @@ type GameBoardProps = {
     onExit: () => void;
 };
 
-const ROCK_SPRITES = [
-    '/sprites/small_rock.gif',
-    '/sprites/mini_rock.gif',
-    '/sprites/medium_rock.gif',
-    '/sprites/big_rock.gif',
-];
-
-const generateDecorations = (map: Island[][]) => {
-    const decorations: { src: string; x: number; y: number; size: number, style: React.CSSProperties }[] = [];
-    const mapSize = map.length;
-
-    map.flat().forEach(island => {
-        const rockCount = 1 + Math.floor(Math.random() * 3); // 1 to 3 rocks per island
-        
-        let possibleSides = [0, 1, 2, 3]; // 0: top, 1: right, 2: bottom, 3: left
-        if (island.y === 0) possibleSides = possibleSides.filter(s => s !== 0);
-        if (island.x === mapSize - 1) possibleSides = possibleSides.filter(s => s !== 1);
-        if (island.y === mapSize - 1) possibleSides = possibleSides.filter(s => s !== 2);
-        if (island.x === 0) possibleSides = possibleSides.filter(s => s !== 3);
-
-
-        for (let i = 0; i < rockCount; i++) {
-            if (possibleSides.length === 0) break;
-
-            const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
-            
-            // Allow rocks to cluster by not removing the side after selection
-            const side = possibleSides[Math.floor(Math.random() * possibleSides.length)];
-
-            const offset = (Math.random() - 0.5) * 50; // -25% to +25% offset along the side
-            const size = Math.random() * 20 + 12; // Random size between 12px and 32px
-
-            let style: React.CSSProperties = {
-                position: 'absolute',
-                zIndex: 5,
-                pointerEvents: 'none',
-                width: `${size}px`,
-                height: `${size}px`,
-            };
-
-            switch(side) {
-                case 0: // Top
-                    style.top = '-25%';
-                    style.left = `${50 + offset}%`;
-                    style.transform = 'translateX(-50%)';
-                    break;
-                case 1: // Right
-                    style.top = `${50 + offset}%`;
-                    style.right = '-25%';
-                    style.transform = 'translateY(-50%)';
-                    break;
-                case 2: // Bottom
-                    style.bottom = '-25%';
-                    style.left = `${50 + offset}%`;
-                    style.transform = 'translateX(-50%)';
-                    break;
-                case 3: // Left
-                    style.top = `${50 + offset}%`;
-                    style.left = '-25%';
-                    style.transform = 'translateY(-50%)';
-                    break;
-            }
-
-            decorations.push({
-                src: rockSrc,
-                x: island.x,
-                y: island.y,
-                size: 24,
-                style,
-            });
-        }
-    });
-
-    return decorations;
-};
-
-
 export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const { playerId } = usePlayer();
   const { gameState, setGameState, isMyTurn, localPlayer, isHost, isLoading } = useGameEngine(gameId, playerId);
@@ -115,13 +38,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [timeLeft, setTimeLeft] = useState(TURN_DURATION);
   const [activeInstructionToastId, setActiveInstructionToastId] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  const decorations = useMemo(() => {
-    if (!gameState || !gameState.map || gameState.map.length === 0) return [];
-    return generateDecorations(gameState.map);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId]); // Depend only on gameId to ensure this runs only once per game
-
 
   useEffect(() => {
     setIsPlayerInfoOpen(!isMobile);
@@ -420,7 +336,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                     selectedArmyId={selectedArmyId}
                     isTeleporting={isTeleporting}
                     isScouting={isScouting}
-                    decorations={decorations}
                 />
                 <div className='text-center'>
                     {status === 'waiting' ? (
