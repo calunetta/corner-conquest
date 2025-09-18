@@ -16,6 +16,7 @@ type IslandTileProps = {
   isSelected: boolean;
   isCurrentPlayerTile: boolean;
   isArmySelectedOnTile: boolean;
+  currentPlayerId: number;
   isTeleporting?: boolean;
   isScoutTarget?: boolean;
 };
@@ -34,7 +35,7 @@ const playerTileIndicatorClasses: Record<string, string> = {
     yellow: 'shadow-yellow-400/50',
 }
 
-export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, isTeleporting, isScoutTarget }: IslandTileProps) {
+export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, currentPlayerId, isTeleporting, isScoutTarget }: IslandTileProps) {
   const occupants = island.occupants.map(o => {
       const player = players.find(p => p.id === o.playerId);
       const army = player?.armies.find(a => a.id === o.armyId);
@@ -43,7 +44,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
 
   const positionedBy = island.positionedBy || [];
   
-  const currentPlayerOnTile = players.find(p => p.id === (isCurrentPlayerTile ? occupants.find(o => players[o.player!.id].armies.some(a => a.position.x === island.x && a.position.y === island.y))?.player!.id : -1));
+  const currentPlayerOnTile = isCurrentPlayerTile ? players.find(p => p.id === currentPlayerId) : undefined;
 
   const baseOwner = island.type === 'base' ? players.find(p => p.id === island.owner) : null;
 

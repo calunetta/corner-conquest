@@ -20,8 +20,6 @@ const generateDecorations = (map: Island[][]) => {
     
     const mapSize = map.length;
     const totalSize = TILE_SIZE + TILE_GAP;
-    const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
-    const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
 
     // Generate rocks around islands
     map.flat().forEach(island => {
@@ -58,6 +56,9 @@ const generateDecorations = (map: Island[][]) => {
         }
     });
 
+    const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
+    const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
+    
     // Generate rocks in the padding area
     const numPaddingRocks = Math.floor(mapSize * 2.5);
     for (let i = 0; i < numPaddingRocks; i++) {
@@ -128,7 +129,6 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
   const decorations = useMemo(() => {
     if (!map) return [];
     return generateDecorations(map);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const totalSize = TILE_SIZE + TILE_GAP;
@@ -147,20 +147,24 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         transformOrigin: '0 0',
       }}
     >
-      <div
-        className="absolute inset-0 bg-water-pattern bg-repeat"
-      />
-      {decorations.map((deco, index) => (
-          <Image
-            key={`deco-${index}`}
-            src={deco.src}
-            alt="decorative rock"
-            width={deco.size}
-            height={deco.size}
-            style={deco.style}
-            unoptimized
-          />
-      ))}
+        <div
+            className="absolute inset-0 bg-water-pattern bg-repeat"
+            style={{
+                width: `${totalMapWidth}px`,
+                height: `${totalMapHeight}px`,
+            }}
+        />
+        {decorations.map((deco, index) => (
+            <Image
+                key={`deco-${index}`}
+                src={deco.src}
+                alt="decorative rock"
+                width={deco.size}
+                height={deco.size}
+                style={deco.style}
+                unoptimized
+            />
+        ))}
       {map.flat().map((island) => {
         const isPossible = possibleMoves.some(p => p.x === island.x && p.y === island.y);
         const isSelected = selectedTile?.x === island.x && selectedTile?.y === island.y;
@@ -190,6 +194,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
                 isSelected={isSelected}
                 isCurrentPlayerTile={isCurrentPlayerTile}
                 isArmySelectedOnTile={!!isArmySelectedOnTile}
+                currentPlayerId={currentPlayerId}
                 isTeleporting={isTeleporting}
                 isScoutTarget={isScoutTarget}
             />
