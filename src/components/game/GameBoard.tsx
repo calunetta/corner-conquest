@@ -18,7 +18,7 @@ import { startGame } from '@/lib/game-initializer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import Image from 'next/image';
-import { TILE_GAP, TILE_SIZE, BASE_TILE_SIZE } from '@/lib/game-logic';
+import { TILE_GAP, TILE_SIZE } from '@/lib/game-logic';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
 export const PADDING = 100;

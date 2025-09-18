@@ -4,7 +4,7 @@ import type { Island, Player, GameAction } from '@/lib/types';
 import { IslandTile } from './IslandTile';
 import { useMemo } from 'react';
 import Image from 'next/image';
-import { TILE_GAP, TILE_SIZE, BASE_TILE_SIZE } from '@/lib/game-logic';
+import { TILE_GAP, TILE_SIZE } from '@/lib/game-logic';
 import { PADDING } from './GameBoard';
 
 const ROCK_SPRITES = [
@@ -128,20 +128,16 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         const isArmySelectedOnTile = (isTeleporting && armyOnTile?.armyId === teleportingArmyId) || (!isTeleporting && selectedArmy?.position.x === island.x && selectedArmy?.position.y === island.y);
         
         const isScoutTarget = isScouting && island.isHidden;
-        
-        const isBase = island.type === 'base';
-        const currentTileSize = isBase ? BASE_TILE_SIZE : TILE_SIZE;
-        const offset = isBase ? (BASE_TILE_SIZE - TILE_SIZE) / 2 : 0;
 
         return (
           <div 
             key={island.id} 
             className="absolute z-10"
             style={{
-              width: `${currentTileSize}px`,
-              height: `${currentTileSize}px`,
-              left: `${PADDING + island.x * totalSize - offset}px`,
-              top: `${PADDING + island.y * totalSize - offset}px`,
+              width: `${TILE_SIZE}px`,
+              height: `${TILE_SIZE}px`,
+              left: `${PADDING + island.x * totalSize}px`,
+              top: `${PADDING + island.y * totalSize}px`,
             }}
           >
             <IslandTile
@@ -163,4 +159,3 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
     </div>
   );
 }
-
