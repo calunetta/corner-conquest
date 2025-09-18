@@ -28,15 +28,15 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
       <Card className={`transition-all duration-300 ${isCurrentPlayer ? `border-accent shadow-lg shadow-accent/20` : ''}`}>
         <CardHeader className="flex-row items-center justify-between space-y-0 p-2">
           <div className="flex items-center gap-2">
-            <CardTitle className="text-sm font-medium">{player.name}</CardTitle>
             <Image 
                 src={PLAYER_DATA[player.color].sprite.idle}
                 alt={`${player.color} army`}
-                width={32}
-                height={32}
-                className="h-8 w-8 object-contain"
+                width={48}
+                height={48}
+                className="h-12 w-12 object-contain"
                 unoptimized
             />
+            <CardTitle className="text-sm font-medium">{player.name}</CardTitle>
           </div>
           <div className="flex items-center gap-2">
             {player.hasExtraMove && (
