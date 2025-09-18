@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { ResourceIcon } from '@/components/icons';
 import { Award, Swords, Zap, Album, Forward } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import Image from 'next/image';
+import { PLAYER_DATA } from '@/lib/player-data';
 
 type PlayerInfoProps = {
   player: Player;
@@ -37,7 +39,14 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
                     </TooltipContent>
                 </Tooltip>
             )}
-            <Badge variant="outline" className={`border-2 ${playerColorMap[player.color]}`}>{player.color.toUpperCase()}</Badge>
+             <Image 
+                src={PLAYER_DATA[player.color].sprite.idle}
+                alt={`${player.color} army`}
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+                unoptimized
+            />
           </div>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center justify-between gap-y-2 p-2 pt-0">
