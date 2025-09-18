@@ -13,7 +13,6 @@ export default {
       backgroundImage: {
         'water-pattern': "url('/sprites/water.png')",
         'terrain': "url('/sprites/terrain.png')",
-        'terrain-box': "url('/sprites/terrain_box.png')",
       },
       fontFamily: {
         body: ['"Lilita One"', 'sans-serif'],

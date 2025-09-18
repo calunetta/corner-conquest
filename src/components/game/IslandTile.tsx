@@ -123,12 +123,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const getTerrainClass = () => {
     if (island.isHidden) return 'bg-muted/30 border-dashed';
     
-    const isBox = (island.x + island.y) % 2 === 0;
-    if (isBox) {
-        return 'bg-terrain-box bg-repeat';
-    } else {
-        return 'bg-terrain bg-cover bg-center';
-    }
+    return 'bg-terrain bg-cover bg-center';
   }
 
   return (
