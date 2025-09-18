@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -50,8 +51,9 @@ export function useGameEngine(gameId: string, playerId: string | null) {
             map: flattenMap(newState.map),
         };
 
-        setGameState(newState);
         await setDoc(gameDocRef, firestoreState, { merge: true });
+        // The local state will be updated by the onSnapshot listener,
+        // so we don't call setGameState here to avoid potential race conditions.
 
     } catch (error: any) {
         console.error("Error updating game state:", error);
@@ -89,23 +91,27 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   }, [isLoading, gameState, localPlayer, router]);
 
   useEffect(() => {
-    if (gameState && gameState.status === 'playing' && currentPlayer?.isBot && !isProcessingBotTurn.current) {
+    if (gameState && gameState.status === 'playing' && currentPlayer?.isBot && isHost && !isProcessingBotTurn.current) {
       isProcessingBotTurn.current = true;
       // Use a short delay to make the bot's turn feel more natural
       setTimeout(async () => {
         try {
+          console.log('Bot turn starting...');
           const nextState = takeBotTurn(gameState);
           await updateGameState(nextState);
+           console.log('Bot turn finished and state updated.');
         } catch (error) {
           console.error("Error during bot turn: ", error);
           // If bot fails, just end its turn to not stall the game
-          await updateGameState({ ...gameState, currentPlayerIndex: (gameState.currentPlayerIndex + 1) % gameState.players.length });
+          const errorState = GameActions.handleEndTurn(gameState);
+          await updateGameState(errorState);
         } finally {
             isProcessingBotTurn.current = false;
         }
-      }, 1000);
+      }, 2000);
     }
-  }, [gameState, currentPlayer, isProcessingBotTurn]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.turn, gameState?.currentPlayerIndex, gameState, currentPlayer, isHost]);
 
 
   return { gameState, setGameState: updateGameState, isMyTurn, localPlayer, isHost, isLoading };
