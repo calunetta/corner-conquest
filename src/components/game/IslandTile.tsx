@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 import type { Island, Player, GameAction, ResourceType, IslandResource, Army, Monster, DeathAnimation } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon } from '../icons';
@@ -82,11 +76,10 @@ const AnimatedMonster = ({ monster, position }: { monster: Monster, position: 't
                     <Image
                         src={spriteSrc}
                         alt={monster.name}
-                        layout='fill'
-                        objectFit='contain'
+                        width={96}
+                        height={96}
                         className="drop-shadow-lg transition-transform duration-1000 ease-in-out"
                         style={{ transform: isAttacking ? (isFlipped ? 'scaleX(-1)' : '') : transform }}
-                        unoptimized
                     />
                 </div>
             </TooltipTrigger>
@@ -158,7 +151,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                  return (
                     <div 
                         key={`${monster.name}-${i}`} 
-                        className={cn("absolute flex h-3/4 w-3/4", positionClass)}
+                        className={cn("absolute flex h-full w-full", positionClass)}
                     >
                         <AnimatedMonster monster={monster} position={positionKey} />
                     </div>
@@ -182,7 +175,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                         layout="fill"
                         objectFit='contain'
                         className="p-1"
-                        unoptimized
                     />
                 ) : <Home className="h-full w-full p-2" />}
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-end justify-center gap-4">
@@ -265,7 +257,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                                 pos.origin.includes('right') && 'right-0',
                                 army.hasActed ? 'opacity-50' : ''
                             )}
-                            unoptimized
                         />
                     </div>
                 )
@@ -279,7 +270,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                     alt="Death animation"
                     width={96}
                     height={96}
-                    unoptimized
                 />
             </div>
         )}
@@ -289,5 +279,3 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     </TooltipProvider>
   );
 }
-
-    

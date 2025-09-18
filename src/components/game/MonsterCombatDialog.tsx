@@ -83,7 +83,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         {selectedMonster && (
           <Card className="inline-flex flex-col items-center gap-2 p-4">
               <div className='relative h-24 w-24'>
-                <Image src={selectedMonster.sprite.attack} alt={selectedMonster.name} layout="fill" objectFit='contain' unoptimized className='-scale-x-100'/>
+                <Image src={selectedMonster.sprite.attack} alt={selectedMonster.name} layout="fill" objectFit='contain' className='-scale-x-100'/>
               </div>
               <div className="text-center">
                   <p className="font-bold capitalize">{getMonsterName(selectedMonster)}</p>
@@ -155,7 +155,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
             onClick={() => setSelectedMonster(monster)}
           >
             <div className='relative h-24 w-24'>
-                <Image src={monster.sprite.idle} alt={monster.name} layout="fill" objectFit='contain' unoptimized />
+                <Image src={monster.sprite.idle} alt={monster.name} layout="fill" objectFit='contain' />
             </div>
             <div className="text-center">
                 <p className="font-bold capitalize">{getMonsterName(monster)}</p>
@@ -190,13 +190,13 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         <div className="flex flex-col justify-around gap-4 sm:flex-row">
           <div className="flex flex-col items-center gap-2">
             <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
-            <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} unoptimized />
+            <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} />
             {renderDice(attackerRolls)}
             <p className="text-xl font-bold">Total: {attackerRolls.reduce((a, b) => a + b, 0)}</p>
           </div>
           {monsterForDisplay && <div className="flex flex-col items-center gap-2">
               <h3 className="font-bold capitalize text-destructive">{getMonsterName(monsterForDisplay)}</h3>
-               {monsterSprite && <Image src={monsterSprite} alt={`${monsterForDisplay.name} sprite`} width={64} height={64} unoptimized />}
+               {monsterSprite && <Image src={monsterSprite} alt={`${monsterForDisplay.name} sprite`} width={64} height={64} />}
               {renderDice(monsterRolls)}
               <p className="text-xl font-bold">Total: {monsterRolls.reduce((a, b) => a + b, 0)}</p>
           </div>}

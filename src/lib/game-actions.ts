@@ -1,7 +1,4 @@
 
-
-
-
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation } from './types';

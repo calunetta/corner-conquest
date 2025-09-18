@@ -73,7 +73,7 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
                 <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
                 {(phase === 'results' || phase === 'death') && (
                   <>
-                    <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} unoptimized />
+                    <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} />
                     {renderDice(attackerRolls)}
                     <p className="text-xl font-bold">Total: {attackerRolls.reduce((a, b) => a + b, 0)}</p>
                   </>
@@ -83,7 +83,7 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
                 <h3 className="font-bold" style={{ color: defender.color }}>{defender.name}</h3>
                 {(phase === 'results' || phase === 'death') && (
                   <>
-                    <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} unoptimized />
+                    <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} />
                     {renderDice(defenderRolls)}
                     <p className="text-xl font-bold">Total: {defenderRolls.reduce((a, b) => a + b, 0)}</p>
                   </>

@@ -1,11 +1,10 @@
 
-
 import type { GameState, Island, Player, PlayerColor, FirestoreGameState } from './types';
 import { PLAYER_COLORS } from './player-data';
 
-export const TILE_SIZE = 150;
+export const TILE_SIZE = 75;
 export const BASE_TILE_SIZE = 150;
-export const TILE_GAP = 32;
+export const TILE_GAP = 16;
 export const MAP_ROWS = 6;
 export const MAP_COLS = 5;
 
