@@ -21,9 +21,10 @@ type CombatDialogProps = {
   gameState: GameState;
   onRoll: (useWarChief: boolean) => void;
   onClose: () => void;
+  isAttacker: boolean;
 };
 
-export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) {
+export function CombatDialog({ gameState, onRoll, onClose, isAttacker }: CombatDialogProps) {
   const [useWarChief, setUseWarChief] = useState(false);
   const { combatState, players } = gameState;
 
@@ -39,8 +40,9 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
   const isCombatOver = phase === 'results';
   const loserId = isCombatOver && winnerId !== null ? (winnerId === attackerId ? defenderId : attackerId) : null;
   
-  const attackerSprite = loserId === attackerId ? PLAYER_DATA[attacker.color].sprite.death : PLAYER_DATA[attacker.color].sprite.attack;
-  const defenderSprite = loserId === defenderId ? PLAYER_DATA[defender.color].sprite.death : PLAYER_DATA[defender.color].sprite.attack;
+  const attackerSprite = isCombatOver && loserId === attackerId ? PLAYER_DATA[attacker.color].sprite.death : PLAYER_DATA[attacker.color].sprite.attack;
+  const defenderSprite = isCombatOver && loserId === defenderId ? PLAYER_DATA[defender.color].sprite.death : PLAYER_DATA[defender.color].sprite.attack;
+
 
   const renderDice = (rolls: number[]) => (
     <div className="flex flex-wrap justify-center gap-2">
@@ -62,7 +64,7 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        {phase === 'rolling' && hasWarChiefCard && (
+        {phase === 'rolling' && hasWarChiefCard && isAttacker && (
             <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
                 <Checkbox id="use-warchief-card" checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
                 <Label htmlFor="use-warchief-card" className='font-bold'>Use 'War Chief' card for +2 attack power?</Label>
@@ -105,12 +107,12 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
         )}
 
         <AlertDialogFooter>
-          {phase === 'rolling' && (
+          {phase === 'rolling' && isAttacker && (
             <Button onClick={() => onRoll(useWarChief)} className="w-full">
               Roll Dice!
             </Button>
           )}
-          {phase === 'results' && (
+          {phase === 'results' && isAttacker && (
             <AlertDialogAction onClick={onClose} className="w-full">
               Continue
             </AlertDialogAction>

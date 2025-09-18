@@ -87,6 +87,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
           gameState={gameState}
           onRoll={(useWarChief) => handleUpdate(GameActions.handleCombatRoll(gameState, useWarChief))}
           onClose={() => handleUpdate(GameActions.handleCloseCombat(gameState))}
+          isAttacker={isMyTurn}
         />
       )}
       {monsterCombatState && currentTileForMonster?.monsters && (
@@ -96,6 +97,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
           onRoll={(monster, useDecideCard, decidedValue, useOvercome, useWarChief) => handleUpdate(GameActions.handleMonsterCombatRoll(gameState, monster, useDecideCard, decidedValue, useOvercome, useWarChief))}
           onClose={() => handleUpdate(GameActions.handleCloseMonsterCombat(gameState))}
           onCancel={() => handleCloseDialog('monsterCombatState')}
+          isAttacker={isMyTurn}
         />
       )}
       {positionDialogState && (
