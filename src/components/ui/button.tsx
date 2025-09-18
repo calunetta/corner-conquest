@@ -10,11 +10,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "text-white hover:brightness-110",
+        default: "hover:brightness-110",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "text-black hover:brightness-110",
+          "hover:brightness-110",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
@@ -65,7 +65,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             )}
           ></span>
         )}
-        <span className="relative z-10 flex items-center justify-center gap-2 pb-[4px]">
+        <span className={cn(
+            "relative z-10 flex items-center justify-center gap-2 pb-[4px]",
+            variant === 'default' && 'text-white',
+            variant === 'outline' && 'text-black'
+        )}>
             {children}
         </span>
         {disabled && (
