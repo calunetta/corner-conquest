@@ -3,6 +3,7 @@
 
 
 
+
 import type { Island, Player, GameAction, ResourceType, IslandResource, Army, Monster } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon } from '../icons';
@@ -43,6 +44,7 @@ const AnimatedMonster = ({ monster, position }: { monster: Monster, position: 't
     const [isAttacking, setIsAttacking] = useState(false);
     const [isFlipped, setIsFlipped] = useState(position === 'bottom-right');
     const [horizontalOffset, setHorizontalOffset] = useState(0);
+    const [previousHorizontalOffset, setPreviousHorizontalOffset] = useState(0);
 
     useEffect(() => {
         const animationInterval = setInterval(() => {
@@ -50,15 +52,22 @@ const AnimatedMonster = ({ monster, position }: { monster: Monster, position: 't
             setIsAttacking(currentlyAttacking);
             
             if (!currentlyAttacking) {
-                if (Math.random() < 0.3) {
-                    setIsFlipped(prev => !prev);
+                const newOffset = (Math.random() - 0.5) * 50;
+
+                if (newOffset > previousHorizontalOffset) {
+                    setIsFlipped(false); // Moving right
+                } else if (newOffset < previousHorizontalOffset) {
+                    setIsFlipped(true); // Moving left
                 }
-                setHorizontalOffset((Math.random() - 0.5) * 50);
+                
+                setPreviousHorizontalOffset(newOffset);
+                setHorizontalOffset(newOffset);
             }
 
         }, Math.random() * 1500 + 1000); // Random interval between 1-2.5 seconds
 
         return () => clearInterval(animationInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const spriteSrc = isAttacking ? monster.sprite.attack : monster.sprite.idle;
