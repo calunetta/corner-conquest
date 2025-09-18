@@ -125,7 +125,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   const decorations = useMemo(() => {
     if (!gameState?.map || gameState.map.length === 0) return [];
-    // The dependency array is empty, so this runs only once.
+    // The dependency array is based on gameId to run only once per game.
     return generateDecorations(gameState.map);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId]);
@@ -485,7 +485,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
                 <main 
                   ref={mapContainerRef}
-                  className="relative flex flex-col items-center justify-start gap-2 overflow-hidden rounded-xl border-2 border-muted bg-water-pattern bg-repeat sm:gap-4"
+                  className="relative gap-2 overflow-hidden rounded-xl bg-water-pattern bg-repeat sm:gap-4"
                   onWheel={handleWheel}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
@@ -576,3 +576,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
