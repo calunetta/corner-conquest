@@ -330,21 +330,22 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     const mapWidthWithZoom = totalMapWidth * zoom;
     const mapHeightWithZoom = totalMapHeight * zoom;
 
-    // If the zoomed map is smaller than the viewport, center it.
-    // Otherwise, clamp it to the edges.
     let clampedX, clampedY;
+
     if (mapWidthWithZoom < clientWidth) {
         clampedX = (clientWidth - mapWidthWithZoom) / 2;
     } else {
         const minPanX = clientWidth - mapWidthWithZoom;
-        clampedX = Math.max(minPanX, Math.min(0, newPanX));
+        const maxPanX = 0;
+        clampedX = Math.max(minPanX, Math.min(newPanX, maxPanX));
     }
     
     if (mapHeightWithZoom < clientHeight) {
         clampedY = (clientHeight - mapHeightWithZoom) / 2;
     } else {
         const minPanY = clientHeight - mapHeightWithZoom;
-        clampedY = Math.max(minPanY, Math.min(0, newPanY));
+        const maxPanY = 0;
+        clampedY = Math.max(minPanY, Math.min(newPanY, maxPanY));
     }
 
     setPan({ x: clampedX, y: clampedY });
@@ -524,3 +525,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
