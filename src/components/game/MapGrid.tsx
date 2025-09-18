@@ -91,7 +91,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         style={{
           gridTemplateColumns: `repeat(${MAP_COLS}, ${tileSize}px)`,
           gap: `${tileGap}px`,
-          marginLeft: isMobile ? '150px' : '0',
+          marginLeft: isMobile ? '180px' : '0',
         }}
       >
         {map.flat().filter(island => !!island).map((island) => {
