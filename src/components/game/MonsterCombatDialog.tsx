@@ -49,7 +49,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   const hasDecideCard = attacker.specialCards.includes('Decide Dice Roll');
   const hasOvercomeCard = attacker.specialCards.includes('Overcome');
   const hasWarChiefCard = attacker.specialCards.includes('War Chief');
-  const monsterForDisplay = phase === 'results' || phase === 'death' ? monsterCombatState.monster : selectedMonster;
+  const monsterForDisplay = phase === 'results' ? monsterCombatState.monster : selectedMonster;
   
   const isSelectionPhase = phase === 'rolling' && monsters.length > 1 && !selectedMonster;
 
@@ -183,7 +183,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         <AlertDialogHeader>
           <AlertDialogTitle>Monster Combat!</AlertDialogTitle>
           {monsterForDisplay && <AlertDialogDescription>
-            {attacker.name} is attacking the {getMonsterName(monsterForDisplay)}!
+            {attacker.name} fought the {getMonsterName(monsterForDisplay)}!
           </AlertDialogDescription>}
         </AlertDialogHeader>
         
@@ -202,31 +202,27 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
           </div>}
         </div>
 
-        {phase === 'results' && (
-          <div className="mt-4 text-center">
-            <h2 className="text-2xl font-bold">
-              {winnerId !== null ? (
-                  <span style={{ color: players[winnerId].color }}>{players[winnerId].name} wins!</span>
-              ) : (
-                  <span className='text-destructive'>The Monster wins!</span>
-              )}
-            </h2>
-          </div>
-        )}
+        <div className="mt-4 text-center">
+          <h2 className="text-2xl font-bold">
+            {isPlayerWinner ? (
+                <span style={{ color: players[winnerId!].color }}>{players[winnerId!].name} wins!</span>
+            ) : (
+                <span className='text-destructive'>The Monster wins!</span>
+            )}
+          </h2>
+        </div>
 
         <AlertDialogFooter>
-          {(phase === 'results' || phase === 'death') && (
-            <AlertDialogAction onClick={onClose} className="w-full">
-              Continue
-            </AlertDialogAction>
-          )}
+          <AlertDialogAction onClick={onClose} className="w-full">
+            Continue
+          </AlertDialogAction>
         </AlertDialogFooter>
       </>
     );
   }
 
   const renderContent = () => {
-    if (phase === 'results' || phase === 'death') {
+    if (phase === 'results') {
       return renderResultsScreen();
     }
     if (isSelectionPhase) {

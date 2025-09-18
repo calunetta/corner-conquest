@@ -36,7 +36,7 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
   if (!defender) return null;
   
   const hasWarChiefCard = attacker.specialCards.includes('War Chief');
-  const isCombatOver = phase === 'results' || phase === 'death';
+  const isCombatOver = phase === 'results';
   const loserId = isCombatOver && winnerId !== null ? (winnerId === attackerId ? defenderId : attackerId) : null;
   
   const attackerSprite = loserId === attackerId ? PLAYER_DATA[attacker.color].sprite.death : PLAYER_DATA[attacker.color].sprite.attack;
@@ -72,22 +72,26 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
         <div className="flex flex-col justify-around gap-4 sm:flex-row">
             <div className="flex flex-col items-center gap-2">
                 <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
-                {isCombatOver && (
+                {isCombatOver ? (
                   <>
                     <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} />
                     {renderDice(attackerRolls)}
                     <p className="text-xl font-bold">Total: {attackerRolls.reduce((a, b) => a + b, 0)}</p>
                   </>
+                ) : (
+                   <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} />
                 )}
             </div>
             <div className="flex flex-col items-center gap-2">
                 <h3 className="font-bold" style={{ color: defender.color }}>{defender.name}</h3>
-                {isCombatOver && (
+                {isCombatOver ? (
                   <>
                     <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} />
                     {renderDice(defenderRolls)}
                     <p className="text-xl font-bold">Total: {defenderRolls.reduce((a, b) => a + b, 0)}</p>
                   </>
+                ) : (
+                    <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} />
                 )}
             </div>
         </div>
@@ -106,7 +110,7 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
               Roll Dice!
             </Button>
           )}
-          {(phase === 'results' || phase === 'death') && (
+          {phase === 'results' && (
             <AlertDialogAction onClick={onClose} className="w-full">
               Continue
             </AlertDialogAction>

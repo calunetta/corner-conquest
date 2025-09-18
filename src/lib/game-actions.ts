@@ -1,5 +1,6 @@
 
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation } from './types';
@@ -588,7 +589,6 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
 
     if (!army) return state;
     
-    // An army that has acted can only move again if the 'Extra Move' card is active.
     if (army.hasActed && !player.hasExtraMove) {
         throw new Error("This army has already acted this turn.");
     }
@@ -637,7 +637,7 @@ function handleMoveAction(state: GameState, x: number, y: number): GameState {
             }
         }
         
-        // After the extra move, mark all armies as having acted. This consumes the one extra action.
+        // After the extra move, mark all armies as having acted.
         player.armies.forEach(a => a.hasActed = true);
 
     } else {
@@ -726,7 +726,7 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean): GameSt
     const defenderScore = combatState.defenderRolls.reduce((a, b) => a + b, 0);
 
     combatState.winnerId = attackerScore > defenderScore ? combatState.attackerId : combatState.defenderId;
-    combatState.phase = 'death';
+    combatState.phase = 'results';
     return newState;
 };
 
@@ -734,12 +734,6 @@ export function handleCloseCombat(state: GameState): GameState {
     const newState = { ...state };
     const { combatState, players, map } = newState;
     if (!combatState) return { ...newState, combatState: null, currentAction: null };
-
-    // Move from death to results phase to show winner text
-    if (combatState.phase === 'death') {
-        combatState.phase = 'results';
-        return newState;
-    }
 
     if (combatState.winnerId === null) return { ...newState, combatState: null, currentAction: null };
     
@@ -880,7 +874,7 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
       attackerRolls,
       monsterRolls,
       winnerId: winnerId,
-      phase: 'death',
+      phase: 'results',
       useDecideDiceRollCard: useDecideCard,
       decidedRollValue: decidedValue,
     };
@@ -890,11 +884,6 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
 export function handleCloseMonsterCombat(state: GameState): GameState {
     const newState = { ...state };
     if (!newState.monsterCombatState) return { ...newState, monsterCombatState: null, currentAction: null };
-
-    if (newState.monsterCombatState.phase === 'death') {
-        newState.monsterCombatState.phase = 'results';
-        return newState;
-    }
     
     const { winnerId, monster, attackerId } = newState.monsterCombatState;
     const attacker = newState.players[attackerId];
@@ -972,7 +961,7 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     switch (cardName) {
         case 'Extra Move':
             player.hasExtraMove = true;
-            newState.log.push(`${player.name} activated 'Extra Move'. One army can move again.`);
+            newState.log.push(`${player.name} activated 'Extra Move'. One army can move again this turn.`);
             break;
         case 'Teleport':
             newState.teleportState = { armyId: null };
