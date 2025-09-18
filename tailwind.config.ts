@@ -12,9 +12,6 @@ export default {
     extend: {
       backgroundImage: {
         'water-pattern': "url('/sprites/water.png')",
-        'button-primary': "url('/sprites/primary_button.png')",
-        'button-secondary': "url('/sprites/secondary_button.png')",
-        'button-primary-pressed': "url('/sprites/primary_button_pressed.png')",
       },
       fontFamily: {
         body: ['"Lilita One"', 'sans-serif'],
