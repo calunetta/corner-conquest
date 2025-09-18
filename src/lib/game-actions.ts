@@ -1,3 +1,4 @@
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState } from './types';
@@ -407,8 +408,9 @@ export function handleEndTurn(state: GameState): GameState {
 
 function setPossibleMoves(state: GameState, x: number, y: number): GameState {
     const newState = { ...state };
-    const { settings } = newState;
-    const mapSize = settings.mapSize;
+    const { map } = newState;
+    const mapRows = map.length;
+    const mapCols = map[0].length;
     const currentPlayer = newState.players[newState.currentPlayerIndex];
     const newlySelectedArmy = getSelectedArmy(newState);
 
@@ -426,7 +428,7 @@ function setPossibleMoves(state: GameState, x: number, y: number): GameState {
             if (Math.abs(i) + Math.abs(j) <= moveRadius && (i !== 0 || j !== 0)) {
                 const newX = x + i;
                 const newY = y + j;
-                if (newX >= 0 && newX < mapSize && newY >= 0 && newY < mapSize) {
+                if (newX >= 0 && newX < mapCols && newY >= 0 && newY < mapRows) {
                     const targetTile = newState.map[newY][newX];
                     if (targetTile.type === 'resource' && targetTile.resources.length === 0 && (!targetTile.monsters || targetTile.monsters.length === 0)) {
                         continue;
