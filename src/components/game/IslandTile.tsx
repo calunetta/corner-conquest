@@ -36,9 +36,9 @@ const playerTileIndicatorClasses: Record<string, string> = {
     yellow: 'shadow-yellow-400/50',
 }
 
-const AnimatedMonster = ({ monster, position }: { monster: Monster, position: 'top-left' | 'bottom-right' }) => {
+const AnimatedMonster = ({ monster }: { monster: Monster }) => {
     const [isAttacking, setIsAttacking] = useState(false);
-    const [isFlipped, setIsFlipped] = useState(position === 'bottom-right');
+    const [isFlipped, setIsFlipped] = useState(false);
     const [horizontalOffset, setHorizontalOffset] = useState(0);
     const [previousHorizontalOffset, setPreviousHorizontalOffset] = useState(0);
 
@@ -48,7 +48,7 @@ const AnimatedMonster = ({ monster, position }: { monster: Monster, position: 't
             setIsAttacking(currentlyAttacking);
             
             if (!currentlyAttacking) {
-                const newOffset = (Math.random() - 0.5) * 50;
+                const newOffset = (Math.random() - 0.5) * 40;
 
                 if (newOffset > previousHorizontalOffset) {
                     setIsFlipped(false); // Moving right
@@ -56,7 +56,7 @@ const AnimatedMonster = ({ monster, position }: { monster: Monster, position: 't
                     setIsFlipped(true); // Moving left
                 }
                 
-                setPreviousHorizontalOffset(newOffset);
+                setPreviousHorizontalOffset(horizontalOffset);
                 setHorizontalOffset(newOffset);
             }
 
@@ -72,7 +72,7 @@ const AnimatedMonster = ({ monster, position }: { monster: Monster, position: 't
     return (
          <Tooltip>
             <TooltipTrigger asChild>
-                <div className='relative h-full w-full'>
+                <div className='relative h-full w-full flex items-center justify-center'>
                     <Image
                         src={spriteSrc}
                         alt={monster.name}
@@ -140,23 +140,15 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const renderMonsterIcons = () => {
     if (!island.monsters || island.monsters.length === 0) return null;
     
-    // Do not render monsters if a death animation is playing for one
     if (deathAnimationOnTile && deathAnimationOnTile.id.startsWith('monster-')) return null;
 
     return (
-        <div className="relative h-full w-full">
-            {island.monsters.map((monster, i) => {
-                 const positionClass = i === 0 ? 'top-0 left-0' : 'bottom-0 right-0';
-                 const positionKey = i === 0 ? 'top-left' : 'bottom-right';
-                 return (
-                    <div 
-                        key={`${monster.name}-${i}`} 
-                        className={cn("absolute flex h-full w-full", positionClass)}
-                    >
-                        <AnimatedMonster monster={monster} position={positionKey} />
-                    </div>
-                )
-            })}
+        <div className="flex h-full w-full flex-col">
+            {island.monsters.map((monster, i) => (
+                <div key={`${monster.name}-${i}`} className={cn("relative h-1/2 w-full", i === 0 ? 'justify-start' : 'justify-end')}>
+                    <AnimatedMonster monster={monster} />
+                </div>
+            ))}
         </div>
     );
   }
@@ -221,7 +213,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             {occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
-                // Do not render army if it's currently in a death animation
                 if (deathAnimations.some(anim => anim.id === `army-${player.id}-${army.id}`)) {
                     return null;
                 }
@@ -268,8 +259,8 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                 <Image
                     src={deathAnimationOnTile.sprite}
                     alt="Death animation"
-                    width={96}
-                    height={96}
+                    width={64}
+                    height={64}
                 />
             </div>
         )}
