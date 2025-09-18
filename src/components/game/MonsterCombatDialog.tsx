@@ -13,12 +13,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { MonsterIcon } from '../icons';
 import { Card } from '../ui/card';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { Slider } from '../ui/slider';
 import Image from 'next/image';
+import { PLAYER_DATA } from '@/lib/player-data';
 
 type MonsterCombatDialogProps = {
   gameState: GameState;
@@ -49,7 +49,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   const hasDecideCard = attacker.specialCards.includes('Decide Dice Roll');
   const hasOvercomeCard = attacker.specialCards.includes('Overcome');
   const hasWarChiefCard = attacker.specialCards.includes('War Chief');
-  const monsterForDisplay = phase === 'results' ? monsterCombatState.monster : selectedMonster;
+  const monsterForDisplay = phase === 'results' || phase === 'death' ? monsterCombatState.monster : selectedMonster;
   
   const isSelectionPhase = phase === 'rolling' && monsters.length > 1 && !selectedMonster;
 
@@ -173,52 +173,60 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
     </>
   );
 
-  const renderResultsScreen = () => (
-    <>
-      <AlertDialogHeader>
-        <AlertDialogTitle>Monster Combat!</AlertDialogTitle>
-        {monsterForDisplay && <AlertDialogDescription>
-          {attacker.name} is attacking the {getMonsterName(monsterForDisplay)}!
-        </AlertDialogDescription>}
-      </AlertDialogHeader>
-      
-      <div className="flex flex-col justify-around gap-4 sm:flex-row">
-        <div className="flex flex-col items-center gap-2">
-          <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
-          {phase === 'results' && renderDice(attackerRolls)}
-          {phase === 'results' && <p className="text-xl font-bold">Total: {attackerRolls.reduce((a, b) => a + b, 0)}</p>}
+  const renderResultsScreen = () => {
+    const isPlayerLoser = winnerId !== attackerId;
+    const attackerSprite = isPlayerLoser ? PLAYER_DATA[attacker.color].sprite.death : PLAYER_DATA[attacker.color].sprite.attack;
+    const monsterSprite = !isPlayerLoser && monsterForDisplay ? monsterForDisplay.sprite.death : monsterForDisplay?.sprite.attack;
+    
+    return (
+      <>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Monster Combat!</AlertDialogTitle>
+          {monsterForDisplay && <AlertDialogDescription>
+            {attacker.name} is attacking the {getMonsterName(monsterForDisplay)}!
+          </AlertDialogDescription>}
+        </AlertDialogHeader>
+        
+        <div className="flex flex-col justify-around gap-4 sm:flex-row">
+          <div className="flex flex-col items-center gap-2">
+            <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
+            <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} unoptimized />
+            {renderDice(attackerRolls)}
+            <p className="text-xl font-bold">Total: {attackerRolls.reduce((a, b) => a + b, 0)}</p>
+          </div>
+          {monsterForDisplay && <div className="flex flex-col items-center gap-2">
+              <h3 className="font-bold capitalize text-destructive">{getMonsterName(monsterForDisplay)}</h3>
+               {monsterSprite && <Image src={monsterSprite} alt={`${monsterForDisplay.name} sprite`} width={64} height={64} unoptimized />}
+              {renderDice(monsterRolls)}
+              <p className="text-xl font-bold">Total: {monsterRolls.reduce((a, b) => a + b, 0)}</p>
+          </div>}
         </div>
-        {monsterForDisplay && <div className="flex flex-col items-center gap-2">
-            <h3 className="font-bold capitalize text-destructive">{getMonsterName(monsterForDisplay)}</h3>
-            {phase === 'results' && renderDice(monsterRolls)}
-            {phase === 'results' && <p className="text-xl font-bold">Total: {monsterRolls.reduce((a, b) => a + b, 0)}</p>}
-        </div>}
-      </div>
 
-      {phase === 'results' && (
-        <div className="mt-4 text-center">
-          <h2 className="text-2xl font-bold">
-            {winnerId !== null ? (
-                <span style={{ color: players[winnerId].color }}>{players[winnerId].name} wins!</span>
-            ) : (
-                <span className='text-destructive'>The Monster wins!</span>
-            )}
-          </h2>
-        </div>
-      )}
-
-      <AlertDialogFooter>
-        {phase === 'results' && (
-          <AlertDialogAction onClick={onClose} className="w-full">
-            Continue
-          </AlertDialogAction>
+        {(phase === 'results' || phase === 'death') && (
+          <div className="mt-4 text-center">
+            <h2 className="text-2xl font-bold">
+              {winnerId !== null ? (
+                  <span style={{ color: players[winnerId].color }}>{players[winnerId].name} wins!</span>
+              ) : (
+                  <span className='text-destructive'>The Monster wins!</span>
+              )}
+            </h2>
+          </div>
         )}
-      </AlertDialogFooter>
-    </>
-  );
+
+        <AlertDialogFooter>
+          {(phase === 'results' || phase === 'death') && (
+            <AlertDialogAction onClick={onClose} className="w-full">
+              Continue
+            </AlertDialogAction>
+          )}
+        </AlertDialogFooter>
+      </>
+    );
+  }
 
   const renderContent = () => {
-    if (phase === 'results') {
+    if (phase === 'results' || phase === 'death') {
       return renderResultsScreen();
     }
     if (isSelectionPhase) {

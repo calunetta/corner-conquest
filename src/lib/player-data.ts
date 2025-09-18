@@ -5,6 +5,7 @@ export const PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'purple', 'yellow'];
 type PlayerSpriteInfo = {
     idle: string;
     attack: string;
+    death: string;
 }
 
 type PlayerData = {
@@ -19,6 +20,7 @@ export const PLAYER_DATA: Record<PlayerColor, PlayerData> = {
         sprite: {
             idle: '/sprites/blue.gif',
             attack: '/sprites/blue_attack.gif',
+            death: '/sprites/blue_death.gif',
         },
         base: '/sprites/castle_blue.png',
     },
@@ -27,6 +29,7 @@ export const PLAYER_DATA: Record<PlayerColor, PlayerData> = {
         sprite: {
             idle: '/sprites/red.gif',
             attack: '/sprites/red_attack.gif',
+            death: '/sprites/red_death.gif',
         },
         base: '/sprites/castle_red.png',
     },
@@ -35,6 +38,7 @@ export const PLAYER_DATA: Record<PlayerColor, PlayerData> = {
         sprite: {
             idle: '/sprites/purple.gif',
             attack: '/sprites/purple_attack.gif',
+            death: '/sprites/purple_death.gif',
         },
         base: '/sprites/castle_purple.png',
     },
@@ -43,6 +47,7 @@ export const PLAYER_DATA: Record<PlayerColor, PlayerData> = {
         sprite: {
             idle: '/sprites/yellow.gif',
             attack: '/sprites/yellow_attack.gif',
+            death: '/sprites/yellow_death.gif',
         },
         base: '/sprites/castle_yellow.png',
     }

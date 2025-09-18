@@ -14,6 +14,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
+import Image from 'next/image';
+import { PLAYER_DATA } from '@/lib/player-data';
 
 type CombatDialogProps = {
   gameState: GameState;
@@ -34,6 +36,10 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
   if (!defender) return null;
   
   const hasWarChiefCard = attacker.specialCards.includes('War Chief');
+  const loserId = winnerId === null ? null : (winnerId === attackerId ? defenderId : attackerId);
+  
+  const attackerSprite = loserId === attackerId ? PLAYER_DATA[attacker.color].sprite.death : PLAYER_DATA[attacker.color].sprite.attack;
+  const defenderSprite = loserId === defenderId ? PLAYER_DATA[defender.color].sprite.death : PLAYER_DATA[defender.color].sprite.attack;
 
   const renderDice = (rolls: number[]) => (
     <div className="flex flex-wrap justify-center gap-2">
@@ -63,19 +69,29 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
         )}
 
         <div className="flex flex-col justify-around gap-4 sm:flex-row">
-          <div className="flex flex-col items-center gap-2">
-            <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
-            {phase === 'results' && renderDice(attackerRolls)}
-            {phase === 'results' && <p className="text-xl font-bold">Total: {attackerRolls.reduce((a, b) => a + b, 0)}</p>}
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <h3 className="font-bold" style={{ color: defender.color }}>{defender.name}</h3>
-            {phase === 'results' && renderDice(defenderRolls)}
-            {phase === 'results' && <p className="text-xl font-bold">Total: {defenderRolls.reduce((a, b) => a + b, 0)}</p>}
-          </div>
+            <div className="flex flex-col items-center gap-2">
+                <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
+                {(phase === 'results' || phase === 'death') && (
+                  <>
+                    <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} unoptimized />
+                    {renderDice(attackerRolls)}
+                    <p className="text-xl font-bold">Total: {attackerRolls.reduce((a, b) => a + b, 0)}</p>
+                  </>
+                )}
+            </div>
+            <div className="flex flex-col items-center gap-2">
+                <h3 className="font-bold" style={{ color: defender.color }}>{defender.name}</h3>
+                {(phase === 'results' || phase === 'death') && (
+                  <>
+                    <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} unoptimized />
+                    {renderDice(defenderRolls)}
+                    <p className="text-xl font-bold">Total: {defenderRolls.reduce((a, b) => a + b, 0)}</p>
+                  </>
+                )}
+            </div>
         </div>
 
-        {phase === 'results' && winnerId !== null && (
+        {(phase === 'results' || phase === 'death') && winnerId !== null && (
           <div className="mt-4 text-center">
             <h2 className="text-2xl font-bold">
               <span style={{ color: players[winnerId].color }}>{players[winnerId].name}</span> wins!
@@ -89,7 +105,7 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
               Roll Dice!
             </Button>
           )}
-          {phase === 'results' && (
+          {(phase === 'results' || phase === 'death') && (
             <AlertDialogAction onClick={onClose} className="w-full">
               Continue
             </AlertDialogAction>

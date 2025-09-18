@@ -1,6 +1,7 @@
 
 
 
+
 export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'purple' | 'yellow';
@@ -76,6 +77,7 @@ export type Monster = {
   sprite: {
     idle: string;
     attack: string;
+    death: string;
   }
 }
 
@@ -92,6 +94,8 @@ export type Island = {
   positionedBy?: {playerId: number, resource: ResourceType}[];
 };
 
+export type CombatPhase = 'rolling' | 'results' | 'death';
+
 export type CombatState = {
   attackerId: number;
   defenderId: number;
@@ -99,7 +103,7 @@ export type CombatState = {
   attackerRolls: number[];
   defenderRolls: number[];
   winnerId: number | null;
-  phase: 'rolling' | 'results';
+  phase: CombatPhase;
 };
 
 export type MonsterCombatState = {
@@ -108,7 +112,7 @@ export type MonsterCombatState = {
   attackerRolls: number[];
   monsterRolls: number[];
   winnerId: number | null;
-  phase: 'rolling' | 'results';
+  phase: CombatPhase;
   useDecideDiceRollCard: boolean;
   decidedRollValue: number;
 };
@@ -170,6 +174,13 @@ export type AttackSelectionDialogState = {
     armies: Army[];
 }
 
+export type DeathAnimation = {
+    id: string; // "army-playerId-armyId" or "monster-x-y-name"
+    x: number;
+    y: number;
+    sprite: string;
+}
+
 export type GameState = {
   id: string;
   name: string;
@@ -203,6 +214,7 @@ export type GameState = {
   scoutingState: ScoutingState | null;
   armySelectionDialogState: ArmySelectionDialogState | null;
   attackSelectionDialogState: AttackSelectionDialogState | null;
+  deathAnimations: DeathAnimation[];
 };
 
 export type FirestoreGameState = Omit<GameState, 'map'> & {

@@ -17,6 +17,7 @@ import * as GameActions from '@/lib/game-actions';
 import { startGame } from '@/lib/game-initializer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import Image from 'next/image';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
 
@@ -118,6 +119,22 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     }
    // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [gameState?.players, gameState?.status, gameState?.settings.victoryPointGoal]);
+   
+   // Effect for handling death animations
+    useEffect(() => {
+        if (gameState?.deathAnimations && gameState.deathAnimations.length > 0) {
+            const animationTimers = gameState.deathAnimations.map(anim => 
+                setTimeout(() => {
+                    setGameState({
+                        ...gameState,
+                        deathAnimations: gameState.deathAnimations.filter(a => a.id !== anim.id),
+                    });
+                }, 1500) // Duration of the death GIF
+            );
+            return () => animationTimers.forEach(clearTimeout);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [gameState?.deathAnimations]);
   
   const handleAction = async (action: GameAction) => {
     if (!gameState || !localPlayer) return;
@@ -258,7 +275,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     );
   }
 
-  const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers, teleportState, scoutingState, armySelectionDialogState, winner, settings } = gameState;
+  const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers, teleportState, scoutingState, armySelectionDialogState, winner, settings, deathAnimations } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
@@ -330,6 +347,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                       selectedArmyId={selectedArmyId}
                       isTeleporting={isTeleporting}
                       isScouting={isScouting}
+                      deathAnimations={deathAnimations}
                   />
                   <div className='pointer-events-none absolute bottom-4 right-4 z-20 rounded-lg bg-background/80 p-2 text-center shadow-md backdrop-blur-sm'>
                       {status === 'waiting' ? (

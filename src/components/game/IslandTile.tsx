@@ -4,7 +4,8 @@
 
 
 
-import type { Island, Player, GameAction, ResourceType, IslandResource, Army, Monster } from '@/lib/types';
+
+import type { Island, Player, GameAction, ResourceType, IslandResource, Army, Monster, DeathAnimation } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon } from '../icons';
 import { Home, HelpCircle, Star, Loader2, Anchor } from 'lucide-react';
@@ -24,6 +25,7 @@ type IslandTileProps = {
   currentPlayerId: number;
   isTeleporting?: boolean;
   isScoutTarget?: boolean;
+  deathAnimations: DeathAnimation[];
 };
 
 const playerColorMap = {
@@ -95,7 +97,7 @@ const AnimatedMonster = ({ monster, position }: { monster: Monster, position: 't
     )
 }
 
-export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, currentPlayerId, isTeleporting, isScoutTarget }: IslandTileProps) {
+export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, currentPlayerId, isTeleporting, isScoutTarget, deathAnimations }: IslandTileProps) {
   const occupants = island.occupants.map(o => {
       const player = players.find(p => p.id === o.playerId);
       const army = player?.armies.find(a => a.id === o.armyId);
@@ -107,6 +109,8 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const currentPlayerOnTile = isCurrentPlayerTile ? players.find(p => p.id === currentPlayerId) : undefined;
 
   const baseOwner = island.type === 'base' ? players.find(p => p.id === island.owner) : null;
+  
+  const deathAnimationOnTile = deathAnimations.find(anim => anim.x === island.x && anim.y === island.y);
 
   const renderResourceIcons = (resources: IslandResource[]) => {
     const isBase = island.type === 'base';
@@ -143,6 +147,9 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const renderMonsterIcons = () => {
     if (!island.monsters || island.monsters.length === 0) return null;
     
+    // Do not render monsters if a death animation is playing for one
+    if (deathAnimationOnTile && deathAnimationOnTile.id.startsWith('monster-')) return null;
+
     return (
         <div className="relative h-full w-full">
             {island.monsters.map((monster, i) => {
@@ -222,6 +229,11 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             {occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
+                // Do not render army if it's currently in a death animation
+                if (deathAnimations.some(anim => anim.id === `army-${player.id}-${army.id}`)) {
+                    return null;
+                }
+                
                 const sprite = PLAYER_DATA[player.color].sprite;
                 if (!sprite) return null;
                 
@@ -260,6 +272,18 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             })}
         </div>
         
+        {deathAnimationOnTile && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center">
+                <Image
+                    src={deathAnimationOnTile.sprite}
+                    alt="Death animation"
+                    width={96}
+                    height={96}
+                    unoptimized
+                />
+            </div>
+        )}
+
         <div className="h-full w-full p-1">{getIcon()}</div>
       </button>
     </TooltipProvider>

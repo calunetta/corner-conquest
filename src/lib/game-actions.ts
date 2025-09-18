@@ -1,10 +1,12 @@
 
 
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState } from './types';
+import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation } from './types';
 import { flattenMap, MAP_COLS, MAP_ROWS } from './game-logic';
+import { PLAYER_DATA } from './player-data';
 
 // --- Action Helpers ---
 
@@ -731,14 +733,22 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean): GameSt
     const defenderScore = combatState.defenderRolls.reduce((a, b) => a + b, 0);
 
     combatState.winnerId = attackerScore > defenderScore ? combatState.attackerId : combatState.defenderId;
-    combatState.phase = 'results';
+    combatState.phase = 'death';
     return newState;
 };
 
 export function handleCloseCombat(state: GameState): GameState {
     const newState = { ...state };
     const { combatState, players, map } = newState;
-    if (!combatState || combatState.winnerId === null) return { ...newState, combatState: null, currentAction: null };
+    if (!combatState) return { ...newState, combatState: null, currentAction: null };
+
+    // Move from death to results phase to show winner text
+    if (combatState.phase === 'death') {
+        combatState.phase = 'results';
+        return newState;
+    }
+
+    if (combatState.winnerId === null) return { ...newState, combatState: null, currentAction: null };
     
     const { winnerId, attackerId, defenderId, defendingArmyId } = combatState;
     const loserId = winnerId === attackerId ? defenderId : attackerId;
@@ -750,12 +760,21 @@ export function handleCloseCombat(state: GameState): GameState {
     
     attackingArmy.hasActed = true;
 
+    const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
+
     if (loserId === defenderId) {
-        const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
         const losingArmy = loser.armies.find(a => a.id === defendingArmyId);
         const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
 
         if (losingArmy && baseTile) {
+            const deathAnim: DeathAnimation = {
+                id: `army-${loser.id}-${losingArmy.id}`,
+                x: losingArmy.position.x,
+                y: losingArmy.position.y,
+                sprite: PLAYER_DATA[loser.color].sprite.death
+            };
+            newState.deathAnimations.push(deathAnim);
+
             const oldPos = losingArmy.position;
             combatTile.occupants = combatTile.occupants.filter(o => !(o.armyId === losingArmy.id && o.playerId === loserId));
             losingArmy.position = {x: baseTile.x, y: baseTile.y};
@@ -769,6 +788,21 @@ export function handleCloseCombat(state: GameState): GameState {
                 }
             }
         }
+    } else { // Attacker lost
+        const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
+         if (attackingArmy && baseTile) {
+            const deathAnim: DeathAnimation = {
+                id: `army-${loser.id}-${attackingArmy.id}`,
+                x: attackingArmy.position.x,
+                y: attackingArmy.position.y,
+                sprite: PLAYER_DATA[loser.color].sprite.death
+            };
+            newState.deathAnimations.push(deathAnim);
+
+            combatTile.occupants = combatTile.occupants.filter(o => !(o.armyId === attackingArmy.id && o.playerId === loserId));
+            attackingArmy.position = {x: baseTile.x, y: baseTile.y};
+            map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: attackingArmy.id});
+         }
     }
 
 
@@ -786,11 +820,9 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
     let attackerRolls: number[] = [];
     let monsterRolls: number[] = [];
     let winnerId: number | null = null;
-    let monsterVP = 0;
     
     const canUseCard = !attacker.actionsThisTurn.includes('use-card');
     let cardUsedThisAction = false;
-    const currentTile = map[attackingArmy.position.y][attackingArmy.position.x];
 
     if (useOvercomeCard && canUseCard) {
         const cardIndex = attacker.specialCards.indexOf('Overcome');
@@ -847,10 +879,49 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
         winnerId = attackerScore >= monsterScore ? attacker.id : null;
     }
     
-    // This is the consolidated outcome logic
+    attackingArmy.hasActed = true;
+
+    newState.monsterCombatState = {
+      attackerId: attacker.id,
+      monster,
+      attackerRolls,
+      monsterRolls,
+      winnerId: winnerId,
+      phase: 'death',
+      useDecideDiceRollCard: useDecideCard,
+      decidedRollValue: decidedValue,
+    };
+    return newState;
+};
+
+export function handleCloseMonsterCombat(state: GameState): GameState {
+    const newState = { ...state };
+    if (!newState.monsterCombatState) return { ...newState, monsterCombatState: null, currentAction: null };
+
+    if (newState.monsterCombatState.phase === 'death') {
+        newState.monsterCombatState.phase = 'results';
+        return newState;
+    }
+    
+    const { winnerId, monster, attackerId } = newState.monsterCombatState;
+    const attacker = newState.players[attackerId];
+    const attackingArmy = getSelectedArmy(newState);
+    if (!attackingArmy) return { ...newState, monsterCombatState: null, currentAction: null };
+
+    const currentTile = newState.map[attackingArmy.position.y][attackingArmy.position.x];
+
     if (winnerId === attacker.id) {
-        monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
+        const monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
         attacker.victoryPoints += monsterVP;
+        
+        const deathAnim: DeathAnimation = {
+            id: `monster-${currentTile.x}-${currentTile.y}-${monster.name}`,
+            x: currentTile.x,
+            y: currentTile.y,
+            sprite: monster.sprite.death
+        };
+        newState.deathAnimations.push(deathAnim);
+
         currentTile.monsters = (currentTile.monsters || []).filter(m => m.name !== monster.name);
         newState.log.push(`${attacker.name} defeated the ${monster.name} for ${monsterVP} VP!`);
         
@@ -862,36 +933,25 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
           newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
         }
     } else {
-        // Loser logic
-        const baseTile = map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
+        const baseTile = newState.map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
         if (baseTile) {
+            const deathAnim: DeathAnimation = {
+                id: `army-${attacker.id}-${attackingArmy.id}`,
+                x: attackingArmy.position.x,
+                y: attackingArmy.position.y,
+                sprite: PLAYER_DATA[attacker.color].sprite.death
+            };
+            newState.deathAnimations.push(deathAnim);
+            
             const oldPos = attackingArmy.position;
-            map[oldPos.y][oldPos.x].occupants = map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== attackingArmy.id);
+            newState.map[oldPos.y][oldPos.x].occupants = newState.map[oldPos.y][oldPos.x].occupants.filter(o => o.armyId !== attackingArmy.id);
             attackingArmy.position = {x: baseTile.x, y: baseTile.y};
-            map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
+            newState.map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
         }
         newState.log.push(`${attacker.name} was defeated by the monster!`);
     }
-    
-    attackingArmy.hasActed = true;
 
-    newState.monsterCombatState = {
-      attackerId: attacker.id,
-      monster,
-      attackerRolls,
-      monsterRolls,
-      winnerId: winnerId,
-      phase: 'results',
-      useDecideDiceRollCard: useDecideCard,
-      decidedRollValue: decidedValue,
-    };
-    return newState;
-};
-
-export function handleCloseMonsterCombat(state: GameState): GameState {
-    // This function is now only responsible for closing the dialog.
-    // The outcome logic is handled in handleMonsterCombatRoll.
-    return { ...state, monsterCombatState: null, currentAction: null };
+    return { ...newState, monsterCombatState: null, currentAction: null };
 }
 
 export const handleOpenUseCardDialog = (state: GameState, cardName: string) => {

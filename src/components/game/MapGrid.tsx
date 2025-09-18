@@ -1,5 +1,6 @@
 
-import type { Island, Player } from '@/lib/types';
+
+import type { Island, Player, DeathAnimation } from '@/lib/types';
 import { IslandTile } from './IslandTile';
 import { useMemo } from 'react';
 import Image from 'next/image';
@@ -56,9 +57,10 @@ type MapGridProps = {
   selectedArmyId: number | null;
   isTeleporting?: boolean;
   isScouting?: boolean;
+  deathAnimations: DeathAnimation[];
 };
 
-export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting, isScouting }: MapGridProps) {
+export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting, isScouting, deathAnimations }: MapGridProps) {
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const selectedArmy = selectedArmyId !== null && currentPlayer ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const teleportingArmyId = isTeleporting && players[currentPlayerId]?.teleportState?.armyId !== null ? players[currentPlayerId]?.teleportState?.armyId : null;
@@ -117,6 +119,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
                 currentPlayerId={currentPlayerId}
                 isTeleporting={isTeleporting}
                 isScoutTarget={isScoutTarget}
+                deathAnimations={deathAnimations}
             />
           );
         })}
