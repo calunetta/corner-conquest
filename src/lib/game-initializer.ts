@@ -100,7 +100,7 @@ export function initializeGame(
       x,
       y,
       type: 'empty',
-      isHidden: true,
+      isHidden: !debugMode,
       occupants: [],
       resources: [],
       positionedBy: [],
@@ -257,11 +257,13 @@ export function initializeGame(
     }
   }
   
-  players.forEach(p => {
-    p.armies.forEach(army => {
-        map[army.position.y][army.position.x].isHidden = false;
-    })
-  });
+  if (!debugMode) {
+    players.forEach(p => {
+        p.armies.forEach(army => {
+            map[army.position.y][army.position.x].isHidden = false;
+        })
+    });
+  }
 
   const finalCardDeck = SPECIAL_CARDS.filter(card => settings.availableCards.includes(card));
 
@@ -307,5 +309,3 @@ export function startGame(gameState: GameState, hostName: string): GameState {
     newState.log.push(`${hostName} has started the game! It's now ${newState.players[0].name}'s turn.`);
     return newState;
 }
-
-    
