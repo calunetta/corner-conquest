@@ -1,12 +1,14 @@
 
 
-import type { Island, Player, GameAction, ResourceType, IslandResource, Army } from '@/lib/types';
+
+import type { Island, Player, GameAction, ResourceType, IslandResource, Army, Monster } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { ResourceIcon, MonsterIcon } from '../icons';
+import { ResourceIcon } from '../icons';
 import { Home, HelpCircle, Star, Loader2, Anchor } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
+import { useState, useEffect } from 'react';
 
 type IslandTileProps = {
   island: Island;
@@ -33,6 +35,40 @@ const playerTileIndicatorClasses: Record<string, string> = {
     red: 'shadow-red-500/50',
     purple: 'shadow-purple-500/50',
     yellow: 'shadow-yellow-400/50',
+}
+
+const AnimatedMonster = ({ monster }: { monster: Monster }) => {
+    const [isAttacking, setIsAttacking] = useState(false);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setIsAttacking(Math.random() < 0.2); // 20% chance to be in attack state each cycle
+        }, Math.random() * 2000 + 1000); // Check every 1-3 seconds
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const spriteSrc = isAttacking ? monster.sprite.attack : monster.sprite.idle;
+
+    return (
+         <Tooltip>
+            <TooltipTrigger asChild>
+                <div className='relative h-1/2 w-1/2'>
+                    <Image
+                        src={spriteSrc}
+                        alt={monster.name}
+                        layout='fill'
+                        objectFit='contain'
+                        className="drop-shadow-lg"
+                        unoptimized
+                    />
+                </div>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>{monster.name} - Lvl: {monster.level}</p>
+            </TooltipContent>
+        </Tooltip>
+    )
 }
 
 export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, currentPlayerId, isTeleporting, isScoutTarget }: IslandTileProps) {
@@ -81,13 +117,23 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   }
 
   const renderMonsterIcons = () => {
-    if (!island.monsters) return null;
-    return island.monsters.map((monster, i) => (
-      <div key={`monster-row-${i}`} className="flex w-full items-center justify-between px-1">
-        <MonsterIcon level={monster.level} className="h-5 w-5" />
-        <span className="text-xs font-bold text-destructive">Lvl: {monster.level}</span>
-      </div>
-    ));
+    if (!island.monsters || island.monsters.length === 0) return null;
+    
+    return (
+        <div className="relative h-full w-full">
+            {island.monsters.map((monster, i) => (
+                <div 
+                    key={`${monster.name}-${i}`} 
+                    className={cn(
+                        "absolute flex h-1/2 w-full",
+                        i === 0 ? 'top-0 justify-start' : 'bottom-0 justify-end'
+                    )}
+                >
+                    <AnimatedMonster monster={monster} />
+                </div>
+            ))}
+        </div>
+    );
   }
 
   const getIcon = () => {
@@ -119,11 +165,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
           </div>
         );
       case 'monster': 
-        return (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1">
-            {renderMonsterIcons()}
-          </div>
-        );
+        return renderMonsterIcons();
       case 'special': return <Star className="h-full w-full text-yellow-400 p-2" />;
       default: return null;
     }

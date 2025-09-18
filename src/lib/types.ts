@@ -1,5 +1,6 @@
 
 
+
 export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'purple' | 'yellow';
@@ -67,10 +68,15 @@ export type Player = {
   masterBuilderActive: boolean;
 };
 
+export type MonsterName = 'Lancer' | 'Bear' | 'Ogre' | 'Minotaur';
+
 export type Monster = {
-  id: 'little' | 'big';
-  type: 'cub' | 'huge';
+  name: MonsterName;
   level: number;
+  sprite: {
+    idle: string;
+    attack: string;
+  }
 }
 
 export type Island = {

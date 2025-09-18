@@ -37,10 +37,15 @@ export type Player = {
   actionsThisTurn: GameAction[];
 };
 
+export type MonsterName = 'Lancer' | 'Bear' | 'Ogre' | 'Minotaur';
+
 export type Monster = {
-  id: 'little' | 'big';
-  type: 'cub' | 'huge';
+  name: MonsterName;
   level: number;
+  sprite: {
+    idle: string;
+    attack: string;
+  }
 }
 
 export type Island = {

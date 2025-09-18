@@ -1,5 +1,6 @@
 
 
+
 import { doc, deleteDoc, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState } from './types';
@@ -850,8 +851,8 @@ export function handleMonsterCombatRoll(state: GameState, monster: Monster, useD
     if (winnerId === attacker.id) {
         monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
         attacker.victoryPoints += monsterVP;
-        currentTile.monsters = (currentTile.monsters || []).filter(m => m.id !== monster.id);
-        newState.log.push(`${attacker.name} defeated the monster for ${monsterVP} VP!`);
+        currentTile.monsters = (currentTile.monsters || []).filter(m => m.name !== monster.name);
+        newState.log.push(`${attacker.name} defeated the ${monster.name} for ${monsterVP} VP!`);
         
         if (currentTile.monsters?.length === 0) {
           currentTile.type = 'resource';

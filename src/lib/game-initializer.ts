@@ -1,5 +1,6 @@
 
-import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings } from './types';
+
+import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings, MonsterName } from './types';
 import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
@@ -17,6 +18,12 @@ export const defaultGameSettings: GameSettings = {
     availableAbilities: ['explorer', 'collector'],
 };
 
+const MONSTER_DATA: Record<number, { name: MonsterName, sprite: { idle: string, attack: string } }> = {
+    1: { name: 'Lancer', sprite: { idle: '/sprites/lancer_idle.gif', attack: '/sprites/lancer_attack.gif' } },
+    2: { name: 'Bear', sprite: { idle: '/sprites/bear_idle.gif', attack: '/sprites/bear_attack.gif' } },
+    3: { name: 'Ogre', sprite: { idle: '/sprites/ogre_idle.gif', attack: '/sprites/ogre_attack.gif' } },
+    4: { name: 'Minotaur', sprite: { idle: '/sprites/minotaur_idle.gif', attack: '/sprites/minotaur_attack.gif' } },
+};
 
 function generateMonsters(x: number, y: number): Monster[] {
     const monsters: Monster[] = [];
@@ -36,17 +43,19 @@ function generateMonsters(x: number, y: number): Monster[] {
 
     if (hasBigMonster) {
         const bigMonsterLevel = possibleLevels.includes(4) && Math.random() < 0.25 ? 4 : 3;
+        const bigMonsterData = MONSTER_DATA[bigMonsterLevel];
         monsters.push({
-            id: 'big',
-            type: bigMonsterLevel === 3 ? 'cub' : 'huge',
-            level: bigMonsterLevel
+            name: bigMonsterData.name,
+            level: bigMonsterLevel,
+            sprite: bigMonsterData.sprite
         });
 
         const littleMonsterLevel = Math.random() < 0.6 ? 1 : 2;
+        const littleMonsterData = MONSTER_DATA[littleMonsterLevel];
          monsters.push({
-            id: 'little',
-            type: littleMonsterLevel === 1 ? 'cub' : 'huge',
-            level: littleMonsterLevel
+            name: littleMonsterData.name,
+            level: littleMonsterLevel,
+            sprite: littleMonsterData.sprite
         });
 
     } else {
@@ -54,32 +63,26 @@ function generateMonsters(x: number, y: number): Monster[] {
         let availableLevels = possibleLevels.filter(l => l <= 2);
         if (availableLevels.length === 0) availableLevels = [1]; 
 
-        if (numMonsters === 1) {
-            const level = availableLevels[Math.floor(Math.random() * availableLevels.length)];
-            monsters.push({
-                id: 'little',
-                type: level === 1 ? 'cub' : 'huge',
-                level: level
-            });
-        } else {
-             monsters.push({ id: 'little', type: 'cub', level: 1 });
-             if (availableLevels.includes(2)) {
-                 monsters.push({ id: 'little', type: 'huge', level: 2 });
-             } else {
-                 monsters.splice(1, 1);
-             }
+        for (let i = 0; i < numMonsters; i++) {
+             const level = availableLevels[Math.floor(Math.random() * availableLevels.length)];
+             const monsterData = MONSTER_DATA[level];
+             monsters.push({
+                 name: monsterData.name,
+                 level: level,
+                 sprite: monsterData.sprite
+             });
         }
     }
 
-    const uniqueTypes = new Set<string>();
-    return monsters.filter(monster => {
-        const signature = `${monster.id}-${monster.type}-${monster.level}`;
-        if (uniqueTypes.has(signature)) {
-            return false;
+    // Prevent duplicate monsters on the same tile
+    const uniqueMonsters = monsters.reduce((acc, current) => {
+        if (!acc.find(item => item.name === current.name)) {
+            acc.push(current);
         }
-        uniqueTypes.add(signature);
-        return true;
-    });
+        return acc;
+    }, [] as Monster[]);
+
+    return uniqueMonsters;
 }
 
 export function initializeGame(

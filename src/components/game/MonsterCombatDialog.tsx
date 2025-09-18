@@ -18,6 +18,7 @@ import { Card } from '../ui/card';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { Slider } from '../ui/slider';
+import Image from 'next/image';
 
 type MonsterCombatDialogProps = {
   gameState: GameState;
@@ -63,7 +64,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   );
 
   const getMonsterName = (monster: Monster) => {
-    return `${monster.type} ${monster.id} Monster (Lvl ${monster.level})`;
+    return `${monster.name} (Lvl ${monster.level})`;
   }
   
   const handleAttack = () => {
@@ -81,7 +82,9 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
       <div className="py-4 text-center">
         {selectedMonster && (
           <Card className="inline-flex flex-col items-center gap-2 p-4">
-              <MonsterIcon level={selectedMonster.level} className="h-12 w-12" />
+              <div className='relative h-24 w-24'>
+                <Image src={selectedMonster.sprite.attack} alt={selectedMonster.name} layout="fill" objectFit='contain' unoptimized className='-scale-x-100'/>
+              </div>
               <div className="text-center">
                   <p className="font-bold capitalize">{getMonsterName(selectedMonster)}</p>
                   <p className="text-sm text-muted-foreground">Power: {selectedMonster.level}</p>
@@ -148,10 +151,12 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         {monsters.map((monster, i) => (
           <Card 
             key={i} 
-            className={`flex cursor-pointer flex-col items-center gap-2 p-4 transition-all hover:bg-muted ${selectedMonster?.id === monster.id && selectedMonster.level === monster.level ? 'ring-2 ring-primary' : ''}`}
+            className={`flex cursor-pointer flex-col items-center gap-2 p-4 transition-all hover:bg-muted ${selectedMonster?.name === monster.name ? 'ring-2 ring-primary' : ''}`}
             onClick={() => setSelectedMonster(monster)}
           >
-            <MonsterIcon level={monster.level} className="h-12 w-12" />
+            <div className='relative h-24 w-24'>
+                <Image src={monster.sprite.idle} alt={monster.name} layout="fill" objectFit='contain' unoptimized />
+            </div>
             <div className="text-center">
                 <p className="font-bold capitalize">{getMonsterName(monster)}</p>
                 <p className="text-sm text-muted-foreground">Power: {monster.level}</p>
