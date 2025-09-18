@@ -76,8 +76,8 @@ const AnimatedMonster = ({ monster, position }: { monster: Monster, position: 't
                     <Image
                         src={spriteSrc}
                         alt={monster.name}
-                        width={96}
-                        height={96}
+                        width={64}
+                        height={64}
                         className="drop-shadow-lg transition-transform duration-1000 ease-in-out"
                         style={{ transform: isAttacking ? (isFlipped ? 'scaleX(-1)' : '') : transform }}
                     />
@@ -172,9 +172,9 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                     <Image 
                         src={PLAYER_DATA[baseOwner.color].base}
                         alt={`${baseOwner.color} base`}
-                        layout="fill"
-                        objectFit='contain'
-                        className="p-1"
+                        width={64}
+                        height={64}
+                        className="p-1 h-full w-full object-contain"
                     />
                 ) : <Home className="h-full w-full p-2" />}
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-end justify-center gap-4">
