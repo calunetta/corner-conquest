@@ -18,7 +18,7 @@ import { startGame } from '@/lib/game-initializer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import Image from 'next/image';
-import { TILE_GAP, TILE_SIZE } from '@/lib/game-logic';
+import { TILE_GAP, TILE_SIZE, BASE_TILE_SIZE } from '@/lib/game-logic';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
 export const PADDING = 100;
@@ -423,7 +423,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                     className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4"
                     >
                     {players.map(p => (
-                        <PlayerInfo key={p.id} player={p} isCurrentPlayer={currentPlayerIndex === p.id} />
+                        <PlayerInfo key={p.playerId} player={p} isCurrentPlayer={currentPlayerIndex === p.id} />
                     ))}
                     {status === 'waiting' && Array.from({ length: maxPlayers - players.length}).map((_, i) => (
                         <div key={`empty-${i}`} className="flex h-full min-h-24 items-center justify-center rounded-lg border-2 border-dashed bg-card p-4 text-sm text-muted-foreground sm:min-h-28 sm:text-base">Waiting for player...</div>
@@ -525,3 +525,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
