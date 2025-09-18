@@ -120,13 +120,24 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     }
   };
 
+  const getTerrainClass = () => {
+    if (island.isHidden) return 'bg-muted/30 border-dashed';
+    
+    const isBox = (island.x + island.y) % 2 === 0;
+    if (isBox) {
+        return 'bg-terrain-box bg-repeat';
+    } else {
+        return 'bg-terrain bg-cover bg-center';
+    }
+  }
+
   return (
     <TooltipProvider>
       <button
         onClick={() => onClick(island.x, island.y)}
         className={cn(
           'aspect-square w-full rounded-lg border-2 flex items-center justify-center relative transition-all duration-200',
-          island.isHidden ? 'bg-muted/30 border-dashed' : 'bg-card',
+          getTerrainClass(),
           isSelected ? 'border-primary ring-2 ring-primary' : '',
           isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
           isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
