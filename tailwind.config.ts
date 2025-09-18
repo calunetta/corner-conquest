@@ -17,8 +17,8 @@ export default {
         'button-primary-pressed': "url('/sprites/primary_button_pressed.png')",
       },
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        body: ['"Lilita One"', 'sans-serif'],
+        headline: ['"Lilita One"', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
