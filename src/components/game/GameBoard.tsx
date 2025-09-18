@@ -115,7 +115,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [timeLeft, setTimeLeft] = useState(TURN_DURATION);
   const [activeInstructionToastId, setActiveInstructionToastId] = useState<string | null>(null);
   
-  const [zoom, setZoom] = useState(0.8);
+  const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [startPan, setStartPan] = useState({ x: 0, y: 0 });
@@ -136,20 +136,26 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMobile]);
   
   useEffect(() => {
-    // Center the map on initial load
-    if (mapContainerRef.current && gameState) {
+    if (mapContainerRef.current && gameState && !isLoading) {
       const { clientWidth, clientHeight } = mapContainerRef.current;
       const mapSize = gameState.settings.mapSize;
-      const totalMapWidth = mapSize * TILE_SIZE + (mapSize - 1) * TILE_GAP;
-      const totalMapHeight = mapSize * TILE_SIZE + (mapSize - 1) * TILE_GAP;
-      
-      setPan({
-        x: (clientWidth - totalMapWidth * zoom) / 2,
-        y: (clientHeight - totalMapHeight * zoom) / 2,
-      });
+      const PADDING = 200; // 100px on each side
+
+      const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING;
+      const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING;
+
+      const widthRatio = clientWidth / totalMapWidth;
+      const heightRatio = clientHeight / totalMapHeight;
+      const initialZoom = Math.min(widthRatio, heightRatio);
+
+      const initialPanX = (clientWidth - (totalMapWidth * initialZoom)) / 2;
+      const initialPanY = (clientHeight - (totalMapHeight * initialZoom)) / 2;
+
+      setZoom(initialZoom);
+      setPan({ x: initialPanX, y: initialPanY });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading]);
+  }, [isLoading, gameId]);
 
 
   useEffect(() => {
@@ -485,7 +491,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
                 <main 
                   ref={mapContainerRef}
-                  className="relative gap-2 overflow-hidden rounded-xl bg-water-pattern bg-repeat sm:gap-4"
+                  className="relative overflow-hidden rounded-xl"
                   onWheel={handleWheel}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
@@ -576,5 +582,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    

@@ -27,6 +27,11 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
   const teleportingArmyId = isTeleporting && players[currentPlayerId]?.teleportState?.armyId !== null ? players[currentPlayerId]?.teleportState?.armyId : null;
   
   const totalSize = TILE_SIZE + TILE_GAP;
+  const mapSize = map.length;
+  const PADDING = 100;
+
+  const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
+  const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
 
   return (
     <div
@@ -36,6 +41,15 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         transformOrigin: '0 0',
       }}
     >
+      <div
+        className="absolute bg-water-pattern bg-repeat"
+        style={{
+          width: `${totalMapWidth}px`,
+          height: `${totalMapHeight}px`,
+          top: `-${PADDING}px`,
+          left: `-${PADDING}px`,
+        }}
+      />
       {map.flat().map((island) => {
         const isPossible = possibleMoves.some(p => p.x === island.x && p.y === island.y);
         const isSelected = selectedTile?.x === island.x && selectedTile?.y === island.y;
@@ -87,5 +101,3 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
     </div>
   );
 }
-
-    
