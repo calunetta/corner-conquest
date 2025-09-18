@@ -21,6 +21,7 @@ import Image from 'next/image';
 import { TILE_GAP, TILE_SIZE } from '@/lib/game-logic';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
+const PADDING = 100;
 
 type GameBoardProps = {
     gameId: string;
@@ -55,24 +56,23 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (mapContainerRef.current && gameState && !isLoading) {
       const { clientWidth, clientHeight } = mapContainerRef.current;
       const mapSize = gameState.settings.mapSize;
-      const PADDING = 100;
-
+      
       const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
       const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
 
       const widthRatio = clientWidth / totalMapWidth;
       const heightRatio = clientHeight / totalMapHeight;
-      const initialZoom = Math.min(widthRatio, heightRatio);
+      const initialZoom = Math.min(widthRatio, heightRatio, 1);
+      
       setMinZoom(initialZoom);
+      setZoom(initialZoom);
 
       const initialPanX = (clientWidth - (totalMapWidth * initialZoom)) / 2;
       const initialPanY = (clientHeight - (totalMapHeight * initialZoom)) / 2;
-
-      setZoom(initialZoom);
       setPan({ x: initialPanX, y: initialPanY });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, gameId]);
+  }, [isLoading, gameId, gameState?.settings.mapSize]);
 
 
   useEffect(() => {
@@ -323,7 +323,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
     const { clientWidth, clientHeight } = mapContainerRef.current;
     const mapSize = gameState.settings.mapSize;
-    const PADDING = 100;
+    
     const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
     const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
     
@@ -517,5 +517,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
 
     
