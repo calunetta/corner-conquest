@@ -4,86 +4,7 @@ import type { Island, Player, GameAction } from '@/lib/types';
 import { IslandTile } from './IslandTile';
 import { useMemo } from 'react';
 import Image from 'next/image';
-
-const ROCK_SPRITES = [
-    '/sprites/small_rock.gif',
-    '/sprites/mini_rock.gif',
-    '/sprites/medium_rock.gif',
-    '/sprites/big_rock.gif',
-];
-
-const TILE_SIZE = 128; // Fixed size for each island tile in pixels
-const TILE_GAP = 32;   // Fixed gap between island tiles in pixels
-
-const generateDecorations = (map: Island[][]) => {
-    const decorations: { src: string; x: number; y: number; size: number, style: React.CSSProperties }[] = [];
-    const mapSize = map.length;
-
-    map.flat().forEach(island => {
-        const rockCount = 1 + Math.floor(Math.random() * 3); // 1 to 3 rocks per island
-        
-        let possibleSides = [0, 1, 2, 3]; // 0: top, 1: right, 2: bottom, 3: left
-        if (island.y === 0) possibleSides = possibleSides.filter(s => s !== 0);
-        if (island.x === mapSize - 1) possibleSides = possibleSides.filter(s => s !== 1);
-        if (island.y === mapSize - 1) possibleSides = possibleSides.filter(s => s !== 2);
-        if (island.x === 0) possibleSides = possibleSides.filter(s => s !== 3);
-
-
-        for (let i = 0; i < rockCount; i++) {
-            if (possibleSides.length === 0) break;
-
-            const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
-            
-            // Allow rocks to cluster by not removing the side after selection
-            const side = possibleSides[Math.floor(Math.random() * possibleSides.length)];
-
-            const offset = (Math.random() - 0.5) * 50; // -25% to +25% offset along the side
-            const size = Math.random() * 20 + 12; // Random size between 12px and 32px
-
-            let style: React.CSSProperties = {
-                position: 'absolute',
-                zIndex: 5,
-                pointerEvents: 'none',
-                width: `${size}px`,
-                height: `${size}px`,
-            };
-
-            switch(side) {
-                case 0: // Top
-                    style.top = '-25%';
-                    style.left = `${50 + offset}%`;
-                    style.transform = 'translateX(-50%)';
-                    break;
-                case 1: // Right
-                    style.top = `${50 + offset}%`;
-                    style.right = '-25%';
-                    style.transform = 'translateY(-50%)';
-                    break;
-                case 2: // Bottom
-                    style.bottom = '-25%';
-                    style.left = `${50 + offset}%`;
-                    style.transform = 'translateX(-50%)';
-                    break;
-                case 3: // Left
-                    style.top = `${50 + offset}%`;
-                    style.left = '-25%';
-                    style.transform = 'translateY(-50%)';
-                    break;
-            }
-
-            decorations.push({
-                src: rockSrc,
-                x: island.x,
-                y: island.y,
-                size: 24,
-                style,
-            });
-        }
-    });
-
-    return decorations;
-};
-
+import { TILE_GAP, TILE_SIZE } from '@/lib/game-logic';
 
 type MapGridProps = {
   map: Island[][];
@@ -97,18 +18,14 @@ type MapGridProps = {
   isScouting?: boolean;
   zoom: number;
   pan: { x: number; y: number };
+  decorations: { src: string; x: number; y: number; size: number, style: React.CSSProperties }[];
 };
 
-export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting, isScouting, zoom, pan }: MapGridProps) {
+export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting, isScouting, zoom, pan, decorations }: MapGridProps) {
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const selectedArmy = selectedArmyId !== null && currentPlayer ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const teleportingArmyId = isTeleporting && players[currentPlayerId]?.teleportState?.armyId !== null ? players[currentPlayerId]?.teleportState?.armyId : null;
-
-  const decorations = useMemo(() => {
-    if (!map || map.length === 0) return [];
-    return generateDecorations(map);
-  }, []);
-
+  
   const totalSize = TILE_SIZE + TILE_GAP;
 
   return (

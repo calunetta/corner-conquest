@@ -1,20 +1,20 @@
 
 import type { GameState, Army, Island, ResourceType } from './types';
 import * as GameActions from './game-actions';
-import { MAP_SIZE } from './game-logic';
 
 function getValidMoves(army: Army, gameState: GameState): { x: number; y: number }[] {
     const { x, y } = army.position;
     const player = gameState.players[gameState.currentPlayerIndex];
     const potentialMoves: { x: number; y: number }[] = [];
     const moveRadius = 2;
+    const mapSize = gameState.settings.mapSize;
 
     for (let i = -moveRadius; i <= moveRadius; i++) {
         for (let j = -moveRadius; j <= moveRadius; j++) {
             if (Math.abs(i) + Math.abs(j) <= moveRadius && (i !== 0 || j !== 0)) {
                 const newX = x + i;
                 const newY = y + j;
-                if (newX >= 0 && newX < MAP_SIZE && newY >= 0 && newY < MAP_SIZE) {
+                if (newX >= 0 && newX < mapSize && newY >= 0 && newY < mapSize) {
                     potentialMoves.push({ x: newX, y: newY });
                 }
             }
@@ -54,7 +54,7 @@ export function takeBotTurn(gameState: GameState): GameState {
                 // The actual end of turn will happen after combat resolves.
                 // For simplicity, we assume the bot commits to this.
                 const monster = newState.monsterCombatState.monster;
-                newState = GameActions.handleMonsterCombatRoll(newState, monster, false, 0);
+                newState = GameActions.handleMonsterCombatRoll(newState, monster, false, 0, false, false);
                 newState = GameActions.handleCloseMonsterCombat(newState);
                 return GameActions.handleEndTurn(newState);
             } catch (e) { console.warn('Bot failed to attack monster:', e); }
@@ -72,8 +72,8 @@ export function takeBotTurn(gameState: GameState): GameState {
             if (target) {
                 try {
                     console.log(`Bot Action: Army ${army.id} moving to hidden tile at ${target.x},${target.y}.`);
-                    newState = GameActions.handleTileClick(newState, army.position.x, army.position.y);
-                    newState = GameActions.handleTileClick(newState, target.x, target.y);
+                    newState = GameActions.handleTileClick(newState, army.position.x, army.position.y, botPlayer.id);
+                    newState = GameActions.handleTileClick(newState, target.x, target.y, botPlayer.id);
                     return GameActions.handleEndTurn(newState);
                 } catch (e) { console.warn('Bot failed to explore:', e); }
             }
@@ -83,7 +83,7 @@ export function takeBotTurn(gameState: GameState): GameState {
     // Priority 3: Collect positioned resources
     for (const army of botPlayer.armies) {
         newState.selectedArmyId = army.id;
-        const isPositioned = botPlayer.positions.some(p => p.x === army.position.x && p.y === army.position.y);
+        const isPositioned = botPlayer.positions.some((p: any) => p.x === army.position.x && p.y === army.position.y);
         if (isPositioned && botPlayer.lastAction !== 'move') {
             try {
                 console.log(`Bot Action: Army ${army.id} collecting resources.`);
@@ -97,7 +97,7 @@ export function takeBotTurn(gameState: GameState): GameState {
     for (const army of botPlayer.armies) {
         newState.selectedArmyId = army.id;
         const tile = newState.map[army.position.y][army.position.x];
-        const isAlreadyPositioned = botPlayer.positions.some(p => p.x === army.position.x && p.y === army.position.y);
+        const isAlreadyPositioned = botPlayer.positions.some((p: any) => p.x === army.position.x && p.y === army.position.y);
         const canPosition = (tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0 && !isAlreadyPositioned;
         
         if (canPosition && botPlayer.lastAction !== 'move') {
@@ -121,8 +121,8 @@ export function takeBotTurn(gameState: GameState): GameState {
         if (target) {
              try {
                 console.log(`Bot Action: Army ${armyToMove.id} moving to random tile ${target.x},${target.y}.`);
-                newState = GameActions.handleTileClick(newState, armyToMove.position.x, armyToMove.position.y);
-                newState = GameActions.handleTileClick(newState, target.x, target.y);
+                newState = GameActions.handleTileClick(newState, armyToMove.position.x, armyToMove.position.y, botPlayer.id);
+                newState = GameActions.handleTileClick(newState, target.x, target.y, botPlayer.id);
                 return GameActions.handleEndTurn(newState);
             } catch (e) { console.warn('Bot failed to move:', e); }
         }

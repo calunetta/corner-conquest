@@ -1,7 +1,9 @@
 import type { GameState, Island, Player, PlayerColor, FirestoreGameState } from './types';
 import { PLAYER_COLORS } from './player-data';
 
-export const MAP_SIZE = 7;
+export const TILE_SIZE = 128; // Fixed size for each island tile in pixels
+export const TILE_GAP = 32;   // Fixed gap between island tiles in pixels
+
 
 export function flattenMap(map: Island[][]): Island[] {
   return map.flat();
