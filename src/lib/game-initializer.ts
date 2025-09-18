@@ -1,6 +1,7 @@
 
 
 
+
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings, MonsterName } from './types';
 import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
@@ -20,10 +21,10 @@ export const defaultGameSettings: GameSettings = {
 };
 
 const MONSTER_DATA: Record<number, { name: MonsterName, sprite: { idle: string, attack: string, death: string } }> = {
-    1: { name: 'Lancer', sprite: { idle: '/sprites/lancer_idle.gif', attack: '/sprites/lancer_attack.gif', death: '/sprites/lancer_death.gif' } },
-    2: { name: 'Bear', sprite: { idle: '/sprites/bear_idle.gif', attack: '/sprites/bear_attack.gif', death: '/sprites/bear_death.gif' } },
-    3: { name: 'Ogre', sprite: { idle: '/sprites/ogre_idle.gif', attack: '/sprites/ogre_attack.gif', death: '/sprites/ogre_death.gif' } },
-    4: { name: 'Minotaur', sprite: { idle: '/sprites/minotaur_idle.gif', attack: '/sprites/minotaur_attack.gif', death: '/sprites/minotaur_death.gif' } },
+    1: { name: 'Lancer', sprite: { idle: '/sprites/lancer_idle.gif', attack: '/sprites/lancer_attack.gif', death: '/sprites/death.gif' } },
+    2: { name: 'Bear', sprite: { idle: '/sprites/bear_idle.gif', attack: '/sprites/bear_attack.gif', death: '/sprites/death.gif' } },
+    3: { name: 'Ogre', sprite: { idle: '/sprites/ogre_idle.gif', attack: '/sprites/ogre_attack.gif', death: '/sprites/death.gif' } },
+    4: { name: 'Minotaur', sprite: { idle: '/sprites/minotaur_idle.gif', attack: '/sprites/minotaur_attack.gif', death: '/sprites/death.gif' } },
 };
 
 function generateMonsters(x: number, y: number): Monster[] {
