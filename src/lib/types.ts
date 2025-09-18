@@ -12,7 +12,6 @@ export type GameSettings = {
     deployCostIncrement: number;
     upgradeCost: number;
     abilityCost: number;
-    mapSize: number;
     baseResourceAmount: number;
     resourceDensity: number; // 0-1, likelihood of resource vs monster
     availableCards: string[];
@@ -202,8 +201,9 @@ export type GameState = {
 
 export type FirestoreGameState = Omit<GameState, 'map'> & {
   map: Island[];
-  mapSize: number;
 };
 
 
 export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards' | 'use-card' | 'end-turn' | 'teleport' | 'teleport-initiated' | 'open-abilities-shop' | 'buy-ability' | 'cancel-action';
+
+    

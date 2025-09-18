@@ -1,19 +1,25 @@
 import type { GameState, Island, Player, PlayerColor, FirestoreGameState } from './types';
 import { PLAYER_COLORS } from './player-data';
 
-export const TILE_SIZE = 224; // Fixed size for each island tile in pixels
-export const BASE_TILE_SIZE = 224; // 1.5x the size of a normal tile
-export const TILE_GAP = 32;   // Fixed gap between island tiles in pixels
+export const TILE_SIZE = 200;
+export const BASE_TILE_SIZE = 200;
+export const TILE_GAP = 16;
+export const MAP_ROWS = 5;
+export const MAP_COLS = 6;
 
 
 export function flattenMap(map: Island[][]): Island[] {
   return map.flat();
 }
 
-export function unflattenMap(flatMap: Island[], size: number): Island[][] {
+export function unflattenMap(flatMap: Island[], rows: number, cols: number): Island[][] {
   const map: Island[][] = [];
-  for (let i = 0; i < size; i++) {
-    map.push(flatMap.slice(i * size, (i + 1) * size));
+  if (!flatMap || flatMap.length === 0) {
+    // Return an empty map of the correct dimensions if flatMap is empty
+    return Array.from({ length: rows }, () => Array(cols).fill(null));
+  }
+  for (let i = 0; i < rows; i++) {
+    map.push(flatMap.slice(i * cols, (i + 1) * cols));
   }
   return map;
 }
@@ -41,9 +47,9 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
     
     const basePositions = [
         { x: 0, y: 0 },
-        { x: newGameState.settings.mapSize - 1, y: newGameState.settings.mapSize - 1 },
-        { x: 0, y: newGameState.settings.mapSize - 1 },
-        { x: newGameState.settings.mapSize - 1, y: 0 },
+        { x: MAP_COLS - 1, y: MAP_ROWS - 1 },
+        { x: 0, y: MAP_ROWS - 1 },
+        { x: MAP_COLS - 1, y: 0 },
     ];
     const newPlayerPos = basePositions[newPlayerSeatIndex];
 
@@ -101,3 +107,5 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
 
     return newGameState;
 }
+
+    

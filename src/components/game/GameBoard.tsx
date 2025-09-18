@@ -1,14 +1,14 @@
 
 'use client';
-import { useState, useEffect, useRef, useMemo } from 'react';
-import type { GameAction, GameState, Island } from '@/lib/types';
+import { useState, useEffect, useRef } from 'react';
+import type { GameAction, GameState } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
 import { ActionsPanel } from './ActionsPanel';
 import { GameLog } from './GameLog';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, ChevronUp, Loader2, ArrowLeft, Play, Trophy, ZoomIn, ZoomOut, Move } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, ArrowLeft, Play, Trophy } from 'lucide-react';
 import { GameDialogs } from './GameDialogs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { usePlayer } from '@/hooks/use-player';
@@ -17,11 +17,9 @@ import * as GameActions from '@/lib/game-actions';
 import { startGame } from '@/lib/game-initializer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
-import Image from 'next/image';
 import { TILE_GAP, TILE_SIZE } from '@/lib/game-logic';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
-export const PADDING = 100;
 
 type GameBoardProps = {
     gameId: string;
@@ -39,42 +37,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [timeLeft, setTimeLeft] = useState(TURN_DURATION);
   const [activeInstructionToastId, setActiveInstructionToastId] = useState<string | null>(null);
   
-  const [zoom, setZoom] = useState(1);
-  const [minZoom, setMinZoom] = useState(0.2);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
-  const [startPan, setStartPan] = useState({ x: 0, y: 0 });
-
-  const mapContainerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setIsPlayerInfoOpen(!isMobile);
   }, [isMobile]);
   
-  useEffect(() => {
-    if (mapContainerRef.current && gameState && !isLoading) {
-      const { clientWidth, clientHeight } = mapContainerRef.current;
-      const mapSize = gameState.settings.mapSize;
-      
-      const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
-      const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
-
-      const widthRatio = clientWidth / totalMapWidth;
-      const heightRatio = clientHeight / totalMapHeight;
-      const initialZoom = Math.min(widthRatio, heightRatio, 1);
-      
-      setMinZoom(initialZoom);
-      setZoom(initialZoom);
-
-      const initialPanX = (clientWidth - (totalMapWidth * initialZoom)) / 2;
-      const initialPanY = (clientHeight - (totalMapHeight * initialZoom)) / 2;
-      setPan({ x: initialPanX, y: initialPanY });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, gameId, gameState?.settings.mapSize]);
-
-
   useEffect(() => {
     if (gameState?.status === 'playing' && isMyTurn) {
       setTimeLeft(TURN_DURATION); // Reset timer at the start of your turn
@@ -282,83 +250,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       setIsExiting(false);
   }
 
-  // --- Pan and Zoom Handlers ---
-  const handleWheel = (e: React.WheelEvent) => {
-    if (!mapContainerRef.current) return;
-    e.preventDefault();
-
-    const rect = mapContainerRef.current.getBoundingClientRect();
-    const zoomFactor = 1.1;
-    const newZoom = e.deltaY < 0 ? zoom * zoomFactor : zoom / zoomFactor;
-    const clampedZoom = Math.max(minZoom, Math.min(2, newZoom)); 
-
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    
-    // Position of the mouse on the "un-zoomed" map
-    const worldX = (mouseX - pan.x) / zoom;
-    const worldY = (mouseY - pan.y) / zoom;
-
-    // New pan position to keep the content under the mouse stationary
-    const newPanX = mouseX - worldX * clampedZoom;
-    const newPanY = mouseY - worldY * clampedZoom;
-
-    setZoom(clampedZoom);
-    setPan({ x: newPanX, y: newPanY });
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Only pan with middle mouse button or if no action is in progress
-    if (e.button !== 1 && (isMyTurn && gameState?.currentAction !== null)) return;
-    e.preventDefault();
-    setIsPanning(true);
-    setStartPan({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isPanning || !mapContainerRef.current || !gameState) return;
-    e.preventDefault();
-    const newPanX = e.clientX - startPan.x;
-    const newPanY = e.clientY - startPan.y;
-    
-    const { clientWidth, clientHeight } = mapContainerRef.current;
-    const mapSize = gameState.settings.mapSize;
-    
-    const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
-    const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
-    
-    const mapWidthWithZoom = totalMapWidth * zoom;
-    const mapHeightWithZoom = totalMapHeight * zoom;
-
-    let clampedX, clampedY;
-
-    if (mapWidthWithZoom < clientWidth) {
-        clampedX = (clientWidth - mapWidthWithZoom) / 2;
-    } else {
-        const minPanX = clientWidth - mapWidthWithZoom;
-        const maxPanX = 0;
-        clampedX = Math.max(minPanX, Math.min(newPanX, maxPanX));
-    }
-    
-    if (mapHeightWithZoom < clientHeight) {
-        clampedY = (clientHeight - mapHeightWithZoom) / 2;
-    } else {
-        const minPanY = clientHeight - mapHeightWithZoom;
-        const maxPanY = 0;
-        clampedY = Math.max(minPanY, Math.min(newPanY, maxPanY));
-    }
-
-    setPan({ x: clampedX, y: clampedY });
-  };
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    setIsPanning(false);
-  };
-  
-  const handleMouseLeave = (e: React.MouseEvent) => {
-    setIsPanning(false);
-  };
-
   if (isLoading || !gameState || !localPlayer) {
     return (
       <div className="flex h-screen w-screen items-center justify-center p-4 text-center">
@@ -375,7 +266,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   const isTeleporting = !!teleportState;
   const isScouting = !!scoutingState && scoutingState.count > 0;
-
 
   return (
     <div className="relative flex h-screen w-full flex-col gap-2 overflow-auto p-2 sm:gap-4 sm:p-4">
@@ -434,13 +324,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         
             <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
                 <main 
-                  ref={mapContainerRef}
-                  className="relative overflow-hidden rounded-xl"
-                  onWheel={handleWheel}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseLeave}
+                  className="relative flex items-center justify-center overflow-auto rounded-xl"
                 >
                   <MapGrid 
                       map={gameState.map} 
@@ -452,8 +336,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                       selectedArmyId={selectedArmyId}
                       isTeleporting={isTeleporting}
                       isScouting={isScouting}
-                      zoom={zoom}
-                      pan={pan}
                   />
                   <div className='pointer-events-none absolute bottom-4 right-4 z-20 rounded-lg bg-background/80 p-2 text-center shadow-md backdrop-blur-sm'>
                       {status === 'waiting' ? (

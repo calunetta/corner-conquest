@@ -64,25 +64,32 @@ export function CustomSettingsSheet({
     min: number,
     max: number,
     step: number = 1
-  ) => (
-    <div className="space-y-3">
-      <div className="flex justify-between">
-        <Label>{label}</Label>
-        <span className="font-bold text-primary">
-          {key === 'resourceDensity'
-            ? `${Math.round((settings[key] as number) * 100)}%`
-            : settings[key]}
-        </span>
-      </div>
-      <Slider
-        value={[settings[key] as number]}
-        onValueChange={(value) => setSettings({ ...settings, [key]: value[0] })}
-        min={min}
-        max={max}
-        step={step}
-      />
-    </div>
-  );
+  ) => {
+    // A type guard to ensure we are only dealing with numeric settings
+    if (typeof settings[key] !== 'number') {
+        return null;
+    }
+
+    return (
+        <div className="space-y-3">
+        <div className="flex justify-between">
+            <Label>{label}</Label>
+            <span className="font-bold text-primary">
+            {key === 'resourceDensity'
+                ? `${Math.round((settings[key] as number) * 100)}%`
+                : settings[key]}
+            </span>
+        </div>
+        <Slider
+            value={[settings[key] as number]}
+            onValueChange={(value) => setSettings({ ...settings, [key]: value[0] })}
+            min={min}
+            max={max}
+            step={step}
+        />
+        </div>
+    );
+  }
   
   const renderCardSelection = () => (
     <div className="space-y-4">
@@ -148,8 +155,6 @@ export function CustomSettingsSheet({
                     <Separator />
                     {renderSlider('vpPerIslandDiscovery', 'VP per Island Discovery', 0, 5)}
                     <Separator />
-                    {renderSlider('mapSize', 'Map Size', 5, 15, 2)}
-                    <Separator />
                     {renderSlider('resourceDensity', 'Resource vs. Monster Density', 0.1, 0.9, 0.05)}
                 </TabsContent>
                  <TabsContent value="costs" className="pt-4 space-y-6">
@@ -179,3 +184,5 @@ export function CustomSettingsSheet({
     </Sheet>
   );
 }
+
+    

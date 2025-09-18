@@ -1,6 +1,7 @@
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings } from './types';
 import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
+import { MAP_COLS, MAP_ROWS } from './game-logic';
 
 export const defaultGameSettings: GameSettings = {
     victoryPointGoal: 30,
@@ -9,7 +10,6 @@ export const defaultGameSettings: GameSettings = {
     deployCostIncrement: 2,
     upgradeCost: 6,
     abilityCost: 15,
-    mapSize: 7,
     baseResourceAmount: 1,
     resourceDensity: 0.6, // 60% chance for a tile to be resource vs monster
     availableCards: [...BASE_CARDS],
@@ -17,9 +17,9 @@ export const defaultGameSettings: GameSettings = {
 };
 
 
-function generateMonsters(x: number, y: number, mapSize: number): Monster[] {
+function generateMonsters(x: number, y: number): Monster[] {
     const monsters: Monster[] = [];
-    const center = { x: Math.floor(mapSize / 2), y: Math.floor(mapSize / 2) };
+    const center = { x: Math.floor(MAP_COLS / 2), y: Math.floor(MAP_ROWS / 2) };
     const distance = Math.abs(x - center.x) + Math.abs(y - center.y);
 
     let possibleLevels: number[] = [];
@@ -90,9 +90,8 @@ export function initializeGame(
     debugMode: boolean = false,
     settings: GameSettings = defaultGameSettings
 ): GameState {
-  const mapSize = settings.mapSize;
-  const map: Island[][] = Array.from({ length: mapSize }, (_, y) =>
-    Array.from({ length: mapSize }, (_, x) => ({
+  const map: Island[][] = Array.from({ length: MAP_ROWS }, (_, y) =>
+    Array.from({ length: MAP_COLS }, (_, x) => ({
       id: `${x}-${y}`,
       x,
       y,
@@ -109,9 +108,9 @@ export function initializeGame(
   
   const basePositions = [
     { x: 0, y: 0 },
-    { x: mapSize - 1, y: mapSize - 1 },
-    { x: 0, y: mapSize - 1 },
-    { x: mapSize - 1, y: 0 },
+    { x: MAP_COLS - 1, y: MAP_ROWS - 1 },
+    { x: 0, y: MAP_ROWS - 1 },
+    { x: MAP_COLS - 1, y: 0 },
   ];
   
   const creatorSeatIndex = 0;
@@ -208,10 +207,10 @@ export function initializeGame(
   }
 
 
-  const center = { x: Math.floor(mapSize / 2), y: Math.floor(mapSize / 2) };
+  const center = { x: Math.floor(MAP_COLS / 2), y: Math.floor(MAP_ROWS / 2) };
 
-  for (let y = 0; y < mapSize; y++) {
-    for (let x = 0; x < mapSize; x++) {
+  for (let y = 0; y < MAP_ROWS; y++) {
+    for (let x = 0; x < MAP_COLS; x++) {
       if (map[y][x].type === 'base' && map[y][x].owner !== undefined) continue;
 
       const distance = Math.abs(x - center.x) + Math.abs(y - center.y);
@@ -249,7 +248,7 @@ export function initializeGame(
         }
         map[y][x].resources = islandResources;
       } else if(islandType === 'monster') {
-          map[y][x].monsters = generateMonsters(x, y, mapSize);
+          map[y][x].monsters = generateMonsters(x, y);
       }
     }
   }
@@ -304,3 +303,5 @@ export function startGame(gameState: GameState, hostName: string): GameState {
     newState.log.push(`${hostName} has started the game! It's now ${newState.players[0].name}'s turn.`);
     return newState;
 }
+
+    
