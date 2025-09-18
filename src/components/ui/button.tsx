@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -44,17 +45,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : "button"
     
     const isCustom = variant === 'default' || variant === 'outline';
-
-    const innerSpanClasses = cn(
-      'absolute inset-0 z-0 bg-center bg-no-repeat',
-      'group-active:bg-button-primary-pressed',
-      {
-        'bg-button-primary': variant === 'default',
-        'bg-button-secondary': variant === 'outline',
-        'bg-cover': !isCustom, // Use cover for non-custom variants if needed
-        'bg-stretch': isCustom, // Custom property for 100% 100%
-      }
-    );
 
     return (
       <Comp
