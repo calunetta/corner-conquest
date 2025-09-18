@@ -321,9 +321,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 </CollapsibleContent>
             </Collapsible>
         
-            <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+            <div className="grid flex-1 grid-cols-1 justify-center gap-4 lg:grid-cols-[auto_320px]">
                 <main 
-                  className="relative flex items-center overflow-auto rounded-xl"
+                  className="relative flex items-center justify-center overflow-auto rounded-xl"
                 >
                   <MapGrid 
                       map={gameState.map} 
