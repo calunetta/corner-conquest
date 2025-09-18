@@ -25,22 +25,27 @@ const ROCK_SPRITES = [
 
 const generateDecorations = (map: Island[][]) => {
     const decorations: { src: string; x: number; y: number; size: number, style: React.CSSProperties }[] = [];
+    const mapSize = map.length;
 
     map.flat().forEach(island => {
         const rockCount = 1 + Math.floor(Math.random() * 3); // 1 to 3 rocks per island
         const usedSides: number[] = [];
+        
+        const possibleSides = [0, 1, 2, 3]; // 0: top, 1: right, 2: bottom, 3: left
+        if (island.y === 0) possibleSides.splice(possibleSides.indexOf(0), 1);
+        if (island.x === mapSize - 1) possibleSides.splice(possibleSides.indexOf(1), 1);
+        if (island.y === mapSize - 1) possibleSides.splice(possibleSides.indexOf(2), 1);
+        if (island.x === 0) possibleSides.splice(possibleSides.indexOf(3), 1);
+
 
         for (let i = 0; i < rockCount; i++) {
+            if (possibleSides.length === 0) break;
+
             const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
             
-            let side = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
-            // Ensure we don't put two rocks on the exact same side unless we run out of options
-            if (usedSides.length < 4) {
-                while(usedSides.includes(side)) {
-                    side = Math.floor(Math.random() * 4);
-                }
-                usedSides.push(side);
-            }
+            const sideIndex = Math.floor(Math.random() * possibleSides.length);
+            const side = possibleSides.splice(sideIndex, 1)[0];
+            usedSides.push(side);
 
             const offset = (Math.random() - 0.5) * 50; // -25% to +25% offset along the side
             const size = Math.random() * 24 + 16; // Random size between 16px and 40px
