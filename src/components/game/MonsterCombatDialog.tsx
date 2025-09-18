@@ -175,8 +175,8 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
 
   const renderResultsScreen = () => {
     const isPlayerWinner = winnerId === attackerId;
-    const attackerSprite = !isPlayerWinner ? PLAYER_DATA[attacker.color].sprite.death : PLAYER_DATA[attacker.color].sprite.attack;
-    const monsterSprite = isPlayerWinner && monsterForDisplay ? monsterForDisplay.sprite.death : monsterForDisplay?.sprite.attack;
+    const attackerSprite = isPlayerWinner ? PLAYER_DATA[attacker.color].sprite.attack : PLAYER_DATA[attacker.color].sprite.death;
+    const monsterSprite = isPlayerWinner ? monsterForDisplay?.sprite.death : monsterForDisplay?.sprite.attack;
     
     return (
       <>
@@ -204,8 +204,8 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
 
         <div className="mt-4 text-center">
           <h2 className="text-2xl font-bold">
-            {isPlayerWinner ? (
-                <span style={{ color: players[winnerId!].color }}>{players[winnerId!].name} wins!</span>
+            {isPlayerWinner && winnerId !== null ? (
+                <span style={{ color: players[winnerId].color }}>{players[winnerId].name} wins!</span>
             ) : (
                 <span className='text-destructive'>The Monster wins!</span>
             )}
