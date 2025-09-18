@@ -129,9 +129,9 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       <button
         onClick={() => onClick(island.x, island.y)}
         className={cn(
-          'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200 border-2 border-transparent',
+          'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200 border-2',
           getTerrainClass(),
-          island.isHidden && 'border-dashed',
+          island.isHidden ? 'border-dashed border-transparent' : 'border-transparent',
           isSelected ? 'ring-2 ring-primary' : '',
           isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
           isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',

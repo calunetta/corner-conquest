@@ -9,7 +9,7 @@ import { ActionsPanel } from './ActionsPanel';
 import { GameLog } from './GameLog';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, ChevronUp, Loader2, ArrowLeft, Play, Trophy } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, ArrowLeft, Play, Trophy, ZoomIn, ZoomOut, Move } from 'lucide-react';
 import { GameDialogs } from './GameDialogs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { usePlayer } from '@/hooks/use-player';
@@ -37,11 +37,35 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [isExiting, setIsExiting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TURN_DURATION);
   const [activeInstructionToastId, setActiveInstructionToastId] = useState<string | null>(null);
+  
+  const [zoom, setZoom] = useState(0.8);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [startPan, setStartPan] = useState({ x: 0, y: 0 });
+
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setIsPlayerInfoOpen(!isMobile);
   }, [isMobile]);
+  
+  useEffect(() => {
+    // Center the map on initial load
+    if (mapContainerRef.current && gameState) {
+      const { clientWidth, clientHeight } = mapContainerRef.current;
+      const mapSize = gameState.settings.mapSize;
+      const totalMapWidth = mapSize * 128 + (mapSize - 1) * 32;
+      const totalMapHeight = mapSize * 128 + (mapSize - 1) * 32;
+      
+      setPan({
+        x: (clientWidth - totalMapWidth * zoom) / 2,
+        y: (clientHeight - totalMapHeight * zoom) / 2,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
+
 
   useEffect(() => {
     if (gameState?.status === 'playing' && isMyTurn) {
@@ -250,6 +274,55 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       setIsExiting(false);
   }
 
+  // --- Pan and Zoom Handlers ---
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!mapContainerRef.current) return;
+    e.preventDefault();
+
+    const rect = mapContainerRef.current.getBoundingClientRect();
+    const zoomFactor = 1.1;
+    const newZoom = e.deltaY < 0 ? zoom * zoomFactor : zoom / zoomFactor;
+    const clampedZoom = Math.max(0.2, Math.min(2, newZoom)); // Clamp zoom level
+
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    // Position of the mouse on the "un-zoomed" map
+    const worldX = (mouseX - pan.x) / zoom;
+    const worldY = (mouseY - pan.y) / zoom;
+
+    // New pan position to keep the content under the mouse stationary
+    const newPanX = mouseX - worldX * clampedZoom;
+    const newPanY = mouseY - worldY * clampedZoom;
+
+    setZoom(clampedZoom);
+    setPan({ x: newPanX, y: newPanY });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Only pan with middle mouse button or if no action is in progress
+    if (e.button !== 1 && (isMyTurn && gameState?.currentAction !== null)) return;
+    e.preventDefault();
+    setIsPanning(true);
+    setStartPan({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isPanning) return;
+    e.preventDefault();
+    setPan({
+      x: e.clientX - startPan.x,
+      y: e.clientY - startPan.y,
+    });
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    setIsPanning(false);
+  };
+  
+  const handleMouseLeave = (e: React.MouseEvent) => {
+    setIsPanning(false);
+  };
 
   if (isLoading || !gameState || !localPlayer) {
     return (
@@ -325,7 +398,15 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             </Collapsible>
         
             <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
-                <main className="flex flex-col items-center justify-start gap-2 overflow-hidden sm:gap-4">
+                <main 
+                  ref={mapContainerRef}
+                  className="relative flex flex-col items-center justify-start gap-2 overflow-hidden rounded-xl border-2 border-muted bg-water-pattern bg-repeat sm:gap-4"
+                  onWheel={handleWheel}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseLeave}
+                >
                 <MapGrid 
                     map={gameState.map} 
                     players={players} 
@@ -336,8 +417,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                     selectedArmyId={selectedArmyId}
                     isTeleporting={isTeleporting}
                     isScouting={isScouting}
+                    zoom={zoom}
+                    pan={pan}
                 />
-                <div className='text-center'>
+                <div className='pointer-events-none absolute bottom-4 right-4 z-20 rounded-lg bg-background/80 p-2 text-center shadow-md backdrop-blur-sm'>
                     {status === 'waiting' ? (
                     <p className='text-base font-semibold text-accent sm:text-lg'>Waiting for players... ({players.length}/{maxPlayers})</p>
                     ) : armySelectionDialogState?.isOpen ? (

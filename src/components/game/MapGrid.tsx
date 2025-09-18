@@ -1,4 +1,5 @@
 
+
 import type { Island, Player, GameAction } from '@/lib/types';
 import { IslandTile } from './IslandTile';
 import { useMemo } from 'react';
@@ -10,6 +11,9 @@ const ROCK_SPRITES = [
     '/sprites/medium_rock.gif',
     '/sprites/big_rock.gif',
 ];
+
+const TILE_SIZE = 128; // Fixed size for each island tile in pixels
+const TILE_GAP = 32;   // Fixed gap between island tiles in pixels
 
 const generateDecorations = (map: Island[][]) => {
     const decorations: { src: string; x: number; y: number; size: number, style: React.CSSProperties }[] = [];
@@ -91,28 +95,28 @@ type MapGridProps = {
   selectedArmyId: number | null;
   isTeleporting?: boolean;
   isScouting?: boolean;
+  zoom: number;
+  pan: { x: number; y: number };
 };
 
-export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting, isScouting }: MapGridProps) {
+export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting, isScouting, zoom, pan }: MapGridProps) {
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const selectedArmy = selectedArmyId !== null && currentPlayer ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const teleportingArmyId = isTeleporting && players[currentPlayerId]?.teleportState?.armyId !== null ? players[currentPlayerId]?.teleportState?.armyId : null;
 
-  const mapSize = map.length;
-
   const decorations = useMemo(() => {
     if (!map || map.length === 0) return [];
     return generateDecorations(map);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const totalSize = TILE_SIZE + TILE_GAP;
 
   return (
     <div
-      className="relative grid rounded-xl border-2 border-muted bg-water-pattern bg-repeat p-2 w-full h-full"
+      className="absolute"
       style={{
-        gridTemplateColumns: `repeat(${mapSize}, 1fr)`,
-        gridTemplateRows: `repeat(${mapSize}, 1fr)`,
-        gap: '2rem',
+        transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+        transformOrigin: '0 0',
       }}
     >
       {map.flat().map((island) => {
@@ -130,8 +134,13 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         return (
           <div 
             key={island.id} 
-            className="relative z-10"
-            style={{ gridColumn: island.x + 1, gridRow: island.y + 1 }}
+            className="absolute z-10"
+            style={{
+              width: `${TILE_SIZE}px`,
+              height: `${TILE_SIZE}px`,
+              left: `${island.x * totalSize}px`,
+              top: `${island.y * totalSize}px`,
+            }}
           >
             {islandDecorations.map((deco, index) => (
               <Image
