@@ -127,11 +127,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 setTimeout(() => {
                     // We need to read the latest state to avoid race conditions
                     setGameState(currentState => {
-                        if (!currentState) return currentState;
-                        return {
+                        if (!currentState || !currentState.deathAnimations) return currentState;
+                        const newState = {
                             ...currentState,
                             deathAnimations: currentState.deathAnimations.filter(a => a.id !== anim.id),
                         };
+                        return newState;
                     });
                 }, 1500) // Duration of the death GIF
             );

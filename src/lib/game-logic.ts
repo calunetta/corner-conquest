@@ -10,6 +10,7 @@ export const MAP_COLS = 5;
 
 
 export function flattenMap(map: Island[][]): Island[] {
+  if (!map) return [];
   return map.flat();
 }
 
