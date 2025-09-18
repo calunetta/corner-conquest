@@ -91,6 +91,33 @@ export function useGameEngine(gameId: string, playerId: string | null) {
         }, 3000);
     }
   }, [isLoading, gameState, localPlayer, router]);
+  
+  // Effect for handling death animations, only the host should clear them.
+  useEffect(() => {
+      if (isHost && gameState?.deathAnimations && gameState.deathAnimations.length > 0) {
+          const animationTimers = gameState.deathAnimations.map(anim => 
+              setTimeout(() => {
+                  // Important: Read the latest state when the timer fires
+                  // This is safer than doing it in the component
+                  if (gameStateRef.current) {
+                      const updatedAnimations = gameStateRef.current.deathAnimations.filter(a => a.id !== anim.id);
+                      updateGameState({
+                          ...gameStateRef.current,
+                          deathAnimations: updatedAnimations
+                      });
+                  }
+              }, 1500) // Duration of the death GIF
+          );
+          return () => animationTimers.forEach(clearTimeout);
+      }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.deathAnimations, isHost]);
+  
+  const gameStateRef = useRef(gameState);
+  useEffect(() => {
+      gameStateRef.current = gameState;
+  }, [gameState]);
+
 
   useEffect(() => {
     if (gameState && gameState.status === 'playing' && currentPlayer?.isBot && isHost && !isProcessingBotTurn.current) {

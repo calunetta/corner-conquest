@@ -120,27 +120,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
    // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [gameState?.players, gameState?.status, gameState?.settings.victoryPointGoal]);
    
-   // Effect for handling death animations, only the host should clear them.
-    useEffect(() => {
-        if (isHost && gameState?.deathAnimations && gameState.deathAnimations.length > 0) {
-            const animationTimers = gameState.deathAnimations.map(anim => 
-                setTimeout(() => {
-                    // We need to read the latest state to avoid race conditions
-                    setGameState(currentState => {
-                        if (!currentState || !currentState.deathAnimations) return currentState;
-                        const newState = {
-                            ...currentState,
-                            deathAnimations: currentState.deathAnimations.filter(a => a.id !== anim.id),
-                        };
-                        return newState;
-                    });
-                }, 1500) // Duration of the death GIF
-            );
-            return () => animationTimers.forEach(clearTimeout);
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [gameState?.deathAnimations, isHost]);
-  
   const handleAction = async (action: GameAction) => {
     if (!gameState || !localPlayer) return;
     
