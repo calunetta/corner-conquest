@@ -1,6 +1,5 @@
 
 
-
 'use client';
 import type { GameAction, GameState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,11 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const currentPlayer = players[currentPlayerIndex];
   
   const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
-  const currentTile = selectedArmy ? map[selectedArmy.position.y][selectedArmy.position.x] : null;
+  
+  // Defensive check to prevent crash if map or army position is invalid
+  const currentTile = (selectedArmy && map && map[selectedArmy.position.y] && map[selectedArmy.position.y][selectedArmy.position.x])
+    ? map[selectedArmy.position.y][selectedArmy.position.x] 
+    : null;
 
   const hasArmyActed = !!selectedArmy?.hasActed;
 
