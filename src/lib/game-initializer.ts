@@ -217,8 +217,22 @@ export function initializeGame(
     for (let x = 0; x < MAP_COLS; x++) {
       if (map[y][x].type === 'base' && map[y][x].owner !== undefined) continue;
 
-      const distance = Math.abs(x - center.x) + Math.abs(y - center.y);
       let islandType: IslandType;
+      
+      // Force center tile to be the "boss"
+      if (x === center.x && y === center.y) {
+          islandType = 'monster';
+          const bossMonsterData = MONSTER_DATA[4];
+          map[y][x].monsters = [{
+              name: bossMonsterData.name,
+              level: 4,
+              sprite: bossMonsterData.sprite
+          }];
+          map[y][x].type = islandType;
+          continue; // Skip to next iteration
+      }
+
+      const distance = Math.abs(x - center.x) + Math.abs(y - center.y);
       
       let rand = Math.random();
       if (distance <= 1) { 
@@ -229,10 +243,6 @@ export function initializeGame(
         if (rand < settings.resourceDensity) islandType = 'resource';
         else if (rand < 0.95) islandType = 'monster';
         else islandType = 'special';
-      }
-
-      if (x === center.x && y === center.y) {
-          islandType = 'monster';
       }
       
       map[y][x].type = islandType;
