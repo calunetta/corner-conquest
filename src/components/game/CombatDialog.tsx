@@ -36,7 +36,8 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
   if (!defender) return null;
   
   const hasWarChiefCard = attacker.specialCards.includes('War Chief');
-  const loserId = winnerId === null ? null : (winnerId === attackerId ? defenderId : attackerId);
+  const isCombatOver = phase === 'results' || phase === 'death';
+  const loserId = isCombatOver && winnerId !== null ? (winnerId === attackerId ? defenderId : attackerId) : null;
   
   const attackerSprite = loserId === attackerId ? PLAYER_DATA[attacker.color].sprite.death : PLAYER_DATA[attacker.color].sprite.attack;
   const defenderSprite = loserId === defenderId ? PLAYER_DATA[defender.color].sprite.death : PLAYER_DATA[defender.color].sprite.attack;
@@ -71,7 +72,7 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
         <div className="flex flex-col justify-around gap-4 sm:flex-row">
             <div className="flex flex-col items-center gap-2">
                 <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
-                {(phase === 'results' || phase === 'death') && (
+                {isCombatOver && (
                   <>
                     <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} />
                     {renderDice(attackerRolls)}
@@ -81,7 +82,7 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
             </div>
             <div className="flex flex-col items-center gap-2">
                 <h3 className="font-bold" style={{ color: defender.color }}>{defender.name}</h3>
-                {(phase === 'results' || phase === 'death') && (
+                {isCombatOver && (
                   <>
                     <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} />
                     {renderDice(defenderRolls)}
@@ -91,7 +92,7 @@ export function CombatDialog({ gameState, onRoll, onClose }: CombatDialogProps) 
             </div>
         </div>
 
-        {(phase === 'results' || phase === 'death') && winnerId !== null && (
+        {phase === 'results' && winnerId !== null && (
           <div className="mt-4 text-center">
             <h2 className="text-2xl font-bold">
               <span style={{ color: players[winnerId].color }}>{players[winnerId].name}</span> wins!

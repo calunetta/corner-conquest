@@ -83,7 +83,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         {selectedMonster && (
           <Card className="inline-flex flex-col items-center gap-2 p-4">
               <div className='relative h-24 w-24'>
-                <Image src={selectedMonster.sprite.attack} alt={selectedMonster.name} layout="fill" objectFit='contain' className='-scale-x-100'/>
+                <Image src={selectedMonster.sprite.attack} alt={selectedMonster.name} width={96} height={96} className='-scale-x-100'/>
               </div>
               <div className="text-center">
                   <p className="font-bold capitalize">{getMonsterName(selectedMonster)}</p>
@@ -155,7 +155,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
             onClick={() => setSelectedMonster(monster)}
           >
             <div className='relative h-24 w-24'>
-                <Image src={monster.sprite.idle} alt={monster.name} layout="fill" objectFit='contain' />
+                <Image src={monster.sprite.idle} alt={monster.name} width={96} height={96} />
             </div>
             <div className="text-center">
                 <p className="font-bold capitalize">{getMonsterName(monster)}</p>
@@ -174,9 +174,9 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   );
 
   const renderResultsScreen = () => {
-    const isPlayerLoser = winnerId !== attackerId;
-    const attackerSprite = isPlayerLoser ? PLAYER_DATA[attacker.color].sprite.death : PLAYER_DATA[attacker.color].sprite.attack;
-    const monsterSprite = !isPlayerLoser && monsterForDisplay ? monsterForDisplay.sprite.death : monsterForDisplay?.sprite.attack;
+    const isPlayerWinner = winnerId === attackerId;
+    const attackerSprite = !isPlayerWinner ? PLAYER_DATA[attacker.color].sprite.death : PLAYER_DATA[attacker.color].sprite.attack;
+    const monsterSprite = isPlayerWinner && monsterForDisplay ? monsterForDisplay.sprite.death : monsterForDisplay?.sprite.attack;
     
     return (
       <>
@@ -202,7 +202,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
           </div>}
         </div>
 
-        {(phase === 'results' || phase === 'death') && (
+        {phase === 'results' && (
           <div className="mt-4 text-center">
             <h2 className="text-2xl font-bold">
               {winnerId !== null ? (
