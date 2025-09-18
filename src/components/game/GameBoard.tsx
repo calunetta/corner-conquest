@@ -29,6 +29,7 @@ type GameBoardProps = {
 
 const generateDecorations = (map: Island[][]) => {
     const decorations: { src: string; x: number; y: number; size: number, style: React.CSSProperties }[] = [];
+    if (!map || map.length === 0) return [];
     const mapSize = map.length;
 
     map.flat().forEach(island => {
@@ -125,10 +126,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const decorations = useMemo(() => {
-    if (!gameState?.map || gameState.map.length === 0) return [];
-    // The dependency array is based on gameId to run only once per game.
+    if (!gameState?.map) return [];
     return generateDecorations(gameState.map);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId]);
 
 
@@ -140,10 +140,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (mapContainerRef.current && gameState && !isLoading) {
       const { clientWidth, clientHeight } = mapContainerRef.current;
       const mapSize = gameState.settings.mapSize;
-      const PADDING = 200; // 100px on each side
+      const PADDING = 100;
 
-      const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING;
-      const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING;
+      const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
+      const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
 
       const widthRatio = clientWidth / totalMapWidth;
       const heightRatio = clientHeight / totalMapHeight;
@@ -401,12 +401,30 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isPanning) return;
+    if (!isPanning || !mapContainerRef.current || !gameState) return;
     e.preventDefault();
-    setPan({
-      x: e.clientX - startPan.x,
-      y: e.clientY - startPan.y,
-    });
+    const newPanX = e.clientX - startPan.x;
+    const newPanY = e.clientY - startPan.y;
+
+    const { clientWidth, clientHeight } = mapContainerRef.current;
+    const mapSize = gameState.settings.mapSize;
+    const PADDING = 100;
+    const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
+    const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
+    
+    const mapWidthWithZoom = totalMapWidth * zoom;
+    const mapHeightWithZoom = totalMapHeight * zoom;
+
+    const clampedX = Math.min(
+      0, // Right boundary
+      Math.max(clientWidth - mapWidthWithZoom, newPanX) // Left boundary
+    );
+    const clampedY = Math.min(
+      0, // Bottom boundary
+      Math.max(clientHeight - mapHeightWithZoom, newPanY) // Top boundary
+    );
+
+    setPan({ x: clampedX, y: clampedY });
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
@@ -584,4 +602,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+
 
