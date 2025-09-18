@@ -34,6 +34,21 @@ const playerTileIndicatorClasses: Record<string, string> = {
     yellow: 'shadow-yellow-400/50',
 }
 
+function IslandBorder() {
+    return (
+        <>
+            {/* Bottom */}
+            <div className="absolute -bottom-1 left-0 h-2 w-full bg-island-edges bg-repeat-x" />
+            {/* Top */}
+            <div className="absolute -top-1 left-0 h-2 w-full origin-center rotate-180 bg-island-edges bg-repeat-x" />
+            {/* Left */}
+            <div className="absolute -left-1 top-0 h-full w-2 origin-center rotate-90 bg-island-edges bg-repeat-x" />
+            {/* Right */}
+            <div className="absolute -right-1 top-0 h-full w-2 origin-center -rotate-90 bg-island-edges bg-repeat-x" />
+        </>
+    )
+}
+
 export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, isTeleporting, isScoutTarget }: IslandTileProps) {
   const occupants = island.occupants.map(o => {
       const player = players.find(p => p.id === o.playerId);
@@ -131,9 +146,9 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       <button
         onClick={() => onClick(island.x, island.y)}
         className={cn(
-          'aspect-square w-full rounded-lg border-2 flex items-center justify-center relative transition-all duration-200',
+          'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200',
           getTerrainClass(),
-          isSelected ? 'border-primary ring-2 ring-primary' : '',
+          isSelected ? 'ring-2 ring-primary' : '',
           isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
           isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
           isArmySelectedOnTile && !isTeleporting && 'ring-2 ring-offset-2 ring-primary',
@@ -143,6 +158,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
       >
+        <IslandBorder />
         <div className="absolute inset-0 z-10">
             {occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
