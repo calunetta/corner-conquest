@@ -1,6 +1,7 @@
 
 
 
+
 import type { Island, Player, GameAction, ResourceType, IslandResource, Army, Monster } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon } from '../icons';
@@ -37,29 +38,43 @@ const playerTileIndicatorClasses: Record<string, string> = {
     yellow: 'shadow-yellow-400/50',
 }
 
-const AnimatedMonster = ({ monster }: { monster: Monster }) => {
+const AnimatedMonster = ({ monster, position }: { monster: Monster, position: 'top-left' | 'bottom-right' }) => {
     const [isAttacking, setIsAttacking] = useState(false);
+    const [isFlipped, setIsFlipped] = useState(position === 'bottom-right');
+    const [horizontalOffset, setHorizontalOffset] = useState(0);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setIsAttacking(Math.random() < 0.2); // 20% chance to be in attack state each cycle
-        }, Math.random() * 2000 + 1000); // Check every 1-3 seconds
+        const animationInterval = setInterval(() => {
+            // Randomly decide to attack
+            setIsAttacking(Math.random() < 0.2);
+            
+            // Randomly decide to flip
+            if (Math.random() < 0.3) {
+                setIsFlipped(prev => !prev);
+            }
+            
+            // Randomly decide to move horizontally (e.g., between -25% and 25% of its container)
+            setHorizontalOffset((Math.random() - 0.5) * 50);
 
-        return () => clearInterval(interval);
+        }, Math.random() * 1500 + 1000); // Update animation state every 1-2.5 seconds
+
+        return () => clearInterval(animationInterval);
     }, []);
 
     const spriteSrc = isAttacking ? monster.sprite.attack : monster.sprite.idle;
+    const transform = `translateX(${horizontalOffset}%) ${isFlipped ? 'scaleX(-1)' : ''}`;
 
     return (
          <Tooltip>
             <TooltipTrigger asChild>
-                <div className='relative h-1/2 w-1/2'>
+                <div className='relative h-full w-full'>
                     <Image
                         src={spriteSrc}
                         alt={monster.name}
                         layout='fill'
                         objectFit='contain'
-                        className="drop-shadow-lg"
+                        className="drop-shadow-lg transition-transform duration-1000 ease-in-out"
+                        style={{ transform: transform }}
                         unoptimized
                     />
                 </div>
@@ -121,17 +136,18 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     
     return (
         <div className="relative h-full w-full">
-            {island.monsters.map((monster, i) => (
-                <div 
-                    key={`${monster.name}-${i}`} 
-                    className={cn(
-                        "absolute flex h-1/2 w-full",
-                        i === 0 ? 'top-0 justify-start' : 'bottom-0 justify-end'
-                    )}
-                >
-                    <AnimatedMonster monster={monster} />
-                </div>
-            ))}
+            {island.monsters.map((monster, i) => {
+                 const positionClass = i === 0 ? 'top-0 left-0' : 'bottom-0 right-0';
+                 const positionKey = i === 0 ? 'top-left' : 'bottom-right';
+                 return (
+                    <div 
+                        key={`${monster.name}-${i}`} 
+                        className={cn("absolute flex h-3/4 w-3/4", positionClass)}
+                    >
+                        <AnimatedMonster monster={monster} position={positionKey} />
+                    </div>
+                )
+            })}
         </div>
     );
   }
@@ -240,3 +256,5 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     </TooltipProvider>
   );
 }
+
+    
