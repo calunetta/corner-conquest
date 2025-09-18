@@ -5,6 +5,7 @@ import { IslandTile } from './IslandTile';
 import { useMemo } from 'react';
 import Image from 'next/image';
 import { TILE_GAP, TILE_SIZE } from '@/lib/game-logic';
+import { PADDING } from './GameBoard';
 
 const ROCK_SPRITES = [
     '/sprites/small_rock.gif',
@@ -16,19 +17,25 @@ const ROCK_SPRITES = [
 const generateDecorations = (map: Island[][]) => {
     const decorations: { src: string; x: number; y: number; size: number, style: React.CSSProperties }[] = [];
     if (!map || map.length === 0) return [];
+    
+    // This function will now be called from within MapGrid, so it has access to map.
+    // The logic to add rocks around islands and in the padding can be consolidated here.
+    
     const mapSize = map.length;
+    const totalSize = TILE_SIZE + TILE_GAP;
 
     // Generate rocks around islands
     map.flat().forEach(island => {
-        const rockCount = 1 + Math.floor(Math.random() * 3); // 1 to 3 rocks per island
+        const rockCount = 1 + Math.floor(Math.random() * 2); // 1 to 2 rocks per island
         
         let possibleSides = [0, 1, 2, 3]; // 0: top, 1: right, 2: bottom, 3: left
 
         for (let i = 0; i < rockCount; i++) {
             const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
-            const side = possibleSides[Math.floor(Math.random() * possibleSides.length)];
+            const sideIndex = Math.floor(Math.random() * possibleSides.length);
+            const side = possibleSides.splice(sideIndex, 1)[0];
 
-            const offset = (Math.random() - 0.5) * 50;
+            const offset = (Math.random() - 0.5) * TILE_SIZE * 0.7;
             const size = Math.random() * 20 + 12;
 
             let style: React.CSSProperties = {
@@ -38,66 +45,23 @@ const generateDecorations = (map: Island[][]) => {
                 width: `${size}px`,
                 height: `${size}px`,
             };
+            
+            const islandLeft = island.x * totalSize + PADDING;
+            const islandTop = island.y * totalSize + PADDING;
 
             switch(side) {
-                case 0: style.top = '-25%'; style.left = `${50 + offset}%`; style.transform = 'translateX(-50%)'; break;
-                case 1: style.top = `${50 + offset}%`; style.right = '-25%'; style.transform = 'translateY(-50%)'; break;
-                case 2: style.bottom = '-25%'; style.left = `${50 + offset}%`; style.transform = 'translateX(-50%)'; break;
-                case 3: style.top = `${50 + offset}%`; style.left = '-25%'; style.transform = 'translateY(-50%)'; break;
+                case 0: style.top = `${islandTop - size * 0.7}px`; style.left = `${islandLeft + TILE_SIZE/2 + offset}px`; break;
+                case 1: style.top = `${islandTop + TILE_SIZE/2 + offset}px`; style.left = `${islandLeft + TILE_SIZE + size * 0.3}px`; break;
+                case 2: style.top = `${islandTop + TILE_SIZE + size * 0.3}px`; style.left = `${islandLeft + TILE_SIZE/2 + offset}px`; break;
+                case 3: style.top = `${islandTop + TILE_SIZE/2 + offset}px`; style.left = `${islandLeft - size * 0.7}px`; break;
             }
 
             decorations.push({ src: rockSrc, x: island.x, y: island.y, size, style });
         }
     });
-
-    // Generate rocks in the outer padding
-    const PADDING_ROCKS_DENSITY = 0.5; // Rocks per tile-worth of space
-    const totalSize = TILE_SIZE + TILE_GAP;
-    const numRocksVertical = Math.floor(mapSize * PADDING_ROCKS_DENSITY);
-    const numRocksHorizontal = Math.floor(mapSize * PADDING_ROCKS_DENSITY);
-
-    for(let i = 0; i < numRocksVertical; i++) {
-        const yPos = Math.random() * (mapSize * totalSize);
-        // Left padding
-        decorations.push(createPaddingRock(yPos, -50, totalSize));
-        // Right padding
-        decorations.push(createPaddingRock(yPos, (mapSize * totalSize) + 50, totalSize));
-    }
-     for(let i = 0; i < numRocksHorizontal; i++) {
-        const xPos = Math.random() * (mapSize * totalSize);
-        // Top padding
-        decorations.push(createPaddingRock(-50, xPos, totalSize));
-        // Bottom padding
-        decorations.push(createPaddingRock((mapSize * totalSize) + 50, xPos, totalSize));
-    }
-
-
+    
     return decorations;
 };
-
-function createPaddingRock(top: number, left: number, totalTileSize: number) {
-    const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
-    const size = Math.random() * 30 + 15;
-    const randomOffsetX = (Math.random() - 0.5) * totalTileSize * 0.5;
-    const randomOffsetY = (Math.random() - 0.5) * totalTileSize * 0.5;
-
-    return {
-        src: rockSrc,
-        x: -1, // Special value to indicate padding rock
-        y: -1,
-        size,
-        style: {
-            position: 'absolute',
-            top: `${top + randomOffsetY}px`,
-            left: `${left + randomOffsetX}px`,
-            transform: 'translate(-50%, -50%)',
-            zIndex: 5,
-            pointerEvents: 'none',
-            width: `${size}px`,
-            height: `${size}px`,
-        } as React.CSSProperties
-    };
-}
 
 
 type MapGridProps = {
@@ -127,10 +91,9 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
 
   const totalSize = TILE_SIZE + TILE_GAP;
   const mapSize = map.length;
-  const PADDING = 100;
 
-  const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP);
-  const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP);
+  const totalMapWidth = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
+  const totalMapHeight = (mapSize * TILE_SIZE) + ((mapSize - 1) * TILE_GAP) + PADDING * 2;
 
   return (
     <div
@@ -143,15 +106,15 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
       <div
         className="absolute bg-water-pattern bg-repeat"
         style={{
-          width: `${totalMapWidth + PADDING * 2}px`,
-          height: `${totalMapHeight + PADDING * 2}px`,
-          top: `-${PADDING}px`,
-          left: `-${PADDING}px`,
+          width: `${totalMapWidth}px`,
+          height: `${totalMapHeight}px`,
+          top: `0px`,
+          left: `0px`,
         }}
       />
-      {decorations.filter(d => d.x === -1).map((deco, index) => (
+      {decorations.map((deco, index) => (
           <Image
-            key={`padding-deco-${index}`}
+            key={`deco-${index}`}
             src={deco.src}
             alt="decorative rock"
             width={deco.size}
@@ -169,8 +132,6 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         const isArmySelectedOnTile = (isTeleporting && armyOnTile?.armyId === teleportingArmyId) || (!isTeleporting && selectedArmy?.position.x === island.x && selectedArmy?.position.y === island.y);
         
         const isScoutTarget = isScouting && island.isHidden;
-        
-        const islandDecorations = decorations.filter(d => d.x === island.x && d.y === island.y);
 
         return (
           <div 
@@ -179,21 +140,10 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
             style={{
               width: `${TILE_SIZE}px`,
               height: `${TILE_SIZE}px`,
-              left: `${island.x * totalSize}px`,
-              top: `${island.y * totalSize}px`,
+              left: `${island.x * totalSize + PADDING}px`,
+              top: `${island.y * totalSize + PADDING}px`,
             }}
           >
-            {islandDecorations.map((deco, index) => (
-              <Image
-                key={index}
-                src={deco.src}
-                alt="decorative rock"
-                width={deco.size}
-                height={deco.size}
-                style={deco.style}
-                unoptimized
-              />
-            ))}
             <IslandTile
                 island={island}
                 players={players}
@@ -211,7 +161,3 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
     </div>
   );
 }
-
-    
-
-    

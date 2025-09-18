@@ -21,7 +21,7 @@ import Image from 'next/image';
 import { TILE_GAP, TILE_SIZE } from '@/lib/game-logic';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
-const PADDING = 100;
+export const PADDING = 100;
 
 type GameBoardProps = {
     gameId: string;
@@ -442,45 +442,45 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                   onMouseUp={handleMouseUp}
                   onMouseLeave={handleMouseLeave}
                 >
-                <MapGrid 
-                    map={gameState.map} 
-                    players={players} 
-                    onTileClick={handleTileClick} 
-                    possibleMoves={isTeleporting && teleportState.armyId !== null ? gameState.map.flat().map(t => ({x: t.x, y: t.y})) : possibleMoves} 
-                    selectedTile={selectedTile} 
-                    currentPlayerId={currentPlayer.id} 
-                    selectedArmyId={selectedArmyId}
-                    isTeleporting={isTeleporting}
-                    isScouting={isScouting}
-                    zoom={zoom}
-                    pan={pan}
-                />
-                <div className='pointer-events-none absolute bottom-4 right-4 z-20 rounded-lg bg-background/80 p-2 text-center shadow-md backdrop-blur-sm'>
-                    {status === 'waiting' ? (
-                    <p className='text-base font-semibold text-accent sm:text-lg'>Waiting for players... ({players.length}/{maxPlayers})</p>
-                    ) : armySelectionDialogState?.isOpen ? (
-                    <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>Select an army to command</p>
-                    ) : (
-                    <>
-                        {isTeleporting && isMyTurn ? (
-                            <div className="flex flex-col items-center gap-2">
-                                <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
-                                    {teleportState.armyId === null ? 'Teleport: Select an army to move' : 'Teleport: Select a destination tile'}
-                                </p>
-                            </div>
-                        ) : isScouting && isMyTurn ? (
-                            <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
-                                Scout: Reveal a hidden tile ({scoutingState.count} remaining)
-                            </p>
-                        ) : (
-                            <>
-                                <p className='text-base font-semibold sm:text-lg'>Turn {gameState.turn}: <span style={{color: currentPlayer.color}}>{currentPlayer.name}'s turn</span></p>
-                                {gameState.currentAction && <p className='text-sm text-muted-foreground sm:text-base'>Current Action: {gameState.currentAction}</p>}
-                            </>
-                        )}
-                    </>
-                    )}
-                </div>
+                  <MapGrid 
+                      map={gameState.map} 
+                      players={players} 
+                      onTileClick={handleTileClick} 
+                      possibleMoves={isTeleporting && teleportState.armyId !== null ? gameState.map.flat().map(t => ({x: t.x, y: t.y})) : possibleMoves} 
+                      selectedTile={selectedTile} 
+                      currentPlayerId={currentPlayer.id} 
+                      selectedArmyId={selectedArmyId}
+                      isTeleporting={isTeleporting}
+                      isScouting={isScouting}
+                      zoom={zoom}
+                      pan={pan}
+                  />
+                  <div className='pointer-events-none absolute bottom-4 right-4 z-20 rounded-lg bg-background/80 p-2 text-center shadow-md backdrop-blur-sm'>
+                      {status === 'waiting' ? (
+                      <p className='text-base font-semibold text-accent sm:text-lg'>Waiting for players... ({players.length}/{maxPlayers})</p>
+                      ) : armySelectionDialogState?.isOpen ? (
+                      <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>Select an army to command</p>
+                      ) : (
+                      <>
+                          {isTeleporting && isMyTurn ? (
+                              <div className="flex flex-col items-center gap-2">
+                                  <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
+                                      {teleportState.armyId === null ? 'Teleport: Select an army to move' : 'Teleport: Select a destination tile'}
+                                  </p>
+                              </div>
+                          ) : isScouting && isMyTurn ? (
+                              <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
+                                  Scout: Reveal a hidden tile ({scoutingState.count} remaining)
+                              </p>
+                          ) : (
+                              <>
+                                  <p className='text-base font-semibold sm:text-lg'>Turn {gameState.turn}: <span style={{color: currentPlayer.color}}>{currentPlayer.name}'s turn</span></p>
+                                  {gameState.currentAction && <p className='text-sm text-muted-foreground sm:text-base'>Current Action: {gameState.currentAction}</p>}
+                              </>
+                          )}
+                      </>
+                      )}
+                  </div>
                 </main>
                 <aside className="flex flex-col justify-start gap-4">
                 <ActionsPanel 
@@ -525,7 +525,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    
-
-    
