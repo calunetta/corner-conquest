@@ -2,6 +2,7 @@
 
 
 
+
 import type { Island, Player, GameAction, ResourceType, IslandResource, Army, Monster } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon } from '../icons';
@@ -45,18 +46,17 @@ const AnimatedMonster = ({ monster, position }: { monster: Monster, position: 't
 
     useEffect(() => {
         const animationInterval = setInterval(() => {
-            // Randomly decide to attack
-            setIsAttacking(Math.random() < 0.2);
+            const currentlyAttacking = Math.random() < 0.2;
+            setIsAttacking(currentlyAttacking);
             
-            // Randomly decide to flip
-            if (Math.random() < 0.3) {
-                setIsFlipped(prev => !prev);
+            if (!currentlyAttacking) {
+                if (Math.random() < 0.3) {
+                    setIsFlipped(prev => !prev);
+                }
+                setHorizontalOffset((Math.random() - 0.5) * 50);
             }
-            
-            // Randomly decide to move horizontally (e.g., between -25% and 25% of its container)
-            setHorizontalOffset((Math.random() - 0.5) * 50);
 
-        }, Math.random() * 1500 + 1000); // Update animation state every 1-2.5 seconds
+        }, Math.random() * 1500 + 1000); // Random interval between 1-2.5 seconds
 
         return () => clearInterval(animationInterval);
     }, []);
@@ -74,7 +74,7 @@ const AnimatedMonster = ({ monster, position }: { monster: Monster, position: 't
                         layout='fill'
                         objectFit='contain'
                         className="drop-shadow-lg transition-transform duration-1000 ease-in-out"
-                        style={{ transform: transform }}
+                        style={{ transform: isAttacking ? (isFlipped ? 'scaleX(-1)' : '') : transform }}
                         unoptimized
                     />
                 </div>
