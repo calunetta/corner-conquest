@@ -27,7 +27,17 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
     <TooltipProvider>
       <Card className={`transition-all duration-300 ${isCurrentPlayer ? `border-accent shadow-lg shadow-accent/20` : ''}`}>
         <CardHeader className="flex-row items-center justify-between space-y-0 p-2">
-          <CardTitle className="text-sm font-medium">{player.name}</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-sm font-medium">{player.name}</CardTitle>
+            <Image 
+                src={PLAYER_DATA[player.color].sprite.idle}
+                alt={`${player.color} army`}
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+                unoptimized
+            />
+          </div>
           <div className="flex items-center gap-2">
             {player.hasExtraMove && (
                 <Tooltip>
@@ -39,14 +49,6 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
                     </TooltipContent>
                 </Tooltip>
             )}
-             <Image 
-                src={PLAYER_DATA[player.color].sprite.idle}
-                alt={`${player.color} army`}
-                width={32}
-                height={32}
-                className="h-8 w-8 object-contain"
-                unoptimized
-            />
           </div>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center justify-between gap-y-2 p-2 pt-0">
