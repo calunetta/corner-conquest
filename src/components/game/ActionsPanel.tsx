@@ -38,7 +38,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const hasArmyActed = !!selectedArmy?.hasActed;
 
   const canCollect = selectedArmy && currentPlayer.positions.some(p => p.armyId === selectedArmy.id);
-  const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.armyId === selectedArmy.id);
+  const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.armyId === selectedArmy.id) && (!currentTile.monsters || currentTile.monsters.length === 0);
   const canAttack = selectedArmy && currentTile && (currentTile.occupants.some(o => o.playerId !== currentPlayer.id) || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
   
   const upgradeCost = currentPlayer.masterBuilderActive ? Math.ceil(settings.upgradeCost / 2) : settings.upgradeCost;
@@ -104,6 +104,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             if (!selectedArmy) return "You must select an army first.";
             if (!currentTile || (currentTile.type !== 'resource' && currentTile.type !== 'base') || currentTile.resources.length === 0) return "This tile has no resources to position on.";
             if (currentPlayer.positions.some(p => p.armyId === selectedArmy.id)) return "You are already positioned here.";
+            if (currentTile.monsters && currentTile.monsters.length > 0) return "Cannot position on an island with monsters.";
             break;
         case 'show-cards':
             if (currentPlayer.specialCards.length === 0) return "You have no special cards.";

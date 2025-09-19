@@ -1,4 +1,5 @@
 
+
 import { db, doc, deleteDoc, runTransaction, arrayUnion, getDoc } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation, Island } from './types';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
@@ -76,6 +77,9 @@ export function handlePositionAction(state: GameState, selectedArmy: Army | null
   }
   if (player.positions.some(p => p.armyId === selectedArmy.id)) {
     throw new Error("This army is already positioned.");
+  }
+   if (tile.monsters && tile.monsters.length > 0) {
+    throw new Error("You cannot position on an island with monsters.");
   }
   
   const availableResources = tile.resources.filter(resource => {
@@ -602,6 +606,10 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
     const { players, currentPlayerIndex, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
     const HAND_LIMIT = 7;
+
+    if (army.position.x === x && army.position.y === y) {
+        return newState; // Do nothing if moving to the same tile
+    }
 
     if (army.hasActed && !player.hasExtraMove) {
         throw new Error("This army has already acted this turn.");
@@ -1351,5 +1359,3 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             return gameState;
     }
 }
-
-    
