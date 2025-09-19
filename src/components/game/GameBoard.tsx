@@ -114,7 +114,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     
     try {
         setIsPerformingAction(true);
-        const { newState, selectedArmyId: newSelectedArmyId } = GameActions.handleGameAction({
+        const { newState, selectedArmyId: newSelectedArmyId, possibleMoves: newPossibleMoves, currentAction: newCurrentAction } = GameActions.handleGameAction({
             action,
             gameState,
             selectedArmy,
@@ -122,18 +122,11 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         });
         
         await setGameState(newState);
-        setSelectedArmyId(newSelectedArmyId ?? null);
+        
+        if (newSelectedArmyId !== undefined) setSelectedArmyId(newSelectedArmyId);
+        if (newPossibleMoves) setPossibleMoves(newPossibleMoves);
+        if (newCurrentAction !== undefined) setCurrentAction(newCurrentAction);
 
-        if (action === 'select-army' && newState) {
-            const player = newState.players[newState.currentPlayerIndex];
-            const army = player.armies.find(a => a.id === newSelectedArmyId);
-            if(army) {
-                const { newState: clickState, ...result } = GameActions.handleTileClick(newState, army.position.x, army.position.y, player.id, army, []);
-                 await setGameState(clickState);
-                 setPossibleMoves(result.possibleMoves);
-                 setCurrentAction(result.currentAction);
-            }
-        }
 
         // Reset UI state for most actions, but preserve it for dialog flows
         if (action !== 'select-army' && action !== 'select-defender') {
@@ -164,6 +157,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setPossibleMoves(result.possibleMoves);
         setCurrentAction(result.currentAction);
         
+        // Use a more robust check to see if state has changed.
         if (result.newState.id !== gameState.id) {
           await setGameState(result.newState);
         }

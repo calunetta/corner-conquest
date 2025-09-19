@@ -230,14 +230,16 @@ export function handleDeployAction(state: GameState): GameState {
       }
     }
 
-    if (isReinforceUsed && canUseCard) {
+    if (isReinforceUsed) {
       newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
       player.reinforceActive = false;
-      player.actionsThisTurn.push('use-card');
-      const cardIndex = player.specialCards.indexOf('Reinforce');
-      if (cardIndex > -1) {
-          const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-          discardPile.push(usedCard);
+      if (canUseCard) {
+          player.actionsThisTurn.push('use-card');
+          const cardIndex = player.specialCards.indexOf('Reinforce');
+          if (cardIndex > -1) {
+              const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+              discardPile.push(usedCard);
+          }
       }
     }
 
@@ -689,37 +691,36 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
     return checkAndEndTurnIfNoActions(newState);
 }
 
-export function handleSelectArmy(state: GameState, armyId: number): GameState {
+export function handleSelectArmy(state: GameState, armyId: number): { newState: GameState; selectedArmyId: number | null, possibleMoves: {x:number, y:number}[], currentAction: GameAction | null } {
     let newState = { ...state };
     newState.armySelectionDialogState = null; 
 
-    if (newState.teleportState) {
-        newState.teleportState.armyId = armyId;
-        return newState;
-    }
-    
     const player = newState.players[newState.currentPlayerIndex];
     const army = player.armies.find(a => a.id === armyId);
-    if (!army) return newState;
+
+    if (!army) {
+        return { newState, selectedArmyId: null, possibleMoves: [], currentAction: null };
+    }
+
+    if (newState.teleportState) {
+        newState.teleportState.armyId = armyId;
+        return { newState, selectedArmyId: armyId, possibleMoves: [], currentAction: 'teleport' };
+    }
 
     const possibleMoves = getPossibleMoves(newState, army);
     const tile = newState.map[army.position.y][army.position.x];
+    const canAttack = tile.occupants.some(o => o.playerId !== player.id) || (tile.type === 'monster' && !!tile.monsters && tile.monsters.length > 0);
 
-    const canAttack = tile && (tile.occupants.some(o => o.playerId !== player.id) || (tile.type === 'monster' && !!tile.monsters && tile.monsters.length > 0));
+    let currentAction: GameAction | null = null;
 
     if (possibleMoves.length > 0) {
-        const { newState: clickState, ...result } = handleTileClick(newState, army.position.x, army.position.y, player.id, army, possibleMoves);
-        return {
-            ...clickState,
-            possibleMoves: result.possibleMoves,
-            currentAction: result.currentAction,
-        };
+        currentAction = 'move';
     } else if (canAttack) {
         const { newState: attackState } = handleAttackAction(newState, army);
-        return attackState;
+        newState = attackState;
     }
 
-    return newState;
+    return { newState, selectedArmyId: armyId, possibleMoves, currentAction };
 }
 
 export function handleSelectResourceForPosition(state: GameState, resource: ResourceType, selectedArmy: Army | null): GameState {
@@ -1338,9 +1339,12 @@ interface HandleActionParams {
     payload?: any;
 }
 
-export function handleGameAction({ action, gameState, selectedArmy, payload }: HandleActionParams): { newState: GameState, selectedArmyId?: number | null } {
+export function handleGameAction({ action, gameState, selectedArmy, payload }: HandleActionParams): { newState: GameState, selectedArmyId?: number | null, possibleMoves?: {x:number, y:number}[], currentAction?: GameAction | null } {
     let resultState = gameState;
     let resultSelectedArmyId: number | null = selectedArmy?.id ?? null;
+    let resultPossibleMoves: {x:number, y:number}[] = [];
+    let resultCurrentAction: GameAction | null = null;
+
 
     switch(action) {
         case 'position':
@@ -1394,8 +1398,11 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             resultState = handleConfirmCollection(gameState, payload, selectedArmy);
             break;
         case 'select-army':
-            resultState = handleSelectArmy(gameState, payload);
-            resultSelectedArmyId = payload;
+            const selectResult = handleSelectArmy(gameState, payload);
+            resultState = selectResult.newState;
+            resultSelectedArmyId = selectResult.selectedArmyId;
+            resultPossibleMoves = selectResult.possibleMoves;
+            resultCurrentAction = selectResult.currentAction;
             break;
         case 'select-defender':
              const { defenderArmyId, attackingArmyId } = payload;
@@ -1442,7 +1449,7 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             return { newState: gameState, selectedArmyId: resultSelectedArmyId };
     }
     
-    return { newState: resultState, selectedArmyId: resultSelectedArmyId };
+    return { newState: resultState, selectedArmyId: resultSelectedArmyId, possibleMoves: resultPossibleMoves, currentAction: resultCurrentAction };
 }
 
     
