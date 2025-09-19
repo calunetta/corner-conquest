@@ -23,9 +23,19 @@ type GameDialogsProps = {
   localPlayer: Player;
   isMyTurn: boolean;
   onConfirmHostLeave: () => void;
+  locallyDismissedDialogs: string[];
+  setLocallyDismissedDialogs: (keys: string[]) => void;
 };
 
-export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, onConfirmHostLeave }: GameDialogsProps) {
+export function GameDialogs({ 
+    gameState, 
+    setGameState, 
+    localPlayer, 
+    isMyTurn, 
+    onConfirmHostLeave,
+    locallyDismissedDialogs,
+    setLocallyDismissedDialogs,
+}: GameDialogsProps) {
   const { 
     combatState, 
     monsterCombatState, 
@@ -46,8 +56,12 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
     setGameState(state);
   };
   
-  const handleCloseDialog = (dialog: keyof GameState) => {
-    handleUpdate({ ...gameState, [dialog]: null, currentAction: null });
+  const handleCloseDialog = (dialogKey: keyof GameState) => {
+    if (isMyTurn) {
+        handleUpdate({ ...gameState, [dialogKey]: null, currentAction: null });
+    } else {
+        setLocallyDismissedDialogs([...locallyDismissedDialogs, dialogKey]);
+    }
   };
   
   const selectedArmy = GameActions.getSelectedArmy(gameState);
@@ -79,28 +93,32 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
     }
     handleUpdate(newState);
   }
+  
+  const isDialogVisible = (key: keyof GameState) => {
+    return !!gameState[key] && !locallyDismissedDialogs.includes(key);
+  }
 
   return (
     <>
-      {combatState && (
+      {isDialogVisible('combatState') && combatState && (
         <CombatDialog
           gameState={gameState}
           onRoll={(useWarChief) => handleUpdate(GameActions.handleCombatRoll(gameState, useWarChief))}
-          onClose={() => handleUpdate(GameActions.handleCloseCombat(gameState))}
+          onClose={() => handleCloseDialog('combatState')}
           isAttacker={isMyTurn}
         />
       )}
-      {monsterCombatState && currentTileForMonster?.monsters && (
+      {isDialogVisible('monsterCombatState') && monsterCombatState && currentTileForMonster?.monsters && (
         <MonsterCombatDialog 
           gameState={gameState} 
           monsters={currentTileForMonster.monsters}
           onRoll={(monster, useDecideCard, decidedValue, useOvercome, useWarChief) => handleUpdate(GameActions.handleMonsterCombatRoll(gameState, monster, useDecideCard, decidedValue, useOvercome, useWarChief))}
-          onClose={() => handleUpdate(GameActions.handleCloseMonsterCombat(gameState))}
+          onClose={() => handleCloseDialog('monsterCombatState')}
           onCancel={() => handleCloseDialog('monsterCombatState')}
           isAttacker={isMyTurn}
         />
       )}
-      {positionDialogState && (
+      {isDialogVisible('positionDialogState') && positionDialogState && (
         <PositionDialog 
           resources={positionDialogState.resources}
           onSelect={(resource) => handleUpdate(GameActions.handleSelectResourceForPosition(gameState, resource))}
@@ -108,7 +126,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
           isMyTurn={isMyTurn}
         />
       )}
-      {collectDialogState?.isOpen && (
+      {isDialogVisible('collectDialogState') && collectDialogState?.isOpen && (
         <CollectDialog
             state={collectDialogState}
             onConfirm={(useProductive) => handleUpdate(GameActions.handleConfirmCollection(gameState, useProductive))}
@@ -116,7 +134,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
             isMyTurn={isMyTurn}
         />
       )}
-      {armySelectionDialogState?.isOpen && (
+      {isDialogVisible('armySelectionDialogState') && armySelectionDialogState?.isOpen && (
         <ArmySelectionDialog
             state={armySelectionDialogState}
             player={localPlayer}
@@ -125,7 +143,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
             isMyTurn={isMyTurn}
         />
       )}
-       {attackSelectionDialogState?.isOpen && (
+       {isDialogVisible('attackSelectionDialogState') && attackSelectionDialogState?.isOpen && (
         <AttackSelectionDialog
             state={attackSelectionDialogState}
             onSelectTarget={(armyId) => handleUpdate(GameActions.handleSelectDefender(gameState, armyId))}
@@ -133,7 +151,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
             isMyTurn={isMyTurn}
         />
       )}
-      {showCardsDialogForPlayer === localPlayer.id && (
+      {isDialogVisible('showCardsDialogForPlayer') && showCardsDialogForPlayer === localPlayer.id && (
         <CardsDialog 
           player={localPlayer}
           onClose={() => handleCloseDialog('showCardsDialogForPlayer')}
@@ -141,7 +159,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
           canUseCards={isMyTurn}
         />
       )}
-      {abilitiesShopState?.isOpen && (
+      {isDialogVisible('abilitiesShopState') && abilitiesShopState?.isOpen && (
         <AbilitiesDialog
           player={localPlayer}
           onClose={() => handleCloseDialog('abilitiesShopState')}
@@ -150,7 +168,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
           isMyTurn={isMyTurn}
         />
       )}
-      {stealResourceDialogState && (
+      {isDialogVisible('stealResourceDialogState') && stealResourceDialogState && (
         <StealResourceDialog
           players={gameState.players.filter(p => p.id !== gameState.currentPlayerIndex)}
           onSteal={(targetPlayerId, resource) => handleUpdate(GameActions.handleStealResource(gameState, targetPlayerId, resource))}
@@ -158,7 +176,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
           isMyTurn={isMyTurn}
         />
       )}
-      {useCardDialogState && (
+      {isDialogVisible('useCardDialogState') && useCardDialogState && (
         <UseCardDialog
           cardName={useCardDialogState.cardName}
           onConfirm={() => handleUpdate(GameActions.handleUseCard(gameState, useCardDialogState.cardName))}
@@ -166,14 +184,14 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
           isMyTurn={isMyTurn}
         />
       )}
-      {showHostLeaveDialog && (
+      {isDialogVisible('showHostLeaveDialog') && showHostLeaveDialog && (
         <HostLeaveDialog
             isLastPlayer={gameState.players.length === 1}
             onConfirm={onConfirmHostLeave}
             onClose={() => handleCloseDialog('showHostLeaveDialog')}
         />
       )}
-      {sabotageDialogState?.isOpen && (
+      {isDialogVisible('sabotageDialogState') && sabotageDialogState?.isOpen && (
         <SabotageDialog
           players={gameState.players.filter(p => p.id !== gameState.currentPlayerIndex)}
           onSabotage={(targetPlayerId) => handleUpdate(GameActions.handleSabotagePlayer(gameState, targetPlayerId))}
@@ -181,7 +199,7 @@ export function GameDialogs({ gameState, setGameState, localPlayer, isMyTurn, on
           isMyTurn={isMyTurn}
         />
       )}
-      {wealthyDialogState?.isOpen && (
+      {isDialogVisible('wealthyDialogState') && wealthyDialogState?.isOpen && (
         <WealthyDialog
           onSelectResource={(resource) => handleUpdate(GameActions.handleGainWealth(gameState, resource))}
           onClose={() => handleCloseDialog('wealthyDialogState')}

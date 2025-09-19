@@ -36,12 +36,20 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [isExiting, setIsExiting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TURN_DURATION);
   const [activeInstructionToastId, setActiveInstructionToastId] = useState<string | null>(null);
+  const [locallyDismissedDialogs, setLocallyDismissedDialogs] = useState<string[]>([]);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setIsPlayerInfoOpen(!isMobile);
   }, [isMobile]);
+  
+  useEffect(() => {
+    // When the turn changes, reset the locally dismissed dialogs for the new active player
+    if (isMyTurn) {
+        setLocallyDismissedDialogs([]);
+    }
+  }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex]);
   
   useEffect(() => {
     if (gameState?.status === 'playing' && isMyTurn) {
@@ -399,6 +407,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         localPlayer={localPlayer}
         isMyTurn={isMyTurn}
         onConfirmHostLeave={handleConfirmHostLeaveGame}
+        locallyDismissedDialogs={locallyDismissedDialogs}
+        setLocallyDismissedDialogs={setLocallyDismissedDialogs}
       />
     </div>
   );
