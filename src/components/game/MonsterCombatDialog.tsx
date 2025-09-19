@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { GameState, Monster } from '@/lib/types';
 import { useState, useEffect } from 'react';
@@ -257,7 +258,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   }
 
   return (
-    <AlertDialog open={true}>
+    <AlertDialog open={true} onOpenChange={isAttacker ? onCancel : onClose}>
       <AlertDialogContent>
         {renderContent()}
       </AlertDialogContent>

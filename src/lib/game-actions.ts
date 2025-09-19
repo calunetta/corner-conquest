@@ -1,4 +1,5 @@
 
+
 import { db, doc, deleteDoc, runTransaction, arrayUnion, getDoc } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation, Island, IslandResource } from './types';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
@@ -354,7 +355,8 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
     } else if (currentTile.type === 'monster' && currentTile.monsters && currentTile.monsters.length > 0) {
       newState.monsterCombatState = {
         attackerId: attacker.id,
-        monster: currentTile.monsters[0], 
+        attackerPosition: selectedArmy.position,
+        monster: currentTile.monsters[0],
         attackerRolls: [],
         monsterRolls: [],
         winnerId: null,
@@ -515,7 +517,7 @@ export function handleTileClick(
             currentPlayer.actionsThisTurn.push('use-card');
             const cardIndex = currentPlayer.specialCards.indexOf('Scout');
             if (cardIndex > -1) {
-                const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+                const usedCard = currentPlayer.specialCards.splice(cardIndex, 1)[0];
                 newState.discardPile.push(usedCard);
             }
              newState = checkAndEndTurnIfNoActions(newState);
@@ -916,6 +918,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
 
     newState.monsterCombatState = {
       attackerId: attacker.id,
+      attackerPosition: selectedArmy.position,
       monster,
       attackerRolls,
       monsterRolls,
@@ -1278,6 +1281,12 @@ export function handleCancelAction(state: GameState): GameState {
     newState.scoutingState = null;
     newState.monsterCombatState = null;
     newState.attackSelectionDialogState = null;
+    newState.positionDialogState = null;
+    newState.collectDialogState = null;
+    newState.useCardDialogState = null;
+    newState.sabotageDialogState = null;
+    newState.wealthyDialogState = null;
+    newState.showHostLeaveDialog = false;
     
     player.hasExtraMove = false;
     player.efficientActive = false;
@@ -1324,9 +1333,16 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             resultSelectedArmyId = null;
             break;
         case 'show-cards':
-             return { newState: { ...gameState, showCardsDialogForPlayer: payload || null }, selectedArmyId: resultSelectedArmyId };
+             resultState = { ...gameState, showCardsDialogForPlayer: payload };
+             break;
+        case 'close-cards':
+            resultState = { ...gameState, showCardsDialogForPlayer: null };
+            break;
         case 'open-abilities-shop':
             resultState = handleOpenAbilitiesShop(gameState);
+            break;
+        case 'close-abilities-shop':
+            resultState = { ...gameState, abilitiesShopState: null };
             break;
         case 'use-card':
             if (['Steal Resource', 'Sabatoge', 'Wealthy'].includes(payload)) {
@@ -1364,12 +1380,18 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             resultState = handleCloseCombat(gameState);
             resultSelectedArmyId = null;
             break;
+        case 'close-combat-viewer':
+            resultState = { ...gameState, combatState: null };
+            break;
         case 'monster-combat-roll':
             resultState = handleMonsterCombatRoll(gameState, payload, selectedArmy);
             break;
         case 'close-monster-combat':
             resultState = handleCloseMonsterCombat(gameState, selectedArmy);
             resultSelectedArmyId = null;
+            break;
+        case 'close-monster-combat-viewer':
+            resultState = { ...gameState, monsterCombatState: null };
             break;
         case 'buy-ability':
             resultState = handleBuyAbility(gameState, payload);
@@ -1393,5 +1415,3 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
     
     return { newState: resultState, selectedArmyId: resultSelectedArmyId };
 }
-
-    

@@ -28,7 +28,7 @@ type ActionConfig = {
 };
 
 export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration, currentAction, selectedArmy }: ActionsPanelProps) {
-  const { currentPlayerIndex, players, map, specialCardsDeck, teleportState, scoutingState, settings } = gameState;
+  const { currentPlayerIndex, players, map, specialCardsDeck, teleportState, scoutingState, settings, showCardsDialogForPlayer, abilitiesShopState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   
   const currentTile = (selectedArmy && map && map[selectedArmy.position.y] && map[selectedArmy.position.y][selectedArmy.position.x])
@@ -63,14 +63,52 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const buyCardLabel = `Buy Card`;
 
   const secondaryActions: ActionConfig[] = [
-    { id: 'upgrade', label: `Upgrade (${currentPlayer.resources.iron}/${upgradeCost} Iron)`, icon: <Zap />, disabled: !canUpgrade, tooltip: "Spend iron to permanently increase your army's attack power by 1. Can only be done once per turn." },
-    { id: 'buy-card', label: buyCardLabel, icon: <ShoppingCart />, disabled: !canBuyCard, tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn." },
-    { id: 'deploy', label: deployLabel, icon: <Sword />, disabled: !canDeploy, tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army." },
-    { id: 'open-abilities-shop', label: 'Abilities Shop', icon: <University />, disabled: false, tooltip: "Purchase permanent passive abilities for your empire." },
+    { 
+      id: 'upgrade', 
+      label: `Upgrade (${currentPlayer.resources.iron}/${upgradeCost} Iron)`, 
+      icon: <Zap />, 
+      disabled: !canUpgrade, 
+      tooltip: "Spend iron to permanently increase your army's attack power by 1. Can only be done once per turn." 
+    },
+    { 
+      id: 'buy-card', 
+      label: buyCardLabel, 
+      icon: <ShoppingCart />, 
+      disabled: !canBuyCard, 
+      tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn." 
+    },
+    { 
+      id: 'deploy', 
+      label: deployLabel, 
+      icon: <Sword />, 
+      disabled: !canDeploy, 
+      tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army." 
+    },
+    { 
+      id: 'open-abilities-shop', 
+      label: 'Abilities Shop', 
+      icon: <University />, 
+      disabled: false, 
+      tooltip: "Purchase permanent passive abilities for your empire.",
+      onClick: () => {
+          const action: GameAction = abilitiesShopState?.isOpen ? 'close-abilities-shop' : 'open-abilities-shop';
+          onAction(action);
+      }
+    },
   ];
   
   const alwaysAvailableActions: ActionConfig[] = [
-      { id: 'show-cards', label: 'Show Cards', icon: <Album />, disabled: currentPlayer.specialCards.length === 0, tooltip: "View your collected special cards. You can use one per turn.", onClick: () => onAction('show-cards', currentPlayer.id) },
+      { 
+        id: 'show-cards', 
+        label: 'Show Cards', 
+        icon: <Album />, 
+        disabled: currentPlayer.specialCards.length === 0, 
+        tooltip: "View your collected special cards. You can use one per turn.", 
+        onClick: () => {
+          const action: GameAction = showCardsDialogForPlayer === currentPlayer.id ? 'close-cards' : 'show-cards';
+          onAction(action, currentPlayer.id);
+        }
+      },
   ]
   
   const timerPercentage = (timeLeft / turnDuration) * 100;

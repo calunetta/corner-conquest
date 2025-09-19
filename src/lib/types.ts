@@ -1,4 +1,5 @@
 
+
 export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'purple' | 'yellow';
@@ -103,6 +104,7 @@ export type CombatState = {
 
 export type MonsterCombatState = {
   attackerId: number;
+  attackerPosition: { x: number, y: number };
   monster: Monster;
   attackerRolls: number[];
   monsterRolls: number[];
@@ -222,12 +224,14 @@ export type GameAction =
   | 'position' 
   | 'buy-card' 
   | 'upgrade' 
-  | 'show-cards' 
+  | 'show-cards'
+  | 'close-cards'
   | 'use-card' 
   | 'confirm-use-card'
   | 'end-turn' 
   | 'teleport' 
-  | 'open-abilities-shop' 
+  | 'open-abilities-shop'
+  | 'close-abilities-shop'
   | 'buy-ability' 
   | 'cancel-action'
   // Dialog actions
@@ -237,8 +241,10 @@ export type GameAction =
   | 'select-defender'
   | 'combat-roll'
   | 'close-combat'
+  | 'close-combat-viewer'
   | 'monster-combat-roll'
   | 'close-monster-combat'
+  | 'close-monster-combat-viewer'
   | 'steal-resource'
   | 'sabotage-player'
   | 'gain-wealth'
