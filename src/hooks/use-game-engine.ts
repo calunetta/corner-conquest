@@ -6,22 +6,65 @@ import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import * as GameActions from '@/lib/game-actions';
-import { isEqual, isObject, transform } from 'lodash';
 
-
-// Utility to find differences between two objects and return an update object for Firestore
-function getChangedFields(oldState: any, newState: any): { [key: string]: any } {
-    function changes(newObj: any, oldObj: any) {
-        return transform(newObj, (result: any, value, key) => {
-            if (!isEqual(value, oldObj[key])) {
-                result[key] =
-                    isObject(value) && isObject(oldObj[key]) && !Array.isArray(value)
-                        ? changes(value, oldObj[key])
-                        : value;
-            }
-        });
+// Custom lightweight deep equal function
+function isEqual(a: any, b: any): boolean {
+    if (a === b) return true;
+    if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
+    if (!a || !b || (typeof a !== 'object' && typeof b !== 'object')) return a === b;
+    if (a === null || a === undefined || b === null || b === undefined) return a === b;
+    if (a.prototype !== b.prototype) return false;
+    let keysA = Object.keys(a);
+    let keysB = Object.keys(b);
+    if (keysA.length !== keysB.length) return false;
+    
+    // Sort keys to ensure order doesn't matter
+    keysA.sort();
+    keysB.sort();
+    
+    for (let i = 0; i < keysA.length; i++) {
+        if (keysA[i] !== keysB[i]) return false;
+        if (!isEqual(a[keysA[i]], b[keysA[i]])) return false;
     }
-    return changes(newState, oldState);
+    
+    return true;
+}
+
+
+// Custom lightweight function to get changed fields for Firestore update
+function getChangedFields(oldState: any, newState: any, path: string = ''): { [key: string]: any } {
+  const changes: { [key: string]: any } = {};
+
+  if (isEqual(oldState, newState)) {
+    return {};
+  }
+
+  // Handle cases where one of the states is not an object or is null
+  if (typeof newState !== 'object' || newState === null || typeof oldState !== 'object' || oldState === null || Array.isArray(newState) || Array.isArray(oldState)) {
+    if (!isEqual(oldState, newState)) {
+        return { [path]: newState };
+    }
+    return {};
+  }
+
+  const allKeys = new Set([...Object.keys(oldState), ...Object.keys(newState)]);
+
+  for (const key of allKeys) {
+    const newPath = path ? `${path}.${key}` : key;
+    const oldValue = oldState[key];
+    const newValue = newState[key];
+
+    if (!isEqual(oldValue, newValue)) {
+      if (typeof newValue !== 'object' || newValue === null || Array.isArray(newValue) || typeof oldValue !== 'object' || oldValue === null || Array.isArray(oldValue)) {
+        changes[newPath] = newValue;
+      } else {
+        const nestedChanges = getChangedFields(oldValue, newValue, newPath);
+        Object.assign(changes, nestedChanges);
+      }
+    }
+  }
+
+  return changes;
 }
 
 
