@@ -608,7 +608,7 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
     const HAND_LIMIT = 7;
 
     if (army.position.x === x && army.position.y === y) {
-        return newState; // Do nothing if moving to the same tile
+        throw new Error("Cannot move to the same tile."); // Do nothing if moving to the same tile
     }
 
     if (army.hasActed && !player.hasExtraMove) {
