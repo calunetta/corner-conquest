@@ -127,17 +127,24 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     const { players, currentPlayerIndex, map, collectDialogState, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
-    if (!collectDialogState && !selectedArmy) return newState;
+    if (!selectedArmy) {
+      throw new Error("No army provided for collection confirmation.");
+    }
+    
+    const position = player.positions.find(p => p.armyId === selectedArmy.id);
+    if (!position) {
+      throw new Error("Position not found to collect from.");
+    }
 
-    const resourceToCollect = collectDialogState ? collectDialogState.resource : null;
-    const armyToUpdate = selectedArmy;
+    let resourceToCollect: IslandResource;
 
-    if (!armyToUpdate) throw new Error("No army provided for collection confirmation.");
-    if (!resourceToCollect) throw new Error("No resource information for collection.");
-
-    const positionIndex = player.positions.findIndex(p => p.armyId === armyToUpdate.id);
-    if (positionIndex === -1) {
-        throw new Error("Position not found to collect from.");
+    if (collectDialogState) {
+        resourceToCollect = collectDialogState.resource;
+    } else {
+        const tile = map[position.y][position.x];
+        const resourceSpot = tile.resources.find(r => r.type === position.resource);
+        if (!resourceSpot) throw new Error("Resource information not found on tile.");
+        resourceToCollect = { type: resourceSpot.type, amount: resourceSpot.amount * newState.settings.baseResourceAmount };
     }
     
     let amountToCollect = resourceToCollect.amount;
@@ -157,12 +164,16 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     }
 
     player.resources[resourceToCollect.type] += amountToCollect;
-    const army = player.armies.find(a => a.id === armyToUpdate.id);
+    const army = player.armies.find(a => a.id === selectedArmy.id);
     if (army) army.hasActed = true;
     newState.log.push(`${player.name} collected ${amountToCollect} ${resourceToCollect.type}.`);
 
-    player.positions.splice(positionIndex, 1);
-    const tile = map[armyToUpdate.position.y][armyToUpdate.position.x];
+    const positionIndex = player.positions.findIndex(p => p.armyId === selectedArmy.id);
+    if (positionIndex > -1) {
+      player.positions.splice(positionIndex, 1);
+    }
+    
+    const tile = map[selectedArmy.position.y][selectedArmy.position.x];
     if (tile.positionedBy) {
         tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === resourceToCollect.type));
     }
@@ -171,6 +182,7 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     newState.collectDialogState = null;
     return checkAndEndTurnIfNoActions(newState);
 }
+
 
 export function handleDeployAction(state: GameState): GameState {
     let newState = { ...state };
@@ -1415,3 +1427,5 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
     
     return { newState: resultState, selectedArmyId: resultSelectedArmyId };
 }
+
+    
