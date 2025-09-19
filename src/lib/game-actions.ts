@@ -1,7 +1,7 @@
 
 
 import { db, doc, deleteDoc, runTransaction, arrayUnion, getDoc } from '@/lib/firebase';
-import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation, Island, IslandResource } from './types';
+import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation, Island, IslandResource, BaseTileInfo } from './types';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
 import { PLAYER_DATA } from './player-data';
 
@@ -186,7 +186,7 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
 
 export function handleDeployAction(state: GameState): GameState {
     let newState = { ...state };
-    const { players, currentPlayerIndex, map, discardPile, settings } = newState;
+    const { players, currentPlayerIndex, map, discardPile, settings, baseTiles } = newState;
     const player = players[currentPlayerIndex];
     
     if (player.actionsThisTurn.includes('deploy')) throw new Error("You can only deploy one army per turn.");
@@ -208,7 +208,7 @@ export function handleDeployAction(state: GameState): GameState {
     const newArmyId = player.armies.length > 0 ? Math.max(...player.armies.map(a => a.id)) + 1 : 0;
     const newArmy: Army = { id: newArmyId, position: {x: 0, y: 0}, hasActed: true }; 
     
-    const baseTile = (newState.baseTiles || []).find(b => b.owner === player.id);
+    const baseTile = (baseTiles || []).find(b => b.owner === player.id);
     if (!baseTile) throw new Error("Base not found!");
     newArmy.position = {x: baseTile.x, y: baseTile.y};
 
@@ -504,7 +504,7 @@ export function handleTileClick(
     currentSelectedArmy: Army | null,
     currentPossibleMoves: {x: number, y: number}[]
 ): TileClickResult {
-    let newState = { ...state };
+    let newState = { ...state, id: state.id + '_dialog' };
     const { players, currentPlayerIndex, teleportState, scoutingState } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const clickedTile = newState.map[y][x];
@@ -786,7 +786,7 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean, selecte
 
 export function handleCloseCombat(state: GameState): GameState {
     let newState = { ...state };
-    const { combatState, players, map } = newState;
+    const { combatState, players, map, baseTiles } = newState;
     if (!combatState || combatState.phase !== 'results' || combatState.winnerId === null) {
         return { ...newState, combatState: null };
     }
@@ -807,7 +807,7 @@ export function handleCloseCombat(state: GameState): GameState {
         newState.log.push(`${winner.name} receives 5 VP for defeating ${loser.name}!`);
 
         const losingArmy = loser.armies.find(a => a.id === defendingArmyId);
-        const baseTile = (newState.baseTiles || []).find(b => b.owner === loserId);
+        const baseTile = (baseTiles || []).find(b => b.owner === loserId);
 
         if (losingArmy && baseTile) {
             const deathAnim: DeathAnimation = {
@@ -835,7 +835,7 @@ export function handleCloseCombat(state: GameState): GameState {
         winner.victoryPoints += 5;
         newState.log.push(`${winner.name} receives 5 VP for defeating ${loser.name}!`);
         
-        const baseTile = (newState.baseTiles || []).find(b => b.owner === loserId);
+        const baseTile = (baseTiles || []).find(b => b.owner === loserId);
          if (attackingArmy && baseTile) {
             const deathAnim: DeathAnimation = {
                 id: `army-${loser.id}-${attackingArmy.id}`,
@@ -946,7 +946,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
 
 export function handleCloseMonsterCombat(state: GameState, selectedArmy: Army | null): GameState {
     let newState = { ...state };
-    const { monsterCombatState } = newState;
+    const { monsterCombatState, baseTiles } = newState;
     if (!monsterCombatState || monsterCombatState.phase !== 'results') {
         return { ...newState, monsterCombatState: null };
     }
@@ -980,7 +980,7 @@ export function handleCloseMonsterCombat(state: GameState, selectedArmy: Army | 
           newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
         }
     } else {
-        const baseTile = (newState.baseTiles || []).find(t => t.owner === attacker.id);
+        const baseTile = (baseTiles || []).find(t => t.owner === attacker.id);
         if (baseTile) {
             const deathAnim: DeathAnimation = {
                 id: `army-${attacker.id}-${selectedArmy.id}`,
@@ -1348,9 +1348,6 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
         case 'close-abilities-shop':
              resultState = { ...gameState, abilitiesShopState: null };
             break;
-        case 'close-cards':
-             resultState = { ...gameState, showCardsDialogForPlayer: null };
-            break;
         case 'use-card':
             if (['Steal Resource', 'Sabatoge', 'Wealthy'].includes(payload)) {
                 let dialogState: Partial<GameState> = {};
@@ -1422,3 +1419,5 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
     
     return { newState: resultState, selectedArmyId: resultSelectedArmyId };
 }
+
+    
