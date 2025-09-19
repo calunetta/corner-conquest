@@ -116,11 +116,13 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             try {
                 console.log(`Bot: Army ${army.id} attacking monster.`);
                 const useDecideCard = botPlayer.specialCards.includes('Decide Dice Roll');
+                const useOvercomeCard = botPlayer.specialCards.includes('Overcome');
+                
                 state = GameActions.handleMonsterCombatRoll(state, {
                     monster: currentTile.monsters[0],
                     useDecideCard: useDecideCard,
                     decidedValue: 6, // Bot always chooses 6
-                    useOvercomeCard: false, // For simplicity, bot doesn't use Overcome
+                    useOvercomeCard: useOvercomeCard,
                     useWarChief: false, // For simplicity
                 }, army);
                 
@@ -199,5 +201,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     console.log(`Bot: No valid actions found. Ending turn.`);
     return GameActions.handleEndTurn(state);
 }
+
+    
 
     

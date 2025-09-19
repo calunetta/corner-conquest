@@ -213,7 +213,14 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         clearInterval(timerRef.current);
       }
     };
-  }, [isMyTurn, gameState?.status, gameState?.turn, gameState?.currentPlayerIndex, handleAction]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMyTurn, gameState?.status, gameState?.turn, gameState?.currentPlayerIndex]);
+  
+   useEffect(() => {
+    if (gameState?.status === 'finished' && timerRef.current) {
+        clearInterval(timerRef.current);
+    }
+   }, [gameState?.status])
 
   useEffect(() => {
     if (timeLeft === 0 && isMyTurn) {
@@ -461,5 +468,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
 
     

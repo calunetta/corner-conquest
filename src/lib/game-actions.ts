@@ -236,14 +236,14 @@ export function handleDeployAction(state: GameState): GameState {
 
 export function handleBuyCardAction(state: GameState): GameState {
     let newState = { ...state };
-    const { players, currentPlayerIndex, specialCardsDeck, discardPile } = newState;
+    const { players, currentPlayerIndex, specialCardsDeck, discardPile, debugMode } = newState;
     const player = players[currentPlayerIndex];
     const HAND_LIMIT = 7;
 
     if (player.actionsThisTurn.includes('buy-card')) throw new Error("You can only buy one card per turn.");
     if (player.resources.gems < 10) throw new Error("Not enough gems to buy a card.");
     if (specialCardsDeck.length === 0 && discardPile.length === 0) throw new Error("There are no special cards left in the game.");
-    if (player.specialCards.length >= HAND_LIMIT) {
+    if (player.specialCards.length >= HAND_LIMIT && !debugMode) {
         newState.log.push(`${player.name} tried to buy a card, but their hand is full!`);
         return newState;
     }
@@ -579,7 +579,7 @@ function revealIsland(state: GameState, x: number, y: number, player: Player): G
     }
 
     if (tile.type === 'special') {
-        if (player.specialCards.length >= HAND_LIMIT) {
+        if (player.specialCards.length >= HAND_LIMIT && !newState.debugMode) {
              newState.log.push(`${player.name} discovered a special island, but their hand is full!`);
         } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
             if (newState.specialCardsDeck.length === 0) {
@@ -628,7 +628,7 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
     }
     
     if (targetTile.type === 'special') {
-         if (player.specialCards.length >= HAND_LIMIT) {
+         if (player.specialCards.length >= HAND_LIMIT && !newState.debugMode) {
              newState.log.push(`${player.name} landed on a special island, but their hand is full!`);
          } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
             if (newState.specialCardsDeck.length === 0) {
@@ -1151,7 +1151,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     }
     
     if (targetTile.type === 'special') {
-        if (player.specialCards.length >= HAND_LIMIT) {
+        if (player.specialCards.length >= HAND_LIMIT && !newState.debugMode) {
              newState.log.push(`${player.name} teleported to a special island, but their hand is full!`);
         } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
             if (newState.specialCardsDeck.length === 0) {
@@ -1181,6 +1181,7 @@ interface PlayerExitParams {
 export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerExitParams): Promise<boolean> {
     try {
         const gameDocRef = doc(db, 'games', gameId);
+        let isLastPlayer = false;
         
         await runTransaction(db, async (transaction) => {
             const gameDoc = await transaction.get(gameDocRef);
@@ -1190,7 +1191,8 @@ export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerEx
             const currentState = gameDoc.data() as FirestoreGameState;
             
             if (currentState.players.length <= 1) {
-                // If this is the last player, the doc will be deleted outside the transaction.
+                isLastPlayer = true;
+                // Do not delete in transaction. We will do it outside.
                 return; 
             }
 
@@ -1203,8 +1205,7 @@ export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerEx
             });
         });
 
-        const finalDoc = await getDoc(gameDocRef);
-        if (!finalDoc.exists() || finalDoc.data().players.length <= 1) {
+        if (isLastPlayer) {
              await deleteDoc(gameDocRef);
              const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
              await deleteDoc(staticDocRef);
@@ -1350,3 +1351,5 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             return gameState;
     }
 }
+
+    
