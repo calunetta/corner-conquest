@@ -117,8 +117,9 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
                 console.log(`Bot: Army ${army.id} attacking monster.`);
                 const useDecideCard = botPlayer.specialCards.includes('Decide Dice Roll');
                 const useOvercomeCard = botPlayer.specialCards.includes('Overcome');
-                
-                state = GameActions.handleMonsterCombatRoll(state, {
+
+                let combatSimState = JSON.parse(JSON.stringify(state));
+                combatSimState = GameActions.handleMonsterCombatRoll(combatSimState, {
                     monster: currentTile.monsters[0],
                     useDecideCard: useDecideCard,
                     decidedValue: 6, // Bot always chooses 6
@@ -126,8 +127,8 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
                     useWarChief: false, // For simplicity
                 }, army);
                 
-                if (state.monsterCombatState) {
-                     state = GameActions.handleCloseMonsterCombat(state, army);
+                if (combatSimState.monsterCombatState) {
+                     state = GameActions.handleCloseMonsterCombat(combatSimState, army);
                 }
                 return GameActions.handleEndTurn(state);
             } catch (e) {
@@ -201,7 +202,3 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     console.log(`Bot: No valid actions found. Ending turn.`);
     return GameActions.handleEndTurn(state);
 }
-
-    
-
-    
