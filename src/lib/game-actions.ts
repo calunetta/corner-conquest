@@ -138,12 +138,12 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
 
     let resourceToCollect: IslandResource;
 
-    if (collectDialogState) {
+    if (collectDialogState && collectDialogState.isOpen) {
         resourceToCollect = collectDialogState.resource;
     } else {
         const tile = map[position.y][position.x];
         const resourceSpot = tile.resources.find(r => r.type === position.resource);
-        if (!resourceSpot) throw new Error("Resource information not found on tile.");
+        if (!resourceSpot) throw new Error("No resource information for collection.");
         resourceToCollect = { type: resourceSpot.type, amount: resourceSpot.amount * newState.settings.baseResourceAmount };
     }
     
@@ -208,7 +208,7 @@ export function handleDeployAction(state: GameState): GameState {
     const newArmyId = player.armies.length > 0 ? Math.max(...player.armies.map(a => a.id)) + 1 : 0;
     const newArmy: Army = { id: newArmyId, position: {x: 0, y: 0}, hasActed: true }; 
     
-    const baseTile = map.flat().find(t => t.type === 'base' && t.owner === player.id);
+    const baseTile = (newState.baseTiles || []).find(b => b.owner === player.id);
     if (!baseTile) throw new Error("Base not found!");
     newArmy.position = {x: baseTile.x, y: baseTile.y};
 
@@ -422,32 +422,36 @@ export function handleEndTurn(state: GameState): GameState {
         }
     }
     
+    // Reset all temporary single-turn effects for the current player
     currentPlayer.hasExtraMove = false;
     currentPlayer.efficientActive = false; 
     currentPlayer.masterBuilderActive = false;
     currentPlayer.reinforceActive = false;
+    
+    // Reset army and action state for the current player before moving to the next
+    currentPlayer.armies.forEach((army: Army) => army.hasActed = false);
+    currentPlayer.actionsThisTurn = [];
 
+
+    // Determine the next player
     let nextPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
-
     let nextPlayer = newState.players[nextPlayerIndex];
+
+    // Handle Sabotage
     if (nextPlayer.isSabotaged) {
         nextPlayer.isSabotaged = false; 
         newState.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
-        
         nextPlayerIndex = (nextPlayerIndex + 1) % newState.players.length;
+        nextPlayer = newState.players[nextPlayerIndex];
     }
     
     newState.currentPlayerIndex = nextPlayerIndex;
-    const finalNextPlayer = newState.players[nextPlayerIndex];
 
     if (newState.currentPlayerIndex === 0) {
       newState.turn += 1;
     }
-
-    finalNextPlayer.armies.forEach((army: Army) => army.hasActed = false);
-    finalNextPlayer.actionsThisTurn = [];
     
-    newState.log.push(`It's now ${finalNextPlayer.name}'s turn.`);
+    newState.log.push(`It's now ${nextPlayer.name}'s turn.`);
     
     return { ...newState, teleportState: null };
 }
@@ -490,7 +494,8 @@ function getPossibleMoves(state: GameState, army: Army): { x: number, y: number 
     }
     return moves.filter(move => {
         const tile = map[move.y][move.x];
-        return tile.type !== 'base' || tile.owner === currentPlayer.id;
+        const baseTileInfo = (state.baseTiles || []).find(b => b.x === tile.x && b.y === tile.y);
+        return !baseTileInfo || baseTileInfo.owner === currentPlayer.id;
     });
 }
 
@@ -522,7 +527,7 @@ export function handleTileClick(
     if (scoutingState && scoutingState.count > 0 && clickedTile.isHidden) {
         newState = revealIsland(newState, x, y, currentPlayer);
         newState.scoutingState!.count--;
-        newState.log.push(`${currentPlayer.name} revealed a tile at (${x},${y}) with Scout. ${scoutingState.count} reveals left.`);
+        newState.log.push(`${currentPlayer.name} revealed a tile at (${x},${y}) with Scout. ${newState.scoutingState.count} reveals left.`);
         if (newState.scoutingState!.count === 0) {
             newState.scoutingState = null;
             newState.log.push(`Scouting complete.`);
@@ -805,7 +810,7 @@ export function handleCloseCombat(state: GameState): GameState {
         newState.log.push(`${winner.name} receives 5 VP for defeating ${loser.name}!`);
 
         const losingArmy = loser.armies.find(a => a.id === defendingArmyId);
-        const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
+        const baseTile = (newState.baseTiles || []).find(b => b.owner === loserId);
 
         if (losingArmy && baseTile) {
             const deathAnim: DeathAnimation = {
@@ -833,7 +838,7 @@ export function handleCloseCombat(state: GameState): GameState {
         winner.victoryPoints += 5;
         newState.log.push(`${winner.name} receives 5 VP for defeating ${loser.name}!`);
         
-        const baseTile = map.flat().find(t => t.type === 'base' && t.owner === loserId);
+        const baseTile = (newState.baseTiles || []).find(b => b.owner === loserId);
          if (attackingArmy && baseTile) {
             const deathAnim: DeathAnimation = {
                 id: `army-${loser.id}-${attackingArmy.id}`,
@@ -978,7 +983,7 @@ export function handleCloseMonsterCombat(state: GameState, selectedArmy: Army | 
           newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
         }
     } else {
-        const baseTile = newState.map.flat().find(t => t.type === 'base' && t.owner === attacker.id);
+        const baseTile = (newState.baseTiles || []).find(t => t.owner === attacker.id);
         if (baseTile) {
             const deathAnim: DeathAnimation = {
                 id: `army-${attacker.id}-${selectedArmy.id}`,
