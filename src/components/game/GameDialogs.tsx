@@ -49,7 +49,8 @@ export function GameDialogs({
     wealthyDialogState,
     armySelectionDialogState,
     attackSelectionDialogState,
-    status
+    status,
+    players
   } = gameState;
   
   const isDialogVisible = (key: keyof GameState) => {
@@ -57,6 +58,8 @@ export function GameDialogs({
   }
   
   const isAttacker = isMyTurn && (!!combatState || !!monsterCombatState);
+
+  const playerForCardsDialog = showCardsDialogForPlayer !== null ? players.find(p => p.id === showCardsDialogForPlayer) : null;
 
   return (
     <>
@@ -111,12 +114,12 @@ export function GameDialogs({
             isMyTurn={isMyTurn}
         />
       )}
-      {isDialogVisible('showCardsDialogForPlayer') && showCardsDialogForPlayer === localPlayer.id && (
+      {isDialogVisible('showCardsDialogForPlayer') && playerForCardsDialog && (
         <CardsDialog 
-          player={localPlayer}
+          player={playerForCardsDialog}
           onClose={() => handleAction('close-cards')}
           onUseCard={(cardName) => handleAction('use-card', cardName)}
-          canUseCards={isMyTurn}
+          canUseCards={isMyTurn && playerForCardsDialog.id === localPlayer.id}
         />
       )}
       {isDialogVisible('abilitiesShopState') && abilitiesShopState?.isOpen && (
