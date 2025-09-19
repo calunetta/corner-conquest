@@ -1,5 +1,4 @@
 
-
 import { db, doc, deleteDoc, runTransaction, arrayUnion, getDoc } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation, Island, IslandResource } from './types';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
@@ -516,7 +515,7 @@ export function handleTileClick(
             currentPlayer.actionsThisTurn.push('use-card');
             const cardIndex = currentPlayer.specialCards.indexOf('Scout');
             if (cardIndex > -1) {
-                const usedCard = currentPlayer.specialCards.splice(cardIndex, 1)[0];
+                const usedCard = player.specialCards.splice(cardIndex, 1)[0];
                 newState.discardPile.push(usedCard);
             }
              newState = checkAndEndTurnIfNoActions(newState);
@@ -1394,3 +1393,5 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
     
     return { newState: resultState, selectedArmyId: resultSelectedArmyId };
 }
+
+    
