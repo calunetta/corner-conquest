@@ -22,28 +22,26 @@ function reconstructMap(flatMap: Island[]): Island[][] {
 }
 
 export function addPlayerToGame(
-    firestoreState: Omit<FirestoreGameState, 'id' | 'name'>, 
-    mapData: Island[],
+    firestoreState: Omit<FirestoreGameState, 'id' | 'name'>,
     playerInfo: { playerId: string, name: string }
-): { newGameState: Omit<FirestoreGameState, 'id' | 'name'> | null, updatedMap: Island[] | null } {
+): { newGameState: Omit<FirestoreGameState, 'id' | 'name'> | null } {
     
     if (firestoreState.status !== 'waiting') {
-        return { newGameState: null, updatedMap: null }; // Game has started
+        return { newGameState: null }; // Game has started
     }
     if (firestoreState.players.length >= firestoreState.maxPlayers) {
-        return { newGameState: null, updatedMap: null }; // Game is full
+        return { newGameState: null }; // Game is full
     }
     if (firestoreState.players.some(p => p.playerId === playerInfo.playerId)) {
-        return { newGameState: firestoreState, updatedMap: mapData }; // Player is already in the game
+        return { newGameState: firestoreState }; // Player is already in the game
     }
 
     let newGameState = JSON.parse(JSON.stringify(firestoreState));
-    let newMap = reconstructMap(JSON.parse(JSON.stringify(mapData)));
 
     const usedColors = newGameState.players.map((p: Player) => p.color);
     const availableColors = PLAYER_COLORS.filter(c => !usedColors.includes(c));
 
-    if (availableColors.length === 0) return { newGameState: null, updatedMap: null };
+    if (availableColors.length === 0) return { newGameState: null };
 
     const newPlayerColor = availableColors[0];
     const newPlayerSeatIndex = newGameState.players.length;
@@ -67,22 +65,19 @@ export function addPlayerToGame(
         newGameState.debugMode
     );
     
-    newMap[newPlayerPos.y][newPlayerPos.x] = {
-        ...newMap[newPlayerPos.y][newPlayerPos.x],
-        type: 'base',
-        owner: newPlayerSeatIndex,
-        isHidden: false,
-        occupants: [{ playerId: newPlayerSeatIndex, armyId: newPlayer.armies[0].id }],
-        resources: [
-            { type: 'gems', amount: 1 }, 
-            { type: 'iron', amount: 1 }, 
-            { type: 'food', amount: 1 }
-        ],
-    };
-    newMap[newPlayerPos.y][newPlayerPos.x].isHidden = false;
-
     newGameState.players.push(newPlayer);
     newGameState.log.push(`${playerInfo.name} has joined the game!`);
+    
+    // Add base info to dynamic state
+    if (!newGameState.baseTiles) {
+        newGameState.baseTiles = [];
+    }
+    newGameState.baseTiles.push({
+        owner: newPlayerSeatIndex,
+        x: newPlayerPos.x,
+        y: newPlayerPos.y,
+    });
+
 
     if (newGameState.players.length === newGameState.maxPlayers) {
         newGameState.log.push(`The game is full! Starting now.`);
@@ -90,5 +85,5 @@ export function addPlayerToGame(
         newGameState.status = 'playing';
     }
     
-    return { newGameState, updatedMap: newMap.flat() };
+    return { newGameState };
 }

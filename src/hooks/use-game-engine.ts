@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import * as GameActions from '@/lib/game-actions';
 import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
+import { getChangedFields } from '@/lib/utils';
+
 
 function reconstructMap(flatMap: Island[]): Island[][] {
     const map: Island[][] = Array.from({ length: MAP_ROWS }, () => []);
@@ -99,22 +101,21 @@ export function useGameEngine(gameId: string, playerId: string | null) {
       finalState = newStateOrFn;
     }
 
-    if (!finalState) return;
+    if (!finalState || !currentState) return;
     
     const { map: newMap, ...newFirestoreState } = finalState;
+    const { map: oldMap, ...oldFirestoreState } = currentState;
+    
+    const changedData = getChangedFields(oldFirestoreState, newFirestoreState);
+
+    if (Object.keys(changedData).length === 0) {
+        return; // No changes to update
+    }
 
     try {
         const gameDocRef = doc(db, 'games', gameId);
         
-        // This is the critical change: Update all dynamic fields at once.
-        // This guarantees consistency and avoids partial state updates.
-        await updateDoc(gameDocRef, {
-            ...newFirestoreState
-        });
-
-        // The map is static and should not change during the game after initialization.
-        // If map updates were necessary, they would be handled separately.
-        // For now, we assume map updates only happen on player join, which is handled in lobby.
+        await updateDoc(gameDocRef, changedData);
 
     } catch (error: any) {
         console.error("Error updating game state:", error);

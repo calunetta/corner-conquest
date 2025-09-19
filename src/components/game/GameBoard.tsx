@@ -62,6 +62,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setSelectedTile(null);
         setPossibleMoves([]);
         setCurrentAction(null);
+        setCardsDialogPlayerId(null);
         if (gameState) {
             // Dismiss all active dialogs locally when it's not our turn
             const dialogKeys = Object.keys(gameState).filter(k => 
@@ -152,7 +153,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setPossibleMoves(result.possibleMoves);
         setCurrentAction(result.currentAction);
         
-        await setGameState(result.newState);
+        if (result.newState.id !== gameState.id) {
+          await setGameState(result.newState);
+        }
 
         if (activeInstructionToastId) {
             dismiss(activeInstructionToastId);

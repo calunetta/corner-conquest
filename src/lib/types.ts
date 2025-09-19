@@ -179,6 +179,12 @@ export type DeathAnimation = {
     sprite: string;
 }
 
+export type BaseTileInfo = {
+    owner: number;
+    x: number;
+    y: number;
+}
+
 export type GameState = {
   id: string;
   name: string;
@@ -188,6 +194,7 @@ export type GameState = {
   settings: GameSettings;
   map: Island[][];
   players: Player[];
+  baseTiles?: BaseTileInfo[];
   currentPlayerIndex: number;
   turn: number;
   log: string[];
