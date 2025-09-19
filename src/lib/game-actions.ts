@@ -5,8 +5,6 @@ import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbiliti
 import { MAP_COLS, MAP_ROWS } from './game-logic';
 import { PLAYER_DATA } from './player-data';
 
-// --- Action Helpers ---
-
 export const getSelectedArmy = (state: GameState, selectedArmyId?: number | null): Army | null => {
     const armyId = selectedArmyId ?? null;
     if (armyId === null) return null;
@@ -15,7 +13,6 @@ export const getSelectedArmy = (state: GameState, selectedArmyId?: number | null
     return player.armies.find(a => a.id === armyId) || null;
 }
 
-// --- Auto-End Turn Logic ---
 function canPlayerPerformAnyAction(state: GameState): boolean {
     const player = state.players[state.currentPlayerIndex];
 
@@ -62,21 +59,19 @@ function checkAndEndTurnIfNoActions(state: GameState): GameState {
     return state;
 }
 
-// --- Main Action Handlers ---
-
 export function handlePositionAction(state: GameState, selectedArmy: Army | null): GameState {
   const { players, currentPlayerIndex, map } = state;
   const player = players[currentPlayerIndex];
   
   if (!selectedArmy) throw new Error("No army selected.");
   if (selectedArmy.hasActed) throw new Error("This army has already acted this turn.");
+  if (player.positions.some(p => p.armyId === selectedArmy.id)) {
+    throw new Error("This army is already positioned.");
+  }
   
   const tile = map[selectedArmy.position.y][selectedArmy.position.x];
   if ((tile.type !== 'resource' && tile.type !== 'base') || tile.resources.length === 0) {
     throw new Error("You can only position on an island with resources.");
-  }
-  if (player.positions.some(p => p.armyId === selectedArmy.id)) {
-    throw new Error("This army is already positioned.");
   }
    if (tile.monsters && tile.monsters.length > 0) {
     throw new Error("You cannot position on an island with monsters.");
@@ -605,10 +600,9 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
     let newState = { ...state };
     const { players, currentPlayerIndex, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
-    const HAND_LIMIT = 7;
 
     if (army.position.x === x && army.position.y === y) {
-        throw new Error("Cannot move to the same tile."); // Do nothing if moving to the same tile
+        throw new Error("Cannot move to the same tile.");
     }
 
     if (army.hasActed && !player.hasExtraMove) {
@@ -636,7 +630,7 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
     }
     
     if (targetTile.type === 'special') {
-         if (player.specialCards.length >= HAND_LIMIT && !newState.debugMode) {
+         if (player.specialCards.length >= 7 && !newState.debugMode) {
              newState.log.push(`${player.name} landed on a special island, but their hand is full!`);
          } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
             if (newState.specialCardsDeck.length === 0) {
@@ -670,8 +664,6 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
 
     return checkAndEndTurnIfNoActions(newState);
 }
-
-// --- Dialog-related Actions ---
 
 export function handleSelectArmy(state: GameState, armyId: number): GameState {
     let newState = { ...state };
@@ -839,7 +831,6 @@ export function handleCloseCombat(state: GameState): GameState {
     newState.combatState = null;
     return checkAndEndTurnIfNoActions(newState);
 }
-
 
 export function handleMonsterCombatRoll(state: GameState, payload: {monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean}, selectedArmy: Army | null): GameState {
     const newState = { ...state };
@@ -1029,21 +1020,24 @@ export const handleUseCard = (state: GameState, cardName: string) => {
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
             break;
         default:
-            shouldRecycleCard = true; // For cards that do nothing on their own
+            shouldRecycleCard = true;
             break;
     }
-
-    if (shouldRecycleCard) {
+    
+    if (['Extra Move', 'Teleport', 'Reinforce', 'Scout', 'Efficient', 'Master Builder'].includes(cardName)) {
+        // These cards are consumed upon activation, not upon final action
         const usedCard = player.specialCards.splice(cardIndex, 1)[0];
         discardPile.push(usedCard);
         player.actionsThisTurn.push('use-card');
-        newState.log.push(`${player.name} used the '${cardName}' card.`);
+    } else {
+        shouldRecycleCard = true;
     }
+
 
     newState.useCardDialogState = null;
     newState.showCardsDialogForPlayer = null;
 
-    if (shouldRecycleCard) {
+    if (!['Sabatoge', 'Wealthy', 'Steal Resource'].includes(cardName)) {
         return checkAndEndTurnIfNoActions(newState);
     }
     return newState;
@@ -1128,24 +1122,13 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
 
 export const handleTeleport = (state: GameState, x: number, y: number): GameState => {
     let newState = { ...state };
-    const { players, currentPlayerIndex, teleportState, map, discardPile } = newState;
+    const { players, currentPlayerIndex, teleportState, map } = newState;
     const player = players[currentPlayerIndex];
-    const HAND_LIMIT = 7;
 
     if (!teleportState || teleportState.armyId === null) return newState;
     
-    const canUseCard = !player.actionsThisTurn.includes('use-card');
-    if (!canUseCard) throw new Error("You have already used a card this turn.");
-
     const armyToMove = player.armies.find(a => a.id === teleportState.armyId);
     if (!armyToMove) return newState;
-
-    const cardIndex = player.specialCards.indexOf('Teleport');
-    if (cardIndex === -1) throw new Error('Teleport card not found.');
-    
-    const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-    discardPile.push(usedCard);
-    player.actionsThisTurn.push('use-card');
     
     const oldTile = map[armyToMove.position.y][armyToMove.position.x];
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== armyToMove.id);
@@ -1159,7 +1142,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     }
     
     if (targetTile.type === 'special') {
-        if (player.specialCards.length >= HAND_LIMIT && !newState.debugMode) {
+        if (player.specialCards.length >= 7 && !newState.debugMode) {
              newState.log.push(`${player.name} teleported to a special island, but their hand is full!`);
         } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
             if (newState.specialCardsDeck.length === 0) {
@@ -1200,7 +1183,6 @@ export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerEx
             
             if (currentState.players.length <= 1) {
                 isLastPlayer = true;
-                // Do not delete in transaction. We will do it outside.
                 return; 
             }
 
@@ -1273,15 +1255,20 @@ export function handleBuyAbility(state: GameState, abilityName: keyof PassiveAbi
 export function handleCancelAction(state: GameState): GameState {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
-
-    if (newState.teleportState) {
-        newState.teleportState = null;
-    } else if (newState.scoutingState) {
-        newState.scoutingState = null;
-    } else if (newState.monsterCombatState) {
-        newState.monsterCombatState = null;
+    
+    // Reverse card consumption if applicable
+    if (newState.teleportState || newState.scoutingState) {
+        const cardName = newState.teleportState ? 'Teleport' : 'Scout';
+        const usedCardIndex = player.actionsThisTurn.indexOf('use-card');
+        if (usedCardIndex > -1) player.actionsThisTurn.splice(usedCardIndex, 1);
+        
+        const cardFromDiscard = newState.discardPile.pop();
+        if(cardFromDiscard) player.specialCards.push(cardFromDiscard);
     }
     
+    newState.teleportState = null;
+    newState.scoutingState = null;
+    newState.monsterCombatState = null;
     player.hasExtraMove = false;
     player.efficientActive = false;
     player.masterBuilderActive = false;
@@ -1318,14 +1305,14 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
         case 'open-abilities-shop':
             return handleOpenAbilitiesShop(gameState);
         case 'use-card':
-            if (payload === 'Steal Resource') {
-                return { ...gameState, stealResourceDialogState: { targetPlayerId: null }, showCardsDialogForPlayer: null };
-            } else if (payload === 'Sabatoge') {
-                return { ...gameState, sabotageDialogState: { isOpen: true }, showCardsDialogForPlayer: null };
-            } else if (payload === 'Wealthy') {
-                return { ...gameState, wealthyDialogState: { isOpen: true }, showCardsDialogForPlayer: null };
+            if (['Steal Resource', 'Sabatoge', 'Wealthy'].includes(payload)) {
+                let dialogState: Partial<GameState> = {};
+                if (payload === 'Steal Resource') dialogState = { stealResourceDialogState: { targetPlayerId: null } };
+                if (payload === 'Sabatoge') dialogState = { sabotageDialogState: { isOpen: true } };
+                if (payload === 'Wealthy') dialogState = { wealthyDialogState: { isOpen: true } };
+                return { ...gameState, ...dialogState, showCardsDialogForPlayer: null, useCardDialogState: null };
             } else {
-                return { ...gameState, useCardDialogState: { cardName: payload }, showCardsDialogForPlayer: null };
+                 return handleUseCard(gameState, payload);
             }
         case 'confirm-use-card':
             return handleUseCard(gameState, payload);

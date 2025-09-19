@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { GameAction, GameState, Army } from '@/lib/types';
@@ -41,7 +42,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [showConfirmExitDialog, setShowConfirmExitDialog] = useState(false);
   const [isPerformingAction, setIsPerformingAction] = useState(false);
   
-  // UI state that doesn't need to be in Firestore
   const [selectedTile, setSelectedTile] = useState<{ x: number, y: number } | null>(null);
   const [selectedArmyId, setSelectedArmyId] = useState<number | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<{ x: number, y: number }[]>([]);
@@ -54,16 +54,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMobile]);
   
   useEffect(() => {
-    // When the turn changes, or it becomes not my turn, reset local state
     if (isMyTurn) {
         setLocallyDismissedDialogs([]);
     } else {
-        // Clear all local state if it's not my turn
         setSelectedArmyId(null);
         setSelectedTile(null);
         setPossibleMoves([]);
         setCurrentAction(null);
-        // Also clear any dialogs that might have been open for the previous player
         setLocallyDismissedDialogs(Object.keys(gameState || {}).filter(k => k.endsWith('State') || k.endsWith('Dialog')));
     }
   }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex]);
@@ -74,11 +71,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     return player?.armies.find(a => a.id === selectedArmyId) || null;
   }, [gameState, selectedArmyId, playerId]);
 
-  // When game state changes, re-evaluate local state
   useEffect(() => {
     if (isMyTurn && gameState) {
         const myPlayer = gameState.players[gameState.currentPlayerIndex];
-        // If an army was auto-selected and now there are more, deselect to force choice
         if (myPlayer.armies.length > 1 && selectedArmyId !== null) {
             const armyStillExists = myPlayer.armies.some(a => a.id === selectedArmyId);
             if (!armyStillExists) {
@@ -86,14 +81,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 setPossibleMoves([]);
                 setSelectedTile(null);
             }
-        // Auto-select if only one army exists
         } else if (myPlayer.armies.length === 1 && selectedArmyId === null) {
              setSelectedArmyId(myPlayer.armies[0].id);
         } else if (myPlayer.armies.length === 1 && selectedArmyId !== myPlayer.armies[0].id) {
             setSelectedArmyId(myPlayer.armies[0].id);
         }
     } else if (!isMyTurn) {
-        // Clear local selections if it's not my turn
         setSelectedArmyId(null);
         setSelectedTile(null);
         setPossibleMoves([]);
@@ -105,25 +98,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleAction = useCallback(async (action: GameAction, payload?: any) => {
     if (!gameState || !localPlayer || isPerformingAction) return;
 
-    if (action === 'show-cards' || action === 'open-abilities-shop') {
-        const result = GameActions.handleGameAction({ action, gameState, selectedArmy, payload });
-        setGameState(result);
-        return;
-    }
-
-    if (!isMyTurn) {
+    if (!isMyTurn && !['show-cards', 'open-abilities-shop'].includes(action)) {
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
       return;
     }
     
     try {
-        if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card', 'show-cards', 'open-abilities-shop', 'cancel-action'].includes(action)) {
-            toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
-            return;
-        }
-
-        setIsPerformingAction(true); // Lock actions
-
+        setIsPerformingAction(true);
         const result = GameActions.handleGameAction({
             action,
             gameState,
@@ -131,28 +112,29 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             payload
         });
         
-        let newState = result;
+        let newState;
         if ('newState' in result) {
-            // This was a local UI change, not a state-changing action
             setSelectedArmyId(result.selectedArmyId);
             setSelectedTile(result.selectedTile);
             setPossibleMoves(result.possibleMoves);
             setCurrentAction(result.currentAction);
             newState = result.newState;
         } else {
-             // This was a state-changing action, so reset local UI state
-             if (action === 'deploy') {
-                setSelectedArmyId(null); // Force re-selection after deploying
+             newState = result;
+             if (action !== 'show-cards') {
+                setSelectedArmyId(null);
+                setPossibleMoves([]);
+                setSelectedTile(null);
+                setCurrentAction(null);
              }
         }
         
-        // This will trigger the Firestore update via the hook
         await setGameState(newState);
 
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
     } finally {
-        setIsPerformingAction(false); // Unlock actions
+        setIsPerformingAction(false);
     }
   }, [gameState, localPlayer, isMyTurn, selectedArmy, toast, setGameState, isPerformingAction]);
   
@@ -168,7 +150,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setPossibleMoves(result.possibleMoves);
         setCurrentAction(result.currentAction);
         
-        // Update game state to show dialogs or for state-changing clicks
         await setGameState(result.newState);
 
         if (activeInstructionToastId) {
@@ -229,9 +210,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, isMyTurn]);
 
-  // Effect to show teleport instructions via toast
   useEffect(() => {
-    // Clean up previous toast if it exists
     if (activeInstructionToastId) {
         dismiss(activeInstructionToastId);
         setActiveInstructionToastId(null);
@@ -468,7 +447,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    
-
-    

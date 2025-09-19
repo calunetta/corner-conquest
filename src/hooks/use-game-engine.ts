@@ -7,11 +7,11 @@ import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import * as GameActions from '@/lib/game-actions';
-import { isEqual, isObject } from 'lodash';
 import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
 
 function reconstructMap(flatMap: Island[]): Island[][] {
     const map: Island[][] = Array.from({ length: MAP_ROWS }, () => []);
+    if (!flatMap) return map;
     flatMap.forEach(island => {
         if (!map[island.y]) {
             map[island.y] = [];
@@ -19,41 +19,6 @@ function reconstructMap(flatMap: Island[]): Island[][] {
         map[island.y][island.x] = island;
     });
     return map;
-}
-
-// Custom lightweight function to get changed fields for Firestore update
-function getChangedFields(oldState: any, newState: any): { [key: string]: any } {
-    const changes: { [key: string]: any } = {};
-
-    function recurse(current: any, previous: any, path: string = '') {
-        // Only recurse on objects
-        if (!isObject(current) || !isObject(previous)) {
-            if (!isEqual(current, previous)) {
-                changes[path] = current;
-            }
-            return;
-        }
-
-        const allKeys = new Set([...Object.keys(current), ...Object.keys(previous)]);
-        allKeys.forEach(key => {
-            const newPath = path ? `${path}.${key}` : key;
-            const currentValue = current[key];
-            const previousValue = previous[key];
-
-            if (!isEqual(currentValue, previousValue)) {
-                // If it's an object (but not an array or null), recurse. Otherwise, set the change.
-                if (isObject(currentValue) && !Array.isArray(currentValue) && currentValue !== null &&
-                    isObject(previousValue) && !Array.isArray(previousValue) && previousValue !== null) {
-                    recurse(currentValue, previousValue, newPath);
-                } else {
-                    changes[newPath] = currentValue;
-                }
-            }
-        });
-    }
-
-    recurse(newState, oldState);
-    return changes;
 }
 
 export function useGameEngine(gameId: string, playerId: string | null) {
@@ -95,7 +60,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
                     const firestoreState = docSnapshot.data() as FirestoreGameState;
                     setGameState({
                         ...firestoreState,
-                        map: mapData!, // Assume mapData is loaded
+                        map: mapData!,
                     });
                 } else {
                     toast({ title: "Game Over", description: "This game session no longer exists." });
@@ -125,41 +90,31 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
   const updateGameState = useCallback(async (newStateOrFn: GameState | null | ((prevState: GameState | null) => GameState | null)) => {
     const currentState = gameStateRef.current;
-    if (currentState === null) {
-         console.warn("Attempted to update a null game state.");
-         return;
-    }
     
     let finalState: GameState | null = null;
     if (typeof newStateOrFn === 'function') {
+        if (!currentState) return; 
         finalState = newStateOrFn(currentState);
     } else {
       finalState = newStateOrFn;
     }
 
-    if (!finalState) {
-        console.warn("Attempted to update game state with null.");
-        return;
-    }
+    if (!finalState) return;
     
-    const { map: oldMap, ...oldFirestoreState } = currentState;
     const { map: newMap, ...newFirestoreState } = finalState;
 
-    const mapChanges = getChangedFields({ map: oldMap }, { map: newMap });
-
     try {
-        const changes = getChangedFields(oldFirestoreState, newFirestoreState);
+        const gameDocRef = doc(db, 'games', gameId);
         
-        if (Object.keys(changes).length > 0) {
-            const gameDocRef = doc(db, 'games', gameId);
-            await updateDoc(gameDocRef, changes);
-        }
+        // This is the critical change: Update all dynamic fields at once.
+        // This guarantees consistency and avoids partial state updates.
+        await updateDoc(gameDocRef, {
+            ...newFirestoreState
+        });
 
-        if (Object.keys(mapChanges).length > 0) {
-            const mapDocRef = doc(db, 'games', gameId, 'static', 'map');
-            await updateDoc(mapDocRef, { map: newMap.flat() });
-        }
-
+        // The map is static and should not change during the game after initialization.
+        // If map updates were necessary, they would be handled separately.
+        // For now, we assume map updates only happen on player join, which is handled in lobby.
 
     } catch (error: any) {
         console.error("Error updating game state:", error);

@@ -9,7 +9,7 @@ import { Separator } from '../ui/separator';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 
 type ActionsPanelProps = {
-  onAction: (action: GameAction) => void;
+  onAction: (action: GameAction, payload?: any) => void;
   gameState: GameState;
   isMyTurn: boolean;
   timeLeft: number;
@@ -30,7 +30,6 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const { currentPlayerIndex, players, map, specialCardsDeck, teleportState, scoutingState, settings } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   
-  // Defensive check to prevent crash if map or army position is invalid
   const currentTile = (selectedArmy && map && map[selectedArmy.position.y] && map[selectedArmy.position.y][selectedArmy.position.x])
     ? map[selectedArmy.position.y][selectedArmy.position.x] 
     : null;
