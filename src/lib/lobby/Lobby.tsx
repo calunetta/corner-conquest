@@ -93,6 +93,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
 
       try {
         const gameDocRef = doc(db, 'games', gameId);
+        const mapDocRef = doc(db, 'games', gameId, 'static', 'map');
 
         await runTransaction(db, async (transaction) => {
             const gameDoc = await transaction.get(gameDocRef);
@@ -103,13 +104,36 @@ export function Lobby({ onJoinGame }: LobbyProps) {
 
             const firestoreState = gameDoc.data() as Omit<FirestoreGameState, 'id' | 'name'>;
             
-            const { newGameState } = addPlayerToGame(firestoreState, { playerId, name: username });
+            if (firestoreState.status !== 'waiting') {
+                 throw new Error("This game has already started or is no longer available.");
+            }
+            if (firestoreState.players.length >= firestoreState.maxPlayers) {
+                throw new Error("This game is full.");
+            }
+            if (firestoreState.players.some(p => p.playerId === playerId)) {
+                // Player is already in, just let them proceed
+                return;
+            }
 
-            if (!newGameState) {
-                 throw new Error("Could not add player to game. The room might be full or closed.");
+            const mapDoc = await transaction.get(mapDocRef);
+            if (!mapDoc.exists()) {
+                throw new Error("Game data is missing.");
+            }
+            const mapData = mapDoc.data().map as Island[];
+            
+            const { newGameState, updatedMap } = addPlayerToGame(firestoreState, mapData, { playerId, name: username });
+
+            if (!newGameState || !updatedMap) {
+                 throw new Error("Could not add player to game. The room might be full or color unavailable.");
             }
             
-            transaction.update(gameDocRef, { ...newGameState });
+            transaction.update(gameDocRef, {
+                players: newGameState.players,
+                log: newGameState.log,
+            });
+            transaction.update(mapDocRef, {
+                map: updatedMap,
+            });
         });
         
         onJoinGame(gameId);

@@ -7,8 +7,7 @@ import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import * as GameActions from '@/lib/game-actions';
-import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
-import { getChangedFields } from '@/lib/utils';
+import { MAP_COLS, MAP_ROWS } from './game-logic';
 
 
 function reconstructMap(flatMap: Island[]): Island[][] {
@@ -91,35 +90,25 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   }, [gameId, toast, router]);
 
   const updateGameState = useCallback(async (newStateOrFn: GameState | null | ((prevState: GameState | null) => GameState | null)) => {
-    const currentState = gameStateRef.current;
-    
     let finalState: GameState | null = null;
     if (typeof newStateOrFn === 'function') {
+        const currentState = gameStateRef.current;
         if (!currentState) return; 
         finalState = newStateOrFn(currentState);
     } else {
       finalState = newStateOrFn;
     }
 
-    if (!finalState || !currentState) return;
+    if (!finalState) return;
     
-    const { map: newMap, ...newFirestoreState } = finalState;
-    const { map: oldMap, ...oldFirestoreState } = currentState;
-    
-    const changedData = getChangedFields(oldFirestoreState, newFirestoreState);
-
-    if (Object.keys(changedData).length === 0) {
-        return; // No changes to update
-    }
+    const { map, ...firestoreState } = finalState;
 
     try {
         const gameDocRef = doc(db, 'games', gameId);
-        
-        await updateDoc(gameDocRef, changedData);
-
-    } catch (error: any) {
+        await updateDoc(gameDocRef, { ...firestoreState });
+    } catch (error) {
         console.error("Error updating game state:", error);
-        toast({ title: "Sync Error", description: `Could not save game state: ${error.message}`, variant: 'destructive' });
+        toast({ title: "Sync Error", description: "Could not save game state.", variant: 'destructive' });
     }
   }, [gameId, toast]);
 

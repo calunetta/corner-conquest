@@ -1352,7 +1352,10 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             resultState = handleOpenAbilitiesShop(gameState);
             break;
         case 'close-abilities-shop':
-            resultState = { ...gameState, abilitiesShopState: null };
+             resultState = { ...gameState, abilitiesShopState: null };
+            break;
+        case 'close-cards':
+             resultState = { ...gameState, showCardsDialogForPlayer: null };
             break;
         case 'use-card':
             if (['Steal Resource', 'Sabatoge', 'Wealthy'].includes(payload)) {
