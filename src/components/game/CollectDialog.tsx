@@ -19,9 +19,10 @@ type CollectDialogProps = {
   state: CollectDialogState;
   onConfirm: (useProductive: boolean) => void;
   onClose: () => void;
+  isMyTurn: boolean;
 };
 
-export function CollectDialog({ state, onConfirm, onClose }: CollectDialogProps) {
+export function CollectDialog({ state, onConfirm, onClose, isMyTurn }: CollectDialogProps) {
   const [useProductive, setUseProductive] = useState(false);
   const { resource, hasProductiveCard } = state;
 
@@ -47,14 +48,20 @@ export function CollectDialog({ state, onConfirm, onClose }: CollectDialogProps)
 
         {hasProductiveCard && (
             <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
-                <Checkbox id="use-productive-card" checked={useProductive} onCheckedChange={(checked) => setUseProductive(!!checked)} />
+                <Checkbox id="use-productive-card" checked={useProductive} onCheckedChange={(checked) => setUseProductive(!!checked)} disabled={!isMyTurn} />
                 <Label htmlFor="use-productive-card" className='font-bold'>Use 'Productive' card to double resources?</Label>
             </div>
         )}
 
         <AlertDialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => onConfirm(useProductive)}>Confirm Collect</Button>
+          {isMyTurn ? (
+            <>
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button onClick={() => onConfirm(useProductive)}>Confirm Collect</Button>
+            </>
+          ) : (
+             <Button variant="outline" onClick={onClose}>Close</Button>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

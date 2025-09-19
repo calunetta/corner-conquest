@@ -18,9 +18,10 @@ type AttackSelectionDialogProps = {
   state: AttackSelectionDialogState;
   onSelectTarget: (armyId: number) => void;
   onClose: () => void;
+  isMyTurn: boolean;
 };
 
-export function AttackSelectionDialog({ state, onSelectTarget, onClose }: AttackSelectionDialogProps) {
+export function AttackSelectionDialog({ state, onSelectTarget, onClose, isMyTurn }: AttackSelectionDialogProps) {
     const { armies, defendingPlayer } = state;
 
     const getArmyStatus = (army: Army): { text: string; icon: React.ReactNode } => {
@@ -50,8 +51,8 @@ export function AttackSelectionDialog({ state, onSelectTarget, onClose }: Attack
             return (
               <Card
                 key={army.id}
-                className="cursor-pointer p-2 transition-all hover:bg-muted"
-                onClick={() => onSelectTarget(army.id)}
+                className={`p-2 transition-all ${isMyTurn ? 'cursor-pointer hover:bg-muted' : 'cursor-not-allowed opacity-50'}`}
+                onClick={() => isMyTurn && onSelectTarget(army.id)}
               >
                 <CardContent className="flex flex-col items-center gap-2 p-1 pt-2">
                   <Swords className="h-8 w-8" style={{ color: defendingPlayer.color }} />

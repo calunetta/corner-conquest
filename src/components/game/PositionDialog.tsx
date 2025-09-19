@@ -1,3 +1,4 @@
+
 'use client';
 import type { ResourceType, IslandResource } from '@/lib/types';
 import {
@@ -16,9 +17,10 @@ type PositionDialogProps = {
   resources: IslandResource[];
   onSelect: (resource: ResourceType) => void;
   onClose: () => void;
+  isMyTurn: boolean;
 };
 
-export function PositionDialog({ resources, onSelect, onClose }: PositionDialogProps) {
+export function PositionDialog({ resources, onSelect, onClose, isMyTurn }: PositionDialogProps) {
   return (
     <AlertDialog open={true} onOpenChange={onClose}>
       <AlertDialogContent>
@@ -36,6 +38,7 @@ export function PositionDialog({ resources, onSelect, onClose }: PositionDialogP
               variant="outline"
               className="flex h-24 w-24 flex-col items-center justify-center gap-2"
               onClick={() => onSelect(resource.type)}
+              disabled={!isMyTurn}
             >
               <div className="flex items-center gap-1">
                 <ResourceIcon type={resource.type} className="h-8 w-8" />

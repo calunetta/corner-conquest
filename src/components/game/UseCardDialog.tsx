@@ -1,3 +1,4 @@
+
 'use client';
 import { SPECIAL_CARD_DESCRIPTIONS } from '@/lib/card-data';
 import {
@@ -10,14 +11,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '../ui/button';
 
 type UseCardDialogProps = {
   cardName: string;
   onConfirm: () => void;
   onClose: () => void;
+  isMyTurn: boolean;
 };
 
-export function UseCardDialog({ cardName, onConfirm, onClose }: UseCardDialogProps) {
+export function UseCardDialog({ cardName, onConfirm, onClose, isMyTurn }: UseCardDialogProps) {
   const description = SPECIAL_CARD_DESCRIPTIONS[cardName] || 'No description available.';
 
   return (
@@ -28,8 +31,14 @@ export function UseCardDialog({ cardName, onConfirm, onClose }: UseCardDialogPro
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Confirm</AlertDialogAction>
+          {isMyTurn ? (
+            <>
+              <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onConfirm}>Confirm</AlertDialogAction>
+            </>
+          ) : (
+             <Button variant="outline" onClick={onClose}>Close</Button>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

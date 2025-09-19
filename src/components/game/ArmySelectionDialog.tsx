@@ -19,9 +19,10 @@ type ArmySelectionDialogProps = {
   player: Player;
   onSelectArmy: (armyId: number) => void;
   onClose: () => void;
+  isMyTurn: boolean;
 };
 
-export function ArmySelectionDialog({ state, player, onSelectArmy, onClose }: ArmySelectionDialogProps) {
+export function ArmySelectionDialog({ state, player, onSelectArmy, onClose, isMyTurn }: ArmySelectionDialogProps) {
     const { armies, x, y } = state;
 
     const getArmyStatus = (army: Army): { text: string; icon: React.ReactNode } => {
@@ -48,11 +49,11 @@ export function ArmySelectionDialog({ state, player, onSelectArmy, onClose }: Ar
         <div className="grid grid-cols-2 gap-4 py-4 sm:grid-cols-3">
           {armies.map((army) => {
             const status = getArmyStatus(army);
-            const isSelectable = !army.hasActed || !!player.teleportState; // Can select acted army for teleport
+            const isSelectable = (!army.hasActed || !!player.teleportState) && isMyTurn; // Can select acted army for teleport
             return (
               <Card
                 key={army.id}
-                className={`cursor-pointer p-2 transition-all hover:bg-muted ${!isSelectable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`p-2 transition-all ${isSelectable ? 'cursor-pointer hover:bg-muted' : 'opacity-50 cursor-not-allowed'}`}
                 onClick={() => isSelectable && onSelectArmy(army.id)}
               >
                 <CardContent className="flex flex-col items-center gap-2 p-1 pt-2">

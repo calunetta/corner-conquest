@@ -1,3 +1,4 @@
+
 'use client';
 import type { Player, ResourceType } from '@/lib/types';
 import { useState } from 'react';
@@ -17,9 +18,10 @@ type StealResourceDialogProps = {
   players: Player[];
   onSteal: (targetPlayerId: number, resource: ResourceType) => void;
   onClose: () => void;
+  isMyTurn: boolean;
 };
 
-export function StealResourceDialog({ players, onSteal, onClose }: StealResourceDialogProps) {
+export function StealResourceDialog({ players, onSteal, onClose, isMyTurn }: StealResourceDialogProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [selectedResource, setSelectedResource] = useState<ResourceType | null>(null);
 
@@ -40,8 +42,8 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
         {players.map((player) => (
           <Card
             key={player.id}
-            className={`cursor-pointer p-2 transition-all hover:bg-muted ${selectedPlayer?.id === player.id ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => handleSelectPlayer(player)}
+            className={`p-2 transition-all ${isMyTurn ? 'cursor-pointer hover:bg-muted' : 'cursor-not-allowed opacity-50'} ${selectedPlayer?.id === player.id ? 'ring-2 ring-primary' : ''}`}
+            onClick={() => isMyTurn && handleSelectPlayer(player)}
           >
             <CardContent className="flex flex-col items-center gap-2 p-1">
               <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ backgroundColor: player.color, color: 'white' }}>
@@ -54,7 +56,7 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
       </div>
       <AlertDialogFooter>
         <Button variant="outline" onClick={onClose}>Cancel</Button>
-        <Button disabled={!selectedPlayer} onClick={() => { /* No-op, just moves to next screen */ }}>
+        <Button disabled={!selectedPlayer || !isMyTurn} onClick={() => { /* No-op, just moves to next screen */ }}>
           Select Resources
         </Button>
       </AlertDialogFooter>
@@ -75,8 +77,8 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
             key={resource}
             variant={selectedResource === resource ? 'default' : 'outline'}
             className="flex h-24 w-24 flex-col items-center justify-center gap-2"
-            onClick={() => setSelectedResource(resource)}
-            disabled={selectedPlayer!.resources[resource] === 0}
+            onClick={() => isMyTurn && setSelectedResource(resource)}
+            disabled={selectedPlayer!.resources[resource] === 0 || !isMyTurn}
           >
             <ResourceIcon type={resource} className="h-8 w-8" />
             <span className="capitalize">{resource}</span>
@@ -87,8 +89,8 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
         ))}
       </div>
       <AlertDialogFooter>
-        <Button variant="outline" onClick={() => setSelectedPlayer(null)}>Back</Button>
-        <Button disabled={!selectedResource} onClick={() => onSteal(selectedPlayer!.id, selectedResource!)}>
+        <Button variant="outline" onClick={() => setSelectedPlayer(null)} disabled={!isMyTurn}>Back</Button>
+        <Button disabled={!selectedResource || !isMyTurn} onClick={() => onSteal(selectedPlayer!.id, selectedResource!)}>
           Steal {selectedResource}
         </Button>
       </AlertDialogFooter>
@@ -98,7 +100,7 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
   return (
     <AlertDialog open={true} onOpenChange={onClose}>
       <AlertDialogContent>
-        {selectedPlayer ? renderResourceSelection() : renderPlayerSelection()}
+        {selectedPlayer && isMyTurn ? renderResourceSelection() : renderPlayerSelection()}
       </AlertDialogContent>
     </AlertDialog>
   );

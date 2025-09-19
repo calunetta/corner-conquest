@@ -22,6 +22,7 @@ type AbilitiesDialogProps = {
   onClose: () => void;
   onBuyAbility: (abilityName: keyof PassiveAbilities) => void;
   gameState: GameState;
+  isMyTurn: boolean;
 };
 
 type AbilityInfo = {
@@ -35,7 +36,7 @@ const ALL_ABILITIES: AbilityInfo[] = [
     { name: 'collector', title: 'Collector', description: 'Passively collect 1 of each available resource from every island you have an army on at the end of your turn.' },
 ]
 
-export function AbilitiesDialog({ player, onClose, onBuyAbility, gameState }: AbilitiesDialogProps) {
+export function AbilitiesDialog({ player, onClose, onBuyAbility, gameState, isMyTurn }: AbilitiesDialogProps) {
   const { toast } = useToast();
   const { settings } = gameState;
   const cost = settings.abilityCost;
@@ -77,7 +78,7 @@ export function AbilitiesDialog({ player, onClose, onBuyAbility, gameState }: Ab
                                     <span className="font-bold">Owned</span>
                                 </div>
                             ) : (
-                                <Button size="sm" onClick={() => handleBuy(ability)} disabled={!canAfford}>
+                                <Button size="sm" onClick={() => handleBuy(ability)} disabled={!canAfford || !isMyTurn}>
                                     <Gem className="mr-2 h-4 w-4" />
                                     Purchase ({cost})
                                 </Button>

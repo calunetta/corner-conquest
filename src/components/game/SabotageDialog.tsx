@@ -17,9 +17,10 @@ type SabotageDialogProps = {
   players: Player[];
   onSabotage: (targetPlayerId: number) => void;
   onClose: () => void;
+  isMyTurn: boolean;
 };
 
-export function SabotageDialog({ players, onSabotage, onClose }: SabotageDialogProps) {
+export function SabotageDialog({ players, onSabotage, onClose, isMyTurn }: SabotageDialogProps) {
 
   return (
     <AlertDialog open={true} onOpenChange={onClose}>
@@ -35,8 +36,8 @@ export function SabotageDialog({ players, onSabotage, onClose }: SabotageDialogP
           {players.map((player) => (
             <Card
               key={player.id}
-              className="cursor-pointer p-2 transition-all hover:bg-muted"
-              onClick={() => onSabotage(player.id)}
+              className={`p-2 transition-all ${isMyTurn ? 'cursor-pointer hover:bg-muted' : 'cursor-not-allowed opacity-50'}`}
+              onClick={() => isMyTurn && onSabotage(player.id)}
             >
               <CardContent className="flex flex-col items-center gap-2 p-1">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ backgroundColor: player.color, color: 'white' }}>

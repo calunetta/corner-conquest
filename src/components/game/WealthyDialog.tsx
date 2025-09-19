@@ -16,11 +16,12 @@ import { ResourceIcon } from '../icons';
 type WealthyDialogProps = {
   onSelectResource: (resource: ResourceType) => void;
   onClose: () => void;
+  isMyTurn: boolean;
 };
 
 const RESOURCES: ResourceType[] = ['gems', 'iron', 'food'];
 
-export function WealthyDialog({ onSelectResource, onClose }: WealthyDialogProps) {
+export function WealthyDialog({ onSelectResource, onClose, isMyTurn }: WealthyDialogProps) {
   return (
     <AlertDialog open={true} onOpenChange={onClose}>
       <AlertDialogContent>
@@ -38,6 +39,7 @@ export function WealthyDialog({ onSelectResource, onClose }: WealthyDialogProps)
               variant="outline"
               className="flex h-24 w-24 flex-col items-center justify-center gap-2"
               onClick={() => onSelectResource(resource)}
+              disabled={!isMyTurn}
             >
               <ResourceIcon type={resource} className="h-8 w-8" />
               <span className="capitalize">{resource}</span>
