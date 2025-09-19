@@ -1,7 +1,7 @@
 
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import type { GameAction, GameState } from '@/lib/types';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import type { GameAction, GameState, Army } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
 import { ActionsPanel } from './ActionsPanel';
@@ -18,6 +18,7 @@ import { startGame } from '@/lib/game-initializer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import Image from 'next/image';
+import { getSelectedArmy as getSelectedArmyUtil } from '@/lib/game-actions';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
 
@@ -38,6 +39,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [activeInstructionToastId, setActiveInstructionToastId] = useState<string | null>(null);
   const [locallyDismissedDialogs, setLocallyDismissedDialogs] = useState<string[]>([]);
   
+  // UI state that doesn't need to be in Firestore
+  const [selectedTile, setSelectedTile] = useState<{ x: number, y: number } | null>(null);
+  const [selectedArmyId, setSelectedArmyId] = useState<number | null>(null);
+  const [possibleMoves, setPossibleMoves] = useState<{ x: number, y: number }[]>([]);
+  const [currentAction, setCurrentAction] = useState<GameAction | null>(null);
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -50,98 +57,56 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setLocallyDismissedDialogs([]);
     }
   }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex]);
-  
+
+  const selectedArmy = useMemo(() => {
+    if (!gameState || selectedArmyId === null) return null;
+    const player = gameState.players[gameState.currentPlayerIndex];
+    return player?.armies.find(a => a.id === selectedArmyId) || null;
+  }, [gameState, selectedArmyId]);
+
+  // When game state changes, re-evaluate local state
   useEffect(() => {
-    if (gameState?.status === 'playing' && isMyTurn) {
-      setTimeLeft(TURN_DURATION); // Reset timer at the start of your turn
-
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-
-      timerRef.current = setInterval(() => {
-        setTimeLeft(prevTime => {
-            if (prevTime <= 1) {
-                clearInterval(timerRef.current!);
-                handleAction('end-turn');
-                return 0;
+    if (isMyTurn && gameState) {
+        // If an army was auto-selected and now there are more, deselect to force choice
+        if (gameState.players[gameState.currentPlayerIndex].armies.length > 1 && selectedArmyId !== null) {
+            const armyStillExists = gameState.players[gameState.currentPlayerIndex].armies.some(a => a.id === selectedArmyId);
+            if (!armyStillExists) {
+                setSelectedArmyId(null);
+                setPossibleMoves([]);
+                setSelectedTile(null);
             }
-            return prevTime - 1;
-        });
-      }, 1000);
-
-    } else {
-        // Not my turn or game not playing, clear interval
-        if (timerRef.current) {
-            clearInterval(timerRef.current);
+        } else if (gameState.players[gameState.currentPlayerIndex].armies.length === 1 && selectedArmyId === null) {
+             setSelectedArmyId(gameState.players[gameState.currentPlayerIndex].armies[0].id);
         }
-        setTimeLeft(TURN_DURATION);
-    }
-    
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMyTurn, gameState?.status, gameState?.turn, gameState?.currentPlayerIndex]);
-
-  useEffect(() => {
-    if (timeLeft === 0 && isMyTurn) {
-        toast({ title: "Time's up!", description: "Your turn has ended automatically."});
-    }
-  // handleAction is not stable, so we disable the lint rule here.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft, isMyTurn]);
-
-  // Effect to show teleport instructions via toast
-  useEffect(() => {
-    // Clean up previous toast if it exists
-    if (activeInstructionToastId) {
-        dismiss(activeInstructionToastId);
-        setActiveInstructionToastId(null);
-    }
-    
-    if (gameState?.teleportState && isMyTurn) {
-      if (gameState.teleportState.armyId === null) {
-        // This check prevents showing the toast again if it was just shown.
-        if (gameState.currentAction !== 'teleport-initiated') {
-            const { id } = toast({ title: 'Teleport: Step 1', description: 'Select an army on the map to teleport.' });
-            setActiveInstructionToastId(id);
-            setGameState({...gameState, currentAction: 'teleport-initiated'});
-        }
-      } else {
-        const { id } = toast({ title: 'Teleport: Step 2', description: 'Now, select any destination tile on the map.' });
-        setActiveInstructionToastId(id);
-      }
+    } else if (!isMyTurn) {
+        // Clear local selections if it's not my turn
+        setSelectedArmyId(null);
+        setSelectedTile(null);
+        setPossibleMoves([]);
+        setCurrentAction(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState?.teleportState, isMyTurn]);
-
-   useEffect(() => {
-    if (gameState?.status === 'playing') {
-        const winner = gameState.players.find(p => p.victoryPoints >= gameState.settings.victoryPointGoal);
-        if (winner && !gameState.winner) {
-            setGameState({ ...gameState, winner, status: 'finished' });
-        }
-    }
-   // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, [gameState?.players, gameState?.status, gameState?.settings.victoryPointGoal]);
-   
-  const handleAction = async (action: GameAction) => {
+  }, [isMyTurn, gameState?.turn]);
+  
+  const handleAction = useCallback(async (action: GameAction, payload?: any) => {
     if (!gameState || !localPlayer) return;
+
+    const createNewState = (handler: (state: GameState, ...args: any[]) => GameState) => {
+        setGameState(currentGameState => {
+            if (!currentGameState) return null;
+            return handler(currentGameState, payload);
+        });
+    };
     
     if (action === 'cancel-action') {
         const { newState, toastMessage } = GameActions.handleCancelAction(gameState);
-        if (toastMessage) {
-            toast({ title: "Action Cancelled", description: toastMessage });
-        }
+        if (toastMessage) toast({ title: "Action Cancelled", description: toastMessage });
         setGameState(newState);
         return;
     }
 
     if (action === 'show-cards') {
-        setGameState({ ...gameState, showCardsDialogForPlayer: localPlayer.id });
+        setGameState(gs => gs ? { ...gs, showCardsDialogForPlayer: localPlayer.id } : null);
         return;
     }
     
@@ -160,65 +125,129 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     }
     
     try {
-        let newState = { ...gameState };
-        
-        const selectedArmy = GameActions.getSelectedArmy(newState);
         if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card', 'show-cards', 'open-abilities-shop'].includes(action)) {
             toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
             return;
         }
 
-        switch(action) {
-            case 'position':
-                newState = GameActions.handlePositionAction(newState);
-                break;
-            case 'collect':
-                newState = GameActions.handleCollectAction(newState);
-                break;
-            case 'deploy':
-                newState = GameActions.handleDeployAction(newState);
-                break;
-            case 'buy-card':
-                newState = GameActions.handleBuyCardAction(newState);
-                break;
-            case 'upgrade':
-                newState = GameActions.handleUpgradeAction(newState);
-                break;
-            case 'attack':
-                newState = GameActions.handleAttackAction(newState);
-                break;
-            case 'end-turn':
-                newState = GameActions.handleEndTurn(newState);
-                break;
-            case 'use-card':
-                // This case is handled inside the CardsDialog for now
-                break;
-            case 'teleport':
-                 // This action is handled by the CardsDialog to initiate teleport mode
-                 break;
-            default:
-                newState = { ...newState, currentAction: action };
+        const newState = GameActions.handleGameAction({
+            action,
+            gameState,
+            selectedArmy,
+            payload
+        });
+
+        // For actions that open dialogs, we just update the shared state
+        if (['position', 'collect', 'attack', 'show-cards', 'open-abilities-shop', 'use-card'].includes(action)) {
+             setGameState(newState);
+        } else {
+             // For actions that change the game logic, we update and clear local UI state
+            setGameState(newState);
+            setSelectedArmyId(null);
+            setSelectedTile(null);
+            setPossibleMoves([]);
+            setCurrentAction(null);
         }
-        setGameState(newState);
+
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
     }
-  };
+  }, [gameState, localPlayer, isMyTurn, selectedArmy, toast, setGameState]);
   
   const handleTileClick = (x: number, y: number) => {
     if (!gameState || !isMyTurn || gameState.status !== 'playing') return;
+    
     try {
-        const newState = GameActions.handleTileClick(gameState, x, y, localPlayer?.id ?? -1);
+        const result = GameActions.handleTileClick(gameState, x, y, localPlayer?.id ?? -1, selectedArmy, possibleMoves);
+        
+        // Update shared game state
+        setGameState(result.newState);
+
+        // Update local UI state based on the result
+        setSelectedArmyId(result.selectedArmyId);
+        setSelectedTile(result.selectedTile);
+        setPossibleMoves(result.possibleMoves);
+        setCurrentAction(result.currentAction);
+
         if (activeInstructionToastId) {
             dismiss(activeInstructionToastId);
             setActiveInstructionToastId(null);
         }
-        setGameState(newState);
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
     }
   };
   
+  useEffect(() => {
+    if (gameState?.status === 'playing' && isMyTurn) {
+      setTimeLeft(TURN_DURATION); 
+
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prevTime => {
+            if (prevTime <= 1) {
+                clearInterval(timerRef.current!);
+                handleAction('end-turn');
+                return 0;
+            }
+            return prevTime - 1;
+        });
+      }, 1000);
+
+    } else {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
+        setTimeLeft(TURN_DURATION);
+    }
+    
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isMyTurn, gameState?.status, gameState?.turn, gameState?.currentPlayerIndex, handleAction]);
+
+  useEffect(() => {
+    if (timeLeft === 0 && isMyTurn) {
+        toast({ title: "Time's up!", description: "Your turn has ended automatically."});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, isMyTurn]);
+
+  // Effect to show teleport instructions via toast
+  useEffect(() => {
+    // Clean up previous toast if it exists
+    if (activeInstructionToastId) {
+        dismiss(activeInstructionToastId);
+        setActiveInstructionToastId(null);
+    }
+    
+    if (gameState?.teleportState && isMyTurn) {
+      if (gameState.teleportState.armyId === null) {
+        const { id } = toast({ title: 'Teleport: Step 1', description: 'Select an army on the map to teleport.' });
+        setActiveInstructionToastId(id);
+      } else {
+        const { id } = toast({ title: 'Teleport: Step 2', description: 'Now, select any destination tile on the map.' });
+        setActiveInstructionToastId(id);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.teleportState, isMyTurn]);
+
+   useEffect(() => {
+    if (gameState?.status === 'playing') {
+        const winner = gameState.players.find(p => p.victoryPoints >= gameState.settings.victoryPointGoal);
+        if (winner && !gameState.winner) {
+            setGameState(gs => gs ? { ...gs, winner, status: 'finished' } : null);
+        }
+    }
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [gameState?.players, gameState?.status, gameState?.settings.victoryPointGoal]);
+   
   const handleStartGame = async () => {
     if (!gameState || !isHost) return;
     const newState = startGame(gameState, localPlayer?.name || 'The host');
@@ -230,7 +259,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (!gameState || !localPlayer) return;
 
     if (isHost && gameState.status === 'waiting') {
-        setGameState({ ...gameState, showHostLeaveDialog: true });
+        setGameState(gs => gs ? { ...gs, showHostLeaveDialog: true } : null);
         return;
     }
 
@@ -242,8 +271,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     setIsExiting(true);
     await GameActions.handlePlayerExit({
       gameId,
-      gameState,
-      setGameState,
       localPlayer,
       isHost,
       onExit,
@@ -254,7 +281,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleConfirmHostLeaveGame = async () => {
       if (!gameState) return;
       setIsExiting(true);
-      await GameActions.handleConfirmHostLeave(gameState, gameId, onExit);
+      await GameActions.handleConfirmHostLeave(gameId, onExit);
       setIsExiting(false);
   }
 
@@ -267,7 +294,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     );
   }
 
-  const { players, currentPlayerIndex, log, possibleMoves, selectedTile, selectedArmyId, status, maxPlayers, teleportState, scoutingState, armySelectionDialogState, winner, settings, deathAnimations } = gameState;
+  const { players, currentPlayerIndex, log, status, maxPlayers, teleportState, scoutingState, armySelectionDialogState, winner, settings, deathAnimations } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
@@ -361,7 +388,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                           ) : (
                               <>
                                   <p className='text-base font-semibold sm:text-lg'>Turn {gameState.turn}: <span style={{color: currentPlayer.color}}>{currentPlayer.name}'s turn</span></p>
-                                  {gameState.currentAction && <p className='text-sm text-muted-foreground sm:text-base'>Current Action: {gameState.currentAction}</p>}
+                                  {currentAction && <p className='text-sm text-muted-foreground sm:text-base'>Current Action: {currentAction}</p>}
                               </>
                           )}
                       </>
@@ -375,6 +402,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                     isMyTurn={isMyTurn && status === 'playing'}
                     timeLeft={timeLeft}
                     turnDuration={TURN_DURATION}
+                    currentAction={currentAction}
+                    selectedArmy={selectedArmy}
                 />
                 <GameLog logs={log} />
                 </aside>
@@ -409,6 +438,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         onConfirmHostLeave={handleConfirmHostLeaveGame}
         locallyDismissedDialogs={locallyDismissedDialogs}
         setLocallyDismissedDialogs={setLocallyDismissedDialogs}
+        handleAction={handleAction}
       />
     </div>
   );

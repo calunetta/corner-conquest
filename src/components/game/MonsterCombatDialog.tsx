@@ -23,7 +23,7 @@ import { PLAYER_DATA } from '@/lib/player-data';
 type MonsterCombatDialogProps = {
   gameState: GameState;
   monsters: Monster[];
-  onRoll: (monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean) => void;
+  onRoll: (payload: { monster: Monster; useDecideCard: boolean; decidedValue: number; useOvercomeCard: boolean; useWarChief: boolean }) => void;
   onClose: () => void;
   onCancel: () => void;
   isAttacker: boolean;
@@ -70,7 +70,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   
   const handleAttack = () => {
     if (selectedMonster && isAttacker) {
-      onRoll(selectedMonster, useDecideCard, decidedValue, useOvercomeCard, useWarChief);
+      onRoll({ monster: selectedMonster, useDecideCard, decidedValue, useOvercomeCard, useWarChief });
     }
   };
   

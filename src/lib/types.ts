@@ -1,7 +1,5 @@
 
 
-
-
 export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'purple' | 'yellow';
@@ -194,10 +192,6 @@ export type GameState = {
   turn: number;
   log: string[];
   winner: Player | null;
-  selectedTile: { x: number, y: number } | null;
-  selectedArmyId: number | null;
-  possibleMoves: { x: number, y: number }[];
-  currentAction: GameAction | null;
   specialCardsDeck: string[];
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
@@ -222,6 +216,32 @@ export type FirestoreGameState = Omit<GameState, 'map'> & {
 };
 
 
-export type GameAction = 'deploy' | 'collect' | 'move' | 'attack' | 'position' | 'buy-card' | 'upgrade' | 'show-cards' | 'use-card' | 'end-turn' | 'teleport' | 'teleport-initiated' | 'open-abilities-shop' | 'buy-ability' | 'cancel-action';
-
-    
+export type GameAction = 
+  | 'deploy' 
+  | 'collect' 
+  | 'move' 
+  | 'attack' 
+  | 'position' 
+  | 'buy-card' 
+  | 'upgrade' 
+  | 'show-cards' 
+  | 'use-card' 
+  | 'end-turn' 
+  | 'teleport' 
+  | 'teleport-initiated' 
+  | 'open-abilities-shop' 
+  | 'buy-ability' 
+  | 'cancel-action'
+  // Dialog actions
+  | 'select-resource-position'
+  | 'confirm-collection'
+  | 'select-army'
+  | 'select-defender'
+  | 'combat-roll'
+  | 'close-combat'
+  | 'monster-combat-roll'
+  | 'close-monster-combat'
+  | 'steal-resource'
+  | 'sabotage-player'
+  | 'gain-wealth'
+  ;

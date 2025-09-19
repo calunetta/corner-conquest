@@ -1,4 +1,5 @@
 
+
 import type { GameState, Island, Player, PlayerColor, FirestoreGameState } from './types';
 import { PLAYER_COLORS } from './player-data';
 
@@ -10,7 +11,7 @@ export const MAP_COLS = 5;
 
 
 export function flattenMap(map: Island[][]): Island[] {
-  if (!map) return [];
+  if (!map || !Array.isArray(map)) return [];
   return map.flat();
 }
 

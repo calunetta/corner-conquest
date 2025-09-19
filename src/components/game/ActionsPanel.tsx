@@ -1,7 +1,7 @@
 
 
 'use client';
-import type { GameAction, GameState } from '@/lib/types';
+import type { GameAction, GameState, Player, Army } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Sword, ShoppingCart, Gem, Anchor, Zap, Album, University, XCircle } from 'lucide-react';
@@ -14,6 +14,8 @@ type ActionsPanelProps = {
   isMyTurn: boolean;
   timeLeft: number;
   turnDuration: number;
+  currentAction: GameAction | null;
+  selectedArmy: Army | null;
 };
 
 type ActionConfig = {
@@ -24,11 +26,9 @@ type ActionConfig = {
   tooltip: string;
 };
 
-export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration }: ActionsPanelProps) {
-  const { currentPlayerIndex, players, map, currentAction, specialCardsDeck, selectedArmyId, teleportState, scoutingState, settings } = gameState;
+export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration, currentAction, selectedArmy }: ActionsPanelProps) {
+  const { currentPlayerIndex, players, map, specialCardsDeck, teleportState, scoutingState, settings } = gameState;
   const currentPlayer = players[currentPlayerIndex];
-  
-  const selectedArmy = selectedArmyId !== null ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   
   // Defensive check to prevent crash if map or army position is invalid
   const currentTile = (selectedArmy && map && map[selectedArmy.position.y] && map[selectedArmy.position.y][selectedArmy.position.x])
