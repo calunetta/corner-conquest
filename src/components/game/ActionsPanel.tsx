@@ -24,6 +24,7 @@ type ActionConfig = {
   icon: React.ReactNode;
   disabled?: boolean;
   tooltip: string;
+  onClick?: () => void;
 };
 
 export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration, currentAction, selectedArmy }: ActionsPanelProps) {
@@ -69,7 +70,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   ];
   
   const alwaysAvailableActions: ActionConfig[] = [
-      { id: 'show-cards', label: 'Show Cards', icon: <Album />, disabled: currentPlayer.specialCards.length === 0, tooltip: "View your collected special cards. You can use one per turn." },
+      { id: 'show-cards', label: 'Show Cards', icon: <Album />, disabled: currentPlayer.specialCards.length === 0, tooltip: "View your collected special cards. You can use one per turn.", onClick: () => onAction('show-cards', currentPlayer.id) },
   ]
   
   const timerPercentage = (timeLeft / turnDuration) * 100;
@@ -121,7 +122,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
                 <div className={isMain ? "w-full" : ""}>
                     <Button
                         variant={currentAction === action.id ? 'default' : 'outline'}
-                        onClick={() => onAction(action.id)}
+                        onClick={action.onClick ? action.onClick : () => onAction(action.id)}
                         disabled={!isMyTurn || action.disabled}
                         className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}
                     >
