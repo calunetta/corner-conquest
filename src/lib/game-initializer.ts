@@ -1,4 +1,5 @@
 
+
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings, MonsterName, FirestoreGameState } from './types';
 import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
@@ -94,6 +95,12 @@ export function createPlayer(
     settings: GameSettings,
     debugMode: boolean
 ): Player {
+    const HAND_LIMIT = 7;
+    let startingCards = ['Extra Move', 'Steal Resource', 'Decide Dice Roll'];
+    if (debugMode) {
+        startingCards = [...new Set(BASE_CARDS)];
+    }
+
     return {
         id: seatIndex,
         playerId,
@@ -106,7 +113,7 @@ export function createPlayer(
         attackPower: 0,
         nextArmyCost: settings.initialDeployCost,
         victoryPoints: 0,
-        specialCards: debugMode && !isBot ? [...new Set(BASE_CARDS)] : ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
+        specialCards: startingCards,
         positions: [],
         hasExtraMove: false,
         actionsThisTurn: [],
@@ -126,7 +133,7 @@ export function initializeGame(
     numBots: number, 
     debugMode: boolean = false,
     settings: GameSettings = defaultGameSettings
-): { dynamicState: FirestoreGameState, staticState: { map: Island[][] } } {
+): { dynamicState: FirestoreGameState, staticState: { map: Island[] } } {
   const map: Island[][] = Array.from({ length: MAP_ROWS }, (_, y) =>
     Array.from({ length: MAP_COLS }, (_, x) => ({
       id: `${x}-${y}`,
@@ -295,7 +302,9 @@ export function initializeGame(
     deathAnimations: [],
   };
 
-  return { dynamicState, staticState: { map } };
+  const flatMap = map.flat();
+
+  return { dynamicState, staticState: { map: flatMap } };
 }
 
 export function startGame(gameState: GameState | FirestoreGameState, hostName: string): FirestoreGameState {

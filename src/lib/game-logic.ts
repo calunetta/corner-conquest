@@ -1,4 +1,5 @@
 
+
 import type { GameState, Island, Player, PlayerColor, FirestoreGameState } from './types';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './game-initializer';
@@ -9,19 +10,35 @@ export const TILE_GAP = 16;
 export const MAP_ROWS = 6;
 export const MAP_COLS = 5;
 
-export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: string, name: string }): { newGameState: FirestoreGameState | null, updatedMap: Island[][] | null } {
-    if (gameState.status !== 'waiting') {
+function reconstructMap(flatMap: Island[]): Island[][] {
+    const map: Island[][] = Array.from({ length: MAP_ROWS }, () => []);
+    flatMap.forEach(island => {
+        if (!map[island.y]) {
+            map[island.y] = [];
+        }
+        map[island.y][island.x] = island;
+    });
+    return map;
+}
+
+export function addPlayerToGame(
+    firestoreState: Omit<FirestoreGameState, 'id' | 'name'>, 
+    mapData: Island[],
+    playerInfo: { playerId: string, name: string }
+): { newGameState: Omit<FirestoreGameState, 'id' | 'name'> | null, updatedMap: Island[] | null } {
+    
+    if (firestoreState.status !== 'waiting') {
         return { newGameState: null, updatedMap: null }; // Game has started
     }
-    if (gameState.players.length >= gameState.maxPlayers) {
+    if (firestoreState.players.length >= firestoreState.maxPlayers) {
         return { newGameState: null, updatedMap: null }; // Game is full
     }
-    if (gameState.players.some(p => p.playerId === playerInfo.playerId)) {
-        const { map, ...dynamicState } = gameState;
-        return { newGameState: dynamicState, updatedMap: map }; // Player is already in the game
+    if (firestoreState.players.some(p => p.playerId === playerInfo.playerId)) {
+        return { newGameState: firestoreState, updatedMap: mapData }; // Player is already in the game
     }
 
-    let newGameState = JSON.parse(JSON.stringify(gameState));
+    let newGameState = JSON.parse(JSON.stringify(firestoreState));
+    let newMap = reconstructMap(JSON.parse(JSON.stringify(mapData)));
 
     const usedColors = newGameState.players.map((p: Player) => p.color);
     const availableColors = PLAYER_COLORS.filter(c => !usedColors.includes(c));
@@ -50,8 +67,8 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
         newGameState.debugMode
     );
     
-    newGameState.map[newPlayerPos.y][newPlayerPos.x] = {
-        ...newGameState.map[newPlayerPos.y][newPlayerPos.x],
+    newMap[newPlayerPos.y][newPlayerPos.x] = {
+        ...newMap[newPlayerPos.y][newPlayerPos.x],
         type: 'base',
         owner: newPlayerSeatIndex,
         isHidden: false,
@@ -62,7 +79,7 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
             { type: 'food', amount: 1 }
         ],
     };
-    newGameState.map[newPlayerPos.y][newPlayerPos.x].isHidden = false;
+    newMap[newPlayerPos.y][newPlayerPos.x].isHidden = false;
 
     newGameState.players.push(newPlayer);
     newGameState.log.push(`${playerInfo.name} has joined the game!`);
@@ -73,8 +90,5 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
         newGameState.status = 'playing';
     }
     
-    const { map, ...dynamicState } = newGameState;
-    return { newGameState: dynamicState, updatedMap: map };
+    return { newGameState, updatedMap: newMap.flat() };
 }
-
-    

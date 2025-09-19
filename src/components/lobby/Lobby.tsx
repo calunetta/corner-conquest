@@ -1,7 +1,8 @@
 
+
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { db, runTransaction, collection, onSnapshot, doc, writeBatch, getDoc, arrayUnion, query, where } from '@/lib/firebase';
+import { db, runTransaction, collection, doc, writeBatch, getDoc, arrayUnion, query, where, onSnapshot } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
 import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
 import { addPlayerToGame } from '@/lib/game-logic';
@@ -101,7 +102,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 throw new Error("Game not found.");
             }
 
-            const firestoreState = gameDoc.data() as FirestoreGameState;
+            const firestoreState = gameDoc.data() as Omit<FirestoreGameState, 'id' | 'name'>;
             
             if (firestoreState.status !== 'waiting') {
                  throw new Error("This game has already started or is no longer available.");
@@ -118,17 +119,20 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             if (!mapDoc.exists()) {
                 throw new Error("Game data is missing.");
             }
-            const mapData = mapDoc.data().map as Island[][];
+            const mapData = mapDoc.data().map as Island[];
             
-            const { newGameState, updatedMap } = addPlayerToGame({ ...firestoreState, map: mapData }, { playerId, name: username });
+            const { newGameState, updatedMap } = addPlayerToGame(firestoreState, mapData, { playerId, name: username });
 
-            if (!newGameState) {
+            if (!newGameState || !updatedMap) {
                  throw new Error("Could not add player to game. The room might be full or color unavailable.");
             }
             
             transaction.update(gameDocRef, {
                 players: newGameState.players,
                 log: newGameState.log,
+            });
+            transaction.update(mapDocRef, {
+                map: updatedMap,
             });
         });
         

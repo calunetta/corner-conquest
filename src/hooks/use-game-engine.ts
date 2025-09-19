@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { db, doc, onSnapshot, getDoc, updateDoc } from '@/lib/firebase';
 import type { GameState, FirestoreGameState, Player, Island } from '@/lib/types';
@@ -6,7 +7,19 @@ import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import * as GameActions from '@/lib/game-actions';
-import { isEqual, isObject, transform } from 'lodash';
+import { isEqual, isObject } from 'lodash';
+import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
+
+function reconstructMap(flatMap: Island[]): Island[][] {
+    const map: Island[][] = Array.from({ length: MAP_ROWS }, () => []);
+    flatMap.forEach(island => {
+        if (!map[island.y]) {
+            map[island.y] = [];
+        }
+        map[island.y][island.x] = island;
+    });
+    return map;
+}
 
 // Custom lightweight function to get changed fields for Firestore update
 function getChangedFields(oldState: any, newState: any): { [key: string]: any } {
@@ -68,7 +81,8 @@ export function useGameEngine(gameId: string, playerId: string | null) {
             const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
             const mapDoc = await getDoc(staticDocRef);
             if (mapDoc.exists()) {
-                mapData = mapDoc.data().map as Island[][];
+                const flatMap = mapDoc.data().map as Island[];
+                mapData = reconstructMap(flatMap);
             } else {
                 toast({ title: "Game Over", description: "This game session no longer exists." });
                 router.push('/');
@@ -131,15 +145,21 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     const { map: oldMap, ...oldFirestoreState } = currentState;
     const { map: newMap, ...newFirestoreState } = finalState;
 
+    const mapChanges = getChangedFields({ map: oldMap }, { map: newMap });
+
     try {
         const changes = getChangedFields(oldFirestoreState, newFirestoreState);
         
         if (Object.keys(changes).length > 0) {
             const gameDocRef = doc(db, 'games', gameId);
             await updateDoc(gameDocRef, changes);
-        } else {
-            console.log("No state changes detected, skipping Firestore update.");
         }
+
+        if (Object.keys(mapChanges).length > 0) {
+            const mapDocRef = doc(db, 'games', gameId, 'static', 'map');
+            await updateDoc(mapDocRef, { map: newMap.flat() });
+        }
+
 
     } catch (error: any) {
         console.error("Error updating game state:", error);
