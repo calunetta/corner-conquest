@@ -111,6 +111,29 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             } catch (e) { console.warn("Bot: Collect failed.", e); }
         }
 
+        // NEW: Attack monsters if present
+        if (currentTile.type === 'monster' && currentTile.monsters && currentTile.monsters.length > 0) {
+            try {
+                console.log(`Bot: Army ${army.id} attacking monster.`);
+                const useDecideCard = botPlayer.specialCards.includes('Decide Dice Roll');
+                state = GameActions.handleMonsterCombatRoll(state, {
+                    monster: currentTile.monsters[0],
+                    useDecideCard: useDecideCard,
+                    decidedValue: 6, // Bot always chooses 6
+                    useOvercomeCard: false, // For simplicity, bot doesn't use Overcome
+                    useWarChief: false, // For simplicity
+                }, army);
+                
+                if (state.monsterCombatState) {
+                     state = GameActions.handleCloseMonsterCombat(state, army);
+                }
+                return GameActions.handleEndTurn(state);
+            } catch (e) {
+                console.warn("Bot: Monster attack failed.", e);
+            }
+        }
+
+
         // 2. Position on an un-claimed resource on the current tile
         const isAlreadyPositioned = botPlayer.positions.some((p: any) => p.armyId === army.id);
         if (!isAlreadyPositioned && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0) {

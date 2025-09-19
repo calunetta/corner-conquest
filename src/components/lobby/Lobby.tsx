@@ -1,8 +1,7 @@
 
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, setDoc, writeBatch, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, runTransaction, collection, onSnapshot, doc, writeBatch, getDoc, arrayUnion } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
 import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
 import { addPlayerToGame } from '@/lib/game-logic';
@@ -106,8 +105,8 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             const firestoreState = gameDoc.data() as FirestoreGameState;
             const mapData = mapDoc.data().map as Island[][];
             
-            if (firestoreState.status === 'playing') {
-                 throw new Error("This game has already started.");
+            if (firestoreState.status !== 'waiting') {
+                 throw new Error("This game has already started or is no longer available.");
             }
             if (firestoreState.players.length >= firestoreState.maxPlayers) {
                 throw new Error("This game is full.");

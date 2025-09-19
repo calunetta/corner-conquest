@@ -1,6 +1,5 @@
 
-import { doc, deleteDoc, runTransaction, arrayUnion, collection, writeBatch, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, doc, deleteDoc, runTransaction, arrayUnion, getDoc } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation, Island } from './types';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
 import { PLAYER_DATA } from './player-data';
@@ -239,11 +238,15 @@ export function handleBuyCardAction(state: GameState): GameState {
     let newState = { ...state };
     const { players, currentPlayerIndex, specialCardsDeck, discardPile } = newState;
     const player = players[currentPlayerIndex];
+    const HAND_LIMIT = 7;
 
     if (player.actionsThisTurn.includes('buy-card')) throw new Error("You can only buy one card per turn.");
     if (player.resources.gems < 10) throw new Error("Not enough gems to buy a card.");
     if (specialCardsDeck.length === 0 && discardPile.length === 0) throw new Error("There are no special cards left in the game.");
-    if (player.specialCards.length >= 10 && !newState.debugMode) throw new Error("You have reached the maximum of 10 cards.");
+    if (player.specialCards.length >= HAND_LIMIT) {
+        newState.log.push(`${player.name} tried to buy a card, but their hand is full!`);
+        return newState;
+    }
 
     if (specialCardsDeck.length === 0) {
         newState.log.push("The deck is empty. Reshuffling the discard pile...");
@@ -565,6 +568,7 @@ export function handleTileClick(
 function revealIsland(state: GameState, x: number, y: number, player: Player): GameState {
     let newState = { ...state };
     const tile = newState.map[y][x];
+    const HAND_LIMIT = 7;
 
     if (!tile.isHidden) return newState;
     
@@ -574,18 +578,20 @@ function revealIsland(state: GameState, x: number, y: number, player: Player): G
         newState.log.push(`${player.name} discovered a new island and gains ${state.settings.vpPerIslandDiscovery} VP!`);
     }
 
-    if (tile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0)) {
-        if (newState.specialCardsDeck.length === 0) {
-             newState.log.push("The deck is empty. Reshuffling the discard pile...");
-             newState.specialCardsDeck = [...newState.discardPile];
-             newState.discardPile = [];
+    if (tile.type === 'special') {
+        if (player.specialCards.length >= HAND_LIMIT) {
+             newState.log.push(`${player.name} discovered a special island, but their hand is full!`);
+        } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
+            if (newState.specialCardsDeck.length === 0) {
+                 newState.log.push("The deck is empty. Reshuffling the discard pile...");
+                 newState.specialCardsDeck = [...newState.discardPile];
+                 newState.discardPile = [];
+            }
+            const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
+            const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
+            player.specialCards.push(drawnCard);
+            newState.log.push(`${player.name} discovered a special island and found a card: "${drawnCard}"!`);
         }
-        const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
-        const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
-        player.specialCards.push(drawnCard);
-        newState.log.push(`${player.name} discovered a special island and found a card: "${drawnCard}"!`);
-    } else if (tile.type === 'special') {
-        newState.log.push(`${player.name} discovered a special island, but their hand was full or no cards were left!`);
     }
     
     return newState;
@@ -595,6 +601,7 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
     let newState = { ...state };
     const { players, currentPlayerIndex, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
+    const HAND_LIMIT = 7;
 
     if (army.hasActed && !player.hasExtraMove) {
         throw new Error("This army has already acted this turn.");
@@ -620,18 +627,20 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
         newState = revealIsland(newState, x, y, player);
     }
     
-    if (targetTile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0)) {
-        if (newState.specialCardsDeck.length === 0) {
-             newState.log.push("The deck is empty. Reshuffling the discard pile...");
-             newState.specialCardsDeck = [...newState.discardPile];
-             newState.discardPile = [];
+    if (targetTile.type === 'special') {
+         if (player.specialCards.length >= HAND_LIMIT) {
+             newState.log.push(`${player.name} landed on a special island, but their hand is full!`);
+         } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
+            if (newState.specialCardsDeck.length === 0) {
+                 newState.log.push("The deck is empty. Reshuffling the discard pile...");
+                 newState.specialCardsDeck = [...newState.discardPile];
+                 newState.discardPile = [];
+            }
+            const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
+            const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
+            player.specialCards.push(drawnCard);
+            newState.log.push(`${player.name} landed on a special island and found a card: "${drawnCard}"!`);
         }
-        const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
-        const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
-        player.specialCards.push(drawnCard);
-        newState.log.push(`${player.name} landed on a special island and found a card: "${drawnCard}"!`);
-    } else if (targetTile.type === 'special') {
-        newState.log.push(`${player.name} landed on a special island, but their hand was full or no cards were left!`);
     }
     
     if (player.hasExtraMove) {
@@ -1113,6 +1122,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     let newState = { ...state };
     const { players, currentPlayerIndex, teleportState, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
+    const HAND_LIMIT = 7;
 
     if (!teleportState || teleportState.armyId === null) return newState;
     
@@ -1140,18 +1150,20 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
         newState = revealIsland(newState, x, y, player);
     }
     
-    if (targetTile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0)) {
-        if (newState.specialCardsDeck.length === 0) {
-             newState.log.push("The deck is empty. Reshuffling the discard pile...");
-             newState.specialCardsDeck = [...newState.discardPile];
-             newState.discardPile = [];
+    if (targetTile.type === 'special') {
+        if (player.specialCards.length >= HAND_LIMIT) {
+             newState.log.push(`${player.name} teleported to a special island, but their hand is full!`);
+        } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
+            if (newState.specialCardsDeck.length === 0) {
+                 newState.log.push("The deck is empty. Reshuffling the discard pile...");
+                 newState.specialCardsDeck = [...newState.discardPile];
+                 newState.discardPile = [];
+            }
+            const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
+            const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
+            player.specialCards.push(drawnCard);
+            newState.log.push(`${player.name} teleported to a special island and found a card: "${drawnCard}"!`);
         }
-        const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
-        const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
-        player.specialCards.push(drawnCard);
-        newState.log.push(`${player.name} teleported to a special island and found a card: "${drawnCard}"!`);
-    } else if (targetTile.type === 'special') {
-        newState.log.push(`${player.name} teleported to a special island, but their hand was full or no cards were left!`);
     }
     
     newState.log.push(`${player.name} used 'Teleport' to move an army!`);
@@ -1178,8 +1190,9 @@ export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerEx
             const currentState = gameDoc.data() as FirestoreGameState;
             
             if (currentState.players.length <= 1) {
-                // If this is the last player, delete the game instead of updating
-                return; // Let the deleteDoc call outside the transaction handle it.
+                // If this is the last player, the doc will be deleted outside the transaction.
+                // We do nothing inside the transaction to avoid an error.
+                return; 
             }
 
             let newPlayers = currentState.players.filter((p: Player) => p.playerId !== localPlayer.playerId);
@@ -1193,8 +1206,10 @@ export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerEx
 
         // Check again after transaction if we need to delete.
         const finalDoc = await getDoc(gameDocRef);
-        if (finalDoc.exists() && finalDoc.data().players.length <= 1) {
+        if (!finalDoc.exists() || finalDoc.data().players.length <= 1) {
              await deleteDoc(gameDocRef);
+             const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
+             await deleteDoc(staticDocRef);
         }
         
         onExit();
@@ -1208,7 +1223,9 @@ export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerEx
 export async function handleConfirmHostLeave(gameId: string, onExit: () => void) {
   try {
       const gameDocRef = doc(db, 'games', gameId);
+      const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
       await deleteDoc(gameDocRef);
+      await deleteDoc(staticDocRef);
       onExit();
   } catch (error) {
     console.error("Error during host leave confirmation:", error);
@@ -1254,6 +1271,8 @@ export function handleCancelAction(state: GameState): GameState {
         newState.teleportState = null;
     } else if (newState.scoutingState) {
         newState.scoutingState = null;
+    } else if (newState.monsterCombatState) {
+        newState.monsterCombatState = null;
     }
     
     player.hasExtraMove = false;
@@ -1271,84 +1290,67 @@ interface HandleActionParams {
     payload?: any;
 }
 
-export function handleGameAction({ action, gameState, selectedArmy, payload }: HandleActionParams): GameState {
-    let resultState = gameState;
+export function handleGameAction({ action, gameState, selectedArmy, payload }: HandleActionParams): GameState | TileClickResult {
     switch(action) {
         case 'position':
-            resultState = handlePositionAction(gameState, selectedArmy);
-            break;
+            return handlePositionAction(gameState, selectedArmy);
         case 'collect':
-            resultState = handleCollectAction(gameState, selectedArmy);
-            break;
+            return handleCollectAction(gameState, selectedArmy);
         case 'deploy':
-            resultState = handleDeployAction(gameState);
-            break;
+            return handleDeployAction(gameState);
         case 'buy-card':
-            resultState = handleBuyCardAction(gameState);
-            break;
+            return handleBuyCardAction(gameState);
         case 'upgrade':
-            resultState = handleUpgradeAction(gameState);
-            break;
+            return handleUpgradeAction(gameState);
         case 'attack':
-            resultState = handleAttackAction(gameState, selectedArmy);
-            break;
+            return handleAttackAction(gameState, selectedArmy);
         case 'end-turn':
-            resultState = handleEndTurn(gameState);
-            break;
+            return handleEndTurn(gameState);
+        case 'show-cards':
+            return { ...gameState, showCardsDialogForPlayer: gameState.currentPlayerIndex };
+        case 'open-abilities-shop':
+            return handleOpenAbilitiesShop(gameState);
         case 'use-card':
             if (payload === 'Steal Resource') {
-                resultState = { ...gameState, stealResourceDialogState: { targetPlayerId: null }, showCardsDialogForPlayer: null };
+                return { ...gameState, stealResourceDialogState: { targetPlayerId: null }, showCardsDialogForPlayer: null };
             } else if (payload === 'Sabatoge') {
-                resultState = { ...gameState, sabotageDialogState: { isOpen: true }, showCardsDialogForPlayer: null };
+                return { ...gameState, sabotageDialogState: { isOpen: true }, showCardsDialogForPlayer: null };
             } else if (payload === 'Wealthy') {
-                resultState = { ...gameState, wealthyDialogState: { isOpen: true }, showCardsDialogForPlayer: null };
+                return { ...gameState, wealthyDialogState: { isOpen: true }, showCardsDialogForPlayer: null };
             } else {
-                resultState = handleUseCard(gameState, payload);
+                return { ...gameState, useCardDialogState: { cardName: payload }, showCardsDialogForPlayer: null };
             }
-            break;
+        case 'confirm-use-card':
+            return handleUseCard(gameState, payload);
         case 'select-resource-position':
-            resultState = handleSelectResourceForPosition(gameState, payload, selectedArmy);
-            break;
+            return handleSelectResourceForPosition(gameState, payload, selectedArmy);
         case 'confirm-collection':
-            resultState = handleConfirmCollection(gameState, payload, selectedArmy);
-            break;
+            return handleConfirmCollection(gameState, payload, selectedArmy);
         case 'select-army':
-            resultState = handleSelectArmy(gameState, payload);
-            break;
+            return handleSelectArmy(gameState, payload);
         case 'select-defender':
-            resultState = handleSelectDefender(gameState, payload);
-            break;
+            return handleSelectDefender(gameState, payload);
         case 'combat-roll':
-            resultState = handleCombatRoll(gameState, payload, selectedArmy);
-            break;
+            return handleCombatRoll(gameState, payload, selectedArmy);
         case 'close-combat':
-            resultState = handleCloseCombat(gameState);
-            break;
+            return handleCloseCombat(gameState);
         case 'monster-combat-roll':
-            resultState = handleMonsterCombatRoll(gameState, payload, selectedArmy);
-            break;
+            return handleMonsterCombatRoll(gameState, payload, selectedArmy);
         case 'close-monster-combat':
-            resultState = handleCloseMonsterCombat(gameState, selectedArmy);
-            break;
+            return handleCloseMonsterCombat(gameState, selectedArmy);
         case 'buy-ability':
-            resultState = handleBuyAbility(gameState, payload);
-            break;
+            return handleBuyAbility(gameState, payload);
         case 'steal-resource':
-            resultState = handleStealResource(gameState, payload);
-            break;
+            return handleStealResource(gameState, payload);
         case 'sabotage-player':
-            resultState = handleSabotagePlayer(gameState, payload);
-            break;
+            return handleSabotagePlayer(gameState, payload);
         case 'gain-wealth':
-            resultState = handleGainWealth(gameState, payload);
-            break;
+            return handleGainWealth(gameState, payload);
         case 'cancel-action':
-            resultState = handleCancelAction(gameState);
-            break;
+            return handleCancelAction(gameState);
         default:
-            resultState = gameState;
+            return gameState;
     }
-    return resultState;
 }
 
     

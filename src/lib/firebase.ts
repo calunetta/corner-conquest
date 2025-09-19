@@ -1,6 +1,21 @@
+
 'use client';
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { 
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    deleteDoc,
+    collection,
+    query,
+    where,
+    onSnapshot,
+    writeBatch,
+    runTransaction,
+    updateDoc,
+    arrayUnion,
+} from 'firebase/firestore';
 
 const firebaseConfig = {
   projectId: 'studio-7086354571-8fddd',
@@ -16,4 +31,21 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
-export { app, db };
+export { 
+    app, 
+    db,
+    doc,
+    getDoc,
+    setDoc,
+    deleteDoc,
+    collection,
+    query,
+    where,
+    onSnapshot,
+    writeBatch,
+    runTransaction,
+    updateDoc,
+    arrayUnion,
+};
+
+    

@@ -1,45 +1,49 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { doc, onSnapshot, updateDoc, getDoc, writeBatch, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, doc, onSnapshot, updateDoc, getDoc, setDoc } from '@/lib/firebase';
 import type { GameState, FirestoreGameState, Player, Island } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import * as GameActions from '@/lib/game-actions';
-import { get, set, isEqual, isObject } from 'lodash';
+import { get, isEqual } from 'lodash';
 
 
 // Utility to find differences between two objects and return an update object for Firestore
 function getChangedFields(oldState: any, newState: any): { [key: string]: any } {
-  const changes: { [key: string]: any } = {};
+    const changes: { [key: string]: any } = {};
 
-  function findDiffs(path: string, key: string, value: any) {
-    const oldVal = get(oldState, `${path}${key}`);
-    const newVal = value;
+    function findDiffs(currentPath: string, oldObj: any, newObj: any) {
+        if (oldObj === newObj) return;
 
-    if (!isEqual(oldVal, newVal)) {
-      changes[`${path}${key}`] = newVal;
+        Object.keys(newObj).forEach(key => {
+            const newPath = currentPath ? `${currentPath}.${key}` : key;
+            const oldValue = get(oldObj, key);
+            const newValue = newObj[key];
+
+            if (!isEqual(oldValue, newValue)) {
+                // If it's an object but not an array, recurse
+                if (typeof newValue === 'object' && newValue !== null && !Array.isArray(newValue)) {
+                     // Check if old value was also an object to avoid errors
+                    if (typeof oldValue === 'object' && oldValue !== null) {
+                        findDiffs(newPath, oldValue, newValue);
+                    } else {
+                        // Old value wasn't an object, so the whole new object is the change
+                        changes[newPath] = newValue;
+                    }
+                } else {
+                    // It's a primitive, an array, or null
+                    changes[newPath] = newValue;
+                }
+            }
+        });
     }
-  }
 
-  function recurse(path: string, newObj: any) {
-    for (const key in newObj) {
-      if (newObj.hasOwnProperty(key)) {
-        const value = newObj[key];
-        if (isObject(value) && !Array.isArray(value) && value !== null) {
-          recurse(`${path}${key}.`, value);
-        } else {
-          findDiffs(path, key, value);
-        }
-      }
-    }
-  }
-
-  const { map, ...dynamicNewState } = newState;
-  recurse('', dynamicNewState);
-  
-  return changes;
+    const { map: oldMap, ...dynamicOldState } = oldState;
+    const { map: newMap, ...dynamicNewState } = newState;
+    findDiffs('', dynamicOldState, dynamicNewState);
+    
+    return changes;
 }
 
 

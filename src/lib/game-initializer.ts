@@ -106,7 +106,7 @@ export function createPlayer(
         attackPower: 0,
         nextArmyCost: settings.initialDeployCost,
         victoryPoints: 0,
-        specialCards: debugMode && !isBot ? [...new Set(BASE_CARDS)] : ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
+        specialCards: debugMode && !isBot ? [...new Set(BASE_CARDS)].slice(0, 7) : ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
         positions: [],
         hasExtraMove: false,
         actionsThisTurn: [],
