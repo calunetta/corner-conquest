@@ -1,72 +1,47 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { db, doc, onSnapshot, updateDoc, getDoc } from '@/lib/firebase';
+import { db, doc, onSnapshot, getDoc, updateDoc } from '@/lib/firebase';
 import type { GameState, FirestoreGameState, Player, Island } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import * as GameActions from '@/lib/game-actions';
-
-// Custom lightweight deep equal function
-function isEqual(a: any, b: any): boolean {
-    if (a === b) return true;
-    if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
-    if (!a || !b || (typeof a !== 'object' && typeof b !== 'object')) return a === b;
-    if (a === null || a === undefined || b === null || b === undefined) return a === b;
-    if (a.prototype !== b.prototype) return false;
-    let keysA = Object.keys(a);
-    let keysB = Object.keys(b);
-    if (keysA.length !== keysB.length) return false;
-    
-    // Sort keys to ensure order doesn't matter
-    keysA.sort();
-    keysB.sort();
-    
-    for (let i = 0; i < keysA.length; i++) {
-        if (keysA[i] !== keysB[i]) return false;
-        if (!isEqual(a[keysA[i]], b[keysA[i]])) return false;
-    }
-    
-    return true;
-}
-
+import { isEqual, isObject, transform } from 'lodash';
 
 // Custom lightweight function to get changed fields for Firestore update
-function getChangedFields(oldState: any, newState: any, path: string = ''): { [key: string]: any } {
-  const changes: { [key: string]: any } = {};
+function getChangedFields(oldState: any, newState: any): { [key: string]: any } {
+    const changes: { [key: string]: any } = {};
 
-  if (isEqual(oldState, newState)) {
-    return {};
-  }
+    function recurse(current: any, previous: any, path: string = '') {
+        // Only recurse on objects
+        if (!isObject(current) || !isObject(previous)) {
+            if (!isEqual(current, previous)) {
+                changes[path] = current;
+            }
+            return;
+        }
 
-  // Handle cases where one of the states is not an object or is null
-  if (typeof newState !== 'object' || newState === null || typeof oldState !== 'object' || oldState === null || Array.isArray(newState) || Array.isArray(oldState)) {
-    if (!isEqual(oldState, newState)) {
-        return { [path]: newState };
+        const allKeys = new Set([...Object.keys(current), ...Object.keys(previous)]);
+        allKeys.forEach(key => {
+            const newPath = path ? `${path}.${key}` : key;
+            const currentValue = current[key];
+            const previousValue = previous[key];
+
+            if (!isEqual(currentValue, previousValue)) {
+                // If it's an object (but not an array or null), recurse. Otherwise, set the change.
+                if (isObject(currentValue) && !Array.isArray(currentValue) && currentValue !== null &&
+                    isObject(previousValue) && !Array.isArray(previousValue) && previousValue !== null) {
+                    recurse(currentValue, previousValue, newPath);
+                } else {
+                    changes[newPath] = currentValue;
+                }
+            }
+        });
     }
-    return {};
-  }
 
-  const allKeys = new Set([...Object.keys(oldState), ...Object.keys(newState)]);
-
-  for (const key of allKeys) {
-    const newPath = path ? `${path}.${key}` : key;
-    const oldValue = oldState[key];
-    const newValue = newState[key];
-
-    if (!isEqual(oldValue, newValue)) {
-      if (typeof newValue !== 'object' || newValue === null || Array.isArray(newValue) || typeof oldValue !== 'object' || oldValue === null || Array.isArray(oldValue)) {
-        changes[newPath] = newValue;
-      } else {
-        const nestedChanges = getChangedFields(oldValue, newValue, newPath);
-        Object.assign(changes, nestedChanges);
-      }
-    }
-  }
-
-  return changes;
+    recurse(newState, oldState);
+    return changes;
 }
-
 
 export function useGameEngine(gameId: string, playerId: string | null) {
   const [gameState, setGameState] = useState<GameState | null>(null);
