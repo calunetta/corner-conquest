@@ -7,7 +7,7 @@ import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import * as GameActions from '@/lib/game-actions';
-import { MAP_COLS, MAP_ROWS } from './game-logic';
+import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
 
 
 function reconstructMap(flatMap: Island[]): Island[][] {
