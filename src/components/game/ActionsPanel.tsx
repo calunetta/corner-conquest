@@ -56,9 +56,9 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0) || currentPlayer.hasExtraMove;
 
   const mainActions: ActionConfig[] = [
-    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasArmyActed, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving.", onClick: () => onAction('collect') },
-    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction('attack') },
-    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed, tooltip: "Position your army on a resource to collect it on a future turn. Can only be done once per turn, before moving.", onClick: () => onAction('position') },
+    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasArmyActed, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving.", onClick: () => onAction('collect', null) },
+    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction('attack', null) },
+    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed, tooltip: "Position your army on a resource to collect it on a future turn. Can only be done once per turn, before moving.", onClick: () => onAction('position', null) },
   ];
   
   const deployLabel = currentPlayer.reinforceActive
@@ -74,7 +74,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
       icon: <Zap />, 
       disabled: !canUpgrade, 
       tooltip: "Spend iron to permanently increase your army's attack power by 1. Can only be done once per turn.",
-      onClick: () => onAction('upgrade')
+      onClick: () => onAction('upgrade', null)
     },
     { 
       id: 'buy-card', 
@@ -82,7 +82,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
       icon: <ShoppingCart />, 
       disabled: !canBuyCard, 
       tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn.",
-      onClick: () => onAction('buy-card')
+      onClick: () => onAction('buy-card', null)
     },
     { 
       id: 'deploy', 
@@ -90,7 +90,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
       icon: <Sword />, 
       disabled: !canDeploy, 
       tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army.",
-      onClick: () => onAction('deploy')
+      onClick: () => onAction('deploy', null)
     },
     { 
       id: 'open-abilities-shop', 
@@ -100,7 +100,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
       tooltip: "Purchase permanent passive abilities for your empire.",
       onClick: () => {
           const action: GameAction = abilitiesShopState?.isOpen ? 'close-abilities-shop' : 'open-abilities-shop';
-          onAction(action);
+          onAction(action, null);
       }
     },
   ];
