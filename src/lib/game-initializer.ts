@@ -108,7 +108,7 @@ export function createPlayer(
         color,
         isBot,
         armies: [{ id: 0, position: basePos, hasActed: false }],
-        resources: debugMode && isBot ? { gems: 20, iron: 20, food: 20 } : { gems: 0, iron: 0, food: 0 },
+        resources: { gems: 0, iron: 0, food: 0 },
         armyCount: 1,
         attackPower: 0,
         nextArmyCost: settings.initialDeployCost,
@@ -119,9 +119,6 @@ export function createPlayer(
         actionsThisTurn: [],
         passiveAbilities: { explorer: false, collector: false },
         isSabotaged: false,
-        reinforceActive: false,
-        efficientActive: false,
-        masterBuilderActive: false,
     };
 }
 
@@ -320,5 +317,3 @@ export function startGame(gameState: GameState | FirestoreGameState, hostName: s
     }
     return newState as FirestoreGameState;
 }
-
-    

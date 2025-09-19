@@ -424,9 +424,6 @@ export function handleEndTurn(state: GameState): GameState {
     
     // Reset all temporary single-turn effects for the current player
     currentPlayer.hasExtraMove = false;
-    currentPlayer.efficientActive = false; 
-    currentPlayer.masterBuilderActive = false;
-    currentPlayer.reinforceActive = false;
     
     // Reset army and action state for the current player before moving to the next
     currentPlayer.armies.forEach((army: Army) => army.hasActed = false);
@@ -1305,9 +1302,6 @@ export function handleCancelAction(state: GameState): GameState {
     newState.showHostLeaveDialog = false;
     
     player.hasExtraMove = false;
-    player.efficientActive = false;
-    player.masterBuilderActive = false;
-    player.reinforceActive = false;
     
     return newState;
 }

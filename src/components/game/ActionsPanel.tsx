@@ -1,5 +1,4 @@
 
-
 'use client';
 import type { GameAction, GameState, Player, Army } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -58,7 +57,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const mainActions: ActionConfig[] = [
     { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasArmyActed, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving.", onClick: () => onAction('collect', null) },
     { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction('attack', null) },
-    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed, tooltip: "Position your army on a resource to collect it on a future turn. Can only be done once per turn, before moving.", onClick: () => onAction('position', null) },
+    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed, tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onAction('position', null) },
   ];
   
   const deployLabel = currentPlayer.reinforceActive
