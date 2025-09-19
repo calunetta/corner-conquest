@@ -41,6 +41,10 @@ export type PassiveAbilities = {
     collector: boolean;
 }
 
+export type TeleportState = {
+    armyId: number | null;
+}
+
 export type Player = {
   id: number; // This is the player's seat index (0-3)
   playerId: string; // This is the unique session ID from usePlayer
@@ -59,6 +63,10 @@ export type Player = {
   actionsThisTurn: GameAction[];
   passiveAbilities: PassiveAbilities;
   isSabotaged: boolean;
+  reinforceActive: boolean;
+  efficientActive: boolean;
+  masterBuilderActive: boolean;
+  teleportState: TeleportState | null;
 };
 
 export type MonsterName = 'Lancer' | 'Bear' | 'Ogre' | 'Minotaur';
@@ -133,10 +141,6 @@ export type UseCardDialogState = {
     cardName: string;
 }
 
-export type TeleportState = {
-    armyId: number | null;
-}
-
 export type SabotageDialogState = {
   isOpen: boolean;
 }
@@ -190,8 +194,8 @@ export type GameState = {
   debugMode: boolean;
   settings: GameSettings;
   map: Island[][];
+  baseTiles: BaseTileInfo[];
   players: Player[];
-  baseTiles?: BaseTileInfo[];
   currentPlayerIndex: number;
   turn: number;
   log: string[];
@@ -202,10 +206,8 @@ export type GameState = {
   monsterCombatState: MonsterCombatState | null;
   positionDialogState: PositionDialogState | null;
   collectDialogState: CollectDialogState | null;
-  showCardsDialogForPlayer: number | null;
   stealResourceDialogState: StealResourceDialogState | null;
   useCardDialogState: UseCardDialogState | null;
-  teleportState: TeleportState | null;
   abilitiesShopState: AbilitiesShopState | null;
   showHostLeaveDialog?: boolean;
   sabotageDialogState: SabotageDialogState | null;
@@ -253,3 +255,5 @@ export type GameAction =
   | 'sabotage-player'
   | 'gain-wealth'
   ;
+
+    

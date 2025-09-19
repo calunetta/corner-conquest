@@ -1,6 +1,6 @@
 
 
-import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings, MonsterName, FirestoreGameState } from './types';
+import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings, MonsterName, FirestoreGameState, BaseTileInfo } from './types';
 import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
@@ -119,6 +119,10 @@ export function createPlayer(
         actionsThisTurn: [],
         passiveAbilities: { explorer: false, collector: false },
         isSabotaged: false,
+        efficientActive: false,
+        masterBuilderActive: false,
+        reinforceActive: false,
+        teleportState: null,
     };
 }
 
@@ -146,6 +150,7 @@ export function initializeGame(
   );
 
   const players: Player[] = [];
+  const baseTiles: BaseTileInfo[] = [];
   
   const basePositions = [
     { x: 0, y: 0 },
@@ -172,6 +177,7 @@ export function initializeGame(
         { type: 'food', amount: 1 }
       ], 
   };
+  baseTiles.push({ owner: creatorSeatIndex, x: creatorPos.x, y: creatorPos.y });
   
   const usedColors = [creator.color];
 
@@ -198,6 +204,7 @@ export function initializeGame(
                 { type: 'food', amount: 1 }
             ], 
         };
+        baseTiles.push({ owner: botSeatIndex, x: botPos.x, y: botPos.y });
     }
   }
 
@@ -275,6 +282,7 @@ export function initializeGame(
     debugMode,
     settings,
     players,
+    baseTiles,
     currentPlayerIndex: 0,
     turn: 0,
     log: [`Game '${gameName}' created by ${creator.name}! Waiting for players...`],
@@ -285,10 +293,8 @@ export function initializeGame(
     monsterCombatState: null,
     positionDialogState: null,
     collectDialogState: null,
-    showCardsDialogForPlayer: null,
     stealResourceDialogState: null,
     useCardDialogState: null,
-    teleportState: null,
     abilitiesShopState: null,
     showHostLeaveDialog: false,
     sabotageDialogState: null,
@@ -317,3 +323,5 @@ export function startGame(gameState: GameState | FirestoreGameState, hostName: s
     }
     return newState as FirestoreGameState;
 }
+
+    
