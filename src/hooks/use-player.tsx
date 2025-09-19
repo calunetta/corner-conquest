@@ -1,7 +1,7 @@
+
 'use client';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, doc, setDoc, getDoc, deleteDoc } from '@/lib/firebase';
 
 type PlayerContextType = {
   playerId: string | null;
@@ -30,11 +30,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setUsernameCallback = useCallback(async (name: string): Promise<boolean> => {
-    // This is the key change. We check for playerId and if it's not ready, we fail gracefully.
-    // The UI can retry. This prevents calling Firestore functions before initialization is complete.
     if (!playerId) {
       console.error("Player ID not initialized yet.");
-      // You could also add a small delay and retry here, but for now, failing is safer.
       return false;
     }
 
@@ -43,14 +40,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     try {
       const docSnap = await getDoc(usernameDocRef);
       if (docSnap.exists() && docSnap.data().playerId !== playerId) {
-        // Username is taken by someone else
         return false;
       }
       
-      // If the username is not taken, or taken by the current player, claim it
       await setDoc(usernameDocRef, { playerId });
       
-      // If user is renaming, release old username
       if (username && username !== name) {
           const oldUsernameDocRef = doc(db, 'usernames', username);
           await deleteDoc(oldUsernameDocRef);
@@ -61,8 +55,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (error) {
       console.error("Error setting username: ", error);
-      // This is where the 'client is offline' error would be caught.
-      // We return false so the UI can inform the user.
       return false;
     }
   }, [playerId, username]);
@@ -74,7 +66,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
     localStorage.removeItem('username');
     setUsernameState(null);
-    // We keep the playerId in localStorage to maintain session uniqueness
   }, [username]);
 
   return (

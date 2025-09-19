@@ -1,49 +1,27 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { db, doc, onSnapshot, updateDoc, getDoc, setDoc } from '@/lib/firebase';
+import { db, doc, onSnapshot, updateDoc, getDoc } from '@/lib/firebase';
 import type { GameState, FirestoreGameState, Player, Island } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import * as GameActions from '@/lib/game-actions';
-import { get, isEqual } from 'lodash';
+import { isEqual, isObject, transform } from 'lodash';
 
 
 // Utility to find differences between two objects and return an update object for Firestore
 function getChangedFields(oldState: any, newState: any): { [key: string]: any } {
-    const changes: { [key: string]: any } = {};
-
-    function findDiffs(currentPath: string, oldObj: any, newObj: any) {
-        if (oldObj === newObj) return;
-
-        Object.keys(newObj).forEach(key => {
-            const newPath = currentPath ? `${currentPath}.${key}` : key;
-            const oldValue = get(oldObj, key);
-            const newValue = newObj[key];
-
-            if (!isEqual(oldValue, newValue)) {
-                // If it's an object but not an array, recurse
-                if (typeof newValue === 'object' && newValue !== null && !Array.isArray(newValue)) {
-                     // Check if old value was also an object to avoid errors
-                    if (typeof oldValue === 'object' && oldValue !== null) {
-                        findDiffs(newPath, oldValue, newValue);
-                    } else {
-                        // Old value wasn't an object, so the whole new object is the change
-                        changes[newPath] = newValue;
-                    }
-                } else {
-                    // It's a primitive, an array, or null
-                    changes[newPath] = newValue;
-                }
+    function changes(newObj: any, oldObj: any) {
+        return transform(newObj, (result: any, value, key) => {
+            if (!isEqual(value, oldObj[key])) {
+                result[key] =
+                    isObject(value) && isObject(oldObj[key]) && !Array.isArray(value)
+                        ? changes(value, oldObj[key])
+                        : value;
             }
         });
     }
-
-    const { map: oldMap, ...dynamicOldState } = oldState;
-    const { map: newMap, ...dynamicNewState } = newState;
-    findDiffs('', dynamicOldState, dynamicNewState);
-    
-    return changes;
+    return changes(newState, oldState);
 }
 
 
@@ -74,7 +52,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
             if (mapDoc.exists()) {
                 mapData = mapDoc.data().map as Island[][];
             } else {
-                // If map data doesn't exist, it likely means the game was deleted
                 toast({ title: "Game Over", description: "This game session no longer exists." });
                 router.push('/');
                 return;
@@ -132,9 +109,12 @@ export function useGameEngine(gameId: string, playerId: string | null) {
         console.warn("Attempted to update game state with null.");
         return;
     }
+    
+    const { map: oldMap, ...oldFirestoreState } = currentState;
+    const { map: newMap, ...newFirestoreState } = finalState;
 
     try {
-        const changes = getChangedFields(currentState, finalState);
+        const changes = getChangedFields(oldFirestoreState, newFirestoreState);
         
         if (Object.keys(changes).length > 0) {
             const gameDocRef = doc(db, 'games', gameId);
@@ -211,8 +191,9 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     
     setTimeout(async () => {
       try {
+          if (!isProcessingBotTurn.current) return;
           const latestState = gameStateRef.current;
-          if (!latestState || !latestState.players[latestState.currentPlayerIndex]?.isBot || !isProcessingBotTurn.current) {
+          if (!latestState || !latestState.players[latestState.currentPlayerIndex]?.isBot) {
               isProcessingBotTurn.current = false;
               return;
           }
@@ -244,5 +225,3 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
   return { gameState, setGameState: updateGameState, isMyTurn, localPlayer, isHost, isLoading };
 }
-
-    

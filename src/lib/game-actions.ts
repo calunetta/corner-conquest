@@ -22,7 +22,7 @@ function canPlayerPerformAnyAction(state: GameState): boolean {
         return true;
     }
 
-    const { settings, specialCardsDeck } = state;
+    const { settings, specialCardsDeck, discardPile } = state;
     const canUseCard = !player.actionsThisTurn.includes('use-card');
 
     const upgradeCost = player.masterBuilderActive ? Math.ceil(settings.upgradeCost / 2) : settings.upgradeCost;
@@ -30,7 +30,7 @@ function canPlayerPerformAnyAction(state: GameState): boolean {
         return true;
     }
 
-    if (player.resources.gems >= 10 && !player.actionsThisTurn.includes('buy-card') && (specialCardsDeck.length > 0 || state.discardPile.length > 0)) {
+    if (player.resources.gems >= 10 && !player.actionsThisTurn.includes('buy-card') && (specialCardsDeck.length > 0 || discardPile.length > 0)) {
         return true;
     }
 
@@ -1191,7 +1191,6 @@ export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerEx
             
             if (currentState.players.length <= 1) {
                 // If this is the last player, the doc will be deleted outside the transaction.
-                // We do nothing inside the transaction to avoid an error.
                 return; 
             }
 
@@ -1204,7 +1203,6 @@ export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerEx
             });
         });
 
-        // Check again after transaction if we need to delete.
         const finalDoc = await getDoc(gameDocRef);
         if (!finalDoc.exists() || finalDoc.data().players.length <= 1) {
              await deleteDoc(gameDocRef);
@@ -1352,5 +1350,3 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             return gameState;
     }
 }
-
-    
