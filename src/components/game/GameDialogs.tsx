@@ -18,11 +18,15 @@ import { AttackSelectionDialog } from './AttackSelectionDialog';
 
 type GameDialogsProps = {
   gameState: GameState;
+  setGameState: (state: GameState | null | ((prevState: GameState | null) => GameState | null)) => Promise<void>;
   localPlayer: Player;
   isMyTurn: boolean;
   onConfirmHostLeave: () => void;
   locallyDismissedDialogs: string[];
+  setLocallyDismissedDialogs: (keys: string[]) => void;
   handleAction: (action: GameAction, payload?: any) => Promise<void>;
+  cardsDialogPlayerId: number | null;
+  onCloseCardsDialog: () => void;
 };
 
 export function GameDialogs({ 
@@ -32,13 +36,14 @@ export function GameDialogs({
     onConfirmHostLeave,
     locallyDismissedDialogs,
     handleAction,
+    cardsDialogPlayerId,
+    onCloseCardsDialog
 }: GameDialogsProps) {
   const { 
     combatState, 
     monsterCombatState, 
     positionDialogState, 
     collectDialogState,
-    showCardsDialogForPlayer, 
     stealResourceDialogState, 
     useCardDialogState, 
     showHostLeaveDialog, 
@@ -57,7 +62,7 @@ export function GameDialogs({
   
   const isAttacker = isMyTurn && (!!combatState || !!monsterCombatState);
 
-  const playerForCardsDialog = showCardsDialogForPlayer !== null ? players.find(p => p.id === showCardsDialogForPlayer) : null;
+  const playerForCardsDialog = cardsDialogPlayerId !== null ? players.find(p => p.id === cardsDialogPlayerId) : null;
 
   return (
     <>
@@ -112,11 +117,14 @@ export function GameDialogs({
             isMyTurn={isMyTurn}
         />
       )}
-      {isDialogVisible('showCardsDialogForPlayer') && playerForCardsDialog && (
+      {playerForCardsDialog && (
         <CardsDialog 
           player={playerForCardsDialog}
-          onClose={() => handleAction('close-cards')}
-          onUseCard={(cardName) => handleAction('use-card', cardName)}
+          onClose={onCloseCardsDialog}
+          onUseCard={(cardName) => {
+            handleAction('use-card', cardName);
+            onCloseCardsDialog();
+          }}
           canUseCards={isMyTurn && playerForCardsDialog.id === localPlayer.id}
         />
       )}

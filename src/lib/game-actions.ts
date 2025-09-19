@@ -1058,7 +1058,6 @@ export const handleUseCard = (state: GameState, cardName: string) => {
 
 
     newState.useCardDialogState = null;
-    newState.showCardsDialogForPlayer = null;
 
     if (!['Sabatoge', 'Wealthy', 'Steal Resource'].includes(cardName)) {
         return checkAndEndTurnIfNoActions(newState);
@@ -1344,12 +1343,6 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             resultState = handleEndTurn(gameState);
             resultSelectedArmyId = null;
             break;
-        case 'show-cards':
-             resultState = { ...gameState, showCardsDialogForPlayer: payload };
-             break;
-        case 'close-cards':
-            resultState = { ...gameState, showCardsDialogForPlayer: null };
-            break;
         case 'open-abilities-shop':
             resultState = handleOpenAbilitiesShop(gameState);
             break;
@@ -1362,7 +1355,7 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
                 if (payload === 'Steal Resource') dialogState = { stealResourceDialogState: { targetPlayerId: null } };
                 if (payload === 'Sabatoge') dialogState = { sabotageDialogState: { isOpen: true } };
                 if (payload === 'Wealthy') dialogState = { wealthyDialogState: { isOpen: true } };
-                resultState = { ...gameState, ...dialogState, showCardsDialogForPlayer: null, useCardDialogState: null };
+                resultState = { ...gameState, ...dialogState, useCardDialogState: null };
             } else {
                  resultState = handleUseCard(gameState, payload);
             }
@@ -1427,5 +1420,3 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
     
     return { newState: resultState, selectedArmyId: resultSelectedArmyId };
 }
-
-    

@@ -17,6 +17,8 @@ type ActionsPanelProps = {
   turnDuration: number;
   currentAction: GameAction | null;
   selectedArmy: Army | null;
+  onToggleCards: (playerId: number) => void;
+  cardsDialogPlayerId: number | null;
 };
 
 type ActionConfig = {
@@ -28,9 +30,9 @@ type ActionConfig = {
   onClick?: () => void;
 };
 
-export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration, currentAction, selectedArmy }: ActionsPanelProps) {
+export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration, currentAction, selectedArmy, onToggleCards, cardsDialogPlayerId }: ActionsPanelProps) {
   const { playerId } = usePlayer();
-  const { currentPlayerIndex, players, map, specialCardsDeck, teleportState, scoutingState, settings, showCardsDialogForPlayer, abilitiesShopState } = gameState;
+  const { currentPlayerIndex, players, map, specialCardsDeck, teleportState, scoutingState, settings, abilitiesShopState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   const localPlayer = players.find(p => p.playerId === playerId)!;
   
@@ -108,8 +110,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
         disabled: localPlayer.specialCards.length === 0, 
         tooltip: "View your collected special cards. You can use one per turn.", 
         onClick: () => {
-          const action: GameAction = showCardsDialogForPlayer === localPlayer.id ? 'close-cards' : 'show-cards';
-          onAction(action, localPlayer.id);
+            onToggleCards(localPlayer.id);
         }
       },
   ]
@@ -162,7 +163,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             <TooltipTrigger asChild>
                 <div className={isMain ? "w-full" : ""}>
                     <Button
-                        variant={currentAction === action.id ? 'default' : 'outline'}
+                        variant={currentAction === action.id || (action.id === 'show-cards' && cardsDialogPlayerId === localPlayer.id) ? 'default' : 'outline'}
                         onClick={action.onClick ? action.onClick : () => onAction(action.id)}
                         disabled={action.id !== 'show-cards' && (!isMyTurn || action.disabled)}
                         className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}

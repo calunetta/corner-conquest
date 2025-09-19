@@ -198,7 +198,6 @@ export type GameState = {
   monsterCombatState: MonsterCombatState | null;
   positionDialogState: PositionDialogState | null;
   collectDialogState: CollectDialogState | null;
-  showCardsDialogForPlayer: number | null;
   stealResourceDialogState: StealResourceDialogState | null;
   useCardDialogState: UseCardDialogState | null;
   teleportState: TeleportState | null;
@@ -224,14 +223,14 @@ export type GameAction =
   | 'position' 
   | 'buy-card' 
   | 'upgrade' 
+  | 'open-abilities-shop'
+  | 'close-abilities-shop'
   | 'show-cards'
   | 'close-cards'
   | 'use-card' 
   | 'confirm-use-card'
   | 'end-turn' 
   | 'teleport' 
-  | 'open-abilities-shop'
-  | 'close-abilities-shop'
   | 'buy-ability' 
   | 'cancel-action'
   // Dialog actions

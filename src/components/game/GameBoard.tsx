@@ -46,6 +46,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [selectedArmyId, setSelectedArmyId] = useState<number | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<{ x: number, y: number }[]>([]);
   const [currentAction, setCurrentAction] = useState<GameAction | null>(null);
+  const [cardsDialogPlayerId, setCardsDialogPlayerId] = useState<number | null>(null);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -105,7 +106,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleAction = useCallback(async (action: GameAction, payload?: any) => {
     if (!gameState || !localPlayer || isPerformingAction) return;
 
-    if (!isMyTurn && !['show-cards', 'open-abilities-shop'].includes(action)) {
+    if (!isMyTurn && !['show-cards', 'open-abilities-shop', 'close-cards', 'close-abilities-shop'].includes(action)) {
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
       return;
     }
@@ -123,7 +124,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setSelectedArmyId(newSelectedArmyId ?? null);
 
         // Reset UI state for most actions, but preserve it for dialog flows
-        if (action !== 'show-cards' && action !== 'select-army' && action !== 'select-defender') {
+        if (action !== 'select-army' && action !== 'select-defender') {
             const isDialogAction = Object.keys(newState).some(k => (k.endsWith('State') || k.endsWith('Dialog')) && newState[k as keyof GameState] !== null);
             if (!isDialogAction) {
                 setCurrentAction(null);
@@ -285,6 +286,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       setIsExiting(false);
   }
 
+  const handleToggleCards = (playerId: number) => {
+    setCardsDialogPlayerId(prevId => prevId === playerId ? null : playerId);
+  };
+
   if (isLoading || !gameState || !localPlayer) {
     return (
       <div className="flex h-screen w-screen items-center justify-center p-4 text-center">
@@ -387,7 +392,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                           ) : isScouting && isMyTurn ? (
                               <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
                                   Scout: Reveal a hidden tile ({scoutingState.count} remaining)
-                              </p>
+                                  </p>
                           ) : (
                               <>
                                   <p className='text-base font-semibold sm:text-lg'>Turn {gameState.turn}: <span style={{color: currentPlayer.color}}>{currentPlayer.name}'s turn</span></p>
@@ -407,6 +412,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                     turnDuration={TURN_DURATION}
                     currentAction={currentAction}
                     selectedArmy={selectedArmy}
+                    onToggleCards={handleToggleCards}
+                    cardsDialogPlayerId={cardsDialogPlayerId}
                 />
                 <GameLog logs={log} />
                 </aside>
@@ -449,6 +456,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         locallyDismissedDialogs={locallyDismissedDialogs}
         setLocallyDismissedDialogs={setLocallyDismissedDialogs}
         handleAction={handleAction}
+        cardsDialogPlayerId={cardsDialogPlayerId}
+        onCloseCardsDialog={() => setCardsDialogPlayerId(null)}
       />
     </div>
   );
