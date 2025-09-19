@@ -102,8 +102,8 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             break;
         case 'position':
             if (!selectedArmy) return "You must select an army first.";
-            if (!currentTile || (currentTile.type !== 'resource' && currentTile.type !== 'base') || currentTile.resources.length === 0) return "This tile has no resources to position on.";
             if (currentPlayer.positions.some(p => p.armyId === selectedArmy.id)) return "You are already positioned here.";
+            if (!currentTile || (currentTile.type !== 'resource' && currentTile.type !== 'base') || currentTile.resources.length === 0) return "This tile has no resources to position on.";
             if (currentTile.monsters && currentTile.monsters.length > 0) return "Cannot position on an island with monsters.";
             break;
         case 'show-cards':

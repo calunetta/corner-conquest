@@ -89,7 +89,7 @@ export function handlePositionAction(state: GameState, selectedArmy: Army | null
 
 export function handleCollectAction(state: GameState, selectedArmy: Army | null): GameState {
   let newState = { ...state };
-  const { players, currentPlayerIndex, map } = newState;
+  const { players, currentPlayerIndex } = newState;
   const player = players[currentPlayerIndex];
   
   if (!selectedArmy) throw new Error("No army selected.");
@@ -99,7 +99,7 @@ export function handleCollectAction(state: GameState, selectedArmy: Army | null)
   if (positionIndex === -1) throw new Error("This army is not positioned on a resource.");
 
   const position = player.positions[positionIndex];
-  const tile = map[position.y][position.x];
+  const tile = newState.map[position.y][position.x];
   const resourceSpot = tile.resources.find(r => r.type === position.resource);
   if (!resourceSpot) throw new Error("Resource not found on this island.");
   
@@ -127,16 +127,20 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     const { players, currentPlayerIndex, map, collectDialogState, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
-    if (!collectDialogState || !selectedArmy) return newState;
+    if (!collectDialogState && !selectedArmy) return newState;
 
-    const { resource } = collectDialogState;
+    const resourceToCollect = collectDialogState ? collectDialogState.resource : null;
+    const armyToUpdate = selectedArmy;
 
-    const positionIndex = player.positions.findIndex(p => p.armyId === selectedArmy.id);
+    if (!armyToUpdate) throw new Error("No army provided for collection confirmation.");
+    if (!resourceToCollect) throw new Error("No resource information for collection.");
+
+    const positionIndex = player.positions.findIndex(p => p.armyId === armyToUpdate.id);
     if (positionIndex === -1) {
         throw new Error("Position not found to collect from.");
     }
     
-    let amountToCollect = resource.amount;
+    let amountToCollect = resourceToCollect.amount;
 
     if (useProductive) {
         if (!player.specialCards.includes('Productive') || player.actionsThisTurn.includes('use-card')) {
@@ -152,15 +156,15 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
         newState.log.push(`${player.name} used 'Productive' to collect double!`);
     }
 
-    player.resources[resource.type] += amountToCollect;
-    const army = player.armies.find(a => a.id === selectedArmy.id);
+    player.resources[resourceToCollect.type] += amountToCollect;
+    const army = player.armies.find(a => a.id === armyToUpdate.id);
     if (army) army.hasActed = true;
-    newState.log.push(`${player.name} collected ${amountToCollect} ${resource.type}.`);
+    newState.log.push(`${player.name} collected ${amountToCollect} ${resourceToCollect.type}.`);
 
     player.positions.splice(positionIndex, 1);
-    const tile = map[selectedArmy.position.y][selectedArmy.position.x];
+    const tile = map[armyToUpdate.position.y][armyToUpdate.position.x];
     if (tile.positionedBy) {
-        tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === resource.type));
+        tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === resourceToCollect.type));
     }
     newState.log.push(`${player.name}'s army must be repositioned to collect again.`);
 
@@ -1321,7 +1325,7 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             resultSelectedArmyId = null;
             break;
         case 'show-cards':
-             return { newState: { ...gameState, showCardsDialogForPlayer: payload }, selectedArmyId: resultSelectedArmyId };
+             return { newState: { ...gameState, showCardsDialogForPlayer: payload || null }, selectedArmyId: resultSelectedArmyId };
         case 'open-abilities-shop':
             resultState = handleOpenAbilitiesShop(gameState);
             break;

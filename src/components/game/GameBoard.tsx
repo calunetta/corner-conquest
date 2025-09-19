@@ -112,47 +112,32 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     
     try {
         setIsPerformingAction(true);
-        const result = GameActions.handleGameAction({
+        const { newState, selectedArmyId: newSelectedArmyId } = GameActions.handleGameAction({
             action,
             gameState,
             selectedArmy,
             payload
         });
         
-        let finalState = result.newState;
-        let finalSelectedArmyId = result.selectedArmyId;
+        await setGameState(newState);
+        setSelectedArmyId(newSelectedArmyId ?? null);
 
-        setSelectedArmyId(finalSelectedArmyId ?? null);
-        
-        if (action !== 'show-cards') {
-           setCurrentAction(null);
-           setPossibleMoves([]);
-           setSelectedTile(null);
+        // Reset UI state for most actions, but preserve it for dialog flows
+        if (action !== 'show-cards' && action !== 'select-army' && action !== 'select-defender') {
+            const isDialogAction = Object.keys(newState).some(k => (k.endsWith('State') || k.endsWith('Dialog')) && newState[k as keyof GameState] !== null);
+            if (!isDialogAction) {
+                setCurrentAction(null);
+                setPossibleMoves([]);
+                setSelectedTile(null);
+            }
         }
-
-        if (finalState.showCardsDialogForPlayer === localPlayer.id) {
-            // Do not clear other state for just showing cards
-        } else if (action !== 'select-army') {
-           if (finalState.armySelectionDialogState?.isOpen) {
-             // Keep state if army selection is needed
-           } else {
-             setCurrentAction(null);
-             setPossibleMoves([]);
-             setSelectedTile(null);
-             if (action !== 'select-defender') {
-                finalSelectedArmyId = null;
-             }
-           }
-        }
-        
-        await setGameState(finalState);
 
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
     } finally {
         setIsPerformingAction(false);
     }
-  }, [gameState, localPlayer, isMyTurn, selectedArmy, toast, setGameState, isPerformingAction, selectedArmyId]);
+  }, [gameState, localPlayer, isMyTurn, selectedArmy, toast, setGameState, isPerformingAction]);
   
   const handleTileClick = async (x: number, y: number) => {
     if (!gameState || !isMyTurn || gameState.status !== 'playing' || isPerformingAction) return;
