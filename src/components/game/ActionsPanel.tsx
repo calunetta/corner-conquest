@@ -27,7 +27,7 @@ type ActionConfig = {
   icon: React.ReactNode;
   disabled?: boolean;
   tooltip: string;
-  onClick?: () => void;
+  onClick: () => void;
 };
 
 export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration, currentAction, selectedArmy, onToggleCards, cardsDialogPlayerId }: ActionsPanelProps) {
@@ -56,9 +56,9 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0) || currentPlayer.hasExtraMove;
 
   const mainActions: ActionConfig[] = [
-    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasArmyActed, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving." },
-    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving." },
-    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed, tooltip: "Position your army on a resource to collect it on a future turn. Can only be done once per turn, before moving." },
+    { id: 'collect', label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasArmyActed, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving.", onClick: () => onAction('collect') },
+    { id: 'attack', label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction('attack') },
+    { id: 'position', label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed, tooltip: "Position your army on a resource to collect it on a future turn. Can only be done once per turn, before moving.", onClick: () => onAction('position') },
   ];
   
   const deployLabel = currentPlayer.reinforceActive
@@ -73,21 +73,24 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
       label: `Upgrade (${currentPlayer.resources.iron}/${upgradeCost} Iron)`, 
       icon: <Zap />, 
       disabled: !canUpgrade, 
-      tooltip: "Spend iron to permanently increase your army's attack power by 1. Can only be done once per turn." 
+      tooltip: "Spend iron to permanently increase your army's attack power by 1. Can only be done once per turn.",
+      onClick: () => onAction('upgrade')
     },
     { 
       id: 'buy-card', 
       label: buyCardLabel, 
       icon: <ShoppingCart />, 
       disabled: !canBuyCard, 
-      tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn." 
+      tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn.",
+      onClick: () => onAction('buy-card')
     },
     { 
       id: 'deploy', 
       label: deployLabel, 
       icon: <Sword />, 
       disabled: !canDeploy, 
-      tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army." 
+      tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army.",
+      onClick: () => onAction('deploy')
     },
     { 
       id: 'open-abilities-shop', 
@@ -109,9 +112,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
         icon: <Album />, 
         disabled: localPlayer.specialCards.length === 0, 
         tooltip: "View your collected special cards. You can use one per turn.", 
-        onClick: () => {
-            onToggleCards(localPlayer.id);
-        }
+        onClick: () => onToggleCards(localPlayer.id)
       },
   ]
   
@@ -164,7 +165,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
                 <div className={isMain ? "w-full" : ""}>
                     <Button
                         variant={currentAction === action.id || (action.id === 'show-cards' && cardsDialogPlayerId === localPlayer.id) ? 'default' : 'outline'}
-                        onClick={action.onClick ? action.onClick : () => onAction(action.id)}
+                        onClick={action.onClick}
                         disabled={action.id !== 'show-cards' && (!isMyTurn || action.disabled)}
                         className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}
                     >
@@ -189,12 +190,12 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
         <CardTitle className="text-lg">Actions</CardTitle>
         <div className="flex items-center gap-2">
             {isCancellableActionInProgress && (
-                 <Button variant="destructive" size="sm" onClick={() => onAction('cancel-action')} disabled={!isMyTurn}>
+                 <Button variant="destructive" size="sm" onClick={() => onAction('cancel-action', null)} disabled={!isMyTurn}>
                     <XCircle />
                     Cancel
                 </Button>
             )}
-            <Button size="sm" onClick={() => onAction('end-turn')} disabled={!isMyTurn} className="relative overflow-hidden">
+            <Button size="sm" onClick={() => onAction('end-turn', null)} disabled={!isMyTurn} className="relative overflow-hidden">
                 <span 
                     className="absolute left-0 top-0 h-full bg-primary/50 transition-all duration-1000 ease-linear"
                     style={{ width: `${isMyTurn ? timerPercentage : 100}%` }}
