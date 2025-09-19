@@ -1,12 +1,47 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { doc, onSnapshot, setDoc, getDoc, writeBatch } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, getDoc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { GameState, FirestoreGameState, Player, Island } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import * as GameActions from '@/lib/game-actions';
+import { get, set, isEqual, isObject } from 'lodash';
+
+
+// Utility to find differences between two objects and return an update object for Firestore
+function getChangedFields(oldState: any, newState: any): { [key: string]: any } {
+  const changes: { [key: string]: any } = {};
+
+  function findDiffs(path: string, key: string, value: any) {
+    const oldVal = get(oldState, `${path}${key}`);
+    const newVal = value;
+
+    if (!isEqual(oldVal, newVal)) {
+      changes[`${path}${key}`] = newVal;
+    }
+  }
+
+  function recurse(path: string, newObj: any) {
+    for (const key in newObj) {
+      if (newObj.hasOwnProperty(key)) {
+        const value = newObj[key];
+        if (isObject(value) && !Array.isArray(value) && value !== null) {
+          recurse(`${path}${key}.`, value);
+        } else {
+          findDiffs(path, key, value);
+        }
+      }
+    }
+  }
+
+  const { map, ...dynamicNewState } = newState;
+  recurse('', dynamicNewState);
+  
+  return changes;
+}
+
 
 export function useGameEngine(gameId: string, playerId: string | null) {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -35,7 +70,10 @@ export function useGameEngine(gameId: string, playerId: string | null) {
             if (mapDoc.exists()) {
                 mapData = mapDoc.data().map as Island[][];
             } else {
-                throw new Error("Map data not found.");
+                // If map data doesn't exist, it likely means the game was deleted
+                toast({ title: "Game Over", description: "This game session no longer exists." });
+                router.push('/');
+                return;
             }
 
             const gameDocRef = doc(db, 'games', gameId);
@@ -73,13 +111,14 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   }, [gameId, toast, router]);
 
   const updateGameState = useCallback(async (newStateOrFn: GameState | null | ((prevState: GameState | null) => GameState | null)) => {
+    const currentState = gameStateRef.current;
+    if (currentState === null) {
+         console.warn("Attempted to update a null game state.");
+         return;
+    }
+    
     let finalState: GameState | null = null;
     if (typeof newStateOrFn === 'function') {
-        const currentState = gameStateRef.current;
-        if (currentState === null) {
-             console.warn("Attempted to update a null game state.");
-             return;
-        }
         finalState = newStateOrFn(currentState);
     } else {
       finalState = newStateOrFn;
@@ -91,11 +130,14 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     }
 
     try {
-        const { map, ...dynamicState } = finalState;
-        const firestoreState: FirestoreGameState = dynamicState;
-
-        const gameDocRef = doc(db, 'games', gameId);
-        await setDoc(gameDocRef, firestoreState, { merge: true });
+        const changes = getChangedFields(currentState, finalState);
+        
+        if (Object.keys(changes).length > 0) {
+            const gameDocRef = doc(db, 'games', gameId);
+            await updateDoc(gameDocRef, changes);
+        } else {
+            console.log("No state changes detected, skipping Firestore update.");
+        }
 
     } catch (error: any) {
         console.error("Error updating game state:", error);
@@ -126,11 +168,12 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
   useEffect(() => {
     if (!isLoading && gameState && !localPlayer) {
+        toast({ title: "Not in Game", description: "You are not a player in this game. Returning to lobby." });
         setTimeout(() => {
             router.push('/');
         }, 3000);
     }
-  }, [isLoading, gameState, localPlayer, router]);
+  }, [isLoading, gameState, localPlayer, router, toast]);
   
   useEffect(() => {
     if (!isHost || !gameStateRef.current?.deathAnimations || gameStateRef.current.deathAnimations.length === 0) {
@@ -155,38 +198,44 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
 
   useEffect(() => {
-    if (isProcessingBotTurn.current) {
+    const currentState = gameStateRef.current;
+    if (isProcessingBotTurn.current || !currentState || currentState.status !== 'playing' || !currentState.players[currentState.currentPlayerIndex]?.isBot || !isHost) {
         return;
     }
-    if (gameState && gameState.status === 'playing' && currentPlayer?.isBot && isHost) {
-      isProcessingBotTurn.current = true;
-      
-      setTimeout(async () => {
-        try {
-            const latestState = gameStateRef.current;
-            if (!latestState || !latestState.players[latestState.currentPlayerIndex]?.isBot || !isProcessingBotTurn.current) {
-                isProcessingBotTurn.current = false;
-                return;
-            }
 
-            console.log('Bot turn starting...');
-            const nextState = await takeBotTurn(latestState);
-            await updateGameState(nextState);
-            console.log('Bot turn finished and state updated.');
-        } catch (error) {
-          console.error("Error during bot turn: ", error);
-          if (gameStateRef.current) {
-              const errorState = GameActions.handleEndTurn(gameStateRef.current);
-              await updateGameState(errorState);
+    isProcessingBotTurn.current = true;
+    
+    setTimeout(async () => {
+      try {
+          const latestState = gameStateRef.current;
+          if (!latestState || !latestState.players[latestState.currentPlayerIndex]?.isBot || !isProcessingBotTurn.current) {
+              isProcessingBotTurn.current = false;
+              return;
           }
-        } finally {
-            setTimeout(() => {
-                isProcessingBotTurn.current = false;
-            }, 500);
+
+          console.log('Bot turn starting...');
+          const nextState = await takeBotTurn(latestState);
+          await updateGameState(nextState);
+          console.log('Bot turn finished and state updated.');
+      } catch (error) {
+        console.error("Error during bot turn: ", error);
+        const stateAfterError = gameStateRef.current;
+        if (stateAfterError) {
+            try {
+                const errorState = GameActions.handleEndTurn(stateAfterError);
+                await updateGameState(errorState);
+            } catch (e) {
+                 console.error("Failed to end turn after bot error:", e);
+            }
         }
-      }, 2000);
-    }
-  }, [gameState, currentPlayer, isHost, updateGameState]);
+      } finally {
+          setTimeout(() => {
+              isProcessingBotTurn.current = false;
+          }, 500);
+      }
+    }, 2000);
+    
+  }, [gameState, isHost, updateGameState]);
 
 
   return { gameState, setGameState: updateGameState, isMyTurn, localPlayer, isHost, isLoading };

@@ -18,6 +18,7 @@ import { startGame } from '@/lib/game-initializer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import Image from 'next/image';
+import { ConfirmExitDialog } from './ConfirmExitDialog';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
 
@@ -37,6 +38,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [timeLeft, setTimeLeft] = useState(TURN_DURATION);
   const [activeInstructionToastId, setActiveInstructionToastId] = useState<string | null>(null);
   const [locallyDismissedDialogs, setLocallyDismissedDialogs] = useState<string[]>([]);
+  const [showConfirmExitDialog, setShowConfirmExitDialog] = useState(false);
+  const [isPerformingAction, setIsPerformingAction] = useState(false);
   
   // UI state that doesn't need to be in Firestore
   const [selectedTile, setSelectedTile] = useState<{ x: number, y: number } | null>(null);
@@ -60,7 +63,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setSelectedTile(null);
         setPossibleMoves([]);
         setCurrentAction(null);
-        // Also clear any dialogs that might have been open
+        // Also clear any dialogs that might have been open for the previous player
         setLocallyDismissedDialogs(Object.keys(gameState || {}).filter(k => k.endsWith('State') || k.endsWith('Dialog')));
     }
   }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex]);
@@ -74,16 +77,20 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   // When game state changes, re-evaluate local state
   useEffect(() => {
     if (isMyTurn && gameState) {
+        const myPlayer = gameState.players[gameState.currentPlayerIndex];
         // If an army was auto-selected and now there are more, deselect to force choice
-        if (gameState.players[gameState.currentPlayerIndex].armies.length > 1 && selectedArmyId !== null) {
-            const armyStillExists = gameState.players[gameState.currentPlayerIndex].armies.some(a => a.id === selectedArmyId);
+        if (myPlayer.armies.length > 1 && selectedArmyId !== null) {
+            const armyStillExists = myPlayer.armies.some(a => a.id === selectedArmyId);
             if (!armyStillExists) {
                 setSelectedArmyId(null);
                 setPossibleMoves([]);
                 setSelectedTile(null);
             }
-        } else if (gameState.players[gameState.currentPlayerIndex].armies.length === 1 && selectedArmyId === null) {
-             setSelectedArmyId(gameState.players[gameState.currentPlayerIndex].armies[0].id);
+        // Auto-select if only one army exists
+        } else if (myPlayer.armies.length === 1 && selectedArmyId === null) {
+             setSelectedArmyId(myPlayer.armies[0].id);
+        } else if (myPlayer.armies.length === 1 && selectedArmyId !== myPlayer.armies[0].id) {
+            setSelectedArmyId(myPlayer.armies[0].id);
         }
     } else if (!isMyTurn) {
         // Clear local selections if it's not my turn
@@ -93,24 +100,14 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setCurrentAction(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMyTurn, gameState?.turn]);
+  }, [isMyTurn, gameState?.turn, gameState?.players]);
   
   const handleAction = useCallback(async (action: GameAction, payload?: any) => {
-    if (!gameState || !localPlayer) return;
+    if (!gameState || !localPlayer || isPerformingAction) return;
 
-    // Actions that only manipulate local state
-    if (action === 'show-cards') {
-        const newState = { ...gameState, showCardsDialogForPlayer: localPlayer.id };
-        setGameState(newState);
-        return;
-    }
-    if (action === 'open-abilities-shop') {
-        try {
-            const newState = GameActions.handleOpenAbilitiesShop(gameState);
-            setGameState(newState);
-        } catch (error: any) {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
-        }
+    if (action === 'show-cards' || action === 'open-abilities-shop') {
+        const result = GameActions.handleGameAction({ action, gameState, selectedArmy, payload });
+        setGameState(result);
         return;
     }
 
@@ -125,7 +122,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             return;
         }
 
-        let result = GameActions.handleGameAction({
+        setIsPerformingAction(true); // Lock actions
+
+        const result = GameActions.handleGameAction({
             action,
             gameState,
             selectedArmy,
@@ -142,24 +141,26 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             newState = result.newState;
         } else {
              // This was a state-changing action, so reset local UI state
-            setSelectedArmyId(null);
-            setSelectedTile(null);
-            setPossibleMoves([]);
-            setCurrentAction(null);
+             if (action === 'deploy') {
+                setSelectedArmyId(null); // Force re-selection after deploying
+             }
         }
         
         // This will trigger the Firestore update via the hook
-        setGameState(newState);
+        await setGameState(newState);
 
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
+    } finally {
+        setIsPerformingAction(false); // Unlock actions
     }
-  }, [gameState, localPlayer, isMyTurn, selectedArmy, toast, setGameState]);
+  }, [gameState, localPlayer, isMyTurn, selectedArmy, toast, setGameState, isPerformingAction]);
   
-  const handleTileClick = (x: number, y: number) => {
-    if (!gameState || !isMyTurn || gameState.status !== 'playing') return;
+  const handleTileClick = async (x: number, y: number) => {
+    if (!gameState || !isMyTurn || gameState.status !== 'playing' || isPerformingAction) return;
     
     try {
+        setIsPerformingAction(true);
         const result = GameActions.handleTileClick(gameState, x, y, localPlayer?.id ?? -1, selectedArmy, possibleMoves);
         
         setSelectedArmyId(result.selectedArmyId);
@@ -168,7 +169,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setCurrentAction(result.currentAction);
         
         // Update game state to show dialogs or for state-changing clicks
-        setGameState(result.newState);
+        await setGameState(result.newState);
 
         if (activeInstructionToastId) {
             dismiss(activeInstructionToastId);
@@ -176,6 +177,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         }
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
+    } finally {
+        setIsPerformingAction(false);
     }
   };
   
@@ -253,10 +256,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (!gameState || !isHost) return;
     const newState = startGame(gameState, localPlayer?.name || 'The host');
     toast({ title: "Game Started!", description: "Let the conquest begin!" });
-    setGameState(newState);
+    await setGameState(newState);
   };
 
-  const handleExitGame = async () => {
+  const handleExitClick = () => {
     if (!gameState || !localPlayer) return;
 
     if (isHost) {
@@ -264,7 +267,16 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         return;
     }
 
-    // Non-host players can leave anytime, their units will be removed.
+    if (gameState.status === 'playing') {
+        setShowConfirmExitDialog(true);
+    } else {
+        handleConfirmExit();
+    }
+  };
+
+  const handleConfirmExit = async () => {
+    setShowConfirmExitDialog(false);
+    if (!localPlayer) return;
     setIsExiting(true);
     await GameActions.handlePlayerExit({
       gameId,
@@ -305,7 +317,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             {status === 'waiting' ? (
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2 sm:gap-4">
-                        <Button variant="outline" size="icon" onClick={handleExitGame} disabled={isExiting}>
+                        <Button variant="outline" size="icon" onClick={handleExitClick} disabled={isExiting}>
                         {isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft />}
                         </Button>
                         <h1 className="text-xl font-bold sm:text-2xl">Corner Conquest</h1>
@@ -320,6 +332,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen} className="w-full">
                 <div className="flex items-center justify-between rounded-md bg-muted/50 p-2">
                     <div className='flex items-center gap-4'>
+                        <Button variant="outline" size="icon" onClick={handleExitClick} disabled={isExiting}>
+                            {isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft />}
+                        </Button>
                         <h2 className="text-base font-semibold sm:text-lg">Player Information</h2>
                         {status === 'playing' && (
                             <div className="flex items-center gap-2 rounded-md bg-background/70 px-3 py-1 text-sm font-semibold">
@@ -424,6 +439,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+      )}
+      
+      {showConfirmExitDialog && (
+          <ConfirmExitDialog 
+            onConfirm={handleConfirmExit}
+            onClose={() => setShowConfirmExitDialog(false)}
+          />
       )}
 
       <GameDialogs 

@@ -19,13 +19,13 @@ import * as GameActions from '@/lib/game-actions';
 
 type GameDialogsProps = {
   gameState: GameState;
-  setGameState: (state: GameState | null | ((prevState: GameState | null) => GameState | null)) => void;
+  setGameState: (state: GameState | null | ((prevState: GameState | null) => GameState | null)) => Promise<void>;
   localPlayer: Player;
   isMyTurn: boolean;
   onConfirmHostLeave: () => void;
   locallyDismissedDialogs: string[];
-  setLocallyDismissedDialogs: (keys: string[]) => void;
-  handleAction: (action: GameAction, payload?: any) => void;
+  setLocallyDismissedDialogs: (keys: string[] | ((prev: string[]) => string[])) => void;
+  handleAction: (action: GameAction, payload?: any) => Promise<void>;
 };
 
 export function GameDialogs({ 
@@ -54,16 +54,12 @@ export function GameDialogs({
     attackSelectionDialogState,
     status
   } = gameState;
-
-  const handleUpdate = (state: GameState) => {
-    setGameState(state);
-  };
   
   const handleCloseDialog = (dialogKey: keyof GameState) => {
     if (isMyTurn) {
         setGameState(gs => gs ? ({ ...gs, [dialogKey]: null }) : null);
     } else {
-        setLocallyDismissedDialogs([...locallyDismissedDialogs, dialogKey]);
+        setLocallyDismissedDialogs(prev => [...prev, dialogKey]);
     }
   };
   
@@ -92,7 +88,7 @@ export function GameDialogs({
           monsters={currentTileForMonster.monsters}
           onRoll={(payload) => handleAction('monster-combat-roll', payload)}
           onClose={() => isAttacker ? handleAction('close-monster-combat') : handleCloseDialog('monsterCombatState')}
-          onCancel={() => handleCloseDialog('monsterCombatState')}
+          onCancel={() => handleAction('cancel-action')}
           isAttacker={isAttacker}
         />
       )}
@@ -188,3 +184,5 @@ export function GameDialogs({
     </>
   );
 }
+
+    
