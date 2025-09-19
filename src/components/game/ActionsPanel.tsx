@@ -98,7 +98,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             break;
         case 'attack':
             if (!selectedArmy) return "You must select an army first.";
-            if (!currentTile || (!currentTile.occupants.some(o => o.playerId !== currentPlayer.id) && (!currentTile.monsters || current_tile.monsters.length === 0))) return "There is nothing to attack on this tile.";
+            if (!currentTile || (!currentTile.occupants.some(o => o.playerId !== currentPlayer.id) && (!currentTile.monsters || currentTile.monsters.length === 0))) return "There is nothing to attack on this tile.";
             break;
         case 'position':
             if (!selectedArmy) return "You must select an army first.";
