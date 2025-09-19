@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Sword, ShoppingCart, Gem, Anchor, Zap, Album, University, XCircle } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '../ui/tooltip';
+import { usePlayer } from '@/hooks/use-player';
 
 type ActionsPanelProps = {
   onAction: (action: GameAction, payload?: any) => void;
@@ -28,8 +29,10 @@ type ActionConfig = {
 };
 
 export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration, currentAction, selectedArmy }: ActionsPanelProps) {
+  const { playerId } = usePlayer();
   const { currentPlayerIndex, players, map, specialCardsDeck, teleportState, scoutingState, settings, showCardsDialogForPlayer, abilitiesShopState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
+  const localPlayer = players.find(p => p.playerId === playerId)!;
   
   const currentTile = (selectedArmy && map && map[selectedArmy.position.y] && map[selectedArmy.position.y][selectedArmy.position.x])
     ? map[selectedArmy.position.y][selectedArmy.position.x] 
@@ -100,13 +103,13 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const alwaysAvailableActions: ActionConfig[] = [
       { 
         id: 'show-cards', 
-        label: 'Show Cards', 
+        label: 'My Cards', 
         icon: <Album />, 
-        disabled: currentPlayer.specialCards.length === 0, 
+        disabled: localPlayer.specialCards.length === 0, 
         tooltip: "View your collected special cards. You can use one per turn.", 
         onClick: () => {
-          const action: GameAction = showCardsDialogForPlayer === currentPlayer.id ? 'close-cards' : 'show-cards';
-          onAction(action, currentPlayer.id);
+          const action: GameAction = showCardsDialogForPlayer === localPlayer.id ? 'close-cards' : 'show-cards';
+          onAction(action, localPlayer.id);
         }
       },
   ]
@@ -145,7 +148,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             if (currentTile.monsters && currentTile.monsters.length > 0) return "Cannot position on an island with monsters.";
             break;
         case 'show-cards':
-            if (currentPlayer.specialCards.length === 0) return "You have no special cards.";
+            if (localPlayer.specialCards.length === 0) return "You have no special cards.";
             break;
         default:
             return "This action is not available.";
@@ -161,7 +164,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
                     <Button
                         variant={currentAction === action.id ? 'default' : 'outline'}
                         onClick={action.onClick ? action.onClick : () => onAction(action.id)}
-                        disabled={!isMyTurn || action.disabled}
+                        disabled={action.id !== 'show-cards' && (!isMyTurn || action.disabled)}
                         className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}
                     >
                         {action.icon}
@@ -171,7 +174,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             </TooltipTrigger>
             <TooltipContent>
                 <p>{action.tooltip}</p>
-                 {(action.disabled && isMyTurn) && <p className="mt-1 text-xs text-destructive">
+                 {(action.disabled && (isMyTurn || action.id === 'show-cards')) && <p className="mt-1 text-xs text-destructive">
                     {hasArmyActed && ['collect', 'attack', 'position'].includes(action.id) ? "This army has already acted." : getDisabledReason(action.id)}
                 </p>}
             </TooltipContent>

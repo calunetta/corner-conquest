@@ -19,7 +19,7 @@ type CardsDialogProps = {
   player: Player;
   onClose: () => void;
   onUseCard: (cardName: string) => void;
-  canUseCards: boolean;
+  canUseCards: boolean; // Is it the local player's turn?
 };
 
 export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDialogProps) {
@@ -30,6 +30,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
 
   const uniqueCards = Object.keys(cardCounts);
 
+  // This is the single source of truth for whether the "Use" button is enabled.
   const canUseCardAbility = canUseCards && !player.actionsThisTurn.includes('use-card');
   
   const handleUseCard = (cardName: string) => {
@@ -46,7 +47,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
         <AlertDialogHeader>
           <AlertDialogTitle>{player.name}'s Special Cards</AlertDialogTitle>
           <AlertDialogDescription>
-            These are the special cards you have collected. You can use one card per turn.
+            These are the special cards collected by {player.name}.
           </AlertDialogDescription>
         </AlertDialogHeader>
         
@@ -59,7 +60,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
                             <CardTitle className="text-lg">{cardName}</CardTitle>
                             <div className="flex items-center gap-4">
                                 <span className="text-sm font-bold text-muted-foreground">x{cardCounts[cardName]}</span>
-                                {isCardUsableNow(cardName) && canUseCards && (
+                                {isCardUsableNow(cardName) && (
                                     <Button 
                                         size="sm" 
                                         onClick={() => handleUseCard(cardName)} 
@@ -78,7 +79,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
                     </Card>
                 )
             }) : (
-                <p className="text-center text-muted-foreground">You have no special cards.</p>
+                <p className="text-center text-muted-foreground">This player has no special cards.</p>
             )}
             </div>
         </ScrollArea>
