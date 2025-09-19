@@ -2,6 +2,7 @@
 
 import type { GameState, Island, Player, PlayerColor, FirestoreGameState } from './types';
 import { PLAYER_COLORS } from './player-data';
+import { createPlayer } from './game-initializer';
 
 export const TILE_SIZE = 75;
 export const BASE_TILE_SIZE = 150;
@@ -56,14 +57,23 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
     ];
     const newPlayerPos = basePositions[newPlayerSeatIndex];
 
-    const newArmy = { id: 0, position: newPlayerPos, hasActed: false };
+    const newPlayer = createPlayer(
+        newPlayerSeatIndex,
+        playerInfo.playerId,
+        playerInfo.name,
+        newPlayerColor,
+        false,
+        newPlayerPos,
+        newGameState.settings,
+        newGameState.debugMode
+    );
     
     newGameState.map[newPlayerPos.y][newPlayerPos.x] = {
         ...newGameState.map[newPlayerPos.y][newPlayerPos.x],
         type: 'base',
         owner: newPlayerSeatIndex,
         isHidden: false,
-        occupants: [{ playerId: newPlayerSeatIndex, armyId: newArmy.id }],
+        occupants: [{ playerId: newPlayerSeatIndex, armyId: newPlayer.armies[0].id }],
         resources: [
             { type: 'gems', amount: 1 }, 
             { type: 'iron', amount: 1 }, 
@@ -71,32 +81,6 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
         ],
     };
     newGameState.map[newPlayerPos.y][newPlayerPos.x].isHidden = false;
-
-
-    const newPlayer: Player = {
-        id: newPlayerSeatIndex,
-        playerId: playerInfo.playerId,
-        name: playerInfo.name,
-        color: newPlayerColor,
-        isBot: false,
-        armies: [newArmy],
-        resources: { gems: 0, iron: 0, food: 0 },
-        armyCount: 1,
-        attackPower: 0,
-        nextArmyCost: newGameState.settings.initialDeployCost,
-        victoryPoints: 0,
-        specialCards: ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
-        positions: [],
-        hasExtraMove: false,
-        actionsThisTurn: [],
-        passiveAbilities: { explorer: false, collector: false },
-        isSabotaged: false,
-        reinforceActive: false,
-        scoutActive: false,
-        wealthyActive: false,
-        efficientActive: false,
-        masterBuilderActive: false,
-    };
 
     newGameState.players.push(newPlayer);
     newGameState.log.push(`${playerInfo.name} has joined the game!`);

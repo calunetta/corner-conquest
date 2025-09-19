@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { GameAction, GameState, Army } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
@@ -18,7 +18,6 @@ import { startGame } from '@/lib/game-initializer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import Image from 'next/image';
-import { getSelectedArmy as getSelectedArmyUtil } from '@/lib/game-actions';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
 
@@ -91,28 +90,15 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleAction = useCallback(async (action: GameAction, payload?: any) => {
     if (!gameState || !localPlayer) return;
 
-    const createNewState = (handler: (state: GameState, ...args: any[]) => GameState) => {
-        setGameState(currentGameState => {
-            if (!currentGameState) return null;
-            return handler(currentGameState, payload);
-        });
-    };
-    
-    if (action === 'cancel-action') {
-        const { newState, toastMessage } = GameActions.handleCancelAction(gameState);
-        if (toastMessage) toast({ title: "Action Cancelled", description: toastMessage });
-        setGameState(newState);
-        return;
-    }
-
+    // Actions that only manipulate local state
     if (action === 'show-cards') {
         setGameState(gs => gs ? { ...gs, showCardsDialogForPlayer: localPlayer.id } : null);
         return;
     }
-    
     if (action === 'open-abilities-shop') {
         try {
-            setGameState(GameActions.handleOpenAbilitiesShop(gameState));
+            const newState = GameActions.handleOpenAbilitiesShop(gameState);
+            setGameState(newState);
         } catch (error: any) {
             toast({ title: 'Error', description: error.message, variant: 'destructive' });
         }
@@ -125,29 +111,31 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     }
     
     try {
-        if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card', 'show-cards', 'open-abilities-shop'].includes(action)) {
+        if (!selectedArmy && !['deploy', 'buy-card', 'upgrade', 'end-turn', 'use-card', 'show-cards', 'open-abilities-shop', 'cancel-action'].includes(action)) {
             toast({ title: 'No Army Selected', description: 'You must select an army before performing this action.', variant: 'destructive'});
             return;
         }
 
-        const newState = GameActions.handleGameAction({
-            action,
-            gameState,
-            selectedArmy,
-            payload
-        });
-
-        // For actions that open dialogs, we just update the shared state
-        if (['position', 'collect', 'attack', 'show-cards', 'open-abilities-shop', 'use-card'].includes(action)) {
-             setGameState(newState);
+        let newState;
+        if (action === 'cancel-action') {
+            const result = GameActions.handleCancelAction(gameState);
+            if (result.toastMessage) toast({ title: "Action Cancelled", description: result.toastMessage });
+            newState = result.newState;
         } else {
-             // For actions that change the game logic, we update and clear local UI state
-            setGameState(newState);
-            setSelectedArmyId(null);
-            setSelectedTile(null);
-            setPossibleMoves([]);
-            setCurrentAction(null);
+            newState = GameActions.handleGameAction({
+                action,
+                gameState,
+                selectedArmy,
+                payload
+            });
         }
+        
+        // For actions that change the game logic, update and clear local UI state
+        setGameState(newState);
+        setSelectedArmyId(null);
+        setSelectedTile(null);
+        setPossibleMoves([]);
+        setCurrentAction(null);
 
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
@@ -160,14 +148,21 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     try {
         const result = GameActions.handleTileClick(gameState, x, y, localPlayer?.id ?? -1, selectedArmy, possibleMoves);
         
-        // Update shared game state
-        setGameState(result.newState);
-
-        // Update local UI state based on the result
-        setSelectedArmyId(result.selectedArmyId);
-        setSelectedTile(result.selectedTile);
-        setPossibleMoves(result.possibleMoves);
-        setCurrentAction(result.currentAction);
+        if (result.newState.id === gameState.id) {
+            // This was a local UI change, not a state-changing action
+            setSelectedArmyId(result.selectedArmyId);
+            setSelectedTile(result.selectedTile);
+            setPossibleMoves(result.possibleMoves);
+            setCurrentAction(result.currentAction);
+            setGameState(result.newState); // Still need to update for dialogs
+        } else {
+            // This was a state-changing action (move, teleport, etc.)
+            setGameState(result.newState);
+            setSelectedArmyId(null);
+            setSelectedTile(null);
+            setPossibleMoves([]);
+            setCurrentAction(null);
+        }
 
         if (activeInstructionToastId) {
             dismiss(activeInstructionToastId);
@@ -258,22 +253,19 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleExitGame = async () => {
     if (!gameState || !localPlayer) return;
 
-    if (isHost && gameState.status === 'waiting') {
+    if (isHost) {
         setGameState(gs => gs ? { ...gs, showHostLeaveDialog: true } : null);
         return;
     }
 
-    if (gameState.status === 'playing') {
-        toast({ title: "Cannot Leave", description: "You cannot leave a game that is in progress.", variant: "destructive" });
-        return;
-    }
-    
+    // Non-host players can leave anytime, their units will be removed.
     setIsExiting(true);
     await GameActions.handlePlayerExit({
       gameId,
       localPlayer,
       isHost,
       onExit,
+      status: gameState.status,
     });
     setIsExiting(false);
   };

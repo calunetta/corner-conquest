@@ -52,7 +52,12 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   const updateGameState = useCallback(async (newState: GameState | null | ((prevState: GameState | null) => GameState | null)) => {
     let finalState: GameState | null = null;
     if (typeof newState === 'function') {
-      finalState = newState(gameStateRef.current);
+        const currentState = gameStateRef.current;
+        if (currentState === null) {
+             console.warn("Attempted to update a null game state.");
+             return;
+        }
+        finalState = newState(currentState);
     } else {
       finalState = newState;
     }
@@ -119,7 +124,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     const animationTimers = animations.map(anim => 
         setTimeout(() => {
             updateGameState(currentState => {
-                if (!currentState) return null;
+                if (!currentState) return null; // Safety check
                 return {
                     ...currentState,
                     deathAnimations: currentState.deathAnimations.filter(a => a.id !== anim.id),
@@ -141,7 +146,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
         try {
             // Re-fetch the latest state before taking action to avoid stale state issues.
             const latestState = gameStateRef.current;
-            if (!latestState || !latestState.players[latestState.currentPlayerIndex]?.isBot) {
+            if (!latestState || !latestState.players[latestState.currentPlayerIndex]?.isBot || isProcessingBotTurn.current === false) {
                 isProcessingBotTurn.current = false;
                 return;
             }
@@ -157,7 +162,11 @@ export function useGameEngine(gameId: string, playerId: string | null) {
               await updateGameState(errorState);
           }
         } finally {
-            isProcessingBotTurn.current = false;
+            // Set a brief timeout before allowing the next bot turn to start
+            // This can prevent rapid, back-to-back turn processing in bot-only games
+            setTimeout(() => {
+                isProcessingBotTurn.current = false;
+            }, 500);
         }
       }, 2000);
     }
@@ -166,5 +175,3 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
   return { gameState, setGameState: updateGameState, isMyTurn, localPlayer, isHost, isLoading };
 }
-
-    

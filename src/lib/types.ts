@@ -193,6 +193,7 @@ export type GameState = {
   log: string[];
   winner: Player | null;
   specialCardsDeck: string[];
+  discardPile: string[];
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
   positionDialogState: PositionDialogState | null;

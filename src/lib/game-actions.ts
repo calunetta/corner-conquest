@@ -34,7 +34,7 @@ function canPlayerPerformAnyAction(state: GameState): boolean {
         return true;
     }
 
-    if (player.resources.gems >= 10 && !player.actionsThisTurn.includes('buy-card') && specialCardsDeck.length > 0) {
+    if (player.resources.gems >= 10 && !player.actionsThisTurn.includes('buy-card') && (specialCardsDeck.length > 0 || state.discardPile.length > 0)) {
         return true;
     }
 
@@ -132,7 +132,7 @@ export function handleCollectAction(state: GameState, selectedArmy: Army | null)
 
 export function handleConfirmCollection(state: GameState, useProductive: boolean, selectedArmy: Army | null): GameState {
     let newState = { ...state };
-    const { players, currentPlayerIndex, map, collectDialogState, specialCardsDeck } = newState;
+    const { players, currentPlayerIndex, map, collectDialogState, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
     if (!collectDialogState || !selectedArmy) return newState;
@@ -154,7 +154,7 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
         const cardIndex = player.specialCards.indexOf('Productive');
         if (cardIndex > -1) {
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-            specialCardsDeck.push(usedCard);
+            discardPile.push(usedCard);
             player.actionsThisTurn.push('use-card');
         }
         newState.log.push(`${player.name} used 'Productive' to collect double!`);
@@ -180,7 +180,7 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
 
 export function handleDeployAction(state: GameState): GameState {
     let newState = { ...state };
-    const { players, currentPlayerIndex, map, specialCardsDeck, settings } = newState;
+    const { players, currentPlayerIndex, map, discardPile, settings } = newState;
     const player = players[currentPlayerIndex];
     
     if (player.actionsThisTurn.includes('deploy')) throw new Error("You can only deploy one army per turn.");
@@ -218,7 +218,7 @@ export function handleDeployAction(state: GameState): GameState {
       const cardIndex = player.specialCards.indexOf('Efficient');
       if (cardIndex > -1) {
           const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-          specialCardsDeck.push(usedCard);
+          discardPile.push(usedCard);
       }
     }
 
@@ -229,7 +229,7 @@ export function handleDeployAction(state: GameState): GameState {
       const cardIndex = player.specialCards.indexOf('Reinforce');
       if (cardIndex > -1) {
           const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-          specialCardsDeck.push(usedCard);
+          discardPile.push(usedCard);
       }
     }
 
@@ -240,18 +240,31 @@ export function handleDeployAction(state: GameState): GameState {
     player.actionsThisTurn.push('deploy');
     newState.log.push(`${player.name} deployed a new army!`);
     
+    // After deploying, deselect army to force player to choose which one to move
     return checkAndEndTurnIfNoActions(newState);
 }
 
 export function handleBuyCardAction(state: GameState): GameState {
     let newState = { ...state };
-    const { players, currentPlayerIndex, specialCardsDeck } = newState;
+    const { players, currentPlayerIndex, specialCardsDeck, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
     if (player.actionsThisTurn.includes('buy-card')) throw new Error("You can only buy one card per turn.");
     if (player.resources.gems < 10) throw new Error("Not enough gems to buy a card.");
-    if (specialCardsDeck.length === 0) throw new Error("There are no special cards left in the deck.");
+    if (specialCardsDeck.length === 0 && discardPile.length === 0) throw new Error("There are no special cards left in the game.");
     if (player.specialCards.length >= 10 && !newState.debugMode) throw new Error("You have reached the maximum of 10 cards.");
+
+    // Reshuffle discard pile if deck is empty
+    if (specialCardsDeck.length === 0) {
+        newState.log.push("The deck is empty. Reshuffling the discard pile...");
+        // Fisher-Yates shuffle
+        for (let i = discardPile.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [discardPile[i], discardPile[j]] = [discardPile[j], discardPile[i]];
+        }
+        newState.specialCardsDeck = [...discardPile];
+        newState.discardPile = [];
+    }
 
     player.resources.gems -= 10;
     const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
@@ -265,7 +278,7 @@ export function handleBuyCardAction(state: GameState): GameState {
 
 export function handleUpgradeAction(state: GameState): GameState {
     let newState = { ...state };
-    const { players, currentPlayerIndex, specialCardsDeck, settings } = newState;
+    const { players, currentPlayerIndex, discardPile, settings } = newState;
     const player = players[currentPlayerIndex];
 
     if (player.actionsThisTurn.includes('upgrade')) throw new Error("You can only upgrade once per turn.");
@@ -289,7 +302,7 @@ export function handleUpgradeAction(state: GameState): GameState {
           const cardIndex = player.specialCards.indexOf('Master Builder');
           if (cardIndex > -1) {
               const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-              specialCardsDeck.push(usedCard);
+              discardPile.push(usedCard);
           }
       }
     }
@@ -402,9 +415,9 @@ export function handleEndTurn(state: GameState): GameState {
     
     // Reset flags for the player whose turn just ended
     currentPlayer.hasExtraMove = false;
-    player.efficientActive = false; // Reset all card flags
-    player.masterBuilderActive = false;
-    player.reinforceActive = false;
+    currentPlayer.efficientActive = false; // Reset all card flags
+    currentPlayer.masterBuilderActive = false;
+    currentPlayer.reinforceActive = false;
 
 
     // Determine the next player
@@ -486,7 +499,12 @@ function revealIsland(state: GameState, x: number, y: number, player: Player): G
         newState.log.push(`${player.name} discovered a new island and gains ${state.settings.vpPerIslandDiscovery} VP!`);
     }
 
-    if (tile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && newState.specialCardsDeck.length > 0) {
+    if (tile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0)) {
+        if (newState.specialCardsDeck.length === 0) {
+             newState.log.push("The deck is empty. Reshuffling the discard pile...");
+             newState.specialCardsDeck = [...newState.discardPile];
+             newState.discardPile = [];
+        }
         const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
         const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
         player.specialCards.push(drawnCard);
@@ -544,7 +562,7 @@ export function handleTileClick(
             const cardIndex = currentPlayer.specialCards.indexOf('Scout');
             if (cardIndex > -1) {
                 const usedCard = currentPlayer.specialCards.splice(cardIndex, 1)[0];
-                newState.specialCardsDeck.push(usedCard);
+                newState.discardPile.push(usedCard);
             }
              newState = checkAndEndTurnIfNoActions(newState);
         }
@@ -620,7 +638,7 @@ export function handleSelectArmy(state: GameState, armyId: number): GameState {
 
 function handleMoveAction(state: GameState, x: number, y: number, army: Army): GameState {
     let newState = { ...state };
-    const { players, currentPlayerIndex, map, specialCardsDeck } = newState;
+    const { players, currentPlayerIndex, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
     if (army.hasActed && !player.hasExtraMove) {
@@ -648,7 +666,12 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
         newState = revealIsland(newState, x, y, player);
     }
     
-    if (targetTile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && newState.specialCardsDeck.length > 0) {
+    if (targetTile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0)) {
+        if (newState.specialCardsDeck.length === 0) {
+             newState.log.push("The deck is empty. Reshuffling the discard pile...");
+             newState.specialCardsDeck = [...newState.discardPile];
+             newState.discardPile = [];
+        }
         const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
         const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
         player.specialCards.push(drawnCard);
@@ -665,7 +688,7 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
         const cardIndex = player.specialCards.indexOf('Extra Move');
         if (cardIndex > -1) {
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-            specialCardsDeck.push(usedCard);
+            discardPile.push(usedCard);
         }
         
         // After the extra move, mark all armies as having acted.
@@ -730,7 +753,7 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean, selecte
     if (!selectedArmy) return state;
 
     const newState = { ...state };
-    const { combatState, players, specialCardsDeck } = newState;
+    const { combatState, players, discardPile } = newState;
     const attacker = players[combatState.attackerId];
     const defender = players[combatState.defenderId];
 
@@ -741,7 +764,7 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean, selecte
         const cardIndex = attacker.specialCards.indexOf('War Chief');
         if (cardIndex > -1) {
             const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
-            specialCardsDeck.push(usedCard);
+            discardPile.push(usedCard);
             attacker.actionsThisTurn.push('use-card');
             attackerBonusPower += 2;
             newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
@@ -842,7 +865,7 @@ export function handleCloseCombat(state: GameState): GameState {
 
 export function handleMonsterCombatRoll(state: GameState, payload: {monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean}, selectedArmy: Army | null): GameState {
     const newState = { ...state };
-    const { players, currentPlayerIndex, specialCardsDeck } = newState;
+    const { players, currentPlayerIndex, discardPile } = newState;
     const attacker = players[currentPlayerIndex];
 
     if (!selectedArmy) return newState;
@@ -859,7 +882,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
         const cardIndex = attacker.specialCards.indexOf('Overcome');
         if (cardIndex > -1) {
             const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
-            specialCardsDeck.push(usedCard);
+            discardPile.push(usedCard);
             attacker.actionsThisTurn.push('use-card');
             newState.log.push(`${attacker.name} used the 'Overcome' card to win automatically!`);
             winnerId = attacker.id;
@@ -876,7 +899,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
              const cardIndex = attacker.specialCards.indexOf('War Chief');
              if (cardIndex > -1) {
                 const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
-                specialCardsDeck.push(usedCard);
+                discardPile.push(usedCard);
                 attacker.actionsThisTurn.push('use-card');
                 attackerBonusPower += 2;
                 cardUsedThisAction = true;
@@ -889,7 +912,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
             const cardIndex = attacker.specialCards.indexOf('Decide Dice Roll');
             if (cardIndex > -1) {
                 const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
-                specialCardsDeck.push(usedCard);
+                discardPile.push(usedCard);
                 attacker.actionsThisTurn.push('use-card');
                 newState.log.push(`${attacker.name} used the 'Decide Dice Roll' card!`);
                 cardUsedThisAction = true;
@@ -992,7 +1015,7 @@ export const handleOpenUseCardDialog = (state: GameState, cardName: string) => {
 
 export const handleUseCard = (state: GameState, cardName: string) => {
     let newState = { ...state };
-    const { players, currentPlayerIndex, specialCardsDeck } = newState;
+    const { players, currentPlayerIndex, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
     const canUseCard = !player.actionsThisTurn.includes('use-card');
@@ -1054,7 +1077,7 @@ export const handleUseCard = (state: GameState, cardName: string) => {
 
     if (shouldRecycleCard) {
         const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-        specialCardsDeck.push(usedCard);
+        discardPile.push(usedCard);
         player.actionsThisTurn.push('use-card');
         newState.log.push(`${player.name} used the '${cardName}' card.`);
     }
@@ -1082,7 +1105,7 @@ export const handleSabotagePlayer = (state: GameState, targetPlayerId: number): 
         const cardIndex = player.specialCards.indexOf('Sabatoge');
         if (cardIndex > -1) {
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-            newState.specialCardsDeck.push(usedCard);
+            newState.discardPile.push(usedCard);
         }
 
         newState.log.push(`${player.name} sabotaged ${targetPlayer.name}! They will miss their next turn.`);
@@ -1105,7 +1128,7 @@ export const handleGainWealth = (state: GameState, resource: ResourceType): Game
     const cardIndex = player.specialCards.indexOf('Wealthy');
     if (cardIndex > -1) {
         const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-        newState.specialCardsDeck.push(usedCard);
+        newState.discardPile.push(usedCard);
     }
     
     newState.log.push(`${player.name} used 'Wealthy' to gain 5 ${resource}.`);
@@ -1116,7 +1139,7 @@ export const handleGainWealth = (state: GameState, resource: ResourceType): Game
 
 export const handleStealResource = (state: GameState, payload: { targetPlayerId: number; resource: ResourceType }): GameState => {
     let newState = { ...state };
-    const { players, currentPlayerIndex, specialCardsDeck } = newState;
+    const { players, currentPlayerIndex, discardPile } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const targetPlayer = players.find(p => p.id === payload.targetPlayerId);
 
@@ -1135,7 +1158,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
     }
     
     const usedCard = currentPlayer.specialCards.splice(cardIndex, 1)[0];
-    specialCardsDeck.push(usedCard);
+    discardPile.push(usedCard);
     currentPlayer.actionsThisTurn.push('use-card');
 
     const stolenAmount = Math.min(targetPlayer.resources[payload.resource], 2);
@@ -1154,7 +1177,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
 
 export const handleTeleport = (state: GameState, x: number, y: number): GameState => {
     let newState = { ...state };
-    const { players, currentPlayerIndex, teleportState, map, specialCardsDeck } = newState;
+    const { players, currentPlayerIndex, teleportState, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
     if (!teleportState || teleportState.armyId === null) return newState;
@@ -1169,7 +1192,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     if (cardIndex === -1) throw new Error('Teleport card not found.');
     
     const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-    specialCardsDeck.push(usedCard);
+    discardPile.push(usedCard);
     player.actionsThisTurn.push('use-card');
     
     const oldTile = map[armyToMove.position.y][armyToMove.position.x];
@@ -1184,7 +1207,12 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
         newState = revealIsland(newState, x, y, player);
     }
     
-    if (targetTile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && newState.specialCardsDeck.length > 0) {
+    if (targetTile.type === 'special' && (player.specialCards.length < 10 || newState.debugMode) && (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0)) {
+        if (newState.specialCardsDeck.length === 0) {
+             newState.log.push("The deck is empty. Reshuffling the discard pile...");
+             newState.specialCardsDeck = [...newState.discardPile];
+             newState.discardPile = [];
+        }
         const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
         const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
         player.specialCards.push(drawnCard);
@@ -1204,10 +1232,19 @@ interface PlayerExitParams {
     localPlayer: Player;
     isHost: boolean;
     onExit: () => void;
+    status: GameStatus;
 }
 
-export async function handlePlayerExit({ gameId, localPlayer, isHost, onExit }: PlayerExitParams): Promise<boolean> {
+export async function handlePlayerExit({ gameId, localPlayer, isHost, onExit, status }: PlayerExitParams): Promise<boolean> {
     try {
+        if (isHost) {
+             // If host leaves, always delete the game to prevent orphaned rooms.
+            await deleteDoc(doc(db, 'games', gameId));
+            onExit();
+            return true;
+        }
+
+        // If a non-host player leaves
         await runTransaction(db, async (transaction) => {
             const gameDocRef = doc(db, 'games', gameId);
             const gameDoc = await transaction.get(gameDocRef);

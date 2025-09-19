@@ -52,6 +52,7 @@ export function GameDialogs({
     wealthyDialogState,
     armySelectionDialogState,
     attackSelectionDialogState,
+    status
   } = gameState;
 
   const handleUpdate = (state: GameState) => {
@@ -72,6 +73,8 @@ export function GameDialogs({
   const isDialogVisible = (key: keyof GameState) => {
     return !!gameState[key] && !locallyDismissedDialogs.includes(key);
   }
+  
+  const isAttacker = isMyTurn && (!!combatState || !!monsterCombatState);
 
   return (
     <>
@@ -79,8 +82,8 @@ export function GameDialogs({
         <CombatDialog
           gameState={gameState}
           onRoll={(useWarChief) => handleAction('combat-roll', useWarChief)}
-          onClose={() => isMyTurn ? handleAction('close-combat') : handleCloseDialog('combatState')}
-          isAttacker={isMyTurn}
+          onClose={() => isAttacker ? handleAction('close-combat') : handleCloseDialog('combatState')}
+          isAttacker={isAttacker}
         />
       )}
       {isDialogVisible('monsterCombatState') && monsterCombatState && currentTileForMonster?.monsters && (
@@ -88,9 +91,9 @@ export function GameDialogs({
           gameState={gameState} 
           monsters={currentTileForMonster.monsters}
           onRoll={(payload) => handleAction('monster-combat-roll', payload)}
-          onClose={() => isMyTurn ? handleAction('close-monster-combat') : handleCloseDialog('monsterCombatState')}
+          onClose={() => isAttacker ? handleAction('close-monster-combat') : handleCloseDialog('monsterCombatState')}
           onCancel={() => handleCloseDialog('monsterCombatState')}
-          isAttacker={isMyTurn}
+          isAttacker={isAttacker}
         />
       )}
       {isDialogVisible('positionDialogState') && positionDialogState && (
@@ -164,6 +167,7 @@ export function GameDialogs({
             isLastPlayer={gameState.players.length === 1}
             onConfirm={onConfirmHostLeave}
             onClose={() => handleCloseDialog('showHostLeaveDialog')}
+            gameStatus={status}
         />
       )}
       {isDialogVisible('sabotageDialogState') && sabotageDialogState?.isOpen && (

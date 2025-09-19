@@ -68,7 +68,6 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     const isBotGame = maxPlayers === 1;
     if (isBotGame) {
       newGame = startGame(newGame, creator.name);
-      newGame.log = [`Game '${gameName}' created by ${creator.name}! The game has started.`];
     }
     
     const firestoreState: FirestoreGameState = {

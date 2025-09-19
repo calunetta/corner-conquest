@@ -1,7 +1,4 @@
 
-
-
-
 import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings, MonsterName } from './types';
 import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
@@ -87,6 +84,42 @@ function generateMonsters(x: number, y: number): Monster[] {
     return uniqueMonsters;
 }
 
+export function createPlayer(
+    seatIndex: number,
+    playerId: string,
+    name: string,
+    color: PlayerColor,
+    isBot: boolean,
+    basePos: { x: number, y: number },
+    settings: GameSettings,
+    debugMode: boolean
+): Player {
+    return {
+        id: seatIndex,
+        playerId,
+        name,
+        color,
+        isBot,
+        armies: [{ id: 0, position: basePos, hasActed: false }],
+        resources: debugMode && isBot ? { gems: 20, iron: 20, food: 20 } : { gems: 0, iron: 0, food: 0 },
+        armyCount: 1,
+        attackPower: 0,
+        nextArmyCost: settings.initialDeployCost,
+        victoryPoints: 0,
+        specialCards: debugMode && !isBot ? [...new Set(BASE_CARDS)] : ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
+        positions: [],
+        hasExtraMove: false,
+        actionsThisTurn: [],
+        passiveAbilities: { explorer: false, collector: false },
+        isSabotaged: false,
+        reinforceActive: false,
+        scoutActive: false,
+        wealthyActive: false,
+        efficientActive: false,
+        masterBuilderActive: false,
+    };
+}
+
 export function initializeGame(
     gameId: string, 
     gameName: string, 
@@ -122,13 +155,15 @@ export function initializeGame(
   const creatorSeatIndex = 0;
   const creatorPos = basePositions[creatorSeatIndex];
 
-  const initialArmy = { id: 0, position: creatorPos, hasActed: false };
+  const creatorPlayer = createPlayer(creatorSeatIndex, creator.playerId, creator.name, creator.color, false, creatorPos, settings, debugMode);
+  players.push(creatorPlayer);
+
   map[creatorPos.y][creatorPos.x] = {
       ...map[creatorPos.y][creatorPos.x],
       type: 'base',
       owner: creatorSeatIndex,
       isHidden: false,
-      occupants: [{ playerId: creatorSeatIndex, armyId: initialArmy.id }],
+      occupants: [{ playerId: creatorSeatIndex, armyId: creatorPlayer.armies[0].id }],
       resources: [
         { type: 'gems', amount: 1 }, 
         { type: 'iron', amount: 1 }, 
@@ -136,31 +171,6 @@ export function initializeGame(
       ], 
   };
   
-  players.push({
-      id: creatorSeatIndex,
-      playerId: creator.playerId,
-      name: creator.name,
-      color: creator.color,
-      isBot: false,
-      armies: [initialArmy],
-      resources: { gems: 0, iron: 0, food: 0 },
-      armyCount: 1,
-      attackPower: 0,
-      nextArmyCost: settings.initialDeployCost,
-      victoryPoints: 0,
-      specialCards: debugMode ? [...new Set(BASE_CARDS)] : ['Extra Move', 'Steal Resource', 'Decide Dice Roll'],
-      positions: [],
-      hasExtraMove: false,
-      actionsThisTurn: [],
-      passiveAbilities: { explorer: false, collector: false },
-      isSabotaged: false,
-      reinforceActive: false,
-      scoutActive: false,
-      wealthyActive: false,
-      efficientActive: false,
-      masterBuilderActive: false,
-  });
-
   const usedColors = [creator.color];
 
   if (maxPlayers === 1 && numBots > 0) {
@@ -171,44 +181,21 @@ export function initializeGame(
         const botColor = availableColors[0];
         usedColors.push(botColor);
 
-        const botArmy = { id: 0, position: botPos, hasActed: false };
+        const botPlayer = createPlayer(botSeatIndex, `bot_${i+1}`, `Bot ${i+1}`, botColor, true, botPos, settings, debugMode);
+        players.push(botPlayer);
+
         map[botPos.y][botPos.x] = {
             ...map[botPos.y][botPos.x],
             type: 'base',
             owner: botSeatIndex,
             isHidden: false,
-            occupants: [{playerId: botSeatIndex, armyId: botArmy.id}],
+            occupants: [{playerId: botSeatIndex, armyId: botPlayer.armies[0].id}],
             resources: [
                 { type: 'gems', amount: 1 }, 
                 { type: 'iron', amount: 1 }, 
                 { type: 'food', amount: 1 }
             ], 
         };
-
-        players.push({
-            id: botSeatIndex,
-            playerId: `bot_${i+1}`,
-            name: `Bot ${i+1}`,
-            color: botColor,
-            isBot: true,
-            armies: [botArmy],
-            resources: debugMode ? { gems: 20, iron: 20, food: 20 } : { gems: 0, iron: 0, food: 0 },
-            armyCount: 1,
-            attackPower: 0,
-            nextArmyCost: settings.initialDeployCost,
-            victoryPoints: 0,
-            specialCards: [],
-            positions: [],
-            hasExtraMove: false,
-            actionsThisTurn: [],
-            passiveAbilities: { explorer: false, collector: false },
-            isSabotaged: false,
-            reinforceActive: false,
-            scoutActive: false,
-            wealthyActive: false,
-            efficientActive: false,
-            masterBuilderActive: false,
-        });
     }
   }
 
@@ -292,11 +279,8 @@ export function initializeGame(
     turn: 0, // Turn 0 means game hasn't started
     log: [`Game '${gameName}' created by ${creator.name}! Waiting for players...`],
     winner: null,
-    selectedTile: null,
-    selectedArmyId: 0,
-    possibleMoves: [],
-    currentAction: null,
     specialCardsDeck: [...finalCardDeck],
+    discardPile: [],
     combatState: null,
     monsterCombatState: null,
     positionDialogState: null,
@@ -312,6 +296,7 @@ export function initializeGame(
     armySelectionDialogState: null,
     attackSelectionDialogState: null,
     deathAnimations: [],
+    showHostLeaveDialog: false,
   };
 }
 
