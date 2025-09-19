@@ -76,9 +76,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   const selectedArmy = useMemo(() => {
     if (!gameState || selectedArmyId === null) return null;
-    const player = gameState.players.find(p => p.id === localPlayer?.id);
+    const player = isMyTurn ? gameState.players[gameState.currentPlayerIndex] : localPlayer;
     return player?.armies.find(a => a.id === selectedArmyId) || null;
-  }, [gameState, selectedArmyId, localPlayer]);
+  }, [gameState, selectedArmyId, localPlayer, isMyTurn]);
 
   useEffect(() => {
     if (isMyTurn && gameState) {
@@ -123,6 +123,17 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         
         await setGameState(newState);
         setSelectedArmyId(newSelectedArmyId ?? null);
+
+        if (action === 'select-army' && newState) {
+            const player = newState.players[newState.currentPlayerIndex];
+            const army = player.armies.find(a => a.id === newSelectedArmyId);
+            if(army) {
+                const { newState: clickState, ...result } = GameActions.handleTileClick(newState, army.position.x, army.position.y, player.id, army, []);
+                 await setGameState(clickState);
+                 setPossibleMoves(result.possibleMoves);
+                 setCurrentAction(result.currentAction);
+            }
+        }
 
         // Reset UI state for most actions, but preserve it for dialog flows
         if (action !== 'select-army' && action !== 'select-defender') {
@@ -181,7 +192,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             if (prevTime <= 1) {
                 clearInterval(timerRef.current!);
                 if (isMyTurn) { // Double check it's still my turn
-                    handleAction('end-turn');
+                    handleAction('end-turn', null);
                 }
                 return 0;
             }
@@ -215,7 +226,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         clearInterval(timerRef.current);
         timerRef.current = null;
         toast({ title: "Time's up!", description: "Your turn has ended automatically."});
-        handleAction('end-turn');
+        handleAction('end-turn', null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, isMyTurn]);

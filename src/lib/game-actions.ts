@@ -192,12 +192,14 @@ export function handleDeployAction(state: GameState): GameState {
     if (player.actionsThisTurn.includes('deploy')) throw new Error("You can only deploy one army per turn.");
     
     let cost = player.nextArmyCost;
+    let isReinforceUsed = false;
     
     if (player.efficientActive) {
         cost = Math.ceil(cost / 2);
     }
     if (player.reinforceActive) {
         cost = 0;
+        isReinforceUsed = true;
     }
 
     if (player.resources.food < cost) throw new Error(`Not enough food. Cost: ${cost}`);
@@ -228,7 +230,7 @@ export function handleDeployAction(state: GameState): GameState {
       }
     }
 
-    if (player.reinforceActive && canUseCard) {
+    if (isReinforceUsed && canUseCard) {
       newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
       player.reinforceActive = false;
       player.actionsThisTurn.push('use-card');
@@ -239,7 +241,7 @@ export function handleDeployAction(state: GameState): GameState {
       }
     }
 
-    if (!player.reinforceActive) {
+    if (!isReinforceUsed) {
         player.nextArmyCost += settings.deployCostIncrement;
     }
     
@@ -422,10 +424,11 @@ export function handleEndTurn(state: GameState): GameState {
         }
     }
     
-    // Reset all temporary single-turn effects for the current player
     currentPlayer.hasExtraMove = false;
+    currentPlayer.efficientActive = false;
+    currentPlayer.masterBuilderActive = false;
+    currentPlayer.reinforceActive = false;
     
-    // Reset army and action state for the current player before moving to the next
     currentPlayer.armies.forEach((army: Army) => army.hasActed = false);
     currentPlayer.actionsThisTurn = [];
 
@@ -504,7 +507,7 @@ export function handleTileClick(
     currentSelectedArmy: Army | null,
     currentPossibleMoves: {x: number, y: number}[]
 ): TileClickResult {
-    let newState = { ...state, id: state.id + '_dialog' };
+    let newState = { ...state, id: state.id + '_temp' };
     const { players, currentPlayerIndex, teleportState, scoutingState } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const clickedTile = newState.map[y][x];
@@ -688,12 +691,34 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
 
 export function handleSelectArmy(state: GameState, armyId: number): GameState {
     let newState = { ...state };
-    
+    newState.armySelectionDialogState = null; 
+
     if (newState.teleportState) {
         newState.teleportState.armyId = armyId;
+        return newState;
     }
     
-    newState.armySelectionDialogState = null; 
+    const player = newState.players[newState.currentPlayerIndex];
+    const army = player.armies.find(a => a.id === armyId);
+    if (!army) return newState;
+
+    const possibleMoves = getPossibleMoves(newState, army);
+    const tile = newState.map[army.position.y][army.position.x];
+
+    const canAttack = tile && (tile.occupants.some(o => o.playerId !== player.id) || (tile.type === 'monster' && !!tile.monsters && tile.monsters.length > 0));
+
+    if (possibleMoves.length > 0) {
+        const { newState: clickState, ...result } = handleTileClick(newState, army.position.x, army.position.y, player.id, army, possibleMoves);
+        return {
+            ...clickState,
+            possibleMoves: result.possibleMoves,
+            currentAction: result.currentAction,
+        };
+    } else if (canAttack) {
+        const { newState: attackState } = handleAttackAction(newState, army);
+        return attackState;
+    }
+
     return newState;
 }
 
