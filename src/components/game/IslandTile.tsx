@@ -230,7 +230,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
 
                 return (
                     <div 
-                        key={`${player.id}-${army.id}`} 
+                        key={`army-sprite-${player.id}-${army.id}`}
                         className={cn('absolute w-1/2 h-1/2', pos.origin)}
                         style={{ top: pos.top, left: pos.left, right: pos.right, bottom: pos.bottom }}
                     >
