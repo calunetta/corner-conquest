@@ -59,7 +59,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
                             <CardTitle className="text-lg">{cardName}</CardTitle>
                             <div className="flex items-center gap-4">
                                 <span className="text-sm font-bold text-muted-foreground">x{cardCounts[cardName]}</span>
-                                {isCardUsableNow(cardName) && (
+                                {isCardUsableNow(cardName) && canUseCards && (
                                     <Button 
                                         size="sm" 
                                         onClick={() => handleUseCard(cardName)} 

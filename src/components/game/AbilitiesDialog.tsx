@@ -1,5 +1,4 @@
 
-
 'use client';
 import type { Player, PassiveAbilities, GameState } from '@/lib/types';
 import {
@@ -78,10 +77,14 @@ export function AbilitiesDialog({ player, onClose, onBuyAbility, gameState, isMy
                                     <span className="font-bold">Owned</span>
                                 </div>
                             ) : (
-                                <Button size="sm" onClick={() => handleBuy(ability)} disabled={!canAfford || !isMyTurn}>
-                                    <Gem className="mr-2 h-4 w-4" />
-                                    Purchase ({cost})
-                                </Button>
+                                <>
+                                  {isMyTurn && (
+                                    <Button size="sm" onClick={() => handleBuy(ability)} disabled={!canAfford}>
+                                        <Gem className="mr-2 h-4 w-4" />
+                                        Purchase ({cost})
+                                    </Button>
+                                  )}
+                                </>
                             )}
                         </CardHeader>
                         <CardContent className='p-4 pt-0'>

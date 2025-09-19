@@ -50,7 +50,11 @@ export function SabotageDialog({ players, onSabotage, onClose, isMyTurn }: Sabot
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          {isMyTurn ? (
+            <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          ) : (
+            <Button variant="outline" onClick={onClose}>Close</Button>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -55,10 +55,16 @@ export function StealResourceDialog({ players, onSteal, onClose, isMyTurn }: Ste
         ))}
       </div>
       <AlertDialogFooter>
-        <Button variant="outline" onClick={onClose}>Cancel</Button>
-        <Button disabled={!selectedPlayer || !isMyTurn} onClick={() => { /* No-op, just moves to next screen */ }}>
-          Select Resources
-        </Button>
+        {isMyTurn ? (
+          <>
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button disabled={!selectedPlayer} onClick={() => { /* No-op, just moves to next screen */ }}>
+              Select Resources
+            </Button>
+          </>
+        ) : (
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        )}
       </AlertDialogFooter>
     </>
   );
@@ -89,10 +95,16 @@ export function StealResourceDialog({ players, onSteal, onClose, isMyTurn }: Ste
         ))}
       </div>
       <AlertDialogFooter>
-        <Button variant="outline" onClick={() => setSelectedPlayer(null)} disabled={!isMyTurn}>Back</Button>
-        <Button disabled={!selectedResource || !isMyTurn} onClick={() => onSteal(selectedPlayer!.id, selectedResource!)}>
-          Steal {selectedResource}
-        </Button>
+        {isMyTurn ? (
+           <>
+            <Button variant="outline" onClick={() => setSelectedPlayer(null)}>Back</Button>
+            <Button disabled={!selectedResource} onClick={() => onSteal(selectedPlayer!.id, selectedResource!)}>
+              Steal {selectedResource}
+            </Button>
+           </>
+        ) : (
+             <Button variant="outline" onClick={onClose}>Close</Button>
+        )}
       </AlertDialogFooter>
     </>
   );
