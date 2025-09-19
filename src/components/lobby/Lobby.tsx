@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { db, runTransaction, collection, onSnapshot, doc, writeBatch, getDoc, arrayUnion } from '@/lib/firebase';
+import { db, runTransaction, collection, onSnapshot, doc, writeBatch, getDoc, arrayUnion, query, where } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
 import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
 import { addPlayerToGame } from '@/lib/game-logic';
@@ -96,14 +96,12 @@ export function Lobby({ onJoinGame }: LobbyProps) {
 
         await runTransaction(db, async (transaction) => {
             const gameDoc = await transaction.get(gameDocRef);
-            const mapDoc = await transaction.get(mapDocRef);
-
-            if (!gameDoc.exists() || !mapDoc.exists()) {
+            
+            if (!gameDoc.exists()) {
                 throw new Error("Game not found.");
             }
 
             const firestoreState = gameDoc.data() as FirestoreGameState;
-            const mapData = mapDoc.data().map as Island[][];
             
             if (firestoreState.status !== 'waiting') {
                  throw new Error("This game has already started or is no longer available.");
@@ -116,14 +114,22 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 return;
             }
 
+            const mapDoc = await transaction.get(mapDocRef);
+            if (!mapDoc.exists()) {
+                throw new Error("Game data is missing.");
+            }
+            const mapData = mapDoc.data().map as Island[][];
+            
             const { newGameState, updatedMap } = addPlayerToGame({ ...firestoreState, map: mapData }, { playerId, name: username });
 
             if (!newGameState) {
                  throw new Error("Could not add player to game. The room might be full or color unavailable.");
             }
             
-            transaction.set(gameDocRef, newGameState);
-            transaction.set(mapDocRef, { map: updatedMap });
+            transaction.update(gameDocRef, {
+                players: newGameState.players,
+                log: newGameState.log,
+            });
         });
         
         onJoinGame(gameId);
@@ -190,5 +196,3 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     </div>
   );
 }
-
-    
