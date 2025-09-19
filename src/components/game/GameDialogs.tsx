@@ -18,12 +18,10 @@ import { AttackSelectionDialog } from './AttackSelectionDialog';
 
 type GameDialogsProps = {
   gameState: GameState;
-  setGameState: (state: GameState | null | ((prevState: GameState | null) => GameState | null)) => Promise<void>;
   localPlayer: Player;
   isMyTurn: boolean;
   onConfirmHostLeave: () => void;
   locallyDismissedDialogs: string[];
-  setLocallyDismissedDialogs: (keys: string[] | ((prev: string[]) => string[])) => void;
   handleAction: (action: GameAction, payload?: any) => Promise<void>;
 };
 
