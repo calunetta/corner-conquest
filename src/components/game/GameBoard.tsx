@@ -51,17 +51,25 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMobile]);
   
   useEffect(() => {
-    // When the turn changes, reset the locally dismissed dialogs for the new active player
+    // When the turn changes, or it becomes not my turn, reset local state
     if (isMyTurn) {
         setLocallyDismissedDialogs([]);
+    } else {
+        // Clear all local state if it's not my turn
+        setSelectedArmyId(null);
+        setSelectedTile(null);
+        setPossibleMoves([]);
+        setCurrentAction(null);
+        // Also clear any dialogs that might have been open
+        setLocallyDismissedDialogs(Object.keys(gameState || {}).filter(k => k.endsWith('State') || k.endsWith('Dialog')));
     }
   }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex]);
 
   const selectedArmy = useMemo(() => {
     if (!gameState || selectedArmyId === null) return null;
-    const player = gameState.players[gameState.currentPlayerIndex];
+    const player = gameState.players.find(p => p.playerId === playerId);
     return player?.armies.find(a => a.id === selectedArmyId) || null;
-  }, [gameState, selectedArmyId]);
+  }, [gameState, selectedArmyId, playerId]);
 
   // When game state changes, re-evaluate local state
   useEffect(() => {
@@ -92,7 +100,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
     // Actions that only manipulate local state
     if (action === 'show-cards') {
-        setGameState(gs => gs ? { ...gs, showCardsDialogForPlayer: localPlayer.id } : null);
+        const newState = { ...gameState, showCardsDialogForPlayer: localPlayer.id };
+        setGameState(newState);
         return;
     }
     if (action === 'open-abilities-shop') {
@@ -116,26 +125,31 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             return;
         }
 
-        let newState;
-        if (action === 'cancel-action') {
-            const result = GameActions.handleCancelAction(gameState);
-            if (result.toastMessage) toast({ title: "Action Cancelled", description: result.toastMessage });
+        let result = GameActions.handleGameAction({
+            action,
+            gameState,
+            selectedArmy,
+            payload
+        });
+        
+        let newState = result;
+        if ('newState' in result) {
+            // This was a local UI change, not a state-changing action
+            setSelectedArmyId(result.selectedArmyId);
+            setSelectedTile(result.selectedTile);
+            setPossibleMoves(result.possibleMoves);
+            setCurrentAction(result.currentAction);
             newState = result.newState;
         } else {
-            newState = GameActions.handleGameAction({
-                action,
-                gameState,
-                selectedArmy,
-                payload
-            });
+             // This was a state-changing action, so reset local UI state
+            setSelectedArmyId(null);
+            setSelectedTile(null);
+            setPossibleMoves([]);
+            setCurrentAction(null);
         }
         
-        // For actions that change the game logic, update and clear local UI state
+        // This will trigger the Firestore update via the hook
         setGameState(newState);
-        setSelectedArmyId(null);
-        setSelectedTile(null);
-        setPossibleMoves([]);
-        setCurrentAction(null);
 
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
@@ -148,21 +162,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     try {
         const result = GameActions.handleTileClick(gameState, x, y, localPlayer?.id ?? -1, selectedArmy, possibleMoves);
         
-        if (result.newState.id === gameState.id) {
-            // This was a local UI change, not a state-changing action
-            setSelectedArmyId(result.selectedArmyId);
-            setSelectedTile(result.selectedTile);
-            setPossibleMoves(result.possibleMoves);
-            setCurrentAction(result.currentAction);
-            setGameState(result.newState); // Still need to update for dialogs
-        } else {
-            // This was a state-changing action (move, teleport, etc.)
-            setGameState(result.newState);
-            setSelectedArmyId(null);
-            setSelectedTile(null);
-            setPossibleMoves([]);
-            setCurrentAction(null);
-        }
+        setSelectedArmyId(result.selectedArmyId);
+        setSelectedTile(result.selectedTile);
+        setPossibleMoves(result.possibleMoves);
+        setCurrentAction(result.currentAction);
+        
+        // Update game state to show dialogs or for state-changing clicks
+        setGameState(result.newState);
 
         if (activeInstructionToastId) {
             dismiss(activeInstructionToastId);
@@ -254,7 +260,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (!gameState || !localPlayer) return;
 
     if (isHost) {
-        setGameState(gs => gs ? { ...gs, showHostLeaveDialog: true } : null);
+        setGameState({ ...gameState, showHostLeaveDialog: true });
         return;
     }
 
@@ -263,9 +269,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     await GameActions.handlePlayerExit({
       gameId,
       localPlayer,
-      isHost,
       onExit,
-      status: gameState.status,
     });
     setIsExiting(false);
   };
@@ -370,7 +374,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                           {isTeleporting && isMyTurn ? (
                               <div className="flex flex-col items-center gap-2">
                                   <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>
-                                      {teleportState.armyId === null ? 'Teleport: Select an army to move' : 'Teleport: Select a destination tile'}
+                                      {teleportState.armyId === null ? 'Teleport: Select an army to move' : 'Teleport: Select a destination'}
                                   </p>
                               </div>
                           ) : isScouting && isMyTurn ? (
@@ -435,3 +439,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    

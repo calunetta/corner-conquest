@@ -1,5 +1,5 @@
 
-import type { GameState, Army, Island, ResourceType } from './types';
+import type { GameState, Army, Island, ResourceType, PassiveAbilities } from './types';
 import * as GameActions from './game-actions';
 
 function getValidMoves(army: Army, gameState: GameState): { x: number; y: number }[] {
@@ -40,12 +40,26 @@ function canAfford(player: GameState['players'][0], cost: number, resource: Reso
 
 
 // --- Main Decision Logic ---
-export function takeBotTurn(initialState: GameState): GameState {
+export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     let state = JSON.parse(JSON.stringify(initialState));
     const botPlayer = state.players[state.currentPlayerIndex];
     console.log(`--- Bot Turn Start: ${botPlayer.name} ---`);
     
     // --- Strategic Actions (once per turn) ---
+
+    // 0. Buy ability if affordable and not owned
+    const abilityCost = state.settings.abilityCost;
+    if (canAfford(botPlayer, abilityCost, 'gems')) {
+        const unownedAbilities = state.settings.availableAbilities.filter(a => !botPlayer.passiveAbilities[a as keyof PassiveAbilities]);
+        if (unownedAbilities.length > 0) {
+            const abilityToBuy = unownedAbilities[0] as keyof PassiveAbilities;
+             try {
+                console.log(`Bot: Attempting to buy ability: ${abilityToBuy}.`);
+                state = GameActions.handleBuyAbility(state, abilityToBuy);
+                return GameActions.handleEndTurn(state);
+            } catch (e) { console.warn("Bot: Buy ability failed.", e); }
+        }
+    }
 
     // 1. Upgrade attack power if affordable and needed
     const upgradeCost = botPlayer.masterBuilderActive ? Math.ceil(state.settings.upgradeCost / 2) : state.settings.upgradeCost;
@@ -80,7 +94,6 @@ export function takeBotTurn(initialState: GameState): GameState {
     // --- Army-Specific Actions (iterate through armies) ---
     const unactedArmies = botPlayer.armies.filter((a: Army) => !a.hasActed);
     for (const army of unactedArmies) {
-        state.selectedArmyId = army.id;
         const currentTile = state.map[army.position.y][army.position.x];
 
         // 1. Collect from a positioned spot
@@ -88,10 +101,11 @@ export function takeBotTurn(initialState: GameState): GameState {
         if (position) {
             try {
                 console.log(`Bot: Army ${army.id} collecting resources.`);
-                state = GameActions.handleCollectAction(state);
-                // The dialog state will be set, so we confirm with no productive card
+                // This now returns a new state object with the dialog state
+                state = GameActions.handleCollectAction(state, army);
+                
                 if (state.collectDialogState) {
-                    state = GameActions.handleConfirmCollection(state, false);
+                    state = GameActions.handleConfirmCollection(state, false, army);
                 }
                 return GameActions.handleEndTurn(state);
             } catch (e) { console.warn("Bot: Collect failed.", e); }
@@ -104,7 +118,7 @@ export function takeBotTurn(initialState: GameState): GameState {
             if (availableResource) {
                 try {
                     console.log(`Bot: Army ${army.id} positioning on ${availableResource.type}.`);
-                    state = GameActions.handleSelectResourceForPosition(state, availableResource.type);
+                    state = GameActions.handleSelectResourceForPosition(state, availableResource.type, army);
                     return GameActions.handleEndTurn(state);
                 } catch (e) { console.warn("Bot: Position failed.", e); }
             }
@@ -120,8 +134,7 @@ export function takeBotTurn(initialState: GameState): GameState {
             if (target) {
                 try {
                     console.log(`Bot: Army ${army.id} moving to explore hidden tile.`);
-                    state = GameActions.handleTileClick(state, army.position.x, army.position.y, botPlayer.id);
-                    state = GameActions.handleTileClick(state, target.x, target.y, botPlayer.id);
+                    state = GameActions.handleTileClick(state, target.x, target.y, botPlayer.id, army, getValidMoves(army, state)).newState;
                     return GameActions.handleEndTurn(state);
                 } catch (e) { console.warn("Bot: Explore move failed.", e); }
             }
@@ -137,8 +150,7 @@ export function takeBotTurn(initialState: GameState): GameState {
             if (target) {
                 try {
                     console.log(`Bot: Army ${army.id} moving to resource tile.`);
-                    state = GameActions.handleTileClick(state, army.position.x, army.position.y, botPlayer.id);
-                    state = GameActions.handleTileClick(state, target.x, target.y, botPlayer.id);
+                    state = GameActions.handleTileClick(state, target.x, target.y, botPlayer.id, army, getValidMoves(army, state)).newState;
                     return GameActions.handleEndTurn(state);
                 } catch (e) { console.warn("Bot: Resource move failed.", e); }
             }
@@ -149,14 +161,12 @@ export function takeBotTurn(initialState: GameState): GameState {
     // --- Fallback: If no other action taken, just move a random army to a random valid spot ---
     const armyToMove = selectRandom(unactedArmies);
     if(armyToMove) {
-        state.selectedArmyId = armyToMove.id;
         const validMoves = getValidMoves(armyToMove, state);
         const target = selectRandom(validMoves);
         if (target) {
              try {
                 console.log(`Bot: Army ${armyToMove.id} making a random fallback move.`);
-                state = GameActions.handleTileClick(state, armyToMove.position.x, armyToMove.position.y, botPlayer.id);
-                state = GameActions.handleTileClick(state, target.x, target.y, botPlayer.id);
+                state = GameActions.handleTileClick(state, target.x, target.y, botPlayer.id, armyToMove, getValidMoves(armyToMove, state)).newState;
                 return GameActions.handleEndTurn(state);
             } catch (e) { console.warn('Bot: Fallback move failed:', e); }
         }
@@ -166,3 +176,5 @@ export function takeBotTurn(initialState: GameState): GameState {
     console.log(`Bot: No valid actions found. Ending turn.`);
     return GameActions.handleEndTurn(state);
 }
+
+    

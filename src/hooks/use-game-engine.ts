@@ -1,10 +1,8 @@
 
-
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { doc, onSnapshot, setDoc, writeBatch } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { unflattenMap, flattenMap } from '@/lib/game-logic';
-import type { GameState, FirestoreGameState, Player } from '@/lib/types';
+import type { GameState, FirestoreGameState, Player, Island } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
@@ -25,41 +23,66 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
   useEffect(() => {
     if (!gameId) return;
-    const gameDocRef = doc(db, 'games', gameId);
 
-    const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
-      setIsLoading(true);
-      if (docSnapshot.exists()) {
-        const firestoreState = docSnapshot.data() as FirestoreGameState;
-        setGameState({
-          ...firestoreState,
-          map: unflattenMap(firestoreState.map),
-        });
-      } else {
-        toast({ title: "Game Over", description: "This game session no longer exists." });
-        router.push('/'); 
-      }
-      setIsLoading(false);
-    }, (error) => {
-      console.error("Firestore snapshot error:", error);
-      toast({ title: 'Connection Error', description: 'Could not connect to the game session.', variant: 'destructive'});
-      setIsLoading(false);
-    });
+    let mapData: Island[][] | null = null;
+    let unsubscribes: (() => void)[] = [];
 
-    return () => unsubscribe();
+    const fetchAndCombine = async () => {
+        setIsLoading(true);
+        try {
+            const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
+            const mapDoc = await getDoc(staticDocRef);
+            if (mapDoc.exists()) {
+                mapData = mapDoc.data().map as Island[][];
+            } else {
+                throw new Error("Map data not found.");
+            }
+
+            const gameDocRef = doc(db, 'games', gameId);
+            const unsubscribeGame = onSnapshot(gameDocRef, (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const firestoreState = docSnapshot.data() as FirestoreGameState;
+                    setGameState({
+                        ...firestoreState,
+                        map: mapData!, // Assume mapData is loaded
+                    });
+                } else {
+                    toast({ title: "Game Over", description: "This game session no longer exists." });
+                    if (unsubscribes.length > 0) unsubscribes.forEach(u => u());
+                    router.push('/');
+                }
+                setIsLoading(false);
+            }, (error) => {
+                console.error("Firestore snapshot error:", error);
+                toast({ title: 'Connection Error', description: 'Could not connect to the game session.', variant: 'destructive'});
+                setIsLoading(false);
+            });
+
+            unsubscribes.push(unsubscribeGame);
+
+        } catch (error) {
+             console.error("Failed to load game data:", error);
+             toast({ title: 'Load Error', description: 'Could not load game data.', variant: 'destructive'});
+             router.push('/');
+        }
+    };
+    
+    fetchAndCombine();
+
+    return () => unsubscribes.forEach(u => u());
   }, [gameId, toast, router]);
 
-  const updateGameState = useCallback(async (newState: GameState | null | ((prevState: GameState | null) => GameState | null)) => {
+  const updateGameState = useCallback(async (newStateOrFn: GameState | null | ((prevState: GameState | null) => GameState | null)) => {
     let finalState: GameState | null = null;
-    if (typeof newState === 'function') {
+    if (typeof newStateOrFn === 'function') {
         const currentState = gameStateRef.current;
         if (currentState === null) {
              console.warn("Attempted to update a null game state.");
              return;
         }
-        finalState = newState(currentState);
+        finalState = newStateOrFn(currentState);
     } else {
-      finalState = newState;
+      finalState = newStateOrFn;
     }
 
     if (!finalState) {
@@ -68,16 +91,11 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     }
 
     try {
-        const gameDocRef = doc(db, 'games', gameId);
-        
-        const firestoreState: FirestoreGameState = {
-            ...finalState,
-            map: flattenMap(finalState.map),
-        };
+        const { map, ...dynamicState } = finalState;
+        const firestoreState: FirestoreGameState = dynamicState;
 
+        const gameDocRef = doc(db, 'games', gameId);
         await setDoc(gameDocRef, firestoreState, { merge: true });
-        // The local state will be updated by the onSnapshot listener,
-        // so we don't call setGameState here to avoid potential race conditions.
 
     } catch (error: any) {
         console.error("Error updating game state:", error);
@@ -114,7 +132,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     }
   }, [isLoading, gameState, localPlayer, router]);
   
-  // Effect for handling death animations, only the host should clear them.
   useEffect(() => {
     if (!isHost || !gameStateRef.current?.deathAnimations || gameStateRef.current.deathAnimations.length === 0) {
         return;
@@ -124,13 +141,13 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     const animationTimers = animations.map(anim => 
         setTimeout(() => {
             updateGameState(currentState => {
-                if (!currentState) return null; // Safety check
+                if (!currentState) return null;
                 return {
                     ...currentState,
                     deathAnimations: currentState.deathAnimations.filter(a => a.id !== anim.id),
                 };
             });
-        }, 1500) // Duration of the death GIF
+        }, 1500)
     );
 
     return () => animationTimers.forEach(clearTimeout);
@@ -138,21 +155,22 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
 
   useEffect(() => {
-    // Added isProcessingBotTurn check to prevent race conditions
-    if (gameState && gameState.status === 'playing' && currentPlayer?.isBot && isHost && !isProcessingBotTurn.current) {
+    if (isProcessingBotTurn.current) {
+        return;
+    }
+    if (gameState && gameState.status === 'playing' && currentPlayer?.isBot && isHost) {
       isProcessingBotTurn.current = true;
       
       setTimeout(async () => {
         try {
-            // Re-fetch the latest state before taking action to avoid stale state issues.
             const latestState = gameStateRef.current;
-            if (!latestState || !latestState.players[latestState.currentPlayerIndex]?.isBot || isProcessingBotTurn.current === false) {
+            if (!latestState || !latestState.players[latestState.currentPlayerIndex]?.isBot || !isProcessingBotTurn.current) {
                 isProcessingBotTurn.current = false;
                 return;
             }
 
             console.log('Bot turn starting...');
-            const nextState = takeBotTurn(latestState);
+            const nextState = await takeBotTurn(latestState);
             await updateGameState(nextState);
             console.log('Bot turn finished and state updated.');
         } catch (error) {
@@ -162,8 +180,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
               await updateGameState(errorState);
           }
         } finally {
-            // Set a brief timeout before allowing the next bot turn to start
-            // This can prevent rapid, back-to-back turn processing in bot-only games
             setTimeout(() => {
                 isProcessingBotTurn.current = false;
             }, 500);
@@ -175,3 +191,5 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
   return { gameState, setGameState: updateGameState, isMyTurn, localPlayer, isHost, isLoading };
 }
+
+    

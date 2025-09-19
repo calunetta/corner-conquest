@@ -1,5 +1,5 @@
 
-import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings, MonsterName } from './types';
+import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings, MonsterName, FirestoreGameState } from './types';
 import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
@@ -113,8 +113,6 @@ export function createPlayer(
         passiveAbilities: { explorer: false, collector: false },
         isSabotaged: false,
         reinforceActive: false,
-        scoutActive: false,
-        wealthyActive: false,
         efficientActive: false,
         masterBuilderActive: false,
     };
@@ -128,7 +126,7 @@ export function initializeGame(
     numBots: number, 
     debugMode: boolean = false,
     settings: GameSettings = defaultGameSettings
-): GameState {
+): { dynamicState: FirestoreGameState, staticState: { map: Island[][] } } {
   const map: Island[][] = Array.from({ length: MAP_ROWS }, (_, y) =>
     Array.from({ length: MAP_COLS }, (_, x) => ({
       id: `${x}-${y}`,
@@ -208,7 +206,6 @@ export function initializeGame(
 
       let islandType: IslandType;
       
-      // Force center tile to be the "boss"
       if (x === center.x && y === center.y) {
           islandType = 'monster';
           const bossMonsterData = MONSTER_DATA[4];
@@ -218,14 +215,14 @@ export function initializeGame(
               sprite: bossMonsterData.sprite
           }];
           map[y][x].type = islandType;
-          continue; // Skip to next iteration
+          continue; 
       }
 
       const distance = Math.abs(x - center.x) + Math.abs(y - center.y);
       
       let rand = Math.random();
       if (distance <= 1) { 
-        if (rand < settings.resourceDensity - 0.1) islandType = 'resource'; // Center is less likely to be resource
+        if (rand < settings.resourceDensity - 0.1) islandType = 'resource'; 
         else if (rand < 0.8) islandType = 'special';  
         else islandType = 'monster'; 
       } else {
@@ -266,17 +263,16 @@ export function initializeGame(
 
   const finalCardDeck = SPECIAL_CARDS.filter(card => settings.availableCards.includes(card));
 
-  return {
+  const dynamicState: FirestoreGameState = {
     id: gameId,
     name: gameName,
     status: 'waiting',
     maxPlayers: maxPlayers === 1 ? numBots + 1 : maxPlayers,
     debugMode,
     settings,
-    map,
     players,
     currentPlayerIndex: 0,
-    turn: 0, // Turn 0 means game hasn't started
+    turn: 0,
     log: [`Game '${gameName}' created by ${creator.name}! Waiting for players...`],
     winner: null,
     specialCardsDeck: [...finalCardDeck],
@@ -290,20 +286,30 @@ export function initializeGame(
     useCardDialogState: null,
     teleportState: null,
     abilitiesShopState: null,
+    showHostLeaveDialog: false,
     sabotageDialogState: null,
     wealthyDialogState: null,
     scoutingState: null,
     armySelectionDialogState: null,
     attackSelectionDialogState: null,
     deathAnimations: [],
-    showHostLeaveDialog: false,
   };
+
+  return { dynamicState, staticState: { map } };
 }
 
-export function startGame(gameState: GameState, hostName: string): GameState {
+export function startGame(gameState: GameState | FirestoreGameState, hostName: string): FirestoreGameState {
     const newState = { ...gameState };
     newState.status = 'playing';
     newState.turn = 1; // Start the first turn
     newState.log.push(`${hostName} has started the game! It's now ${newState.players[0].name}'s turn.`);
-    return newState;
+    
+    // Ensure we return FirestoreGameState
+    if ('map' in newState) {
+        const { map, ...dynamicState } = newState as GameState;
+        return dynamicState;
+    }
+    return newState as FirestoreGameState;
 }
+
+    

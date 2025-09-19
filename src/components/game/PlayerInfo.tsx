@@ -4,7 +4,7 @@ import type { Player } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ResourceIcon } from '@/components/icons';
-import { Award, Swords, Zap, Album, Forward } from 'lucide-react';
+import { Award, Swords, Zap, Album, Forward, Ban } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
@@ -37,6 +37,18 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
             <CardTitle className="text-sm font-medium">{player.name}</CardTitle>
           </div>
           <div className="flex items-center gap-2">
+            {player.isSabotaged && (
+                <Tooltip>
+                    <TooltipTrigger>
+                         <Badge variant="destructive" className="flex items-center gap-1">
+                            <Ban className="h-3 w-3" /> Sabotaged
+                        </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>This player will miss their next turn!</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
             {player.hasExtraMove && (
                 <Tooltip>
                     <TooltipTrigger>
@@ -116,3 +128,5 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
     </TooltipProvider>
   );
 }
+
+    

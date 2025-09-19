@@ -1,13 +1,12 @@
 
-
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, runTransaction, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, writeBatch, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
 import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
-import { addPlayerToGame, flattenMap, unflattenMap } from '@/lib/game-logic';
-import type { GameState, PlayerColor, FirestoreGameState, GameSettings, Player } from '@/lib/types';
+import { addPlayerToGame } from '@/lib/game-logic';
+import type { GameState, PlayerColor, FirestoreGameState, GameSettings, Player, Island } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CreateGameDialog } from './CreateGameDialog';
@@ -61,22 +60,24 @@ export function Lobby({ onJoinGame }: LobbyProps) {
   ): Promise<boolean> => {
     if (!playerId || !username) return false;
 
-    const newGameId = doc(collection(db, 'games')).id;
+    const gameDocRef = doc(collection(db, 'games'));
+    const newGameId = gameDocRef.id;
+
     const creator = { playerId, name: username, color: playerColor };
-    let newGame = initializeGame(newGameId, gameName, maxPlayers, creator, numBots, debugMode, settings);
+    let { dynamicState, staticState } = initializeGame(newGameId, gameName, maxPlayers, creator, numBots, debugMode, settings);
     
     const isBotGame = maxPlayers === 1;
     if (isBotGame) {
-      newGame = startGame(newGame, creator.name);
+      dynamicState = startGame(dynamicState, creator.name);
     }
-    
-    const firestoreState: FirestoreGameState = {
-        ...newGame,
-        map: flattenMap(newGame.map),
-    };
 
     try {
-        await setDoc(doc(db, 'games', newGameId), firestoreState);
+        const batch = writeBatch(db);
+        batch.set(gameDocRef, dynamicState);
+        const staticDocRef = doc(db, 'games', newGameId, 'static', 'map');
+        batch.set(staticDocRef, staticState);
+        await batch.commit();
+
         onJoinGame(newGameId);
         return true;
     } catch (error) {
@@ -92,13 +93,18 @@ export function Lobby({ onJoinGame }: LobbyProps) {
 
       try {
         const gameDocRef = doc(db, 'games', gameId);
+        const mapDocRef = doc(db, 'games', gameId, 'static', 'map');
+
         await runTransaction(db, async (transaction) => {
             const gameDoc = await transaction.get(gameDocRef);
-            if (!gameDoc.exists()) {
+            const mapDoc = await transaction.get(mapDocRef);
+
+            if (!gameDoc.exists() || !mapDoc.exists()) {
                 throw new Error("Game not found.");
             }
 
             const firestoreState = gameDoc.data() as FirestoreGameState;
+            const mapData = mapDoc.data().map as Island[][];
             
             if (firestoreState.status === 'playing') {
                  throw new Error("This game has already started.");
@@ -111,18 +117,14 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 return;
             }
 
-            const newGameState = addPlayerToGame({ ...firestoreState, map: unflattenMap(firestoreState.map) }, { playerId, name: username });
+            const { newGameState, updatedMap } = addPlayerToGame({ ...firestoreState, map: mapData }, { playerId, name: username });
 
             if (!newGameState) {
                  throw new Error("Could not add player to game. The room might be full or color unavailable.");
             }
             
-            const updatedFirestoreState: FirestoreGameState = {
-                ...newGameState,
-                map: flattenMap(newGameState.map),
-            };
-
-            transaction.set(gameDocRef, updatedFirestoreState);
+            transaction.set(gameDocRef, newGameState);
+            transaction.set(mapDocRef, { map: updatedMap });
         });
         
         onJoinGame(gameId);
@@ -189,3 +191,5 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     </div>
   );
 }
+
+    

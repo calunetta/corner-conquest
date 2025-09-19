@@ -1,5 +1,4 @@
 
-
 import type { GameState, Island, Player, PlayerColor, FirestoreGameState } from './types';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './game-initializer';
@@ -10,41 +9,24 @@ export const TILE_GAP = 16;
 export const MAP_ROWS = 6;
 export const MAP_COLS = 5;
 
-
-export function flattenMap(map: Island[][]): Island[] {
-  if (!map || !Array.isArray(map)) return [];
-  return map.flat();
-}
-
-export function unflattenMap(flatMap: Island[]): Island[][] {
-  const map: Island[][] = [];
-  if (!flatMap || flatMap.length === 0) {
-    // Return an empty map of the correct dimensions if flatMap is empty
-    return Array.from({ length: MAP_ROWS }, () => Array(MAP_COLS).fill(null));
-  }
-  for (let i = 0; i < MAP_ROWS; i++) {
-    map.push(flatMap.slice(i * MAP_COLS, (i + 1) * MAP_COLS));
-  }
-  return map;
-}
-
-export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: string, name: string }): GameState | null {
+export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: string, name: string }): { newGameState: FirestoreGameState | null, updatedMap: Island[][] | null } {
     if (gameState.status !== 'waiting') {
-        return null; // Game has started
+        return { newGameState: null, updatedMap: null }; // Game has started
     }
     if (gameState.players.length >= gameState.maxPlayers) {
-        return null; // Game is full
+        return { newGameState: null, updatedMap: null }; // Game is full
     }
     if (gameState.players.some(p => p.playerId === playerInfo.playerId)) {
-        return gameState; // Player is already in the game
+        const { map, ...dynamicState } = gameState;
+        return { newGameState: dynamicState, updatedMap: map }; // Player is already in the game
     }
 
-    const newGameState = JSON.parse(JSON.stringify(gameState));
+    let newGameState = JSON.parse(JSON.stringify(gameState));
 
     const usedColors = newGameState.players.map((p: Player) => p.color);
     const availableColors = PLAYER_COLORS.filter(c => !usedColors.includes(c));
 
-    if (availableColors.length === 0) return null; // Should not happen if maxPlayers is 4
+    if (availableColors.length === 0) return { newGameState: null, updatedMap: null };
 
     const newPlayerColor = availableColors[0];
     const newPlayerSeatIndex = newGameState.players.length;
@@ -85,12 +67,14 @@ export function addPlayerToGame(gameState: GameState, playerInfo: { playerId: st
     newGameState.players.push(newPlayer);
     newGameState.log.push(`${playerInfo.name} has joined the game!`);
 
-    // If the game is now full, start it
     if (newGameState.players.length === newGameState.maxPlayers) {
         newGameState.log.push(`The game is full! Starting now.`);
         newGameState.turn = 1;
         newGameState.status = 'playing';
     }
-
-    return newGameState;
+    
+    const { map, ...dynamicState } = newGameState;
+    return { newGameState: dynamicState, updatedMap: map };
 }
+
+    

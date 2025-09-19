@@ -1,5 +1,4 @@
 
-
 export type ResourceType = 'gems' | 'iron' | 'food';
 export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
 export type PlayerColor = 'blue' | 'red' | 'purple' | 'yellow';
@@ -57,12 +56,9 @@ export type Player = {
   positions: PlayerPosition[];
   hasExtraMove: boolean;
   actionsThisTurn: GameAction[];
-  teleportState?: TeleportState | null; 
   passiveAbilities: PassiveAbilities;
   isSabotaged: boolean;
   reinforceActive: boolean;
-  scoutActive: boolean;
-  wealthyActive: boolean;
   efficientActive: boolean;
   masterBuilderActive: boolean;
 };
@@ -212,9 +208,8 @@ export type GameState = {
   deathAnimations: DeathAnimation[];
 };
 
-export type FirestoreGameState = Omit<GameState, 'map'> & {
-  map: Island[];
-};
+// This represents the main game document in Firestore, without the static map data.
+export type FirestoreGameState = Omit<GameState, 'map'>;
 
 
 export type GameAction = 
@@ -229,7 +224,6 @@ export type GameAction =
   | 'use-card' 
   | 'end-turn' 
   | 'teleport' 
-  | 'teleport-initiated' 
   | 'open-abilities-shop' 
   | 'buy-ability' 
   | 'cancel-action'
@@ -246,3 +240,5 @@ export type GameAction =
   | 'sabotage-player'
   | 'gain-wealth'
   ;
+
+    
