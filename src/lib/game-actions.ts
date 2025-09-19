@@ -1,12 +1,12 @@
 
 
 import { db, doc, deleteDoc, runTransaction, arrayUnion, getDoc } from '@/lib/firebase';
-import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation, Island } from './types';
+import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation, Island, IslandResource } from './types';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
 import { PLAYER_DATA } from './player-data';
 
-export const getSelectedArmy = (state: GameState, selectedArmyId?: number | null): Army | null => {
-    const armyId = selectedArmyId ?? null;
+export const getSelectedArmy = (state: GameState): Army | null => {
+    const armyId = state.armySelectionDialogState?.armies[0]?.id ?? state.attackSelectionDialogState?.armies[0]?.id ?? null;
     if (armyId === null) return null;
     const player = state.players[state.currentPlayerIndex];
     if (!player) return null;
@@ -77,7 +77,7 @@ export function handlePositionAction(state: GameState, selectedArmy: Army | null
     throw new Error("You cannot position on an island with monsters.");
   }
   
-  const availableResources = tile.resources.filter(resource => {
+  const availableResources = tile.resources.filter((resource: IslandResource) => {
     return !(tile.positionedBy || []).some(p => p.resource === resource.type);
   });
   if (availableResources.length === 0) {
@@ -304,8 +304,8 @@ export function handleUpgradeAction(state: GameState): GameState {
     return checkAndEndTurnIfNoActions(newState);
 }
 
-export function handleAttackAction(state: GameState, selectedArmy: Army | null): GameState {
-    const newState = { ...state };
+export function handleAttackAction(state: GameState, selectedArmy: Army | null): { newState: GameState; selectedArmyId: number | null } {
+    let newState = { ...state };
     const { players, currentPlayerIndex, map } = newState;
     const attacker = players[currentPlayerIndex];
 
@@ -330,6 +330,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
         if (defendingArmies.length === 1) {
             newState.combatState = {
                 attackerId: attacker.id,
+                attackingArmyId: selectedArmy.id,
                 defenderId: defendingPlayer.id,
                 defendingArmyId: defendingArmies[0].id,
                 attackerRolls: [],
@@ -342,6 +343,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
                 isOpen: true,
                 x: selectedArmy.position.x,
                 y: selectedArmy.position.y,
+                attackingArmyId: selectedArmy.id,
                 defendingPlayer: defendingPlayer,
                 armies: defendingArmies,
             };
@@ -360,7 +362,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
     } else {
         throw new Error("There is nothing to attack on this island.");
     }
-    return newState;
+    return { newState, selectedArmyId: selectedArmy.id };
 }
 
 export function handleEndTurn(state: GameState): GameState {
@@ -425,7 +427,7 @@ export function handleEndTurn(state: GameState): GameState {
       newState.turn += 1;
     }
 
-    finalNextPlayer.armies.forEach(army => army.hasActed = false);
+    finalNextPlayer.armies.forEach((army: Army) => army.hasActed = false);
     finalNextPlayer.actionsThisTurn = [];
     
     newState.log.push(`It's now ${finalNextPlayer.name}'s turn.`);
@@ -515,7 +517,7 @@ export function handleTileClick(
             }
              newState = checkAndEndTurnIfNoActions(newState);
         }
-        return { newState, selectedArmyId, selectedTile: null, possibleMoves, currentAction };
+        return { newState, selectedArmyId, selectedTile: null, possibleMoves, currentAction: null };
     }
     
     if (teleportState) {
@@ -656,7 +658,7 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
             discardPile.push(usedCard);
         }
         
-        player.armies.forEach(a => a.hasActed = true);
+        player.armies.forEach((a: Army) => a.hasActed = true);
 
     } else {
         army.hasActed = true;
@@ -698,7 +700,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     return checkAndEndTurnIfNoActions(newState);
 };
 
-export function handleSelectDefender(state: GameState, defenderArmyId: number): GameState {
+export function handleSelectDefender(state: GameState, defenderArmyId: number, attackingArmyId: number): GameState {
     let newState = { ...state };
     const { attackSelectionDialogState, players, currentPlayerIndex } = newState;
 
@@ -709,6 +711,7 @@ export function handleSelectDefender(state: GameState, defenderArmyId: number): 
 
     newState.combatState = {
         attackerId: attacker.id,
+        attackingArmyId: attackingArmyId,
         defenderId: defender.id,
         defendingArmyId: defenderArmyId,
         attackerRolls: [],
@@ -728,7 +731,8 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean, selecte
     const newState = { ...state };
     const { combatState, players, discardPile } = newState;
     const attacker = players[combatState.attackerId];
-    const defender = players[combatState.defenderId];
+    const defender = players.find(p => p.id === combatState.defenderId);
+    if(!defender) return state;
 
     let attackerBonusPower = 0;
     const canUseCard = !attacker.actionsThisTurn.includes('use-card');
@@ -768,12 +772,13 @@ export function handleCloseCombat(state: GameState): GameState {
         return { ...newState, combatState: null };
     }
     
-    const { winnerId, attackerId, defenderId, defendingArmyId } = combatState;
+    const { winnerId, attackerId, defenderId, attackingArmyId, defendingArmyId } = combatState;
     const loserId = winnerId === attackerId ? defenderId : attackerId;
     const winner = players.find(p => p.id === winnerId)!;
     const loser = players.find(p => p.id === loserId)!;
     
-    const attackingArmy = players[attackerId].armies.find(a => a.id === getSelectedArmy(state, a.id)?.id);
+    const attackingArmy = players.find(p=>p.id === attackerId)?.armies.find(a => a.id === attackingArmyId);
+
     if (!attackingArmy) return { ...newState, combatState: null };
     
     const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
@@ -1269,6 +1274,8 @@ export function handleCancelAction(state: GameState): GameState {
     newState.teleportState = null;
     newState.scoutingState = null;
     newState.monsterCombatState = null;
+    newState.attackSelectionDialogState = null;
+    
     player.hasExtraMove = false;
     player.efficientActive = false;
     player.masterBuilderActive = false;
@@ -1284,65 +1291,102 @@ interface HandleActionParams {
     payload?: any;
 }
 
-export function handleGameAction({ action, gameState, selectedArmy, payload }: HandleActionParams): GameState | TileClickResult {
+export function handleGameAction({ action, gameState, selectedArmy, payload }: HandleActionParams): { newState: GameState, selectedArmyId?: number | null } {
+    let resultState = gameState;
+    let resultSelectedArmyId: number | null = selectedArmy?.id ?? null;
+
     switch(action) {
         case 'position':
-            return handlePositionAction(gameState, selectedArmy);
+            resultState = handlePositionAction(gameState, selectedArmy);
+            break;
         case 'collect':
-            return handleCollectAction(gameState, selectedArmy);
+            resultState = handleCollectAction(gameState, selectedArmy);
+            break;
         case 'deploy':
-            return handleDeployAction(gameState);
+            resultState = handleDeployAction(gameState);
+            break;
         case 'buy-card':
-            return handleBuyCardAction(gameState);
+            resultState = handleBuyCardAction(gameState);
+            break;
         case 'upgrade':
-            return handleUpgradeAction(gameState);
+            resultState = handleUpgradeAction(gameState);
+            break;
         case 'attack':
-            return handleAttackAction(gameState, selectedArmy);
+            const attackResult = handleAttackAction(gameState, selectedArmy);
+            resultState = attackResult.newState;
+            resultSelectedArmyId = attackResult.selectedArmyId;
+            break;
         case 'end-turn':
-            return handleEndTurn(gameState);
+            resultState = handleEndTurn(gameState);
+            resultSelectedArmyId = null;
+            break;
         case 'show-cards':
-            return { ...gameState, showCardsDialogForPlayer: gameState.currentPlayerIndex };
+             return { newState: { ...gameState, showCardsDialogForPlayer: payload }, selectedArmyId: resultSelectedArmyId };
         case 'open-abilities-shop':
-            return handleOpenAbilitiesShop(gameState);
+            resultState = handleOpenAbilitiesShop(gameState);
+            break;
         case 'use-card':
             if (['Steal Resource', 'Sabatoge', 'Wealthy'].includes(payload)) {
                 let dialogState: Partial<GameState> = {};
                 if (payload === 'Steal Resource') dialogState = { stealResourceDialogState: { targetPlayerId: null } };
                 if (payload === 'Sabatoge') dialogState = { sabotageDialogState: { isOpen: true } };
                 if (payload === 'Wealthy') dialogState = { wealthyDialogState: { isOpen: true } };
-                return { ...gameState, ...dialogState, showCardsDialogForPlayer: null, useCardDialogState: null };
+                resultState = { ...gameState, ...dialogState, showCardsDialogForPlayer: null, useCardDialogState: null };
             } else {
-                 return handleUseCard(gameState, payload);
+                 resultState = handleUseCard(gameState, payload);
             }
+            break;
         case 'confirm-use-card':
-            return handleUseCard(gameState, payload);
+            resultState = handleUseCard(gameState, payload);
+            break;
         case 'select-resource-position':
-            return handleSelectResourceForPosition(gameState, payload, selectedArmy);
+            resultState = handleSelectResourceForPosition(gameState, payload, selectedArmy);
+            break;
         case 'confirm-collection':
-            return handleConfirmCollection(gameState, payload, selectedArmy);
+            resultState = handleConfirmCollection(gameState, payload, selectedArmy);
+            break;
         case 'select-army':
-            return handleSelectArmy(gameState, payload);
+            resultState = handleSelectArmy(gameState, payload);
+            resultSelectedArmyId = payload;
+            break;
         case 'select-defender':
-            return handleSelectDefender(gameState, payload);
+             const { defenderArmyId, attackingArmyId } = payload;
+             resultState = handleSelectDefender(gameState, defenderArmyId, attackingArmyId);
+             resultSelectedArmyId = attackingArmyId;
+            break;
         case 'combat-roll':
-            return handleCombatRoll(gameState, payload, selectedArmy);
+            resultState = handleCombatRoll(gameState, payload, selectedArmy);
+            break;
         case 'close-combat':
-            return handleCloseCombat(gameState);
+            resultState = handleCloseCombat(gameState);
+            resultSelectedArmyId = null;
+            break;
         case 'monster-combat-roll':
-            return handleMonsterCombatRoll(gameState, payload, selectedArmy);
+            resultState = handleMonsterCombatRoll(gameState, payload, selectedArmy);
+            break;
         case 'close-monster-combat':
-            return handleCloseMonsterCombat(gameState, selectedArmy);
+            resultState = handleCloseMonsterCombat(gameState, selectedArmy);
+            resultSelectedArmyId = null;
+            break;
         case 'buy-ability':
-            return handleBuyAbility(gameState, payload);
+            resultState = handleBuyAbility(gameState, payload);
+            break;
         case 'steal-resource':
-            return handleStealResource(gameState, payload);
+            resultState = handleStealResource(gameState, payload);
+            break;
         case 'sabotage-player':
-            return handleSabotagePlayer(gameState, payload);
+            resultState = handleSabotagePlayer(gameState, payload);
+            break;
         case 'gain-wealth':
-            return handleGainWealth(gameState, payload);
+            resultState = handleGainWealth(gameState, payload);
+            break;
         case 'cancel-action':
-            return handleCancelAction(gameState);
+            resultState = handleCancelAction(gameState);
+            resultSelectedArmyId = null;
+            break;
         default:
-            return gameState;
+            return { newState: gameState, selectedArmyId: resultSelectedArmyId };
     }
+    
+    return { newState: resultState, selectedArmyId: resultSelectedArmyId };
 }

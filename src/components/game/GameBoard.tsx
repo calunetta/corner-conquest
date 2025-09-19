@@ -61,15 +61,17 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setSelectedTile(null);
         setPossibleMoves([]);
         setCurrentAction(null);
-        setLocallyDismissedDialogs(Object.keys(gameState || {}).filter(k => k.endsWith('State') || k.endsWith('Dialog')));
+        if (gameState) {
+            setLocallyDismissedDialogs(Object.keys(gameState).filter(k => k.endsWith('State') || k.endsWith('Dialog')));
+        }
     }
-  }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex]);
+  }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex, gameState]);
 
   const selectedArmy = useMemo(() => {
     if (!gameState || selectedArmyId === null) return null;
-    const player = gameState.players.find(p => p.playerId === playerId);
+    const player = gameState.players.find(p => p.id === localPlayer?.id);
     return player?.armies.find(a => a.id === selectedArmyId) || null;
-  }, [gameState, selectedArmyId, playerId]);
+  }, [gameState, selectedArmyId, localPlayer]);
 
   useEffect(() => {
     if (isMyTurn && gameState) {
@@ -112,31 +114,46 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             payload
         });
         
-        let newState;
+        let finalState, finalSelectedArmyId;
         if ('newState' in result) {
-            setSelectedArmyId(result.selectedArmyId);
-            setSelectedTile(result.selectedTile);
-            setPossibleMoves(result.possibleMoves);
-            setCurrentAction(result.currentAction);
-            newState = result.newState;
+            finalState = result.newState;
+            finalSelectedArmyId = result.selectedArmyId;
         } else {
-             newState = result;
-             if (action !== 'show-cards') {
-                setSelectedArmyId(null);
-                setPossibleMoves([]);
-                setSelectedTile(null);
-                setCurrentAction(null);
+            finalState = result;
+            finalSelectedArmyId = selectedArmyId;
+        }
+
+        setSelectedArmyId(finalSelectedArmyId ?? null);
+        
+        if (action !== 'show-cards') {
+           setCurrentAction(null);
+           setPossibleMoves([]);
+           setSelectedTile(null);
+        }
+
+        if (finalState.showCardsDialogForPlayer === localPlayer.id) {
+            // Do not clear other state for just showing cards
+        } else if (action !== 'select-army') {
+           if (finalState.armySelectionDialogState?.isOpen) {
+             // Keep state if army selection is needed
+           } else {
+             setCurrentAction(null);
+             setPossibleMoves([]);
+             setSelectedTile(null);
+             if (action !== 'select-defender') {
+                result.selectedArmyId = null;
              }
+           }
         }
         
-        await setGameState(newState);
+        await setGameState(finalState);
 
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
     } finally {
         setIsPerformingAction(false);
     }
-  }, [gameState, localPlayer, isMyTurn, selectedArmy, toast, setGameState, isPerformingAction]);
+  }, [gameState, localPlayer, isMyTurn, selectedArmy, toast, setGameState, isPerformingAction, selectedArmyId]);
   
   const handleTileClick = async (x: number, y: number) => {
     if (!gameState || !isMyTurn || gameState.status !== 'playing' || isPerformingAction) return;
@@ -175,7 +192,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setTimeLeft(prevTime => {
             if (prevTime <= 1) {
                 clearInterval(timerRef.current!);
-                handleAction('end-turn');
+                if (isMyTurn) { // Double check it's still my turn
+                    handleAction('end-turn');
+                }
                 return 0;
             }
             return prevTime - 1;
@@ -204,8 +223,11 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
    }, [gameState?.status])
 
   useEffect(() => {
-    if (timeLeft === 0 && isMyTurn) {
+    if (timeLeft <= 0 && isMyTurn && timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
         toast({ title: "Time's up!", description: "Your turn has ended automatically."});
+        handleAction('end-turn');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, isMyTurn]);
@@ -318,9 +340,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen} className="w-full">
                 <div className="flex items-center justify-between rounded-md bg-muted/50 p-2">
                     <div className='flex items-center gap-4'>
-                        <Button variant="outline" size="icon" onClick={handleExitClick} disabled={isExiting}>
+                        {status !== 'waiting' && <Button variant="outline" size="icon" onClick={handleExitClick} disabled={isExiting}>
                             {isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft />}
-                        </Button>
+                        </Button>}
                         <h2 className="text-base font-semibold sm:text-lg">Player Information</h2>
                         {status === 'playing' && (
                             <div className="flex items-center gap-2 rounded-md bg-background/70 px-3 py-1 text-sm font-semibold">

@@ -92,6 +92,7 @@ export type CombatPhase = 'rolling' | 'results' | 'death';
 
 export type CombatState = {
   attackerId: number;
+  attackingArmyId: number;
   defenderId: number;
   defendingArmyId: number;
   attackerRolls: number[];
@@ -164,6 +165,7 @@ export type AttackSelectionDialogState = {
     isOpen: boolean;
     x: number;
     y: number;
+    attackingArmyId: number;
     defendingPlayer: Player;
     armies: Army[];
 }
@@ -222,6 +224,7 @@ export type GameAction =
   | 'upgrade' 
   | 'show-cards' 
   | 'use-card' 
+  | 'confirm-use-card'
   | 'end-turn' 
   | 'teleport' 
   | 'open-abilities-shop' 
@@ -240,5 +243,3 @@ export type GameAction =
   | 'sabotage-player'
   | 'gain-wealth'
   ;
-
-    
