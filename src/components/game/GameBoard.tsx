@@ -62,10 +62,15 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setPossibleMoves([]);
         setCurrentAction(null);
         if (gameState) {
-            setLocallyDismissedDialogs(Object.keys(gameState).filter(k => k.endsWith('State') || k.endsWith('Dialog')));
+            // Dismiss all active dialogs locally when it's not our turn
+            const dialogKeys = Object.keys(gameState).filter(k => 
+                (k.endsWith('State') && gameState[k as keyof GameState] !== null) || 
+                k.endsWith('Dialog')
+            );
+            setLocallyDismissedDialogs(dialogKeys);
         }
     }
-  }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex, gameState]);
+  }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex]);
 
   const selectedArmy = useMemo(() => {
     if (!gameState || selectedArmyId === null) return null;
@@ -114,14 +119,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             payload
         });
         
-        let finalState, finalSelectedArmyId;
-        if ('newState' in result) {
-            finalState = result.newState;
-            finalSelectedArmyId = result.selectedArmyId;
-        } else {
-            finalState = result;
-            finalSelectedArmyId = selectedArmyId;
-        }
+        let finalState = result.newState;
+        let finalSelectedArmyId = result.selectedArmyId;
 
         setSelectedArmyId(finalSelectedArmyId ?? null);
         
@@ -141,7 +140,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
              setPossibleMoves([]);
              setSelectedTile(null);
              if (action !== 'select-defender') {
-                result.selectedArmyId = null;
+                finalSelectedArmyId = null;
              }
            }
         }

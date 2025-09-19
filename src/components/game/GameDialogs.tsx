@@ -59,10 +59,10 @@ export function GameDialogs({
     if (isMyTurn) {
         setGameState(gs => {
             if (!gs) return null;
-            const newGs = { ...gs };
-            // A bit of a hack, but some actions need cancellation logic
-            if (['monsterCombatState', 'attackSelectionDialogState'].includes(dialogKey)) {
-                return GameActions.handleCancelAction(newGs);
+            let newGs = { ...gs };
+             // Reset any action-specific state on close
+            if (['monsterCombatState', 'attackSelectionDialogState', 'positionDialogState', 'collectDialogState', 'stealResourceDialogState', 'sabotageDialogState', 'wealthyDialogState', 'teleportState', 'scoutingState'].includes(dialogKey)) {
+                newGs = GameActions.handleCancelAction(newGs);
             }
             (newGs as any)[dialogKey] = null;
             return newGs;
@@ -76,7 +76,7 @@ export function GameDialogs({
   const currentTileForMonster = (selectedArmy && gameState.map && gameState.map[selectedArmy.position.y]) ? gameState.map[selectedArmy.position.y][selectedArmy.position.x] : null;
 
   const isDialogVisible = (key: keyof GameState) => {
-    return !!gameState[key] && !locallyDismissedDialogs.includes(key);
+    return !!gameState[key] && !locallyDismissedDialogs.includes(key as string);
   }
   
   const isAttacker = isMyTurn && (!!combatState || !!monsterCombatState);
