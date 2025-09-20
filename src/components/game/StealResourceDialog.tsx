@@ -4,6 +4,7 @@ import type { Player, ResourceType } from '@/lib/types';
 import { useState } from 'react';
 import {
   AlertDialog,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -57,7 +58,7 @@ export function StealResourceDialog({ players, onSteal, onClose, isMyTurn }: Ste
       <AlertDialogFooter>
         {isMyTurn ? (
           <>
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
             <Button disabled={!selectedPlayer} onClick={() => { /* No-op, just moves to next screen */ }}>
               Select Resources
             </Button>

@@ -19,6 +19,10 @@ function canPlayerPerformAnyAction(state: GameState): boolean {
     if (player.armies.some(army => !army.hasActed)) {
         return true;
     }
+    
+    if (player.hasExtraMove) {
+        return true;
+    }
 
     const { settings, specialCardsDeck, discardPile } = state;
     const canUseCard = !player.actionsThisTurn.includes('use-card');
@@ -210,7 +214,7 @@ export function handleDeployAction(state: GameState): GameState {
     const newArmyId = player.armies.length > 0 ? Math.max(...player.armies.map(a => a.id)) + 1 : 0;
     const newArmy: Army = { id: newArmyId, position: {x: 0, y: 0}, hasActed: true }; 
     
-    const baseTile = (baseTiles || []).find(b => b.owner === player.id);
+    const baseTile = baseTiles.find(b => b.owner === player.id);
     if (!baseTile) throw new Error("Base not found!");
     newArmy.position = {x: baseTile.x, y: baseTile.y};
 
@@ -496,7 +500,7 @@ function getPossibleMoves(state: GameState, army: Army): { x: number, y: number 
     }
     return moves.filter(move => {
         const tile = map[move.y][move.x];
-        const baseTileInfo = (state.baseTiles || []).find(b => b.x === tile.x && b.y === tile.y);
+        const baseTileInfo = state.baseTiles.find(b => b.x === tile.x && b.y === tile.y);
         return !baseTileInfo || baseTileInfo.owner === currentPlayer.id;
     });
 }
@@ -509,7 +513,7 @@ export function handleTileClick(
     currentSelectedArmy: Army | null,
     currentPossibleMoves: {x: number, y: number}[]
 ): TileClickResult {
-    let newState = { ...state, id: state.id + '_temp' };
+    let newState = { ...state, id: state.id + `_tileclick_${Date.now()}` };
     const { players, currentPlayerIndex, teleportState, scoutingState } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const clickedTile = newState.map[y][x];
@@ -701,7 +705,7 @@ export function handleSelectArmy(state: GameState, armyId: number): { newState: 
     if (!army) {
         return { newState, selectedArmyId: null, possibleMoves: [], currentAction: null };
     }
-
+    
     if (newState.teleportState) {
         newState.teleportState.armyId = armyId;
         return { newState, selectedArmyId: armyId, possibleMoves: [], currentAction: 'teleport' };
@@ -710,17 +714,16 @@ export function handleSelectArmy(state: GameState, armyId: number): { newState: 
     const possibleMoves = getPossibleMoves(newState, army);
     const tile = newState.map[army.position.y][army.position.x];
     const canAttack = tile.occupants.some(o => o.playerId !== player.id) || (tile.type === 'monster' && !!tile.monsters && tile.monsters.length > 0);
-
-    let currentAction: GameAction | null = null;
-
+    
     if (possibleMoves.length > 0) {
-        currentAction = 'move';
+        return { newState, selectedArmyId: armyId, possibleMoves, currentAction: 'move' };
     } else if (canAttack) {
         const { newState: attackState } = handleAttackAction(newState, army);
-        newState = attackState;
+        return { newState: attackState, selectedArmyId: armyId, possibleMoves: [], currentAction: 'attack' };
     }
 
-    return { newState, selectedArmyId: armyId, possibleMoves, currentAction };
+
+    return { newState, selectedArmyId: armyId, possibleMoves, currentAction: null };
 }
 
 export function handleSelectResourceForPosition(state: GameState, resource: ResourceType, selectedArmy: Army | null): GameState {
@@ -833,7 +836,7 @@ export function handleCloseCombat(state: GameState): GameState {
         newState.log.push(`${winner.name} receives 5 VP for defeating ${loser.name}!`);
 
         const losingArmy = loser.armies.find(a => a.id === defendingArmyId);
-        const baseTile = (baseTiles || []).find(b => b.owner === loserId);
+        const baseTile = baseTiles.find(b => b.owner === loserId);
 
         if (losingArmy && baseTile) {
             const deathAnim: DeathAnimation = {
@@ -861,7 +864,7 @@ export function handleCloseCombat(state: GameState): GameState {
         winner.victoryPoints += 5;
         newState.log.push(`${winner.name} receives 5 VP for defeating ${loser.name}!`);
         
-        const baseTile = (baseTiles || []).find(b => b.owner === loserId);
+        const baseTile = baseTiles.find(b => b.owner === loserId);
          if (attackingArmy && baseTile) {
             const deathAnim: DeathAnimation = {
                 id: `army-${loser.id}-${attackingArmy.id}`,
@@ -1006,7 +1009,7 @@ export function handleCloseMonsterCombat(state: GameState, selectedArmy: Army | 
           newState.log.push(`The defeated monster's den revealed a cache of ${randomResource}!`);
         }
     } else {
-        const baseTile = (baseTiles || []).find(t => t.owner === attacker.id);
+        const baseTile = baseTiles.find(t => t.owner === attacker.id);
         if (baseTile) {
             const deathAnim: DeathAnimation = {
                 id: `army-${attacker.id}-${selectedArmy.id}`,
@@ -1038,12 +1041,13 @@ export const handleUseCard = (state: GameState, cardName: string) => {
     const cardIndex = player.specialCards.indexOf(cardName);
     if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
     
-    let shouldRecycleCard = false;
+    let shouldCheckEndTurn = true;
 
     switch (cardName) {
         case 'Extra Move':
             player.hasExtraMove = true;
             newState.log.push(`${player.name} activated 'Extra Move'. One army can move again this turn.`);
+            shouldCheckEndTurn = false; // The player needs to take their extra move.
             break;
         case 'Teleport':
             newState.teleportState = { armyId: null };
@@ -1070,24 +1074,19 @@ export const handleUseCard = (state: GameState, cardName: string) => {
             player.masterBuilderActive = true;
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
             break;
-        default:
-            shouldRecycleCard = true;
-            break;
     }
     
+    // Most non-combat cards are single-use activations that are consumed immediately.
+    // Combat cards are consumed during combat logic. Dialog cards are consumed when the dialog action is confirmed.
     if (['Extra Move', 'Teleport', 'Reinforce', 'Scout', 'Efficient', 'Master Builder'].includes(cardName)) {
-        // These cards are consumed upon activation, not upon final action
         const usedCard = player.specialCards.splice(cardIndex, 1)[0];
         discardPile.push(usedCard);
         player.actionsThisTurn.push('use-card');
-    } else {
-        shouldRecycleCard = true;
     }
-
 
     newState.useCardDialogState = null;
 
-    if (!['Sabatoge', 'Wealthy', 'Steal Resource'].includes(cardName)) {
+    if (shouldCheckEndTurn && !['Sabatoge', 'Wealthy', 'Steal Resource'].includes(cardName)) {
         return checkAndEndTurnIfNoActions(newState);
     }
     return newState;
@@ -1325,6 +1324,7 @@ export function handleCancelAction(state: GameState): GameState {
     newState.useCardDialogState = null;
     newState.sabotageDialogState = null;
     newState.wealthyDialogState = null;
+    newState.stealResourceDialogState = null;
     newState.showHostLeaveDialog = false;
     
     player.hasExtraMove = false;
