@@ -1,6 +1,6 @@
 
 'use client';
-import { ResourceType } from '@/lib/enums';
+import { ResourceType, CardName } from '@/lib/enums';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -26,7 +26,7 @@ export function WealthyDialog({ onSelectResource, onClose, isMyTurn }: WealthyDi
     <AlertDialog open={true} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Use 'Wealthy' Card</AlertDialogTitle>
+          <AlertDialogTitle>Use '{CardName.Wealthy}' Card</AlertDialogTitle>
           <AlertDialogDescription>
             Select a resource to gain 5 units of.
           </AlertDialogDescription>

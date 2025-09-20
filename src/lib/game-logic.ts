@@ -2,7 +2,7 @@
 import type { GameState, Island, Player, PlayerColor, FirestoreGameState, BaseTileInfo } from './types';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './game-initializer';
-import { GameStatus } from './enums';
+import { GameStatus, IslandType } from './enums';
 
 export const TILE_SIZE = 75;
 export const BASE_TILE_SIZE = 150;
@@ -71,7 +71,7 @@ export function addPlayerToGame(
     newGameState.log.push(`${playerInfo.name} has joined the game!`);
     
     const baseTile = newMap[newPlayerPos.y][newPlayerPos.x];
-    baseTile.type = 'base';
+    baseTile.type = IslandType.Base;
     baseTile.owner = newPlayerSeatIndex;
     baseTile.occupants.push({ playerId: newPlayerSeatIndex, armyId: newPlayer.armies[0].id });
     baseTile.resources = [

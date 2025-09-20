@@ -1,6 +1,6 @@
 
 import type { GameState, Army, PassiveAbilities, CardName, AbilityName } from './types';
-import { GameAction, ResourceType } from './enums';
+import { GameAction, ResourceType, CardName as CardNameEnum } from './enums';
 import { handleAttackAction, handleMonsterCombatRoll, handleCloseMonsterCombat } from './actions/attack';
 import { handleBuyAbility, handleBuyCardAction } from './actions/card';
 import { getPossibleMoves, handleTileClick } from './actions/movement';
@@ -130,10 +130,10 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
                  if (monsterCombatState) {
                     const combatResultState = handleMonsterCombatRoll(attackState, {
                         monster: monsterCombatState.monster,
-                        useDecideCard: botPlayer.specialCards.includes(CardName.DecideDiceRoll),
+                        useDecideCard: botPlayer.specialCards.includes(CardNameEnum.DecideDiceRoll),
                         decidedValue: 6,
-                        useOvercomeCard: botPlayer.specialCards.includes(CardName.Overcome),
-                        useWarChief: botPlayer.specialCards.includes(CardName.WarChief),
+                        useOvercomeCard: botPlayer.specialCards.includes(CardNameEnum.Overcome),
+                        useWarChief: botPlayer.specialCards.includes(CardNameEnum.WarChief),
                     }, army);
                     const finalState = handleCloseMonsterCombat(combatResultState, army);
                     return handleEndTurn(finalState);

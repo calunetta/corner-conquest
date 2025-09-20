@@ -1,6 +1,6 @@
 
 import type { GameState, Army, IslandResource, CardName } from '@/lib/types';
-import { ResourceType, GameAction, IslandType } from '../enums';
+import { ResourceType, GameAction, IslandType, CardName as CardNameEnum } from '../enums';
 import { checkAndEndTurnIfNoActions } from './player';
 
 export function handlePositionAction(state: GameState, selectedArmy: Army | null): GameState {
@@ -49,7 +49,7 @@ export function handleCollectAction(state: GameState, selectedArmy: Army | null)
   
   const resourceToCollect = { type: resourceSpot.type, amount: resourceSpot.amount };
 
-  const hasProductiveCard = player.specialCards.includes(CardName.Productive) && !player.actionsThisTurn.includes(GameAction.UseCard);
+  const hasProductiveCard = player.specialCards.includes(CardNameEnum.Productive) && !player.actionsThisTurn.includes(GameAction.UseCard);
 
   if (hasProductiveCard) {
       newState.collectDialogState = {
@@ -93,11 +93,11 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     let amountToCollect = resourceToCollect.amount;
 
     if (useProductive) {
-        if (!player.specialCards.includes(CardName.Productive) || player.actionsThisTurn.includes(GameAction.UseCard)) {
+        if (!player.specialCards.includes(CardNameEnum.Productive) || player.actionsThisTurn.includes(GameAction.UseCard)) {
             throw new Error("Cannot use 'Productive' card.");
         }
         amountToCollect *= 2;
-        const cardIndex = player.specialCards.indexOf(CardName.Productive);
+        const cardIndex = player.specialCards.indexOf(CardNameEnum.Productive);
         if (cardIndex > -1) {
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
             discardPile.push(usedCard);

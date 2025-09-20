@@ -15,9 +15,9 @@ interface HandleActionParams {
     payload?: any;
 }
 
-export { handlePlayerExit, handleConfirmHostLeave, handleGameAction };
+export { handlePlayerExit, handleConfirmHostLeave };
 
-function handleGameAction({ action, gameState, selectedArmy, payload }: HandleActionParams): ActionHandlerResult {
+export function handleGameAction({ action, gameState, selectedArmy, payload }: HandleActionParams): ActionHandlerResult {
     switch(action) {
         // Player actions
         case GameAction.Deploy:

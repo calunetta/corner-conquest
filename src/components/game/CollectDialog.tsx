@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { ResourceIcon } from '../icons';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
+import { CardName } from '@/lib/enums';
 
 type CollectDialogProps = {
   state: CollectDialogState;
@@ -49,7 +50,7 @@ export function CollectDialog({ state, onConfirm, onClose, isMyTurn }: CollectDi
         {hasProductiveCard && (
             <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
                 <Checkbox id="use-productive-card" checked={useProductive} onCheckedChange={(checked) => setUseProductive(!!checked)} disabled={!isMyTurn} />
-                <Label htmlFor="use-productive-card" className='font-bold'>Use 'Productive' card to double resources?</Label>
+                <Label htmlFor="use-productive-card" className='font-bold'>Use '{CardName.Productive}' card to double resources?</Label>
             </div>
         )}
 

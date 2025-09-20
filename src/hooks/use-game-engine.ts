@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { db, doc, onSnapshot, getDoc, updateDoc } from '@/lib/firebase';
 import type { GameState, FirestoreGameState, Player, Island } from '@/lib/types';

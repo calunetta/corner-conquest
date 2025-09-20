@@ -2,14 +2,15 @@
 
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { db, runTransaction, collection, doc, writeBatch, getDoc, arrayUnion, query, where, onSnapshot } from '@/lib/firebase';
+import { db, runTransaction, collection, doc, writeBatch, getDoc, arrayUnion, query, where, onSnapshot, updateDoc } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
 import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
 import { addPlayerToGame } from '@/lib/game-logic';
-import type { GameState, PlayerColor, FirestoreGameState, GameSettings, Player, Island } from '@/lib/types';
+import type { GameState, FirestoreGameState, GameSettings, Player, Island } from '@/lib/types';
+import { PlayerColor, GameStatus } from '@/lib/enums';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CreateGameDialog } from './CreateGameDialog';
+import { CreateGameDialog } from '../../components/lobby/CreateGameDialog';
 import { Loader2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PLAYER_COLORS } from '@/lib/player-data';
@@ -27,7 +28,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    const q = query(collection(db, 'games'), where('status', '==', 'waiting'));
+    const q = query(collection(db, 'games'), where('status', '==', GameStatus.Waiting));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const gamesList: GameState[] = [];
       querySnapshot.forEach((doc) => {
@@ -104,7 +105,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
 
             const firestoreState = gameDoc.data() as Omit<FirestoreGameState, 'id' | 'name'>;
             
-            if (firestoreState.status !== 'waiting') {
+            if (firestoreState.status !== GameStatus.Waiting) {
                  throw new Error("This game has already started or is no longer available.");
             }
             if (firestoreState.players.length >= firestoreState.maxPlayers) {
@@ -121,15 +122,18 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             }
             const mapData = mapDoc.data().map as Island[];
             
-            const { newGameState, updatedMap } = addPlayerToGame(firestoreState, mapData, { playerId, name: username });
+            const { newGameState, updatedMap, newBaseTile } = addPlayerToGame(firestoreState, mapData, { playerId, name: username });
 
-            if (!newGameState || !updatedMap) {
+            if (!newGameState || !updatedMap || !newBaseTile) {
                  throw new Error("Could not add player to game. The room might be full or color unavailable.");
             }
             
             transaction.update(gameDocRef, {
                 players: newGameState.players,
                 log: newGameState.log,
+                baseTiles: arrayUnion(newBaseTile),
+                status: newGameState.status,
+                turn: newGameState.turn,
             });
             transaction.update(mapDocRef, {
                 map: updatedMap,
@@ -193,7 +197,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
         </CardContent>
       </Card>
       <CreateGameDialog 
-        open={isCreatingGame}
+        open={isJoiningGame === null && isCreatingGame}
         onOpenChange={setIsCreatingGame}
         onCreateGame={handleCreateGame}
       />

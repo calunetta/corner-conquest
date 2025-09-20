@@ -225,4 +225,3 @@ export type ActionHandlerResult = {
     currentAction?: GameAction | null;
     selectedTile?: {x: number, y: number} | null;
 }
-    

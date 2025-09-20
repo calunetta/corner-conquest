@@ -1,7 +1,7 @@
 
 'use client';
 import type { Player } from '@/lib/types';
-import { ResourceType } from '@/lib/enums';
+import { ResourceType, CardName } from '@/lib/enums';
 import { useState } from 'react';
 import {
   AlertDialog,
@@ -35,7 +35,7 @@ export function StealResourceDialog({ players, onSteal, onClose, isMyTurn }: Ste
   const renderPlayerSelection = () => (
     <>
       <AlertDialogHeader>
-        <AlertDialogTitle>Use 'Steal Resource'</AlertDialogTitle>
+        <AlertDialogTitle>Use '{CardName.StealResource}'</AlertDialogTitle>
         <AlertDialogDescription>
           Select a player to steal 2 resources from.
         </AlertDialogDescription>

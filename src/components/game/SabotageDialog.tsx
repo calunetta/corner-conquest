@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '../ui/card';
+import { CardName } from '@/lib/enums';
 
 type SabotageDialogProps = {
   players: Player[];
@@ -26,7 +27,7 @@ export function SabotageDialog({ players, onSabotage, onClose, isMyTurn }: Sabot
     <AlertDialog open={true} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Use 'Sabotage' Card</AlertDialogTitle>
+          <AlertDialogTitle>Use '{CardName.Sabotage}' Card</AlertDialogTitle>
           <AlertDialogDescription>
             Choose an opponent. They will miss their next turn.
           </AlertDialogDescription>

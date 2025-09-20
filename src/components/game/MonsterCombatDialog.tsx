@@ -20,6 +20,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Slider } from '../ui/slider';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
+import { CardName } from '@/lib/enums';
 
 type MonsterCombatDialogProps = {
   gameState: GameState;
@@ -48,9 +49,9 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
 
   const { attackerId, attackerRolls, monsterRolls, winnerId, phase } = monsterCombatState;
   const attacker = players[attackerId];
-  const hasDecideCard = attacker.specialCards.includes('Decide Dice Roll');
-  const hasOvercomeCard = attacker.specialCards.includes('Overcome');
-  const hasWarChiefCard = attacker.specialCards.includes('War Chief');
+  const hasDecideCard = attacker.specialCards.includes(CardName.DecideDiceRoll);
+  const hasOvercomeCard = attacker.specialCards.includes(CardName.Overcome);
+  const hasWarChiefCard = attacker.specialCards.includes(CardName.WarChief);
   const monsterForDisplay = phase === 'results' ? monsterCombatState.monster : selectedMonster;
   
   const isSelectionPhase = phase === 'rolling' && monsters.length > 1 && !selectedMonster;
@@ -105,20 +106,20 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
                   {hasOvercomeCard && (
                   <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
                       <Checkbox id="use-overcome-card" checked={useOvercomeCard} onCheckedChange={(checked) => { setUseOvercomeCard(!!checked); if(!!checked) setUseDecideCard(false); }} />
-                      <Label htmlFor="use-overcome-card" className='font-bold'>Use 'Overcome' card to win automatically?</Label>
+                      <Label htmlFor="use-overcome-card" className='font-bold'>Use '{CardName.Overcome}' card to win automatically?</Label>
                   </div>
                   )}
                   {hasWarChiefCard && (
                       <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
                           <Checkbox id="use-warchief-card" disabled={useOvercomeCard} checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
-                          <Label htmlFor="use-warchief-card" className='font-bold'>Use 'War Chief' card for +2 attack power?</Label>
+                          <Label htmlFor="use-warchief-card" className='font-bold'>Use '{CardName.WarChief}' card for +2 attack power?</Label>
                       </div>
                   )}
                   {hasDecideCard && (
                   <div className="space-y-4 rounded-md border bg-muted/50 p-4">
                       <div className="flex items-center space-x-2">
                           <Checkbox id="use-decide-card" checked={useDecideCard} disabled={useOvercomeCard} onCheckedChange={(checked) => setUseDecideCard(!!checked)} />
-                          <Label htmlFor="use-decide-card" className='font-bold'>Use 'Decide Dice Roll' card?</Label>
+                          <Label htmlFor="use-decide-card" className='font-bold'>Use '{CardName.DecideDiceRoll}' card?</Label>
                       </div>
                       {useDecideCard && (
                           <div className='space-y-2 pt-2'>

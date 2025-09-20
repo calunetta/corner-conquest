@@ -3,7 +3,7 @@ import type { GameState, Island, Player, IslandResource, Monster, GameSettings, 
 import { BASE_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
-import { IslandType, ResourceType, PlayerColor, MonsterNameEnum, GameStatus } from './enums';
+import { IslandType, ResourceType, PlayerColor, MonsterNameEnum, GameStatus, AbilityName as AbilityNameEnum } from './enums';
 
 export const defaultGameSettings: GameSettings = {
     victoryPointGoal: 30,
@@ -15,7 +15,7 @@ export const defaultGameSettings: GameSettings = {
     baseResourceAmount: 1,
     resourceDensity: 0.6, // 60% chance for a tile to be resource vs monster
     availableCards: [...BASE_CARDS],
-    availableAbilities: ['explorer', 'collector'],
+    availableAbilities: [AbilityNameEnum.Explorer, AbilityNameEnum.Collector],
     fogOfWar: false,
 };
 
@@ -96,7 +96,7 @@ export function createPlayer(
     settings: GameSettings,
     debugMode: boolean
 ): Player {
-    let startingCards: CardName[] = [CardName.ExtraMove, CardName.StealResource, CardName.DecideDiceRoll];
+    let startingCards: CardName[] = [CardNameEnum.ExtraMove, CardNameEnum.StealResource, CardNameEnum.DecideDiceRoll];
     if (debugMode) {
         startingCards = [...new Set(BASE_CARDS)];
     }
@@ -123,7 +123,7 @@ export function createPlayer(
         positions: [],
         hasExtraMove: false,
         actionsThisTurn: [],
-        passiveAbilities: { [AbilityName.Explorer]: false, [AbilityName.Collector]: false },
+        passiveAbilities: { [AbilityNameEnum.Explorer]: false, [AbilityNameEnum.Collector]: false },
         isSabotaged: false,
         efficientActive: false,
         masterBuilderActive: false,

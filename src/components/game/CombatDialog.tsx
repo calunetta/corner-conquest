@@ -16,6 +16,7 @@ import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
+import { CardName } from '@/lib/enums';
 
 type CombatDialogProps = {
   gameState: GameState;
@@ -36,7 +37,7 @@ export function CombatDialog({ gameState, onRoll, onClose, isAttacker }: CombatD
 
   if (!defender) return null;
   
-  const hasWarChiefCard = attacker.specialCards.includes('War Chief');
+  const hasWarChiefCard = attacker.specialCards.includes(CardName.WarChief);
   const isCombatOver = phase === 'results';
   const loserId = isCombatOver && winnerId !== null ? (winnerId === attackerId ? defenderId : attackerId) : null;
   
@@ -67,7 +68,7 @@ export function CombatDialog({ gameState, onRoll, onClose, isAttacker }: CombatD
         {phase === 'rolling' && hasWarChiefCard && isAttacker && (
             <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
                 <Checkbox id="use-warchief-card" checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
-                <Label htmlFor="use-warchief-card" className='font-bold'>Use 'War Chief' card for +2 attack power?</Label>
+                <Label htmlFor="use-warchief-card" className='font-bold'>Use '{CardName.WarChief}' card for +2 attack power?</Label>
             </div>
         )}
 
