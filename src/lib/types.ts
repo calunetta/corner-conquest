@@ -1,9 +1,7 @@
 
+import type { GameAction, ResourceType, IslandType, PlayerColor, GameStatus, CardName, AbilityName, MonsterNameEnum } from './enums';
 
-export type ResourceType = 'gems' | 'iron' | 'food';
-export type IslandType = 'base' | 'resource' | 'monster' | 'special' | 'empty';
-export type PlayerColor = 'blue' | 'red' | 'purple' | 'yellow';
-export type GameStatus = 'waiting' | 'playing' | 'finished';
+export type { ResourceType, IslandType, PlayerColor, GameStatus, CardName, AbilityName, MonsterNameEnum };
 
 export type GameSettings = {
     victoryPointGoal: number;
@@ -14,8 +12,8 @@ export type GameSettings = {
     abilityCost: number;
     baseResourceAmount: number;
     resourceDensity: number; // 0-1, likelihood of resource vs monster
-    availableCards: string[];
-    availableAbilities: string[];
+    availableCards: CardName[];
+    availableAbilities: AbilityName[];
     fogOfWar: boolean;
 };
 
@@ -38,8 +36,7 @@ export type Army = {
 }
 
 export type PassiveAbilities = {
-    explorer: boolean;
-    collector: boolean;
+    [key in AbilityName]: boolean;
 }
 
 export type TeleportState = {
@@ -58,10 +55,10 @@ export type Player = {
   attackPower: number;
   nextArmyCost: number;
   victoryPoints: number;
-  specialCards: string[]; // Names of special cards
+  specialCards: CardName[]; // Names of special cards
   positions: PlayerPosition[];
   hasExtraMove: boolean;
-  actionsThisTurn: string[];
+  actionsThisTurn: GameAction[];
   passiveAbilities: PassiveAbilities;
   isSabotaged: boolean;
   reinforceActive: boolean;
@@ -71,10 +68,8 @@ export type Player = {
   revealedTiles: string[];
 };
 
-export type MonsterName = 'Lancer' | 'Bear' | 'Ogre' | 'Minotaur';
-
 export type Monster = {
-  name: MonsterName;
+  name: MonsterNameEnum;
   level: number;
   sprite: {
     idle: string;
@@ -139,7 +134,7 @@ export type StealResourceDialogState = {
 }
 
 export type UseCardDialogState = {
-    cardName: string;
+    cardName: CardName;
 }
 
 export type SabotageDialogState = {
@@ -201,8 +196,8 @@ export type GameState = {
   turn: number;
   log: string[];
   winner: Player | null;
-  specialCardsDeck: string[];
-  discardPile: string[];
+  specialCardsDeck: CardName[];
+  discardPile: CardName[];
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
   positionDialogState: PositionDialogState | null;
@@ -221,43 +216,6 @@ export type GameState = {
 
 // This represents the main game document in Firestore, without the static map data.
 export type FirestoreGameState = Omit<GameState, 'map'>;
-
-
-export type GameAction = 
-  | 'deploy' 
-  | 'collect' 
-  | 'move' 
-  | 'attack' 
-  | 'position' 
-  | 'buy-card' 
-  | 'upgrade' 
-  | 'open-abilities-shop'
-  | 'close-abilities-shop'
-  | 'show-cards'
-  | 'close-cards'
-  | 'use-card' 
-  | 'confirm-use-card'
-  | 'end-turn' 
-  | 'teleport' 
-  | 'buy-ability' 
-  | 'cancel-action'
-  | 'deselect-army'
-  | 'tile-click'
-  // Dialog actions
-  | 'select-resource-position'
-  | 'confirm-collection'
-  | 'select-army'
-  | 'select-defender'
-  | 'combat-roll'
-  | 'close-combat'
-  | 'close-combat-viewer'
-  | 'monster-combat-roll'
-  | 'close-monster-combat'
-  | 'close-monster-combat-viewer'
-  | 'steal-resource'
-  | 'sabotage-player'
-  | 'gain-wealth'
-  ;
 
 // Represents the output of a game action handler
 export type ActionHandlerResult = {

@@ -1,12 +1,12 @@
 
-
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { db, runTransaction, collection, doc, writeBatch, getDoc, arrayUnion, query, where, onSnapshot, updateDoc } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
 import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
 import { addPlayerToGame } from '@/lib/game-logic';
-import type { GameState, PlayerColor, FirestoreGameState, GameSettings, Player, Island } from '@/lib/types';
+import type { GameState, FirestoreGameState, GameSettings, Player, Island } from '@/lib/types';
+import { PlayerColor, GameStatus } from '@/lib/enums';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CreateGameDialog } from './CreateGameDialog';
@@ -27,7 +27,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    const q = query(collection(db, 'games'), where('status', '==', 'waiting'));
+    const q = query(collection(db, 'games'), where('status', '==', GameStatus.Waiting));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const gamesList: GameState[] = [];
       querySnapshot.forEach((doc) => {
@@ -104,7 +104,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
 
             const firestoreState = gameDoc.data() as Omit<FirestoreGameState, 'id' | 'name'>;
             
-            if (firestoreState.status !== 'waiting') {
+            if (firestoreState.status !== GameStatus.Waiting) {
                  throw new Error("This game has already started or is no longer available.");
             }
             if (firestoreState.players.length >= firestoreState.maxPlayers) {
@@ -203,5 +203,3 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     </div>
   );
 }
-
-    

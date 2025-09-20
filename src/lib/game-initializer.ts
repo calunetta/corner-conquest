@@ -1,9 +1,9 @@
 
-
-import type { GameState, Island, Player, ResourceType, IslandType, PlayerColor, IslandResource, Monster, GameSettings, MonsterName, FirestoreGameState, BaseTileInfo } from './types';
-import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
+import type { GameState, Island, Player, IslandResource, Monster, GameSettings, FirestoreGameState, BaseTileInfo, CardName, AbilityName } from './types';
+import { BASE_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
+import { IslandType, ResourceType, PlayerColor, MonsterNameEnum, GameStatus } from './enums';
 
 export const defaultGameSettings: GameSettings = {
     victoryPointGoal: 30,
@@ -19,11 +19,11 @@ export const defaultGameSettings: GameSettings = {
     fogOfWar: false,
 };
 
-const MONSTER_DATA: Record<number, { name: MonsterName, sprite: { idle: string, attack: string, death: string } }> = {
-    1: { name: 'Lancer', sprite: { idle: '/sprites/lancer_idle.gif', attack: '/sprites/lancer_attack.gif', death: '/sprites/death.gif' } },
-    2: { name: 'Bear', sprite: { idle: '/sprites/bear_idle.gif', attack: '/sprites/bear_attack.gif', death: '/sprites/death.gif' } },
-    3: { name: 'Ogre', sprite: { idle: '/sprites/ogre_idle.gif', attack: '/sprites/ogre_attack.gif', death: '/sprites/death.gif' } },
-    4: { name: 'Minotaur', sprite: { idle: '/sprites/minotaur_idle.gif', attack: '/sprites/minotaur_attack.gif', death: '/sprites/death.gif' } },
+const MONSTER_DATA: Record<number, { name: MonsterNameEnum, sprite: { idle: string, attack: string, death: string } }> = {
+    1: { name: MonsterNameEnum.Lancer, sprite: { idle: '/sprites/lancer_idle.gif', attack: '/sprites/lancer_attack.gif', death: '/sprites/death.gif' } },
+    2: { name: MonsterNameEnum.Bear, sprite: { idle: '/sprites/bear_idle.gif', attack: '/sprites/bear_attack.gif', death: '/sprites/death.gif' } },
+    3: { name: MonsterNameEnum.Ogre, sprite: { idle: '/sprites/ogre_idle.gif', attack: '/sprites/ogre_attack.gif', death: '/sprites/death.gif' } },
+    4: { name: MonsterNameEnum.Minotaur, sprite: { idle: '/sprites/minotaur_idle.gif', attack: '/sprites/minotaur_attack.gif', death: '/sprites/death.gif' } },
 };
 
 function generateMonsters(x: number, y: number): Monster[] {
@@ -96,7 +96,7 @@ export function createPlayer(
     settings: GameSettings,
     debugMode: boolean
 ): Player {
-    let startingCards = ['Extra Move', 'Steal Resource', 'Decide Dice Roll'];
+    let startingCards: CardName[] = [CardName.ExtraMove, CardName.StealResource, CardName.DecideDiceRoll];
     if (debugMode) {
         startingCards = [...new Set(BASE_CARDS)];
     }
@@ -114,7 +114,7 @@ export function createPlayer(
         color,
         isBot,
         armies: [{ id: 0, position: basePos, hasActed: false }],
-        resources: { gems: 0, iron: 0, food: 0 },
+        resources: { [ResourceType.Gems]: 0, [ResourceType.Iron]: 0, [ResourceType.Food]: 0 },
         armyCount: 1,
         attackPower: 0,
         nextArmyCost: settings.initialDeployCost,
@@ -123,7 +123,7 @@ export function createPlayer(
         positions: [],
         hasExtraMove: false,
         actionsThisTurn: [],
-        passiveAbilities: { explorer: false, collector: false },
+        passiveAbilities: { [AbilityName.Explorer]: false, [AbilityName.Collector]: false },
         isSabotaged: false,
         efficientActive: false,
         masterBuilderActive: false,
@@ -147,7 +147,7 @@ export function initializeGame(
       id: `${x}-${y}`,
       x,
       y,
-      type: 'empty',
+      type: IslandType.Empty,
       occupants: [],
       resources: [],
       positionedBy: [],
@@ -173,13 +173,13 @@ export function initializeGame(
 
   map[creatorPos.y][creatorPos.x] = {
       ...map[creatorPos.y][creatorPos.x],
-      type: 'base',
+      type: IslandType.Base,
       owner: creatorSeatIndex,
       occupants: [{ playerId: creatorSeatIndex, armyId: creatorPlayer.armies[0].id }],
       resources: [
-        { type: 'gems', amount: settings.baseResourceAmount }, 
-        { type: 'iron', amount: settings.baseResourceAmount }, 
-        { type: 'food', amount: settings.baseResourceAmount }
+        { type: ResourceType.Gems, amount: settings.baseResourceAmount }, 
+        { type: ResourceType.Iron, amount: settings.baseResourceAmount }, 
+        { type: ResourceType.Food, amount: settings.baseResourceAmount }
       ], 
   };
   baseTiles.push({ owner: creatorSeatIndex, x: creatorPos.x, y: creatorPos.y });
@@ -199,13 +199,13 @@ export function initializeGame(
 
         map[botPos.y][botPos.x] = {
             ...map[botPos.y][botPos.x],
-            type: 'base',
+            type: IslandType.Base,
             owner: botSeatIndex,
             occupants: [{playerId: botSeatIndex, armyId: botPlayer.armies[0].id}],
             resources: [
-                { type: 'gems', amount: settings.baseResourceAmount }, 
-                { type: 'iron', amount: settings.baseResourceAmount }, 
-                { type: 'food', amount: settings.baseResourceAmount }
+                { type: ResourceType.Gems, amount: settings.baseResourceAmount }, 
+                { type: ResourceType.Iron, amount: settings.baseResourceAmount }, 
+                { type: ResourceType.Food, amount: settings.baseResourceAmount }
             ], 
         };
         baseTiles.push({ owner: botSeatIndex, x: botPos.x, y: botPos.y });
@@ -217,12 +217,12 @@ export function initializeGame(
 
   for (let y = 0; y < MAP_ROWS; y++) {
     for (let x = 0; x < MAP_COLS; x++) {
-      if (map[y][x].type === 'base' && map[y][x].owner !== undefined) continue;
+      if (map[y][x].type === IslandType.Base && map[y][x].owner !== undefined) continue;
 
       let islandType: IslandType;
       
       if (x === center.x && y === center.y) {
-          islandType = 'monster';
+          islandType = IslandType.Monster;
           const bossMonsterData = MONSTER_DATA[4];
           map[y][x].monsters = [{
               name: bossMonsterData.name,
@@ -237,19 +237,19 @@ export function initializeGame(
       
       let rand = Math.random();
       if (distance <= 1) { 
-        if (rand < settings.resourceDensity - 0.1) islandType = 'resource'; 
-        else if (rand < 0.8) islandType = 'special';  
-        else islandType = 'monster'; 
+        if (rand < settings.resourceDensity - 0.1) islandType = IslandType.Resource; 
+        else if (rand < 0.8) islandType = IslandType.Special;  
+        else islandType = IslandType.Monster; 
       } else {
-        if (rand < settings.resourceDensity) islandType = 'resource';
-        else if (rand < 0.95) islandType = 'monster';
-        else islandType = 'special';
+        if (rand < settings.resourceDensity) islandType = IslandType.Resource;
+        else if (rand < 0.95) islandType = IslandType.Monster;
+        else islandType = IslandType.Special;
       }
       
       map[y][x].type = islandType;
 
-      if (islandType === 'resource') {
-        const resourceTypes: ResourceType[] = ['gems', 'iron', 'food'];
+      if (islandType === IslandType.Resource) {
+        const resourceTypes: ResourceType[] = [ResourceType.Gems, ResourceType.Iron, ResourceType.Food];
         const availableResources = [...resourceTypes];
         
         const numResourceTypes = (distance <= 3 && Math.random() < 0.4) ? 2 : 1;
@@ -262,18 +262,18 @@ export function initializeGame(
             islandResources.push({ type: selectedResourceType, amount });
         }
         map[y][x].resources = islandResources;
-      } else if(islandType === 'monster') {
+      } else if(islandType === IslandType.Monster) {
           map[y][x].monsters = generateMonsters(x, y);
       }
     }
   }
 
-  const finalCardDeck = SPECIAL_CARDS.filter(card => settings.availableCards.includes(card));
+  const finalCardDeck = BASE_CARDS.filter(card => settings.availableCards.includes(card));
 
   const dynamicState: FirestoreGameState = {
     id: gameId,
     name: gameName,
-    status: 'waiting',
+    status: GameStatus.Waiting,
     maxPlayers: maxPlayers === 1 ? numBots + 1 : maxPlayers,
     debugMode,
     settings,
@@ -308,7 +308,7 @@ export function initializeGame(
 
 export function startGame(gameState: GameState | FirestoreGameState): FirestoreGameState {
     const newState = { ...gameState };
-    newState.status = 'playing';
+    newState.status = GameStatus.Playing;
     newState.turn = 1; // Start the first turn
     newState.log.push(`The game has started! It's now ${newState.players[0].name}'s turn.`);
     

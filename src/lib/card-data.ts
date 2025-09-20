@@ -1,56 +1,55 @@
 
+import { CardName } from "./enums";
 
-export const BASE_CARDS = [
-  'Extra Move', 'Steal Resource', 'Sabotage', 'Reinforce', 
-  'Scout', 'Overcome', 'Wealthy', 'Productive', 'Efficient',
-  'Master Builder', 'War Chief',
-  'Decide Dice Roll', 'Teleport'
+export const BASE_CARDS: CardName[] = [
+  CardName.ExtraMove, CardName.StealResource, CardName.Sabotage, CardName.Reinforce,
+  CardName.Scout, CardName.Overcome, CardName.Wealthy, CardName.Productive, CardName.Efficient,
+  CardName.MasterBuilder, CardName.WarChief,
+  CardName.DecideDiceRoll, CardName.Teleport
 ];
 
 // More copies of common cards, fewer of rare ones.
-export const SPECIAL_CARDS = [
-  'Extra Move', 'Extra Move', 'Extra Move',
-  'Steal Resource', 'Steal Resource',
-  'Reinforce', 'Reinforce',
-  'Wealthy', 'Wealthy',
-  'Productive', 'Productive',
-  'Efficient',
-  'Master Builder',
-  'War Chief',
-  'Decide Dice Roll',
-  'Scout',
-  'Overcome',
-  'Sabotage',
-  'Teleport', // Only one copy
+export const SPECIAL_CARDS: CardName[] = [
+  CardName.ExtraMove, CardName.ExtraMove, CardName.ExtraMove,
+  CardName.StealResource, CardName.StealResource,
+  CardName.Reinforce, CardName.Reinforce,
+  CardName.Wealthy, CardName.Wealthy,
+  CardName.Productive, CardName.Productive,
+  CardName.Efficient,
+  CardName.MasterBuilder,
+  CardName.WarChief,
+  CardName.DecideDiceRoll,
+  CardName.Scout,
+  CardName.Overcome,
+  CardName.Sabotage,
+  CardName.Teleport, // Only one copy
 ];
 
 
-export const USABLE_CARDS = [
-    'Extra Move', 
-    'Steal Resource', 
-    'Teleport', 
-    'Sabotage', 
-    'Reinforce', 
-    'Scout', 
-    'Wealthy', 
-    'Efficient',
-    'Master Builder',
+export const USABLE_CARDS: CardName[] = [
+    CardName.ExtraMove,
+    CardName.StealResource,
+    CardName.Teleport,
+    CardName.Sabotage,
+    CardName.Reinforce,
+    CardName.Scout,
+    CardName.Wealthy,
+    CardName.Efficient,
+    CardName.MasterBuilder,
 ];
 
-export const SPECIAL_CARD_DESCRIPTIONS: Record<string, string> = {
-    'Extra Move': 'Take an extra move action this turn.',
-    'Steal Resource': 'Steal 2 resources of one type from another player.',
-    'Sabotage': 'Choose an opponent to lose their next turn.',
-    'Reinforce': 'Deploy a new army for free.',
-    'Scout': 'Reveal any 3 hidden tiles on the map.',
-    'Overcome': 'Automatically win your next battle (player or monster).',
-    'Wealthy': 'Gain 5 resources of your choice.',
-    'Productive': 'Double your resource collection for one turn.',
-    'Efficient': 'Your next deployment costs 50% less food.',
-    'Master Builder': 'Your next upgrade costs 50% less iron.',
-    'War Chief': 'Gain +2 attack power for your next battle.',
-    'Explorer': 'Passively gain 1 VP per turn for each island you have a unit on.',
-    'Collector': 'Passively gain 1 resource of each type from each island you have a unit on.',
-    'Decide Dice Roll': 'When attacking a monster, choose the value of one of your dice.',
-    'Teleport': 'Move one of your armies to any tile on the map.'
-}
+export const SPECIAL_CARD_DESCRIPTIONS: Record<CardName, string> = {
+    [CardName.ExtraMove]: 'Take an extra move action this turn.',
+    [CardName.StealResource]: 'Steal 2 resources of one type from another player.',
+    [CardName.Sabotage]: 'Choose an opponent to lose their next turn.',
+    [CardName.Reinforce]: 'Deploy a new army for free.',
+    [CardName.Scout]: 'Reveal any 3 hidden tiles on the map.',
+    [CardName.Overcome]: 'Automatically win your next battle (player or monster).',
+    [CardName.Wealthy]: 'Gain 5 resources of your choice.',
+    [CardName.Productive]: 'Double your resource collection for one turn.',
+    [CardName.Efficient]: 'Your next deployment costs 50% less food.',
+    [CardName.MasterBuilder]: 'Your next upgrade costs 50% less iron.',
+    [CardName.WarChief]: 'Gain +2 attack power for your next battle.',
+    [CardName.DecideDiceRoll]: 'When attacking a monster, choose the value of one of your dice.',
+    [CardName.Teleport]: 'Move one of your armies to any tile on the map.'
+};

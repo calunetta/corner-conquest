@@ -1,5 +1,6 @@
 
 'use client';
+import { GameStatus } from '@/lib/enums';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,12 +16,12 @@ type HostLeaveDialogProps = {
   isLastPlayer: boolean;
   onConfirm: () => void;
   onClose: () => void;
-  gameStatus: 'waiting' | 'playing' | 'finished';
+  gameStatus: GameStatus;
 };
 
 export function HostLeaveDialog({ isLastPlayer, onConfirm, onClose, gameStatus }: HostLeaveDialogProps) {
   const description = () => {
-    if (gameStatus === 'playing') {
+    if (gameStatus === GameStatus.Playing) {
       return "You are the host. If you leave a game in progress, the game room will be deleted, and the match will end for all players.";
     }
     if (isLastPlayer) {

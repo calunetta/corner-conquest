@@ -1,6 +1,6 @@
 
-
-import type { GameState, Army, Island, ResourceType, PassiveAbilities } from './types';
+import type { GameState, Army, PassiveAbilities, CardName, AbilityName } from './types';
+import { GameAction, ResourceType } from './enums';
 import { handleAttackAction, handleMonsterCombatRoll, handleCloseMonsterCombat } from './actions/attack';
 import { handleBuyAbility, handleBuyCardAction } from './actions/card';
 import { getPossibleMoves, handleTileClick } from './actions/movement';
@@ -13,7 +13,7 @@ function selectRandom<T>(array: T[]): T | null {
     return array[Math.floor(Math.random() * array.length)];
 }
 
-function canAfford(player: GameState['players'][0], cost: number, resource: ResourceType = 'food'): boolean {
+function canAfford(player: GameState['players'][0], cost: number, resource: ResourceType = ResourceType.Food): boolean {
     return player.resources[resource] >= cost;
 }
 
@@ -35,14 +35,14 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
 
     // Buy Ability
     const abilityCost = state.settings.abilityCost;
-    const unownedAbilities = state.settings.availableAbilities.filter(a => !botPlayer.passiveAbilities[a as keyof PassiveAbilities]);
-    if (canAfford(botPlayer, abilityCost, 'gems') && unownedAbilities.length > 0) {
+    const unownedAbilities = state.settings.availableAbilities.filter(a => !botPlayer.passiveAbilities[a as AbilityName]);
+    if (canAfford(botPlayer, abilityCost, ResourceType.Gems) && unownedAbilities.length > 0) {
         possibleActions.push({
             name: 'buy-ability',
             priority: 8, // High priority if affordable
             execute: (s) => {
                 try {
-                    return handleBuyAbility(s, unownedAbilities[0] as keyof PassiveAbilities);
+                    return handleBuyAbility(s, unownedAbilities[0] as AbilityName);
                 } catch { return null; }
             }
         });
@@ -50,7 +50,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     
     // Upgrade Attack
     const upgradeCost = botPlayer.masterBuilderActive ? Math.ceil(state.settings.upgradeCost / 2) : state.settings.upgradeCost;
-    if (canAfford(botPlayer, upgradeCost, 'iron') && botPlayer.attackPower < 4 && !botPlayer.actionsThisTurn.includes('upgrade')) {
+    if (canAfford(botPlayer, upgradeCost, ResourceType.Iron) && botPlayer.attackPower < 4 && !botPlayer.actionsThisTurn.includes(GameAction.Upgrade)) {
         possibleActions.push({
             name: 'upgrade-attack',
             priority: 7 - botPlayer.attackPower, // Lower priority as power increases
@@ -64,7 +64,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
 
     // Deploy Army
     const deployCost = botPlayer.efficientActive ? Math.ceil(botPlayer.nextArmyCost / 2) : botPlayer.nextArmyCost;
-    if ((canAfford(botPlayer, deployCost, 'food') || botPlayer.reinforceActive) && botPlayer.armyCount < 5 && !botPlayer.actionsThisTurn.includes('deploy')) {
+    if ((canAfford(botPlayer, deployCost, ResourceType.Food) || botPlayer.reinforceActive) && botPlayer.armyCount < 5 && !botPlayer.actionsThisTurn.includes(GameAction.Deploy)) {
         possibleActions.push({
             name: 'deploy-army',
             priority: 6 - botPlayer.armyCount, // Lower priority as army grows
@@ -77,7 +77,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     }
 
     // Buy Card
-    if (canAfford(botPlayer, 10, 'gems') && !botPlayer.actionsThisTurn.includes('buy-card')) {
+    if (canAfford(botPlayer, 10, ResourceType.Gems) && !botPlayer.actionsThisTurn.includes(GameAction.BuyCard)) {
         possibleActions.push({
             name: 'buy-card',
             priority: botPlayer.resources.gems > 20 ? 4 : 1, // Only if gems are plentiful
@@ -130,10 +130,10 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
                  if (monsterCombatState) {
                     const combatResultState = handleMonsterCombatRoll(attackState, {
                         monster: monsterCombatState.monster,
-                        useDecideCard: botPlayer.specialCards.includes('Decide Dice Roll'),
+                        useDecideCard: botPlayer.specialCards.includes(CardName.DecideDiceRoll),
                         decidedValue: 6,
-                        useOvercomeCard: botPlayer.specialCards.includes('Overcome'),
-                        useWarChief: botPlayer.specialCards.includes('War Chief'),
+                        useOvercomeCard: botPlayer.specialCards.includes(CardName.Overcome),
+                        useWarChief: botPlayer.specialCards.includes(CardName.WarChief),
                     }, army);
                     const finalState = handleCloseMonsterCombat(combatResultState, army);
                     return handleEndTurn(finalState);

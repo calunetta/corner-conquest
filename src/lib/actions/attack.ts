@@ -1,7 +1,8 @@
 
-import type { GameState, Army, Monster, DeathAnimation } from '@/lib/types';
+import type { GameState, Army, Monster, DeathAnimation, CardName } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { checkAndEndTurnIfNoActions } from './player';
+import { GameAction, IslandType } from '../enums';
 
 export function handleAttackAction(state: GameState, selectedArmy: Army | null): { newState: GameState; selectedArmyId: number | null } {
     let newState = { ...state };
@@ -53,7 +54,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
                 armies: defendingArmies,
             };
         }
-    } else if (currentTile.type === 'monster' && currentTile.monsters && currentTile.monsters.length > 0) {
+    } else if (currentTile.type === IslandType.Monster && currentTile.monsters && currentTile.monsters.length > 0) {
       newState.monsterCombatState = {
         attackerId: attacker.id,
         attackerPosition: selectedArmy.position,
@@ -108,14 +109,14 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean, selecte
     if(!defender) return state;
 
     let attackerBonusPower = 0;
-    const canUseCard = !attacker.actionsThisTurn.includes('use-card');
+    const canUseCard = !attacker.actionsThisTurn.includes(GameAction.UseCard);
 
     if (useWarChief && canUseCard) {
-        const cardIndex = attacker.specialCards.indexOf('War Chief');
+        const cardIndex = attacker.specialCards.indexOf(CardName.WarChief);
         if (cardIndex > -1) {
             const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
             discardPile.push(usedCard);
-            attacker.actionsThisTurn.push('use-card');
+            attacker.actionsThisTurn.push(GameAction.UseCard);
             attackerBonusPower += 2;
             newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
         }
@@ -223,14 +224,14 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
     let winnerId: number | null = null;
     
     let cardUsedThisAction = false;
-    const canUseCard = !attacker.actionsThisTurn.includes('use-card');
+    const canUseCard = !attacker.actionsThisTurn.includes(GameAction.UseCard);
 
     if (useOvercomeCard && canUseCard) {
-        const cardIndex = attacker.specialCards.indexOf('Overcome');
+        const cardIndex = attacker.specialCards.indexOf(CardName.Overcome);
         if (cardIndex > -1) {
             const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
             discardPile.push(usedCard);
-            attacker.actionsThisTurn.push('use-card');
+            attacker.actionsThisTurn.push(GameAction.UseCard);
             newState.log.push(`${attacker.name} used the 'Overcome' card to win automatically!`);
             winnerId = attacker.id;
             cardUsedThisAction = true;
@@ -243,11 +244,11 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
         let attackerBonusPower = 0;
         
         if (useWarChief && canUseCard && !cardUsedThisAction) {
-             const cardIndex = attacker.specialCards.indexOf('War Chief');
+             const cardIndex = attacker.specialCards.indexOf(CardName.WarChief);
              if (cardIndex > -1) {
                 const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
                 discardPile.push(usedCard);
-                attacker.actionsThisTurn.push('use-card');
+                attacker.actionsThisTurn.push(GameAction.UseCard);
                 attackerBonusPower += 2;
                 cardUsedThisAction = true;
                 newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
@@ -256,11 +257,11 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
 
         let canUseDecideCard = useDecideCard;
         if (useDecideCard && canUseCard && !cardUsedThisAction) {
-            const cardIndex = attacker.specialCards.indexOf('Decide Dice Roll');
+            const cardIndex = attacker.specialCards.indexOf(CardName.DecideDiceRoll);
             if (cardIndex > -1) {
                 const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
                 discardPile.push(usedCard);
-                attacker.actionsThisTurn.push('use-card');
+                attacker.actionsThisTurn.push(GameAction.UseCard);
                 newState.log.push(`${attacker.name} used the 'Decide Dice Roll' card!`);
                 cardUsedThisAction = true;
             } else {
@@ -327,7 +328,7 @@ export function handleCloseMonsterCombat(state: GameState, selectedArmy: Army | 
         newState.log.push(`${attacker.name} defeated the ${monster.name} for ${monsterVP} VP!`);
         
         if (currentTile.monsters?.length === 0) {
-          currentTile.type = 'resource';
+          currentTile.type = IslandType.Resource;
         }
     } else {
         const baseTile = baseTiles.find(t => t.owner === attacker.id);

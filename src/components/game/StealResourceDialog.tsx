@@ -1,6 +1,7 @@
 
 'use client';
-import type { Player, ResourceType } from '@/lib/types';
+import type { Player } from '@/lib/types';
+import { ResourceType } from '@/lib/enums';
 import { useState } from 'react';
 import {
   AlertDialog,

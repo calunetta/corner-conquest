@@ -1,7 +1,8 @@
 
-import type { GameState, Player, Army, ActionHandlerResult, GameAction } from '@/lib/types';
+import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions } from './player';
+import { GameAction, IslandType } from '../enums';
 
 export function getPossibleMoves(state: GameState, army: Army): { x: number; y: number }[] {
     const { x, y } = army.position;
@@ -23,7 +24,7 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
                 const newY = y + j;
                 if (newX >= 0 && newX < mapCols && newY >= 0 && newY < mapRows) {
                     const targetTile = map[newY][newX];
-                    if (targetTile.type === 'resource' && targetTile.resources.length === 0 && (!targetTile.monsters || targetTile.monsters.length === 0)) {
+                    if (targetTile.type === IslandType.Resource && targetTile.resources.length === 0 && (!targetTile.monsters || targetTile.monsters.length === 0)) {
                         continue;
                     }
                     moves.push({ x: newX, y: newY });
@@ -58,7 +59,7 @@ export function revealIsland(state: GameState, x: number, y: number): GameState 
         newState.log.push(`${player.name} discovered a new island and gains ${newState.settings.vpPerIslandDiscovery} VP!`);
     }
 
-    if (tile.type === 'special') {
+    if (tile.type === IslandType.Special) {
         if (player.specialCards.length >= HAND_LIMIT && !newState.debugMode) {
              newState.log.push(`${player.name} discovered a special island, but their hand is full!`);
         } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
@@ -111,9 +112,9 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         player.hasExtraMove = false; 
         newState.log.push(`${player.name} used their Extra Move!`);
         
-        if (!player.actionsThisTurn.includes('use-card')) {
-            player.actionsThisTurn.push('use-card');
-            const cardIndex = player.specialCards.indexOf('Extra Move');
+        if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
+            player.actionsThisTurn.push(GameAction.UseCard);
+            const cardIndex = player.specialCards.indexOf(CardName.ExtraMove);
             if (cardIndex > -1) {
                 const usedCard = player.specialCards.splice(cardIndex, 1)[0];
                 discardPile.push(usedCard);
@@ -186,7 +187,7 @@ export function handleTileClick(
             const army = armiesOnTile[0];
             selectedArmyId = army.id;
             possibleMoves = getPossibleMoves(newState, army);
-            currentAction = 'move';
+            currentAction = GameAction.Move;
         } else {
             newState.armySelectionDialogState = { isOpen: true, x, y, armies: armiesOnTile };
             selectedArmyId = null;
@@ -215,18 +216,18 @@ export function handleSelectArmy(state: GameState, armyId: number): ActionHandle
     
     if (newState.teleportState) {
         newState.teleportState.armyId = armyId;
-        return { newState, selectedArmyId: armyId, possibleMoves: [], currentAction: 'teleport' };
+        return { newState, selectedArmyId: armyId, possibleMoves: [], currentAction: GameAction.Teleport };
     }
 
     const possibleMoves = getPossibleMoves(newState, army);
     const tile = newState.map[army.position.y][army.position.x];
-    const canAttack = tile.occupants.some(o => o.playerId !== player.id) || (tile.type === 'monster' && !!tile.monsters && tile.monsters.length > 0);
+    const canAttack = tile.occupants.some(o => o.playerId !== player.id) || (tile.type === IslandType.Monster && !!tile.monsters && tile.monsters.length > 0);
     
     if (possibleMoves.length > 0) {
-        return { newState, selectedArmyId: armyId, possibleMoves, currentAction: 'move', selectedTile: {x: army.position.x, y: army.position.y} };
+        return { newState, selectedArmyId: armyId, possibleMoves, currentAction: GameAction.Move, selectedTile: {x: army.position.x, y: army.position.y} };
     } else if (canAttack && !army.hasActed) {
         const attackResult = handleAttackAction(newState, army);
-        return { ...attackResult, currentAction: 'attack' };
+        return { ...attackResult, currentAction: GameAction.Attack };
     }
 
     return { newState, selectedArmyId: armyId, possibleMoves: [], currentAction: null };
@@ -254,7 +255,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
         newState = revealIsland(newState, x, y);
     }
     
-    if (targetTile.type === 'special' && isFirstDiscovery) {
+    if (targetTile.type === IslandType.Special && isFirstDiscovery) {
         if (player.specialCards.length >= 7 && !newState.debugMode) {
              newState.log.push(`${player.name} teleported to a special island, but their hand is full!`);
         } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
@@ -270,12 +271,12 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
         }
     }
     
-    if (!player.actionsThisTurn.includes('use-card')) {
-        const cardIndex = player.specialCards.indexOf('Teleport');
+    if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
+        const cardIndex = player.specialCards.indexOf(CardName.Teleport);
         if (cardIndex > -1) {
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
             discardPile.push(usedCard);
-            player.actionsThisTurn.push('use-card');
+            player.actionsThisTurn.push(GameAction.UseCard);
         }
     }
     
@@ -296,9 +297,9 @@ export function handleScout(state: GameState, x: number, y: number): GameState {
     
     if (newState.scoutingState!.count === 0) {
         newState.log.push(`Scouting complete.`);
-        if (!player.actionsThisTurn.includes('use-card')) {
-            player.actionsThisTurn.push('use-card');
-            const cardIndex = player.specialCards.indexOf('Scout');
+        if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
+            player.actionsThisTurn.push(GameAction.UseCard);
+            const cardIndex = player.specialCards.indexOf(CardName.Scout);
             if (cardIndex > -1) {
                 const usedCard = player.specialCards.splice(cardIndex, 1)[0];
                 newState.discardPile.push(usedCard);

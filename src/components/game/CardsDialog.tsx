@@ -1,6 +1,6 @@
 
 'use client';
-import type { Player } from '@/lib/types';
+import type { Player, CardName } from '@/lib/types';
 import { SPECIAL_CARD_DESCRIPTIONS, USABLE_CARDS } from '@/lib/card-data';
 import {
   AlertDialog,
@@ -14,11 +14,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '../ui/scroll-area';
 import { Button } from '../ui/button';
 import { AlertDialogCancel } from '@radix-ui/react-alert-dialog';
+import { GameAction } from '@/lib/enums';
 
 type CardsDialogProps = {
   player: Player;
   onClose: () => void;
-  onUseCard: (cardName: string) => void;
+  onUseCard: (cardName: CardName) => void;
   canUseCards: boolean; // Is it the local player's turn?
 };
 
@@ -26,18 +27,18 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
   const cardCounts = player.specialCards.reduce((acc, card) => {
     acc[card] = (acc[card] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<CardName, number>);
 
-  const uniqueCards = Object.keys(cardCounts);
+  const uniqueCards = Object.keys(cardCounts) as CardName[];
 
   // This is the single source of truth for whether the "Use" button is enabled.
-  const canUseCardAbility = canUseCards && !player.actionsThisTurn.includes('use-card');
+  const canUseCardAbility = canUseCards && !player.actionsThisTurn.includes(GameAction.UseCard);
   
-  const handleUseCard = (cardName: string) => {
+  const handleUseCard = (cardName: CardName) => {
     onUseCard(cardName);
   }
 
-  const isCardUsableNow = (cardName: string): boolean => {
+  const isCardUsableNow = (cardName: CardName): boolean => {
     return USABLE_CARDS.includes(cardName);
   }
 

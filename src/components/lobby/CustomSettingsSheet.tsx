@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState } from 'react';
 import {
@@ -13,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { GameSettings } from '@/lib/types';
+import type { GameSettings, CardName, AbilityName } from '@/lib/types';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -28,7 +27,7 @@ type CustomSettingsSheetProps = {
   initialSettings: GameSettings;
 };
 
-const ALL_ABILITIES = ['explorer', 'collector'];
+const ALL_ABILITIES: AbilityName[] = ['explorer' as AbilityName, 'collector' as AbilityName];
 
 export function CustomSettingsSheet({
   open,
@@ -42,7 +41,7 @@ export function CustomSettingsSheet({
     onSave(settings);
   };
   
-  const handleCardToggle = (cardName: string, checked: boolean) => {
+  const handleCardToggle = (cardName: CardName, checked: boolean) => {
     setSettings(prev => ({
         ...prev,
         availableCards: checked 
@@ -51,7 +50,7 @@ export function CustomSettingsSheet({
     }));
   };
   
-  const handleAbilityToggle = (abilityName: string, checked: boolean) => {
+  const handleAbilityToggle = (abilityName: AbilityName, checked: boolean) => {
     setSettings(prev => ({
         ...prev,
         availableAbilities: checked 
@@ -199,5 +198,3 @@ export function CustomSettingsSheet({
     </Sheet>
   );
 }
-
-    

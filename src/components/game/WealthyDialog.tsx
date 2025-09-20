@@ -1,6 +1,6 @@
 
 'use client';
-import type { ResourceType } from '@/lib/types';
+import { ResourceType } from '@/lib/enums';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -19,7 +19,7 @@ type WealthyDialogProps = {
   isMyTurn: boolean;
 };
 
-const RESOURCES: ResourceType[] = ['gems', 'iron', 'food'];
+const RESOURCES: ResourceType[] = [ResourceType.Gems, ResourceType.Iron, ResourceType.Food];
 
 export function WealthyDialog({ onSelectResource, onClose, isMyTurn }: WealthyDialogProps) {
   return (

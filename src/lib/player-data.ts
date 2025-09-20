@@ -1,7 +1,7 @@
 
-import { PlayerColor } from './types';
+import { PlayerColor } from './enums';
 
-export const PLAYER_COLORS: PlayerColor[] = ['blue', 'red', 'purple', 'yellow'];
+export const PLAYER_COLORS: PlayerColor[] = [PlayerColor.Blue, PlayerColor.Red, PlayerColor.Purple, PlayerColor.Yellow];
 
 type PlayerSpriteInfo = {
     idle: string;
@@ -16,7 +16,7 @@ type PlayerData = {
 }
 
 export const PLAYER_DATA: Record<PlayerColor, PlayerData> = {
-    blue: {
+    [PlayerColor.Blue]: {
         name: 'The Legionnaires',
         sprite: {
             idle: '/sprites/blue.gif',
@@ -25,7 +25,7 @@ export const PLAYER_DATA: Record<PlayerColor, PlayerData> = {
         },
         base: '/sprites/castle_blue.png',
     },
-    red: {
+    [PlayerColor.Red]: {
         name: 'The Praetorians',
         sprite: {
             idle: '/sprites/red.gif',
@@ -34,7 +34,7 @@ export const PLAYER_DATA: Record<PlayerColor, PlayerData> = {
         },
         base: '/sprites/castle_red.png',
     },
-    purple: {
+    [PlayerColor.Purple]: {
         name: 'The Hoplites',
         sprite: {
             idle: '/sprites/purple.gif',
@@ -43,7 +43,7 @@ export const PLAYER_DATA: Record<PlayerColor, PlayerData> = {
         },
         base: '/sprites/castle_purple.png',
     },
-    yellow: {
+    [PlayerColor.Yellow]: {
         name: 'The Immortals',
         sprite: {
             idle: '/sprites/yellow.gif',

@@ -1,7 +1,7 @@
 
-
 'use client';
-import type { GameState, Player, ResourceType, GameAction } from '@/lib/types';
+import type { GameState, Player, ResourceType, CardName, AbilityName } from '@/lib/types';
+import { GameAction } from '@/lib/enums';
 import { CombatDialog } from './CombatDialog';
 import { MonsterCombatDialog } from './MonsterCombatDialog';
 import { PositionDialog } from './PositionDialog';
@@ -18,12 +18,10 @@ import { AttackSelectionDialog } from './AttackSelectionDialog';
 
 type GameDialogsProps = {
   gameState: GameState;
-  setGameState: (state: GameState | null | ((prevState: GameState | null) => GameState | null)) => Promise<void>;
   localPlayer: Player;
   isMyTurn: boolean;
   onConfirmHostLeave: () => void;
   locallyDismissedDialogs: string[];
-  setLocallyDismissedDialogs: (keys: string[]) => void;
   handleAction: (action: GameAction, payload?: any) => Promise<void>;
   cardsDialogPlayerId: number | null;
   onCloseCardsDialog: () => void;
@@ -69,8 +67,8 @@ export function GameDialogs({
       {isDialogVisible('combatState') && combatState && (
         <CombatDialog
           gameState={gameState}
-          onRoll={(useWarChief) => handleAction('combat-roll', { useWarChief })}
-          onClose={() => isAttacker ? handleAction('close-combat') : handleAction('close-combat-viewer')}
+          onRoll={(useWarChief) => handleAction(GameAction.CombatRoll, { useWarChief })}
+          onClose={() => isAttacker ? handleAction(GameAction.CloseCombat) : handleAction(GameAction.CloseCombatViewer)}
           isAttacker={isAttacker}
         />
       )}
@@ -78,25 +76,25 @@ export function GameDialogs({
         <MonsterCombatDialog 
           gameState={gameState} 
           monsters={gameState.map[monsterCombatState.attackerPosition.y][monsterCombatState.attackerPosition.x].monsters || []}
-          onRoll={(payload) => handleAction('monster-combat-roll', payload)}
-          onClose={() => isAttacker ? handleAction('close-monster-combat') : handleAction('close-monster-combat-viewer')}
-          onCancel={() => handleAction('cancel-action')}
+          onRoll={(payload) => handleAction(GameAction.MonsterCombatRoll, payload)}
+          onClose={() => isAttacker ? handleAction(GameAction.CloseMonsterCombat) : handleAction(GameAction.CloseMonsterCombatViewer)}
+          onCancel={() => handleAction(GameAction.CancelAction)}
           isAttacker={isAttacker}
         />
       )}
       {isDialogVisible('positionDialogState') && positionDialogState && (
         <PositionDialog 
           resources={positionDialogState.resources}
-          onSelect={(resource) => handleAction('select-resource-position', resource)}
-          onClose={() => handleAction('cancel-action')}
+          onSelect={(resource) => handleAction(GameAction.SelectResourcePosition, resource)}
+          onClose={() => handleAction(GameAction.CancelAction)}
           isMyTurn={isMyTurn}
         />
       )}
       {isDialogVisible('collectDialogState') && collectDialogState?.isOpen && (
         <CollectDialog
             state={collectDialogState}
-            onConfirm={(useProductive) => handleAction('confirm-collection', { useProductive })}
-            onClose={() => handleAction('cancel-action')}
+            onConfirm={(useProductive) => handleAction(GameAction.ConfirmCollection, { useProductive })}
+            onClose={() => handleAction(GameAction.CancelAction)}
             isMyTurn={isMyTurn}
         />
       )}
@@ -104,16 +102,16 @@ export function GameDialogs({
         <ArmySelectionDialog
             state={armySelectionDialogState}
             player={localPlayer}
-            onSelectArmy={(armyId) => handleAction('select-army', { armyId })}
-            onClose={() => handleAction('cancel-action')}
+            onSelectArmy={(armyId) => handleAction(GameAction.SelectArmy, { armyId })}
+            onClose={() => handleAction(GameAction.CancelAction)}
             isMyTurn={isMyTurn}
         />
       )}
        {isDialogVisible('attackSelectionDialogState') && attackSelectionDialogState?.isOpen && (
         <AttackSelectionDialog
             state={attackSelectionDialogState}
-            onSelectTarget={(defenderArmyId) => handleAction('select-defender', { defenderArmyId, attackingArmyId: attackSelectionDialogState.attackingArmyId })}
-            onClose={() => handleAction('cancel-action')}
+            onSelectTarget={(defenderArmyId) => handleAction(GameAction.SelectDefender, { defenderArmyId, attackingArmyId: attackSelectionDialogState.attackingArmyId })}
+            onClose={() => handleAction(GameAction.CancelAction)}
             isMyTurn={isMyTurn}
         />
       )}
@@ -121,8 +119,8 @@ export function GameDialogs({
         <CardsDialog 
           player={playerForCardsDialog}
           onClose={onCloseCardsDialog}
-          onUseCard={(cardName) => {
-            handleAction('use-card', { cardName });
+          onUseCard={(cardName: CardName) => {
+            handleAction(GameAction.UseCard, { cardName });
             onCloseCardsDialog();
           }}
           canUseCards={isMyTurn && playerForCardsDialog.id === localPlayer.id}
@@ -131,8 +129,8 @@ export function GameDialogs({
       {isDialogVisible('abilitiesShopState') && abilitiesShopState?.isOpen && (
         <AbilitiesDialog
           player={localPlayer}
-          onClose={() => handleAction('close-abilities-shop')}
-          onBuyAbility={(abilityName) => handleAction('buy-ability', { abilityName })}
+          onClose={() => handleAction(GameAction.CloseAbilitiesShop)}
+          onBuyAbility={(abilityName: AbilityName) => handleAction(GameAction.BuyAbility, { abilityName })}
           gameState={gameState}
           isMyTurn={isMyTurn}
         />
@@ -140,16 +138,16 @@ export function GameDialogs({
       {isDialogVisible('stealResourceDialogState') && stealResourceDialogState && (
         <StealResourceDialog
           players={gameState.players.filter(p => p.id !== gameState.currentPlayerIndex)}
-          onSteal={(target, resource) => handleAction('steal-resource', {targetPlayerId: target, resource: resource})}
-          onClose={() => handleAction('cancel-action')}
+          onSteal={(target, resource) => handleAction(GameAction.StealResource, {targetPlayerId: target, resource: resource})}
+          onClose={() => handleAction(GameAction.CancelAction)}
           isMyTurn={isMyTurn}
         />
       )}
       {isDialogVisible('useCardDialogState') && useCardDialogState && (
         <UseCardDialog
           cardName={useCardDialogState.cardName}
-          onConfirm={() => handleAction('confirm-use-card', { cardName: useCardDialogState.cardName })}
-          onClose={() => handleAction('cancel-action')}
+          onConfirm={() => handleAction(GameAction.ConfirmUseCard, { cardName: useCardDialogState.cardName })}
+          onClose={() => handleAction(GameAction.CancelAction)}
           isMyTurn={isMyTurn}
         />
       )}
@@ -157,22 +155,22 @@ export function GameDialogs({
         <HostLeaveDialog
             isLastPlayer={gameState.players.length === 1}
             onConfirm={onConfirmHostLeave}
-            onClose={() => handleAction('cancel-action')}
+            onClose={() => handleAction(GameAction.CancelAction)}
             gameStatus={status}
         />
       )}
       {isDialogVisible('sabotageDialogState') && sabotageDialogState?.isOpen && (
         <SabotageDialog
           players={gameState.players.filter(p => p.id !== gameState.currentPlayerIndex)}
-          onSabotage={(targetPlayerId) => handleAction('sabotage-player', { targetPlayerId })}
-          onClose={() => handleAction('cancel-action')}
+          onSabotage={(targetPlayerId) => handleAction(GameAction.SabotagePlayer, { targetPlayerId })}
+          onClose={() => handleAction(GameAction.CancelAction)}
           isMyTurn={isMyTurn}
         />
       )}
       {isDialogVisible('wealthyDialogState') && wealthyDialogState?.isOpen && (
         <WealthyDialog
-          onSelectResource={(resource) => handleAction('gain-wealth', { resource })}
-          onClose={() => handleAction('cancel-action')}
+          onSelectResource={(resource) => handleAction(GameAction.GainWealth, { resource })}
+          onClose={() => handleAction(GameAction.CancelAction)}
           isMyTurn={isMyTurn}
         />
       )}

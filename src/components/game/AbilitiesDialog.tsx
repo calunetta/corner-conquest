@@ -1,6 +1,6 @@
 
 'use client';
-import type { Player, PassiveAbilities, GameState } from '@/lib/types';
+import type { Player, PassiveAbilities, GameState, AbilityName } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -15,24 +15,25 @@ import { Button } from '../ui/button';
 import { AlertDialogCancel } from '@radix-ui/react-alert-dialog';
 import { Gem, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { GameAction } from '@/lib/enums';
 
 type AbilitiesDialogProps = {
   player: Player;
   onClose: () => void;
-  onBuyAbility: (abilityName: keyof PassiveAbilities) => void;
+  onBuyAbility: (abilityName: AbilityName) => void;
   gameState: GameState;
   isMyTurn: boolean;
 };
 
 type AbilityInfo = {
-  name: keyof PassiveAbilities;
+  name: AbilityName;
   title: string;
   description: string;
 }
 
 const ALL_ABILITIES: AbilityInfo[] = [
-    { name: 'explorer', title: 'Explorer', description: 'Passively gain 1 VP per turn for each island you have an army on.' },
-    { name: 'collector', title: 'Collector', description: 'Passively collect 1 of each available resource from every island you have an army on at the end of your turn.' },
+    { name: 'explorer' as AbilityName, title: 'Explorer', description: 'Passively gain 1 VP per turn for each island you have an army on.' },
+    { name: 'collector' as AbilityName, title: 'Collector', description: 'Passively collect 1 of each available resource from every island you have an army on at the end of your turn.' },
 ]
 
 export function AbilitiesDialog({ player, onClose, onBuyAbility, gameState, isMyTurn }: AbilitiesDialogProps) {

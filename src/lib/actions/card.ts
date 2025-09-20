@@ -1,6 +1,7 @@
 
-import type { GameState, PassiveAbilities, ResourceType } from '@/lib/types';
+import type { GameState, PassiveAbilities, ResourceType, CardName, AbilityName } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
+import { GameAction } from '../enums';
 
 export function handleBuyCardAction(state: GameState): GameState {
     let newState = { ...state };
@@ -8,7 +9,7 @@ export function handleBuyCardAction(state: GameState): GameState {
     const player = players[currentPlayerIndex];
     const HAND_LIMIT = 7;
 
-    if (player.actionsThisTurn.includes('buy-card')) throw new Error("You can only buy one card per turn.");
+    if (player.actionsThisTurn.includes(GameAction.BuyCard)) throw new Error("You can only buy one card per turn.");
     if (player.resources.gems < 10) throw new Error("Not enough gems to buy a card.");
     if (specialCardsDeck.length === 0 && discardPile.length === 0) throw new Error("There are no special cards left in the game.");
     if (player.specialCards.length >= HAND_LIMIT && !debugMode) {
@@ -30,18 +31,18 @@ export function handleBuyCardAction(state: GameState): GameState {
     const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
     const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
     player.specialCards.push(drawnCard);
-    player.actionsThisTurn.push('buy-card');
+    player.actionsThisTurn.push(GameAction.BuyCard);
     newState.log.push(`${player.name} bought a special card: "${drawnCard}"!`);
 
     return checkAndEndTurnIfNoActions(newState);
 }
 
-export const handleUseCard = (state: GameState, cardName: string): GameState => {
+export const handleUseCard = (state: GameState, cardName: CardName): GameState => {
     let newState = { ...state };
     const { players, currentPlayerIndex } = newState;
     const player = players[currentPlayerIndex];
 
-    const canUseCard = !player.actionsThisTurn.includes('use-card');
+    const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
     if (!canUseCard) throw new Error("You can only use one card per turn.");
     
     const cardIndex = player.specialCards.indexOf(cardName);
@@ -51,35 +52,35 @@ export const handleUseCard = (state: GameState, cardName: string): GameState => 
     let shouldOpenConfirmation = false;
 
     switch (cardName) {
-        case 'Extra Move':
+        case CardName.ExtraMove:
             player.hasExtraMove = true;
             newState.log.push(`${player.name} activated 'Extra Move'. One army can move again this turn.`);
             shouldCheckEndTurn = false;
             break;
-        case 'Teleport':
+        case CardName.Teleport:
             newState.teleportState = { armyId: null };
             shouldCheckEndTurn = false;
             break;
-        case 'Scout':
+        case CardName.Scout:
             newState.scoutingState = { count: 3 };
             newState.log.push(`${player.name} activated 'Scout'. Click 3 hidden tiles to reveal them.`);
             shouldCheckEndTurn = false;
             break;
-        case 'Reinforce':
+        case CardName.Reinforce:
             player.reinforceActive = true;
             newState.log.push(`${player.name} activated 'Reinforce'. Their next deployment is free.`);
             break;
-        case 'Efficient':
+        case CardName.Efficient:
             player.efficientActive = true;
             newState.log.push(`${player.name} activated 'Efficient'. Their next deployment costs 50% less.`);
             break;
-        case 'Master Builder':
+        case CardName.MasterBuilder:
             player.masterBuilderActive = true;
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
             break;
-        case 'Sabotage':
-        case 'Steal Resource':
-        case 'Wealthy':
+        case CardName.Sabotage:
+        case CardName.StealResource:
+        case CardName.Wealthy:
             shouldOpenConfirmation = true;
             break;
         default:
@@ -90,8 +91,8 @@ export const handleUseCard = (state: GameState, cardName: string): GameState => 
         newState.useCardDialogState = { cardName };
     } else {
          // For immediate effects, mark as used if it's not a delayed effect like Extra Move
-        if (cardName !== 'Extra Move') {
-            player.actionsThisTurn.push('use-card');
+        if (cardName !== CardName.ExtraMove) {
+            player.actionsThisTurn.push(GameAction.UseCard);
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
             newState.discardPile.push(usedCard);
         }
@@ -103,17 +104,17 @@ export const handleUseCard = (state: GameState, cardName: string): GameState => 
     return newState;
 };
 
-export const handleConfirmUseCard = (state: GameState, cardName: string): GameState => {
+export const handleConfirmUseCard = (state: GameState, cardName: CardName): GameState => {
     let newState = { ...state };
     let dialogState: Partial<GameState> = {};
     switch (cardName) {
-        case 'Steal Resource':
+        case CardName.StealResource:
             dialogState = { stealResourceDialogState: { targetPlayerId: null } };
             break;
-        case 'Sabotage':
+        case CardName.Sabotage:
             dialogState = { sabotageDialogState: { isOpen: true } };
             break;
-        case 'Wealthy':
+        case CardName.Wealthy:
             dialogState = { wealthyDialogState: { isOpen: true } };
             break;
         default:
@@ -129,12 +130,12 @@ export const handleSabotagePlayer = (state: GameState, targetPlayerId: number): 
     const targetPlayer = newState.players.find(p => p.id === targetPlayerId);
 
     if (targetPlayer) {
-        if (!player.actionsThisTurn.includes('use-card')) {
-             player.actionsThisTurn.push('use-card');
+        if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
+             player.actionsThisTurn.push(GameAction.UseCard);
         }
         
         targetPlayer.isSabotaged = true;
-        const cardIndex = player.specialCards.indexOf('Sabotage');
+        const cardIndex = player.specialCards.indexOf(CardName.Sabotage);
         if (cardIndex > -1) {
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
             newState.discardPile.push(usedCard);
@@ -151,13 +152,13 @@ export const handleGainWealth = (state: GameState, resource: ResourceType): Game
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     
-    if (!player.actionsThisTurn.includes('use-card')) {
-        player.actionsThisTurn.push('use-card');
+    if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
+        player.actionsThisTurn.push(GameAction.UseCard);
     }
     
     player.resources[resource] += 5;
     
-    const cardIndex = player.specialCards.indexOf('Wealthy');
+    const cardIndex = player.specialCards.indexOf(CardName.Wealthy);
     if (cardIndex > -1) {
         const usedCard = player.specialCards.splice(cardIndex, 1)[0];
         newState.discardPile.push(usedCard);
@@ -176,11 +177,11 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
 
     if (!targetPlayer) return { ...newState, stealResourceDialogState: null };
     
-    const cardIndex = currentPlayer.specialCards.indexOf('Steal Resource');
+    const cardIndex = currentPlayer.specialCards.indexOf(CardName.StealResource);
     if (cardIndex === -1) throw new Error(`${currentPlayer.name} tried to steal without the card.`);
     
-    if (!currentPlayer.actionsThisTurn.includes('use-card')) {
-        currentPlayer.actionsThisTurn.push('use-card');
+    if (!currentPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
+        currentPlayer.actionsThisTurn.push(GameAction.UseCard);
     }
     const usedCard = currentPlayer.specialCards.splice(cardIndex, 1)[0];
     discardPile.push(usedCard);
@@ -207,7 +208,7 @@ export function handleOpenAbilitiesShop(state: GameState): GameState {
     return { ...state, abilitiesShopState: { isOpen: true } };
 }
 
-export function handleBuyAbility(state: GameState, abilityName: keyof PassiveAbilities): GameState {
+export function handleBuyAbility(state: GameState, abilityName: AbilityName): GameState {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     const cost = newState.settings.abilityCost;

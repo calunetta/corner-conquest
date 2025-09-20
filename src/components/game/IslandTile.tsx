@@ -1,5 +1,5 @@
 
-import type { Island, Player, GameAction, ResourceType, IslandResource, Army, Monster, DeathAnimation } from '@/lib/types';
+import type { Island, Player, ResourceType, IslandResource, Army, Monster, DeathAnimation } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon } from '../icons';
 import { Home, HelpCircle, Star, Loader2, Anchor } from 'lucide-react';
@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { useState, useEffect } from 'react';
 import { usePlayer } from '@/hooks/use-player';
+import { IslandType, PlayerColor } from '@/lib/enums';
 
 type IslandTileProps = {
   island: Island;
@@ -24,18 +25,18 @@ type IslandTileProps = {
   fogOfWar: boolean;
 };
 
-const playerColorMap = {
-  blue: { bg: 'bg-blue-500', border: 'border-blue-300' },
-  red: { bg: 'bg-red-500', border: 'border-red-300' },
-  purple: { bg: 'bg-purple-500', border: 'border-purple-300' },
-  yellow: { bg: 'bg-yellow-400', border: 'border-yellow-200' },
+const playerColorMap: Record<PlayerColor, { bg: string, border: string }> = {
+  [PlayerColor.Blue]: { bg: 'bg-blue-500', border: 'border-blue-300' },
+  [PlayerColor.Red]: { bg: 'bg-red-500', border: 'border-red-300' },
+  [PlayerColor.Purple]: { bg: 'bg-purple-500', border: 'border-purple-300' },
+  [PlayerColor.Yellow]: { bg: 'bg-yellow-400', border: 'border-yellow-200' },
 };
 
 const playerTileIndicatorClasses: Record<string, string> = {
-    blue: 'shadow-blue-500/50',
-    red: 'shadow-red-500/50',
-    purple: 'shadow-purple-500/50',
-    yellow: 'shadow-yellow-400/50',
+    [PlayerColor.Blue]: 'shadow-blue-500/50',
+    [PlayerColor.Red]: 'shadow-red-500/50',
+    [PlayerColor.Purple]: 'shadow-purple-500/50',
+    [PlayerColor.Yellow]: 'shadow-yellow-400/50',
 }
 
 const AnimatedMonster = ({ monster }: { monster: Monster }) => {
@@ -106,14 +107,14 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   
   const currentPlayerOnTile = isCurrentPlayerTile ? players.find(p => p.id === currentPlayerId) : undefined;
 
-  const baseOwner = island.type === 'base' ? players.find(p => p.id === island.owner) : null;
+  const baseOwner = island.type === IslandType.Base ? players.find(p => p.id === island.owner) : null;
   
   const deathAnimationOnTile = deathAnimations.find(anim => anim.x === island.x && anim.y === island.y);
   
   const isHiddenForPlayer = fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id);
 
   const renderResourceIcons = (resources: IslandResource[]) => {
-    const isBase = island.type === 'base';
+    const isBase = island.type === IslandType.Base;
     return resources.map((resource, index) => {
         const positionInfo = positionedBy.find(p => p.resource === resource.type);
         const positionedPlayer = positionInfo ? players[positionInfo.playerId] : null;
@@ -164,7 +165,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     if (isHiddenForPlayer) return <HelpCircle className="h-full w-full text-muted-foreground/50" />;
     
     switch (island.type) {
-      case 'base': 
+      case IslandType.Base: 
         return (
             <div className='relative h-full w-full'>
                 {baseOwner?.color ? (
@@ -181,15 +182,15 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                 </div>
             </div>
         );
-      case 'resource': 
+      case IslandType.Resource: 
         return (
           <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1">
             {renderResourceIcons(island.resources)}
           </div>
         );
-      case 'monster': 
+      case IslandType.Monster: 
         return renderMonsterIcons();
-      case 'special': return <Star className="h-full w-full text-yellow-400 p-2" />;
+      case IslandType.Special: return <Star className="h-full w-full text-yellow-400 p-2" />;
       default: return null;
     }
   };
@@ -277,4 +278,3 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     </TooltipProvider>
   );
 }
-

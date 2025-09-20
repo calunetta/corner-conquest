@@ -1,7 +1,8 @@
 
-import type { GameState, GameAction, Player, Army, ResourceType, PassiveAbilities } from '@/lib/types';
+import type { GameState, Player, Army, PassiveAbilities, CardName, AbilityName } from '@/lib/types';
 import { db, doc, deleteDoc, runTransaction, arrayUnion } from '@/lib/firebase';
 import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
+import { GameAction } from '../enums';
 
 export function canPlayerPerformAnyAction(state: GameState): boolean {
     const player = state.players[state.currentPlayerIndex];
@@ -15,19 +16,19 @@ export function canPlayerPerformAnyAction(state: GameState): boolean {
     }
 
     const { settings, specialCardsDeck, discardPile } = state;
-    const canUseCard = !player.actionsThisTurn.includes('use-card');
+    const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
 
     const upgradeCost = player.masterBuilderActive ? Math.ceil(settings.upgradeCost / 2) : settings.upgradeCost;
-    if (player.resources.iron >= upgradeCost && !player.actionsThisTurn.includes('upgrade') && player.attackPower < 4) {
+    if (player.resources.iron >= upgradeCost && !player.actionsThisTurn.includes(GameAction.Upgrade) && player.attackPower < 4) {
         return true;
     }
 
-    if (player.resources.gems >= 10 && !player.actionsThisTurn.includes('buy-card') && (specialCardsDeck.length > 0 || discardPile.length > 0)) {
+    if (player.resources.gems >= 10 && !player.actionsThisTurn.includes(GameAction.BuyCard) && (specialCardsDeck.length > 0 || discardPile.length > 0)) {
         return true;
     }
 
     const deployCost = player.efficientActive ? Math.ceil(player.nextArmyCost / 2) : player.nextArmyCost;
-    if ((player.resources.food >= deployCost || player.reinforceActive) && player.armyCount < 5 && !player.actionsThisTurn.includes('deploy')) {
+    if ((player.resources.food >= deployCost || player.reinforceActive) && player.armyCount < 5 && !player.actionsThisTurn.includes(GameAction.Deploy)) {
         return true;
     }
 
@@ -36,7 +37,7 @@ export function canPlayerPerformAnyAction(state: GameState): boolean {
     }
     
     if (player.resources.gems >= settings.abilityCost && settings.availableAbilities.length > 0) {
-        const unownedAbilities = settings.availableAbilities.filter(a => !player.passiveAbilities[a as keyof PassiveAbilities]);
+        const unownedAbilities = settings.availableAbilities.filter(a => !player.passiveAbilities[a as AbilityName]);
         if (unownedAbilities.length > 0) {
             return true;
         }
@@ -58,7 +59,7 @@ export function handleDeployAction(state: GameState): GameState {
     const { players, currentPlayerIndex, map, discardPile, settings, baseTiles } = newState;
     const player = players[currentPlayerIndex];
     
-    if (player.actionsThisTurn.includes('deploy')) throw new Error("You can only deploy one army per turn.");
+    if (player.actionsThisTurn.includes(GameAction.Deploy)) throw new Error("You can only deploy one army per turn.");
     
     let cost = player.nextArmyCost;
     let isReinforceUsed = false;
@@ -86,13 +87,13 @@ export function handleDeployAction(state: GameState): GameState {
     player.armies.push(newArmy);
     map[baseTile.y][baseTile.x].occupants.push({ playerId: player.id, armyId: newArmy.id });
     
-    const canUseCard = !player.actionsThisTurn.includes('use-card');
+    const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
 
     if (player.efficientActive && canUseCard) {
       newState.log.push(`${player.name} used 'Efficient' for a cheaper deployment!`);
       player.efficientActive = false;
-      player.actionsThisTurn.push('use-card');
-      const cardIndex = player.specialCards.indexOf('Efficient');
+      player.actionsThisTurn.push(GameAction.UseCard);
+      const cardIndex = player.specialCards.indexOf(CardName.Efficient);
       if (cardIndex > -1) {
           const usedCard = player.specialCards.splice(cardIndex, 1)[0];
           discardPile.push(usedCard);
@@ -103,8 +104,8 @@ export function handleDeployAction(state: GameState): GameState {
       newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
       player.reinforceActive = false;
       if (canUseCard) {
-          player.actionsThisTurn.push('use-card');
-          const cardIndex = player.specialCards.indexOf('Reinforce');
+          player.actionsThisTurn.push(GameAction.UseCard);
+          const cardIndex = player.specialCards.indexOf(CardName.Reinforce);
           if (cardIndex > -1) {
               const usedCard = player.specialCards.splice(cardIndex, 1)[0];
               discardPile.push(usedCard);
@@ -116,7 +117,7 @@ export function handleDeployAction(state: GameState): GameState {
         player.nextArmyCost += settings.deployCostIncrement;
     }
     
-    player.actionsThisTurn.push('deploy');
+    player.actionsThisTurn.push(GameAction.Deploy);
     newState.log.push(`${player.name} deployed a new army!`);
     
     return checkAndEndTurnIfNoActions(newState);
@@ -127,7 +128,7 @@ export function handleUpgradeAction(state: GameState): GameState {
     const { players, currentPlayerIndex, discardPile, settings } = newState;
     const player = players[currentPlayerIndex];
 
-    if (player.actionsThisTurn.includes('upgrade')) throw new Error("You can only upgrade once per turn.");
+    if (player.actionsThisTurn.includes(GameAction.Upgrade)) throw new Error("You can only upgrade once per turn.");
     if (player.attackPower >= 4) throw new Error("You have reached the maximum attack power.");
 
     let cost = settings.upgradeCost;
@@ -142,10 +143,10 @@ export function handleUpgradeAction(state: GameState): GameState {
     if (player.masterBuilderActive) {
       newState.log.push(`${player.name} used 'Master Builder' for a cheaper upgrade!`);
       player.masterBuilderActive = false;
-      const canUseCard = !player.actionsThisTurn.includes('use-card');
+      const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
       if (canUseCard) {
-          player.actionsThisTurn.push('use-card');
-          const cardIndex = player.specialCards.indexOf('Master Builder');
+          player.actionsThisTurn.push(GameAction.UseCard);
+          const cardIndex = player.specialCards.indexOf(CardName.MasterBuilder);
           if (cardIndex > -1) {
               const usedCard = player.specialCards.splice(cardIndex, 1)[0];
               discardPile.push(usedCard);
@@ -153,7 +154,7 @@ export function handleUpgradeAction(state: GameState): GameState {
       }
     }
 
-    player.actionsThisTurn.push('upgrade');
+    player.actionsThisTurn.push(GameAction.Upgrade);
     newState.log.push(`${player.name} upgraded their army's attack power to ${player.attackPower + 1}.`);
     
     return checkAndEndTurnIfNoActions(newState);
@@ -177,7 +178,7 @@ export function handleEndTurn(state: GameState): GameState {
     }
     
     if (currentPlayer.passiveAbilities.collector) {
-        let resourcesCollected: Partial<Record<ResourceType, number>> = {};
+        let resourcesCollected: Partial<Record<string, number>> = {};
         const occupiedIslands = new Set<string>();
         
         currentPlayer.armies.forEach((army: Army) => {
@@ -186,7 +187,7 @@ export function handleEndTurn(state: GameState): GameState {
             
             if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0) {
                 occupiedIslands.add(tile.id);
-                tile.resources.forEach((resource: { type: ResourceType; }) => {
+                tile.resources.forEach((resource: { type: string; }) => {
                     currentPlayer.resources[resource.type] += 1;
                     resourcesCollected[resource.type] = (resourcesCollected[resource.type] || 0) + 1;
                 });
@@ -245,7 +246,7 @@ export function handleCancelAction(state: GameState): GameState {
     
     // Reverse card consumption if applicable
     if (newState.teleportState || newState.scoutingState) {
-        const usedCardIndex = player.actionsThisTurn.indexOf('use-card');
+        const usedCardIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
         if (usedCardIndex > -1) player.actionsThisTurn.splice(usedCardIndex, 1);
         
         const cardFromDiscard = newState.discardPile.pop();
@@ -265,13 +266,13 @@ export function handleCancelAction(state: GameState): GameState {
     newState.showHostLeaveDialog = false;
     
     if (player.hasExtraMove) {
-        const cardIndex = player.specialCards.indexOf('Extra Move');
+        const cardIndex = player.specialCards.indexOf(CardName.ExtraMove);
         if (cardIndex === -1) { // If card was already used
-             const discardIndex = newState.discardPile.indexOf('Extra Move');
+             const discardIndex = newState.discardPile.indexOf(CardName.ExtraMove);
              if (discardIndex > -1) {
                 const card = newState.discardPile.splice(discardIndex, 1)[0];
                 player.specialCards.push(card);
-                const actionIndex = player.actionsThisTurn.indexOf('use-card');
+                const actionIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
                 if (actionIndex > -1) player.actionsThisTurn.splice(actionIndex, 1);
              }
         }

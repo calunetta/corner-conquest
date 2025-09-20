@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect } from 'react';
 import {
@@ -20,7 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PlayerColor, GameSettings } from '@/lib/types';
+import { GameSettings } from '@/lib/types';
+import { PlayerColor } from '@/lib/enums';
 import { Loader2, Check, HelpCircle, Settings } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
@@ -49,7 +49,7 @@ export function CreateGameDialog({
 }: CreateGameDialogProps) {
   const [gameName, setGameName] = useState('');
   const [maxPlayers, setMaxPlayers] = useState<number>(4);
-  const [playerColor, setPlayerColor] = useState<PlayerColor>('blue');
+  const [playerColor, setPlayerColor] = useState<PlayerColor>(PlayerColor.Blue);
   const [debugMode, setDebugMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isCustomizing, setIsCustomizing] = useState(false);

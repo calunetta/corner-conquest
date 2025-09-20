@@ -1,6 +1,7 @@
 
 'use client';
 import { SPECIAL_CARD_DESCRIPTIONS } from '@/lib/card-data';
+import type { CardName } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +15,7 @@ import {
 import { Button } from '../ui/button';
 
 type UseCardDialogProps = {
-  cardName: string;
+  cardName: CardName;
   onConfirm: () => void;
   onClose: () => void;
   isMyTurn: boolean;

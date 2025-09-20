@@ -1,8 +1,8 @@
 
-
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { GameAction, GameState, Army } from '@/lib/types';
+import type { GameState, Army } from '@/lib/types';
+import { GameAction } from '@/lib/enums';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from './PlayerInfo';
 import { ActionsPanel } from './ActionsPanel';
@@ -107,7 +107,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
     if (!gameState || !localPlayer || isPerformingAction) return;
 
-    if (!isMyTurn && !['show-cards', 'open-abilities-shop', 'close-cards', 'close-abilities-shop'].includes(action)) {
+    if (!isMyTurn && ![GameAction.ShowCards, GameAction.OpenAbilitiesShop, GameAction.CloseCards, GameAction.CloseAbilitiesShop].includes(action)) {
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
       return;
     }
@@ -129,7 +129,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
 
         // Reset UI state for most actions, but preserve it for dialog flows
-        if (action !== 'select-army' && action !== 'select-defender') {
+        if (action !== GameAction.SelectArmy && action !== GameAction.SelectDefender) {
             const isDialogAction = Object.keys(newState).some(k => (k.endsWith('State') || k.endsWith('Dialog')) && newState[k as keyof GameState] !== null);
             if (!isDialogAction) {
                 setCurrentAction(null);
@@ -151,7 +151,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     try {
         setIsPerformingAction(true);
         const result = handleGameAction({
-            action: 'tile-click',
+            action: GameAction.TileClick,
             gameState,
             selectedArmy: selectedArmy,
             payload: { x, y, possibleMoves }
@@ -192,7 +192,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             if (prevTime <= 1) {
                 clearInterval(timerRef.current!);
                 if (isMyTurn) { // Double check it's still my turn
-                    onAction('end-turn', null);
+                    onAction(GameAction.EndTurn, null);
                 }
                 return 0;
             }
@@ -226,7 +226,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         clearInterval(timerRef.current);
         timerRef.current = null;
         toast({ title: "Time's up!", description: "Your turn has ended automatically."});
-        onAction('end-turn', null);
+        onAction(GameAction.EndTurn, null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, isMyTurn]);
@@ -465,12 +465,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
       <GameDialogs 
         gameState={gameState} 
-        setGameState={setGameState} 
         localPlayer={localPlayer}
         isMyTurn={isMyTurn}
         onConfirmHostLeave={handleConfirmHostLeaveGame}
         locallyDismissedDialogs={locallyDismissedDialogs}
-        setLocallyDismissedDialogs={setLocallyDismissedDialogs}
         handleAction={onAction}
         cardsDialogPlayerId={cardsDialogPlayerId}
         onCloseCardsDialog={() => setCardsDialogPlayerId(null)}

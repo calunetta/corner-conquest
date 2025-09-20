@@ -1,8 +1,8 @@
 
-
 import type { GameState, Island, Player, PlayerColor, FirestoreGameState, BaseTileInfo } from './types';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './game-initializer';
+import { GameStatus } from './enums';
 
 export const TILE_SIZE = 75;
 export const BASE_TILE_SIZE = 150;
@@ -27,7 +27,7 @@ export function addPlayerToGame(
     playerInfo: { playerId: string, name: string }
 ): { newGameState: Omit<FirestoreGameState, 'id' | 'name'> | null, updatedMap: Island[] | null, newBaseTile: BaseTileInfo | null } {
     
-    if (firestoreState.status !== 'waiting') {
+    if (firestoreState.status !== GameStatus.Waiting) {
         return { newGameState: null, updatedMap: null, newBaseTile: null }; // Game has started
     }
     if (firestoreState.players.length >= firestoreState.maxPlayers) {
@@ -89,7 +89,7 @@ export function addPlayerToGame(
 
     if (newGameState.players.length === newGameState.maxPlayers) {
         newGameState.log.push(`The game is full! Starting now.`);
-        newGameState.status = 'playing';
+        newGameState.status = GameStatus.Playing;
         newGameState.turn = 1;
     }
     

@@ -1,5 +1,6 @@
 
-import type { GameState, Army, ResourceType, IslandResource } from '@/lib/types';
+import type { GameState, Army, IslandResource, CardName } from '@/lib/types';
+import { ResourceType, GameAction, IslandType } from '../enums';
 import { checkAndEndTurnIfNoActions } from './player';
 
 export function handlePositionAction(state: GameState, selectedArmy: Army | null): GameState {
@@ -13,7 +14,7 @@ export function handlePositionAction(state: GameState, selectedArmy: Army | null
   }
   
   const tile = map[selectedArmy.position.y][selectedArmy.position.x];
-  if ((tile.type !== 'resource' && tile.type !== 'base') || tile.resources.length === 0) {
+  if ((tile.type !== IslandType.Resource && tile.type !== IslandType.Base) || tile.resources.length === 0) {
     throw new Error("You can only position on an island with resources.");
   }
    if (tile.monsters && tile.monsters.length > 0) {
@@ -48,7 +49,7 @@ export function handleCollectAction(state: GameState, selectedArmy: Army | null)
   
   const resourceToCollect = { type: resourceSpot.type, amount: resourceSpot.amount };
 
-  const hasProductiveCard = player.specialCards.includes('Productive') && !player.actionsThisTurn.includes('use-card');
+  const hasProductiveCard = player.specialCards.includes(CardName.Productive) && !player.actionsThisTurn.includes(GameAction.UseCard);
 
   if (hasProductiveCard) {
       newState.collectDialogState = {
@@ -92,15 +93,15 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     let amountToCollect = resourceToCollect.amount;
 
     if (useProductive) {
-        if (!player.specialCards.includes('Productive') || player.actionsThisTurn.includes('use-card')) {
+        if (!player.specialCards.includes(CardName.Productive) || player.actionsThisTurn.includes(GameAction.UseCard)) {
             throw new Error("Cannot use 'Productive' card.");
         }
         amountToCollect *= 2;
-        const cardIndex = player.specialCards.indexOf('Productive');
+        const cardIndex = player.specialCards.indexOf(CardName.Productive);
         if (cardIndex > -1) {
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
             discardPile.push(usedCard);
-            player.actionsThisTurn.push('use-card');
+            player.actionsThisTurn.push(GameAction.UseCard);
         }
         newState.log.push(`${player.name} used 'Productive' to collect double!`);
     }
