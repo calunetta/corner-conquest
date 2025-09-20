@@ -16,6 +16,7 @@ export const defaultGameSettings: GameSettings = {
     resourceDensity: 0.6, // 60% chance for a tile to be resource vs monster
     availableCards: [...BASE_CARDS],
     availableAbilities: ['explorer', 'collector'],
+    fogOfWar: false,
 };
 
 const MONSTER_DATA: Record<number, { name: MonsterName, sprite: { idle: string, attack: string, death: string } }> = {
@@ -100,6 +101,12 @@ export function createPlayer(
     if (debugMode) {
         startingCards = [...new Set(BASE_CARDS)];
     }
+    
+    let revealedTiles: string[] = [];
+    if (settings.fogOfWar) {
+        revealedTiles.push(`${basePos.x}-${basePos.y}`);
+    }
+
 
     return {
         id: seatIndex,
@@ -121,8 +128,8 @@ export function createPlayer(
         isSabotaged: false,
         efficientActive: false,
         masterBuilderActive: false,
-        reinforceActive: false,
         teleportState: null,
+        revealedTiles,
     };
 }
 
@@ -141,7 +148,7 @@ export function initializeGame(
       x,
       y,
       type: 'empty',
-      isHidden: !debugMode,
+      isHidden: settings.fogOfWar,
       occupants: [],
       resources: [],
       positionedBy: [],
@@ -172,9 +179,9 @@ export function initializeGame(
       isHidden: false,
       occupants: [{ playerId: creatorSeatIndex, armyId: creatorPlayer.armies[0].id }],
       resources: [
-        { type: 'gems', amount: 1 }, 
-        { type: 'iron', amount: 1 }, 
-        { type: 'food', amount: 1 }
+        { type: 'gems', amount: settings.baseResourceAmount }, 
+        { type: 'iron', amount: settings.baseResourceAmount }, 
+        { type: 'food', amount: settings.baseResourceAmount }
       ], 
   };
   baseTiles.push({ owner: creatorSeatIndex, x: creatorPos.x, y: creatorPos.y });
@@ -199,9 +206,9 @@ export function initializeGame(
             isHidden: false,
             occupants: [{playerId: botSeatIndex, armyId: botPlayer.armies[0].id}],
             resources: [
-                { type: 'gems', amount: 1 }, 
-                { type: 'iron', amount: 1 }, 
-                { type: 'food', amount: 1 }
+                { type: 'gems', amount: settings.baseResourceAmount }, 
+                { type: 'iron', amount: settings.baseResourceAmount }, 
+                { type: 'food', amount: settings.baseResourceAmount }
             ], 
         };
         baseTiles.push({ owner: botSeatIndex, x: botPos.x, y: botPos.y });
@@ -254,7 +261,7 @@ export function initializeGame(
         for(let i=0; i < numResourceTypes; i++) {
             const randomIndex = Math.floor(Math.random() * availableResources.length);
             const selectedResourceType = availableResources.splice(randomIndex, 1)[0];
-            const amount = (Math.random() < 0.3 ? 2 : 1);
+            const amount = (Math.random() < 0.3 ? 2 : 1) * settings.baseResourceAmount;
             islandResources.push({ type: selectedResourceType, amount });
         }
         map[y][x].resources = islandResources;
@@ -264,13 +271,14 @@ export function initializeGame(
     }
   }
   
-  if (!debugMode) {
-    players.forEach(p => {
-        p.armies.forEach(army => {
-            map[army.position.y][army.position.x].isHidden = false;
-        })
-    });
+  if (!settings.fogOfWar) {
+    for (let y = 0; y < MAP_ROWS; y++) {
+        for (let x = 0; x < MAP_COLS; x++) {
+            map[y][x].isHidden = false;
+        }
+    }
   }
+
 
   const finalCardDeck = SPECIAL_CARDS.filter(card => settings.availableCards.includes(card));
 
@@ -310,11 +318,11 @@ export function initializeGame(
   return { dynamicState, staticState: { map: flatMap } };
 }
 
-export function startGame(gameState: GameState | FirestoreGameState, hostName: string): FirestoreGameState {
+export function startGame(gameState: GameState | FirestoreGameState): FirestoreGameState {
     const newState = { ...gameState };
     newState.status = 'playing';
     newState.turn = 1; // Start the first turn
-    newState.log.push(`${hostName} has started the game! It's now ${newState.players[0].name}'s turn.`);
+    newState.log.push(`The game has started! It's now ${newState.players[0].name}'s turn.`);
     
     // Ensure we return FirestoreGameState
     if ('map' in newState) {
@@ -323,5 +331,3 @@ export function startGame(gameState: GameState | FirestoreGameState, hostName: s
     }
     return newState as FirestoreGameState;
 }
-
-    

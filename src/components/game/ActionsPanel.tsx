@@ -123,38 +123,37 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             if (currentPlayer.attackPower >= 4) return "Maximum attack power reached.";
             if (currentPlayer.resources.iron < upgradeCost) return "Not enough iron.";
             if (currentPlayer.actionsThisTurn.includes('upgrade')) return "You've already upgraded this turn.";
-            break;
+            return "This action is not available.";
         case 'buy-card':
             if (currentPlayer.resources.gems < 10) return "Not enough gems.";
             if (specialCardsDeck.length === 0) return "No cards left in the deck.";
             if (currentPlayer.actionsThisTurn.includes('buy-card')) return "You've already bought a card this turn.";
-            break;
+            return "This action is not available.";
         case 'deploy':
             if (!currentPlayer.reinforceActive && currentPlayer.resources.food < deployCost) return "Not enough food.";
             if (currentPlayer.armyCount >= 5) return "Maximum army size reached.";
             if (currentPlayer.actionsThisTurn.includes('deploy')) return "You've already deployed this turn.";
-            break;
+            return "This action is not available.";
         case 'collect':
             if (!selectedArmy) return "You must select an army first.";
             if (!currentPlayer.positions.some(p => p.armyId === selectedArmy.id)) return "Your selected army is not positioned on a resource.";
-            break;
+            return "This action is not available.";
         case 'attack':
             if (!selectedArmy) return "You must select an army first.";
             if (!currentTile || (!currentTile.occupants.some(o => o.playerId !== currentPlayer.id) && (!currentTile.monsters || currentTile.monsters.length === 0))) return "There is nothing to attack on this tile.";
-            break;
+            return "This action is not available.";
         case 'position':
             if (!selectedArmy) return "You must select an army first.";
             if (currentPlayer.positions.some(p => p.armyId === selectedArmy.id)) return "You are already positioned here.";
             if (!currentTile || (currentTile.type !== 'resource' && currentTile.type !== 'base') || currentTile.resources.length === 0) return "This tile has no resources to position on.";
             if (currentTile.monsters && currentTile.monsters.length > 0) return "Cannot position on an island with monsters.";
-            break;
+            return "This action is not available.";
         case 'show-cards':
             if (localPlayer.specialCards.length === 0) return "You have no special cards.";
-            break;
+            return "This action is not available.";
         default:
             return "This action is not available.";
     }
-    return "This action is not available.";
   };
 
   const renderButton = (action: ActionConfig, isMain: boolean) => (

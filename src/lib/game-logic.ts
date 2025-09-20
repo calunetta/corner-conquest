@@ -73,23 +73,33 @@ export function addPlayerToGame(
     const baseTile = newMap[newPlayerPos.y][newPlayerPos.x];
     baseTile.type = 'base';
     baseTile.owner = newPlayerSeatIndex;
-    baseTile.isHidden = false;
+    baseTile.isHidden = false; // Always reveal a player's base tile
     baseTile.occupants.push({ playerId: newPlayerSeatIndex, armyId: newPlayer.armies[0].id });
     baseTile.resources = [
-        { type: 'gems', amount: 1 }, 
-        { type: 'iron', amount: 1 }, 
-        { type: 'food', amount: 1 }
+        { type: 'gems', amount: newGameState.settings.baseResourceAmount }, 
+        { type: 'iron', amount: newGameState.settings.baseResourceAmount }, 
+        { type: 'food', amount: newGameState.settings.baseResourceAmount }
     ];
+    
+    // Add the new base to the revealed tiles for all players if not in fog of war mode
+    if (!newGameState.settings.fogOfWar) {
+        newGameState.players.forEach((p: Player) => {
+            if (!p.revealedTiles.includes(baseTile.id)) {
+                p.revealedTiles.push(baseTile.id);
+            }
+        });
+    } else {
+        // In fog of war, only the new player reveals their own base
+        newPlayer.revealedTiles.push(baseTile.id);
+    }
     
     const newBaseTile: BaseTileInfo = { owner: newPlayerSeatIndex, x: newPlayerPos.x, y: newPlayerPos.y };
 
     if (newGameState.players.length === newGameState.maxPlayers) {
         newGameState.log.push(`The game is full! Starting now.`);
-        newGameState.turn = 1;
         newGameState.status = 'playing';
+        newGameState.turn = 1;
     }
     
     return { newGameState, updatedMap: newMap.flat(), newBaseTile };
 }
-
-    
