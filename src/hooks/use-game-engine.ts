@@ -67,6 +67,8 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     if (!gameId) return;
 
     setIsLoading(true);
+    let dynamicDataLoaded = false;
+    let staticDataLoaded = false;
 
     const gameDocRef = doc(db, 'games', gameId);
     const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
@@ -74,11 +76,12 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     const unsubscribeGame = onSnapshot(gameDocRef, (docSnapshot) => {
         if (docSnapshot.exists()) {
             setDynamicState(docSnapshot.data() as FirestoreGameState);
+            dynamicDataLoaded = true;
+            if (staticDataLoaded) setIsLoading(false);
         } else {
             toast({ title: "Game Over", description: "This game session no longer exists." });
             router.push('/');
         }
-        if (staticState) setIsLoading(false);
     }, (error) => {
         console.error("Firestore dynamic state error:", error);
         toast({ title: 'Connection Error', description: 'Could not connect to the game session.', variant: 'destructive'});
@@ -88,10 +91,11 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     const unsubscribeMap = onSnapshot(staticDocRef, (docSnapshot) => {
         if (docSnapshot.exists()) {
             setStaticState(docSnapshot.data() as { map: Island[] });
+            staticDataLoaded = true;
+            if (dynamicDataLoaded) setIsLoading(false);
         } else {
             toast({ title: "Game Data Error", description: "Could not load map data." });
         }
-         if (dynamicState) setIsLoading(false);
     }, (error) => {
         console.error("Firestore map state error:", error);
         toast({ title: 'Map Error', description: 'Could not load the game map.', variant: 'destructive' });
