@@ -210,7 +210,7 @@ export type GameState = {
   stealResourceDialogState: StealResourceDialogState | null;
   useCardDialogState: UseCardDialogState | null;
   abilitiesShopState: AbilitiesShopState | null;
-  showHostLeaveDialog?: boolean;
+  showHostLeaveDialog: boolean;
   sabotageDialogState: SabotageDialogState | null;
   wealthyDialogState: WealthyDialogState | null;
   scoutingState: ScoutingState | null;
