@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { db, runTransaction, collection, doc, writeBatch, getDoc, arrayUnion, query, where, onSnapshot, updateDoc } from '@/lib/firebase';
@@ -10,7 +9,7 @@ import type { GameState, FirestoreGameState, GameSettings, Player, Island } from
 import { PlayerColor, GameStatus } from '@/lib/enums';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CreateGameDialog } from '../../components/lobby/CreateGameDialog';
+import { CreateGameDialog } from './CreateGameDialog';
 import { Loader2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PLAYER_COLORS } from '@/lib/player-data';

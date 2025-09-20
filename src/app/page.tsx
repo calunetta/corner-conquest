@@ -1,8 +1,9 @@
+
 'use client';
 import { useState } from 'react';
-import { GameBoard } from '@/components/game/GameBoard';
-import { Lobby } from '@/components/lobby/Lobby';
-import { Login } from '@/components/lobby/Login';
+import { GameBoard } from '@/features/game/components/GameBoard';
+import { Lobby } from '@/features/lobby/components/Lobby';
+import { Login } from '@/features/lobby/components/Login';
 import { usePlayer } from '@/hooks/use-player';
 
 export default function Home() {
