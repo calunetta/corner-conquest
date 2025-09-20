@@ -1,7 +1,7 @@
 
 'use client';
 import type { GameState, Player, CardName, AbilityName } from '@/lib/types';
-import { GameAction } from '@/lib/enums';
+import { GameAction } from '@/lib/types';
 import { CombatDialog } from './CombatDialog';
 import { MonsterCombatDialog } from './MonsterCombatDialog';
 import { PositionDialog } from './PositionDialog';
@@ -177,3 +177,5 @@ export function GameDialogs({
     </>
   );
 }
+
+    

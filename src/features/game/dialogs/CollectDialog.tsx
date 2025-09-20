@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { CollectDialogState } from '@/lib/types';
 import { useState } from 'react';
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { ResourceIcon } from '@/components/icons';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CardName } from '@/lib/enums';
+import { CardName } from '@/lib/types';
 
 type CollectDialogProps = {
   state: CollectDialogState;

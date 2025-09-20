@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { GameState, Army } from '@/lib/types';
-import { GameAction } from '@/lib/enums';
+import { GameAction } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from '@/features/game/panels/PlayerInfo';
 import { ActionsPanel } from '@/features/game/panels/ActionsPanel';
@@ -476,3 +476,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    

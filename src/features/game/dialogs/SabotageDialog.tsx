@@ -1,6 +1,7 @@
 
+
 'use client';
-import type { Player } from '@/lib/types';
+import type { Player, CardName } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -12,7 +13,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CardName } from '@/lib/enums';
 
 type SabotageDialogProps = {
   players: Player[];

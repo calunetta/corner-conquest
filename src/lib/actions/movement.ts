@@ -1,8 +1,9 @@
 
+
 import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions } from './player';
-import { GameAction, IslandType, CardName as CardNameEnum } from '../enums';
+import { GameAction, IslandType } from '../types';
 
 export function getPossibleMoves(state: GameState, army: Army): { x: number; y: number }[] {
     const { x, y } = army.position;
@@ -114,7 +115,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         
         if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
             player.actionsThisTurn.push(GameAction.UseCard);
-            const cardIndex = player.specialCards.indexOf(CardNameEnum.ExtraMove);
+            const cardIndex = player.specialCards.indexOf(CardName.ExtraMove);
             if (cardIndex > -1) {
                 const usedCard = player.specialCards.splice(cardIndex, 1)[0];
                 discardPile.push(usedCard);
@@ -272,7 +273,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     }
     
     if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
-        const cardIndex = player.specialCards.indexOf(CardNameEnum.Teleport);
+        const cardIndex = player.specialCards.indexOf(CardName.Teleport);
         if (cardIndex > -1) {
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
             discardPile.push(usedCard);
@@ -299,7 +300,7 @@ export function handleScout(state: GameState, x: number, y: number): GameState {
         newState.log.push(`Scouting complete.`);
         if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
             player.actionsThisTurn.push(GameAction.UseCard);
-            const cardIndex = player.specialCards.indexOf(CardNameEnum.Scout);
+            const cardIndex = player.specialCards.indexOf(CardName.Scout);
             if (cardIndex > -1) {
                 const usedCard = player.specialCards.splice(cardIndex, 1)[0];
                 newState.discardPile.push(usedCard);

@@ -1,6 +1,6 @@
 
 'use client';
-import { GameStatus } from '@/lib/enums';
+import { GameStatus } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,

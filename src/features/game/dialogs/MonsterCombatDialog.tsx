@@ -1,6 +1,7 @@
 
+
 'use client';
-import type { GameState, Monster } from '@/lib/types';
+import type { GameState, Monster, CardName } from '@/lib/types';
 import { useState, useEffect } from 'react';
 import {
   AlertDialog,
@@ -19,7 +20,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
-import { CardName } from '@/lib/enums';
 
 type MonsterCombatDialogProps = {
   gameState: GameState;
@@ -31,7 +31,6 @@ type MonsterCombatDialogProps = {
 };
 
 export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCancel, isAttacker }: MonsterCombatDialogProps) {
-  const { monsterCombatState, players } = gameState;
   const [selectedMonster, setSelectedMonster] = useState<Monster | null>(null);
   const [useDecideCard, setUseDecideCard] = useState(false);
   const [decidedValue, setDecidedValue] = useState(6);
@@ -46,6 +45,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
 
   if (!monsterCombatState) return null;
 
+  const { monsterCombatState, players } = gameState;
   const { attackerId, attackerRolls, monsterRolls, winnerId, phase } = monsterCombatState;
   const attacker = players[attackerId];
   const hasDecideCard = attacker.specialCards.includes(CardName.DecideDiceRoll);

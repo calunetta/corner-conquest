@@ -1,6 +1,6 @@
 
 import type { GameState, ActionHandlerResult, Army } from '@/lib/types';
-import { GameAction } from '../enums';
+import { GameAction } from '@/lib/types';
 
 import { handleAttackAction, handleSelectDefender, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
 import { handleBuyCardAction, handleUseCard, handleConfirmUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleOpenAbilitiesShop, handleBuyAbility } from './card';

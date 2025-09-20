@@ -1,7 +1,8 @@
 
+
 import type { GameState, PassiveAbilities, ResourceType, CardName, AbilityName } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
-import { GameAction, CardName as CardNameEnum } from '../enums';
+import { GameAction } from '../types';
 
 export function handleBuyCardAction(state: GameState): GameState {
     let newState = { ...state };
@@ -52,35 +53,35 @@ export const handleUseCard = (state: GameState, cardName: CardName): GameState =
     let shouldOpenConfirmation = false;
 
     switch (cardName) {
-        case CardNameEnum.ExtraMove:
+        case CardName.ExtraMove:
             player.hasExtraMove = true;
             newState.log.push(`${player.name} activated 'Extra Move'. One army can move again this turn.`);
             shouldCheckEndTurn = false;
             break;
-        case CardNameEnum.Teleport:
+        case CardName.Teleport:
             newState.teleportState = { armyId: null };
             shouldCheckEndTurn = false;
             break;
-        case CardNameEnum.Scout:
+        case CardName.Scout:
             newState.scoutingState = { count: 3 };
             newState.log.push(`${player.name} activated 'Scout'. Click 3 hidden tiles to reveal them.`);
             shouldCheckEndTurn = false;
             break;
-        case CardNameEnum.Reinforce:
+        case CardName.Reinforce:
             player.reinforceActive = true;
             newState.log.push(`${player.name} activated 'Reinforce'. Their next deployment is free.`);
             break;
-        case CardNameEnum.Efficient:
+        case CardName.Efficient:
             player.efficientActive = true;
             newState.log.push(`${player.name} activated 'Efficient'. Their next deployment costs 50% less.`);
             break;
-        case CardNameEnum.MasterBuilder:
+        case CardName.MasterBuilder:
             player.masterBuilderActive = true;
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
             break;
-        case CardNameEnum.Sabotage:
-        case CardNameEnum.StealResource:
-        case CardNameEnum.Wealthy:
+        case CardName.Sabotage:
+        case CardName.StealResource:
+        case CardName.Wealthy:
             shouldOpenConfirmation = true;
             break;
         default:
@@ -91,7 +92,7 @@ export const handleUseCard = (state: GameState, cardName: CardName): GameState =
         newState.useCardDialogState = { cardName };
     } else {
          // For immediate effects, mark as used if it's not a delayed effect like Extra Move
-        if (cardName !== CardNameEnum.ExtraMove) {
+        if (cardName !== CardName.ExtraMove) {
             player.actionsThisTurn.push(GameAction.UseCard);
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
             newState.discardPile.push(usedCard);
@@ -108,13 +109,13 @@ export const handleConfirmUseCard = (state: GameState, cardName: CardName): Game
     let newState = { ...state };
     let dialogState: Partial<GameState> = {};
     switch (cardName) {
-        case CardNameEnum.StealResource:
+        case CardName.StealResource:
             dialogState = { stealResourceDialogState: { targetPlayerId: null } };
             break;
-        case CardNameEnum.Sabotage:
+        case CardName.Sabotage:
             dialogState = { sabotageDialogState: { isOpen: true } };
             break;
-        case CardNameEnum.Wealthy:
+        case CardName.Wealthy:
             dialogState = { wealthyDialogState: { isOpen: true } };
             break;
         default:
@@ -135,7 +136,7 @@ export const handleSabotagePlayer = (state: GameState, targetPlayerId: number): 
         }
         
         targetPlayer.isSabotaged = true;
-        const cardIndex = player.specialCards.indexOf(CardNameEnum.Sabotage);
+        const cardIndex = player.specialCards.indexOf(CardName.Sabotage);
         if (cardIndex > -1) {
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
             newState.discardPile.push(usedCard);
@@ -158,7 +159,7 @@ export const handleGainWealth = (state: GameState, resource: ResourceType): Game
     
     player.resources[resource] += 5;
     
-    const cardIndex = player.specialCards.indexOf(CardNameEnum.Wealthy);
+    const cardIndex = player.specialCards.indexOf(CardName.Wealthy);
     if (cardIndex > -1) {
         const usedCard = player.specialCards.splice(cardIndex, 1)[0];
         newState.discardPile.push(usedCard);
@@ -177,7 +178,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
 
     if (!targetPlayer) return { ...newState, stealResourceDialogState: null };
     
-    const cardIndex = currentPlayer.specialCards.indexOf(CardNameEnum.StealResource);
+    const cardIndex = currentPlayer.specialCards.indexOf(CardName.StealResource);
     if (cardIndex === -1) throw new Error(`${currentPlayer.name} tried to steal without the card.`);
     
     if (!currentPlayer.actionsThisTurn.includes(GameAction.UseCard)) {

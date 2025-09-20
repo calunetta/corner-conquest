@@ -1,6 +1,7 @@
 
+
 'use client';
-import { ResourceType, CardName } from '@/lib/enums';
+import { ResourceType, CardName } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogCancel,

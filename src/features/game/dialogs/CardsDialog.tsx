@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { Player, CardName } from '@/lib/types';
 import { SPECIAL_CARD_DESCRIPTIONS, USABLE_CARDS } from '@/lib/card-data';
@@ -14,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { AlertDialogCancel } from '@radix-ui/react-alert-dialog';
-import { GameAction } from '@/lib/enums';
+import { GameAction } from '@/lib/types';
 
 type CardsDialogProps = {
   player: Player;

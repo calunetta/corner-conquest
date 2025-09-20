@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { Player, GameState, AbilityName } from '@/lib/types';
 import {
@@ -15,7 +16,8 @@ import { Button } from '@/components/ui/button';
 import { AlertDialogCancel } from '@radix-ui/react-alert-dialog';
 import { Gem, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { GameAction, AbilityName as AbilityNameEnum } from '@/lib/enums';
+import { GameAction } from '@/lib/types';
+import { AbilityName as AbilityNameEnum } from '@/lib/types';
 
 type AbilitiesDialogProps = {
   player: Player;

@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { useState, useEffect } from 'react';
 import { usePlayer } from '@/hooks/use-player';
-import { IslandType, PlayerColor } from '@/lib/enums';
+import { IslandType, PlayerColor } from '@/lib/types';
 
 type IslandTileProps = {
   island: Island;

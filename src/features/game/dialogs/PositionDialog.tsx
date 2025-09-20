@@ -1,7 +1,6 @@
 
 'use client';
-import type { IslandResource } from '@/lib/types';
-import { ResourceType } from '@/lib/enums';
+import type { IslandResource, ResourceType } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogCancel,

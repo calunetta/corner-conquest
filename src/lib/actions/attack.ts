@@ -1,8 +1,9 @@
 
+
 import type { GameState, Army, Monster, DeathAnimation, CardName } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { checkAndEndTurnIfNoActions } from './player';
-import { GameAction, IslandType, CardName as CardNameEnum } from '../enums';
+import { GameAction, IslandType } from '../types';
 
 export function handleAttackAction(state: GameState, selectedArmy: Army | null): { newState: GameState; selectedArmyId: number | null } {
     let newState = { ...state };
@@ -112,7 +113,7 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean, selecte
     const canUseCard = !attacker.actionsThisTurn.includes(GameAction.UseCard);
 
     if (useWarChief && canUseCard) {
-        const cardIndex = attacker.specialCards.indexOf(CardNameEnum.WarChief);
+        const cardIndex = attacker.specialCards.indexOf(CardName.WarChief);
         if (cardIndex > -1) {
             const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
             discardPile.push(usedCard);
@@ -227,7 +228,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
     const canUseCard = !attacker.actionsThisTurn.includes(GameAction.UseCard);
 
     if (useOvercomeCard && canUseCard) {
-        const cardIndex = attacker.specialCards.indexOf(CardNameEnum.Overcome);
+        const cardIndex = attacker.specialCards.indexOf(CardName.Overcome);
         if (cardIndex > -1) {
             const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
             discardPile.push(usedCard);
@@ -244,7 +245,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
         let attackerBonusPower = 0;
         
         if (useWarChief && canUseCard && !cardUsedThisAction) {
-             const cardIndex = attacker.specialCards.indexOf(CardNameEnum.WarChief);
+             const cardIndex = attacker.specialCards.indexOf(CardName.WarChief);
              if (cardIndex > -1) {
                 const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
                 discardPile.push(usedCard);
@@ -257,7 +258,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
 
         let canUseDecideCard = useDecideCard;
         if (useDecideCard && canUseCard && !cardUsedThisAction) {
-            const cardIndex = attacker.specialCards.indexOf(CardNameEnum.DecideDiceRoll);
+            const cardIndex = attacker.specialCards.indexOf(CardName.DecideDiceRoll);
             if (cardIndex > -1) {
                 const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
                 discardPile.push(usedCard);

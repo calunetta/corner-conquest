@@ -1,5 +1,5 @@
 
-import { PlayerColor } from './enums';
+import { PlayerColor } from './types';
 
 export const PLAYER_COLORS: PlayerColor[] = [PlayerColor.Blue, PlayerColor.Red, PlayerColor.Purple, PlayerColor.Yellow];
 

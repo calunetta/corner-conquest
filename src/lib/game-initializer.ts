@@ -1,9 +1,10 @@
 
+
 import type { GameState, Island, Player, IslandResource, Monster, GameSettings, FirestoreGameState, BaseTileInfo, CardName, AbilityName } from './types';
 import { BASE_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
-import { IslandType, ResourceType, PlayerColor, MonsterNameEnum, GameStatus, AbilityName as AbilityNameEnum } from './enums';
+import { IslandType, ResourceType, PlayerColor, MonsterName, GameStatus } from './types';
 
 export const defaultGameSettings: GameSettings = {
     victoryPointGoal: 30,
@@ -15,15 +16,15 @@ export const defaultGameSettings: GameSettings = {
     baseResourceAmount: 1,
     resourceDensity: 0.6, // 60% chance for a tile to be resource vs monster
     availableCards: [...BASE_CARDS],
-    availableAbilities: [AbilityNameEnum.Explorer, AbilityNameEnum.Collector],
+    availableAbilities: [AbilityName.Explorer, AbilityName.Collector],
     fogOfWar: false,
 };
 
-const MONSTER_DATA: Record<number, { name: MonsterNameEnum, sprite: { idle: string, attack: string, death: string } }> = {
-    1: { name: MonsterNameEnum.Lancer, sprite: { idle: '/sprites/lancer_idle.gif', attack: '/sprites/lancer_attack.gif', death: '/sprites/death.gif' } },
-    2: { name: MonsterNameEnum.Bear, sprite: { idle: '/sprites/bear_idle.gif', attack: '/sprites/bear_attack.gif', death: '/sprites/death.gif' } },
-    3: { name: MonsterNameEnum.Ogre, sprite: { idle: '/sprites/ogre_idle.gif', attack: '/sprites/ogre_attack.gif', death: '/sprites/death.gif' } },
-    4: { name: MonsterNameEnum.Minotaur, sprite: { idle: '/sprites/minotaur_idle.gif', attack: '/sprites/minotaur_attack.gif', death: '/sprites/death.gif' } },
+const MONSTER_DATA: Record<number, { name: MonsterName, sprite: { idle: string, attack: string, death: string } }> = {
+    1: { name: MonsterName.Lancer, sprite: { idle: '/sprites/lancer_idle.gif', attack: '/sprites/lancer_attack.gif', death: '/sprites/death.gif' } },
+    2: { name: MonsterName.Bear, sprite: { idle: '/sprites/bear_idle.gif', attack: '/sprites/bear_attack.gif', death: '/sprites/death.gif' } },
+    3: { name: MonsterName.Ogre, sprite: { idle: '/sprites/ogre_idle.gif', attack: '/sprites/ogre_attack.gif', death: '/sprites/death.gif' } },
+    4: { name: MonsterName.Minotaur, sprite: { idle: '/sprites/minotaur_idle.gif', attack: '/sprites/minotaur_attack.gif', death: '/sprites/death.gif' } },
 };
 
 function generateMonsters(x: number, y: number): Monster[] {
@@ -96,7 +97,7 @@ export function createPlayer(
     settings: GameSettings,
     debugMode: boolean
 ): Player {
-    let startingCards: CardName[] = [CardNameEnum.ExtraMove, CardNameEnum.StealResource, CardNameEnum.DecideDiceRoll];
+    let startingCards: CardName[] = [CardName.ExtraMove, CardName.StealResource, CardName.DecideDiceRoll];
     if (debugMode) {
         startingCards = [...new Set(BASE_CARDS)];
     }
@@ -123,7 +124,7 @@ export function createPlayer(
         positions: [],
         hasExtraMove: false,
         actionsThisTurn: [],
-        passiveAbilities: { [AbilityNameEnum.Explorer]: false, [AbilityNameEnum.Collector]: false },
+        passiveAbilities: { [AbilityName.Explorer]: false, [AbilityName.Collector]: false },
         isSabotaged: false,
         efficientActive: false,
         masterBuilderActive: false,

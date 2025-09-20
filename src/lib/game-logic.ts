@@ -2,7 +2,7 @@
 import type { GameState, Island, Player, PlayerColor, FirestoreGameState, BaseTileInfo } from './types';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './game-initializer';
-import { GameStatus, IslandType } from './enums';
+import { GameStatus, IslandType } from './types';
 
 export const TILE_SIZE = 75;
 export const BASE_TILE_SIZE = 150;

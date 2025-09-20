@@ -1,7 +1,6 @@
 
 import { Gem, Hammer, Wheat, Skull, Angry, Bot, Crown, Icon as LucideIcon } from 'lucide-react';
 import type { ResourceType } from '@/lib/types';
-import { ResourceType as ResourceTypeEnum } from '@/lib/enums';
 
 type ResourceIconProps = {
   type: ResourceType;
@@ -9,9 +8,9 @@ type ResourceIconProps = {
 };
 
 const resourceIconMap: Record<ResourceType, LucideIcon> = {
-  [ResourceTypeEnum.Gems]: Gem,
-  [ResourceTypeEnum.Iron]: Hammer,
-  [ResourceTypeEnum.Food]: Wheat,
+  ['gems' as ResourceType]: Gem,
+  ['iron' as ResourceType]: Hammer,
+  ['food' as ResourceType]: Wheat,
 };
 
 export function ResourceIcon({ type, className }: ResourceIconProps) {

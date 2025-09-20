@@ -1,6 +1,7 @@
 
+
 'use client';
-import type { GameState } from '@/lib/types';
+import type { GameState, CardName } from '@/lib/types';
 import { useState } from 'react';
 import {
   AlertDialog,
@@ -16,7 +17,6 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
-import { CardName } from '@/lib/enums';
 
 type CombatDialogProps = {
   gameState: GameState;

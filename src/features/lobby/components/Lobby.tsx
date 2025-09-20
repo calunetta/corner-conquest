@@ -5,8 +5,8 @@ import { db, runTransaction, collection, doc, writeBatch, getDoc, arrayUnion, qu
 import { usePlayer } from '@/hooks/use-player';
 import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
 import { addPlayerToGame } from '@/lib/game-logic';
-import type { GameState, FirestoreGameState, GameSettings, Player, Island } from '@/lib/types';
-import { PlayerColor, GameStatus } from '@/lib/enums';
+import type { GameState, FirestoreGameState, GameSettings, Player, Island, PlayerColor } from '@/lib/types';
+import { GameStatus } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CreateGameDialog } from './CreateGameDialog';

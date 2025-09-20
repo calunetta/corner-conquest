@@ -1,8 +1,9 @@
 
+
 import type { GameState, Player, Army, PassiveAbilities, CardName, AbilityName } from '@/lib/types';
 import { db, doc, deleteDoc, runTransaction, arrayUnion } from '@/lib/firebase';
 import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
-import { GameAction, CardName as CardNameEnum, AbilityName as AbilityNameEnum } from '../enums';
+import { GameAction } from '../types';
 
 export function canPlayerPerformAnyAction(state: GameState): boolean {
     const player = state.players[state.currentPlayerIndex];
@@ -93,7 +94,7 @@ export function handleDeployAction(state: GameState): GameState {
       newState.log.push(`${player.name} used 'Efficient' for a cheaper deployment!`);
       player.efficientActive = false;
       player.actionsThisTurn.push(GameAction.UseCard);
-      const cardIndex = player.specialCards.indexOf(CardNameEnum.Efficient);
+      const cardIndex = player.specialCards.indexOf(CardName.Efficient);
       if (cardIndex > -1) {
           const usedCard = player.specialCards.splice(cardIndex, 1)[0];
           discardPile.push(usedCard);
@@ -105,7 +106,7 @@ export function handleDeployAction(state: GameState): GameState {
       player.reinforceActive = false;
       if (canUseCard) {
           player.actionsThisTurn.push(GameAction.UseCard);
-          const cardIndex = player.specialCards.indexOf(CardNameEnum.Reinforce);
+          const cardIndex = player.specialCards.indexOf(CardName.Reinforce);
           if (cardIndex > -1) {
               const usedCard = player.specialCards.splice(cardIndex, 1)[0];
               discardPile.push(usedCard);
@@ -146,7 +147,7 @@ export function handleUpgradeAction(state: GameState): GameState {
       const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
       if (canUseCard) {
           player.actionsThisTurn.push(GameAction.UseCard);
-          const cardIndex = player.specialCards.indexOf(CardNameEnum.MasterBuilder);
+          const cardIndex = player.specialCards.indexOf(CardName.MasterBuilder);
           if (cardIndex > -1) {
               const usedCard = player.specialCards.splice(cardIndex, 1)[0];
               discardPile.push(usedCard);
@@ -266,9 +267,9 @@ export function handleCancelAction(state: GameState): GameState {
     newState.showHostLeaveDialog = false;
     
     if (player.hasExtraMove) {
-        const cardIndex = player.specialCards.indexOf(CardNameEnum.ExtraMove);
+        const cardIndex = player.specialCards.indexOf(CardName.ExtraMove);
         if (cardIndex === -1) { // If card was already used
-             const discardIndex = newState.discardPile.indexOf(CardNameEnum.ExtraMove);
+             const discardIndex = newState.discardPile.indexOf(CardName.ExtraMove);
              if (discardIndex > -1) {
                 const card = newState.discardPile.splice(discardIndex, 1)[0];
                 player.specialCards.push(card);

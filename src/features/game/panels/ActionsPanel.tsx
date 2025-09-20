@@ -1,7 +1,7 @@
 
 'use client';
 import type { GameState, Player, Army } from '@/lib/types';
-import { GameAction } from '@/lib/enums';
+import { GameAction } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Sword, ShoppingCart, Gem, Anchor, Zap, Album, University, XCircle } from 'lucide-react';
@@ -225,3 +225,5 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
     </Card>
   );
 }
+
+    
