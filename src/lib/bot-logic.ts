@@ -178,11 +178,15 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         
         // 4. Move to a promising new tile
         const validMoves = getValidMoves(army, simState);
-        const hiddenTiles = validMoves.filter(move => simState.map[move.y][move.x].isHidden);
-        if (hiddenTiles.length > 0) {
-            const target = selectRandom(hiddenTiles);
+        const unrevealedTiles = validMoves.filter(move => {
+            const tile = simState.map[move.y][move.x];
+            return !botPlayer.revealedTiles.includes(tile.id);
+        });
+
+        if (unrevealedTiles.length > 0) {
+            const target = selectRandom(unrevealedTiles);
             if (target) {
-                console.log(`Bot: Army ${army.id} moving to explore hidden tile.`);
+                console.log(`Bot: Army ${army.id} moving to explore unrevealed tile.`);
                 try {
                     const moveState = GameActions.handleTileClick(simState, target.x, target.y, botPlayer.id, army, getValidMoves(army, simState)).newState;
                     return GameActions.handleEndTurn(moveState);

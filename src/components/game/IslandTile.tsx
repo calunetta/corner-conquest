@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { useState, useEffect } from 'react';
+import { usePlayer } from '@/hooks/use-player';
 
 type IslandTileProps = {
   island: Island;
@@ -20,6 +21,7 @@ type IslandTileProps = {
   isTeleporting?: boolean;
   isScoutTarget?: boolean;
   deathAnimations: DeathAnimation[];
+  fogOfWar: boolean;
 };
 
 const playerColorMap = {
@@ -90,7 +92,10 @@ const AnimatedMonster = ({ monster }: { monster: Monster }) => {
     )
 }
 
-export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, currentPlayerId, isTeleporting, isScoutTarget, deathAnimations }: IslandTileProps) {
+export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, currentPlayerId, isTeleporting, isScoutTarget, deathAnimations, fogOfWar }: IslandTileProps) {
+  const { playerId } = usePlayer();
+  const localPlayer = players.find(p => p.playerId === playerId);
+  
   const occupants = island.occupants.map(o => {
       const player = players.find(p => p.id === o.playerId);
       const army = player?.armies.find(a => a.id === o.armyId);
@@ -104,6 +109,8 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const baseOwner = island.type === 'base' ? players.find(p => p.id === island.owner) : null;
   
   const deathAnimationOnTile = deathAnimations.find(anim => anim.x === island.x && anim.y === island.y);
+  
+  const isHiddenForPlayer = fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id);
 
   const renderResourceIcons = (resources: IslandResource[]) => {
     const isBase = island.type === 'base';
@@ -154,7 +161,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   }
 
   const getIcon = () => {
-    if (island.isHidden) return <HelpCircle className="h-full w-full text-muted-foreground/50" />;
+    if (isHiddenForPlayer) return <HelpCircle className="h-full w-full text-muted-foreground/50" />;
     
     switch (island.type) {
       case 'base': 
@@ -198,7 +205,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         className={cn(
           'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200 border-2',
           getTerrainClass(),
-          island.isHidden ? 'border-dashed border-transparent' : 'border-transparent',
+          isHiddenForPlayer ? 'border-dashed border-transparent' : 'border-transparent',
           isSelected ? 'ring-2 ring-primary' : '',
           isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
           isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
@@ -210,7 +217,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         aria-label={`Island at ${island.x}, ${island.y}`}
       >
         <div className="absolute inset-0 z-10">
-            {occupants.map(({ player, army }, index) => {
+            {!isHiddenForPlayer && occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
                 if (deathAnimations.some(anim => anim.id === `army-${player.id}-${army.id}`)) {
@@ -270,3 +277,4 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     </TooltipProvider>
   );
 }
+

@@ -58,9 +58,10 @@ type MapGridProps = {
   isTeleporting?: boolean;
   isScouting?: boolean;
   deathAnimations: DeathAnimation[];
+  fogOfWar: boolean;
 };
 
-export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting, isScouting, deathAnimations }: MapGridProps) {
+export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting, isScouting, deathAnimations, fogOfWar }: MapGridProps) {
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const selectedArmy = selectedArmyId !== null && currentPlayer ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const teleportingArmyId = isTeleporting && players[currentPlayerId]?.teleportState?.armyId !== null ? players[currentPlayerId]?.teleportState?.armyId : null;
@@ -104,7 +105,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
           const armyOnTile = island.occupants.find(o => o.playerId === currentPlayerId);
           const isArmySelectedOnTile = (isTeleporting && armyOnTile?.armyId === teleportingArmyId) || (!isTeleporting && selectedArmy?.position.x === island.x && selectedArmy?.position.y === island.y);
           
-          const isScoutTarget = isScouting && island.isHidden;
+          const isScoutTarget = isScouting && fogOfWar;
           
           return (
             <IslandTile
@@ -120,6 +121,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
                 isTeleporting={isTeleporting}
                 isScoutTarget={isScoutTarget}
                 deathAnimations={deathAnimations}
+                fogOfWar={fogOfWar}
             />
           );
         })}

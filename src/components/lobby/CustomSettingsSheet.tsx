@@ -18,6 +18,7 @@ import { Separator } from '../ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { BASE_CARDS } from '@/lib/card-data';
 import { Checkbox } from '../ui/checkbox';
+import { Switch } from '../ui/switch';
 
 type CustomSettingsSheetProps = {
   open: boolean;
@@ -151,6 +152,19 @@ export function CustomSettingsSheet({
                     <TabsTrigger value="content">Content</TabsTrigger>
                 </TabsList>
                 <TabsContent value="general" className="pt-4 space-y-6">
+                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                            <Label>Fog of War</Label>
+                            <p className="text-xs text-muted-foreground">
+                                Hide map tiles until they are explored by each player individually.
+                            </p>
+                        </div>
+                        <Switch
+                            checked={settings.fogOfWar}
+                            onCheckedChange={(checked) => setSettings({ ...settings, fogOfWar: checked })}
+                        />
+                    </div>
+                    <Separator />
                     {renderSlider('victoryPointGoal', 'Victory Points to Win', 10, 100, 5)}
                     <Separator />
                     {renderSlider('vpPerIslandDiscovery', 'VP per Island Discovery', 0, 5)}

@@ -11,8 +11,8 @@ import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
 
 
 function reconstructMap(flatMap: Island[]): Island[][] {
-    const map: Island[][] = Array.from({ length: MAP_ROWS }, () => []);
-    if (!flatMap) return map;
+    if (!flatMap) return Array.from({ length: MAP_ROWS }, () => []);
+    const map: Island[][] = Array.from({ length: MAP_ROWS }, () => Array(MAP_COLS).fill(null));
     flatMap.forEach(island => {
         if (!map[island.y]) {
             map[island.y] = [];
@@ -23,13 +23,19 @@ function reconstructMap(flatMap: Island[]): Island[][] {
 }
 
 export function useGameEngine(gameId: string, playerId: string | null) {
-  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [dynamicState, setDynamicState] = useState<FirestoreGameState | null>(null);
+  const [mapData, setMapData] = useState<Island[][] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
 
   const isProcessingBotTurn = useRef(false);
   const gameStateRef = useRef<GameState | null>(null);
+
+  const gameState = useMemo<GameState | null>(() => {
+    if (!dynamicState || !mapData) return null;
+    return { ...dynamicState, map: mapData };
+  }, [dynamicState, mapData]);
 
   useEffect(() => {
     gameStateRef.current = gameState;
@@ -38,56 +44,44 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   useEffect(() => {
     if (!gameId) return;
 
-    let mapData: Island[][] | null = null;
-    let unsubscribes: (() => void)[] = [];
+    setIsLoading(true);
 
-    const fetchAndCombine = async () => {
-        setIsLoading(true);
-        try {
-            const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
-            const mapDoc = await getDoc(staticDocRef);
-            if (mapDoc.exists()) {
-                const flatMap = mapDoc.data().map as Island[];
-                mapData = reconstructMap(flatMap);
-            } else {
-                toast({ title: "Game Over", description: "This game session no longer exists." });
-                router.push('/');
-                return;
-            }
+    const gameDocRef = doc(db, 'games', gameId);
+    const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
 
-            const gameDocRef = doc(db, 'games', gameId);
-            const unsubscribeGame = onSnapshot(gameDocRef, (docSnapshot) => {
-                if (docSnapshot.exists()) {
-                    const firestoreState = docSnapshot.data() as FirestoreGameState;
-                    setGameState({
-                        ...firestoreState,
-                        map: mapData!,
-                    });
-                } else {
-                    toast({ title: "Game Over", description: "This game session no longer exists." });
-                    if (unsubscribes.length > 0) unsubscribes.forEach(u => u());
-                    router.push('/');
-                }
-                setIsLoading(false);
-            }, (error) => {
-                console.error("Firestore snapshot error:", error);
-                toast({ title: 'Connection Error', description: 'Could not connect to the game session.', variant: 'destructive'});
-                setIsLoading(false);
-            });
-
-            unsubscribes.push(unsubscribeGame);
-
-        } catch (error) {
-             console.error("Failed to load game data:", error);
-             toast({ title: 'Load Error', description: 'Could not load game data.', variant: 'destructive'});
-             router.push('/');
+    const unsubscribeGame = onSnapshot(gameDocRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+            setDynamicState(docSnapshot.data() as FirestoreGameState);
+        } else {
+            toast({ title: "Game Over", description: "This game session no longer exists." });
+            router.push('/');
         }
-    };
-    
-    fetchAndCombine();
+        if (mapData) setIsLoading(false);
+    }, (error) => {
+        console.error("Firestore dynamic state error:", error);
+        toast({ title: 'Connection Error', description: 'Could not connect to the game session.', variant: 'destructive'});
+        setIsLoading(false);
+    });
 
-    return () => unsubscribes.forEach(u => u());
-  }, [gameId, toast, router]);
+    const unsubscribeMap = onSnapshot(staticDocRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+            const flatMap = docSnapshot.data().map as Island[];
+            setMapData(reconstructMap(flatMap));
+        } else {
+            toast({ title: "Game Data Error", description: "Could not load map data." });
+        }
+         if (dynamicState) setIsLoading(false);
+    }, (error) => {
+        console.error("Firestore map state error:", error);
+        toast({ title: 'Map Error', description: 'Could not load the game map.', variant: 'destructive' });
+        setIsLoading(false);
+    });
+
+    return () => {
+        unsubscribeGame();
+        unsubscribeMap();
+    };
+  }, [gameId, toast, router, mapData, dynamicState]);
 
   const updateGameState = useCallback(async (newStateOrFn: GameState | null | ((prevState: GameState | null) => GameState | null)) => {
     let finalState: GameState | null = null;
@@ -106,6 +100,11 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     try {
         const gameDocRef = doc(db, 'games', gameId);
         await updateDoc(gameDocRef, { ...firestoreState });
+
+        const newFlatMap = map.flat();
+        const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
+        await updateDoc(staticDocRef, { map: newFlatMap });
+
     } catch (error) {
         console.error("Error updating game state:", error);
         toast({ title: "Sync Error", description: "Could not save game state.", variant: 'destructive' });

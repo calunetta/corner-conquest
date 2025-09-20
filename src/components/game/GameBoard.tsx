@@ -152,15 +152,15 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setIsPerformingAction(true);
         const result = GameActions.handleTileClick(gameState, x, y, localPlayer?.id ?? -1, selectedArmy, possibleMoves);
         
-        setSelectedArmyId(result.selectedArmyId);
-        setSelectedTile(result.selectedTile);
-        setPossibleMoves(result.possibleMoves);
-        setCurrentAction(result.currentAction);
-        
         // Use a more robust check to see if state has changed.
         if (result.newState.id !== gameState.id) {
           await setGameState(result.newState);
         }
+        
+        setSelectedArmyId(result.selectedArmyId);
+        setSelectedTile(result.selectedTile);
+        setPossibleMoves(result.possibleMoves);
+        setCurrentAction(result.currentAction);
 
         if (activeInstructionToastId) {
             dismiss(activeInstructionToastId);
@@ -383,6 +383,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                       isTeleporting={isTeleporting}
                       isScouting={isScouting}
                       deathAnimations={deathAnimations}
+                      fogOfWar={settings.fogOfWar}
                   />
                   <div className='pointer-events-none absolute bottom-4 right-4 z-20 rounded-lg bg-background/80 p-2 text-center shadow-md backdrop-blur-sm'>
                       {status === 'waiting' ? (
