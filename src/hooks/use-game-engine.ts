@@ -8,23 +8,44 @@ import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import * as GameActions from '@/lib/game-actions';
 import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
+import { isEqual, isObject, transform } from 'lodash';
 
 
 function reconstructMap(flatMap: Island[]): Island[][] {
-    if (!flatMap) return Array.from({ length: MAP_ROWS }, () => []);
+    if (!flatMap || flatMap.length === 0) return Array.from({ length: MAP_ROWS }, () => Array(MAP_COLS).fill(null));
     const map: Island[][] = Array.from({ length: MAP_ROWS }, () => Array(MAP_COLS).fill(null));
     flatMap.forEach(island => {
-        if (!map[island.y]) {
-            map[island.y] = [];
+        if (island && map[island.y]) {
+            map[island.y][island.x] = island;
         }
-        map[island.y][island.x] = island;
     });
     return map;
 }
 
+/**
+ * Deep diff between two objects, returning the new values.
+ * @param  {Object} object Object compared
+ * @param  {Object} base   Object to compare against
+ * @return {Object}        Return a new object who represent the diff
+ */
+function getChangedFields(object: any, base: any) {
+  function changes(object: any, base: any) {
+    return transform(object, function (result: any, value, key) {
+      if (!isEqual(value, base[key])) {
+        result[key] =
+          isObject(value) && isObject(base[key])
+            ? changes(value, base[key])
+            : value;
+      }
+    });
+  }
+  return changes(object, base);
+}
+
+
 export function useGameEngine(gameId: string, playerId: string | null) {
   const [dynamicState, setDynamicState] = useState<FirestoreGameState | null>(null);
-  const [mapData, setMapData] = useState<Island[][] | null>(null);
+  const [staticState, setStaticState] = useState<{ map: Island[] } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
@@ -33,9 +54,10 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   const gameStateRef = useRef<GameState | null>(null);
 
   const gameState = useMemo<GameState | null>(() => {
-    if (!dynamicState || !mapData) return null;
-    return { ...dynamicState, map: mapData };
-  }, [dynamicState, mapData]);
+    if (!dynamicState || !staticState) return null;
+    const map = reconstructMap(staticState.map);
+    return { ...dynamicState, map: map };
+  }, [dynamicState, staticState]);
 
   useEffect(() => {
     gameStateRef.current = gameState;
@@ -56,7 +78,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
             toast({ title: "Game Over", description: "This game session no longer exists." });
             router.push('/');
         }
-        if (mapData) setIsLoading(false);
+        if (staticState) setIsLoading(false);
     }, (error) => {
         console.error("Firestore dynamic state error:", error);
         toast({ title: 'Connection Error', description: 'Could not connect to the game session.', variant: 'destructive'});
@@ -65,8 +87,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
     const unsubscribeMap = onSnapshot(staticDocRef, (docSnapshot) => {
         if (docSnapshot.exists()) {
-            const flatMap = docSnapshot.data().map as Island[];
-            setMapData(reconstructMap(flatMap));
+            setStaticState(docSnapshot.data() as { map: Island[] });
         } else {
             toast({ title: "Game Data Error", description: "Could not load map data." });
         }
@@ -81,13 +102,15 @@ export function useGameEngine(gameId: string, playerId: string | null) {
         unsubscribeGame();
         unsubscribeMap();
     };
-  }, [gameId, toast, router, mapData, dynamicState]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId, toast, router]);
 
   const updateGameState = useCallback(async (newStateOrFn: GameState | null | ((prevState: GameState | null) => GameState | null)) => {
+    const currentState = gameStateRef.current;
+    if (!currentState) return;
+
     let finalState: GameState | null = null;
     if (typeof newStateOrFn === 'function') {
-        const currentState = gameStateRef.current;
-        if (!currentState) return; 
         finalState = newStateOrFn(currentState);
     } else {
       finalState = newStateOrFn;
@@ -95,15 +118,24 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
     if (!finalState) return;
     
-    const { map, ...firestoreState } = finalState;
-
+    const { map: newMap, ...newFirestoreState } = finalState;
+    const { map: oldMap, ...oldFirestoreState } = currentState;
+    
     try {
-        const gameDocRef = doc(db, 'games', gameId);
-        await updateDoc(gameDocRef, { ...firestoreState });
+        const dynamicChanges = getChangedFields(newFirestoreState, oldFirestoreState);
+        if (Object.keys(dynamicChanges).length > 0) {
+            const gameDocRef = doc(db, 'games', gameId);
+            await updateDoc(gameDocRef, dynamicChanges);
+        }
+        
+        const newFlatMap = newMap.flat();
+        const oldFlatMap = oldMap.flat();
+        const staticChanges = getChangedFields({ map: newFlatMap }, { map: oldFlatMap });
 
-        const newFlatMap = map.flat();
-        const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
-        await updateDoc(staticDocRef, { map: newFlatMap });
+        if (staticChanges && Object.keys(staticChanges).length > 0) {
+            const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
+            await updateDoc(staticDocRef, staticChanges);
+        }
 
     } catch (error) {
         console.error("Error updating game state:", error);
