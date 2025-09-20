@@ -114,13 +114,15 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     
     try {
         setIsPerformingAction(true);
-        const { newState, selectedArmyId: newSelectedArmyId, possibleMoves: newPossibleMoves, currentAction: newCurrentAction } = GameActions.handleGameAction({
+        const actionResult = GameActions.handleGameAction({
             action,
             gameState,
             selectedArmy,
             payload
         });
         
+        const { newState, selectedArmyId: newSelectedArmyId, possibleMoves: newPossibleMoves, currentAction: newCurrentAction } = actionResult;
+
         await setGameState(newState);
         
         if (newSelectedArmyId !== undefined) setSelectedArmyId(newSelectedArmyId);
