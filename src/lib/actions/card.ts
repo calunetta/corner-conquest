@@ -77,7 +77,7 @@ export const handleUseCard = (state: GameState, cardName: string): GameState => 
             player.masterBuilderActive = true;
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
             break;
-        case 'Sabatoge':
+        case 'Sabotage':
         case 'Steal Resource':
         case 'Wealthy':
             shouldOpenConfirmation = true;
@@ -110,7 +110,7 @@ export const handleConfirmUseCard = (state: GameState, cardName: string): GameSt
         case 'Steal Resource':
             dialogState = { stealResourceDialogState: { targetPlayerId: null } };
             break;
-        case 'Sabatoge':
+        case 'Sabotage':
             dialogState = { sabotageDialogState: { isOpen: true } };
             break;
         case 'Wealthy':
@@ -134,7 +134,7 @@ export const handleSabotagePlayer = (state: GameState, targetPlayerId: number): 
         }
         
         targetPlayer.isSabotaged = true;
-        const cardIndex = player.specialCards.indexOf('Sabatoge');
+        const cardIndex = player.specialCards.indexOf('Sabotage');
         if (cardIndex > -1) {
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
             newState.discardPile.push(usedCard);

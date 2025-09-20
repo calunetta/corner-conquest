@@ -1,7 +1,7 @@
 
 
 export const BASE_CARDS = [
-  'Extra Move', 'Steal Resource', 'Sabatoge', 'Reinforce', 
+  'Extra Move', 'Steal Resource', 'Sabotage', 'Reinforce', 
   'Scout', 'Overcome', 'Wealthy', 'Productive', 'Efficient',
   'Master Builder', 'War Chief',
   'Decide Dice Roll', 'Teleport'
@@ -20,7 +20,7 @@ export const SPECIAL_CARDS = [
   'Decide Dice Roll',
   'Scout',
   'Overcome',
-  'Sabatoge',
+  'Sabotage',
   'Teleport', // Only one copy
 ];
 
@@ -29,7 +29,7 @@ export const USABLE_CARDS = [
     'Extra Move', 
     'Steal Resource', 
     'Teleport', 
-    'Sabatoge', 
+    'Sabotage', 
     'Reinforce', 
     'Scout', 
     'Wealthy', 
@@ -40,7 +40,7 @@ export const USABLE_CARDS = [
 export const SPECIAL_CARD_DESCRIPTIONS: Record<string, string> = {
     'Extra Move': 'Take an extra move action this turn.',
     'Steal Resource': 'Steal 2 resources of one type from another player.',
-    'Sabatoge': 'Choose an opponent to lose their next turn.',
+    'Sabotage': 'Choose an opponent to lose their next turn.',
     'Reinforce': 'Deploy a new army for free.',
     'Scout': 'Reveal any 3 hidden tiles on the map.',
     'Overcome': 'Automatically win your next battle (player or monster).',
