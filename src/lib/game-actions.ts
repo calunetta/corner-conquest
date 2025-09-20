@@ -1,6 +1,6 @@
 
 
-import { db, doc, deleteDoc, runTransaction, arrayUnion, getDoc } from '@/lib/firebase';
+import { db, doc, deleteDoc, runTransaction, arrayUnion, getDoc, updateDoc } from '@/lib/firebase';
 import type { GameState, GameAction, ResourceType, Monster, Army, PassiveAbilities, Player, FirestoreGameState, DeathAnimation, Island, IslandResource, BaseTileInfo } from './types';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
 import { PLAYER_DATA } from './player-data';
@@ -400,7 +400,9 @@ export function handleEndTurn(state: GameState): GameState {
         const occupiedIslands = new Set<string>();
         currentPlayer.armies.forEach((army: Army) => {
             const tile = newState.map[army.position.y][army.position.x];
-            occupiedIslands.add(tile.id);
+            if (newState.players.every(p => p.revealedTiles.includes(tile.id))) {
+                occupiedIslands.add(tile.id);
+            }
         });
         const vpGained = occupiedIslands.size;
         if (vpGained > 0) {
@@ -516,9 +518,10 @@ export function handleTileClick(
     currentPossibleMoves: {x: number, y: number}[]
 ): TileClickResult {
     let newState = { ...state, id: state.id + `_tileclick_${Date.now()}` };
-    const { players, currentPlayerIndex, teleportState, scoutingState } = newState;
+    const { players, currentPlayerIndex, teleportState, scoutingState, settings } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const clickedTile = newState.map[y][x];
+    const isTileRevealed = settings.fogOfWar ? currentPlayer.revealedTiles.includes(clickedTile.id) : true;
     
     let selectedArmyId: number | null = currentSelectedArmy?.id ?? null;
     let selectedTile: {x: number, y: number} | null = { x, y };
@@ -532,7 +535,7 @@ export function handleTileClick(
         return { newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
     }
     
-    if (scoutingState && scoutingState.count > 0 && clickedTile.isHidden) {
+    if (scoutingState && scoutingState.count > 0 && !isTileRevealed) {
         newState = revealIsland(newState, x, y, currentPlayer);
         newState.scoutingState!.count--;
         newState.log.push(`${currentPlayer.name} revealed a tile at (${x},${y}) with Scout. ${newState.scoutingState.count} reveals left.`);
@@ -599,15 +602,24 @@ export function handleTileClick(
 function revealIsland(state: GameState, x: number, y: number, player: Player): GameState {
     let newState = { ...state };
     const tile = newState.map[y][x];
+    const tileId = tile.id;
     const HAND_LIMIT = 7;
 
-    if (!tile.isHidden) return newState;
-    
-    tile.isHidden = false;
-    player.victoryPoints += state.settings.vpPerIslandDiscovery;
-    if (state.settings.vpPerIslandDiscovery > 0) {
-        newState.log.push(`${player.name} discovered a new island and gains ${state.settings.vpPerIslandDiscovery} VP!`);
+    if (player.revealedTiles.includes(tileId)) {
+        return newState; // Already revealed for this player
     }
+
+    player.revealedTiles.push(tileId);
+
+    // Only grant VP if the player is the first to discover it among all players
+    const isFirstEverDiscovery = !newState.players.some(p => p.id !== player.id && p.revealedTiles.includes(tileId));
+    if (isFirstEverDiscovery) {
+        player.victoryPoints += state.settings.vpPerIslandDiscovery;
+        if (state.settings.vpPerIslandDiscovery > 0) {
+            newState.log.push(`${player.name} discovered a new island and gains ${state.settings.vpPerIslandDiscovery} VP!`);
+        }
+    }
+
 
     if (tile.type === 'special') {
         if (player.specialCards.length >= HAND_LIMIT && !newState.debugMode) {
@@ -657,11 +669,12 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
     const targetTile = newState.map[y][x];
     targetTile.occupants.push({ playerId: player.id, armyId: army.id });
     
-    if (targetTile.isHidden) {
+    const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);
+    if (isFirstDiscovery) {
         newState = revealIsland(newState, x, y, player);
     }
     
-    if (targetTile.type === 'special') {
+    if (targetTile.type === 'special' && isFirstDiscovery) {
          if (player.specialCards.length >= 7 && !newState.debugMode) {
              newState.log.push(`${player.name} landed on a special island, but their hand is full!`);
          } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
@@ -681,11 +694,14 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
         player.hasExtraMove = false; 
         newState.log.push(`${player.name} used their Extra Move!`);
         
-        player.actionsThisTurn.push('use-card');
-        const cardIndex = player.specialCards.indexOf('Extra Move');
-        if (cardIndex > -1) {
-            const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-            discardPile.push(usedCard);
+        const canUseCard = !player.actionsThisTurn.includes('use-card');
+        if (canUseCard) {
+            player.actionsThisTurn.push('use-card');
+            const cardIndex = player.specialCards.indexOf('Extra Move');
+            if (cardIndex > -1) {
+                const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+                discardPile.push(usedCard);
+            }
         }
         
     } else {
@@ -1181,11 +1197,12 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     const targetTile = map[y][x];
     targetTile.occupants.push({ playerId: player.id, armyId: armyToMove.id });
     
-    if (targetTile.isHidden) {
+    const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);
+    if (isFirstDiscovery) {
         newState = revealIsland(newState, x, y, player);
     }
     
-    if (targetTile.type === 'special') {
+    if (targetTile.type === 'special' && isFirstDiscovery) {
         if (player.specialCards.length >= 7 && !newState.debugMode) {
              newState.log.push(`${player.name} teleported to a special island, but their hand is full!`);
         } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
@@ -1243,9 +1260,15 @@ export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerEx
             let newPlayers = currentState.players.filter((p: Player) => p.playerId !== localPlayer.playerId);
             const newLog = arrayUnion(`${localPlayer.name} has left the room.`);
             
+            let newCurrentPlayerIndex = currentState.currentPlayerIndex;
+            if (currentState.currentPlayerIndex >= newPlayers.length) {
+                newCurrentPlayerIndex = 0;
+            }
+            
             transaction.update(gameDocRef, { 
                 players: newPlayers, 
                 log: newLog,
+                currentPlayerIndex: newCurrentPlayerIndex,
             });
         });
 
@@ -1305,6 +1328,15 @@ export function handleBuyAbility(state: GameState, abilityName: keyof PassiveAbi
     newState.abilitiesShopState = null;
     return checkAndEndTurnIfNoActions(newState);
 }
+
+export function handleDeselectArmy(): { selectedArmyId: null, possibleMoves: [], currentAction: null } {
+    return {
+        selectedArmyId: null,
+        possibleMoves: [],
+        currentAction: null,
+    }
+}
+
 
 export function handleCancelAction(state: GameState): GameState {
     let newState = { ...state };
@@ -1408,6 +1440,12 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             resultSelectedArmyId = selectResult.selectedArmyId;
             resultPossibleMoves = selectResult.possibleMoves;
             resultCurrentAction = selectResult.currentAction;
+            break;
+        case 'deselect-army':
+            const deselectResult = handleDeselectArmy();
+            resultSelectedArmyId = deselectResult.selectedArmyId;
+            resultPossibleMoves = deselectResult.possibleMoves;
+            resultCurrentAction = deselectResult.currentAction;
             break;
         case 'select-defender':
              const { defenderArmyId, attackingArmyId } = payload;

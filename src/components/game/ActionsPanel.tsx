@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { GameAction, GameState, Player, Army } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -191,6 +192,12 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
                  <Button variant="destructive" size="sm" onClick={() => onAction('cancel-action', null)} disabled={!isMyTurn}>
                     <XCircle />
                     Cancel
+                </Button>
+            )}
+            {selectedArmy && isMyTurn && (
+                 <Button variant="secondary" size="sm" onClick={() => onAction('deselect-army', null)}>
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Deselect Army
                 </Button>
             )}
             <Button size="sm" onClick={() => onAction('end-turn', null)} disabled={!isMyTurn} className="relative overflow-hidden">

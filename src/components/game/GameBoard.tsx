@@ -384,6 +384,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                       isScouting={isScouting}
                       deathAnimations={deathAnimations}
                       fogOfWar={settings.fogOfWar}
+                      localPlayer={localPlayer}
                   />
                   <div className='pointer-events-none absolute bottom-4 right-4 z-20 rounded-lg bg-background/80 p-2 text-center shadow-md backdrop-blur-sm'>
                       {status === 'waiting' ? (

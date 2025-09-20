@@ -16,6 +16,7 @@ export type GameSettings = {
     resourceDensity: number; // 0-1, likelihood of resource vs monster
     availableCards: string[];
     availableAbilities: string[];
+    fogOfWar: boolean;
 };
 
 export type IslandResource = {
@@ -67,6 +68,7 @@ export type Player = {
   efficientActive: boolean;
   masterBuilderActive: boolean;
   teleportState: TeleportState | null;
+  revealedTiles: string[];
 };
 
 export type MonsterName = 'Lancer' | 'Bear' | 'Ogre' | 'Minotaur';
@@ -87,7 +89,6 @@ export type Island = {
   y: number;
   type: IslandType;
   owner?: number;
-  isHidden: boolean;
   resources: IslandResource[];
   occupants: { playerId: number, armyId: number }[];
   monsters?: Monster[];
@@ -240,6 +241,7 @@ export type GameAction =
   | 'teleport' 
   | 'buy-ability' 
   | 'cancel-action'
+  | 'deselect-army'
   // Dialog actions
   | 'select-resource-position'
   | 'confirm-collection'
