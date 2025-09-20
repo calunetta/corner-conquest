@@ -6,7 +6,7 @@ import type { GameState, FirestoreGameState, Player, Island } from '@/lib/types'
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
-import * as GameActions from '@/lib/game-actions';
+import { handleEndTurn } from '@/lib/actions/player';
 import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
 import { isEqual, isObject, transform } from 'lodash';
 
@@ -225,7 +225,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
         const stateAfterError = gameStateRef.current;
         if (stateAfterError) {
             try {
-                const errorState = GameActions.handleEndTurn(stateAfterError);
+                const errorState = handleEndTurn(stateAfterError);
                 await updateGameState(errorState);
             } catch (e) {
                  console.error("Failed to end turn after bot error:", e);

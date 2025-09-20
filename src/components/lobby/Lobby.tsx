@@ -196,7 +196,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
         </CardContent>
       </Card>
       <CreateGameDialog 
-        open={isCreatingGame}
+        open={isJoiningGame === null && isCreatingGame}
         onOpenChange={setIsCreatingGame}
         onCreateGame={handleCreateGame}
       />

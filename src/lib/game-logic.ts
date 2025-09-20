@@ -73,7 +73,6 @@ export function addPlayerToGame(
     const baseTile = newMap[newPlayerPos.y][newPlayerPos.x];
     baseTile.type = 'base';
     baseTile.owner = newPlayerSeatIndex;
-    baseTile.isHidden = false; // Always reveal a player's base tile
     baseTile.occupants.push({ playerId: newPlayerSeatIndex, armyId: newPlayer.armies[0].id });
     baseTile.resources = [
         { type: 'gems', amount: newGameState.settings.baseResourceAmount }, 
@@ -82,14 +81,7 @@ export function addPlayerToGame(
     ];
     
     // Add the new base to the revealed tiles for all players if not in fog of war mode
-    if (!newGameState.settings.fogOfWar) {
-        newGameState.players.forEach((p: Player) => {
-            if (!p.revealedTiles.includes(baseTile.id)) {
-                p.revealedTiles.push(baseTile.id);
-            }
-        });
-    } else {
-        // In fog of war, only the new player reveals their own base
+    if (newGameState.settings.fogOfWar) {
         newPlayer.revealedTiles.push(baseTile.id);
     }
     

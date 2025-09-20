@@ -14,7 +14,7 @@ import { GameDialogs } from './GameDialogs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { usePlayer } from '@/hooks/use-player';
 import { useGameEngine } from '@/hooks/use-game-engine';
-import * as GameActions from '@/lib/game-actions';
+import { handleGameAction, handlePlayerExit, handleConfirmHostLeave } from '@/lib/actions';
 import { startGame } from '@/lib/game-initializer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
@@ -104,7 +104,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMyTurn, gameState?.turn, gameState?.players]);
   
-  const handleAction = useCallback(async (action: GameAction, payload?: any) => {
+  const onAction = useCallback(async (action: GameAction, payload?: any) => {
     if (!gameState || !localPlayer || isPerformingAction) return;
 
     if (!isMyTurn && !['show-cards', 'open-abilities-shop', 'close-cards', 'close-abilities-shop'].includes(action)) {
@@ -114,20 +114,18 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     
     try {
         setIsPerformingAction(true);
-        const actionResult = GameActions.handleGameAction({
+        const {newState, ...uiState} = handleGameAction({
             action,
             gameState,
             selectedArmy,
             payload
         });
         
-        const { newState, selectedArmyId: newSelectedArmyId, possibleMoves: newPossibleMoves, currentAction: newCurrentAction } = actionResult;
-
         await setGameState(newState);
         
-        if (newSelectedArmyId !== undefined) setSelectedArmyId(newSelectedArmyId);
-        if (newPossibleMoves) setPossibleMoves(newPossibleMoves);
-        if (newCurrentAction !== undefined) setCurrentAction(newCurrentAction);
+        if (uiState.selectedArmyId !== undefined) setSelectedArmyId(uiState.selectedArmyId);
+        if (uiState.possibleMoves) setPossibleMoves(uiState.possibleMoves);
+        if (uiState.currentAction !== undefined) setCurrentAction(uiState.currentAction);
 
 
         // Reset UI state for most actions, but preserve it for dialog flows
@@ -152,17 +150,23 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     
     try {
         setIsPerformingAction(true);
-        const result = GameActions.handleTileClick(gameState, x, y, localPlayer?.id ?? -1, selectedArmy, possibleMoves);
+        const result = handleGameAction({
+            action: 'tile-click',
+            gameState,
+            selectedArmy: selectedArmy,
+            payload: { x, y, possibleMoves }
+        });
         
-        // Use a more robust check to see if state has changed.
-        if (result.newState.id !== gameState.id) {
-          await setGameState(result.newState);
+        const { newState, selectedArmyId: newSelectedArmyId, possibleMoves: newPossibleMoves, currentAction: newCurrentAction, selectedTile: newSelectedTile } = result;
+
+        if (newState.id !== gameState.id) {
+          await setGameState(newState);
         }
         
-        setSelectedArmyId(result.selectedArmyId);
-        setSelectedTile(result.selectedTile);
-        setPossibleMoves(result.possibleMoves);
-        setCurrentAction(result.currentAction);
+        setSelectedArmyId(newSelectedArmyId);
+        setSelectedTile(newSelectedTile);
+        setPossibleMoves(newPossibleMoves);
+        setCurrentAction(newCurrentAction);
 
         if (activeInstructionToastId) {
             dismiss(activeInstructionToastId);
@@ -188,7 +192,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             if (prevTime <= 1) {
                 clearInterval(timerRef.current!);
                 if (isMyTurn) { // Double check it's still my turn
-                    handleAction('end-turn', null);
+                    onAction('end-turn', null);
                 }
                 return 0;
             }
@@ -222,7 +226,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         clearInterval(timerRef.current);
         timerRef.current = null;
         toast({ title: "Time's up!", description: "Your turn has ended automatically."});
-        handleAction('end-turn', null);
+        onAction('end-turn', null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, isMyTurn]);
@@ -281,7 +285,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     setShowConfirmExitDialog(false);
     if (!localPlayer) return;
     setIsExiting(true);
-    await GameActions.handlePlayerExit({
+    await handlePlayerExit({
       gameId,
       localPlayer,
       onExit,
@@ -292,7 +296,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleConfirmHostLeaveGame = async () => {
       if (!gameState) return;
       setIsExiting(true);
-      await GameActions.handleConfirmHostLeave(gameId, onExit);
+      await handleConfirmHostLeave(gameId, onExit);
       setIsExiting(false);
   }
 
@@ -417,7 +421,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 </main>
                 <aside className="flex flex-col justify-start gap-4">
                 <ActionsPanel 
-                    onAction={handleAction} 
+                    onAction={onAction} 
                     gameState={gameState} 
                     isMyTurn={isMyTurn && status === 'playing'}
                     timeLeft={timeLeft}
@@ -467,7 +471,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         onConfirmHostLeave={handleConfirmHostLeaveGame}
         locallyDismissedDialogs={locallyDismissedDialogs}
         setLocallyDismissedDialogs={setLocallyDismissedDialogs}
-        handleAction={handleAction}
+        handleAction={onAction}
         cardsDialogPlayerId={cardsDialogPlayerId}
         onCloseCardsDialog={() => setCardsDialogPlayerId(null)}
       />

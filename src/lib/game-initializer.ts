@@ -96,7 +96,6 @@ export function createPlayer(
     settings: GameSettings,
     debugMode: boolean
 ): Player {
-    const HAND_LIMIT = 7;
     let startingCards = ['Extra Move', 'Steal Resource', 'Decide Dice Roll'];
     if (debugMode) {
         startingCards = [...new Set(BASE_CARDS)];
@@ -128,6 +127,7 @@ export function createPlayer(
         isSabotaged: false,
         efficientActive: false,
         masterBuilderActive: false,
+        reinforceActive: false,
         teleportState: null,
         revealedTiles,
     };
@@ -148,7 +148,6 @@ export function initializeGame(
       x,
       y,
       type: 'empty',
-      isHidden: settings.fogOfWar,
       occupants: [],
       resources: [],
       positionedBy: [],
@@ -176,7 +175,6 @@ export function initializeGame(
       ...map[creatorPos.y][creatorPos.x],
       type: 'base',
       owner: creatorSeatIndex,
-      isHidden: false,
       occupants: [{ playerId: creatorSeatIndex, armyId: creatorPlayer.armies[0].id }],
       resources: [
         { type: 'gems', amount: settings.baseResourceAmount }, 
@@ -203,7 +201,6 @@ export function initializeGame(
             ...map[botPos.y][botPos.x],
             type: 'base',
             owner: botSeatIndex,
-            isHidden: false,
             occupants: [{playerId: botSeatIndex, armyId: botPlayer.armies[0].id}],
             resources: [
                 { type: 'gems', amount: settings.baseResourceAmount }, 
@@ -270,15 +267,6 @@ export function initializeGame(
       }
     }
   }
-  
-  if (!settings.fogOfWar) {
-    for (let y = 0; y < MAP_ROWS; y++) {
-        for (let x = 0; x < MAP_COLS; x++) {
-            map[y][x].isHidden = false;
-        }
-    }
-  }
-
 
   const finalCardDeck = SPECIAL_CARDS.filter(card => settings.availableCards.includes(card));
 

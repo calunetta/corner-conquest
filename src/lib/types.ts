@@ -61,7 +61,7 @@ export type Player = {
   specialCards: string[]; // Names of special cards
   positions: PlayerPosition[];
   hasExtraMove: boolean;
-  actionsThisTurn: GameAction[];
+  actionsThisTurn: string[];
   passiveAbilities: PassiveAbilities;
   isSabotaged: boolean;
   reinforceActive: boolean;
@@ -242,6 +242,7 @@ export type GameAction =
   | 'buy-ability' 
   | 'cancel-action'
   | 'deselect-army'
+  | 'tile-click'
   // Dialog actions
   | 'select-resource-position'
   | 'confirm-collection'
@@ -258,4 +259,12 @@ export type GameAction =
   | 'gain-wealth'
   ;
 
+// Represents the output of a game action handler
+export type ActionHandlerResult = {
+    newState: GameState;
+    selectedArmyId?: number | null;
+    possibleMoves?: {x:number, y:number}[];
+    currentAction?: GameAction | null;
+    selectedTile?: {x: number, y: number} | null;
+}
     

@@ -1,34 +1,12 @@
 
 
 import type { GameState, Army, Island, ResourceType, PassiveAbilities } from './types';
-import * as GameActions from './game-actions';
+import { handleAttackAction, handleMonsterCombatRoll, handleCloseMonsterCombat } from './actions/attack';
+import { handleBuyAbility, handleBuyCardAction } from './actions/card';
+import { getPossibleMoves, handleTileClick } from './actions/movement';
+import { handleDeployAction, handleUpgradeAction, handleEndTurn } from './actions/player';
+import { handleCollectAction, handleConfirmCollection, handleSelectResourceForPosition } from './actions/resource';
 
-function getValidMoves(army: Army, gameState: GameState): { x: number; y: number }[] {
-    const { x, y } = army.position;
-    const player = gameState.players[gameState.currentPlayerIndex];
-    const potentialMoves: { x: number; y: number }[] = [];
-    const moveRadius = 2;
-    const { map } = gameState;
-    const mapRows = map.length;
-    const mapCols = map[0].length;
-
-    for (let i = -moveRadius; i <= moveRadius; i++) {
-        for (let j = -moveRadius; j <= moveRadius; j++) {
-            if (Math.abs(i) + Math.abs(j) <= moveRadius && (i !== 0 || j !== 0)) {
-                const newX = x + i;
-                const newY = y + j;
-                if (newX >= 0 && newX < mapCols && newY >= 0 && newY < mapRows) {
-                    potentialMoves.push({ x: newX, y: newY });
-                }
-            }
-        }
-    }
-
-    return potentialMoves.filter(move => {
-        const tile = map[move.y][move.x];
-        return !(tile.type === 'base' && tile.owner !== player.id);
-    });
-}
 
 function selectRandom<T>(array: T[]): T | null {
     if (array.length === 0) return null;
@@ -64,7 +42,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             priority: 8, // High priority if affordable
             execute: (s) => {
                 try {
-                    return GameActions.handleBuyAbility(s, unownedAbilities[0] as keyof PassiveAbilities);
+                    return handleBuyAbility(s, unownedAbilities[0] as keyof PassiveAbilities);
                 } catch { return null; }
             }
         });
@@ -78,7 +56,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             priority: 7 - botPlayer.attackPower, // Lower priority as power increases
             execute: (s) => {
                 try {
-                    return GameActions.handleUpgradeAction(s);
+                    return handleUpgradeAction(s);
                 } catch { return null; }
             }
         });
@@ -86,13 +64,13 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
 
     // Deploy Army
     const deployCost = botPlayer.efficientActive ? Math.ceil(botPlayer.nextArmyCost / 2) : botPlayer.nextArmyCost;
-    if (canAfford(botPlayer, deployCost, 'food') && botPlayer.armyCount < 5 && !botPlayer.actionsThisTurn.includes('deploy')) {
+    if ((canAfford(botPlayer, deployCost, 'food') || botPlayer.reinforceActive) && botPlayer.armyCount < 5 && !botPlayer.actionsThisTurn.includes('deploy')) {
         possibleActions.push({
             name: 'deploy-army',
             priority: 6 - botPlayer.armyCount, // Lower priority as army grows
             execute: (s) => {
                 try {
-                    return GameActions.handleDeployAction(s);
+                    return handleDeployAction(s);
                 } catch { return null; }
             }
         });
@@ -105,7 +83,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             priority: botPlayer.resources.gems > 20 ? 4 : 1, // Only if gems are plentiful
             execute: (s) => {
                 try {
-                    return GameActions.handleBuyCardAction(s);
+                    return handleBuyCardAction(s);
                 } catch { return null; }
             }
         });
@@ -118,7 +96,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         console.log(`Bot: Choosing strategic action '${bestAction.name}' with priority ${bestAction.priority}`);
         const nextState = bestAction.execute(state);
         if (nextState) {
-            return GameActions.handleEndTurn(nextState);
+            return handleEndTurn(nextState);
         }
     }
 
@@ -135,11 +113,11 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         if (position) {
             console.log(`Bot: Army ${army.id} collecting resources.`);
             try {
-                let tempState = GameActions.handleCollectAction(simState, army);
+                let tempState = handleCollectAction(simState, army);
                 if (tempState.collectDialogState) {
-                    tempState = GameActions.handleConfirmCollection(tempState, false, army);
+                    tempState = handleConfirmCollection(tempState, false, army);
                 }
-                return GameActions.handleEndTurn(tempState);
+                return handleEndTurn(tempState);
             } catch (e) { console.warn("Bot: Collect failed.", e); }
         }
 
@@ -147,18 +125,18 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         if (currentTile.type === 'monster' && currentTile.monsters && currentTile.monsters.length > 0) {
              console.log(`Bot: Army ${army.id} attacking monster.`);
              try {
-                 const { newState: attackState } = GameActions.handleAttackAction(simState, army);
+                 const { newState: attackState } = handleAttackAction(simState, army);
                  const { monsterCombatState } = attackState;
                  if (monsterCombatState) {
-                    const combatResultState = GameActions.handleMonsterCombatRoll(attackState, {
+                    const combatResultState = handleMonsterCombatRoll(attackState, {
                         monster: monsterCombatState.monster,
                         useDecideCard: botPlayer.specialCards.includes('Decide Dice Roll'),
                         decidedValue: 6,
                         useOvercomeCard: botPlayer.specialCards.includes('Overcome'),
                         useWarChief: botPlayer.specialCards.includes('War Chief'),
                     }, army);
-                    const finalState = GameActions.handleCloseMonsterCombat(combatResultState, army);
-                    return GameActions.handleEndTurn(finalState);
+                    const finalState = handleCloseMonsterCombat(combatResultState, army);
+                    return handleEndTurn(finalState);
                  }
              } catch (e) { console.warn("Bot: Monster attack failed.", e); }
         }
@@ -170,14 +148,14 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             if (availableResource) {
                 console.log(`Bot: Army ${army.id} positioning on ${availableResource.type}.`);
                 try {
-                    const posState = GameActions.handleSelectResourceForPosition(simState, availableResource.type, army);
-                    return GameActions.handleEndTurn(posState);
+                    const posState = handleSelectResourceForPosition(simState, availableResource.type, army);
+                    return handleEndTurn(posState);
                 } catch (e) { console.warn("Bot: Position failed.", e); }
             }
         }
         
         // 4. Move to a promising new tile
-        const validMoves = getValidMoves(army, simState);
+        const validMoves = getPossibleMoves(simState, army);
         const unrevealedTiles = validMoves.filter(move => {
             const tile = simState.map[move.y][move.x];
             return !botPlayer.revealedTiles.includes(tile.id);
@@ -188,8 +166,8 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             if (target) {
                 console.log(`Bot: Army ${army.id} moving to explore unrevealed tile.`);
                 try {
-                    const moveState = GameActions.handleTileClick(simState, target.x, target.y, botPlayer.id, army, getValidMoves(army, simState)).newState;
-                    return GameActions.handleEndTurn(moveState);
+                    const { newState: moveState } = handleTileClick(simState, target.x, target.y, army, getPossibleMoves(simState, army));
+                    return handleEndTurn(moveState);
                 } catch (e) { console.warn("Bot: Explore move failed.", e); }
             }
         }
@@ -203,8 +181,8 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             if (target) {
                  console.log(`Bot: Army ${army.id} moving to resource tile.`);
                  try {
-                    const moveState = GameActions.handleTileClick(simState, target.x, target.y, botPlayer.id, army, getValidMoves(army, simState)).newState;
-                    return GameActions.handleEndTurn(moveState);
+                    const { newState: moveState } = handleTileClick(simState, target.x, target.y, army, getPossibleMoves(simState, army));
+                    return handleEndTurn(moveState);
                 } catch (e) { console.warn("Bot: Resource move failed.", e); }
             }
         }
@@ -214,18 +192,18 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     // --- Fallback: If no other action taken, just move a random army to a random valid spot ---
     const armyToMove = selectRandom(unactedArmies);
     if(armyToMove) {
-        const validMoves = getValidMoves(armyToMove, state);
+        const validMoves = getPossibleMoves(state, armyToMove);
         const target = selectRandom(validMoves);
         if (target) {
              console.log(`Bot: Army ${armyToMove.id} making a random fallback move.`);
              try {
-                const moveState = GameActions.handleTileClick(state, target.x, target.y, botPlayer.id, armyToMove, getValidMoves(armyToMove, state)).newState;
-                return GameActions.handleEndTurn(moveState);
+                const { newState: moveState } = handleTileClick(state, target.x, target.y, armyToMove, getPossibleMoves(state, armyToMove));
+                return handleEndTurn(moveState);
             } catch (e) { console.warn('Bot: Fallback move failed:', e); }
         }
     }
 
     // --- Final Fallback ---
     console.log(`Bot: No valid actions found. Ending turn.`);
-    return GameActions.handleEndTurn(state);
+    return handleEndTurn(state);
 }

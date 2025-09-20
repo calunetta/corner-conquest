@@ -69,7 +69,7 @@ export function GameDialogs({
       {isDialogVisible('combatState') && combatState && (
         <CombatDialog
           gameState={gameState}
-          onRoll={(useWarChief) => handleAction('combat-roll', useWarChief)}
+          onRoll={(useWarChief) => handleAction('combat-roll', { useWarChief })}
           onClose={() => isAttacker ? handleAction('close-combat') : handleAction('close-combat-viewer')}
           isAttacker={isAttacker}
         />
@@ -95,7 +95,7 @@ export function GameDialogs({
       {isDialogVisible('collectDialogState') && collectDialogState?.isOpen && (
         <CollectDialog
             state={collectDialogState}
-            onConfirm={(useProductive) => handleAction('confirm-collection', useProductive)}
+            onConfirm={(useProductive) => handleAction('confirm-collection', { useProductive })}
             onClose={() => handleAction('cancel-action')}
             isMyTurn={isMyTurn}
         />
@@ -104,7 +104,7 @@ export function GameDialogs({
         <ArmySelectionDialog
             state={armySelectionDialogState}
             player={localPlayer}
-            onSelectArmy={(armyId) => handleAction('select-army', armyId)}
+            onSelectArmy={(armyId) => handleAction('select-army', { armyId })}
             onClose={() => handleAction('cancel-action')}
             isMyTurn={isMyTurn}
         />
@@ -122,7 +122,7 @@ export function GameDialogs({
           player={playerForCardsDialog}
           onClose={onCloseCardsDialog}
           onUseCard={(cardName) => {
-            handleAction('use-card', cardName);
+            handleAction('use-card', { cardName });
             onCloseCardsDialog();
           }}
           canUseCards={isMyTurn && playerForCardsDialog.id === localPlayer.id}
@@ -132,7 +132,7 @@ export function GameDialogs({
         <AbilitiesDialog
           player={localPlayer}
           onClose={() => handleAction('close-abilities-shop')}
-          onBuyAbility={(abilityName) => handleAction('buy-ability', abilityName)}
+          onBuyAbility={(abilityName) => handleAction('buy-ability', { abilityName })}
           gameState={gameState}
           isMyTurn={isMyTurn}
         />
@@ -148,7 +148,7 @@ export function GameDialogs({
       {isDialogVisible('useCardDialogState') && useCardDialogState && (
         <UseCardDialog
           cardName={useCardDialogState.cardName}
-          onConfirm={() => handleAction('confirm-use-card', useCardDialogState.cardName)}
+          onConfirm={() => handleAction('confirm-use-card', { cardName: useCardDialogState.cardName })}
           onClose={() => handleAction('cancel-action')}
           isMyTurn={isMyTurn}
         />
@@ -164,14 +164,14 @@ export function GameDialogs({
       {isDialogVisible('sabotageDialogState') && sabotageDialogState?.isOpen && (
         <SabotageDialog
           players={gameState.players.filter(p => p.id !== gameState.currentPlayerIndex)}
-          onSabotage={(targetPlayerId) => handleAction('sabotage-player', targetPlayerId)}
+          onSabotage={(targetPlayerId) => handleAction('sabotage-player', { targetPlayerId })}
           onClose={() => handleAction('cancel-action')}
           isMyTurn={isMyTurn}
         />
       )}
       {isDialogVisible('wealthyDialogState') && wealthyDialogState?.isOpen && (
         <WealthyDialog
-          onSelectResource={(resource) => handleAction('gain-wealth', resource)}
+          onSelectResource={(resource) => handleAction('gain-wealth', { resource })}
           onClose={() => handleAction('cancel-action')}
           isMyTurn={isMyTurn}
         />
