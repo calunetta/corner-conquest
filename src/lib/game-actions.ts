@@ -107,8 +107,7 @@ export function handleCollectAction(state: GameState, selectedArmy: Army | null)
   const resourceSpot = tile.resources.find(r => r.type === position.resource);
   if (!resourceSpot) throw new Error("Resource not found on this island.");
   
-  const resourceYield = newState.settings.baseResourceAmount;
-  const resourceToCollect = { type: resourceSpot.type, amount: resourceSpot.amount * resourceYield };
+  const resourceToCollect = { type: resourceSpot.type, amount: resourceSpot.amount };
 
   const hasProductiveCard = player.specialCards.includes('Productive') && !player.actionsThisTurn.includes('use-card');
 
@@ -148,7 +147,7 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
         const tile = map[position.y][position.x];
         const resourceSpot = tile.resources.find(r => r.type === position.resource);
         if (!resourceSpot) throw new Error("No resource information for collection.");
-        resourceToCollect = { type: resourceSpot.type, amount: resourceSpot.amount * newState.settings.baseResourceAmount };
+        resourceToCollect = { type: resourceSpot.type, amount: resourceSpot.amount };
     }
     
     let amountToCollect = resourceToCollect.amount;
@@ -335,6 +334,9 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
 
     if (!selectedArmy) throw new Error("No army selected.");
     if (selectedArmy.hasActed) throw new Error("This army has already acted this turn.");
+
+    const army = attacker.armies.find(a => a.id === selectedArmy.id);
+    if(army) army.hasActed = true;
 
     const currentTile = map[selectedArmy.position.y][selectedArmy.position.x];
     const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
@@ -686,8 +688,6 @@ function handleMoveAction(state: GameState, x: number, y: number, army: Army): G
             discardPile.push(usedCard);
         }
         
-        player.armies.forEach((a: Army) => a.hasActed = true);
-
     } else {
         army.hasActed = true;
     }
@@ -1032,7 +1032,7 @@ export function handleCloseMonsterCombat(state: GameState, selectedArmy: Army | 
 
 export const handleUseCard = (state: GameState, cardName: string) => {
     let newState = { ...state };
-    const { players, currentPlayerIndex, discardPile } = newState;
+    const { players, currentPlayerIndex } = newState;
     const player = players[currentPlayerIndex];
 
     const canUseCard = !player.actionsThisTurn.includes('use-card');
@@ -1074,19 +1074,14 @@ export const handleUseCard = (state: GameState, cardName: string) => {
             player.masterBuilderActive = true;
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
             break;
+        default:
+            newState.useCardDialogState = { cardName };
+            return newState;
     }
     
-    // Most non-combat cards are single-use activations that are consumed immediately.
-    // Combat cards are consumed during combat logic. Dialog cards are consumed when the dialog action is confirmed.
-    if (['Extra Move', 'Teleport', 'Reinforce', 'Scout', 'Efficient', 'Master Builder'].includes(cardName)) {
-        const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-        discardPile.push(usedCard);
-        player.actionsThisTurn.push('use-card');
-    }
-
     newState.useCardDialogState = null;
 
-    if (shouldCheckEndTurn && !['Sabatoge', 'Wealthy', 'Steal Resource'].includes(cardName)) {
+    if (shouldCheckEndTurn) {
         return checkAndEndTurnIfNoActions(newState);
     }
     return newState;
@@ -1171,7 +1166,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
 
 export const handleTeleport = (state: GameState, x: number, y: number): GameState => {
     let newState = { ...state };
-    const { players, currentPlayerIndex, teleportState, map } = newState;
+    const { players, currentPlayerIndex, teleportState, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
     if (!teleportState || teleportState.armyId === null) return newState;
@@ -1203,6 +1198,16 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
             const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
             player.specialCards.push(drawnCard);
             newState.log.push(`${player.name} teleported to a special island and found a card: "${drawnCard}"!`);
+        }
+    }
+    
+    const canUseCard = !player.actionsThisTurn.includes('use-card');
+    if (canUseCard) {
+        const cardIndex = player.specialCards.indexOf('Teleport');
+        if (cardIndex > -1) {
+            const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+            discardPile.push(usedCard);
+            player.actionsThisTurn.push('use-card');
         }
     }
     
@@ -1378,7 +1383,10 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
              resultState = { ...gameState, abilitiesShopState: null };
             break;
         case 'use-card':
-            if (['Steal Resource', 'Sabatoge', 'Wealthy'].includes(payload)) {
+            resultState = handleUseCard(gameState, payload);
+            break;
+        case 'confirm-use-card':
+             if (['Steal Resource', 'Sabatoge', 'Wealthy'].includes(payload)) {
                 let dialogState: Partial<GameState> = {};
                 if (payload === 'Steal Resource') dialogState = { stealResourceDialogState: { targetPlayerId: null } };
                 if (payload === 'Sabatoge') dialogState = { sabotageDialogState: { isOpen: true } };
@@ -1387,9 +1395,6 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             } else {
                  resultState = handleUseCard(gameState, payload);
             }
-            break;
-        case 'confirm-use-card':
-            resultState = handleUseCard(gameState, payload);
             break;
         case 'select-resource-position':
             resultState = handleSelectResourceForPosition(gameState, payload, selectedArmy);
