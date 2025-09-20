@@ -1,4 +1,5 @@
 
+
 import type { GameState, GameAction, ActionHandlerResult, Army } from '@/lib/types';
 
 import { handleAttackAction, handleSelectDefender, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
@@ -28,7 +29,7 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
         case 'deselect-army':
             return { newState: gameState, ...handleDeselectArmy() };
         case 'cancel-action':
-            return { newState: handleCancelAction(gameState), selectedArmyId: null };
+            return { newState: handleCancelAction(gameState) };
 
         // Resource actions
         case 'position':
