@@ -205,9 +205,12 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     }
   };
 
-  const getTerrainClass = () => {
-    return 'bg-terrain bg-cover bg-center bg-no-repeat';
-  }
+  const borderImageStyle = {
+    position: 'relative' as 'relative',
+    width: '40px',
+    height: '20px',
+    bottom: '-15px'
+  };
 
   return (
     <TooltipProvider>
@@ -226,7 +229,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
       >
-        <div className={cn("absolute inset-0 z-10", getTerrainClass())}>
+        <div className={cn("absolute inset-0 z-10 bg-terrain bg-cover bg-center bg-no-repeat", isHiddenForPlayer && 'opacity-0')}>
             {!isHiddenForPlayer && occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
@@ -288,12 +291,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
           {borderImageSequence.map((src, index) => (
             <div
               key={index}
-              style={{
-                position: 'relative', 
-                width: '40px',
-                height: '20px', 
-                bottom: '-15px'
-              }}
+              style={borderImageStyle}
             >
               <Image
                 src={src}
@@ -310,3 +308,4 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   );
 }
 
+    
