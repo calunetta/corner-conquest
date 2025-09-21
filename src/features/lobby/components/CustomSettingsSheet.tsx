@@ -20,7 +20,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BASE_CARDS } from '@/lib/card-data';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import { AbilityName as AbilityNameEnum } from '@/lib/types';
 
 
 type CustomSettingsSheetProps = {
@@ -30,7 +29,7 @@ type CustomSettingsSheetProps = {
   initialSettings: GameSettings;
 };
 
-const ALL_ABILITIES: AbilityName[] = [AbilityNameEnum.Explorer, AbilityNameEnum.Collector];
+const ALL_ABILITIES: AbilityName[] = ['explorer', 'collector'];
 
 export function CustomSettingsSheet({
   open,

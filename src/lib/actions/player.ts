@@ -1,9 +1,9 @@
 
 
-import type { GameState, Player, Army, PassiveAbilities, CardName, AbilityName } from '@/lib/types';
+import type { GameState, Player, Army, PassiveAbilities, CardName } from '@/lib/types';
 import { db, doc, deleteDoc, runTransaction, arrayUnion } from '@/lib/firebase';
 import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
-import { GameAction } from '../types';
+import { GameAction, AbilityName } from '../types';
 
 export function canPlayerPerformAnyAction(state: GameState): boolean {
     const player = state.players[state.currentPlayerIndex];

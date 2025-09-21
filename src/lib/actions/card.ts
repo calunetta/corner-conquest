@@ -1,8 +1,8 @@
 
 
-import type { GameState, PassiveAbilities, ResourceType, CardName, AbilityName } from '@/lib/types';
+import type { GameState, PassiveAbilities, ResourceType } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
-import { GameAction } from '../types';
+import { GameAction, CardName, AbilityName } from '../types';
 
 export function handleBuyCardAction(state: GameState): GameState {
     let newState = { ...state };
