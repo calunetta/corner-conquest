@@ -1,5 +1,5 @@
 
-import type { GameState, Player, Army, CardName } from '@/lib/types';
+import type { GameState, Player, Army, CardName, ActionHandlerResult } from '@/lib/types';
 import { db, doc, deleteDoc, runTransaction, arrayUnion } from '@/lib/firebase';
 import { GameAction, AbilityName } from '../types';
 import { MAP_COLS } from '../game-logic';
@@ -253,7 +253,7 @@ export function handleEndTurn(state: GameState): GameState {
     return newState;
 }
 
-export function handleDeselectArmy() {
+export function handleDeselectArmy(): Partial<ActionHandlerResult> {
     return {
         selectedArmyId: null,
         selectedTile: null,

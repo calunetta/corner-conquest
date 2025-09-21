@@ -1,5 +1,5 @@
 
-import type { GameState, PassiveAbilities, ResourceType } from '@/lib/types';
+import type { GameState, PassiveAbilities, ResourceType, ActionHandlerResult } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
 import { GameAction, CardName, AbilityName } from '../types';
 
@@ -37,7 +37,7 @@ export function handleBuyCardAction(state: GameState): GameState {
     return checkAndEndTurnIfNoActions(newState);
 }
 
-export const handleUseCard = (state: GameState, cardName: CardName): GameState => {
+export const handleUseCard = (state: GameState, cardName: CardName): ActionHandlerResult => {
     let newState = { ...state };
     const { players, currentPlayerIndex } = newState;
     const player = players[currentPlayerIndex];
@@ -48,14 +48,15 @@ export const handleUseCard = (state: GameState, cardName: CardName): GameState =
     const cardIndex = player.specialCards.indexOf(cardName);
     if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
     
-    let shouldCheckEndTurn = true;
+    let shouldCheckEndTurn = false;
     let shouldOpenConfirmation = false;
+    let selectedArmyId = null;
 
     switch (cardName) {
         case CardName.ExtraMove:
             player.hasExtraMove = true;
             newState.log.push(`${player.name} activated 'Extra Move'. One army can move again this turn.`);
-            shouldCheckEndTurn = false;
+            selectedArmyId = null; // Deselect to force re-selection for extra move
             break;
         case CardName.Teleport:
             newState.teleportState = { armyId: null };
@@ -69,14 +70,17 @@ export const handleUseCard = (state: GameState, cardName: CardName): GameState =
         case CardName.Reinforce:
             player.reinforceActive = true;
             newState.log.push(`${player.name} activated 'Reinforce'. Their next deployment is free.`);
+            shouldCheckEndTurn = true;
             break;
         case CardName.Efficient:
             player.efficientActive = true;
             newState.log.push(`${player.name} activated 'Efficient'. Their next deployment costs 50% less.`);
+            shouldCheckEndTurn = true;
             break;
         case CardName.MasterBuilder:
             player.masterBuilderActive = true;
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
+            shouldCheckEndTurn = true;
             break;
         case CardName.Sabotage:
         case CardName.StealResource:
@@ -98,9 +102,9 @@ export const handleUseCard = (state: GameState, cardName: CardName): GameState =
     }
 
     if (shouldCheckEndTurn) {
-        return checkAndEndTurnIfNoActions(newState);
+        return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
     }
-    return newState;
+    return { newState, selectedArmyId };
 };
 
 export const handleConfirmUseCard = (state: GameState, cardName: CardName): GameState => {
@@ -140,7 +144,7 @@ export const handleConfirmUseCard = (state: GameState, cardName: CardName): Game
     return { ...newState, ...dialogState };
 }
 
-export const handleSabotagePlayer = (state: GameState, targetPlayerId: number): GameState => {
+export function handleSabotagePlayer(state: GameState, targetPlayerId: number): ActionHandlerResult {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     const targetPlayer = newState.players.find(p => p.id === targetPlayerId);
@@ -151,10 +155,10 @@ export const handleSabotagePlayer = (state: GameState, targetPlayerId: number): 
     }
 
     newState.sabotageDialogState = null;
-    return checkAndEndTurnIfNoActions(newState);
+    return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
 }
 
-export const handleGainWealth = (state: GameState, resource: ResourceType): GameState => {
+export function handleGainWealth(state: GameState, resource: ResourceType): ActionHandlerResult {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     
@@ -162,16 +166,18 @@ export const handleGainWealth = (state: GameState, resource: ResourceType): Game
     newState.log.push(`${player.name} used 'Wealthy' to gain 5 ${resource}.`);
     
     newState.wealthyDialogState = null;
-    return checkAndEndTurnIfNoActions(newState);
+    return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
 }
 
-export const handleStealResource = (state: GameState, payload: { targetPlayerId: number; resource: ResourceType }): GameState => {
+export const handleStealResource = (state: GameState, payload: { targetPlayerId: number; resource: ResourceType }): ActionHandlerResult => {
     let newState = { ...state };
     const { players, currentPlayerIndex } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const targetPlayer = players.find(p => p.id === payload.targetPlayerId);
 
-    if (!targetPlayer) return { ...newState, stealResourceDialogState: null };
+    if (!targetPlayer) {
+        return {newState: { ...newState, stealResourceDialogState: null }, selectedArmyId: null};
+    }
     
     const stolenAmount = Math.min(targetPlayer.resources[payload.resource], 2);
 
@@ -184,7 +190,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
     }
 
     newState.stealResourceDialogState = null;
-    return checkAndEndTurnIfNoActions(newState);
+    return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
 };
 
 export function handleOpenAbilitiesShop(state: GameState): GameState {
@@ -195,7 +201,7 @@ export function handleOpenAbilitiesShop(state: GameState): GameState {
     return { ...state, abilitiesShopState: { isOpen: true } };
 }
 
-export function handleBuyAbility(state: GameState, abilityName: AbilityName): GameState {
+export function handleBuyAbility(state: GameState, abilityName: AbilityName): ActionHandlerResult {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     const cost = newState.settings.abilityCost;
@@ -215,5 +221,5 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ga
     newState.log.push(`${player.name} has acquired the '${abilityName.charAt(0).toUpperCase() + abilityName.slice(1)}' passive ability!`);
 
     newState.abilitiesShopState = null;
-    return checkAndEndTurnIfNoActions(newState);
+    return {newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null};
 }

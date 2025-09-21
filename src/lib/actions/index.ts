@@ -25,9 +25,9 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
     switch(action) {
         // Player actions
         case GameAction.Deploy:
-            return { newState: handleDeployAction(gameState) };
+            return { newState: handleDeployAction(gameState), selectedArmyId: null };
         case GameAction.Upgrade:
-            return { newState: handleUpgradeAction(gameState) };
+            return { newState: handleUpgradeAction(gameState), selectedArmyId: null };
         case GameAction.EndTurn:
             return { newState: handleEndTurn(gameState), selectedArmyId: null };
         case GameAction.DeselectArmy:
@@ -37,13 +37,13 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
 
         // Resource actions
         case GameAction.Position:
-            return { newState: handlePositionAction(gameState, selectedArmy) };
+            return handlePositionAction(gameState, selectedArmy);
         case GameAction.Collect:
-            return { newState: handleCollectAction(gameState, selectedArmy) };
+            return handleCollectAction(gameState, selectedArmy);
         case GameAction.SelectResourcePosition:
-            return { newState: handleSelectResourceForPosition(gameState, payload, selectedArmy) };
+            return handleSelectResourceForPosition(gameState, payload, selectedArmy);
         case GameAction.ConfirmCollection:
-            return { newState: handleConfirmCollection(gameState, payload.useProductive, selectedArmy) };
+            return handleConfirmCollection(gameState, payload.useProductive, selectedArmy);
 
         // Movement & Tile actions
         case GameAction.TileClick:
@@ -61,29 +61,29 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
         case GameAction.CombatRoll:
             return { newState: handleCombatRoll(gameState, payload.useWarChief, selectedArmy) };
         case GameAction.CloseCombat:
-            return { newState: handleCloseCombat(gameState), selectedArmyId: null };
+            return handleCloseCombat(gameState);
         case GameAction.CloseCombatViewer:
             return { newState: { ...gameState, combatState: null } };
         case GameAction.MonsterCombatRoll:
             return { newState: handleMonsterCombatRoll(gameState, payload, selectedArmy) };
         case GameAction.CloseMonsterCombat:
-            return { newState: handleCloseMonsterCombat(gameState, selectedArmy), selectedArmyId: null };
+            return handleCloseMonsterCombat(gameState, selectedArmy);
         case GameAction.CloseMonsterCombatViewer:
             return { newState: { ...gameState, monsterCombatState: null } };
 
         // Card actions
         case GameAction.BuyCard:
-            return { newState: handleBuyCardAction(gameState) };
+            return { newState: handleBuyCardAction(gameState), selectedArmyId: null };
         case GameAction.UseCard:
-            return { newState: handleUseCard(gameState, payload.cardName) };
+            return handleUseCard(gameState, payload.cardName);
         case GameAction.ConfirmUseCard:
             return { newState: handleConfirmUseCard(gameState, payload.cardName) };
         case GameAction.SabotagePlayer:
-            return { newState: handleSabotagePlayer(gameState, payload.targetPlayerId) };
+            return handleSabotagePlayer(gameState, payload.targetPlayerId);
         case GameAction.GainWealth:
-            return { newState: handleGainWealth(gameState, payload.resource) };
+            return handleGainWealth(gameState, payload.resource);
         case GameAction.StealResource:
-            return { newState: handleStealResource(gameState, payload) };
+            return handleStealResource(gameState, payload);
         
         // Abilities Shop
         case GameAction.OpenAbilitiesShop:
@@ -91,7 +91,7 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
         case GameAction.CloseAbilitiesShop:
              return { newState: { ...gameState, abilitiesShopState: null } };
         case GameAction.BuyAbility:
-            return { newState: handleBuyAbility(gameState, payload.abilityName) };
+            return handleBuyAbility(gameState, payload.abilityName);
 
         default:
             return { newState: gameState };

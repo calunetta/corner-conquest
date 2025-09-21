@@ -129,12 +129,14 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             const {newState, ...uiState} = handleGameAction({
                 action,
                 gameState: currentGameState,
-                selectedArmyId,
+                selectedArmyId: selectedArmyId,
                 payload
             });
             
             if (uiState.selectedArmyId !== undefined) setSelectedArmyId(uiState.selectedArmyId);
             if (uiState.currentAction !== undefined) setCurrentAction(uiState.currentAction);
+            if (uiState.selectedTile !== undefined) setSelectedTile(uiState.selectedTile);
+            if (uiState.possibleMoves !== undefined) setPossibleMoves(uiState.possibleMoves);
 
             // Reset UI state for most actions, but preserve it for dialog flows
             if (action !== GameAction.SelectArmy && action !== GameAction.CancelAction) {
@@ -169,10 +171,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 payload: { x, y, possibleMoves }
             });
             
-            const { newState, selectedArmyId: newSelectedArmyId, currentAction: newCurrentAction } = result;
-
+            const { newState, selectedArmyId: newSelectedArmyId, currentAction: newCurrentAction, selectedTile: newSelectedTile, possibleMoves: newPossibleMoves } = result;
+            
             setSelectedArmyId(newSelectedArmyId === undefined ? selectedArmyId : newSelectedArmyId);
             setCurrentAction(newCurrentAction === undefined ? currentAction : newCurrentAction);
+            setSelectedTile(newSelectedTile === undefined ? selectedTile : newSelectedTile);
+            setPossibleMoves(newPossibleMoves === undefined ? possibleMoves : newPossibleMoves);
 
             if (activeInstructionToastId) {
                 dismiss(activeInstructionToastId);
@@ -489,5 +493,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 }
 
     
+
 
 

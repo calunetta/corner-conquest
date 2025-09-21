@@ -1,11 +1,11 @@
 
 
-import type { GameState, Army, IslandResource, CardName } from '@/lib/types';
+import type { GameState, Army, IslandResource, CardName, ActionHandlerResult } from '@/lib/types';
 import { ResourceType, GameAction, IslandType } from '../types';
 import { checkAndEndTurnIfNoActions } from './player';
 import { MAP_COLS } from '../game-logic';
 
-export function handlePositionAction(state: GameState, selectedArmy: Army | null): GameState {
+export function handlePositionAction(state: GameState, selectedArmy: Army | null): ActionHandlerResult {
   const { players, currentPlayerIndex, map } = state;
   const player = players[currentPlayerIndex];
   
@@ -30,10 +30,10 @@ export function handlePositionAction(state: GameState, selectedArmy: Army | null
     throw new Error("All resources on this island are already occupied.");
   }
   
-  return { ...state, positionDialogState: { x: selectedArmy.position.x, y: selectedArmy.position.y, resources: availableResources }};
+  return { newState: { ...state, positionDialogState: { x: selectedArmy.position.x, y: selectedArmy.position.y, resources: availableResources }}, selectedArmyId: selectedArmy.id };
 }
 
-export function handleCollectAction(state: GameState, selectedArmy: Army | null): GameState {
+export function handleCollectAction(state: GameState, selectedArmy: Army | null): ActionHandlerResult {
   let newState = { ...state };
   const { players, currentPlayerIndex } = newState;
   const player = players[currentPlayerIndex];
@@ -53,21 +53,17 @@ export function handleCollectAction(state: GameState, selectedArmy: Army | null)
 
   const hasProductiveCard = player.specialCards.includes(CardName.Productive) && !player.actionsThisTurn.includes(GameAction.UseCard);
 
-  if (hasProductiveCard) {
-      newState.collectDialogState = {
-        isOpen: true,
-        x: position.x,
-        y: position.y,
-        resource: resourceToCollect,
-        hasProductiveCard: true,
-      };
-      return newState;
-  } else {
-    return handleConfirmCollection(newState, false, selectedArmy);
-  }
+  newState.collectDialogState = {
+    isOpen: true,
+    x: position.x,
+    y: position.y,
+    resource: resourceToCollect,
+    hasProductiveCard: hasProductiveCard,
+  };
+  return { newState, selectedArmyId: selectedArmy.id };
 }
 
-export function handleConfirmCollection(state: GameState, useProductive: boolean, armyForCollection: Army | null): GameState {
+export function handleConfirmCollection(state: GameState, useProductive: boolean, armyForCollection: Army | null): ActionHandlerResult {
     let newState = { ...state };
     const { players, currentPlayerIndex, map, collectDialogState, discardPile } = newState;
     const player = players[currentPlayerIndex];
@@ -125,15 +121,17 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     newState.log.push(`${player.name}'s army must be repositioned to collect again.`);
 
     newState.collectDialogState = null;
-    return checkAndEndTurnIfNoActions(newState);
+    return {newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null};
 }
 
-export function handleSelectResourceForPosition(state: GameState, resource: ResourceType, selectedArmy: Army | null): GameState {
+export function handleSelectResourceForPosition(state: GameState, resource: ResourceType, selectedArmy: Army | null): ActionHandlerResult {
     let newState = { ...state };
     const { players, currentPlayerIndex, positionDialogState } = newState;
     const player = players[currentPlayerIndex];
 
-    if (!selectedArmy || !positionDialogState) return { ...state, positionDialogState: null };
+    if (!selectedArmy || !positionDialogState) {
+        return { newState: { ...state, positionDialogState: null }, selectedArmyId: selectedArmy?.id ?? null };
+    }
     
     const { x, y } = selectedArmy.position;
     player.positions.push({ x, y, resource, armyId: selectedArmy.id });
@@ -147,7 +145,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     newState.log.push(`${player.name} positioned an army on ${resource}.`);
     
     newState.positionDialogState = null;
-    return checkAndEndTurnIfNoActions(newState);
+    return {newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null};
 };
 
     

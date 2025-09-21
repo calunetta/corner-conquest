@@ -1,11 +1,11 @@
 
-import type { GameState, Army, Monster, DeathAnimation, CardName } from '@/lib/types';
+import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { checkAndEndTurnIfNoActions } from './player';
 import { GameAction, IslandType } from '../types';
 import { MAP_COLS } from '../game-logic';
 
-export function handleAttackAction(state: GameState, selectedArmy: Army | null): { newState: GameState; selectedArmyId: number | null } {
+export function handleAttackAction(state: GameState, selectedArmy: Army | null): ActionHandlerResult {
     let newState = { ...state };
     const { players, currentPlayerIndex, map } = newState;
     const attacker = players[currentPlayerIndex];
@@ -65,7 +65,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
         newState.log.push(`${attacker.name}'s army attacks, but finds no target!`);
         const army = attacker.armies.find(a => a.id === selectedArmy.id);
         if (army) army.hasActed = true;
-        return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: selectedArmy.id };
+        return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
     }
     return { newState, selectedArmyId: selectedArmy.id };
 }
@@ -136,11 +136,11 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean, attacki
     return newState;
 };
 
-export function handleCloseCombat(state: GameState): GameState {
+export function handleCloseCombat(state: GameState): ActionHandlerResult {
     let newState = { ...state };
     const { combatState, players, map, baseTiles } = newState;
     if (!combatState || combatState.phase !== 'results' || combatState.winnerId === null) {
-        return { ...newState, combatState: null };
+        return { newState: { ...newState, combatState: null }, selectedArmyId: null };
     }
     
     const { winnerId, attackerId, defenderId, attackingArmyId, defendingArmyId } = combatState;
@@ -150,7 +150,7 @@ export function handleCloseCombat(state: GameState): GameState {
     
     const attackingArmy = players.find(p=>p.id === attackerId)?.armies.find(a => a.id === attackingArmyId);
 
-    if (!attackingArmy) return { ...newState, combatState: null };
+    if (!attackingArmy) return { newState: { ...newState, combatState: null }, selectedArmyId: null };
     
     const combatTile = map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
 
@@ -206,7 +206,7 @@ export function handleCloseCombat(state: GameState): GameState {
 
     newState.log.push(`${winner.name} defeated ${loser.name} in battle!`);
     newState.combatState = null;
-    return checkAndEndTurnIfNoActions(newState);
+    return {newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null};
 }
 
 export function handleMonsterCombatRoll(state: GameState, payload: {monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean}, attackingArmy: Army | null): GameState {
@@ -297,16 +297,16 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
     return newState;
 };
 
-export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army | null): GameState {
+export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army | null): ActionHandlerResult {
     let newState = { ...state };
     const { monsterCombatState, baseTiles } = newState;
     if (!monsterCombatState || monsterCombatState.phase !== 'results') {
-        return { ...newState, monsterCombatState: null };
+        return { newState: { ...newState, monsterCombatState: null }, selectedArmyId: null };
     }
     
     const { winnerId, monster, attackerId } = newState.monsterCombatState;
     const attacker = newState.players[attackerId];
-    if (!attackingArmy) return { ...newState, monsterCombatState: null };
+    if (!attackingArmy) return { newState: { ...newState, monsterCombatState: null }, selectedArmyId: null };
 
     const currentTile = newState.map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
 
@@ -347,5 +347,5 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
     }
 
     newState.monsterCombatState = null;
-    return checkAndEndTurnIfNoActions(newState);
+    return {newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
 }

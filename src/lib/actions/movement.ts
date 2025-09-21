@@ -121,8 +121,6 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
                 discardPile.push(usedCard);
             }
         }
-        // Army has acted with extra move, can still do other things but this move is done.
-        // It should NOT automatically end the turn, so we don't call checkAndEndTurnIfNoActions here.
         return newState;
     } else {
         army.hasActed = true;
@@ -164,6 +162,9 @@ export function handleTileClick(
 
     if (currentSelectedArmy && isPossibleMove) {
         newState = handleMoveAction(newState, x, y, currentSelectedArmy);
+        if (!currentPlayer.hasExtraMove) {
+             newState = checkAndEndTurnIfNoActions(newState);
+        }
         return { newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
     }
     
@@ -182,7 +183,9 @@ export function handleTileClick(
                  newState.armySelectionDialogState = { isOpen: true, x, y, armies: armiesOnTile };
             }
         } else {
-            newState = handleTeleport(newState, x, y);
+            const { newState: teleportedState, selectedArmyId: deselectedArmy } = handleTeleport(newState, x, y);
+            newState = teleportedState;
+            return { newState, selectedArmyId: deselectedArmy, selectedTile: null, possibleMoves: [], currentAction: null };
         }
         return { newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
     }
@@ -239,15 +242,15 @@ export function handleSelectArmy(state: GameState, armyId: number): ActionHandle
     return { newState, selectedArmyId: armyId, possibleMoves: [], currentAction: null };
 }
 
-export const handleTeleport = (state: GameState, x: number, y: number): GameState => {
+export const handleTeleport = (state: GameState, x: number, y: number): ActionHandlerResult => {
     let newState = { ...state };
     const { players, currentPlayerIndex, teleportState, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
-    if (!teleportState || teleportState.armyId === null) return newState;
+    if (!teleportState || teleportState.armyId === null) return { newState };
     
     const armyToMove = player.armies.find(a => a.id === teleportState.armyId);
-    if (!armyToMove) return newState;
+    if (!armyToMove) return { newState };
     
     const oldTile = map[armyToMove.position.y * MAP_COLS + armyToMove.position.x];
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== armyToMove.id);
@@ -289,7 +292,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     newState.log.push(`${player.name} used 'Teleport' to move an army!`);
     
     newState.teleportState = null;
-    return checkAndEndTurnIfNoActions(newState);
+    return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
 }
 
 export function handleScout(state: GameState, x: number, y: number): GameState {
