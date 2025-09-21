@@ -21,6 +21,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescript
 import Image from 'next/image';
 import { ConfirmExitDialog } from '@/features/game/dialogs/ConfirmExitDialog';
 import { MAP_COLS } from '@/lib/game-logic';
+import { getPossibleMoves } from '@/lib/actions/movement';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
 
@@ -88,8 +89,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             const armyStillExists = myPlayer.armies.some(a => a.id === selectedArmyId);
             if (!armyStillExists) {
                 setSelectedArmyId(null);
-                setPossibleMoves([]);
-                setSelectedTile(null);
             }
         } else if (myPlayer.armies.length === 1 && selectedArmyId === null) {
              setSelectedArmyId(myPlayer.armies[0].id);
@@ -98,12 +97,20 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         }
     } else if (!isMyTurn) {
         setSelectedArmyId(null);
-        setSelectedTile(null);
-        setPossibleMoves([]);
-        setCurrentAction(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMyTurn, gameState?.turn, gameState?.players]);
+  
+  useEffect(() => {
+    if (selectedArmy && gameState) {
+        const moves = getPossibleMoves(gameState, selectedArmy);
+        setPossibleMoves(moves);
+        setSelectedTile(selectedArmy.position);
+    } else {
+        setPossibleMoves([]);
+        setSelectedTile(null);
+    }
+  }, [selectedArmyId, gameState, selectedArmy]);
   
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
     if (isPerformingAction) return;
@@ -126,19 +133,14 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 payload
             });
             
-            // This part now happens inside the state setter, using the returned UI state
             if (uiState.selectedArmyId !== undefined) setSelectedArmyId(uiState.selectedArmyId);
-            if (uiState.possibleMoves) setPossibleMoves(uiState.possibleMoves);
             if (uiState.currentAction !== undefined) setCurrentAction(uiState.currentAction);
-            if (uiState.selectedTile !== undefined) setSelectedTile(uiState.selectedTile);
 
             // Reset UI state for most actions, but preserve it for dialog flows
-            if (action !== GameAction.SelectArmy && action !== GameAction.SelectDefender && action !== GameAction.CancelAction) {
+            if (action !== GameAction.SelectArmy && action !== GameAction.CancelAction) {
                 const isDialogAction = Object.keys(newState).some(k => (k.endsWith('State') || k.endsWith('Dialog')) && newState[k as keyof GameState] !== null);
                 if (!isDialogAction) {
                     setCurrentAction(null);
-                    setPossibleMoves([]);
-                    setSelectedTile(null);
                 }
             }
 
@@ -167,11 +169,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 payload: { x, y, possibleMoves }
             });
             
-            const { newState, selectedArmyId: newSelectedArmyId, possibleMoves: newPossibleMoves, currentAction: newCurrentAction, selectedTile: newSelectedTile } = result;
+            const { newState, selectedArmyId: newSelectedArmyId, currentAction: newCurrentAction } = result;
 
             setSelectedArmyId(newSelectedArmyId === undefined ? selectedArmyId : newSelectedArmyId);
-            setSelectedTile(newSelectedTile === undefined ? selectedTile : newSelectedTile);
-            setPossibleMoves(newPossibleMoves === undefined ? possibleMoves : newPossibleMoves);
             setCurrentAction(newCurrentAction === undefined ? currentAction : newCurrentAction);
 
             if (activeInstructionToastId) {
@@ -489,4 +489,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 }
 
     
+
 
