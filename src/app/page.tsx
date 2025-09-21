@@ -9,13 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 function Login() {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] =useState(false);
   const { setUsername, playerId } = usePlayer();
-  const { toast } = useToast();
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
 
   const handleLogin = async () => {
     if (!name) return;
@@ -24,44 +24,57 @@ function Login() {
     const success = await setUsername(name);
     
     if (!success) {
-      toast({
-        title: 'Login Failed',
-        description: 'This username might be taken, or there was a network issue. Please try again.',
-        variant: 'destructive',
-      });
+      setShowErrorDialog(true);
     }
     // On success, the parent component will automatically render the lobby.
     setIsLoading(false);
   };
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-background">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Welcome to Corner Conquest</CardTitle>
-          <CardDescription>Enter a username to begin.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              type="text"
-              id="username"
-              placeholder="Your Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-            />
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button className="w-full" onClick={handleLogin} disabled={isLoading || !name || !playerId}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Enter Lobby
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
+    <>
+      <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle>Welcome to Corner Conquest</CardTitle>
+            <CardDescription>Enter a username to begin.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                type="text"
+                id="username"
+                placeholder="Your Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button className="w-full" onClick={handleLogin} disabled={isLoading || !name || !playerId}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Enter Lobby
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+      <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Username Taken</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This username is already in use. Please choose a different one.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogAction onClick={() => setShowErrorDialog(false)}>
+                    OK
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
