@@ -34,10 +34,10 @@ const playerColorMap: Record<PlayerColor, { bg: string, border: string }> = {
 };
 
 const playerTileIndicatorClasses: Record<string, string> = {
-    [PlayerColor.Blue]: 'shadow-blue-500/50',
-    [PlayerColor.Red]: 'shadow-red-500/50',
-    [PlayerColor.Purple]: 'shadow-purple-500/50',
-    [PlayerColor.Yellow]: 'shadow-yellow-400/50',
+    'blue': 'shadow-blue-500/50',
+    'red': 'shadow-red-500/50',
+    'purple': 'shadow-purple-500/50',
+    'yellow': 'shadow-yellow-400/50',
 }
 
 const AnimatedMonster = ({ monster }: { monster: Monster }) => {
