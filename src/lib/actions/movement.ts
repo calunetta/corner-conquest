@@ -1,4 +1,5 @@
 
+
 import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions } from './player';
@@ -120,6 +121,9 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
                 discardPile.push(usedCard);
             }
         }
+        // Army has acted with extra move, can still do other things but this move is done.
+        // It should NOT automatically end the turn, so we don't call checkAndEndTurnIfNoActions here.
+        return newState;
     } else {
         army.hasActed = true;
     }
@@ -312,3 +316,4 @@ export function handleScout(state: GameState, x: number, y: number): GameState {
     }
     return newState;
 }
+
