@@ -215,7 +215,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         onClick={() => onClick(island.x, island.y)}
         className={cn(
           'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200 border-2',
-          getTerrainClass(),
           isHiddenForPlayer ? 'border-dashed border-muted-foreground/30 bg-background/50' : 'border-transparent',
           isSelected ? 'ring-2 ring-primary' : '',
           isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
@@ -227,7 +226,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
       >
-        <div className="absolute inset-0 z-10">
+        <div className={cn("absolute inset-0 z-10", getTerrainClass())}>
             {!isHiddenForPlayer && occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
@@ -310,3 +309,4 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     </TooltipProvider>
   );
 }
+
