@@ -115,7 +115,7 @@ export function createPlayer(
         color,
         isBot,
         armies: [{ id: 0, position: basePos, hasActed: false }],
-        resources: { [ResourceType.Gems]: 0, [ResourceType.Iron]: 0, [ResourceType.Food]: 0 },
+        resources: { [ResourceType.Gems]: 0, [ResourceType.Iron]: 0, [ResourceType.Wheat]: 0 },
         armyCount: 1,
         attackPower: 0,
         nextArmyCost: settings.initialDeployCost,
@@ -180,7 +180,7 @@ export function initializeGame(
       resources: [
         { type: ResourceType.Gems, amount: settings.baseResourceAmount }, 
         { type: ResourceType.Iron, amount: settings.baseResourceAmount }, 
-        { type: ResourceType.Food, amount: settings.baseResourceAmount }
+        { type: ResourceType.Wheat, amount: settings.baseResourceAmount }
       ], 
   };
   baseTiles.push({ owner: creatorSeatIndex, x: creatorPos.x, y: creatorPos.y });
@@ -206,7 +206,7 @@ export function initializeGame(
             resources: [
                 { type: ResourceType.Gems, amount: settings.baseResourceAmount }, 
                 { type: ResourceType.Iron, amount: settings.baseResourceAmount }, 
-                { type: ResourceType.Food, amount: settings.baseResourceAmount }
+                { type: ResourceType.Wheat, amount: settings.baseResourceAmount }
             ], 
         };
         baseTiles.push({ owner: botSeatIndex, x: botPos.x, y: botPos.y });
@@ -250,7 +250,7 @@ export function initializeGame(
       map[y][x].type = islandType;
 
       if (islandType === IslandType.Resource) {
-        const resourceTypes: ResourceType[] = [ResourceType.Gems, ResourceType.Iron, ResourceType.Food];
+        const resourceTypes: ResourceType[] = [ResourceType.Gems, ResourceType.Iron, ResourceType.Wheat];
         const availableResources = [...resourceTypes];
         
         const numResourceTypes = (distance <= 3 && Math.random() < 0.4) ? 2 : 1;
@@ -284,7 +284,7 @@ export function initializeGame(
     turn: 0,
     log: [`Game '${gameName}' created by ${creator.name}! Waiting for players...`],
     winner: null,
-    specialCardsDeck: [...finalCardDeck],
+    specialCardsDeck: [...finalCardDeck, ...finalCardDeck],
     discardPile: [],
     combatState: null,
     monsterCombatState: null,

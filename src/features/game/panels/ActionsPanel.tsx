@@ -50,7 +50,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const upgradeCost = currentPlayer.masterBuilderActive ? Math.ceil(settings.upgradeCost / 2) : settings.upgradeCost;
   const deployCost = currentPlayer.efficientActive ? Math.ceil(currentPlayer.nextArmyCost / 2) : currentPlayer.nextArmyCost;
 
-  const canDeploy = (currentPlayer.resources.food >= deployCost || currentPlayer.reinforceActive) && currentPlayer.armyCount < 5 && !currentPlayer.actionsThisTurn.includes(GameAction.Deploy);
+  const canDeploy = (currentPlayer.resources.wheat >= deployCost || currentPlayer.reinforceActive) && currentPlayer.armyCount < 5 && !currentPlayer.actionsThisTurn.includes(GameAction.Deploy);
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !currentPlayer.actionsThisTurn.includes(GameAction.BuyCard);
   const canUpgrade = currentPlayer.resources.iron >= upgradeCost && !currentPlayer.actionsThisTurn.includes(GameAction.Upgrade) && currentPlayer.attackPower < 4;
   
@@ -64,7 +64,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   
   const deployLabel = currentPlayer.reinforceActive
     ? 'Deploy'
-    : `Deploy (${currentPlayer.resources.food}/${deployCost} Food)`;
+    : `Deploy (${currentPlayer.resources.wheat}/${deployCost} Wheat)`;
 
   const buyCardLabel = `Buy Card`;
 
@@ -90,7 +90,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
       label: deployLabel, 
       icon: <Sword />, 
       disabled: !canDeploy, 
-      tooltip: "Spend food to deploy a new army at your base. The cost increases with each new army.",
+      tooltip: "Spend wheat to deploy a new army at your base. The cost increases with each new army.",
       onClick: () => onAction(GameAction.Deploy, null)
     },
     { 
@@ -132,7 +132,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             if (currentPlayer.actionsThisTurn.includes(GameAction.BuyCard)) return "You've already bought a card this turn.";
             return "This action is not available.";
         case GameAction.Deploy:
-            if (!currentPlayer.reinforceActive && currentPlayer.resources.food < deployCost) return "Not enough food.";
+            if (!currentPlayer.reinforceActive && currentPlayer.resources.wheat < deployCost) return "Not enough wheat.";
             if (currentPlayer.armyCount >= 5) return "Maximum army size reached.";
             if (currentPlayer.actionsThisTurn.includes(GameAction.Deploy)) return "You've already deployed this turn.";
             return "This action is not available.";

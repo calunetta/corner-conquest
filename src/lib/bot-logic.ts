@@ -14,7 +14,7 @@ function selectRandom<T>(array: T[]): T | null {
     return array[Math.floor(Math.random() * array.length)];
 }
 
-function canAfford(player: GameState['players'][0], cost: number, resource: ResourceType = 'food' as ResourceType): boolean {
+function canAfford(player: GameState['players'][0], cost: number, resource: ResourceType = 'wheat' as ResourceType): boolean {
     return player.resources[resource] >= cost;
 }
 
@@ -65,7 +65,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
 
     // Deploy Army
     const deployCost = botPlayer.efficientActive ? Math.ceil(botPlayer.nextArmyCost / 2) : botPlayer.nextArmyCost;
-    if ((canAfford(botPlayer, deployCost, 'food' as ResourceType) || botPlayer.reinforceActive) && botPlayer.armyCount < 5 && !botPlayer.actionsThisTurn.includes(GameAction.Deploy)) {
+    if ((canAfford(botPlayer, deployCost, 'wheat' as ResourceType) || botPlayer.reinforceActive) && botPlayer.armyCount < 5 && !botPlayer.actionsThisTurn.includes(GameAction.Deploy)) {
         possibleActions.push({
             name: 'deploy-army',
             priority: 6 - botPlayer.armyCount, // Lower priority as army grows

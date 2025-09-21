@@ -59,7 +59,7 @@ export enum AbilityName {
 export enum ResourceType {
     Gems = 'gems',
     Iron = 'iron',
-    Food = 'food',
+    Wheat = 'wheat',
 }
 
 export enum IslandType {

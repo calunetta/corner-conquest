@@ -18,13 +18,12 @@ import {
 } from 'firebase/firestore';
 
 const firebaseConfig = {
-  projectId: 'studio-7086354571-8fddd',
-  appId: '1:371450476800:web:8699cefa33e9e5bb431be5',
-  storageBucket: 'studio-7086354571-8fddd.firebasestorage.app',
-  apiKey: 'AIzaSyAgsF--at0khZHo9zEdC6tHTBc6-mOh2bg',
-  authDomain: 'studio-7086354571-8fddd.firebaseapp.com',
-  measurementId: '',
-  messagingSenderId: '371450476800',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 };
 
 // Initialize Firebase

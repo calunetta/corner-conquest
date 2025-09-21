@@ -28,7 +28,7 @@ export function canPlayerPerformAnyAction(state: GameState): boolean {
     }
 
     const deployCost = player.efficientActive ? Math.ceil(player.nextArmyCost / 2) : player.nextArmyCost;
-    if ((player.resources.food >= deployCost || player.reinforceActive) && player.armyCount < 5 && !player.actionsThisTurn.includes(GameAction.Deploy)) {
+    if ((player.resources.wheat >= deployCost || player.reinforceActive) && player.armyCount < 5 && !player.actionsThisTurn.includes(GameAction.Deploy)) {
         return true;
     }
 
@@ -72,10 +72,10 @@ export function handleDeployAction(state: GameState): GameState {
         isReinforceUsed = true;
     }
 
-    if (player.resources.food < cost) throw new Error(`Not enough food. Cost: ${cost}`);
+    if (player.resources.wheat < cost) throw new Error(`Not enough wheat. Cost: ${cost}`);
     if (player.armyCount >= 5) throw new Error("You have reached the maximum army size.");
 
-    player.resources.food -= cost;
+    player.resources.wheat -= cost;
     player.armyCount += 1;
     const newArmyId = player.armies.length > 0 ? Math.max(...player.armies.map(a => a.id)) + 1 : 0;
     const newArmy: Army = { id: newArmyId, position: {x: 0, y: 0}, hasActed: true }; 
@@ -228,7 +228,23 @@ export function handleEndTurn(state: GameState): GameState {
     
     newState.log.push(`It's now ${nextPlayer.name}'s turn.`);
     
-    return { ...newState, teleportState: null };
+    // Reset all dialogs and temporary states
+    newState.teleportState = null;
+    newState.scoutingState = null;
+    newState.combatState = null;
+    newState.monsterCombatState = null;
+    newState.positionDialogState = null;
+    newState.collectDialogState = null;
+    newState.stealResourceDialogState = null;
+    newState.useCardDialogState = null;
+    newState.abilitiesShopState = null;
+    newState.showHostLeaveDialog = false;
+    newState.sabotageDialogState = null;
+    newState.wealthyDialogState = null;
+    newState.armySelectionDialogState = null;
+    newState.attackSelectionDialogState = null;
+
+    return newState;
 }
 
 export function handleDeselectArmy() {

@@ -191,19 +191,20 @@ export function handleCloseCombat(state: GameState): GameState {
         winner.victoryPoints += 5;
         newState.log.push(`${winner.name} receives 5 VP for defeating ${loser.name}!`);
         
+        const loserArmy = loser.armies.find(a => a.id === attackingArmyId);
         const baseTile = baseTiles.find(b => b.owner === loserId);
-         if (attackingArmy && baseTile) {
+         if (loserArmy && baseTile) {
             const deathAnim: DeathAnimation = {
-                id: `army-${loser.id}-${attackingArmy.id}`,
-                x: attackingArmy.position.x,
-                y: attackingArmy.position.y,
+                id: `army-${loser.id}-${loserArmy.id}`,
+                x: loserArmy.position.x,
+                y: loserArmy.position.y,
                 sprite: PLAYER_DATA[loser.color].sprite.death
             };
             newState.deathAnimations.push(deathAnim);
 
-            combatTile.occupants = combatTile.occupants.filter(o => !(o.armyId === attackingArmy.id && o.playerId === loserId));
-            attackingArmy.position = {x: baseTile.x, y: baseTile.y};
-            map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: attackingArmy.id});
+            combatTile.occupants = combatTile.occupants.filter(o => !(o.armyId === loserArmy.id && o.playerId === loserId));
+            loserArmy.position = {x: baseTile.x, y: baseTile.y};
+            map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: loserArmy.id});
          }
     }
 

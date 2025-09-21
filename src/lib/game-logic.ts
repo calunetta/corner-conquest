@@ -77,7 +77,7 @@ export function addPlayerToGame(
     baseTile.resources = [
         { type: 'gems', amount: newGameState.settings.baseResourceAmount }, 
         { type: 'iron', amount: newGameState.settings.baseResourceAmount }, 
-        { type: 'food', amount: newGameState.settings.baseResourceAmount }
+        { type: 'wheat', amount: newGameState.settings.baseResourceAmount }
     ];
     
     // Add the new base to the revealed tiles for all players if not in fog of war mode

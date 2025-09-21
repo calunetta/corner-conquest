@@ -97,12 +97,14 @@ export function Lobby({ onJoinGame }: LobbyProps) {
 
         await runTransaction(db, async (transaction) => {
             const gameDoc = await transaction.get(gameDocRef);
+            const mapDoc = await transaction.get(mapDocRef);
             
-            if (!gameDoc.exists()) {
-                throw new Error("Game not found.");
+            if (!gameDoc.exists() || !mapDoc.exists()) {
+                throw new Error("Game or its map data not found.");
             }
 
             const firestoreState = gameDoc.data() as FirestoreGameState;
+            const mapData = mapDoc.data() as { map: Island[] };
             
             if (firestoreState.status !== GameStatus.Waiting) {
                  throw new Error("This game has already started or is no longer available.");
@@ -114,14 +116,8 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 // Player is already in, just let them proceed
                 return;
             }
-
-            const mapDoc = await transaction.get(mapDocRef);
-            if (!mapDoc.exists()) {
-                throw new Error("Game data is missing.");
-            }
-            const mapData = mapDoc.data().map as Island[];
             
-            const { newGameState, updatedMap, newBaseTile } = addPlayerToGame(firestoreState, mapData, { playerId, name: username });
+            const { newGameState, updatedMap, newBaseTile } = addPlayerToGame(firestoreState, mapData.map, { playerId, name: username });
 
             if (!newGameState || !updatedMap || !newBaseTile) {
                  throw new Error("Could not add player to game. The room might be full or color unavailable.");

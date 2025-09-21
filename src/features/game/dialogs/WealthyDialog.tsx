@@ -20,7 +20,7 @@ type WealthyDialogProps = {
   isMyTurn: boolean;
 };
 
-const RESOURCES: ResourceType[] = [ResourceType.Gems, ResourceType.Iron, ResourceType.Food];
+const RESOURCES: ResourceType[] = [ResourceType.Gems, ResourceType.Iron, ResourceType.Wheat];
 
 export function WealthyDialog({ onSelectResource, onClose, isMyTurn }: WealthyDialogProps) {
   return (

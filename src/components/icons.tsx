@@ -1,6 +1,6 @@
 
-import { Gem, Hammer, Wheat, Skull, Angry, Bot, Crown, Icon as LucideIcon } from 'lucide-react';
-import type { ResourceType } from '@/lib/types';
+import { Gem, Hammer, Wheat, Skull, Angry, Bot, Crown, type LucideIcon } from 'lucide-react';
+import { type Monster, ResourceType } from '@/lib/types';
 
 type ResourceIconProps = {
   type: ResourceType;
@@ -8,9 +8,9 @@ type ResourceIconProps = {
 };
 
 const resourceIconMap: Record<ResourceType, LucideIcon> = {
-  ['gems' as ResourceType]: Gem,
-  ['iron' as ResourceType]: Hammer,
-  ['food' as ResourceType]: Wheat,
+  [ResourceType.Gems]: Gem,
+  [ResourceType.Iron]: Hammer,
+  [ResourceType.Wheat]: Wheat,
 };
 
 export function ResourceIcon({ type, className }: ResourceIconProps) {

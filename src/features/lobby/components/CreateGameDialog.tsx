@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { GameSettings, PlayerColor } from '@/lib/types';
+import { GameSettings, PlayerColor, ResourceType } from '@/lib/types';
 import { Loader2, HelpCircle, Settings } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
