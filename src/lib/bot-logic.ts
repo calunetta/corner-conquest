@@ -1,7 +1,7 @@
 
 
-import type { GameState, Army, PassiveAbilities, CardName, ResourceType } from './types';
-import { GameAction, AbilityName } from './types';
+import type { GameState, Army, ResourceType } from './types';
+import { GameAction, AbilityName, CardName } from './types';
 import { handleAttackAction, handleMonsterCombatRoll, handleCloseMonsterCombat } from './actions/attack';
 import { handleBuyAbility, handleBuyCardAction } from './actions/card';
 import { getPossibleMoves, handleTileClick } from './actions/movement';
