@@ -99,9 +99,9 @@ export function handleSelectDefender(state: GameState, defenderArmyId: number, a
     return newState;
 }
 
-export function handleCombatRoll(state: GameState, useWarChief: boolean, selectedArmy: Army | null): GameState {
+export function handleCombatRoll(state: GameState, useWarChief: boolean, attackingArmy: Army | null): GameState {
     if (!state.combatState) return state;
-    if (!selectedArmy) return state;
+    if (!attackingArmy) return state;
 
     const newState = { ...state };
     const { combatState, players, discardPile } = newState;
@@ -134,8 +134,8 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean, selecte
     combatState.winnerId = attackerScore > defenderScore ? combatState.attackerId : combatState.defenderId;
     combatState.phase = 'results';
 
-    const army = attacker.armies.find(a => a.id === selectedArmy.id);
-    if(army) army.hasActed = true;
+    const armyInState = attacker.armies.find(a => a.id === attackingArmy.id);
+    if(armyInState) armyInState.hasActed = true;
 
     return newState;
 };
@@ -213,12 +213,12 @@ export function handleCloseCombat(state: GameState): GameState {
     return checkAndEndTurnIfNoActions(newState);
 }
 
-export function handleMonsterCombatRoll(state: GameState, payload: {monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean}, selectedArmy: Army | null): GameState {
+export function handleMonsterCombatRoll(state: GameState, payload: {monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean}, attackingArmy: Army | null): GameState {
     const newState = { ...state };
     const { players, currentPlayerIndex, discardPile } = newState;
     const attacker = players[currentPlayerIndex];
 
-    if (!selectedArmy) return newState;
+    if (!attackingArmy) return newState;
     const { monster, useDecideCard, decidedValue, useOvercomeCard, useWarChief } = payload;
 
     let attackerRolls: number[] = [];
@@ -284,12 +284,12 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
         winnerId = attackerScore >= monsterScore ? attacker.id : null;
     }
     
-    const army = attacker.armies.find(a => a.id === selectedArmy.id);
+    const army = attacker.armies.find(a => a.id === attackingArmy.id);
     if(army) army.hasActed = true;
 
     newState.monsterCombatState = {
       attackerId: attacker.id,
-      attackerPosition: selectedArmy.position,
+      attackerPosition: attackingArmy.position,
       monster,
       attackerRolls,
       monsterRolls,
@@ -301,7 +301,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
     return newState;
 };
 
-export function handleCloseMonsterCombat(state: GameState, selectedArmy: Army | null): GameState {
+export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army | null): GameState {
     let newState = { ...state };
     const { monsterCombatState, baseTiles } = newState;
     if (!monsterCombatState || monsterCombatState.phase !== 'results') {
@@ -310,9 +310,9 @@ export function handleCloseMonsterCombat(state: GameState, selectedArmy: Army | 
     
     const { winnerId, monster, attackerId } = newState.monsterCombatState;
     const attacker = newState.players[attackerId];
-    if (!selectedArmy) return { ...newState, monsterCombatState: null };
+    if (!attackingArmy) return { ...newState, monsterCombatState: null };
 
-    const currentTile = newState.map[selectedArmy.position.y][selectedArmy.position.x];
+    const currentTile = newState.map[attackingArmy.position.y][attackingArmy.position.x];
 
     if (winnerId === attacker.id) {
         const monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
@@ -336,16 +336,16 @@ export function handleCloseMonsterCombat(state: GameState, selectedArmy: Army | 
         const baseTile = baseTiles.find(t => t.owner === attacker.id);
         if (baseTile) {
             const deathAnim: DeathAnimation = {
-                id: `army-${attacker.id}-${selectedArmy.id}`,
-                x: selectedArmy.position.x,
-                y: selectedArmy.position.y,
+                id: `army-${attacker.id}-${attackingArmy.id}`,
+                x: attackingArmy.position.x,
+                y: attackingArmy.position.y,
                 sprite: PLAYER_DATA[attacker.color].sprite.death
             };
             newState.deathAnimations.push(deathAnim);
             
-            newState.map[selectedArmy.position.y][selectedArmy.position.x].occupants = newState.map[selectedArmy.position.y][selectedArmy.position.x].occupants.filter(o => o.armyId !== selectedArmy.id);
-            selectedArmy.position = {x: baseTile.x, y: baseTile.y};
-            newState.map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: selectedArmy.id});
+            newState.map[attackingArmy.position.y][attackingArmy.position.x].occupants = newState.map[attackingArmy.position.y][attackingArmy.position.x].occupants.filter(o => o.armyId !== attackingArmy.id);
+            attackingArmy.position = {x: baseTile.x, y: baseTile.y};
+            newState.map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
         }
         newState.log.push(`${attacker.name} was defeated by the monster!`);
     }
@@ -353,3 +353,5 @@ export function handleCloseMonsterCombat(state: GameState, selectedArmy: Army | 
     newState.monsterCombatState = null;
     return checkAndEndTurnIfNoActions(newState);
 }
+
+    

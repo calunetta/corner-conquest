@@ -66,16 +66,16 @@ export function handleCollectAction(state: GameState, selectedArmy: Army | null)
   }
 }
 
-export function handleConfirmCollection(state: GameState, useProductive: boolean, selectedArmy: Army | null): GameState {
+export function handleConfirmCollection(state: GameState, useProductive: boolean, armyForCollection: Army | null): GameState {
     let newState = { ...state };
     const { players, currentPlayerIndex, map, collectDialogState, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
-    if (!selectedArmy) {
+    if (!armyForCollection) {
       throw new Error("No army provided for collection confirmation.");
     }
     
-    const position = player.positions.find(p => p.armyId === selectedArmy.id);
+    const position = player.positions.find(p => p.armyId === armyForCollection.id);
     if (!position) {
       throw new Error("Position not found to collect from.");
     }
@@ -108,16 +108,16 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     }
 
     player.resources[resourceToCollect.type] += amountToCollect;
-    const army = player.armies.find(a => a.id === selectedArmy.id);
+    const army = player.armies.find(a => a.id === armyForCollection.id);
     if (army) army.hasActed = true;
     newState.log.push(`${player.name} collected ${amountToCollect} ${resourceToCollect.type}.`);
 
-    const positionIndex = player.positions.findIndex(p => p.armyId === selectedArmy.id);
+    const positionIndex = player.positions.findIndex(p => p.armyId === armyForCollection.id);
     if (positionIndex > -1) {
       player.positions.splice(positionIndex, 1);
     }
     
-    const tile = map[selectedArmy.position.y][selectedArmy.position.x];
+    const tile = map[armyForCollection.position.y][armyForCollection.position.x];
     if (tile.positionedBy) {
         tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === resourceToCollect.type));
     }
@@ -148,3 +148,5 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     newState.positionDialogState = null;
     return checkAndEndTurnIfNoActions(newState);
 };
+
+    

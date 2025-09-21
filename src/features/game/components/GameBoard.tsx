@@ -118,12 +118,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         await setGameState((currentGameState) => {
             if (!currentGameState || !localPlayer) return currentGameState;
             
-            const armyForAction = currentGameState.players[currentGameState.currentPlayerIndex]?.armies.find(a => a.id === selectedArmyId) || null;
-            
             const {newState, ...uiState} = handleGameAction({
                 action,
                 gameState: currentGameState,
-                selectedArmy: armyForAction,
+                selectedArmyId,
                 payload
             });
             
@@ -131,6 +129,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             if (uiState.selectedArmyId !== undefined) setSelectedArmyId(uiState.selectedArmyId);
             if (uiState.possibleMoves) setPossibleMoves(uiState.possibleMoves);
             if (uiState.currentAction !== undefined) setCurrentAction(uiState.currentAction);
+            if (uiState.selectedTile !== undefined) setSelectedTile(uiState.selectedTile);
 
             // Reset UI state for most actions, but preserve it for dialog flows
             if (action !== GameAction.SelectArmy && action !== GameAction.SelectDefender && action !== GameAction.CancelAction) {
@@ -159,13 +158,11 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setIsPerformingAction(true);
         await setGameState(currentGameState => {
             if (!currentGameState) return null;
-            
-            const armyForAction = currentGameState.players[currentGameState.currentPlayerIndex]?.armies.find(a => a.id === selectedArmyId) || null;
 
             const result = handleGameAction({
                 action: GameAction.TileClick,
                 gameState: currentGameState,
-                selectedArmy: armyForAction,
+                selectedArmyId: selectedArmyId,
                 payload: { x, y, possibleMoves }
             });
             
@@ -489,3 +486,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    

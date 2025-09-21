@@ -12,13 +12,17 @@ import { handlePositionAction, handleCollectAction, handleConfirmCollection, han
 interface HandleActionParams {
     action: GameAction;
     gameState: GameState;
-    selectedArmy: Army | null;
+    selectedArmyId: number | null;
     payload?: any;
 }
 
 export { handlePlayerExit, handleConfirmHostLeave };
 
-export function handleGameAction({ action, gameState, selectedArmy, payload }: HandleActionParams): ActionHandlerResult {
+export function handleGameAction({ action, gameState, selectedArmyId, payload }: HandleActionParams): ActionHandlerResult {
+    const selectedArmy = selectedArmyId !== null 
+        ? gameState.players[gameState.currentPlayerIndex]?.armies.find(a => a.id === selectedArmyId) ?? null
+        : null;
+
     switch(action) {
         // Player actions
         case GameAction.Deploy:
@@ -94,3 +98,5 @@ export function handleGameAction({ action, gameState, selectedArmy, payload }: H
             return { newState: gameState };
     }
 }
+
+    
