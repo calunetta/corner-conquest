@@ -6,7 +6,7 @@ import { Home, HelpCircle, Star, Loader2, Anchor } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { usePlayer } from '@/hooks/use-player';
 import { IslandType, PlayerColor } from '@/lib/types';
 
@@ -25,6 +25,12 @@ type IslandTileProps = {
   fogOfWar: boolean;
   localPlayer: Player;
 };
+
+const BORDER_IMAGES = [
+  '/sprites/island_edge_1.gif',
+  '/sprites/island_edge_2.gif',
+  '/sprites/island_edge_3.gif',
+];
 
 const playerColorMap: Record<PlayerColor, { bg: string, border: string }> = {
   [PlayerColor.Blue]: { bg: 'bg-blue-500', border: 'border-blue-300' },
@@ -111,6 +117,9 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const deathAnimationOnTile = deathAnimations.find(anim => anim.x === island.x && anim.y === island.y);
   
   const isHiddenForPlayer = fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id);
+  
+  const borderImage = useMemo(() => BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)], []);
+
 
   const renderResourceIcons = (resources: IslandResource[]) => {
     const isBase = island.type === IslandType.Base;
@@ -203,7 +212,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       <button
         onClick={() => onClick(island.x, island.y)}
         className={cn(
-          'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200 border-2 z-10',
+          'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200 border-2',
           getTerrainClass(),
           isHiddenForPlayer ? 'border-dashed border-muted-foreground/30 bg-background/50' : 'border-transparent',
           isSelected ? 'ring-2 ring-primary' : '',
@@ -272,10 +281,10 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             </div>
         )}
 
-        <div className="h-full w-full p-1">{getIcon()}</div>
+        <div className="h-full w-full p-1 z-10">{getIcon()}</div>
 
         <Image
-            src="/sprites/island_edges.gif"
+            src={borderImage}
             alt=""
             width={80}
             height={20}
