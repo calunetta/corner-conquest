@@ -10,7 +10,7 @@ import { GameStatus } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CreateGameDialog } from './CreateGameDialog';
-import { Loader2, Users } from 'lucide-react';
+import { Loader2, Users, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PLAYER_COLORS } from '@/lib/player-data';
 
@@ -104,7 +104,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             }
 
             const firestoreState = gameDoc.data() as FirestoreGameState;
-            const mapData = mapDoc.data() as { map: Island[] };
+            const mapData = mapDoc.data() as { map: Island[][] }; // This is now an array of arrays
             
             if (firestoreState.status !== GameStatus.Waiting) {
                  throw new Error("This game has already started or is no longer available.");
@@ -117,7 +117,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 return;
             }
             
-            const { newGameState, updatedMap, newBaseTile } = addPlayerToGame(firestoreState, mapData.map, { playerId, name: username });
+            const { newGameState, updatedMap, newBaseTile } = addPlayerToGame(firestoreState, mapData.map.flat(), { playerId, name: username });
 
             if (!newGameState || !updatedMap || !newBaseTile) {
                  throw new Error("Could not add player to game. The room might be full or color unavailable.");
@@ -147,43 +147,55 @@ export function Lobby({ onJoinGame }: LobbyProps) {
 
   return (
     <div className="container mx-auto flex h-full flex-col items-center justify-center p-2 sm:p-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <CardTitle>Game Lobby</CardTitle>
-                <CardDescription>Join a game or create a new one to start playing.</CardDescription>
+      <Card className="w-full max-w-3xl">
+        <CardHeader className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-4">
+              <CardTitle className='text-2xl'>Game Lobby</CardTitle>
+              <div className="text-sm text-muted-foreground">
+                Welcome, <span className="font-bold text-foreground">{username}</span>!
+                <Button variant="link" size="sm" onClick={logout} className="ml-1 p-0 h-auto">Logout</Button>
+              </div>
             </div>
-            <div className='flex w-full items-center justify-end gap-2 sm:w-auto'>
-                <p className='text-sm text-muted-foreground'>Welcome, <span className='font-bold text-foreground'>{username}</span></p>
-                <Button variant="outline" size="sm" onClick={logout}>Logout</Button>
-            </div>
+            <CardDescription>Join an available game or create a new one to start playing.</CardDescription>
           </div>
+          <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex justify-end">
-            <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
-          </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {isLoading ? (
               <div className="flex justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : games.length === 0 ? (
-              <p className="text-center text-muted-foreground">No open games found. Why not create one?</p>
+              <div className="py-12 text-center text-muted-foreground">
+                <p className="font-semibold">No open games found.</p>
+                <p className="text-sm">Why not be the first to create one?</p>
+              </div>
             ) : (
               games.map((game) => (
-                <div key={game.id} className="flex flex-col items-start gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-                  <div>
+                <div key={game.id} className="flex flex-col items-start gap-3 rounded-lg border bg-card p-3 transition-all hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+                  <div className="flex-1">
                     <h3 className="font-bold">{game.name}</h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Users className="h-4 w-4" />
-                        <span>{game.players.length} / {game.maxPlayers} players</span>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                            <Crown className="h-4 w-4 text-yellow-500" />
+                            <span>{game.players[0]?.name || '...'}</span>
+                        </div>
+                         <div className="flex items-center gap-1.5">
+                            <Users className="h-4 w-4" />
+                            <span>{game.players.length} / {game.maxPlayers} players</span>
+                        </div>
                     </div>
                   </div>
-                  <Button onClick={() => handleJoinGame(game.id)} disabled={isJoiningGame !== null || game.players.length >= game.maxPlayers} className="w-full sm:w-auto">
-                    {isJoiningGame === game.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Join
+                  <Button 
+                    onClick={() => handleJoinGame(game.id)} 
+                    disabled={isJoiningGame !== null || game.players.length >= game.maxPlayers} 
+                    className="w-full sm:w-auto"
+                    variant={game.players.length >= game.maxPlayers ? 'secondary' : 'default'}
+                  >
+                    {isJoiningGame === game.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {game.players.length >= game.maxPlayers ? 'Full' : 'Join'}
                   </Button>
                 </div>
               ))
