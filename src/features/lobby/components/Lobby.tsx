@@ -164,9 +164,9 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     <div className="container mx-auto flex h-full flex-col items-center justify-center p-2 sm:p-4">
       <Card className="w-full max-w-3xl">
         <CardHeader>
-          <div className="flex w-full justify-end items-center gap-2 text-sm text-muted-foreground mb-4">
-              <span>Welcome, {username}!</span>
-              <Button variant="ghost" size="icon" onClick={logout}>
+          <div className="flex w-full items-center justify-end gap-2 mb-4">
+              <span className="text-sm">Welcome, {username}!</span>
+              <Button variant="destructive" size="icon" onClick={logout}>
                 <Power className="h-4 w-4" />
               </Button>
           </div>
