@@ -165,7 +165,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
       <Card className="w-full max-w-3xl">
         <CardHeader>
           <div className="flex w-full items-center justify-end gap-2 text-sm text-muted-foreground mb-4">
-              <span>Welcome, <span className="font-bold text-foreground">{username}</span>!</span>
+              <span>Welcome, {username}!</span>
               <Button variant="destructive" size="icon" onClick={logout}>
                 <Power className="h-4 w-4" />
               </Button>
@@ -250,3 +250,5 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     </div>
   );
 }
+
+    
