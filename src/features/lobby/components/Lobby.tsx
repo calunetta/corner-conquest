@@ -133,7 +133,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             
             const updateData: Partial<FirestoreGameState> = {
                 players: newGameState.players,
-                log: newGameState.log,
+                log: arrayUnion(`${username} has joined the game!`),
                 baseTiles: arrayUnion(newBaseTile)
             };
             
