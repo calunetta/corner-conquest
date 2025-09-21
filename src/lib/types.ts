@@ -277,7 +277,7 @@ export type GameState = {
   maxPlayers: number;
   debugMode: boolean;
   settings: GameSettings;
-  map: Island[][];
+  map: Island[];
   baseTiles: BaseTileInfo[];
   players: Player[];
   currentPlayerIndex: number;

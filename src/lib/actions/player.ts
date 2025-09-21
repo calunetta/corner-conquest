@@ -3,6 +3,7 @@
 import type { GameState, Player, Army, CardName } from '@/lib/types';
 import { db, doc, deleteDoc, runTransaction, arrayUnion } from '@/lib/firebase';
 import { GameAction, AbilityName } from '../types';
+import { MAP_COLS } from '../game-logic';
 
 export function canPlayerPerformAnyAction(state: GameState): boolean {
     const player = state.players[state.currentPlayerIndex];
@@ -80,12 +81,12 @@ export function handleDeployAction(state: GameState): GameState {
     const newArmyId = player.armies.length > 0 ? Math.max(...player.armies.map(a => a.id)) + 1 : 0;
     const newArmy: Army = { id: newArmyId, position: {x: 0, y: 0}, hasActed: true }; 
     
-    const baseTile = baseTiles.find(b => b.owner === player.id);
-    if (!baseTile) throw new Error("Base not found!");
-    newArmy.position = {x: baseTile.x, y: baseTile.y};
+    const baseTileInfo = baseTiles.find(b => b.owner === player.id);
+    if (!baseTileInfo) throw new Error("Base not found!");
+    newArmy.position = {x: baseTileInfo.x, y: baseTileInfo.y};
 
     player.armies.push(newArmy);
-    map[baseTile.y][baseTile.x].occupants.push({ playerId: player.id, armyId: newArmy.id });
+    map[baseTileInfo.y * MAP_COLS + baseTileInfo.x].occupants.push({ playerId: player.id, armyId: newArmy.id });
     
     const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
 
@@ -173,7 +174,7 @@ export function handleEndTurn(state: GameState): GameState {
     if (currentPlayer.passiveAbilities.explorer) {
         const occupiedIslands = new Set<string>();
         currentPlayer.armies.forEach((army: Army) => {
-            const tile = newState.map[army.position.y][army.position.x];
+            const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
             occupiedIslands.add(tile.id);
         });
         const vpGained = occupiedIslands.size;
@@ -188,7 +189,7 @@ export function handleEndTurn(state: GameState): GameState {
         const occupiedIslands = new Set<string>();
         
         currentPlayer.armies.forEach((army: Army) => {
-            const tile = newState.map[army.position.y][army.position.x];
+            const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
             if (occupiedIslands.has(tile.id)) return;
             
             if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0) {

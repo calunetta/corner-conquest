@@ -144,7 +144,7 @@ export function initializeGame(
     debugMode: boolean = false,
     settings: GameSettings = defaultGameSettings
 ): GameState {
-  const map: Island[][] = Array.from({ length: MAP_ROWS }, (_, y) =>
+  const map2D: Island[][] = Array.from({ length: MAP_ROWS }, (_, y) =>
     Array.from({ length: MAP_COLS }, (_, x) => ({
       id: `${x}-${y}`,
       x,
@@ -173,8 +173,8 @@ export function initializeGame(
   const creatorPlayer = createPlayer(creatorSeatIndex, creator.playerId, creator.name, creator.color, false, creatorPos, settings, debugMode);
   players.push(creatorPlayer);
 
-  map[creatorPos.y][creatorPos.x] = {
-      ...map[creatorPos.y][creatorPos.x],
+  map2D[creatorPos.y][creatorPos.x] = {
+      ...map2D[creatorPos.y][creatorPos.x],
       type: IslandType.Base,
       owner: creatorSeatIndex,
       occupants: [{ playerId: creatorSeatIndex, armyId: creatorPlayer.armies[0].id }],
@@ -199,8 +199,8 @@ export function initializeGame(
         const botPlayer = createPlayer(botSeatIndex, `bot_${i+1}`, `Bot ${i+1}`, botColor, true, botPos, settings, debugMode);
         players.push(botPlayer);
 
-        map[botPos.y][botPos.x] = {
-            ...map[botPos.y][botPos.x],
+        map2D[botPos.y][botPos.x] = {
+            ...map2D[botPos.y][botPos.x],
             type: IslandType.Base,
             owner: botSeatIndex,
             occupants: [{playerId: botSeatIndex, armyId: botPlayer.armies[0].id}],
@@ -219,19 +219,19 @@ export function initializeGame(
 
   for (let y = 0; y < MAP_ROWS; y++) {
     for (let x = 0; x < MAP_COLS; x++) {
-      if (map[y][x].type === IslandType.Base && map[y][x].owner !== undefined) continue;
+      if (map2D[y][x].type === IslandType.Base && map2D[y][x].owner !== undefined) continue;
 
       let islandType: IslandType;
       
       if (x === center.x && y === center.y) {
           islandType = IslandType.Monster;
           const bossMonsterData = MONSTER_DATA[4];
-          map[y][x].monsters = [{
+          map2D[y][x].monsters = [{
               name: bossMonsterData.name,
               level: 4,
               sprite: bossMonsterData.sprite
           }];
-          map[y][x].type = islandType;
+          map2D[y][x].type = islandType;
           continue; 
       }
 
@@ -248,7 +248,7 @@ export function initializeGame(
         else islandType = IslandType.Special;
       }
       
-      map[y][x].type = islandType;
+      map2D[y][x].type = islandType;
 
       if (islandType === IslandType.Resource) {
         const resourceTypes: ResourceType[] = [ResourceType.Gems, ResourceType.Iron, ResourceType.Wheat];
@@ -263,14 +263,16 @@ export function initializeGame(
             const amount = (Math.random() < 0.3 ? 2 : 1) * settings.baseResourceAmount;
             islandResources.push({ type: selectedResourceType, amount });
         }
-        map[y][x].resources = islandResources;
+        map2D[y][x].resources = islandResources;
       } else if(islandType === IslandType.Monster) {
-          map[y][x].monsters = generateMonsters(x, y);
+          map2D[y][x].monsters = generateMonsters(x, y);
       }
     }
   }
 
   const finalCardDeck = BASE_CARDS.filter(card => settings.availableCards.includes(card));
+
+  const map = map2D.flat();
 
   const gameState: GameState = {
     id: gameId,

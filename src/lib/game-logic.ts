@@ -1,4 +1,5 @@
 
+
 import type { GameState, Player, PlayerColor, BaseTileInfo } from './types';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './game-initializer';
@@ -54,7 +55,7 @@ export function addPlayerToGame(
     
     newGameState.players.push(newPlayer);
     
-    const baseTile = newGameState.map[newPlayerPos.y][newPlayerPos.x];
+    const baseTile = newGameState.map[newPlayerPos.y * MAP_COLS + newPlayerPos.x];
     baseTile.type = IslandType.Base;
     baseTile.owner = newPlayerSeatIndex;
     baseTile.occupants.push({ playerId: newPlayerSeatIndex, armyId: newPlayer.armies[0].id });

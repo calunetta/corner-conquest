@@ -4,6 +4,7 @@ import type { GameState, Army, Monster, DeathAnimation, CardName } from '@/lib/t
 import { PLAYER_DATA } from '@/lib/player-data';
 import { checkAndEndTurnIfNoActions } from './player';
 import { GameAction, IslandType } from '../types';
+import { MAP_COLS } from '../game-logic';
 
 export function handleAttackAction(state: GameState, selectedArmy: Army | null): { newState: GameState; selectedArmyId: number | null } {
     let newState = { ...state };
@@ -19,7 +20,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
     
     if (army.hasActed && !attacker.hasExtraMove) throw new Error("This army has already acted this turn.");
 
-    const currentTile = map[selectedArmy.position.y][selectedArmy.position.x];
+    const currentTile = map[selectedArmy.position.y * MAP_COLS + selectedArmy.position.x];
     const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
 
     if (otherPlayersOccupants.length > 0) {
@@ -156,7 +157,7 @@ export function handleCloseCombat(state: GameState): GameState {
 
     if (!attackingArmy) return { ...newState, combatState: null };
     
-    const combatTile = map[attackingArmy.position.y][attackingArmy.position.x];
+    const combatTile = map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
 
     if (loserId === defenderId) {
         winner.victoryPoints += 5;
@@ -177,13 +178,13 @@ export function handleCloseCombat(state: GameState): GameState {
             const oldPos = losingArmy.position;
             combatTile.occupants = combatTile.occupants.filter(o => !(o.armyId === losingArmy.id && o.playerId === loserId));
             losingArmy.position = {x: baseTile.x, y: baseTile.y};
-            map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
+            map[baseTile.y * MAP_COLS + baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
             
             const positionIndex = loser.positions.findIndex(p => p.armyId === losingArmy.id);
             if (positionIndex > -1) {
                 const removedPosition = loser.positions.splice(positionIndex, 1)[0];
-                if (map[oldPos.y][oldPos.x].positionedBy) {
-                    map[oldPos.y][oldPos.x].positionedBy = map[oldPos.y][oldPos.x]!.filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
+                if (map[oldPos.y * MAP_COLS + oldPos.x].positionedBy) {
+                    map[oldPos.y * MAP_COLS + oldPos.x].positionedBy = map[oldPos.y * MAP_COLS + oldPos.x]!.filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
                 }
             }
         }
@@ -204,7 +205,7 @@ export function handleCloseCombat(state: GameState): GameState {
 
             combatTile.occupants = combatTile.occupants.filter(o => !(o.armyId === loserArmy.id && o.playerId === loserId));
             loserArmy.position = {x: baseTile.x, y: baseTile.y};
-            map[baseTile.y][baseTile.x].occupants.push({playerId: loserId, armyId: loserArmy.id});
+            map[baseTile.y * MAP_COLS + baseTile.x].occupants.push({playerId: loserId, armyId: loserArmy.id});
          }
     }
 
@@ -261,7 +262,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
         if (useDecideCard && canUseCard && !cardUsedThisAction) {
             const cardIndex = attacker.specialCards.indexOf(CardName.DecideDiceRoll);
             if (cardIndex > -1) {
-                const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
+                const usedCard = player.specialCards.splice(cardIndex, 1)[0];
                 discardPile.push(usedCard);
                 attacker.actionsThisTurn.push(GameAction.UseCard);
                 newState.log.push(`${attacker.name} used the 'Decide Dice Roll' card!`);
@@ -312,7 +313,7 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
     const attacker = newState.players[attackerId];
     if (!attackingArmy) return { ...newState, monsterCombatState: null };
 
-    const currentTile = newState.map[attackingArmy.position.y][attackingArmy.position.x];
+    const currentTile = newState.map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
 
     if (winnerId === attacker.id) {
         const monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
@@ -343,9 +344,9 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
             };
             newState.deathAnimations.push(deathAnim);
             
-            newState.map[attackingArmy.position.y][attackingArmy.position.x].occupants = newState.map[attackingArmy.position.y][attackingArmy.position.x].occupants.filter(o => o.armyId !== attackingArmy.id);
+            newState.map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x].occupants = newState.map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x].occupants.filter(o => o.armyId !== attackingArmy.id);
             attackingArmy.position = {x: baseTile.x, y: baseTile.y};
-            newState.map[baseTile.y][baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
+            newState.map[baseTile.y * MAP_COLS + baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
         }
         newState.log.push(`${attacker.name} was defeated by the monster!`);
     }

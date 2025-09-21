@@ -4,12 +4,12 @@ import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/l
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions } from './player';
 import { GameAction, IslandType } from '../types';
+import { MAP_COLS, MAP_ROWS } from '../game-logic';
 
 export function getPossibleMoves(state: GameState, army: Army): { x: number; y: number }[] {
     const { x, y } = army.position;
     const { map } = state;
-    const mapRows = map.length;
-    const mapCols = map[0].length;
+    
     const currentPlayer = state.players[state.currentPlayerIndex];
     
     if (army.hasActed && !currentPlayer.hasExtraMove) {
@@ -23,8 +23,8 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
             if (Math.abs(i) + Math.abs(j) <= moveRadius && (i !== 0 || j !== 0)) {
                 const newX = x + i;
                 const newY = y + j;
-                if (newX >= 0 && newX < mapCols && newY >= 0 && newY < mapRows) {
-                    const targetTile = map[newY][newX];
+                if (newX >= 0 && newX < MAP_COLS && newY >= 0 && newY < MAP_ROWS) {
+                    const targetTile = map[newY * MAP_COLS + newX];
                     if (targetTile.type === IslandType.Resource && targetTile.resources.length === 0 && (!targetTile.monsters || targetTile.monsters.length === 0)) {
                         continue;
                     }
@@ -34,7 +34,7 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
         }
     }
     return moves.filter(move => {
-        const tile = map[move.y][move.x];
+        const tile = map[move.y * MAP_COLS + move.x];
         const baseTileInfo = state.baseTiles.find(b => b.x === tile.x && b.y === tile.y);
         return !baseTileInfo || baseTileInfo.owner === currentPlayer.id;
     });
@@ -43,7 +43,7 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
 export function revealIsland(state: GameState, x: number, y: number): GameState {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
-    const tile = newState.map[y][x];
+    const tile = newState.map[y * MAP_COLS + x];
     const tileId = tile.id;
     const HAND_LIMIT = 7;
 
@@ -88,7 +88,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         throw new Error("Cannot move to the same tile.");
     }
     
-    const oldTile = map[army.position.y][army.position.x];
+    const oldTile = map[army.position.y * MAP_COLS + army.position.x];
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
     
     const positionIndex = player.positions.findIndex(p => p.armyId === army.id);
@@ -101,7 +101,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     }
 
     army.position = { x, y };
-    const targetTile = newState.map[y][x];
+    const targetTile = newState.map[y * MAP_COLS + x];
     targetTile.occupants.push({ playerId: player.id, armyId: army.id });
     
     const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);
@@ -138,7 +138,7 @@ export function handleTileClick(
     let newState = { ...state, id: state.id + `_tileclick_${Date.now()}` };
     const { players, currentPlayerIndex, teleportState, scoutingState, settings } = newState;
     const currentPlayer = players[currentPlayerIndex];
-    const clickedTile = newState.map[y][x];
+    const clickedTile = newState.map[y * MAP_COLS + x];
     const isTileRevealed = !settings.fogOfWar || currentPlayer.revealedTiles.includes(clickedTile.id);
     
     let selectedArmyId: number | null = currentSelectedArmy?.id ?? null;
@@ -217,7 +217,7 @@ export function handleSelectArmy(state: GameState, armyId: number): ActionHandle
     }
 
     const possibleMoves = getPossibleMoves(newState, army);
-    const tile = newState.map[army.position.y][army.position.x];
+    const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
     const canAttack = tile.occupants.some(o => o.playerId !== player.id) || (tile.type === IslandType.Monster && !!tile.monsters && tile.monsters.length > 0);
     
     if (possibleMoves.length > 0) {
@@ -240,11 +240,11 @@ export const handleTeleport = (state: GameState, x: number, y: number): GameStat
     const armyToMove = player.armies.find(a => a.id === teleportState.armyId);
     if (!armyToMove) return newState;
     
-    const oldTile = map[armyToMove.position.y][armyToMove.position.x];
+    const oldTile = map[armyToMove.position.y * MAP_COLS + armyToMove.position.x];
     oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== armyToMove.id);
 
     armyToMove.position = { x, y };
-    const targetTile = map[y][x];
+    const targetTile = map[y * MAP_COLS + x];
     targetTile.occupants.push({ playerId: player.id, armyId: armyToMove.id });
     
     const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);

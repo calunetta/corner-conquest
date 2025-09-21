@@ -70,7 +70,7 @@ const generateDecorations = (isMobile: boolean, tileSize: number, gap: number) =
 };
 
 type MapGridProps = {
-  map: Island[][];
+  map: Island[];
   players: Player[];
   onTileClick: (x: number, y: number) => void;
   possibleMoves: { x: number, y: number }[];
@@ -119,7 +119,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
           marginLeft: isMobile ? '180px' : '0',
         }}
       >
-        {map.flat().filter(island => !!island).map((island) => {
+        {map.map((island) => {
           const isPossible = possibleMoves.some(p => p.x === island.x && p.y === island.y);
           const isSelected = !!selectedTile && selectedTile.x === island.x && selectedTile.y === island.y;
           const isCurrentPlayerTile = island.occupants.some(o => o.playerId === currentPlayerId);

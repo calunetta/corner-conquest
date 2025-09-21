@@ -20,6 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
+import { MAP_COLS } from '@/lib/game-logic';
 
 type MonsterCombatDialogProps = {
   gameState: GameState;
@@ -43,10 +44,11 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
     }
   }, [monsters]);
 
+  const { monsterCombatState, players, map } = gameState;
+
   if (!monsterCombatState) return null;
 
-  const { monsterCombatState, players } = gameState;
-  const { attackerId, attackerRolls, monsterRolls, winnerId, phase } = monsterCombatState;
+  const { attackerId, attackerRolls, monsterRolls, winnerId, phase, attackerPosition } = monsterCombatState;
   const attacker = players[attackerId];
   const hasDecideCard = attacker.specialCards.includes(CardName.DecideDiceRoll);
   const hasOvercomeCard = attacker.specialCards.includes(CardName.Overcome);

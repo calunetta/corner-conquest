@@ -20,6 +20,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import Image from 'next/image';
 import { ConfirmExitDialog } from '@/features/game/dialogs/ConfirmExitDialog';
+import { MAP_COLS } from '@/lib/game-logic';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
 
@@ -323,7 +324,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     );
   }
 
-  const { players, currentPlayerIndex, log, status, maxPlayers, teleportState, scoutingState, armySelectionDialogState, winner, settings, deathAnimations } = gameState;
+  const { players, currentPlayerIndex, log, status, maxPlayers, teleportState, scoutingState, armySelectionDialogState, winner, settings, deathAnimations, map } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
@@ -389,10 +390,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                   className="relative flex items-center justify-center overflow-auto rounded-xl"
                 >
                   <MapGrid 
-                      map={gameState.map} 
+                      map={map} 
                       players={players} 
                       onTileClick={handleTileClick} 
-                      possibleMoves={isTeleporting && teleportState?.armyId !== null ? gameState.map.flat().map(t => ({x: t.x, y: t.y})) : possibleMoves} 
+                      possibleMoves={isTeleporting && teleportState?.armyId !== null ? map.map(t => ({x: t.x, y: t.y})) : possibleMoves} 
                       selectedTile={selectedTile} 
                       currentPlayerId={currentPlayer.id} 
                       selectedArmyId={selectedArmyId}

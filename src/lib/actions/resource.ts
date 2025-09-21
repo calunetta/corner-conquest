@@ -3,6 +3,7 @@
 import type { GameState, Army, IslandResource, CardName } from '@/lib/types';
 import { ResourceType, GameAction, IslandType } from '../types';
 import { checkAndEndTurnIfNoActions } from './player';
+import { MAP_COLS } from '../game-logic';
 
 export function handlePositionAction(state: GameState, selectedArmy: Army | null): GameState {
   const { players, currentPlayerIndex, map } = state;
@@ -14,7 +15,7 @@ export function handlePositionAction(state: GameState, selectedArmy: Army | null
     throw new Error("This army is already positioned.");
   }
   
-  const tile = map[selectedArmy.position.y][selectedArmy.position.x];
+  const tile = map[selectedArmy.position.y * MAP_COLS + selectedArmy.position.x];
   if ((tile.type !== IslandType.Resource && tile.type !== IslandType.Base) || tile.resources.length === 0) {
     throw new Error("You can only position on an island with resources.");
   }
@@ -44,7 +45,7 @@ export function handleCollectAction(state: GameState, selectedArmy: Army | null)
   if (positionIndex === -1) throw new Error("This army is not positioned on a resource.");
 
   const position = player.positions[positionIndex];
-  const tile = newState.map[position.y][position.x];
+  const tile = newState.map[position.y * MAP_COLS + position.x];
   const resourceSpot = tile.resources.find(r => r.type === position.resource);
   if (!resourceSpot) throw new Error("Resource not found on this island.");
   
@@ -85,7 +86,7 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     if (collectDialogState && collectDialogState.isOpen) {
         resourceToCollect = collectDialogState.resource;
     } else {
-        const tile = map[position.y][position.x];
+        const tile = map[position.y * MAP_COLS + position.x];
         const resourceSpot = tile.resources.find(r => r.type === position.resource);
         if (!resourceSpot) throw new Error("No resource information for collection.");
         resourceToCollect = { type: resourceSpot.type, amount: resourceSpot.amount };
@@ -117,7 +118,7 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
       player.positions.splice(positionIndex, 1);
     }
     
-    const tile = map[armyForCollection.position.y][armyForCollection.position.x];
+    const tile = map[armyForCollection.position.y * MAP_COLS + armyForCollection.position.x];
     if (tile.positionedBy) {
         tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === resourceToCollect.type));
     }
@@ -137,7 +138,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     const { x, y } = selectedArmy.position;
     player.positions.push({ x, y, resource, armyId: selectedArmy.id });
     
-    const tile = newState.map[y][x];
+    const tile = newState.map[y * MAP_COLS + x];
     if (!tile.positionedBy) tile.positionedBy = [];
     tile.positionedBy.push({playerId: player.id, resource});
 
