@@ -164,17 +164,17 @@ export function Lobby({ onJoinGame }: LobbyProps) {
   return (
     <div className="container mx-auto flex h-full flex-col items-center justify-center p-2 sm:p-4">
       <Card className="w-full max-w-3xl">
-        <CardHeader className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1">
-             <CardTitle className='text-2xl'>Game Lobby</CardTitle>
-             <CardDescription>Join a game or create one to begin your conquest.</CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between">
+          <div>
+            <CardTitle className='text-2xl'>Game Lobby</CardTitle>
+            <CardDescription>Join a game or create one to begin your conquest.</CardDescription>
           </div>
-          <div className="flex w-full flex-col items-stretch gap-y-2 sm:w-auto sm:flex-row sm:items-center sm:gap-x-4">
-            <div className="text-sm text-muted-foreground sm:text-right">
+          <div className="flex flex-col items-end gap-2">
+            <div className="text-sm text-muted-foreground">
                 Welcome, <span className="font-bold text-foreground">{username}</span>!
                 <Button variant="link" size="sm" onClick={logout} className="ml-1 p-0 h-auto">Logout</Button>
             </div>
-            <Button onClick={() => setIsCreatingGame(true)} className="w-full sm:w-auto">Create New Game</Button>
+            <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
           </div>
         </CardHeader>
         <CardContent>
