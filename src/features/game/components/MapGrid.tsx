@@ -3,7 +3,7 @@ import type { Island, Player, DeathAnimation } from '@/lib/types';
 import { IslandTile } from './IslandTile';
 import { useMemo } from 'react';
 import Image from 'next/image';
-import { TILE_GAP, TILE_SIZE, MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
+import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -14,21 +14,21 @@ const ROCK_SPRITES = [
     '/sprites/big_rock.gif',
 ];
 
-const generateDecorations = (isMobile: boolean) => {
+const generateDecorations = (isMobile: boolean, tileSize: number, gap: number) => {
     if (isMobile) return [];
 
     const decorations: { src: string; style: React.CSSProperties }[] = [];
-    const totalGridWidth = (MAP_COLS * TILE_SIZE) + ((MAP_COLS) * TILE_GAP);
-    const totalGridHeight = (MAP_ROWS * TILE_SIZE) + ((MAP_ROWS) * TILE_GAP);
+    const totalGridWidth = (MAP_COLS * tileSize) + ((MAP_COLS) * gap);
+    const totalGridHeight = (MAP_ROWS * tileSize) + ((MAP_ROWS) * gap);
 
     const isOverIsland = (x: number, y: number) => {
-        const col = Math.floor(x / (TILE_SIZE + TILE_GAP));
-        const row = Math.floor(y / (TILE_SIZE + TILE_GAP));
+        const col = Math.floor(x / (tileSize + gap));
+        const row = Math.floor(y / (tileSize + gap));
 
-        const xInCol = x % (TILE_SIZE + TILE_GAP);
-        const yInRow = y % (TILE_SIZE + TILE_GAP);
+        const xInCol = x % (tileSize + gap);
+        const yInRow = y % (tileSize + gap);
 
-        return xInCol < TILE_SIZE && yInRow < TILE_SIZE;
+        return xInCol < tileSize && yInRow < tileSize;
     };
 
     const rockCount = isMobile ? 0 : 50;
@@ -84,7 +84,9 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
   const teleportingArmyId = isTeleporting && players[currentPlayerId]?.teleportState?.armyId !== null ? players[currentPlayerId]?.teleportState?.armyId : null;
   
   const isMobile = useIsMobile();
-  const decorations = useMemo(() => generateDecorations(isMobile), [isMobile]);
+  const tileSize = isMobile ? 75 : 100;
+  const gap = isMobile ? 16 : 24;
+  const decorations = useMemo(() => generateDecorations(isMobile, tileSize, gap), [isMobile, tileSize, gap]);
 
   if (!map || map.length === 0) return null;
 
@@ -106,8 +108,8 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
       <div 
         className="grid z-10 relative"
         style={{
-          gridTemplateColumns: `repeat(${MAP_COLS}, ${TILE_SIZE}px)`,
-          gap: `${TILE_GAP}px`,
+          gridTemplateColumns: `repeat(${MAP_COLS}, ${tileSize}px)`,
+          gap: `${gap}px`,
           marginLeft: isMobile ? '180px' : '0',
         }}
       >
