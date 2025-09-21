@@ -186,9 +186,9 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between p-4">
+      <CardHeader className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-lg">Actions</CardTitle>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
             {isCancellableActionInProgress && (
                  <Button variant="destructive" size="sm" onClick={() => onAction(GameAction.CancelAction, null)} disabled={!isMyTurn}>
                     <XCircle />
@@ -226,5 +226,3 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
     </Card>
   );
 }
-
-    
