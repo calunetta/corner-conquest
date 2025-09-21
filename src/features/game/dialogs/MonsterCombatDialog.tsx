@@ -1,7 +1,8 @@
 
 
 'use client';
-import type { GameState, Monster, CardName } from '@/lib/types';
+import type { GameState, Monster } from '@/lib/types';
+import { CardName } from '@/lib/types';
 import { useState, useEffect } from 'react';
 import {
   AlertDialog,
@@ -267,3 +268,5 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
     </AlertDialog>
   );
 }
+
+    
