@@ -205,13 +205,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     }
   };
 
-  const borderImageStyle = {
-    position: 'relative' as 'relative',
-    width: '40px',
-    height: '20px',
-    bottom: '-15px'
-  };
-
   return (
     <TooltipProvider>
       <button
@@ -291,7 +284,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
           {borderImageSequence.map((src, index) => (
             <div
               key={index}
-              style={borderImageStyle}
+              className="relative w-[40px] h-[20px] -bottom-[15px]"
             >
               <Image
                 src={src}
