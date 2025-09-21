@@ -3,9 +3,10 @@ import type { Island, Player, DeathAnimation } from '@/lib/types';
 import { IslandTile } from './IslandTile';
 import { useMemo } from 'react';
 import Image from 'next/image';
-import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
+
 
 const ROCK_SPRITES = [
     '/sprites/small_rock.gif',
@@ -18,32 +19,37 @@ const generateDecorations = (isMobile: boolean, tileSize: number, gap: number) =
     if (isMobile) return [];
 
     const decorations: { src: string; style: React.CSSProperties }[] = [];
-    const totalGridWidth = (MAP_COLS * tileSize) + ((MAP_COLS) * gap);
-    const totalGridHeight = (MAP_ROWS * tileSize) + ((MAP_ROWS) * gap);
+    const totalGridWidth = (MAP_COLS * tileSize) + ((MAP_COLS - 1) * gap);
+    const totalGridHeight = (MAP_ROWS * tileSize) + ((MAP_ROWS - 1) * gap);
+    const numRocks = isMobile ? 0 : 50;
 
-    const isOverIsland = (x: number, y: number) => {
-        const col = Math.floor(x / (tileSize + gap));
-        const row = Math.floor(y / (tileSize + gap));
-
-        const xInCol = x % (tileSize + gap);
-        const yInRow = y % (tileSize + gap);
-
-        return xInCol < tileSize && yInRow < tileSize;
-    };
-
-    const rockCount = isMobile ? 0 : 50;
     let attempts = 0;
-
-    while (decorations.length < rockCount && attempts < rockCount * 10) {
+    while (decorations.length < numRocks && attempts < numRocks * 10) {
+        attempts++;
         const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
         const size = Math.random() * 20 + 12;
 
-        const posX = Math.random() * totalGridWidth;
-        const posY = Math.random() * totalGridHeight;
-        
-        attempts++;
-        if (isOverIsland(posX, posY)) {
-            continue; // Skip if it's over an island
+        // Place rocks only in the gaps
+        const isHorizontalGap = Math.random() > 0.5;
+        let x, y;
+
+        if (isHorizontalGap) {
+            // Place in a vertical gap column
+            const col = Math.floor(Math.random() * (MAP_COLS - 1));
+            const gapXStart = (col + 1) * tileSize + col * gap;
+            x = gapXStart + Math.random() * gap;
+            y = Math.random() * totalGridHeight;
+        } else {
+            // Place in a horizontal gap row
+            const row = Math.floor(Math.random() * (MAP_ROWS - 1));
+            const gapYStart = (row + 1) * tileSize + row * gap;
+            x = Math.random() * totalGridWidth;
+            y = gapYStart + Math.random() * gap;
+        }
+
+        // Final check to ensure it's not too close to the edge of the grid
+        if (x < size || y < size || x > totalGridWidth - size || y > totalGridHeight - size) {
+            continue;
         }
 
         const style: React.CSSProperties = {
@@ -52,14 +58,14 @@ const generateDecorations = (isMobile: boolean, tileSize: number, gap: number) =
             pointerEvents: 'none',
             width: `${size}px`,
             height: `${size}px`,
-            left: `${posX}px`,
-            top: `${posY}px`,
-            transform: 'translate(-50%, -50%)'
+            left: `${x}px`,
+            top: `${y}px`,
+            transform: 'translate(-50%, -50%)',
         };
 
         decorations.push({ src: rockSrc, style });
     }
-    
+
     return decorations;
 };
 
@@ -84,8 +90,8 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
   const teleportingArmyId = isTeleporting && players[currentPlayerId]?.teleportState?.armyId !== null ? players[currentPlayerId]?.teleportState?.armyId : null;
   
   const isMobile = useIsMobile();
-  const tileSize = isMobile ? 75 : 100;
-  const gap = isMobile ? 16 : 24;
+  const tileSize = isMobile ? 75 : 120;
+  const gap = isMobile ? 16 : 32;
   const decorations = useMemo(() => generateDecorations(isMobile, tileSize, gap), [isMobile, tileSize, gap]);
 
   if (!map || map.length === 0) return null;
