@@ -122,7 +122,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     return Array.from({ length: 3 }, () => BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)]);
   }, []);
 
-  const borderContainerStyle: React.CSSProperties = {
+  const borderImageStyle: React.CSSProperties = {
       position: 'relative',
       width: '40px',
       height: '20px',
@@ -228,7 +228,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
       >
-        <div className={cn("absolute inset-0 z-10 bg-terrain bg-cover bg-center bg-no-repeat", isHiddenForPlayer && 'opacity-0')}>
+        <div className="absolute inset-0 z-10 bg-terrain bg-cover bg-center bg-no-repeat">
             {!isHiddenForPlayer && occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
@@ -288,19 +288,22 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
           {getIcon()}
         </div>
         
-        <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 z-0 flex w-full justify-center" style={borderContainerStyle}>
+        <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 z-0 flex w-full justify-center">
           {borderImageSequence.map((src, index) => (
-            <Image
-                key={index}
-                src={src}
-                alt=""
-                layout="fill"
-                objectFit="contain"
-                unoptimized
-            />
+            <div key={index} style={borderImageStyle}>
+              <Image
+                  src={src}
+                  alt=""
+                  layout="fill"
+                  objectFit="contain"
+                  unoptimized
+              />
+            </div>
           ))}
         </div>
       </button>
     </TooltipProvider>
   );
 }
+
+    
