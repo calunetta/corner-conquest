@@ -152,20 +152,20 @@ export function Lobby({ onJoinGame }: LobbyProps) {
   return (
     <div className="container mx-auto flex h-full flex-col items-center justify-center p-2 sm:p-4">
       <Card className="w-full max-w-3xl">
-        <CardHeader className="flex flex-row items-start justify-between">
-          <div>
-            <CardTitle className='text-2xl'>Game Lobby</CardTitle>
-            <CardDescription>Join a game or create one to begin your conquest.</CardDescription>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-             <div className="text-sm text-muted-foreground">
-                Welcome, <span className="font-bold text-foreground">{username}</span>!
-             </div>
-            <div className='flex items-center gap-2'>
-              <Button variant="destructive" size="sm" onClick={logout}>Logout</Button>
-              <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
+        <CardHeader>
+            <div className='flex w-full items-center justify-between'>
+              <div>
+                <CardTitle className='text-2xl'>Game Lobby</CardTitle>
+                <CardDescription>Join a game or create one to begin your conquest.</CardDescription>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    Welcome, <span className="font-bold text-foreground">{username}</span>!
+                    <Button variant="destructive" size="sm" onClick={logout}>Logout</Button>
+                </div>
+                <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
+              </div>
             </div>
-          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
