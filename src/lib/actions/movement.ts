@@ -142,7 +142,7 @@ export function handleTileClick(
     const isTileRevealed = !settings.fogOfWar || currentPlayer.revealedTiles.includes(clickedTile.id);
     
     let selectedArmyId: number | null = currentSelectedArmy?.id ?? null;
-    let selectedTile: {x: number, y: number} | null = null;
+    let selectedTile: {x: number, y: number} | null = {x, y};
     let possibleMoves: {x: number, y: number}[] = currentPossibleMoves;
     let currentAction: GameAction | null = null;
     
@@ -179,7 +179,6 @@ export function handleTileClick(
     }
     
     if (armiesOnTile.length > 0) {
-        selectedTile = { x, y };
         if (armiesOnTile.length === 1) {
             const army = armiesOnTile[0];
             selectedArmyId = army.id;
