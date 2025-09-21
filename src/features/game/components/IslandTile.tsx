@@ -119,14 +119,19 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const isHiddenForPlayer = fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id);
   
   const borderImageSequence = useMemo(() => {
-    return Array.from({ length: 3 }, () => BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)]);
+    const middleImage = BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)];
+    return [
+      '/sprites/island_edge_1.gif',
+      middleImage,
+      '/sprites/island_edge_2.gif',
+    ];
   }, []);
 
   const borderImageStyle: React.CSSProperties = {
       position: 'relative',
       width: '40px',
       height: '20px',
-      bottom: '-15px',
+      bottom: '-11px',
   };
 
 
@@ -305,5 +310,3 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     </TooltipProvider>
   );
 }
-
-    
