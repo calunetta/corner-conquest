@@ -122,6 +122,13 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     return Array.from({ length: 3 }, () => BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)]);
   }, []);
 
+  const borderContainerStyle: React.CSSProperties = {
+      position: 'relative',
+      width: '40px',
+      height: '20px',
+      bottom: '-15px',
+  };
+
 
   const renderResourceIcons = (resources: IslandResource[]) => {
     const isBase = island.type === IslandType.Base;
@@ -211,7 +218,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         onClick={() => onClick(island.x, island.y)}
         className={cn(
           'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200 border-2',
-          isHiddenForPlayer ? 'border-dashed border-muted-foreground/30 bg-background/50' : 'border-transparent',
           isSelected ? 'ring-2 ring-primary' : '',
           isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
           isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
@@ -278,27 +284,25 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             </div>
         )}
 
-        <div className="h-full w-full p-1 z-10">{getIcon()}</div>
-
+        <div className={cn("h-full w-full p-1 z-20", isHiddenForPlayer ? 'bg-transparent' : 'bg-transparent')}>
+          {getIcon()}
+        </div>
+        
         <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 z-0 flex w-full justify-center">
-          {borderImageSequence.map((src, index) => (
-            <div
-              key={index}
-              className="relative w-[40px] h-[20px] -bottom-[15px]"
-            >
-              <Image
-                src={src}
-                alt=""
-                layout="fill"
-                objectFit="contain"
-                unoptimized
-              />
+             <div style={borderContainerStyle}>
+              {borderImageSequence.map((src, index) => (
+                <Image
+                    key={index}
+                    src={src}
+                    alt=""
+                    layout="fill"
+                    objectFit="contain"
+                    unoptimized
+                />
+              ))}
             </div>
-          ))}
         </div>
       </button>
     </TooltipProvider>
   );
 }
-
-    
