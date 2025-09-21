@@ -288,19 +288,17 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
           {getIcon()}
         </div>
         
-        <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 z-0 flex w-full justify-center">
-             <div style={borderContainerStyle}>
-              {borderImageSequence.map((src, index) => (
-                <Image
-                    key={index}
-                    src={src}
-                    alt=""
-                    layout="fill"
-                    objectFit="contain"
-                    unoptimized
-                />
-              ))}
-            </div>
+        <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 z-0 flex w-full justify-center" style={borderContainerStyle}>
+          {borderImageSequence.map((src, index) => (
+            <Image
+                key={index}
+                src={src}
+                alt=""
+                layout="fill"
+                objectFit="contain"
+                unoptimized
+            />
+          ))}
         </div>
       </button>
     </TooltipProvider>
