@@ -195,7 +195,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   };
 
   const getTerrainClass = () => {
-    return isHiddenForPlayer ? 'bg-muted/30' : 'bg-terrain bg-cover bg-center';
+    return 'bg-terrain bg-cover bg-center';
   }
 
   return (
@@ -273,6 +273,15 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         )}
 
         <div className="h-full w-full p-1">{getIcon()}</div>
+
+        <Image
+            src="/sprites/island_edges.gif"
+            alt=""
+            width={80}
+            height={20}
+            className="pointer-events-none absolute -bottom-2 z-20 h-auto w-full"
+            unoptimized
+        />
       </button>
     </TooltipProvider>
   );
