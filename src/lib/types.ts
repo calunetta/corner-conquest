@@ -152,7 +152,6 @@ export type Player = {
   reinforceActive: boolean;
   efficientActive: boolean;
   masterBuilderActive: boolean;
-  reinforceActive: boolean;
   teleportState: TeleportState | null;
   revealedTiles: string[];
 };
