@@ -7,6 +7,7 @@ import { handleBuyAbility, handleBuyCardAction } from './actions/card';
 import { getPossibleMoves, handleTileClick } from './actions/movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn } from './actions/player';
 import { handleCollectAction, handleConfirmCollection, handleSelectResourceForPosition } from './actions/resource';
+import { MAP_COLS } from './game-logic';
 
 
 function selectRandom<T>(array: T[]): T | null {
@@ -107,7 +108,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     for (const army of unactedArmies) {
         // This is a simulation, so we use a copy of the state
         let simState = JSON.parse(JSON.stringify(state));
-        const currentTile = simState.map[army.position.y][army.position.x];
+        const currentTile = simState.map[army.position.y * MAP_COLS + army.position.x];
 
         // 1. Collect from a positioned spot
         const position = botPlayer.positions.find((p: any) => p.armyId === army.id);
@@ -158,7 +159,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         // 4. Move to a promising new tile
         const validMoves = getPossibleMoves(simState, army);
         const unrevealedTiles = validMoves.filter(move => {
-            const tile = simState.map[move.y][move.x];
+            const tile = simState.map[move.y * MAP_COLS + move.x];
             return !botPlayer.revealedTiles.includes(tile.id);
         });
 
@@ -174,7 +175,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         }
 
         const resourceTiles = validMoves.filter(move => {
-             const tile = simState.map[move.y][move.x];
+             const tile = simState.map[move.y * MAP_COLS + move.x];
              return (tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0 && tile.occupants.length === 0;
         });
         if (resourceTiles.length > 0) {
