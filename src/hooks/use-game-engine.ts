@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import { handleEndTurn } from '@/lib/actions/player';
 import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
-import { isEqual, isObject, transform } from 'lodash';
+import { isEqual, isObject, transform, forEach, isUndefined } from 'lodash';
 
 
 function reconstructMap(flatMap: Island[]): Island[][] {
@@ -28,20 +28,27 @@ function reconstructMap(flatMap: Island[]): Island[][] {
  * @param  {Object} base   Object to compare against
  * @return {Object}        Return a new object who represent the diff
  */
-function getChangedFields(object: any, base: any) {
-  function changes(obj: any, baseObj: any) {
-    return transform(obj, function (result: any, value, key) {
+function getChangedFields(object: any, base: any): any {
+  const changes = (obj: any, baseObj: any) => {
+    return transform(obj, (result: any, value, key) => {
       if (!isEqual(value, baseObj[key])) {
-        // If the value is an object and the base value is also an object, recurse.
-        // Otherwise, or if the new value is null, just assign it.
-        result[key] =
-          isObject(value) && isObject(baseObj?.[key]) && value !== null
-            ? changes(value, baseObj[key])
-            : value;
+        result[key] = (isObject(value) && isObject(baseObj[key]) && !Array.isArray(value))
+          ? changes(value, baseObj[key])
+          : value;
       }
     });
-  }
-  return changes(object, base);
+  };
+
+  const initialChanges = changes(object, base);
+
+  // Also check for keys that were in base but are now undefined in object
+  forEach(base, (value, key) => {
+      if (isUndefined(object[key]) && !isUndefined(value)) {
+          initialChanges[key] = null; // Or use Firestore's delete field if needed
+      }
+  });
+
+  return initialChanges;
 }
 
 
