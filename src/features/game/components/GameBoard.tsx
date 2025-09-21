@@ -165,7 +165,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         
         setSelectedArmyId(newSelectedArmyId);
         setSelectedTile(newSelectedTile);
-        setPossibleMoves(newPossibleMoves);
+        setPossibleMoves(newPossibleMoves || []);
         setCurrentAction(newCurrentAction);
 
         if (activeInstructionToastId) {
