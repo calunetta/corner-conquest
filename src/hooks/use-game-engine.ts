@@ -23,17 +23,20 @@ function reconstructMap(flatMap: Island[]): Island[][] {
 
 /**
  * Deep diff between two objects, returning the new values.
+ * Correctly handles setting a previously undefined property to null.
  * @param  {Object} object Object compared
  * @param  {Object} base   Object to compare against
  * @return {Object}        Return a new object who represent the diff
  */
 function getChangedFields(object: any, base: any) {
-  function changes(object: any, base: any) {
-    return transform(object, function (result: any, value, key) {
-      if (!isEqual(value, base[key])) {
+  function changes(obj: any, baseObj: any) {
+    return transform(obj, function (result: any, value, key) {
+      if (!isEqual(value, baseObj[key])) {
+        // If the value is an object and the base value is also an object, recurse.
+        // Otherwise, or if the new value is null, just assign it.
         result[key] =
-          isObject(value) && isObject(base[key])
-            ? changes(value, base[key])
+          isObject(value) && isObject(baseObj[key]) && value !== null
+            ? changes(value, baseObj[key])
             : value;
       }
     });
@@ -71,8 +74,18 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
     const gameDocRef = doc(db, 'games', gameId);
     const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
+    
+    let isUnsubscribed = false;
+
+    const unsubscribeAll = () => {
+        if (isUnsubscribed) return;
+        isUnsubscribed = true;
+        unsubscribeGame();
+        unsubscribeMap();
+    };
 
     const unsubscribeGame = onSnapshot(gameDocRef, (docSnapshot) => {
+        if (isUnsubscribed) return;
         if (docSnapshot.exists()) {
             setDynamicState(docSnapshot.data() as FirestoreGameState);
             dynamicDataLoaded = true;
@@ -83,28 +96,35 @@ export function useGameEngine(gameId: string, playerId: string | null) {
             router.push('/');
         }
     }, (error) => {
+        if (isUnsubscribed) return;
         console.error("Firestore dynamic state error:", error);
         toast({ title: 'Connection Error', description: 'Could not connect to the game session.', variant: 'destructive'});
         setIsLoading(false);
+        unsubscribeAll();
     });
 
     const unsubscribeMap = onSnapshot(staticDocRef, (docSnapshot) => {
+        if (isUnsubscribed) return;
         if (docSnapshot.exists()) {
             setStaticState(docSnapshot.data() as { map: Island[] });
             staticDataLoaded = true;
             if (dynamicDataLoaded) setIsLoading(false);
+        } else {
+            // This can happen if the host leaves, it's not necessarily an error state if the game doc is also gone.
+            if (!dynamicDataLoaded) {
+                 toast({ title: 'Map Error', description: 'Could not load the game map.', variant: 'destructive' });
+                 setIsLoading(false);
+                 unsubscribeAll();
+            }
         }
     }, (error) => {
+        if (isUnsubscribed) return;
         console.error("Firestore map state error:", error);
         toast({ title: 'Map Error', description: 'Could not load the game map.', variant: 'destructive' });
         setIsLoading(false);
+        unsubscribeAll();
     });
     
-    const unsubscribeAll = () => {
-        unsubscribeGame();
-        unsubscribeMap();
-    };
-
     return () => {
         unsubscribeAll();
     };
