@@ -13,7 +13,7 @@ import { CreateGameDialog } from './CreateGameDialog';
 import { Loader2, Users, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PLAYER_COLORS, PLAYER_DATA } from '@/lib/player-data';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
@@ -96,8 +96,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
 
       try {
         const gameDocRef = doc(db, 'games', gameId);
-        const mapDocRef = doc(db, 'games', gameId, 'static', 'map');
-
+        
         await runTransaction(db, async (transaction) => {
             const gameDoc = await transaction.get(gameDocRef);
             
@@ -143,12 +142,13 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             if (newGameState.players.length === newGameState.maxPlayers) {
                 updateData.status = GameStatus.Playing;
                 updateData.turn = 1;
+                updateData.log = arrayUnion(`The game is full! Starting now.`);
             }
 
             transaction.update(gameDocRef, updateData);
             
             // Only update the map if it has changed
-            transaction.update(mapDocRef, { map: updatedMap });
+            transaction.update(doc(db, 'games', gameId, 'static', 'map'), { map: updatedMap });
         });
         
         onJoinGame(gameId);
