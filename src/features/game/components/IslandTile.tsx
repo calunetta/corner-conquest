@@ -233,7 +233,24 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
       >
-        <div className="absolute inset-0 z-10 bg-terrain bg-cover bg-center bg-no-repeat">
+        <div className="absolute inset-0 z-10 bg-terrain bg-cover bg-center bg-no-repeat" />
+        
+        {deathAnimationOnTile && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center">
+                <Image
+                    src={deathAnimationOnTile.sprite}
+                    alt="Death animation"
+                    width={64}
+                    height={64}
+                />
+            </div>
+        )}
+
+        <div className={cn("h-full w-full p-1 z-20", isHiddenForPlayer ? 'bg-transparent' : 'bg-transparent')}>
+          {getIcon()}
+        </div>
+
+        <div className="absolute inset-0 z-30 pointer-events-none">
             {!isHiddenForPlayer && occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
@@ -255,7 +272,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                 return (
                     <div 
                         key={`army-sprite-${player.id}-${army.id}`}
-                        className={cn('absolute w-1/2 h-1/2 z-30', pos.origin)}
+                        className={cn('absolute w-1/2 h-1/2', pos.origin)}
                         style={{ top: pos.top, left: pos.left, right: pos.right, bottom: pos.bottom }}
                     >
                         <Image
@@ -276,21 +293,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                     </div>
                 )
             })}
-        </div>
-        
-        {deathAnimationOnTile && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center">
-                <Image
-                    src={deathAnimationOnTile.sprite}
-                    alt="Death animation"
-                    width={64}
-                    height={64}
-                />
-            </div>
-        )}
-
-        <div className={cn("h-full w-full p-1 z-20", isHiddenForPlayer ? 'bg-transparent' : 'bg-transparent')}>
-          {getIcon()}
         </div>
         
         <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 z-0 flex w-full justify-center">
