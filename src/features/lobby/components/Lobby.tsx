@@ -1,11 +1,11 @@
 
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { db, runTransaction, collection, doc, writeBatch, getDoc, arrayUnion, query, where, onSnapshot, updateDoc } from '@/lib/firebase';
+import { db, runTransaction, collection, doc, writeBatch, getDoc, arrayUnion, query, where, onSnapshot, updateDoc, setDoc } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
 import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
 import { addPlayerToGame } from '@/lib/game-logic';
-import type { GameState, FirestoreGameState, GameSettings, Player, Island, PlayerColor } from '@/lib/types';
+import type { GameState, GameSettings, Player, Island, PlayerColor } from '@/lib/types';
 import { GameStatus } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -34,11 +34,10 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const gamesList: GameState[] = [];
       querySnapshot.forEach((doc) => {
-        const firestoreState = doc.data() as FirestoreGameState;
+        const firestoreState = doc.data() as GameState;
         gamesList.push({
             ...firestoreState,
             id: doc.id,
-            map: [], // Don't need the full map data in the lobby
             settings: firestoreState.settings || defaultGameSettings,
         });
       });
@@ -67,21 +66,15 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     const newGameId = gameDocRef.id;
 
     const creator = { playerId, name: username, color: playerColor };
-    const { dynamicState, staticState } = initializeGame(newGameId, gameName, maxPlayers, creator, numBots, debugMode, settings);
+    let newGame = initializeGame(newGameId, gameName, maxPlayers, creator, numBots, debugMode, settings);
     
-    let finalDynamicState = dynamicState;
     const isBotGame = maxPlayers === 1;
     if (isBotGame) {
-      finalDynamicState = startGame(dynamicState as GameState);
+      newGame = startGame(newGame);
     }
 
     try {
-        const batch = writeBatch(db);
-        batch.set(gameDocRef, finalDynamicState);
-        const staticDocRef = doc(db, 'games', newGameId, 'static', 'map');
-        batch.set(staticDocRef, staticState);
-        await batch.commit();
-
+        await setDoc(gameDocRef, newGame);
         onJoinGame(newGameId);
         return true;
     } catch (error) {
@@ -105,49 +98,26 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 throw new Error("Game not found.");
             }
             
-            const firestoreState = gameDoc.data() as FirestoreGameState;
+            const gameState = gameDoc.data() as GameState;
             
-            if (firestoreState.status !== GameStatus.Waiting) {
+            if (gameState.status !== GameStatus.Waiting) {
                  throw new Error("This game has already started or is no longer available.");
             }
-            if (firestoreState.players.length >= firestoreState.maxPlayers) {
+            if (gameState.players.length >= gameState.maxPlayers) {
                 throw new Error("This game is full.");
             }
-            if (firestoreState.players.some(p => p.playerId === playerId)) {
+            if (gameState.players.some(p => p.playerId === playerId)) {
                 // Player is already in, just let them proceed
                 return;
             }
-
-            const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
-            const staticDoc = await transaction.get(staticDocRef);
-            if (!staticDoc.exists()) {
-              throw new Error("Game map data is missing.");
-            }
-            const mapData = staticDoc.data().map as Island[];
             
-            const { newGameState, updatedMap, newBaseTile } = addPlayerToGame(firestoreState, mapData, { playerId, name: username });
+            const { newGameState } = addPlayerToGame(gameState, { playerId, name: username });
 
-            if (!newGameState || !newBaseTile) {
+            if (!newGameState) {
                  throw new Error("Could not add player to game. The room might be full or color unavailable.");
             }
             
-            const updateData: Partial<FirestoreGameState> = {
-                players: newGameState.players,
-                log: arrayUnion(`${username} has joined the game!`),
-                baseTiles: arrayUnion(newBaseTile)
-            };
-            
-            // Conditionally update status and turn if the game is starting
-            if (newGameState.status === GameStatus.Playing) {
-                updateData.status = newGameState.status;
-                updateData.turn = newGameState.turn;
-            }
-
-            transaction.update(gameDocRef, updateData);
-
-            if (updatedMap) {
-               transaction.set(staticDocRef, { map: updatedMap });
-            }
+            transaction.set(gameDocRef, newGameState);
         });
         
         onJoinGame(gameId);

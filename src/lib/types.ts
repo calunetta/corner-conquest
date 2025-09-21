@@ -302,9 +302,6 @@ export type GameState = {
   deathAnimations: DeathAnimation[];
 };
 
-// This represents the main game document in Firestore, without the static map data.
-export type FirestoreGameState = Omit<GameState, 'map'>;
-
 // Represents the output of a game action handler
 export type ActionHandlerResult = {
     newState: GameState;

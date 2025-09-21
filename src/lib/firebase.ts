@@ -46,5 +46,3 @@ export {
     updateDoc,
     arrayUnion,
 };
-
-    

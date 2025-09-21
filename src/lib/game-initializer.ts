@@ -1,6 +1,6 @@
 
 
-import type { GameState, Island, Player, IslandResource, Monster, GameSettings, FirestoreGameState, BaseTileInfo } from './types';
+import type { GameState, Island, Player, IslandResource, Monster, GameSettings, BaseTileInfo } from './types';
 import { CardName } from './types';
 import { BASE_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
@@ -143,7 +143,7 @@ export function initializeGame(
     numBots: number, 
     debugMode: boolean = false,
     settings: GameSettings = defaultGameSettings
-): { dynamicState: FirestoreGameState, staticState: { map: Island[] } } {
+): GameState {
   const map: Island[][] = Array.from({ length: MAP_ROWS }, (_, y) =>
     Array.from({ length: MAP_COLS }, (_, x) => ({
       id: `${x}-${y}`,
@@ -272,7 +272,7 @@ export function initializeGame(
 
   const finalCardDeck = BASE_CARDS.filter(card => settings.availableCards.includes(card));
 
-  const dynamicState: FirestoreGameState = {
+  const gameState: GameState = {
     id: gameId,
     name: gameName,
     status: GameStatus.Waiting,
@@ -280,6 +280,7 @@ export function initializeGame(
     debugMode,
     settings,
     players,
+    map,
     baseTiles,
     currentPlayerIndex: 0,
     turn: 0,
@@ -303,21 +304,13 @@ export function initializeGame(
     deathAnimations: [],
   };
 
-  const flatMap = map.flat();
-
-  return { dynamicState, staticState: { map: flatMap } };
+  return gameState;
 }
 
-export function startGame(gameState: GameState | FirestoreGameState): FirestoreGameState {
+export function startGame(gameState: GameState): GameState {
     const newState = { ...gameState };
     newState.status = GameStatus.Playing;
     newState.turn = 1; // Start the first turn
     newState.log.push(`The game has started! It's now ${newState.players[0].name}'s turn.`);
-    
-    // Ensure we return FirestoreGameState
-    if ('map' in newState) {
-        const { map, ...dynamicState } = newState as GameState;
-        return dynamicState;
-    }
-    return newState as FirestoreGameState;
+    return newState;
 }

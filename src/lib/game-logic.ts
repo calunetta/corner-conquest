@@ -1,5 +1,5 @@
 
-import type { GameState, Island, Player, PlayerColor, FirestoreGameState, BaseTileInfo } from './types';
+import type { GameState, Player, PlayerColor, BaseTileInfo } from './types';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './game-initializer';
 import { GameStatus, IslandType } from './types';
@@ -8,40 +8,27 @@ export const BASE_TILE_SIZE = 150;
 export const MAP_ROWS = 6;
 export const MAP_COLS = 5;
 
-function reconstructMap(flatMap: Island[]): Island[][] {
-    const map: Island[][] = Array.from({ length: MAP_ROWS }, () => []);
-    flatMap.forEach(island => {
-        if (!map[island.y]) {
-            map[island.y] = [];
-        }
-        map[island.y][island.x] = island;
-    });
-    return map;
-}
-
 export function addPlayerToGame(
-    firestoreState: FirestoreGameState,
-    mapData: Island[],
+    gameState: GameState,
     playerInfo: { playerId: string, name: string }
-): { newGameState: FirestoreGameState | null, updatedMap: Island[] | null, newBaseTile: BaseTileInfo | null } {
+): { newGameState: GameState | null, newBaseTile: BaseTileInfo | null } {
     
-    if (firestoreState.status !== GameStatus.Waiting) {
-        return { newGameState: null, updatedMap: null, newBaseTile: null }; // Game has started
+    if (gameState.status !== GameStatus.Waiting) {
+        return { newGameState: null, newBaseTile: null }; // Game has started
     }
-    if (firestoreState.players.length >= firestoreState.maxPlayers) {
-        return { newGameState: null, updatedMap: null, newBaseTile: null }; // Game is full
+    if (gameState.players.length >= gameState.maxPlayers) {
+        return { newGameState: null, newBaseTile: null }; // Game is full
     }
-    if (firestoreState.players.some(p => p.playerId === playerInfo.playerId)) {
-        return { newGameState: firestoreState, updatedMap: mapData, newBaseTile: null }; // Player is already in the game
+    if (gameState.players.some(p => p.playerId === playerInfo.playerId)) {
+        return { newGameState: gameState, newBaseTile: null }; // Player is already in the game
     }
 
-    let newGameState = JSON.parse(JSON.stringify(firestoreState));
-    let newMap = reconstructMap(mapData);
+    let newGameState = JSON.parse(JSON.stringify(gameState));
 
     const usedColors = newGameState.players.map((p: Player) => p.color);
     const availableColors = PLAYER_COLORS.filter(c => !usedColors.includes(c));
 
-    if (availableColors.length === 0) return { newGameState: null, updatedMap: null, newBaseTile: null };
+    if (availableColors.length === 0) return { newGameState: null, newBaseTile: null };
 
     const newPlayerColor = availableColors[0];
     const newPlayerSeatIndex = newGameState.players.length;
@@ -66,9 +53,8 @@ export function addPlayerToGame(
     );
     
     newGameState.players.push(newPlayer);
-    newGameState.log.push(`${playerInfo.name} has joined the game!`);
     
-    const baseTile = newMap[newPlayerPos.y][newPlayerPos.x];
+    const baseTile = newGameState.map[newPlayerPos.y][newPlayerPos.x];
     baseTile.type = IslandType.Base;
     baseTile.owner = newPlayerSeatIndex;
     baseTile.occupants.push({ playerId: newPlayerSeatIndex, armyId: newPlayer.armies[0].id });
@@ -84,12 +70,15 @@ export function addPlayerToGame(
     }
     
     const newBaseTile: BaseTileInfo = { owner: newPlayerSeatIndex, x: newPlayerPos.x, y: newPlayerPos.y };
+    newGameState.baseTiles.push(newBaseTile);
 
     if (newGameState.players.length === newGameState.maxPlayers) {
         newGameState.log.push(`The game is full! Starting now.`);
         newGameState.status = GameStatus.Playing;
         newGameState.turn = 1;
+    } else {
+        newGameState.log.push(`${playerInfo.name} has joined the game!`);
     }
     
-    return { newGameState, updatedMap: newMap.flat(), newBaseTile };
+    return { newGameState, newBaseTile };
 }

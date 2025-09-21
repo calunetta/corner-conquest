@@ -347,8 +347,6 @@ export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerEx
 
         if (isLastPlayer) {
              await deleteDoc(gameDocRef);
-             const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
-             await deleteDoc(staticDocRef);
         }
         
         onExit();
@@ -362,9 +360,7 @@ export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerEx
 export async function handleConfirmHostLeave(gameId: string, onExit: () => void) {
   try {
       const gameDocRef = doc(db, 'games', gameId);
-      const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
       await deleteDoc(gameDocRef);
-      await deleteDoc(staticDocRef);
       onExit();
   } catch (error) {
     console.error("Error during host leave confirmation:", error);
