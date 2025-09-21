@@ -165,19 +165,19 @@ export function Lobby({ onJoinGame }: LobbyProps) {
       <Card className="w-full max-w-3xl">
         <CardHeader>
           <div className="flex w-full items-center justify-end gap-2 mb-4">
-              <span className="text-sm">Welcome, {username}!</span>
-              <Button variant="destructive" size="icon" onClick={logout}>
-                <Power className="h-4 w-4" />
-              </Button>
+            <span className="text-sm">Welcome, {username}!</span>
+            <Button variant="destructive" size="icon" onClick={logout}>
+              <Power className="h-4 w-4" />
+            </Button>
           </div>
           <div className="flex w-full items-start justify-between">
-              <div>
-                  <CardTitle className="text-2xl">Game Lobby</CardTitle>
-                  <CardDescription>
-                      Join a game or create one to begin your conquest.
-                  </CardDescription>
-              </div>
-              <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
+            <div>
+              <CardTitle>Game Lobby</CardTitle>
+              <CardDescription>
+                Join a game or create one to begin your conquest.
+              </CardDescription>
+            </div>
+            <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
           </div>
         </CardHeader>
         <CardContent>

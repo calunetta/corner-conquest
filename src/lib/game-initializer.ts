@@ -1,10 +1,11 @@
 
 
 import type { GameState, Island, Player, IslandResource, Monster, GameSettings, FirestoreGameState, BaseTileInfo } from './types';
+import { CardName } from './types';
 import { BASE_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
 import { MAP_COLS, MAP_ROWS } from './game-logic';
-import { IslandType, ResourceType, PlayerColor, MonsterName, GameStatus, AbilityName, CardName } from './types';
+import { IslandType, ResourceType, PlayerColor, MonsterName, GameStatus, AbilityName } from './types';
 
 export const defaultGameSettings: GameSettings = {
     victoryPointGoal: 30,
