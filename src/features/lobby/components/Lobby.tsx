@@ -12,7 +12,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { CreateGameDialog } from './CreateGameDialog';
 import { Loader2, Users, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { PLAYER_COLORS } from '@/lib/player-data';
+import { PLAYER_COLORS, PLAYER_DATA } from '@/lib/player-data';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 type LobbyProps = {
   onJoinGame: (gameId: string) => void;
@@ -97,14 +100,20 @@ export function Lobby({ onJoinGame }: LobbyProps) {
 
         await runTransaction(db, async (transaction) => {
             const gameDoc = await transaction.get(gameDocRef);
-            const mapDoc = await transaction.get(mapDocRef);
             
-            if (!gameDoc.exists() || !mapDoc.exists()) {
-                throw new Error("Game or its map data not found.");
+            if (!gameDoc.exists()) {
+                throw new Error("Game not found.");
             }
-
+            
             const firestoreState = gameDoc.data() as FirestoreGameState;
-            const mapData = mapDoc.data() as { map: Island[][] }; // This is now an array of arrays
+            
+            // We need the map data to add a player, so we fetch it here.
+            // This is less efficient than having it in the lobby state, but safer for transactions.
+            const mapDoc = await getDoc(doc(db, 'games', gameId, 'static', 'map'));
+            if (!mapDoc.exists()) {
+                throw new Error("Game map data not found.");
+            }
+            const mapData = mapDoc.data() as { map: Island[][] };
             
             if (firestoreState.status !== GameStatus.Waiting) {
                  throw new Error("This game has already started or is no longer available.");
@@ -117,22 +126,29 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 return;
             }
             
-            const { newGameState, updatedMap, newBaseTile } = addPlayerToGame(firestoreState, mapData.map.flat(), { playerId, name: username });
+            const { newGameState, updatedMap, newBaseTile } = addPlayerToGame(firestoreState, mapData.map, { playerId, name: username });
 
             if (!newGameState || !updatedMap || !newBaseTile) {
                  throw new Error("Could not add player to game. The room might be full or color unavailable.");
             }
             
-            transaction.update(gameDocRef, {
+            // The properties to update in the transaction
+            const updateData: Partial<FirestoreGameState> = {
                 players: newGameState.players,
                 log: newGameState.log,
-                baseTiles: arrayUnion(newBaseTile),
-                status: newGameState.status,
-                turn: newGameState.turn,
-            });
-            transaction.update(mapDocRef, {
-                map: updatedMap,
-            });
+                baseTiles: arrayUnion(newBaseTile)
+            };
+
+            // Conditionally update status and turn if the game is starting
+            if (newGameState.players.length === newGameState.maxPlayers) {
+                updateData.status = GameStatus.Playing;
+                updateData.turn = 1;
+            }
+
+            transaction.update(gameDocRef, updateData);
+            
+            // Only update the map if it has changed
+            transaction.update(mapDocRef, { map: updatedMap });
         });
         
         onJoinGame(gameId);
@@ -150,16 +166,16 @@ export function Lobby({ onJoinGame }: LobbyProps) {
       <Card className="w-full max-w-3xl">
         <CardHeader className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1">
-            <div className="flex items-center gap-4">
-              <CardTitle className='text-2xl'>Game Lobby</CardTitle>
-              <div className="text-sm text-muted-foreground">
+             <CardTitle className='text-2xl'>Game Lobby</CardTitle>
+             <CardDescription>Join a game or create one to begin your conquest.</CardDescription>
+          </div>
+           <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
+             <div className="text-right text-sm text-muted-foreground">
                 Welcome, <span className="font-bold text-foreground">{username}</span>!
                 <Button variant="link" size="sm" onClick={logout} className="ml-1 p-0 h-auto">Logout</Button>
               </div>
-            </div>
-            <CardDescription>Join an available game or create a new one to start playing.</CardDescription>
+            <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
           </div>
-          <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -173,32 +189,52 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 <p className="text-sm">Why not be the first to create one?</p>
               </div>
             ) : (
-              games.map((game) => (
-                <div key={game.id} className="flex flex-col items-start gap-3 rounded-lg border bg-card p-3 transition-all hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-                  <div className="flex-1">
-                    <h3 className="font-bold">{game.name}</h3>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                            <Crown className="h-4 w-4 text-yellow-500" />
-                            <span>{game.players[0]?.name || '...'}</span>
+              <TooltipProvider>
+                {games.map((game) => (
+                  <div key={game.id} className="flex flex-col items-start gap-3 rounded-lg border bg-card p-3 transition-all hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+                    <div className="flex flex-1 items-center gap-4">
+                      <div className="flex -space-x-2">
+                        {game.players.map(p => (
+                           <Tooltip key={p.playerId}>
+                              <TooltipTrigger asChild>
+                                  <Avatar className="h-8 w-8 border-2" style={{ borderColor: p.color }}>
+                                    <AvatarFallback style={{ backgroundColor: p.color }} className="text-white font-bold">
+                                        {p.name.charAt(0)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{p.name}</p>
+                              </TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </div>
+                      <div>
+                        <h3 className="font-bold">{game.name}</h3>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                                <Crown className="h-4 w-4 text-yellow-500" />
+                                <span>{game.players[0]?.name || '...'}</span>
+                            </div>
+                             <div className="flex items-center gap-1.5">
+                                <Users className="h-4 w-4" />
+                                <span>{game.players.length} / {game.maxPlayers} players</span>
+                            </div>
                         </div>
-                         <div className="flex items-center gap-1.5">
-                            <Users className="h-4 w-4" />
-                            <span>{game.players.length} / {game.maxPlayers} players</span>
-                        </div>
+                      </div>
                     </div>
+                    <Button 
+                      onClick={() => handleJoinGame(game.id)} 
+                      disabled={isJoiningGame !== null || game.players.length >= game.maxPlayers} 
+                      className="w-full sm:w-auto"
+                      variant={game.players.length >= game.maxPlayers ? 'secondary' : 'default'}
+                    >
+                      {isJoiningGame === game.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      {game.players.length >= game.maxPlayers ? 'Full' : 'Join'}
+                    </Button>
                   </div>
-                  <Button 
-                    onClick={() => handleJoinGame(game.id)} 
-                    disabled={isJoiningGame !== null || game.players.length >= game.maxPlayers} 
-                    className="w-full sm:w-auto"
-                    variant={game.players.length >= game.maxPlayers ? 'secondary' : 'default'}
-                  >
-                    {isJoiningGame === game.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    {game.players.length >= game.maxPlayers ? 'Full' : 'Join'}
-                  </Button>
-                </div>
-              ))
+                ))}
+              </TooltipProvider>
             )}
           </div>
         </CardContent>
