@@ -35,7 +35,7 @@ function getChangedFields(object: any, base: any) {
         // If the value is an object and the base value is also an object, recurse.
         // Otherwise, or if the new value is null, just assign it.
         result[key] =
-          isObject(value) && isObject(baseObj[key]) && value !== null
+          isObject(value) && isObject(baseObj?.[key]) && value !== null
             ? changes(value, baseObj[key])
             : value;
       }

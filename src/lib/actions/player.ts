@@ -287,7 +287,9 @@ export function handleCancelAction(state: GameState): GameState {
              const discardIndex = newState.discardPile.indexOf(CardName.ExtraMove);
              if (discardIndex > -1) {
                 const card = newState.discardPile.splice(discardIndex, 1)[0];
-                player.specialCards.push(card);
+                if (card) {
+                    player.specialCards.push(card);
+                }
                 const actionIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
                 if (actionIndex > -1) player.actionsThisTurn.splice(actionIndex, 1);
              }
