@@ -245,9 +245,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         const { id } = toast({ title: 'Teleport: Step 2', description: 'Now, select any destination tile on the map.' });
         setActiveInstructionToastId(id);
       }
+    } else if (gameState?.scoutingState && gameState.scoutingState.count > 0 && isMyTurn) {
+        const { id } = toast({ title: 'Scout Activated', description: `Click a hidden tile to reveal it. ${gameState.scoutingState.count} reveals remaining.` });
+        setActiveInstructionToastId(id);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState?.teleportState, isMyTurn]);
+  }, [gameState?.teleportState, gameState?.scoutingState, isMyTurn]);
 
    useEffect(() => {
     if (gameState?.status === 'playing') {
@@ -476,5 +479,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    

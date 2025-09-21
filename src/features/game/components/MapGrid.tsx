@@ -105,7 +105,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
           const armyOnTile = island.occupants.find(o => o.playerId === currentPlayerId);
           const isArmySelectedOnTile = (isTeleporting && armyOnTile?.armyId === teleportingArmyId) || (!isTeleporting && selectedArmy?.position.x === island.x && selectedArmy?.position.y === island.y);
           
-          const isScoutTarget = isScouting && fogOfWar && !localPlayer.revealedTiles.includes(island.id);
+          const isScoutTarget = isScouting && fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id);
           
           return (
             <IslandTile

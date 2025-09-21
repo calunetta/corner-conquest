@@ -139,7 +139,7 @@ export function handleTileClick(
     const { players, currentPlayerIndex, teleportState, scoutingState, settings } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const clickedTile = newState.map[y][x];
-    const isTileRevealed = settings.fogOfWar ? currentPlayer.revealedTiles.includes(clickedTile.id) : true;
+    const isTileRevealed = !settings.fogOfWar || currentPlayer.revealedTiles.includes(clickedTile.id);
     
     let selectedArmyId: number | null = currentSelectedArmy?.id ?? null;
     let selectedTile: {x: number, y: number} | null = { x, y };

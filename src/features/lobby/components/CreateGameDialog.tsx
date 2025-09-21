@@ -67,7 +67,13 @@ export function CreateGameDialog({
     if (!gameName || isCreating) return;
     setIsCreating(true);
     const numBots = maxPlayers === 1 ? 1 : 0;
-    const success = await onCreateGame(gameName, maxPlayers, playerColor, numBots, debugMode, customSettings);
+    
+    let finalSettings = { ...customSettings };
+    if (maxPlayers === 1) { // Player vs Bot
+        finalSettings.fogOfWar = !debugMode;
+    }
+
+    const success = await onCreateGame(gameName, maxPlayers, playerColor, numBots, debugMode, finalSettings);
     setIsCreating(false);
     if (success) {
       onOpenChange(false);
@@ -159,7 +165,7 @@ export function CreateGameDialog({
                             <HelpCircle className='h-4 w-4 text-muted-foreground' />
                         </TooltipTrigger>
                         <TooltipContent>
-                            <p>Start the game with one of every special card for easy testing.</p>
+                            <p>Disable Fog of War and start with all special cards.</p>
                         </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

@@ -80,7 +80,7 @@ export function addPlayerToGame(
         { type: 'wheat', amount: newGameState.settings.baseResourceAmount }
     ];
     
-    // Add the new base to the revealed tiles for all players if not in fog of war mode
+    // Add the new base to the revealed tiles for the new player if fog of war is on
     if (newGameState.settings.fogOfWar) {
         newPlayer.revealedTiles.push(baseTile.id);
     }

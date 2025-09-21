@@ -18,7 +18,7 @@ export const defaultGameSettings: GameSettings = {
     resourceDensity: 0.6, // 60% chance for a tile to be resource vs monster
     availableCards: [...BASE_CARDS],
     availableAbilities: [AbilityName.Explorer, AbilityName.Collector],
-    fogOfWar: false,
+    fogOfWar: true,
 };
 
 const MONSTER_DATA: Record<number, { name: MonsterName, sprite: { idle: string, attack: string, death: string } }> = {
@@ -98,7 +98,7 @@ export function createPlayer(
     settings: GameSettings,
     debugMode: boolean
 ): Player {
-    let startingCards: CardName[] = [CardName.ExtraMove, CardName.StealResource, CardName.DecideDiceRoll];
+    let startingCards: CardName[] = [CardName.ExtraMove, CardName.StealResource, CardName.DecideDiceRoll, CardName.Scout];
     if (debugMode) {
         startingCards = [...new Set(BASE_CARDS)];
     }
