@@ -1,5 +1,4 @@
 
-
 import type { GameState, Army, Monster, DeathAnimation, CardName } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { checkAndEndTurnIfNoActions } from './player';
@@ -12,13 +11,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
     const attacker = players[currentPlayerIndex];
 
     if (!selectedArmy) throw new Error("No army selected.");
-
-    // Consume the action immediately
-    const army = attacker.armies.find(a => a.id === selectedArmy.id);
-    if(army) army.hasActed = true;
-    else throw new Error("Attacking army not found");
-    
-    if (army.hasActed && !attacker.hasExtraMove) throw new Error("This army has already acted this turn.");
+    if (selectedArmy.hasActed && !attacker.hasExtraMove) throw new Error("This army has already acted this turn.");
 
     const currentTile = map[selectedArmy.position.y * MAP_COLS + selectedArmy.position.x];
     const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
@@ -70,6 +63,8 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
       };
     } else {
         newState.log.push(`${attacker.name}'s army attacks, but finds no target!`);
+        const army = attacker.armies.find(a => a.id === selectedArmy.id);
+        if (army) army.hasActed = true;
         return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: selectedArmy.id };
     }
     return { newState, selectedArmyId: selectedArmy.id };
@@ -184,7 +179,7 @@ export function handleCloseCombat(state: GameState): GameState {
             if (positionIndex > -1) {
                 const removedPosition = loser.positions.splice(positionIndex, 1)[0];
                 if (map[oldPos.y * MAP_COLS + oldPos.x].positionedBy) {
-                    map[oldPos.y * MAP_COLS + oldPos.x].positionedBy = map[oldPos.y * MAP_COLS + oldPos.x]!.filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
+                    map[oldPos.y * MAP_COLS + oldPos.x]!.positionedBy = (map[oldPos.y * MAP_COLS + oldPos.x]!.positionedBy || []).filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
                 }
             }
         }
@@ -262,7 +257,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
         if (useDecideCard && canUseCard && !cardUsedThisAction) {
             const cardIndex = attacker.specialCards.indexOf(CardName.DecideDiceRoll);
             if (cardIndex > -1) {
-                const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+                const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
                 discardPile.push(usedCard);
                 attacker.actionsThisTurn.push(GameAction.UseCard);
                 newState.log.push(`${attacker.name} used the 'Decide Dice Roll' card!`);
@@ -354,5 +349,3 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
     newState.monsterCombatState = null;
     return checkAndEndTurnIfNoActions(newState);
 }
-
-    

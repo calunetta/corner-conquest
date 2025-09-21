@@ -1,5 +1,4 @@
 
-
 import type { GameState, ActionHandlerResult, Army } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 
@@ -98,5 +97,3 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
             return { newState: gameState };
     }
 }
-
-    

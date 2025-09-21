@@ -1,5 +1,4 @@
 
-
 import type { GameState, Player, Army, CardName } from '@/lib/types';
 import { db, doc, deleteDoc, runTransaction, arrayUnion } from '@/lib/firebase';
 import { GameAction, AbilityName } from '../types';
@@ -269,12 +268,21 @@ export function handleCancelAction(state: GameState): GameState {
     const player = newState.players[newState.currentPlayerIndex];
     
     // Reverse card consumption if applicable
-    if (newState.teleportState || newState.scoutingState) {
+    if (newState.teleportState || newState.scoutingState || newState.useCardDialogState) {
         const usedCardIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
-        if (usedCardIndex > -1) player.actionsThisTurn.splice(usedCardIndex, 1);
+        if (usedCardIndex > -1) {
+             player.actionsThisTurn.splice(usedCardIndex, 1);
+        }
+        
+        let cardToReturn: CardName | undefined;
+        if(newState.useCardDialogState) cardToReturn = newState.useCardDialogState.cardName;
+        else if (newState.teleportState) cardToReturn = CardName.Teleport;
+        else if (newState.scoutingState) cardToReturn = CardName.Scout;
         
         const cardFromDiscard = newState.discardPile.pop();
-        if(cardFromDiscard) player.specialCards.push(cardFromDiscard);
+        if(cardFromDiscard && cardFromDiscard === cardToReturn) {
+            player.specialCards.push(cardFromDiscard);
+        }
     }
     
     newState.teleportState = null;

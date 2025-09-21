@@ -1,5 +1,4 @@
 
-
 import type { GameState, PassiveAbilities, ResourceType } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
 import { GameAction, CardName, AbilityName } from '../types';
@@ -83,6 +82,7 @@ export const handleUseCard = (state: GameState, cardName: CardName): GameState =
         case CardName.StealResource:
         case CardName.Wealthy:
             shouldOpenConfirmation = true;
+            shouldCheckEndTurn = false; // Don't end turn, wait for dialog
             break;
         default:
             throw new Error(`The card "${cardName}" does not have a defined use action.`);
@@ -91,12 +91,10 @@ export const handleUseCard = (state: GameState, cardName: CardName): GameState =
     if (shouldOpenConfirmation) {
         newState.useCardDialogState = { cardName };
     } else {
-         // For immediate effects, mark as used if it's not a delayed effect like Extra Move
-        if (cardName !== CardName.ExtraMove) {
-            player.actionsThisTurn.push(GameAction.UseCard);
-            const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-            newState.discardPile.push(usedCard);
-        }
+        // For immediate effects, mark as used
+        player.actionsThisTurn.push(GameAction.UseCard);
+        const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+        newState.discardPile.push(usedCard);
     }
 
     if (shouldCheckEndTurn) {
@@ -106,8 +104,24 @@ export const handleUseCard = (state: GameState, cardName: CardName): GameState =
 };
 
 export const handleConfirmUseCard = (state: GameState, cardName: CardName): GameState => {
-    let newState = { ...state };
+    let newState = { ...state, useCardDialogState: null }; // Close confirmation dialog
     let dialogState: Partial<GameState> = {};
+    
+    const player = newState.players[newState.currentPlayerIndex];
+    
+    // Mark card as used
+    if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
+        player.actionsThisTurn.push(GameAction.UseCard);
+        const cardIndex = player.specialCards.indexOf(cardName);
+        if (cardIndex > -1) {
+            const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+            newState.discardPile.push(usedCard);
+        } else {
+             // This case should ideally not happen if logic is correct
+            console.error(`Card ${cardName} not found for player ${player.name} when trying to confirm its use.`);
+        }
+    }
+
     switch (cardName) {
         case CardName.StealResource:
             dialogState = { stealResourceDialogState: { targetPlayerId: null } };
@@ -119,10 +133,11 @@ export const handleConfirmUseCard = (state: GameState, cardName: CardName): Game
             dialogState = { wealthyDialogState: { isOpen: true } };
             break;
         default:
-            return handleUseCard(newState, cardName);
+            // This path shouldn't be taken for dialog cards, but as a fallback, we do nothing.
+            return newState;
     }
 
-    return { ...newState, ...dialogState, useCardDialogState: null };
+    return { ...newState, ...dialogState };
 }
 
 export const handleSabotagePlayer = (state: GameState, targetPlayerId: number): GameState => {
@@ -131,17 +146,7 @@ export const handleSabotagePlayer = (state: GameState, targetPlayerId: number): 
     const targetPlayer = newState.players.find(p => p.id === targetPlayerId);
 
     if (targetPlayer) {
-        if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
-             player.actionsThisTurn.push(GameAction.UseCard);
-        }
-        
         targetPlayer.isSabotaged = true;
-        const cardIndex = player.specialCards.indexOf(CardName.Sabotage);
-        if (cardIndex > -1) {
-            const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-            newState.discardPile.push(usedCard);
-        }
-
         newState.log.push(`${player.name} sabotaged ${targetPlayer.name}! They will miss their next turn.`);
     }
 
@@ -153,40 +158,21 @@ export const handleGainWealth = (state: GameState, resource: ResourceType): Game
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     
-    if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
-        player.actionsThisTurn.push(GameAction.UseCard);
-    }
-    
     player.resources[resource] += 5;
-    
-    const cardIndex = player.specialCards.indexOf(CardName.Wealthy);
-    if (cardIndex > -1) {
-        const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-        newState.discardPile.push(usedCard);
-    }
-    
     newState.log.push(`${player.name} used 'Wealthy' to gain 5 ${resource}.`);
+    
     newState.wealthyDialogState = null;
     return checkAndEndTurnIfNoActions(newState);
 }
 
 export const handleStealResource = (state: GameState, payload: { targetPlayerId: number; resource: ResourceType }): GameState => {
     let newState = { ...state };
-    const { players, currentPlayerIndex, discardPile } = newState;
+    const { players, currentPlayerIndex } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const targetPlayer = players.find(p => p.id === payload.targetPlayerId);
 
     if (!targetPlayer) return { ...newState, stealResourceDialogState: null };
     
-    const cardIndex = currentPlayer.specialCards.indexOf(CardName.StealResource);
-    if (cardIndex === -1) throw new Error(`${currentPlayer.name} tried to steal without the card.`);
-    
-    if (!currentPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
-        currentPlayer.actionsThisTurn.push(GameAction.UseCard);
-    }
-    const usedCard = currentPlayer.specialCards.splice(cardIndex, 1)[0];
-    discardPile.push(usedCard);
-
     const stolenAmount = Math.min(targetPlayer.resources[payload.resource], 2);
 
     if (stolenAmount > 0) {
