@@ -10,7 +10,7 @@ import { GameStatus } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CreateGameDialog } from './CreateGameDialog';
-import { Loader2, Users, Crown } from 'lucide-react';
+import { Loader2, Users, Crown, Power } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PLAYER_COLORS, PLAYER_DATA } from '@/lib/player-data';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -165,9 +165,9 @@ export function Lobby({ onJoinGame }: LobbyProps) {
       <Card className="w-full max-w-3xl">
         <CardHeader>
           <div className="flex w-full items-center justify-end gap-2 text-sm text-muted-foreground mb-4">
-              Welcome, <span className="font-bold text-foreground">{username}</span>!
-              <Button variant="destructive" size="sm" onClick={logout}>
-                Logout
+              <span>Welcome, <span className="font-bold text-foreground">{username}</span>!</span>
+              <Button variant="destructive" size="icon" onClick={logout}>
+                <Power className="h-4 w-4" />
               </Button>
           </div>
           <div className="flex w-full items-start justify-between">
