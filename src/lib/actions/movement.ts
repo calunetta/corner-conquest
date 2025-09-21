@@ -1,5 +1,4 @@
 
-
 import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions } from './player';
@@ -135,10 +134,16 @@ export function handleTileClick(
     currentSelectedArmy: Army | null,
     currentPossibleMoves: {x: number, y: number}[]
 ): ActionHandlerResult {
-    let newState = { ...state, id: state.id + `_tileclick_${Date.now()}` };
+    let newState = { ...state };
     const { players, currentPlayerIndex, teleportState, scoutingState, settings } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const clickedTile = newState.map[y * MAP_COLS + x];
+    
+    if (!currentPlayer || !clickedTile) {
+        // Early exit if essential data is missing
+        return { newState: state };
+    }
+
     const isTileRevealed = !settings.fogOfWar || currentPlayer.revealedTiles.includes(clickedTile.id);
     
     let selectedArmyId: number | null = currentSelectedArmy?.id ?? null;
