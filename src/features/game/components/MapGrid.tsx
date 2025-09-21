@@ -16,27 +16,44 @@ const ROCK_SPRITES = [
 
 const generateDecorations = (isMobile: boolean) => {
     if (isMobile) return [];
-    
+
     const decorations: { src: string; style: React.CSSProperties }[] = [];
-    const tileSize = 75;
-    const tileGap = 16;
-    const totalGridWidth = (MAP_COLS * tileSize) + ((MAP_COLS) * tileGap);
-    const totalGridHeight = (MAP_ROWS * tileSize) + ((MAP_ROWS) * tileGap);
+    const totalGridWidth = (MAP_COLS * TILE_SIZE) + ((MAP_COLS) * TILE_GAP);
+    const totalGridHeight = (MAP_ROWS * TILE_SIZE) + ((MAP_ROWS) * TILE_GAP);
 
-    const rockCount = isMobile ? 0 : 50; 
+    const isOverIsland = (x: number, y: number) => {
+        const col = Math.floor(x / (TILE_SIZE + TILE_GAP));
+        const row = Math.floor(y / (TILE_SIZE + TILE_GAP));
 
-    for (let i = 0; i < rockCount; i++) {
+        const xInCol = x % (TILE_SIZE + TILE_GAP);
+        const yInRow = y % (TILE_SIZE + TILE_GAP);
+
+        return xInCol < TILE_SIZE && yInRow < TILE_SIZE;
+    };
+
+    const rockCount = isMobile ? 0 : 50;
+    let attempts = 0;
+
+    while (decorations.length < rockCount && attempts < rockCount * 10) {
         const rockSrc = ROCK_SPRITES[Math.floor(Math.random() * ROCK_SPRITES.length)];
         const size = Math.random() * 20 + 12;
+
+        const posX = Math.random() * totalGridWidth;
+        const posY = Math.random() * totalGridHeight;
         
+        attempts++;
+        if (isOverIsland(posX, posY)) {
+            continue; // Skip if it's over an island
+        }
+
         const style: React.CSSProperties = {
             position: 'absolute',
             zIndex: 5,
             pointerEvents: 'none',
             width: `${size}px`,
             height: `${size}px`,
-            left: `${Math.random() * totalGridWidth}px`,
-            top: `${Math.random() * totalGridHeight}px`,
+            left: `${posX}px`,
+            top: `${posY}px`,
             transform: 'translate(-50%, -50%)'
         };
 
@@ -71,9 +88,6 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
 
   if (!map || map.length === 0) return null;
 
-  const tileSize = 75;
-  const tileGap = 16;
-
   return (
     <div
       className="relative bg-water-pattern bg-repeat p-8 rounded-xl shadow-lg"
@@ -92,8 +106,8 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
       <div 
         className="grid z-10 relative"
         style={{
-          gridTemplateColumns: `repeat(${MAP_COLS}, ${tileSize}px)`,
-          gap: `${tileGap}px`,
+          gridTemplateColumns: `repeat(${MAP_COLS}, ${TILE_SIZE}px)`,
+          gap: `${TILE_GAP}px`,
           marginLeft: isMobile ? '180px' : '0',
         }}
       >
