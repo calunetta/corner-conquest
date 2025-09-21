@@ -131,7 +131,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       position: 'relative',
       width: '40px',
       height: '20px',
-      bottom: '-11px',
   };
 
 
@@ -223,11 +222,11 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         onClick={() => onClick(island.x, island.y)}
         className={cn(
           'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200',
-          isSelected ? 'ring-2 ring-primary' : '',
-          isPossibleMove ? 'border-2 border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'border-2 border-transparent hover:border-foreground/50',
+          isSelected ? 'shadow-lg shadow-primary/70' : '',
+          isPossibleMove ? 'border-2 border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'border border-transparent hover:border-foreground/50',
           isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
-          isArmySelectedOnTile && !isTeleporting && 'ring-2 ring-offset-2 ring-primary',
-          isArmySelectedOnTile && isTeleporting && 'ring-2 ring-offset-2 ring-purple-500',
+          isArmySelectedOnTile && !isTeleporting && 'shadow-lg shadow-primary/70',
+          isArmySelectedOnTile && isTeleporting && 'shadow-lg shadow-purple-500/70',
           isTeleporting && isPossibleMove && 'border-2 border-purple-500 hover:border-purple-400 shadow-lg shadow-purple-500/30',
           isScoutTarget && 'cursor-pointer border-2 border-blue-400 hover:border-blue-300 shadow-lg shadow-blue-500/30'
         )}
@@ -295,7 +294,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             })}
         </div>
         
-        <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 z-0 flex w-full justify-center">
+        <div className="pointer-events-none absolute -bottom-[11px] left-1/2 -translate-x-1/2 z-0 flex w-full justify-center">
           {borderImageSequence.map((src, index) => (
             <div key={index} style={borderImageStyle}>
               <Image

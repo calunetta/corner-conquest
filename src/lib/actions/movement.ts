@@ -142,9 +142,14 @@ export function handleTileClick(
     const isTileRevealed = !settings.fogOfWar || currentPlayer.revealedTiles.includes(clickedTile.id);
     
     let selectedArmyId: number | null = currentSelectedArmy?.id ?? null;
-    let selectedTile: {x: number, y: number} | null = { x, y };
+    let selectedTile: {x: number, y: number} | null = null;
     let possibleMoves: {x: number, y: number}[] = currentPossibleMoves;
     let currentAction: GameAction | null = null;
+    
+    const armiesOnTile = clickedTile.occupants
+        .filter(o => o.playerId === currentPlayer.id)
+        .map(o => currentPlayer.armies.find(a => a.id === o.armyId))
+        .filter((army): army is Army => !!army);
     
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
 
@@ -160,11 +165,6 @@ export function handleTileClick(
     
     if (teleportState) {
         if (teleportState.armyId === null) {
-            const armiesOnTile = clickedTile.occupants
-                .filter(o => o.playerId === currentPlayer.id)
-                .map(o => currentPlayer.armies.find(a => a.id === o.armyId))
-                .filter((a): a is Army => !!a);
-
             if (armiesOnTile.length === 0) throw new Error("You must select a tile with one of your own armies.");
 
             if (armiesOnTile.length === 1) {
@@ -178,12 +178,8 @@ export function handleTileClick(
         return { newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
     }
     
-    const armiesOnTile = clickedTile.occupants
-        .filter(o => o.playerId === currentPlayer.id)
-        .map(o => currentPlayer.armies.find(a => a.id === o.armyId))
-        .filter((army): army is Army => !!army);
-
     if (armiesOnTile.length > 0) {
+        selectedTile = { x, y };
         if (armiesOnTile.length === 1) {
             const army = armiesOnTile[0];
             selectedArmyId = army.id;
@@ -199,6 +195,7 @@ export function handleTileClick(
         selectedArmyId = null;
         possibleMoves = [];
         currentAction = null;
+        selectedTile = null;
     }
 
     return { newState, selectedArmyId, selectedTile, possibleMoves, currentAction };

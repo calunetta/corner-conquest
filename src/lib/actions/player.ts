@@ -250,6 +250,7 @@ export function handleEndTurn(state: GameState): GameState {
 export function handleDeselectArmy() {
     return {
         selectedArmyId: null,
+        selectedTile: null,
         possibleMoves: [],
         currentAction: null,
     }
