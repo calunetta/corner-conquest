@@ -205,7 +205,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         className={cn(
           'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200 border-2 z-10',
           getTerrainClass(),
-          isHiddenForPlayer && !fogOfWar ? 'border-dashed border-muted-foreground/30' : 'border-transparent',
+          isHiddenForPlayer ? 'border-dashed border-muted-foreground/30' : 'border-transparent',
           isSelected ? 'ring-2 ring-primary' : '',
           isPossibleMove ? 'border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'hover:border-foreground/50',
           isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
