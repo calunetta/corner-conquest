@@ -162,6 +162,12 @@ export function handleUpgradeAction(state: GameState): GameState {
 
 export function handleEndTurn(state: GameState): GameState {
     let newState = JSON.parse(JSON.stringify(state)); 
+    
+    // Add a sanity check for the currentPlayerIndex
+    if (newState.currentPlayerIndex >= newState.players.length) {
+        newState.currentPlayerIndex = 0;
+    }
+    
     let currentPlayer = newState.players[newState.currentPlayerIndex];
     
     if (currentPlayer.passiveAbilities.explorer) {
