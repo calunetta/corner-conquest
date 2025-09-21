@@ -79,6 +79,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
             if (staticDataLoaded) setIsLoading(false);
         } else {
             toast({ title: "Game Over", description: "This game session no longer exists." });
+            unsubscribeAll();
             router.push('/');
         }
     }, (error) => {
@@ -92,18 +93,20 @@ export function useGameEngine(gameId: string, playerId: string | null) {
             setStaticState(docSnapshot.data() as { map: Island[] });
             staticDataLoaded = true;
             if (dynamicDataLoaded) setIsLoading(false);
-        } else {
-            toast({ title: "Game Data Error", description: "Could not load map data." });
         }
     }, (error) => {
         console.error("Firestore map state error:", error);
         toast({ title: 'Map Error', description: 'Could not load the game map.', variant: 'destructive' });
         setIsLoading(false);
     });
-
-    return () => {
+    
+    const unsubscribeAll = () => {
         unsubscribeGame();
         unsubscribeMap();
+    };
+
+    return () => {
+        unsubscribeAll();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, toast, router]);
@@ -125,9 +128,15 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     const { map: oldMap, ...oldFirestoreState } = currentState;
     
     try {
+        const gameDocRef = doc(db, 'games', gameId);
+        const gameDoc = await getDoc(gameDocRef);
+        if (!gameDoc.exists()) {
+            console.warn("Attempted to update a non-existent game document.");
+            return;
+        }
+
         const dynamicChanges = getChangedFields(newFirestoreState, oldFirestoreState);
         if (Object.keys(dynamicChanges).length > 0) {
-            const gameDocRef = doc(db, 'games', gameId);
             await updateDoc(gameDocRef, dynamicChanges);
         }
         
