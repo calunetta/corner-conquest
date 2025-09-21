@@ -118,7 +118,9 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   
   const isHiddenForPlayer = fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id);
   
-  const borderImage = useMemo(() => BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)], []);
+  const borderImageSequence = useMemo(() => {
+    return Array.from({ length: 3 }, () => BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)]);
+  }, []);
 
 
   const renderResourceIcons = (resources: IslandResource[]) => {
@@ -283,14 +285,27 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
 
         <div className="h-full w-full p-1 z-10">{getIcon()}</div>
 
-        <Image
-            src={borderImage}
-            alt=""
-            width={80}
-            height={20}
-            className="pointer-events-none absolute -bottom-2 z-0 h-auto w-full"
-            unoptimized
-        />
+        <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 z-0 flex w-full justify-center">
+          {borderImageSequence.map((src, index) => (
+            <div
+              key={index}
+              style={{
+                position: 'relative', 
+                width: '40px',
+                height: '20px', 
+                bottom: '-15px'
+              }}
+            >
+              <Image
+                src={src}
+                alt=""
+                layout="fill"
+                objectFit="contain"
+                unoptimized
+              />
+            </div>
+          ))}
+        </div>
       </button>
     </TooltipProvider>
   );
