@@ -172,7 +172,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
           <div className="flex flex-col items-end gap-2">
             <div className="text-sm text-muted-foreground">
                 Welcome, <span className="font-bold text-foreground">{username}</span>!
-                <Button variant="link" size="sm" onClick={logout} className="ml-1 p-0 h-auto">Logout</Button>
+                <Button variant="link" size="sm" onClick={logout} className="ml-1 p-0 h-auto text-red-500 hover:text-red-600">Logout</Button>
             </div>
             <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
           </div>
