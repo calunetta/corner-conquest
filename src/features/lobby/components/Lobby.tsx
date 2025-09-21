@@ -71,7 +71,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     
     const isBotGame = maxPlayers === 1;
     if (isBotGame) {
-      dynamicState = startGame(dynamicState);
+      dynamicState = startGame(dynamicState as GameState);
     }
 
     try {
@@ -106,14 +106,6 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             
             const firestoreState = gameDoc.data() as FirestoreGameState;
             
-            // We need the map data to add a player, so we fetch it here.
-            // This is less efficient than having it in the lobby state, but safer for transactions.
-            const mapDoc = await getDoc(doc(db, 'games', gameId, 'static', 'map'));
-            if (!mapDoc.exists()) {
-                throw new Error("Game map data not found.");
-            }
-            const mapData = mapDoc.data() as { map: Island[][] };
-            
             if (firestoreState.status !== GameStatus.Waiting) {
                  throw new Error("This game has already started or is no longer available.");
             }
@@ -125,13 +117,12 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 return;
             }
             
-            const { newGameState, updatedMap, newBaseTile } = addPlayerToGame(firestoreState, mapData.map, { playerId, name: username });
+            const { newGameState, newBaseTile } = addPlayerToGame(firestoreState, { playerId, name: username });
 
-            if (!newGameState || !updatedMap || !newBaseTile) {
+            if (!newGameState || !newBaseTile) {
                  throw new Error("Could not add player to game. The room might be full or color unavailable.");
             }
             
-            // The properties to update in the transaction
             const updateData: Partial<FirestoreGameState> = {
                 players: newGameState.players,
                 log: newGameState.log,
@@ -146,9 +137,6 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             }
 
             transaction.update(gameDocRef, updateData);
-            
-            // Only update the map if it has changed
-            transaction.update(doc(db, 'games', gameId, 'static', 'map'), { map: updatedMap });
         });
         
         onJoinGame(gameId);
@@ -170,11 +158,13 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             <CardDescription>Join a game or create one to begin your conquest.</CardDescription>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <div className="text-sm text-muted-foreground">
+             <div className="text-sm text-muted-foreground">
                 Welcome, <span className="font-bold text-foreground">{username}</span>!
-                <Button variant="link" size="sm" onClick={logout} className="ml-1 p-0 h-auto text-red-500 hover:text-red-600">Logout</Button>
+             </div>
+            <div className='flex items-center gap-2'>
+              <Button variant="destructive" size="sm" onClick={logout}>Logout</Button>
+              <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
             </div>
-            <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
           </div>
         </CardHeader>
         <CardContent>
