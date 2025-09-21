@@ -35,16 +35,17 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const { currentPlayerIndex, players, map, specialCardsDeck, teleportState, scoutingState, settings, abilitiesShopState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   const localPlayer = players.find(p => p.playerId === playerId)!;
+  const armyInState = selectedArmy ? currentPlayer.armies.find(a => a.id === selectedArmy.id) : null;
   
-  const currentTile = (selectedArmy && map && map[selectedArmy.position.y] && map[selectedArmy.position.y][selectedArmy.position.x])
-    ? map[selectedArmy.position.y][selectedArmy.position.x] 
+  const currentTile = (armyInState && map && map[armyInState.position.y] && map[armyInState.position.y][armyInState.position.x])
+    ? map[armyInState.position.y][armyInState.position.x] 
     : null;
 
-  const hasArmyActed = !!selectedArmy?.hasActed;
+  const hasArmyActed = !!armyInState?.hasActed;
 
-  const canCollect = selectedArmy && currentPlayer.positions.some(p => p.armyId === selectedArmy.id);
-  const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.armyId === selectedArmy.id) && (!currentTile.monsters || currentTile.monsters.length === 0);
-  const canAttack = selectedArmy && currentTile && (currentTile.occupants.some(o => o.playerId !== currentPlayer.id) || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
+  const canCollect = armyInState && currentPlayer.positions.some(p => p.armyId === armyInState.id);
+  const canPosition = armyInState && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !currentPlayer.positions.some(p => p.armyId === armyInState.id) && (!currentTile.monsters || currentTile.monsters.length === 0);
+  const canAttack = armyInState && currentTile && (currentTile.occupants.some(o => o.playerId !== currentPlayer.id) || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
   
   const upgradeCost = currentPlayer.masterBuilderActive ? Math.ceil(settings.upgradeCost / 2) : settings.upgradeCost;
   const deployCost = currentPlayer.efficientActive ? Math.ceil(currentPlayer.nextArmyCost / 2) : currentPlayer.nextArmyCost;
@@ -136,16 +137,16 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
             if (currentPlayer.actionsThisTurn.includes(GameAction.Deploy)) return "You've already deployed this turn.";
             return "This action is not available.";
         case GameAction.Collect:
-            if (!selectedArmy) return "You must select an army first.";
-            if (!currentPlayer.positions.some(p => p.armyId === selectedArmy?.id)) return "Your selected army is not positioned on a resource.";
+            if (!armyInState) return "You must select an army first.";
+            if (!currentPlayer.positions.some(p => p.armyId === armyInState?.id)) return "Your selected army is not positioned on a resource.";
             return "This action is not available.";
         case GameAction.Attack:
-            if (!selectedArmy) return "You must select an army first.";
+            if (!armyInState) return "You must select an army first.";
             if (!currentTile || (!currentTile.occupants.some(o => o.playerId !== currentPlayer.id) && (!currentTile.monsters || currentTile.monsters.length === 0))) return "There is nothing to attack on this tile.";
             return "This action is not available.";
         case GameAction.Position:
-            if (!selectedArmy) return "You must select an army first.";
-            if (currentPlayer.positions.some(p => p.armyId === selectedArmy?.id)) return "You are already positioned here.";
+            if (!armyInState) return "You must select an army first.";
+            if (currentPlayer.positions.some(p => p.armyId === armyInState?.id)) return "You are already positioned here.";
             if (!currentTile || (currentTile.type !== 'resource' && currentTile.type !== 'base') || currentTile.resources.length === 0) return "This tile has no resources to position on.";
             if (currentTile.monsters && currentTile.monsters.length > 0) return "Cannot position on an island with monsters.";
             return "This action is not available.";

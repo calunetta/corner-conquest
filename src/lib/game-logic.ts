@@ -22,10 +22,10 @@ function reconstructMap(flatMap: Island[]): Island[][] {
 }
 
 export function addPlayerToGame(
-    firestoreState: Omit<FirestoreGameState, 'id' | 'name'>,
+    firestoreState: FirestoreGameState,
     mapData: Island[],
     playerInfo: { playerId: string, name: string }
-): { newGameState: Omit<FirestoreGameState, 'id' | 'name'> | null, updatedMap: Island[] | null, newBaseTile: BaseTileInfo | null } {
+): { newGameState: FirestoreGameState | null, updatedMap: Island[] | null, newBaseTile: BaseTileInfo | null } {
     
     if (firestoreState.status !== GameStatus.Waiting) {
         return { newGameState: null, updatedMap: null, newBaseTile: null }; // Game has started

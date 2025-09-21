@@ -365,7 +365,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                     className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4"
                     >
                     {players.map(p => (
-                        <PlayerInfo key={p.playerId} player={p} isCurrentPlayer={currentPlayerIndex === p.id} />
+                        <PlayerInfo key={p.playerId} player={p} isCurrentPlayer={p.id === currentPlayerIndex} />
                     ))}
                     {status === 'waiting' && Array.from({ length: maxPlayers - players.length}).map((_, i) => (
                         <div key={`empty-${i}`} className="flex h-full min-h-24 items-center justify-center rounded-lg border-2 border-dashed bg-card p-4 text-sm text-muted-foreground sm:min-h-28 sm:text-base">Waiting for player...</div>

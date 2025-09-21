@@ -68,7 +68,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     
     const isBotGame = maxPlayers === 1;
     if (isBotGame) {
-      dynamicState = startGame(dynamicState, creator.name);
+      dynamicState = startGame(dynamicState);
     }
 
     try {
@@ -102,7 +102,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 throw new Error("Game not found.");
             }
 
-            const firestoreState = gameDoc.data() as Omit<FirestoreGameState, 'id' | 'name'>;
+            const firestoreState = gameDoc.data() as FirestoreGameState;
             
             if (firestoreState.status !== GameStatus.Waiting) {
                  throw new Error("This game has already started or is no longer available.");
