@@ -39,13 +39,29 @@ function getChangedFields(object: any, base: any): any {
     });
   };
 
-  const initialChanges = changes(object, base);
+  let initialChanges = changes(object, base);
 
-  // Also check for keys that were in base but are now undefined in object
+  // Also check for keys that were in base but are now undefined or null in object
   forEach(base, (value, key) => {
       if (isUndefined(object[key]) && !isUndefined(value)) {
-          initialChanges[key] = null; // Or use Firestore's delete field if needed
+          // This key was removed
+          initialChanges[key] = null; // Use null to represent deletion in Firestore
       }
+  });
+
+  // Check for keys that are new in object
+  forEach(object, (value, key) => {
+    if (isUndefined(base[key])) {
+        initialChanges[key] = value;
+    }
+  });
+  
+  // This is a Firestore constraint. We cannot have undefined values.
+  // We clean them up here. If a key was removed, it should be set to null above.
+  initialChanges = transform(initialChanges, (result: any, value, key) => {
+    if (value !== undefined) {
+        result[key] = value;
+    }
   });
 
   return initialChanges;
@@ -139,20 +155,33 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   }, [gameId, toast, router]);
 
   const updateGameState = useCallback(async (newStateOrFn: GameState | null | ((prevState: GameState | null) => GameState | null)) => {
-    const currentState = gameStateRef.current;
-    if (!currentState) return;
-
+    
     let finalState: GameState | null = null;
+    
     if (typeof newStateOrFn === 'function') {
+        const currentState = gameStateRef.current;
+        if (!currentState) {
+            console.error("Cannot update state based on function because current state is null.");
+            return;
+        }
         finalState = newStateOrFn(currentState);
     } else {
       finalState = newStateOrFn;
     }
 
-    if (!finalState) return;
+    if (!finalState) {
+        console.error("updateGameState was called with null or returned null.");
+        return;
+    }
+    
+    const currentStateForDiff = gameStateRef.current;
+    if (!currentStateForDiff) {
+        console.error("Cannot calculate diff because previous state is null.");
+        return;
+    }
     
     const { map: newMap, ...newFirestoreState } = finalState;
-    const { map: oldMap, ...oldFirestoreState } = currentState;
+    const { map: oldMap, ...oldFirestoreState } = currentStateForDiff;
     
     try {
         const gameDocRef = doc(db, 'games', gameId);

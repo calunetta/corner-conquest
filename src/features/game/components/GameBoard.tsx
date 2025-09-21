@@ -105,7 +105,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMyTurn, gameState?.turn, gameState?.players]);
   
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
-    if (!gameState || !localPlayer || isPerformingAction) return;
+    if (isPerformingAction) return;
 
     if (!isMyTurn && ![GameAction.ShowCards, GameAction.OpenAbilitiesShop, GameAction.CloseCards, GameAction.CloseAbilitiesShop].includes(action)) {
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
@@ -114,64 +114,74 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     
     try {
         setIsPerformingAction(true);
-        const {newState, ...uiState} = handleGameAction({
-            action,
-            gameState,
-            selectedArmy,
-            payload
-        });
         
-        await setGameState(newState);
-        
-        if (uiState.selectedArmyId !== undefined) setSelectedArmyId(uiState.selectedArmyId);
-        if (uiState.possibleMoves) setPossibleMoves(uiState.possibleMoves);
-        if (uiState.currentAction !== undefined) setCurrentAction(uiState.currentAction);
+        await setGameState((currentGameState) => {
+            if (!currentGameState || !localPlayer) return currentGameState;
+            
+            const armyForAction = currentGameState.players[currentGameState.currentPlayerIndex]?.armies.find(a => a.id === selectedArmyId) || null;
+            
+            const {newState, ...uiState} = handleGameAction({
+                action,
+                gameState: currentGameState,
+                selectedArmy: armyForAction,
+                payload
+            });
+            
+            // This part now happens inside the state setter, using the returned UI state
+            if (uiState.selectedArmyId !== undefined) setSelectedArmyId(uiState.selectedArmyId);
+            if (uiState.possibleMoves) setPossibleMoves(uiState.possibleMoves);
+            if (uiState.currentAction !== undefined) setCurrentAction(uiState.currentAction);
 
-
-        // Reset UI state for most actions, but preserve it for dialog flows
-        if (action !== GameAction.SelectArmy && action !== GameAction.SelectDefender && action !== GameAction.CancelAction) {
-            const isDialogAction = Object.keys(newState).some(k => (k.endsWith('State') || k.endsWith('Dialog')) && newState[k as keyof GameState] !== null);
-            if (!isDialogAction) {
-                setCurrentAction(null);
-                setPossibleMoves([]);
-                setSelectedTile(null);
+            // Reset UI state for most actions, but preserve it for dialog flows
+            if (action !== GameAction.SelectArmy && action !== GameAction.SelectDefender && action !== GameAction.CancelAction) {
+                const isDialogAction = Object.keys(newState).some(k => (k.endsWith('State') || k.endsWith('Dialog')) && newState[k as keyof GameState] !== null);
+                if (!isDialogAction) {
+                    setCurrentAction(null);
+                    setPossibleMoves([]);
+                    setSelectedTile(null);
+                }
             }
-        }
+
+            return newState;
+        });
 
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
     } finally {
         setIsPerformingAction(false);
     }
-  }, [gameState, localPlayer, isMyTurn, selectedArmy, toast, setGameState, isPerformingAction]);
+  }, [isPerformingAction, isMyTurn, toast, setGameState, localPlayer, selectedArmyId]);
   
   const handleTileClick = async (x: number, y: number) => {
     if (!gameState || !isMyTurn || gameState.status !== 'playing' || isPerformingAction) return;
     
     try {
         setIsPerformingAction(true);
-        const result = handleGameAction({
-            action: GameAction.TileClick,
-            gameState,
-            selectedArmy: selectedArmy,
-            payload: { x, y, possibleMoves }
+        await setGameState(currentGameState => {
+            if (!currentGameState) return null;
+            
+            const armyForAction = currentGameState.players[currentGameState.currentPlayerIndex]?.armies.find(a => a.id === selectedArmyId) || null;
+
+            const result = handleGameAction({
+                action: GameAction.TileClick,
+                gameState: currentGameState,
+                selectedArmy: armyForAction,
+                payload: { x, y, possibleMoves }
+            });
+            
+            const { newState, selectedArmyId: newSelectedArmyId, possibleMoves: newPossibleMoves, currentAction: newCurrentAction, selectedTile: newSelectedTile } = result;
+
+            setSelectedArmyId(newSelectedArmyId === undefined ? selectedArmyId : newSelectedArmyId);
+            setSelectedTile(newSelectedTile === undefined ? selectedTile : newSelectedTile);
+            setPossibleMoves(newPossibleMoves === undefined ? possibleMoves : newPossibleMoves);
+            setCurrentAction(newCurrentAction === undefined ? currentAction : newCurrentAction);
+
+            if (activeInstructionToastId) {
+                dismiss(activeInstructionToastId);
+                setActiveInstructionToastId(null);
+            }
+            return newState;
         });
-        
-        const { newState, selectedArmyId: newSelectedArmyId, possibleMoves: newPossibleMoves, currentAction: newCurrentAction, selectedTile: newSelectedTile } = result;
-
-        if (newState.id !== gameState.id) {
-          await setGameState(newState);
-        }
-        
-        setSelectedArmyId(newSelectedArmyId);
-        setSelectedTile(newSelectedTile);
-        setPossibleMoves(newPossibleMoves || []);
-        setCurrentAction(newCurrentAction);
-
-        if (activeInstructionToastId) {
-            dismiss(activeInstructionToastId);
-            setActiveInstructionToastId(null);
-        }
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
     } finally {
