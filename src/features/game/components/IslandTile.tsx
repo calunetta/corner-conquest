@@ -195,7 +195,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   };
 
   const getTerrainClass = () => {
-    return 'bg-terrain bg-cover bg-center';
+    return 'bg-terrain bg-cover bg-center bg-no-repeat';
   }
 
   return (
@@ -286,5 +286,3 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     </TooltipProvider>
   );
 }
-
-    
