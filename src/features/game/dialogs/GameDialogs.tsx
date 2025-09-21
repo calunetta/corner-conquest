@@ -15,6 +15,7 @@ import { WealthyDialog } from './WealthyDialog';
 import { CollectDialog } from './CollectDialog';
 import { ArmySelectionDialog } from './ArmySelectionDialog';
 import { AttackSelectionDialog } from './AttackSelectionDialog';
+import { MAP_COLS } from '@/lib/game-logic';
 
 type GameDialogsProps = {
   gameState: GameState;
@@ -75,7 +76,7 @@ export function GameDialogs({
       {isDialogVisible('monsterCombatState') && monsterCombatState && (
         <MonsterCombatDialog 
           gameState={gameState} 
-          monsters={gameState.map[monsterCombatState.attackerPosition.y][monsterCombatState.attackerPosition.x].monsters || []}
+          monsters={gameState.map[monsterCombatState.attackerPosition.y * MAP_COLS + monsterCombatState.attackerPosition.x].monsters || []}
           onRoll={(payload) => handleAction(GameAction.MonsterCombatRoll, payload)}
           onClose={() => isAttacker ? handleAction(GameAction.CloseMonsterCombat) : handleAction(GameAction.CloseMonsterCombatViewer)}
           onCancel={() => handleAction(GameAction.CancelAction)}
