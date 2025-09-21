@@ -67,16 +67,17 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     const newGameId = gameDocRef.id;
 
     const creator = { playerId, name: username, color: playerColor };
-    let { dynamicState, staticState } = initializeGame(newGameId, gameName, maxPlayers, creator, numBots, debugMode, settings);
+    const { dynamicState, staticState } = initializeGame(newGameId, gameName, maxPlayers, creator, numBots, debugMode, settings);
     
+    let finalDynamicState = dynamicState;
     const isBotGame = maxPlayers === 1;
     if (isBotGame) {
-      dynamicState = startGame(dynamicState as GameState);
+      finalDynamicState = startGame(dynamicState as GameState);
     }
 
     try {
         const batch = writeBatch(db);
-        batch.set(gameDocRef, dynamicState);
+        batch.set(gameDocRef, finalDynamicState);
         const staticDocRef = doc(db, 'games', newGameId, 'static', 'map');
         batch.set(staticDocRef, staticState);
         await batch.commit();
@@ -116,8 +117,15 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 // Player is already in, just let them proceed
                 return;
             }
+
+            const staticDocRef = doc(db, 'games', gameId, 'static', 'map');
+            const staticDoc = await transaction.get(staticDocRef);
+            if (!staticDoc.exists()) {
+              throw new Error("Game map data is missing.");
+            }
+            const mapData = staticDoc.data().map as Island[];
             
-            const { newGameState, newBaseTile } = addPlayerToGame(firestoreState, { playerId, name: username });
+            const { newGameState, updatedMap, newBaseTile } = addPlayerToGame(firestoreState, mapData, { playerId, name: username });
 
             if (!newGameState || !newBaseTile) {
                  throw new Error("Could not add player to game. The room might be full or color unavailable.");
@@ -128,15 +136,18 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 log: newGameState.log,
                 baseTiles: arrayUnion(newBaseTile)
             };
-
+            
             // Conditionally update status and turn if the game is starting
-            if (newGameState.players.length === newGameState.maxPlayers) {
-                updateData.status = GameStatus.Playing;
-                updateData.turn = 1;
-                updateData.log = arrayUnion(`The game is full! Starting now.`);
+            if (newGameState.status === GameStatus.Playing) {
+                updateData.status = newGameState.status;
+                updateData.turn = newGameState.turn;
             }
 
             transaction.update(gameDocRef, updateData);
+
+            if (updatedMap) {
+               transaction.set(staticDocRef, { map: updatedMap });
+            }
         });
         
         onJoinGame(gameId);
@@ -153,19 +164,21 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     <div className="container mx-auto flex h-full flex-col items-center justify-center p-2 sm:p-4">
       <Card className="w-full max-w-3xl">
         <CardHeader>
-            <div className='flex w-full items-center justify-between'>
+          <div className="flex w-full items-center justify-end gap-2 text-sm text-muted-foreground mb-4">
+              Welcome, <span className="font-bold text-foreground">{username}</span>!
+              <Button variant="destructive" size="sm" onClick={logout}>
+                Logout
+              </Button>
+          </div>
+          <div className="flex w-full items-start justify-between">
               <div>
-                <CardTitle className='text-2xl'>Game Lobby</CardTitle>
-                <CardDescription>Join a game or create one to begin your conquest.</CardDescription>
+                  <CardTitle className="text-2xl">Game Lobby</CardTitle>
+                  <CardDescription>
+                      Join a game or create one to begin your conquest.
+                  </CardDescription>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    Welcome, <span className="font-bold text-foreground">{username}</span>!
-                    <Button variant="destructive" size="sm" onClick={logout}>Logout</Button>
-                </div>
-                <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
-              </div>
-            </div>
+              <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
