@@ -50,39 +50,33 @@ The application uses a "state machine" pattern where the game state is managed c
 
 This architecture ensures that the game logic is predictable, testable, and decoupled from the UI. UI components are responsible for *displaying* the state and *dispatching* actions, while the `lib/actions` files are responsible for *calculating* state changes.
 
-## 4. Core Game Mechanics
+## 4. Core Game Mechanics & Match Flow
 
-This section describes the rules and flow of a typical match.
+### 4.1. Objective & Winning
+The first player to reach the `victoryPointGoal` (default: 30 VP) wins the game. When this occurs, the game `status` changes to 'finished', a `winner` is declared in the game state, and a dialog appears announcing the winner. Victory Points (VP) are earned from:
+- **Winning Battles:** +5 VP for defeating another player's army.
+- **Defeating Monsters:** Variable VP based on monster level (2 for Lvl 1, 5 for Lvl 2, etc.).
+- **Island Discovery:** +`vpPerIslandDiscovery` VP for being the first player in the game to reveal a new island.
+- **Passive Abilities:** The `Explorer` ability grants VP each turn for every island you occupy.
 
-### Objective
-
-The first player to reach the `victoryPointGoal` (default: 30 VP) wins the game. Victory Points are primarily earned by:
-- Winning battles against other players or powerful monsters.
-- Being the first to discover a new island (`vpPerIslandDiscovery`).
-- Passive abilities like `Explorer`.
-
-### The Map & Islands
-
-The game is played on a grid of islands. Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to an adjacent tile.
-
+### 4.2. The Map & Islands
+The game is played on a grid of islands. Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to a tile, revealing it *for that player only*.
 - **Base:** Your starting point. Where you deploy new armies and where defeated armies respawn. Bases also generate all three resource types.
 - **Resource Islands:** Contain **Wheat**, **Iron**, or **Gems**.
-- **Monster Islands:** Inhabited by hostile creatures that must be defeated to claim the island and its resources.
+- **Monster Islands:** Inhabited by hostile creatures that must be defeated.
 - **Special Islands:** Discovering these grants the player a random Special Card.
 
-### Resources & Player Progression
-
+### 4.3. Resources & Progression
 - **Wheat:** Used to **Deploy** new armies. The cost increases with each new army.
 - **Iron:** Used to **Upgrade** the Attack Power of all your armies permanently.
-- **Gems:** A valuable resource used to **Buy Special Cards** or purchase permanent **Passive Abilities**.
+- **Gems:** Used to **Buy Special Cards** or purchase permanent **Passive Abilities**.
 
-### Turn Structure & Actions
-
+### 4.4. Turn Structure & Actions
 A player's turn consists of a series of actions. The game automatically ends a player's turn if they have no more possible moves or actions.
 
 1.  **Start of Turn (Automatic Collection):**
     - If a player has armies "positioned" on resources from a previous turn, they are automatically collected.
-    - If the player has the **"Productive"** card, a dialog appears, allowing them to double the yield of one resource.
+    - If the player has the **"Productive"** card, a dialog appears, allowing them to double the yield of one resource type. Otherwise, collection is instant.
 
 2.  **Player Actions:** A player can perform several actions per turn, with some limitations:
     - **Army Actions:** Each army can perform **one** major action per turn (either `Attack`/`Position` OR `Move`).
@@ -95,13 +89,64 @@ A player's turn consists of a series of actions. The game automatically ends a p
         - **Buy Card:** Spend Gems to draw a Special Card.
         - **Use Card:** Play one Special Card from your hand.
 
-### Combat
-
+### 4.5. Combat
 - Combat is resolved through dice rolls. Each player rolls a number of dice equal to their **Attack Power + 1**.
 - The player with the higher total roll wins the battle.
 - Defeated armies are not destroyed; they are sent back to their owner's Base tile to regroup.
 
-### Special Cards & Abilities
+## 5. Detailed System Explanations
 
-- **Special Cards:** Provide powerful, one-time effects like moving an army anywhere (`Teleport`), getting a free army (`Reinforce`), or forcing an opponent to miss their turn (`Sabotage`).
-- **Passive Abilities:** Players can spend Gems to buy permanent upgrades from the "Abilities Shop", such as `Explorer` (gain 1 VP per turn for each island you occupy) or `Collector` (automatically gather 1 of each resource from every island you occupy at the end of your turn).
+### 5.1. Special Cards
+When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn.
+- **Extra Move:** Grants the player an extra move action. One army that has already acted can move again.
+- **Teleport:** Initiates a two-step action. First, select an army. Second, select *any* tile on the map to move it to.
+- **Scout:** Initiates a multi-step action. The player can click on 3 different hidden tiles to reveal them. This does not involve any army movement.
+- **Sabotage:** Opens a dialog to choose an opponent. That opponent will miss their next turn.
+- **Reinforce:** The player's next `Deploy` action this turn is free.
+- **Efficient:** The player's next `Deploy` action this turn costs 50% less Wheat.
+- **Master Builder:** The player's next `Upgrade` action this turn costs 50% less Iron.
+- **Steal Resource:** Opens a dialog to choose a player, then a resource type. Steals 2 of that resource from the target.
+- **Wealthy:** Opens a dialog to choose a resource type. The player gains 5 of that resource.
+- **Overcome:** Automatically win the next combat encounter (vs. player or monster).
+- **War Chief:** Gain +2 to your attack power for the next combat encounter.
+- **Decide Dice Roll:** In the next *monster* combat, you can choose the value of one of your dice.
+- **Productive:** A passive card. At the start of your turn, if you are positioned to collect resources, a dialog opens allowing you to spend this card to double the yield of one resource type.
+
+### 5.2. Player Info Panel
+This UI element provides a real-time summary for each player in the game, displaying:
+- Player Name and Army Sprite
+- **Victory Points (VP)**
+- **Army Count:** Total number of armies on the board.
+- **Attack Power:** Global modifier for all armies.
+- **Resources:** Current count of Wheat, Iron, and Gems.
+- **Special Cards:** Total number of cards in hand.
+- **Status Effects:** Icons for `Sabotage` (miss next turn) or `Extra Move`.
+
+### 5.3. Player Exiting the Game
+- **Normal Player:** If a non-host player leaves, their armies are removed from the board, they are removed from the `players` array in the game state, and a log message is generated. The game continues for the remaining players.
+- **Host Player:** If the host leaves, the entire game document is **deleted from Firestore**. The game ends for all players, and they are returned to the lobby.
+
+### 5.4. Game Customization
+From the Lobby, players can create a new game and access a "Customize Match" sheet with the following options:
+- **General:** Victory Point goal, enable/disable Fog of War, set VP for island discovery, and adjust the density of resource islands vs. monster islands.
+- **Costs:** Set the initial cost for deploying armies, the cost increment for subsequent deployments, and the costs for upgrades and passive abilities.
+- **Content:** Selectively enable or disable which Special Cards and Passive Abilities are available to be drawn or purchased during the match.
+
+### 5.5. Game Log
+The game log is a running, public history of major events in the match, displayed to all players. It records:
+- Players joining or leaving.
+- Game start and end.
+- Turn progression (`It's now Player X's turn.`).
+- Key actions like deploying armies, upgrading power, and buying cards.
+- Combat outcomes (`Player A defeated Player B!`).
+- Resource collection and VP gains.
+- Special card usage (`Player X used 'Teleport'!`).
+
+This log provides crucial context and a narrative for the unfolding game.
+
+## 6. Blueprint for Future Development
+- **Always Modify State via `handleGameAction`:** All new features must be implemented as actions that flow through the central `handleGameAction` reducer.
+- **Keep Action Handlers Pure:** Functions in `src/lib/actions/` should not have side effects. They take a game state and a payload and return a *new* game state object.
+- **Use Dialogs for Multi-Step Actions:** For actions that require choices (like `Teleport` or `Sabotage`), create a new state property (e.g., `sabotageDialogState`) and a corresponding dialog component. The action handler sets this state, and the dialog component dispatches further actions.
+- **Decouple UI from Logic:** UI components should only read from the `GameState` and dispatch actions. They should never contain complex game rule calculations.
+- **Update This Document:** When a new feature is added, this `README.md` file must be updated to reflect the new mechanics to maintain it as our source of truth.
