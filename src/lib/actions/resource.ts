@@ -2,7 +2,7 @@
 
 import type { GameState, Army, IslandResource, CardName, ActionHandlerResult } from '@/lib/types';
 import { ResourceType, GameAction, IslandType } from '../types';
-import { checkAndEndTurnIfNoActions } from './player';
+import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
 import { MAP_COLS } from '../game-logic';
 
 export function handlePositionAction(state: GameState, selectedArmy: Army | null): ActionHandlerResult {
@@ -121,7 +121,14 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     newState.log.push(`${player.name}'s army must be repositioned to collect again.`);
 
     newState.collectDialogState = null;
-    return {newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null};
+    
+    const canStillAct = army ? canArmyPerformAnyAction(newState, army) : false;
+    if (!canStillAct) {
+        newState = checkAndEndTurnIfNoActions(newState);
+        return {newState, selectedArmyId: null};
+    }
+
+    return {newState, selectedArmyId: army?.id ?? null };
 }
 
 export function handleSelectResourceForPosition(state: GameState, resource: ResourceType, selectedArmy: Army | null): ActionHandlerResult {
@@ -145,7 +152,12 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     newState.log.push(`${player.name} positioned an army on ${resource}.`);
     
     newState.positionDialogState = null;
-    return {newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null};
-};
 
+    const canStillAct = army ? canArmyPerformAnyAction(newState, army) : false;
+    if (!canStillAct) {
+        newState = checkAndEndTurnIfNoActions(newState);
+        return {newState, selectedArmyId: null};
+    }
     
+    return {newState, selectedArmyId: selectedArmy.id };
+};

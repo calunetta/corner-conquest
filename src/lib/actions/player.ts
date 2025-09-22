@@ -1,23 +1,52 @@
 
+
 import type { GameState, Player, Army, CardName, ActionHandlerResult } from '@/lib/types';
 import { db, doc, deleteDoc, runTransaction, arrayUnion } from '@/lib/firebase';
-import { GameAction, AbilityName } from '../types';
+import { GameAction, AbilityName, IslandType } from '../types';
 import { MAP_COLS } from '../game-logic';
+import { getPossibleMoves } from './movement';
+
+export function canArmyPerformAnyAction(state: GameState, army: Army): boolean {
+    const player = state.players[state.currentPlayerIndex];
+    if (player.id !== state.currentPlayerIndex) return false; // Not the current player
+
+    if (army.hasActed && !player.hasExtraMove) return false;
+
+    // Can Move?
+    if (getPossibleMoves(state, army).length > 0) return true;
+
+    const tile = state.map[army.position.y * MAP_COLS + army.position.x];
+
+    // Can Attack?
+    const canAttack = tile.occupants.some(o => o.playerId !== player.id) || (tile.type === IslandType.Monster && !!tile.monsters && tile.monsters.length > 0);
+    if (canAttack) return true;
+
+    // Can Position?
+    const isPositioned = player.positions.some(p => p.armyId === army.id);
+    if (!isPositioned && (tile.type === IslandType.Resource || tile.type === IslandType.Base) && tile.resources.length > 0 && (!tile.monsters || tile.monsters.length === 0)) {
+       const hasAvailableResourceSlot = tile.resources.some(res => !(tile.positionedBy || []).some(p => p.resource === res.type));
+       if (hasAvailableResourceSlot) return true;
+    }
+
+    // Can Collect?
+    if (isPositioned) return true;
+
+    return false;
+}
+
 
 export function canPlayerPerformAnyAction(state: GameState): boolean {
     const player = state.players[state.currentPlayerIndex];
 
-    if (player.armies.some(army => !army.hasActed)) {
-        return true;
-    }
-    
-    if (player.hasExtraMove) {
+    // Check if any army can perform an action
+    if (player.armies.some(army => canArmyPerformAnyAction(state, army))) {
         return true;
     }
 
     const { settings, specialCardsDeck, discardPile } = state;
     const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
 
+    // Check strategic (non-army) actions
     const upgradeCost = player.masterBuilderActive ? Math.ceil(settings.upgradeCost / 2) : settings.upgradeCost;
     if (player.resources.iron >= upgradeCost && !player.actionsThisTurn.includes(GameAction.Upgrade) && player.attackPower < 4) {
         return true;
@@ -268,7 +297,7 @@ export function handleCancelAction(state: GameState): GameState {
     const player = newState.players[newState.currentPlayerIndex];
     
     // Reverse card consumption if applicable
-    if (newState.teleportState || newState.scoutingState || newState.useCardDialogState) {
+    if (newState.teleportState || newState.scoutingState || newState.useCardDialogState || newState.sabotageDialogState || newState.wealthyDialogState || newState.stealResourceDialogState) {
         const usedCardIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
         if (usedCardIndex > -1) {
              player.actionsThisTurn.splice(usedCardIndex, 1);
@@ -278,10 +307,15 @@ export function handleCancelAction(state: GameState): GameState {
         if(newState.useCardDialogState) cardToReturn = newState.useCardDialogState.cardName;
         else if (newState.teleportState) cardToReturn = CardName.Teleport;
         else if (newState.scoutingState) cardToReturn = CardName.Scout;
-        
-        const cardFromDiscard = newState.discardPile.pop();
-        if(cardFromDiscard && cardFromDiscard === cardToReturn) {
-            player.specialCards.push(cardFromDiscard);
+        else if (newState.sabotageDialogState) cardToReturn = CardName.Sabotage;
+        else if (newState.wealthyDialogState) cardToReturn = CardName.Wealthy;
+        else if (newState.stealResourceDialogState) cardToReturn = CardName.StealResource;
+
+        if (cardToReturn) {
+            const cardFromDiscard = newState.discardPile.pop();
+            if(cardFromDiscard && cardFromDiscard === cardToReturn) {
+                player.specialCards.push(cardFromDiscard);
+            }
         }
     }
     

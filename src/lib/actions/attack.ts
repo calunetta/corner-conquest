@@ -1,7 +1,8 @@
 
+
 import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
-import { checkAndEndTurnIfNoActions } from './player';
+import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
 import { GameAction, IslandType } from '../types';
 import { MAP_COLS } from '../game-logic';
 
@@ -65,7 +66,12 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
         newState.log.push(`${attacker.name}'s army attacks, but finds no target!`);
         const army = attacker.armies.find(a => a.id === selectedArmy.id);
         if (army) army.hasActed = true;
-        return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
+        const canStillAct = army ? canArmyPerformAnyAction(newState, army) : false;
+        if (!canStillAct) {
+             newState = checkAndEndTurnIfNoActions(newState);
+             return { newState, selectedArmyId: null };
+        }
+        return { newState, selectedArmyId: army?.id ?? null };
     }
     return { newState, selectedArmyId: selectedArmy.id };
 }
@@ -206,7 +212,18 @@ export function handleCloseCombat(state: GameState): ActionHandlerResult {
 
     newState.log.push(`${winner.name} defeated ${loser.name} in battle!`);
     newState.combatState = null;
-    return {newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null};
+    
+    const winningArmy = winner.id === attackerId ? attackingArmy : null;
+    if (winningArmy) {
+        const canStillAct = canArmyPerformAnyAction(newState, winningArmy);
+        if (!canStillAct) {
+            newState = checkAndEndTurnIfNoActions(newState);
+            return { newState, selectedArmyId: null };
+        }
+        return { newState, selectedArmyId: winningArmy.id };
+    }
+
+    return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
 }
 
 export function handleMonsterCombatRoll(state: GameState, payload: {monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean}, attackingArmy: Army | null): GameState {
@@ -328,6 +345,14 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
         if (currentTile.monsters?.length === 0) {
           currentTile.type = IslandType.Resource;
         }
+        
+        const canStillAct = canArmyPerformAnyAction(newState, attackingArmy);
+        if (!canStillAct) {
+            newState = checkAndEndTurnIfNoActions(newState);
+            return { newState, selectedArmyId: null };
+        }
+        return { newState, selectedArmyId: attackingArmy.id };
+
     } else {
         const baseTile = baseTiles.find(t => t.owner === attacker.id);
         if (baseTile) {

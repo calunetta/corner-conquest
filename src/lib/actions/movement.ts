@@ -2,7 +2,7 @@
 
 import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
 import { handleAttackAction } from './attack';
-import { checkAndEndTurnIfNoActions } from './player';
+import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
 import { GameAction, IslandType } from '../types';
 import { MAP_COLS, MAP_ROWS } from '../game-logic';
 
@@ -79,7 +79,7 @@ export function revealIsland(state: GameState, x: number, y: number): GameState 
     return newState;
 }
 
-export function handleMoveAction(state: GameState, x: number, y: number, army: Army): GameState {
+export function handleMoveAction(state: GameState, x: number, y: number, army: Army): ActionHandlerResult {
     let newState = { ...state };
     const { players, currentPlayerIndex, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
@@ -121,12 +121,17 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
                 discardPile.push(usedCard);
             }
         }
-        return newState;
     } else {
         army.hasActed = true;
     }
 
-    return checkAndEndTurnIfNoActions(newState);
+    const canStillAct = canArmyPerformAnyAction(newState, army);
+    if (!canStillAct) {
+        newState = checkAndEndTurnIfNoActions(newState);
+        return { newState, selectedArmyId: null };
+    }
+
+    return { newState, selectedArmyId: army.id };
 }
 
 export function handleTileClick(
@@ -164,11 +169,11 @@ export function handleTileClick(
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
 
     if (currentSelectedArmy && isPossibleMove) {
-        newState = handleMoveAction(newState, x, y, currentSelectedArmy);
-        if (!currentPlayer.hasExtraMove) {
-             newState = checkAndEndTurnIfNoActions(newState);
+        const moveResult = handleMoveAction(newState, x, y, currentSelectedArmy);
+        if (moveResult.selectedArmyId === null) {
+            return { newState: moveResult.newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
         }
-        return { newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
+        return moveResult;
     }
     
     if (scoutingState && scoutingState.count > 0 && !isTileRevealed) {
