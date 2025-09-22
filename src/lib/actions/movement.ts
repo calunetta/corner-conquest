@@ -113,10 +113,6 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     if (player.hasExtraMove) {
         player.hasExtraMove = false; 
         newState.log.push(`${player.name} used their Extra Move!`);
-        
-        if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
-            player.actionsThisTurn.push(GameAction.UseCard);
-        }
     } else {
         army.hasActed = true;
     }
@@ -251,7 +247,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): ActionHa
     const { players, currentPlayerIndex, teleportState, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
-    if (!teleportState || teleportState.armyId === null) return { newState };
+    if (!teleportState || teleportState.armyId === null || !teleportState.cardName) return { newState };
     
     const armyToMove = player.armies.find(a => a.id === teleportState.armyId);
     if (!armyToMove) return { newState };
@@ -271,6 +267,10 @@ export const handleTeleport = (state: GameState, x: number, y: number): ActionHa
     if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
         player.actionsThisTurn.push(GameAction.UseCard);
     }
+    const cardIndex = player.specialCards.indexOf(teleportState.cardName);
+    if (cardIndex > -1) {
+        discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
+    }
     
     newState.log.push(`${player.name} used 'Teleport' to move an army!`);
     
@@ -284,14 +284,20 @@ export function handleScout(state: GameState, x: number, y: number): GameState {
     if (!newState.scoutingState) return newState;
 
     newState = revealIsland(newState, x, y);
-    newState.scoutingState!.count--;
+    newState.scoutingState.count--;
     newState.log.push(`${player.name} revealed a tile at (${x},${y}) with Scout. ${newState.scoutingState.count} reveals left.`);
     
-    if (newState.scoutingState!.count === 0) {
+    if (newState.scoutingState.count === 0) {
         newState.log.push(`Scouting complete.`);
         if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
             player.actionsThisTurn.push(GameAction.UseCard);
         }
+        
+        const cardIndex = player.specialCards.indexOf(newState.scoutingState.cardName);
+        if (cardIndex > -1) {
+            newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
+        }
+
         newState.scoutingState = null;
         newState = checkAndEndTurnIfNoActions(newState);
     }

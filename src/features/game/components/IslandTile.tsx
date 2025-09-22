@@ -125,13 +125,18 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   }, [island.type, island.id, fogOfWar, isPersonallyRevealed, globallyRevealedTiles]);
 
   const tilePlayerColor = useMemo(() => {
-      const occupantIds = new Set(island.occupants.map(o => o.playerId));
-      if (occupantIds.size === 1) {
-          const singlePlayer = players.find(p => p.id === occupantIds.values().next().value);
-          return singlePlayer?.color || null;
-      }
-      return null;
-  }, [island.occupants, players]);
+    if (!isTileVisible) return null;
+    const occupantIds = new Set(island.occupants.map(o => o.playerId));
+    if (occupantIds.size === 1) {
+        const singlePlayerId = occupantIds.values().next().value;
+        const singlePlayer = players.find(p => p.id === singlePlayerId);
+        // Only show indicator for the local player's armies
+        if (singlePlayer && singlePlayer.id === localPlayer.id) {
+            return singlePlayer.color;
+        }
+    }
+    return null;
+  }, [island.occupants, players, isTileVisible, localPlayer.id]);
   
   const borderImageSequence = useMemo(() => {
     const middleImage = BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)];

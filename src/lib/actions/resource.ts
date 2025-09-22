@@ -42,10 +42,9 @@ export function handleCollectAction(state: GameState, selectedArmy: Army | null)
   if (!selectedArmy) throw new Error("No army selected.");
   if (selectedArmy.hasActed) throw new Error("This army has already acted this turn.");
 
-  const positionIndex = player.positions.findIndex(p => p.armyId === selectedArmy.id);
-  if (positionIndex === -1) throw new Error("This army is not positioned on a resource.");
+  const position = player.positions.find(p => p.armyId === selectedArmy.id);
+  if (!position) throw new Error("This army is not positioned on a resource.");
 
-  const position = player.positions[positionIndex];
   const tile = newState.map[position.y * MAP_COLS + position.x];
   const resourceSpot = tile.resources.find(r => r.type === position.resource);
   if (!resourceSpot) throw new Error("Resource not found on this island.");
@@ -98,9 +97,9 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
         amountToCollect *= 2;
         const cardIndex = player.specialCards.indexOf(CardName.Productive);
         if (cardIndex > -1) {
+            player.actionsThisTurn.push(GameAction.UseCard);
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
             discardPile.push(usedCard);
-            player.actionsThisTurn.push(GameAction.UseCard);
         }
         newState.log.push(`${player.name} used 'Productive' to collect double!`);
     }

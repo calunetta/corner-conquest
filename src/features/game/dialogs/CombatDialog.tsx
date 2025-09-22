@@ -31,14 +31,16 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
   const [useWarChief, setUseWarChief] = useState(false);
   const { combatState, players } = gameState;
 
+  const isAttacker = localPlayerId === combatState?.attackerId;
+
   useEffect(() => {
-    if (combatState?.phase === 'results' && !isMyTurn) {
+    if (combatState?.phase === 'results' && !isAttacker) {
         const timer = setTimeout(() => {
             onClose();
         }, 5000);
         return () => clearTimeout(timer);
     }
-  }, [combatState?.phase, isMyTurn, onClose]);
+  }, [combatState?.phase, isAttacker, onClose]);
 
   if (!combatState) return null;
 
@@ -54,8 +56,6 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
   
   const attackerSprite = isCombatOver && loserId === attackerId ? PLAYER_DATA[attacker.color].sprite.death : PLAYER_DATA[attacker.color].sprite.attack;
   const defenderSprite = isCombatOver && loserId === defenderId ? PLAYER_DATA[defender.color].sprite.death : PLAYER_DATA[defender.color].sprite.attack;
-
-  const isAttacker = localPlayerId === attackerId;
 
   const renderDice = (rolls: number[]) => (
     <div className="flex flex-wrap justify-center gap-2">

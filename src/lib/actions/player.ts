@@ -121,9 +121,9 @@ export function handleDeployAction(state: GameState): GameState {
     if (player.efficientActive && canUseCard) {
       newState.log.push(`${player.name} used 'Efficient' for a cheaper deployment!`);
       player.efficientActive = false;
-      player.actionsThisTurn.push(GameAction.UseCard);
       const cardIndex = player.specialCards.indexOf(CardName.Efficient);
       if (cardIndex > -1) {
+          player.actionsThisTurn.push(GameAction.UseCard);
           const usedCard = player.specialCards.splice(cardIndex, 1)[0];
           discardPile.push(usedCard);
       }
@@ -133,9 +133,9 @@ export function handleDeployAction(state: GameState): GameState {
       newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
       player.reinforceActive = false;
       if (canUseCard) {
-          player.actionsThisTurn.push(GameAction.UseCard);
           const cardIndex = player.specialCards.indexOf(CardName.Reinforce);
           if (cardIndex > -1) {
+              player.actionsThisTurn.push(GameAction.UseCard);
               const usedCard = player.specialCards.splice(cardIndex, 1)[0];
               discardPile.push(usedCard);
           }
@@ -174,9 +174,9 @@ export function handleUpgradeAction(state: GameState): GameState {
       player.masterBuilderActive = false;
       const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
       if (canUseCard) {
-          player.actionsThisTurn.push(GameAction.UseCard);
           const cardIndex = player.specialCards.indexOf(CardName.MasterBuilder);
           if (cardIndex > -1) {
+              player.actionsThisTurn.push(GameAction.UseCard);
               const usedCard = player.specialCards.splice(cardIndex, 1)[0];
               discardPile.push(usedCard);
           }
@@ -294,11 +294,13 @@ export function handleCancelAction(state: GameState): GameState {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     
-    // This function now only clears the states without trying to refund cards,
-    // as the card is only consumed upon successful final action.
-    
-    newState.teleportState = null;
-    newState.scoutingState = null;
+    if (newState.teleportState) {
+        newState.teleportState = null;
+    }
+     if (newState.scoutingState) {
+        newState.scoutingState = null;
+    }
+
     newState.monsterCombatState = null;
     newState.attackSelectionDialogState = null;
     newState.positionDialogState = null;
@@ -306,12 +308,6 @@ export function handleCancelAction(state: GameState): GameState {
     newState.sabotageDialogState = null;
     newState.wealthyDialogState = null;
     newState.stealResourceDialogState = null;
-    
-    if (player.hasExtraMove) {
-        // If extra move was activated but not used, we can consider if it should be refunded.
-        // For now, let's keep it simple: cancelling the action means losing the opportunity.
-        player.hasExtraMove = false;
-    }
     
     return newState;
 }

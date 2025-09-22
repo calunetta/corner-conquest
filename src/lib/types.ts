@@ -227,10 +227,12 @@ export type WealthyDialogState = {
 
 export type ScoutingState = {
     count: number;
+    cardName: CardName;
 }
 
 export type TeleportState = {
     armyId: number | null;
+    cardName: CardName;
 };
 
 
