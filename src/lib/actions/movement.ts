@@ -146,7 +146,10 @@ export function handleTileClick(
         return { newState: state };
     }
 
-    const isTileRevealed = !settings.fogOfWar || currentPlayer.revealedTiles.includes(clickedTile.id);
+    let isTileRevealed = true;
+    if (settings.fogOfWar) {
+        isTileRevealed = currentPlayer.revealedTiles.includes(clickedTile.id);
+    }
     
     let selectedArmyId: number | null = currentSelectedArmy?.id ?? null;
     let selectedTile: {x: number, y: number} | null = {x, y};
@@ -319,4 +322,5 @@ export function handleScout(state: GameState, x: number, y: number): GameState {
     }
     return newState;
 }
+
 

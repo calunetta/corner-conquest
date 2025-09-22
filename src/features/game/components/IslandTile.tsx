@@ -118,7 +118,16 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const deathAnimationOnTile = deathAnimations.find(anim => anim.x === island.x && anim.y === island.y);
   
   const isPersonallyRevealed = localPlayer.revealedTiles.includes(island.id);
-  const isTileVisible = island.type === IslandType.Base || (fogOfWar ? isPersonallyRevealed : globallyRevealedTiles.has(island.id));
+
+  // Determine if the island details (resources, monsters) are visible
+  const isTileVisible = useMemo(() => {
+    if (island.type === IslandType.Base) return true;
+    if (fogOfWar) {
+      return isPersonallyRevealed;
+    }
+    return globallyRevealedTiles.has(island.id);
+  }, [island.type, island.id, fogOfWar, isPersonallyRevealed, globallyRevealedTiles]);
+
   
   const borderImageSequence = useMemo(() => {
     const middleImage = BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)];
@@ -255,8 +264,17 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             {occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
-                // An army is visible if it's the local player's, if the tile is a base, or if the tile has been personally revealed.
-                const isArmyVisible = player.id === localPlayer.id || island.type === IslandType.Base || isPersonallyRevealed;
+                // Determine if the army sprite is visible
+                const isArmyVisible = useMemo(() => {
+                    // Own armies are always visible
+                    if (player.id === localPlayer.id) return true;
+                    
+                    // If Fog of War is off, all armies are visible
+                    if (!fogOfWar) return true;
+
+                    // If Fog of War is on, opponents are visible only on bases or personally revealed tiles
+                    return island.type === IslandType.Base || isPersonallyRevealed;
+                }, [player.id, localPlayer.id, fogOfWar, island.type, isPersonallyRevealed]);
                 
                 if (!isArmyVisible) {
                     return null;
