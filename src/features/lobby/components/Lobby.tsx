@@ -10,16 +10,67 @@ import { GameStatus } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CreateGameDialog } from './CreateGameDialog';
-import { Loader2, Users, Crown, Power } from 'lucide-react';
+import { Loader2, Users, Crown, Power, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PLAYER_COLORS, PLAYER_DATA } from '@/lib/player-data';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 
 type LobbyProps = {
   onJoinGame: (gameId: string) => void;
 };
+
+const SettingsDisplay = ({ settings }: { settings: GameSettings }) => (
+    <div className='space-y-3'>
+        <div className='flex justify-between items-center text-sm'>
+            <span className='text-muted-foreground'>Victory Point Goal</span>
+            <span className='font-bold'>{settings.victoryPointGoal}</span>
+        </div>
+        <div className='flex justify-between items-center text-sm'>
+            <span className='text-muted-foreground'>Fog of War</span>
+            <span className='font-bold'>{settings.fogOfWar ? 'Enabled' : 'Disabled'}</span>
+        </div>
+        <div className='flex justify-between items-center text-sm'>
+            <span className='text-muted-foreground'>Resource Density</span>
+            <span className='font-bold'>{Math.round(settings.resourceDensity * 100)}%</span>
+        </div>
+        <div className='flex justify-between items-center text-sm'>
+            <span className='text-muted-foreground'>VP per Discovery</span>
+            <span className='font-bold'>{settings.vpPerIslandDiscovery}</span>
+        </div>
+        <Separator />
+        <div className='flex justify-between items-center text-sm'>
+            <span className='text-muted-foreground'>Initial Deploy Cost</span>
+            <span className='font-bold'>{settings.initialDeployCost}</span>
+        </div>
+         <div className='flex justify-between items-center text-sm'>
+            <span className='text-muted-foreground'>Upgrade Cost</span>
+            <span className='font-bold'>{settings.upgradeCost}</span>
+        </div>
+         <div className='flex justify-between items-center text-sm'>
+            <span className='text-muted-foreground'>Ability Cost</span>
+            <span className='font-bold'>{settings.abilityCost}</span>
+        </div>
+        <Separator />
+         <div>
+            <h4 className="mb-2 text-sm font-medium text-muted-foreground">Available Cards</h4>
+            <div className="flex flex-wrap gap-1">
+                {settings.availableCards.map(card => <Badge key={card} variant="secondary">{card}</Badge>)}
+            </div>
+        </div>
+        <div>
+            <h4 className="mb-2 text-sm font-medium text-muted-foreground">Available Abilities</h4>
+            <div className="flex flex-wrap gap-1">
+                {settings.availableAbilities.map(ability => <Badge key={ability} variant="secondary" className='capitalize'>{ability}</Badge>)}
+            </div>
+        </div>
+    </div>
+)
 
 export function Lobby({ onJoinGame }: LobbyProps) {
   const [games, setGames] = useState<GameState[]>([]);
@@ -196,15 +247,32 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                         </div>
                       </div>
                     </div>
-                    <Button 
-                      onClick={() => handleJoinGame(game.id)} 
-                      disabled={isJoiningGame !== null || game.players.length >= game.maxPlayers} 
-                      className="w-full sm:w-auto"
-                      variant={game.players.length >= game.maxPlayers ? 'secondary' : 'default'}
-                    >
-                      {isJoiningGame === game.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      {game.players.length >= game.maxPlayers ? 'Full' : 'Join'}
-                    </Button>
+                    <div className='flex items-center gap-2'>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon"><Info className='h-4 w-4' /></Button>
+                            </PopoverTrigger>
+                            <PopoverContent className='w-80'>
+                                <ScrollArea className='h-96 pr-4'>
+                                    <div className='space-y-2'>
+                                        <h3 className='font-bold text-lg'>{game.name}</h3>
+                                        <p className='text-sm text-muted-foreground'>Match Settings</p>
+                                        <Separator />
+                                        <SettingsDisplay settings={game.settings} />
+                                    </div>
+                                </ScrollArea>
+                            </PopoverContent>
+                        </Popover>
+                        <Button 
+                        onClick={() => handleJoinGame(game.id)} 
+                        disabled={isJoiningGame !== null || game.players.length >= game.maxPlayers} 
+                        className="w-full sm:w-auto"
+                        variant={game.players.length >= game.maxPlayers ? 'secondary' : 'default'}
+                        >
+                        {isJoiningGame === game.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        {game.players.length >= game.maxPlayers ? 'Full' : 'Join'}
+                        </Button>
+                    </div>
                   </div>
                 ))}
               </TooltipProvider>
