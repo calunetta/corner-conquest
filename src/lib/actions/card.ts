@@ -111,7 +111,6 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
     let collectedResources: Record<string, number> = {};
     let doubledResourceString = '';
 
-    // Consume the card if a resource was selected to be doubled
     if (selectedResource) {
         player.actionsThisTurn.push(GameAction.UseCard);
         const cardIndex = player.specialCards.indexOf(CardName.Productive);
@@ -138,6 +137,16 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
     if (collectedStrings.length > 0) {
         newState.log.push(`${player.name} collected ${collectedStrings.join(', ')}${doubledResourceString}.`);
     }
+
+    // Reset positions after collecting
+    player.positions.forEach(pos => {
+        const tile = newState.map[pos.y * MAP_COLS + pos.x];
+        if (tile && tile.positionedBy) {
+            tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === pos.resource));
+        }
+    });
+    player.positions = [];
+
 
     newState.productiveCardDialogState = null;
     return { newState, selectedArmyId: null };
@@ -201,7 +210,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
         newState.log.push(`${currentPlayer.name} tried to steal ${payload.resource} from ${targetPlayer.name}, but they had none.`);
     }
 
-    player.actionsThisTurn.push(GameAction.UseCard);
+    currentPlayer.actionsThisTurn.push(GameAction.UseCard);
     const cardIndex = currentPlayer.specialCards.indexOf(CardName.StealResource);
     if (cardIndex > -1) {
         newState.discardPile.push(currentPlayer.specialCards.splice(cardIndex, 1)[0]);

@@ -186,10 +186,11 @@ export function handleUpgradeAction(state: GameState): GameState {
 }
 
 function applyAutomaticCollection(state: GameState, player: Player): { newState: GameState, collectedResources: Record<string, number> } {
+    let newState = { ...state };
     const collectedResources: Record<string, number> = {};
     
     player.positions.forEach(pos => {
-        const tile = state.map[pos.y * MAP_COLS + pos.x];
+        const tile = newState.map[pos.y * MAP_COLS + pos.x];
         const resourceSpot = tile.resources.find(r => r.type === pos.resource);
         if (resourceSpot) {
             player.resources[resourceSpot.type] += resourceSpot.amount;
@@ -197,7 +198,16 @@ function applyAutomaticCollection(state: GameState, player: Player): { newState:
         }
     });
 
-    return { newState: state, collectedResources };
+    // Reset positions after collecting
+    player.positions.forEach(pos => {
+        const tile = newState.map[pos.y * MAP_COLS + pos.x];
+        if (tile && tile.positionedBy) {
+            tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === pos.resource));
+        }
+    });
+    player.positions = [];
+
+    return { newState, collectedResources };
 }
 
 export function handleEndTurn(state: GameState): GameState {
@@ -282,8 +292,9 @@ export function handleEndTurn(state: GameState): GameState {
             };
             newState.log.push(`${nextPlayer.name}, you have a 'Productive' card. Choose a resource to double.`);
         } else {
-            const { collectedResources } = applyAutomaticCollection(newState, nextPlayer);
-            const collectedStrings = Object.entries(collectedResources).map(([type, amount]) => `${amount} ${type}`);
+            const collectionResult = applyAutomaticCollection(newState, nextPlayer);
+            newState = collectionResult.newState;
+            const collectedStrings = Object.entries(collectionResult.collectedResources).map(([type, amount]) => `${amount} ${type}`);
             if (collectedStrings.length > 0) {
                 newState.log.push(`${nextPlayer.name} automatically collected ${collectedStrings.join(', ')}.`);
             }
