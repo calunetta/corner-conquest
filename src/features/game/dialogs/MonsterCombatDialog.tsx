@@ -1,5 +1,4 @@
 
-
 'use client';
 import type { GameState, Monster } from '@/lib/types';
 import { CardName } from '@/lib/types';
@@ -175,7 +174,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
       </div>
        <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row">
             <AlertDialogCancel onClick={onCancel} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
-            <Button onClick={() => { /* This button just closes the selection screen and moves to attack screen */ setSelectedMonster(selectedMonster)}} disabled={!selectedMonster} className="w-full sm:w-auto">
+            <Button onClick={() => { /* This button just confirms the selection */ }} disabled={!selectedMonster} className="w-full sm:w-auto">
                 Confirm
             </Button>
       </AlertDialogFooter>
@@ -236,6 +235,11 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
     }
     if (isSelectionPhase) {
       return renderSelectionScreen();
+    }
+    // If not selection phase and not results, it's the attack screen.
+    // Ensure a monster is selected if there's only one.
+    if (!selectedMonster && monsters.length === 1) {
+      setSelectedMonster(monsters[0]);
     }
     return renderAttackScreen();
   }
