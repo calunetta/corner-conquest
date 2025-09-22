@@ -1,7 +1,8 @@
 
 
 'use client';
-import type { Player, CardName } from '@/lib/types';
+import type { Player } from '@/lib/types';
+import { CardName } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogCancel,
