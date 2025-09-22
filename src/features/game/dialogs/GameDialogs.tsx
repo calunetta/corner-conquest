@@ -15,6 +15,7 @@ import { WealthyDialog } from './WealthyDialog';
 import { ArmySelectionDialog } from './ArmySelectionDialog';
 import { AttackSelectionDialog } from './AttackSelectionDialog';
 import { ProductiveCardDialog } from './ProductiveCardDialog';
+import { SpecialIslandRollDialog } from './SpecialIslandRollDialog';
 
 type GameDialogsProps = {
   gameState: GameState;
@@ -80,6 +81,14 @@ export function GameDialogs({
                     state={gameState.productiveCardDialogState}
                     onConfirm={(selectedResource) => handleAction(GameAction.UseProductiveCard, { selectedResource })}
                 />
+            )}
+
+             {gameState.specialIslandRollDialogState?.isOpen && (
+              <SpecialIslandRollDialog
+                state={gameState.specialIslandRollDialogState}
+                onRoll={() => handleAction(GameAction.RollOnSpecialIsland)}
+                onClose={() => handleAction(GameAction.CloseSpecialIslandDialog)}
+              />
             )}
 
             {gameState.armySelectionDialogState?.isOpen && (

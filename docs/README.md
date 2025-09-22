@@ -63,8 +63,8 @@ The first player to reach the `victoryPointGoal` (default: 30 VP) wins the game.
 The game is played on a grid of islands. Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to a tile, revealing it.
 - **Base:** Your starting point. Where you deploy new armies and where defeated armies respawn. Bases also generate all three resource types.
 - **Resource Islands:** Contain **Wheat**, **Iron**, or **Gems**.
-- **Monster Islands:** Inhabited by hostile creatures that must be defeated.
-- **Special Islands:** Discovering these grants the player a random Special Card. On subsequent landings on the same island, there is a 50% chance to receive another card.
+- **Monster Islands:** Inhabited by hostile creatures that must be defeated. When monsters are present, they are rendered with a dynamic idle animation within the `IslandTile` component. Their sprites randomly shift left and right and have a chance to play their `attack` animation to make them feel alive.
+- **Special Islands:** Discovering these grants the player a random Special Card. On subsequent landings on the same island, a dialog appears prompting the player to roll a die. On a roll of 3 or 6, they receive another card.
 
 ### 4.3. Resources & Progression
 - **Wheat:** Used to **Deploy** new armies. The cost increases with each new army.

@@ -32,6 +32,8 @@ export enum GameAction {
   StealResource = 'steal-resource',
   SabotagePlayer = 'sabotage-player',
   GainWealth = 'gain-wealth',
+  RollOnSpecialIsland = 'roll-on-special-island',
+  CloseSpecialIslandDialog = 'close-special-island-dialog',
 }
 
 export enum CardName {
@@ -214,6 +216,12 @@ export type ProductiveCardDialogState = {
     }[];
 }
 
+export type SpecialIslandRollDialogState = {
+  isOpen: boolean;
+  roll: number | null;
+  cardDrawn: CardName | null;
+};
+
 export type StealResourceDialogState = {
     isOpen: boolean;
 }
@@ -291,6 +299,7 @@ export type GameState = {
   monsterCombatState: MonsterCombatState | null;
   positionDialogState: PositionDialogState | null;
   productiveCardDialogState: ProductiveCardDialogState | null;
+  specialIslandRollDialogState: SpecialIslandRollDialogState | null;
   stealResourceDialogState: StealResourceDialogState | null;
   abilitiesShopState: AbilitiesShopState | null;
   sabotageDialogState: SabotageDialogState | null;

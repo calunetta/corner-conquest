@@ -318,6 +318,7 @@ export function handleEndTurn(state: GameState): GameState {
     newState.wealthyDialogState = null;
     newState.armySelectionDialogState = null;
     newState.attackSelectionDialogState = null;
+    newState.specialIslandRollDialogState = null;
 
     return newState;
 }
@@ -346,6 +347,7 @@ export function handleCancelAction(state: GameState): GameState {
     newState.stealResourceDialogState = null;
     newState.armySelectionDialogState = null;
     newState.abilitiesShopState = null;
+    newState.specialIslandRollDialogState = null;
 
     // Refund the "Use Card" action if one was pending
     const useCardIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);

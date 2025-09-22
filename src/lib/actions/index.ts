@@ -4,7 +4,7 @@ import type { GameState, ActionHandlerResult, Army } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 
 import { handleAttackAction, handleSelectDefender, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
-import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleOpenAbilitiesShop, handleBuyAbility, handleUseProductiveCard } from './card';
+import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleOpenAbilitiesShop, handleBuyAbility, handleUseProductiveCard, handleRollOnSpecialIsland, handleCloseSpecialIslandDialog } from './card';
 import { handleTileClick, handleSelectArmy } from './movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn, handlePlayerExit, handleConfirmHostLeave, handleCancelAction, handleDeselectArmy } from './player';
 import { handlePositionAction, handleSelectResourceForPosition } from './resource';
@@ -78,6 +78,10 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
             return handleGainWealth(gameState, payload.resource);
         case GameAction.StealResource:
             return handleStealResource(gameState, payload);
+        case GameAction.RollOnSpecialIsland:
+            return { newState: handleRollOnSpecialIsland(gameState) };
+        case GameAction.CloseSpecialIslandDialog:
+            return { newState: handleCloseSpecialIslandDialog(gameState) };
         
         // Abilities Shop
         case GameAction.OpenAbilitiesShop:

@@ -249,3 +249,45 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ac
     newState.abilitiesShopState = null;
     return {newState, selectedArmyId: null};
 }
+
+
+export function handleRollOnSpecialIsland(state: GameState): GameState {
+  let newState = { ...state };
+  const player = newState.players[newState.currentPlayerIndex];
+  const HAND_LIMIT = 7;
+
+  if (!newState.specialIslandRollDialogState) return newState;
+
+  const roll = Math.floor(Math.random() * 6) + 1;
+  let cardDrawn: CardName | null = null;
+
+  if (roll === 3 || roll === 6) {
+    if (player.specialCards.length >= HAND_LIMIT && !newState.debugMode) {
+      newState.log.push(`${player.name} was lucky, but their hand is full!`);
+    } else {
+      if (newState.specialCardsDeck.length === 0 && newState.discardPile.length > 0) {
+        newState.log.push("The deck is empty. Reshuffling the discard pile...");
+        newState.specialCardsDeck = [...newState.discardPile];
+        newState.discardPile = [];
+      }
+
+      if (newState.specialCardsDeck.length > 0) {
+        const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
+        const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
+        player.specialCards.push(drawnCard);
+        cardDrawn = drawnCard;
+        newState.log.push(`${player.name} rolled a ${roll} and found a card: "${drawnCard}"!`);
+      }
+    }
+  } else {
+    newState.log.push(`${player.name} rolled a ${roll} and found nothing.`);
+  }
+
+  newState.specialIslandRollDialogState = { isOpen: true, roll, cardDrawn };
+  return newState;
+}
+
+export function handleCloseSpecialIslandDialog(state: GameState): GameState {
+  return { ...state, specialIslandRollDialogState: null };
+}
+
