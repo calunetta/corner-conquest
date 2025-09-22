@@ -31,6 +31,12 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
         if (docSnapshot.exists()) {
             const data = docSnapshot.data() as GameState;
+            
+            // Clear locally dismissed dialogs when turn changes
+            if (gameStateRef.current && gameStateRef.current.turn !== data.turn) {
+                // This logic is now handled in GameBoard.tsx
+            }
+
             setGameState(data);
             setIsLoading(false);
         } else {

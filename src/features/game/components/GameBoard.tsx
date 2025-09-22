@@ -487,6 +487,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         isMyTurn={isMyTurn}
         onConfirmHostLeave={handleConfirmHostLeaveGame}
         locallyDismissedDialogs={locallyDismissedDialogs}
+        setLocallyDismissedDialogs={setLocallyDismissedDialogs}
         handleAction={onAction}
         cardsDialogPlayerId={cardsDialogPlayerId}
         onCloseCardsDialog={() => setCardsDialogPlayerId(null)}
@@ -494,9 +495,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    
-
-
-
-

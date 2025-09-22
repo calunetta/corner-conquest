@@ -23,6 +23,7 @@ type GameDialogsProps = {
   isMyTurn: boolean;
   onConfirmHostLeave: () => void;
   locallyDismissedDialogs: (keyof GameState)[];
+  setLocallyDismissedDialogs: (keys: (keyof GameState)[]) => void;
   handleAction: (action: GameAction, payload?: any) => Promise<void>;
   cardsDialogPlayerId: number | null;
   onCloseCardsDialog: () => void;
@@ -34,6 +35,7 @@ export function GameDialogs({
     isMyTurn, 
     onConfirmHostLeave,
     locallyDismissedDialogs,
+    setLocallyDismissedDialogs,
     handleAction,
     cardsDialogPlayerId,
     onCloseCardsDialog
@@ -59,6 +61,10 @@ export function GameDialogs({
     return !!gameState[key] && !locallyDismissedDialogs.includes(key);
   }
   
+  const handleLocalClose = (key: keyof GameState) => {
+    setLocallyDismissedDialogs([...locallyDismissedDialogs, key]);
+  }
+
   const isAttacker = isMyTurn && (!!combatState || !!monsterCombatState);
 
   const playerForCardsDialog = cardsDialogPlayerId !== null ? players.find(p => p.id === cardsDialogPlayerId) : null;
@@ -69,7 +75,7 @@ export function GameDialogs({
         <CombatDialog
           gameState={gameState}
           onRoll={(useWarChief) => handleAction(GameAction.CombatRoll, { useWarChief })}
-          onClose={() => isAttacker ? handleAction(GameAction.CloseCombat) : handleAction(GameAction.CloseCombatViewer)}
+          onClose={() => isAttacker ? handleAction(GameAction.CloseCombat) : handleLocalClose('combatState')}
           isAttacker={isAttacker}
         />
       )}
@@ -78,7 +84,7 @@ export function GameDialogs({
           gameState={gameState} 
           monsters={gameState.map[monsterCombatState.attackerPosition.y * MAP_COLS + monsterCombatState.attackerPosition.x].monsters || []}
           onRoll={(payload) => handleAction(GameAction.MonsterCombatRoll, payload)}
-          onClose={() => isAttacker ? handleAction(GameAction.CloseMonsterCombat) : handleAction(GameAction.CloseMonsterCombatViewer)}
+          onClose={() => isAttacker ? handleAction(GameAction.CloseMonsterCombat) : handleLocalClose('monsterCombatState')}
           onCancel={() => handleAction(GameAction.CancelAction)}
           isAttacker={isAttacker}
         />
@@ -95,7 +101,7 @@ export function GameDialogs({
         <CollectDialog
             state={collectDialogState}
             onConfirm={(useProductive) => handleAction(GameAction.ConfirmCollection, { useProductive })}
-            onClose={() => handleAction(GameAction.CancelAction)}
+            onClose={() => isMyTurn ? handleAction(GameAction.CancelAction) : handleLocalClose('collectDialogState')}
             isMyTurn={isMyTurn}
         />
       )}
@@ -130,7 +136,7 @@ export function GameDialogs({
       {isDialogVisible('abilitiesShopState') && abilitiesShopState?.isOpen && (
         <AbilitiesDialog
           player={localPlayer}
-          onClose={() => handleAction(GameAction.CloseAbilitiesShop)}
+          onClose={() => isMyTurn ? handleAction(GameAction.CloseAbilitiesShop) : handleLocalClose('abilitiesShopState')}
           onBuyAbility={(abilityName: AbilityName) => handleAction(GameAction.BuyAbility, { abilityName })}
           gameState={gameState}
           isMyTurn={isMyTurn}
@@ -140,7 +146,7 @@ export function GameDialogs({
         <StealResourceDialog
           players={gameState.players.filter(p => p.id !== gameState.currentPlayerIndex)}
           onSteal={(target, resource) => handleAction(GameAction.StealResource, {targetPlayerId: target, resource: resource})}
-          onClose={() => handleAction(GameAction.CancelAction)}
+          onClose={() => isMyTurn ? handleAction(GameAction.CancelAction) : handleLocalClose('stealResourceDialogState')}
           isMyTurn={isMyTurn}
         />
       )}
@@ -148,7 +154,7 @@ export function GameDialogs({
         <UseCardDialog
           cardName={useCardDialogState.cardName}
           onConfirm={() => handleAction(GameAction.ConfirmUseCard, { cardName: useCardDialogState.cardName })}
-          onClose={() => handleAction(GameAction.CancelAction)}
+          onClose={() => isMyTurn ? handleAction(GameAction.CancelAction) : handleLocalClose('useCardDialogState')}
           isMyTurn={isMyTurn}
         />
       )}
@@ -164,7 +170,7 @@ export function GameDialogs({
         <SabotageDialog
           players={gameState.players.filter(p => p.id !== gameState.currentPlayerIndex)}
           onSabotage={(targetPlayerId) => handleAction(GameAction.SabotagePlayer, { targetPlayerId })}
-          onClose={() => handleAction(GameAction.CancelAction)}
+          onClose={() => isMyTurn ? handleAction(GameAction.CancelAction) : handleLocalClose('sabotageDialogState')}
           isMyTurn={isMyTurn}
         />
       )}
