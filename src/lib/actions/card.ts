@@ -67,7 +67,7 @@ export const handleUseCard = (state: GameState, cardName: CardName): ActionHandl
         case CardName.Scout:
             newState.scoutingState = { count: 3, cardName: CardName.Scout };
             newState.log.push(`${player.name} activated 'Scout'. Click 3 hidden tiles to reveal them.`);
-            break;
+            return { newState, selectedArmyId: null };
         case CardName.Reinforce:
             player.reinforceActive = true;
             player.actionsThisTurn.push(GameAction.UseCard);
@@ -138,7 +138,6 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
         newState.log.push(`${player.name} collected ${collectedStrings.join(', ')}${doubledResourceString}.`);
     }
 
-    // Reset positions after collecting
     player.positions.forEach(pos => {
         const tile = newState.map[pos.y * MAP_COLS + pos.x];
         if (tile && tile.positionedBy) {
