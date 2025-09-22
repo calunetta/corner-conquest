@@ -83,6 +83,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     let newState = { ...state };
     const { players, currentPlayerIndex, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
+    const HAND_LIMIT = 7;
 
     if (army.position.x === x && army.position.y === y) {
         throw new Error("Cannot move to the same tile.");
@@ -107,6 +108,20 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);
     if (isFirstDiscovery) {
         newState = revealIsland(newState, x, y);
+    } else if (targetTile.type === IslandType.Special && Math.random() < 0.5) {
+        if (player.specialCards.length >= HAND_LIMIT && !newState.debugMode) {
+             newState.log.push(`${player.name} landed on a special island, but their hand is full!`);
+        } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
+            if (newState.specialCardsDeck.length === 0) {
+                 newState.log.push("The deck is empty. Reshuffling the discard pile...");
+                 newState.specialCardsDeck = [...newState.discardPile];
+                 newState.discardPile = [];
+            }
+            const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
+            const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
+            player.specialCards.push(drawnCard);
+            newState.log.push(`${player.name} landed on a special island and found a card: "${drawnCard}"!`);
+        }
     }
     
     if (player.hasExtraMove) {

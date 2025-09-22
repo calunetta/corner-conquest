@@ -53,18 +53,18 @@ This architecture ensures that the game logic is predictable, testable, and deco
 ## 4. Core Game Mechanics & Match Flow
 
 ### 4.1. Objective & Winning
-The first player to reach the `victoryPointGoal` (default: 30 VP) wins the game. When this occurs, the game `status` changes to 'finished', a `winner` is declared in the game state, and a dialog appears announcing the winner. Victory Points (VP) are earned from:
+The first player to reach the `victoryPointGoal` (default: 30 VP) wins the game. When this occurs, the game `status` changes to 'finished', a `winner` is declared in the game state by creating a deep copy of the winning player object, and a dialog appears announcing the winner. Victory Points (VP) are earned from:
 - **Winning Battles:** +5 VP for defeating another player's army.
 - **Defeating Monsters:** Variable VP based on monster level (2 for Lvl 1, 5 for Lvl 2, etc.).
 - **Island Discovery:** +`vpPerIslandDiscovery` VP for being the first player in the game to reveal a new island.
 - **Passive Abilities:** The `Explorer` ability grants VP each turn for every island you occupy.
 
 ### 4.2. The Map & Islands
-The game is played on a grid of islands. Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to a tile, revealing it *for that player only*.
+The game is played on a grid of islands. Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to a tile, revealing it.
 - **Base:** Your starting point. Where you deploy new armies and where defeated armies respawn. Bases also generate all three resource types.
 - **Resource Islands:** Contain **Wheat**, **Iron**, or **Gems**.
 - **Monster Islands:** Inhabited by hostile creatures that must be defeated.
-- **Special Islands:** Discovering these grants the player a random Special Card.
+- **Special Islands:** Discovering these grants the player a random Special Card. On subsequent landings on the same island, there is a 50% chance to receive another card.
 
 ### 4.3. Resources & Progression
 - **Wheat:** Used to **Deploy** new armies. The cost increases with each new army.
