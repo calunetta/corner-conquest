@@ -1,6 +1,5 @@
 
 
-
 import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
@@ -264,9 +263,7 @@ export const handleTeleport = (state: GameState, x: number, y: number): ActionHa
         newState = revealIsland(newState, x, y);
     }
     
-    if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
-        player.actionsThisTurn.push(GameAction.UseCard);
-    }
+    player.actionsThisTurn.push(GameAction.UseCard);
     const cardIndex = player.specialCards.indexOf(teleportState.cardName);
     if (cardIndex > -1) {
         discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
@@ -289,9 +286,7 @@ export function handleScout(state: GameState, x: number, y: number): GameState {
     
     if (newState.scoutingState.count === 0) {
         newState.log.push(`Scouting complete.`);
-        if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
-            player.actionsThisTurn.push(GameAction.UseCard);
-        }
+        player.actionsThisTurn.push(GameAction.UseCard);
         
         const cardIndex = player.specialCards.indexOf(newState.scoutingState.cardName);
         if (cardIndex > -1) {

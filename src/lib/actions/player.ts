@@ -1,6 +1,5 @@
 
 
-
 import type { GameState, Player, Army, CardName, ActionHandlerResult } from '@/lib/types';
 import { db, doc, deleteDoc, runTransaction, arrayUnion } from '@/lib/firebase';
 import { GameAction, AbilityName, IslandType, MAP_COLS } from '../types';
@@ -292,15 +291,9 @@ export function handleDeselectArmy(): Partial<ActionHandlerResult> {
 
 export function handleCancelAction(state: GameState): GameState {
     let newState = { ...state };
-    const player = newState.players[newState.currentPlayerIndex];
     
-    if (newState.teleportState) {
-        newState.teleportState = null;
-    }
-     if (newState.scoutingState) {
-        newState.scoutingState = null;
-    }
-
+    newState.teleportState = null;
+    newState.scoutingState = null;
     newState.monsterCombatState = null;
     newState.attackSelectionDialogState = null;
     newState.positionDialogState = null;
@@ -308,6 +301,8 @@ export function handleCancelAction(state: GameState): GameState {
     newState.sabotageDialogState = null;
     newState.wealthyDialogState = null;
     newState.stealResourceDialogState = null;
+    newState.armySelectionDialogState = null;
+    newState.abilitiesShopState = null;
     
     return newState;
 }

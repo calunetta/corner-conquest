@@ -174,5 +174,3 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
     </AlertDialog>
   );
 }
-
-    

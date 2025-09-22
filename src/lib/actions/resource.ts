@@ -1,6 +1,5 @@
 
 
-
 import type { GameState, Army, IslandResource, CardName, ActionHandlerResult } from '@/lib/types';
 import { ResourceType, GameAction, IslandType, MAP_COLS } from '../types';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
@@ -91,7 +90,8 @@ export function handleConfirmCollection(state: GameState, useProductive: boolean
     let amountToCollect = resourceToCollect.amount;
 
     if (useProductive) {
-        if (!player.specialCards.includes(CardName.Productive) || player.actionsThisTurn.includes(GameAction.UseCard)) {
+        const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
+        if (!player.specialCards.includes(CardName.Productive) || !canUseCard) {
             throw new Error("Cannot use 'Productive' card.");
         }
         amountToCollect *= 2;
