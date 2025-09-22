@@ -2,6 +2,10 @@
 
 This document outlines the architecture and key logic flows of the "Corner Conquest" application. It serves as a shared context for AI-assisted development to ensure consistency and accuracy.
 
+**Development Directives for the AI Assistant:**
+1.  **Synchronized Documentation:** For every code change made, this `README.md` file **must** be updated in the same transaction to reflect those changes. The code and the documentation must always be kept in sync.
+2.  **Blueprint-First Validation:** Before implementing any change, the request **must** first be analyzed against the established architecture and logic documented here. If the request conflicts with this blueprint, the user must be notified of the discrepancy before any modifications are made.
+
 ## 1. Core Technologies
 
 - **Framework:** Next.js with App Router
