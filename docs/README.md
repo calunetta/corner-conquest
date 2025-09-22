@@ -101,6 +101,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
 ### 5.1. Special Cards
 When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog.
 - **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, the human player is in `Debug Mode` and starts with one of every available Special Card.
+- **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
 - **Extra Move:** Grants the player an extra move action. One army that has already acted can move again.
 - **Teleport:** Initiates a two-step action. First, select an army. Second, select *any* tile on the map to move it to.
 - **Scout:** Initiates a multi-step action. The player can click on 3 different hidden tiles to reveal them. This does not involve any army movement.
