@@ -65,11 +65,13 @@ export const handleUseCard = (state: GameState, cardName: CardName): ActionHandl
             return { newState, selectedArmyId: null };
         case CardName.Teleport:
             newState.teleportState = { armyId: null, cardName: CardName.Teleport };
+            selectedArmyId = null;
             break;
         case CardName.Scout:
             newState.scoutingState = { count: 3, cardName: CardName.Scout };
             newState.log.push(`${player.name} activated 'Scout'. Click 3 hidden tiles to reveal them.`);
-            return { newState, selectedArmyId: null };
+            selectedArmyId = null;
+            break;
         case CardName.Reinforce:
             player.reinforceActive = true;
             const rCardIndex = player.specialCards.indexOf(CardName.Reinforce);

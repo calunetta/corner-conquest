@@ -3,7 +3,7 @@
 import type { GameState, Army, ResourceType, ActionHandlerResult } from './types';
 import { GameAction, AbilityName, CardName, IslandType, MAP_COLS } from './types';
 import { handleAttackAction, handleMonsterCombatRoll, handleCloseMonsterCombat } from './actions/attack';
-import { handleBuyAbility, handleBuyCardAction } from './actions/card';
+import { handleBuyAbility, handleBuyCardAction, handleGainWealth } from './actions/card';
 import { getPossibleMoves, handleTileClick } from './actions/movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn } from './actions/player';
 import { handleSelectResourceForPosition } from './actions/resource';
@@ -31,6 +31,18 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     const botPlayer = state.players[state.currentPlayerIndex];
     console.log(`--- Bot Turn Start: ${botPlayer.name} ---`);
     
+    // Check for useful cards and activate them pre-turn
+    if (botPlayer.specialCards.includes(CardName.Reinforce)) {
+        botPlayer.reinforceActive = true;
+    }
+    if (botPlayer.specialCards.includes(CardName.Efficient)) {
+        botPlayer.efficientActive = true;
+    }
+    if (botPlayer.specialCards.includes(CardName.MasterBuilder)) {
+        botPlayer.masterBuilderActive = true;
+    }
+
+
     const possibleActions: BotAction[] = [];
 
     // --- Strategic (non-army) Actions ---
@@ -90,16 +102,63 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             }
         });
     }
+    
+    // Use Wealthy card if low on resources needed for high-priority actions
+    if (botPlayer.specialCards.includes(CardName.Wealthy)) {
+        let neededResource: ResourceType | null = null;
+        if (!canAfford(botPlayer, deployCost, 'wheat' as ResourceType) && botPlayer.armyCount < 5) {
+            neededResource = 'wheat' as ResourceType;
+        } else if (!canAfford(botPlayer, upgradeCost, 'iron' as ResourceType) && botPlayer.attackPower < 4) {
+            neededResource = 'iron' as ResourceType;
+        }
+        
+        if (neededResource) {
+            const resourceToGain = neededResource;
+            possibleActions.push({
+                name: 'use-wealthy',
+                priority: 8, // Very high priority to unblock other actions
+                execute: (s) => {
+                    try {
+                        return handleGainWealth(s, resourceToGain).newState;
+                    } catch { return null; }
+                }
+            })
+        }
+    }
 
 
     // --- Army-Specific Actions (Evaluate all possibilities) ---
     const unactedArmies = botPlayer.armies.filter((a: Army) => !a.hasActed);
     for (const army of unactedArmies) {
         const currentTile = state.map[army.position.y * MAP_COLS + army.position.x];
+        
+        // --- High Priority: Attack ---
+        const enemyOnTile = currentTile.occupants.find(o => o.playerId !== botPlayer.id);
+        const monsterOnTile = currentTile.monsters && currentTile.monsters.length > 0;
+        
+        if(enemyOnTile) {
+             const enemyPlayer = state.players.find(p => p.id === enemyOnTile.playerId);
+             if (enemyPlayer) {
+                 possibleActions.push({
+                     name: `attack-player-${army.id}`,
+                     priority: 8 + (botPlayer.attackPower - enemyPlayer.attackPower), // Higher priority if bot is stronger
+                     execute: (s) => handleAttackAction(s, army).newState,
+                 });
+             }
+        }
+        
+        if(monsterOnTile) {
+             possibleActions.push({
+                name: `attack-monster-${army.id}`,
+                priority: 7, // High priority to clear islands
+                execute: (s) => handleAttackAction(s, army).newState,
+             });
+        }
+
 
         // Action: Position on current tile
         const isAlreadyPositioned = botPlayer.positions.some((p: any) => p.armyId === army.id);
-        if (!isAlreadyPositioned && (currentTile.type === IslandType.Resource || currentTile.type === IslandType.Base) && currentTile.resources.length > 0) {
+        if (!isAlreadyPositioned && (currentTile.type === IslandType.Resource || currentTile.type === IslandType.Base) && currentTile.resources.length > 0 && !monsterOnTile) {
             const availableResource = currentTile.resources.find((res: any) => !(currentTile.positionedBy || []).some((p: any) => p.resource === res.type));
             if (availableResource) {
                 possibleActions.push({
@@ -125,7 +184,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
                 priority = 5;
             } 
             // Prioritize moving to unoccupied resource islands
-            else if ((targetTile.type === IslandType.Resource || targetTile.type === IslandType.Base) && targetTile.resources.length > 0 && targetTile.occupants.length === 0) {
+            else if ((targetTile.type === IslandType.Resource || targetTile.type === IslandType.Base) && targetTile.resources.length > 0 && targetTile.occupants.length === 0 && !targetTile.monsters) {
                 priority = 4;
             }
             // Prioritize special tiles
@@ -162,3 +221,4 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     console.log(`Bot: No valid actions found. Ending turn.`);
     return handleEndTurn(state);
 }
+
