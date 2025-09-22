@@ -1,4 +1,5 @@
 
+
 import type { Island, Player, ResourceType, IslandResource, Army, Monster, DeathAnimation } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon } from '@/components/icons';
@@ -35,6 +36,13 @@ const playerColorMap: Record<PlayerColor, { bg: string, border: string }> = {
   [PlayerColor.Red]: { bg: 'bg-red-500', border: 'border-red-300' },
   [PlayerColor.Purple]: { bg: 'bg-purple-500', border: 'border-purple-300' },
   [PlayerColor.Yellow]: { bg: 'bg-yellow-400', border: 'border-yellow-200' },
+};
+
+const playerTileIndicatorClasses: Record<string, string> = {
+    'blue': 'shadow-blue-500/50',
+    'red': 'shadow-red-500/50',
+    'purple': 'shadow-purple-500/50',
+    'yellow': 'shadow-yellow-400/50',
 };
 
 const AnimatedMonster = ({ monster }: { monster: Monster }) => {
@@ -112,9 +120,18 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     if (fogOfWar) {
       return isPersonallyRevealed;
     }
+    // If fog of war is disabled, tile is visible if ANYONE has revealed it.
     return globallyRevealedTiles.has(island.id);
   }, [island.type, island.id, fogOfWar, isPersonallyRevealed, globallyRevealedTiles]);
 
+  const tilePlayerColor = useMemo(() => {
+      const occupantIds = new Set(island.occupants.map(o => o.playerId));
+      if (occupantIds.size === 1) {
+          const singlePlayer = players.find(p => p.id === occupantIds.values().next().value);
+          return singlePlayer?.color || null;
+      }
+      return null;
+  }, [island.occupants, players]);
   
   const borderImageSequence = useMemo(() => {
     const middleImage = BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)];
@@ -223,7 +240,8 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
           isSelected ? 'shadow-2xl shadow-primary/80' : '',
           isPossibleMove ? 'border-2 border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'border border-transparent hover:border-foreground/50',
           isTeleporting && isPossibleMove && 'border-2 border-purple-500 hover:border-purple-400 shadow-lg shadow-purple-500/30',
-          isScoutTarget && 'cursor-pointer border-2 border-blue-400 hover:border-blue-300 shadow-lg shadow-blue-500/30'
+          isScoutTarget && 'cursor-pointer border-2 border-blue-400 hover:border-blue-300 shadow-lg shadow-blue-500/30',
+          tilePlayerColor && !isSelected && `shadow-lg ${playerTileIndicatorClasses[tilePlayerColor]}`
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
       >
@@ -319,4 +337,3 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     </TooltipProvider>
   );
 }
-
