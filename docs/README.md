@@ -91,7 +91,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
 
 ### 4.5. Combat
 - Combat is resolved through dice rolls. Each player rolls a number of dice equal to their **Attack Power + 1**.
-- The player with the higher total roll wins the battle.
+- The player with the higher total roll wins the battle. In case of a tie, the defender wins.
 - Defeated armies are not destroyed; they are sent back to their owner's Base tile to regroup.
 - **Combat Dialog Animations:** During the `rolling` phase, both combatants show their `attack` sprite. In the `results` phase, the winner remains in their attack pose, while the loser's sprite changes to the `death` animation.
 - **Player vs. Monster Combat:** This follows the same dice roll mechanic. Monsters have a `level` which determines the number of dice they roll. The `MonsterCombatDialog` may include checkboxes for relevant special cards (`War Chief`, `Decide Dice Roll`, `Overcome`).
@@ -176,16 +176,16 @@ The game log is a running, public history of major events in the match, displaye
 This log provides crucial context and a narrative for the unfolding game.
 
 ## 6. Bot Logic
-The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a priority-based system to make decisions.
+The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priority-based system to make decisions.
 1.  At the start of its turn, the bot evaluates all possible strategic and army actions.
-2.  Each action is assigned a numeric `priority`. Examples:
-    - **Positioning on a resource:** Very high priority (9).
-    - **Buying an Ability:** High priority (8).
-    - **Upgrading Attack Power:** Medium priority (7, decreases as power increases).
-    - **Deploying a new Army:** Medium priority (6, decreases as army count increases).
-    - **Exploring a new tile:** Medium priority (5).
-    - **Moving to a resource island:** Medium priority (4).
-3.  The bot executes the single action with the highest priority score. After that action, its turn ends. This creates a focused but effective AI opponent that prioritizes long-term strategic advantage (positioning, upgrading) over simple movement.
+2.  Each action is assigned a numeric `priority` based on the current game state.
+    - **Positioning on a resource:** Very high priority (9). This is the bot's primary way to build its economy.
+    - **Attacking:** High priority, especially if the bot has a power advantage or if it needs to clear a monster from a valuable island.
+    - **Using Strategic Cards:** The bot will intelligently use cards like `Wealthy` if it is low on a resource needed for a high-priority action (like deploying an army). It will also use `Reinforce`, `Efficient`, and `Master Builder` to save resources.
+    - **Upgrading Attack Power:** Medium priority, which decreases as its power level increases to avoid over-investing.
+    - **Deploying a new Army:** Medium priority, which decreases as its army count increases to maintain a balanced force.
+    - **Exploring:** The bot now has a higher priority to explore new tiles, preventing it from getting stuck and encouraging expansion.
+3.  The bot executes the single action with the highest priority score. After that action, its turn ends. This creates a focused but adaptable AI opponent that balances long-term strategy with opportunistic plays.
 
 ## 7. Blueprint for Future Development
 - **Always Modify State via `handleGameAction`:** All new features must be implemented as actions that flow through the central `handleGameAction` reducer.
@@ -193,3 +193,5 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a priority-based s
 - **Use Dialogs for Multi-Step Actions:** For actions that require choices (like `Teleport` or `Sabotage`), create a new state property (e.g., `sabotageDialogState`) and a corresponding dialog component. The action handler sets this state, and the dialog component dispatches further actions.
 - **Decouple UI from Logic:** UI components should only read from the `GameState` and dispatch actions. They should never contain complex game rule calculations.
 - **Update This Document:** When a new feature is added, this `README.md` file must be updated to reflect the new mechanics to maintain it as our source of truth.
+
+    

@@ -291,7 +291,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
         monsterRolls = rollDice(monster.level);
         const attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
         const monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
-        winnerId = attackerScore >= monsterScore ? attacker.id : null;
+        winnerId = attackerScore > monsterScore ? attacker.id : null;
     }
     
     if (cardUsedThisAction) {
@@ -386,3 +386,5 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
     newState.monsterCombatState = null;
     return {newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
 }
+
+    
