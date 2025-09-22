@@ -1,7 +1,8 @@
 
 
 'use client';
-import type { GameState, CardName } from '@/lib/types';
+import type { GameState } from '@/lib/types';
+import { CardName } from '@/lib/types';
 import { useState } from 'react';
 import {
   AlertDialog,
