@@ -367,18 +367,19 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
     } else {
         newState.log.push(`${attacker.name} was defeated by the ${monster.name}!`);
         const baseTile = baseTiles.find(t => t.owner === attacker.id);
-        if (baseTile) {
+        const losingArmy = attacker.armies.find(a => a.id === attackingArmy.id);
+        if (losingArmy && baseTile) {
             const deathAnim: DeathAnimation = {
-                id: `army-${attacker.id}-${attackingArmy.id}`,
-                x: attackingArmy.position.x,
-                y: attackingArmy.position.y,
+                id: `army-${attacker.id}-${losingArmy.id}`,
+                x: losingArmy.position.x,
+                y: losingArmy.position.y,
                 sprite: PLAYER_DATA[attacker.color].sprite.death
             };
             newState.deathAnimations.push(deathAnim);
             
-            newState.map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x].occupants = newState.map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x].occupants.filter(o => o.armyId !== attackingArmy.id);
-            attackingArmy.position = {x: baseTile.x, y: baseTile.y};
-            newState.map[baseTile.y * MAP_COLS + baseTile.x].occupants.push({playerId: attacker.id, armyId: attackingArmy.id});
+            newState.map[losingArmy.position.y * MAP_COLS + losingArmy.position.x].occupants = newState.map[losingArmy.position.y * MAP_COLS + losingArmy.position.x].occupants.filter(o => o.armyId !== losingArmy.id);
+            losingArmy.position = {x: baseTile.x, y: baseTile.y};
+            newState.map[baseTile.y * MAP_COLS + baseTile.x].occupants.push({playerId: attacker.id, armyId: losingArmy.id});
         }
     }
 

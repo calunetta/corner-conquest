@@ -38,6 +38,9 @@ export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeL
     : null;
 
   const hasArmyActed = !!selectedArmy?.hasActed;
+  
+  const isCardActionInProgress = !!teleportState || !!scoutingState;
+
 
   const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !localPlayer.positions.some(p => p.armyId === selectedArmy.id) && (!currentTile.monsters || currentTile.monsters.length === 0);
   const canAttack = selectedArmy && currentTile && (currentTile.occupants.some(o => o.playerId !== localPlayer.id) || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
@@ -52,8 +55,8 @@ export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeL
   const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0) || !!gameState.useCardDialogState || !!gameState.sabotageDialogState || !!gameState.wealthyDialogState || !!gameState.stealResourceDialogState || localPlayer.hasExtraMove;
 
   const mainActions: ActionConfig[] = [
-    { id: GameAction.Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Attack, null) },
-    { id: GameAction.Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed, tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Position, null) },
+    { id: GameAction.Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed || isCardActionInProgress, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Attack, null) },
+    { id: GameAction.Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress, tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Position, null) },
   ];
   
   const deployLabel = localPlayer.reinforceActive
@@ -114,6 +117,7 @@ export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeL
   const timerPercentage = (timeLeft / turnDuration) * 100;
 
   const getDisabledReason = (actionId: GameAction): string => {
+    if (isCardActionInProgress) return "Complete or cancel your current card action.";
     switch (actionId) {
         case GameAction.Upgrade:
             if (localPlayer.attackPower >= 4) return "Maximum attack power reached.";

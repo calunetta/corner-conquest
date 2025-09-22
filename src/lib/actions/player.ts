@@ -334,6 +334,7 @@ export function handleDeselectArmy(): Partial<ActionHandlerResult> {
 
 export function handleCancelAction(state: GameState): GameState {
     let newState = { ...state };
+    const player = newState.players[newState.currentPlayerIndex];
     
     newState.teleportState = null;
     newState.scoutingState = null;
@@ -345,6 +346,12 @@ export function handleCancelAction(state: GameState): GameState {
     newState.stealResourceDialogState = null;
     newState.armySelectionDialogState = null;
     newState.abilitiesShopState = null;
+
+    // Refund the "Use Card" action if one was pending
+    const useCardIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
+    if (useCardIndex > -1) {
+        player.actionsThisTurn.splice(useCardIndex, 1);
+    }
     
     return newState;
 }

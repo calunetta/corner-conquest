@@ -77,9 +77,10 @@ type MapGridProps = {
   fogOfWar: boolean;
   localPlayer: Player;
   globallyRevealedTiles: Set<string>;
+  debugMode: boolean;
 };
 
-export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, isTeleporting, isScouting, deathAnimations, fogOfWar, localPlayer, globallyRevealedTiles }: MapGridProps) {
+export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, isTeleporting, isScouting, deathAnimations, fogOfWar, localPlayer, globallyRevealedTiles, debugMode }: MapGridProps) {
   
   const isMobile = useIsMobile();
   const tileSize = isMobile ? 75 : 120;
@@ -114,7 +115,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         {map.map((island) => {
           const isPossible = possibleMoves.some(p => p.x === island.x && p.y === island.y);
           const isSelected = !!selectedTile && selectedTile.x === island.x && selectedTile.y === island.y;
-          const isScoutTarget = isScouting && fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id);
+          const isScoutTarget = isScouting && (debugMode ? false : fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id));
           
           return (
             <IslandTile
@@ -130,6 +131,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
                 fogOfWar={fogOfWar}
                 localPlayer={localPlayer}
                 globallyRevealedTiles={globallyRevealedTiles}
+                debugMode={debugMode}
             />
           );
         })}

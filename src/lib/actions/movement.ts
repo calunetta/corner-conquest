@@ -143,7 +143,7 @@ export function handleTileClick(
     }
 
     let isTileRevealed = true;
-    if (settings.fogOfWar) {
+    if (settings.fogOfWar && !settings.debugMode) {
         isTileRevealed = currentPlayer.revealedTiles.includes(clickedTile.id);
     }
     
@@ -159,9 +159,10 @@ export function handleTileClick(
     
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
 
+    // If an army is selected and the clicked tile is a valid move, execute the move.
     if (currentSelectedArmy && isPossibleMove) {
         const moveResult = handleMoveAction(newState, x, y, currentSelectedArmy);
-        if (moveResult.selectedArmyId === null) {
+        if (moveResult.selectedArmyId === null) { // Move ended the turn
             return { newState: moveResult.newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
         }
         return moveResult;
@@ -189,19 +190,21 @@ export function handleTileClick(
         return { newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
     }
     
+    // If not a move, treat as a selection click.
     if (armiesOnTile.length > 0) {
         if (armiesOnTile.length === 1) {
             const army = armiesOnTile[0];
             selectedArmyId = army.id;
             possibleMoves = getPossibleMoves(newState, army);
-            currentAction = GameAction.Move;
-        } else {
+            currentAction = GameAction.Move; // Default action is move
+        } else { // Multiple armies on the same tile
             newState.armySelectionDialogState = { isOpen: true, x, y, armies: armiesOnTile };
             selectedArmyId = null;
             possibleMoves = [];
             currentAction = null;
         }
     } else {
+        // Clicked on a tile with no friendly armies, deselect everything.
         selectedArmyId = null;
         possibleMoves = [];
         currentAction = null;

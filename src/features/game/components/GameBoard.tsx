@@ -59,6 +59,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     return [...gameState.players].sort((a, b) => a.id - b.id);
   }, [gameState?.players]);
 
+
   useEffect(() => {
     setIsPlayerInfoOpen(!isMobile);
   }, [isMobile]);
@@ -320,7 +321,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     );
   }
 
-  const { players, currentPlayerIndex, log, status, maxPlayers, teleportState, scoutingState, winner, settings, deathAnimations, map } = gameState;
+  const { players, currentPlayerIndex, log, status, maxPlayers, teleportState, scoutingState, winner, settings, deathAnimations, map, debugMode } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
@@ -397,6 +398,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                       fogOfWar={settings.fogOfWar}
                       localPlayer={localPlayer}
                       globallyRevealedTiles={globallyRevealedTiles}
+                      debugMode={debugMode}
                   />
                   <div className='pointer-events-none absolute bottom-4 right-4 z-20 rounded-lg bg-background/80 p-2 text-center shadow-md backdrop-blur-sm'>
                       {status === 'waiting' ? (
@@ -480,9 +482,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    
-
-    
-
-    

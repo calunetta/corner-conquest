@@ -23,6 +23,7 @@ type IslandTileProps = {
   fogOfWar: boolean;
   localPlayer: Player;
   globallyRevealedTiles: Set<string>;
+  debugMode: boolean;
 };
 
 const BORDER_IMAGES = [
@@ -44,6 +45,7 @@ const playerTileIndicatorClasses: Record<string, string> = {
     'purple': 'shadow-purple-500/50',
     'yellow': 'shadow-yellow-400/50',
 };
+
 
 const AnimatedMonster = ({ monster }: { monster: Monster }) => {
     const [isAttacking, setIsAttacking] = useState(false);
@@ -99,7 +101,7 @@ const AnimatedMonster = ({ monster }: { monster: Monster }) => {
     )
 }
 
-export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isTeleporting, isScoutTarget, deathAnimations, fogOfWar, localPlayer, globallyRevealedTiles }: IslandTileProps) {
+export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isTeleporting, isScoutTarget, deathAnimations, fogOfWar, localPlayer, globallyRevealedTiles, debugMode }: IslandTileProps) {
   
   const occupants = island.occupants.map(o => {
       const player = players.find(p => p.id === o.playerId);
@@ -116,13 +118,14 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   const isPersonallyRevealed = localPlayer.revealedTiles.includes(island.id);
 
   const isTileVisible = useMemo(() => {
+    if (debugMode) return true;
     if (island.type === IslandType.Base) return true;
     if (fogOfWar) {
       return isPersonallyRevealed;
     }
     // If fog of war is disabled, tile is visible if ANYONE has revealed it.
     return globallyRevealedTiles.has(island.id);
-  }, [island.type, island.id, fogOfWar, isPersonallyRevealed, globallyRevealedTiles]);
+  }, [island.type, island.id, fogOfWar, isPersonallyRevealed, globallyRevealedTiles, debugMode]);
 
   const tilePlayerColor = useMemo(() => {
     if (!isTileVisible) return null;
@@ -276,7 +279,9 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                 }
                 
                 let isArmyVisible;
-                if (fogOfWar) {
+                if (debugMode) {
+                    isArmyVisible = true;
+                } else if (fogOfWar) {
                     // With fog, own armies are visible. Opponent armies are visible on bases or personally revealed tiles.
                     isArmyVisible = player.id === localPlayer.id || island.type === IslandType.Base || isPersonallyRevealed;
                 } else {
