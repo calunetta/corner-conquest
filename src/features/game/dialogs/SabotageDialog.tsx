@@ -53,7 +53,7 @@ export function SabotageDialog({ players, onSabotage, onClose, isMyTurn }: Sabot
 
         <AlertDialogFooter>
           {isMyTurn ? (
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
           ) : (
             <Button variant="outline" onClick={onClose}>Close</Button>
           )}
