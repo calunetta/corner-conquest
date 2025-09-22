@@ -20,6 +20,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ConfirmExitDialog } from '@/features/game/dialogs/ConfirmExitDialog';
 import { getPossibleMoves } from '@/lib/actions/movement';
+import { cloneDeep } from 'lodash';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
 
@@ -65,7 +66,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMobile]);
   
   useEffect(() => {
-    // When turn changes, reset local UI state
     if (!isMyTurn) {
         setSelectedArmyId(null);
         setSelectedTile(null);
@@ -107,7 +107,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
     if (isPerformingAction) return;
 
-    if (!isMyTurn && ![GameAction.ShowCards, GameAction.CloseCards, GameAction.CloseCombatViewer, GameAction.CloseMonsterCombatViewer].includes(action)) {
+    if (!isMyTurn && ![GameAction.ShowCards, GameAction.CloseCards, GameAction.CloseCombat].includes(action)) {
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
       return;
     }
@@ -261,7 +261,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (gameState?.status === 'playing') {
         const winner = gameState.players.find(p => p.victoryPoints >= gameState.settings.victoryPointGoal);
         if (winner && !gameState.winner) {
-            setGameState(gs => gs ? { ...gs, winner, status: 'finished' } : null);
+            setGameState(gs => gs ? { ...gs, winner: cloneDeep(winner), status: 'finished' } : null);
         }
     }
    // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -161,7 +161,6 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
         targetPlayer.isSabotaged = true;
         newState.log.push(`${player.name} sabotaged ${targetPlayer.name}! They will miss their next turn.`);
         
-        // This is where the action is fully consumed.
         const cardIndex = player.specialCards.indexOf(CardName.Sabotage);
         if (cardIndex > -1) {
             newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
@@ -179,7 +178,6 @@ export function handleGainWealth(state: GameState, resource: ResourceType): Acti
     player.resources[resource] += 5;
     newState.log.push(`${player.name} used 'Wealthy' to gain 5 ${resource}.`);
     
-    // This is where the action is fully consumed.
     const cardIndex = player.specialCards.indexOf(CardName.Wealthy);
     if (cardIndex > -1) {
         newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
@@ -210,7 +208,6 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
         newState.log.push(`${currentPlayer.name} tried to steal ${payload.resource} from ${targetPlayer.name}, but they had none.`);
     }
 
-    // This is where the action is fully consumed.
     const cardIndex = currentPlayer.specialCards.indexOf(CardName.StealResource);
     if (cardIndex > -1) {
         newState.discardPile.push(currentPlayer.specialCards.splice(cardIndex, 1)[0]);

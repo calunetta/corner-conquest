@@ -138,7 +138,6 @@ export function handleTileClick(
     const clickedTile = newState.map[y * MAP_COLS + x];
     
     if (!currentPlayer || !clickedTile) {
-        // Early exit if essential data is missing
         return { newState: state };
     }
 
@@ -159,10 +158,9 @@ export function handleTileClick(
     
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
 
-    // If an army is selected and the clicked tile is a valid move, execute the move.
     if (currentSelectedArmy && isPossibleMove) {
         const moveResult = handleMoveAction(newState, x, y, currentSelectedArmy);
-        if (moveResult.selectedArmyId === null) { // Move ended the turn
+        if (moveResult.selectedArmyId === null) {
             return { newState: moveResult.newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
         }
         return moveResult;
@@ -190,21 +188,19 @@ export function handleTileClick(
         return { newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
     }
     
-    // If not a move, treat as a selection click.
     if (armiesOnTile.length > 0) {
         if (armiesOnTile.length === 1) {
             const army = armiesOnTile[0];
             selectedArmyId = army.id;
             possibleMoves = getPossibleMoves(newState, army);
-            currentAction = GameAction.Move; // Default action is move
-        } else { // Multiple armies on the same tile
+            currentAction = GameAction.Move; 
+        } else { 
             newState.armySelectionDialogState = { isOpen: true, x, y, armies: armiesOnTile };
             selectedArmyId = null;
             possibleMoves = [];
             currentAction = null;
         }
     } else {
-        // Clicked on a tile with no friendly armies, deselect everything.
         selectedArmyId = null;
         possibleMoves = [];
         currentAction = null;
@@ -266,7 +262,6 @@ export const handleTeleport = (state: GameState, x: number, y: number): ActionHa
         newState = revealIsland(newState, x, y);
     }
     
-    player.actionsThisTurn.push(GameAction.UseCard);
     const cardIndex = player.specialCards.indexOf(teleportState.cardName);
     if (cardIndex > -1) {
         discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
@@ -289,7 +284,6 @@ export function handleScout(state: GameState, x: number, y: number): GameState {
     
     if (newState.scoutingState.count === 0) {
         newState.log.push(`Scouting complete.`);
-        player.actionsThisTurn.push(GameAction.UseCard);
         
         const cardIndex = player.specialCards.indexOf(newState.scoutingState.cardName);
         if (cardIndex > -1) {
