@@ -11,44 +11,67 @@ This document outlines the architecture and key logic flows of the "Corner Conqu
 - **State Management (Game):** Firestore real-time listeners (`useGameEngine`)
 - **Backend/Database:** Firebase (Firestore)
 
-## 2. Project Structure
+## 2. Project Structure & Development Guide
+
+Understanding the project's structure is key to making changes efficiently and correctly.
 
 - `src/app/`: Core application, pages, and layout.
 - `src/components/`: Reusable, generic UI components (mostly from ShadCN).
 - `src/features/`: Contains domain-specific components and logic.
   - `game/`: All components, dialogs, and panels related to the active game board.
   - `lobby/`: Components for creating and joining games.
-- `src/hooks/`: Custom React hooks for managing client-side state and browser events.
+- `src/hooks/`: Custom React hooks for managing client-side state and browser events. The most important are `useGameEngine` (Firestore sync) and `usePlayer` (session management).
 - `src/lib/`: Core application logic, type definitions, and Firebase configuration.
-  - `actions/`: The "brain" of the game. Pure functions that take the current game state and an action, and return the new game state.
+  - `actions/`: **The "brain" of the game.** Contains pure functions that take the current game state and an action, and return the new game state. *All new game mechanics must be implemented here.*
   - `game-initializer.ts`: Logic for creating the initial game state, including map generation.
   - `game-logic.ts`: Higher-level logic, such as adding a player to a game.
   - `bot-logic.ts`: The AI logic for bot players.
-  - `types.ts`: Central repository for all TypeScript types used in the application.
+  - `types.ts`: Central repository for all TypeScript types used in the application. This is a critical file for maintaining type safety.
 
-## 3. Game State Management & Logic Flow
+### 2.1. The Importance of Enums
+The project uses TypeScript `enum`s extensively (e.g., `GameAction`, `IslandType`, `CardName`), all defined in `src/lib/types.ts`.
+- **Why?** Enums prevent bugs caused by typos and ensure that actions and types are used consistently across the entire codebase. Using `GameAction.Deploy` is safe; typing `"deploi"` is not.
+- **Critical Note:** A common source of hard-to-debug errors has been incorrect enum imports. **Always double-check that you are importing the correct enum** from `types.ts` when implementing new logic.
+
+## 3. Game State Management & Firebase Logic
 
 The application uses a "state machine" pattern where the game state is managed centrally in Firestore and modified by pure functions.
 
 1.  **Central State:** The entire `GameState` object is stored as a single document in a Firestore collection named `games`.
 
-2.  **Client-Side Subscription:** The `useGameEngine` hook (`src/hooks/use-game-engine.ts`) is the primary connection to the game state. It subscribes to real-time updates for the current game document in Firestore. When the document changes, it updates the local React state, causing the UI to re-render.
+2.  **Client-Side Subscription (Reading):** The `useGameEngine` hook (`src/hooks/use-game-engine.ts`) is the primary connection to the game state. It subscribes to real-time updates for the current game document in Firestore using `onSnapshot`. When the document changes on the backend, it automatically updates the local React state, causing the UI to re-render for **all connected players**.
 
-3.  **User Actions:**
+3.  **User Actions & State Updates (Writing):**
     - A user interaction (e.g., clicking a tile) in a component like `GameBoard.tsx` triggers an action.
     - It calls `handleGameAction` in `src/lib/actions/index.ts`. This is the **single entry point** for all game logic modifications.
-
-4.  **Action Handlers:**
     - `handleGameAction` acts as a router, delegating the action to a specific, more granular function (e.g., `handleMoveAction`, `handleAttackAction`).
-    - These functions are **pure**: they receive the current `GameState` and a payload, perform calculations, and return a **new `GameState` object**. They **do not** modify the state directly.
-
-5.  **State Update:**
-    - The new `GameState` object is returned to `GameBoard.tsx`.
-    - The `setGameState` function (which is an alias for `updateGameState` from `useGameEngine`) is called. This function writes the entire new state object back to Firestore, overwriting the old one.
-
-6.  **Real-Time Propagation:** The write to Firestore triggers the `onSnapshot` listener in the `useGameEngine` hook for **all connected players**, ensuring their UIs are updated in real-time with the new state.
+    - These granular functions are **pure**: they receive the current `GameState` and a payload, perform calculations, and return a **new `GameState` object**. They **do not** modify the state directly.
+    - The new `GameState` object is returned up the chain to `GameBoard.tsx`.
+    - The `setGameState` function (which is an alias for `updateGameState` from `useGameEngine`) is called. This function writes the entire new state object back to Firestore, overwriting the old one in a single transaction.
 
 This architecture ensures that the game logic is predictable, testable, and decoupled from the UI. UI components are responsible for *displaying* the state and *dispatching* actions, while the `lib/actions` files are responsible for *calculating* state changes.
+
+### 3.1. Turn Change Logic
+When `handleEndTurn` is called, a sequence of events occurs:
+1.  The `currentPlayerIndex` is incremented.
+2.  The new current player's armies have their `hasActed` status reset to `false`, and their `actionsThisTurn` array is cleared.
+3.  Any temporary statuses (like `hasExtraMove`) are reset.
+4.  Passive abilities for the *outgoing* player (like `Explorer`) are calculated and applied.
+5.  A check is performed to see if the *new* player is sabotaged. If so, their turn is skipped.
+6.  A check for the *new* player's pre-turn actions is performed (e.g., Automatic Resource Collection). If they are positioned on resources, the appropriate collection logic or dialog (`ProductiveCardDialog`) is triggered.
+7.  A log message announces the new turn.
+8.  All temporary dialog states (`combatState`, `positionDialogState`, etc.) are reset to `null`.
+
+### 3.2. Firebase & React/Next.js Common Pitfalls
+- **Firestore Cannot Store `undefined`:** A recurring critical bug is caused by attempting to write a `GameState` object with `undefined` properties. Firestore will silently strip these properties, causing the `GameState` read by clients to have a different shape than expected, leading to crashes. **Rule: Always use `null` instead of `undefined`** for optional or empty state properties.
+- **React's Rules of Hooks:** You **cannot** call hooks (`useState`, `useEffect`, `useMemo`, etc.) inside loops, conditions, or nested functions. A common mistake is trying to use `useMemo` inside a `.map()` function. Hooks must always be called at the top level of your component.
+
+### 3.3. Estimated Firestore Usage
+A full 4-player game to 30 Victory Points is highly variable, but a rough estimate can be made:
+- **Assumptions:** ~10 turns per player, ~2 actions (writes) per turn.
+- **Writes:** `4 players * 10 turns/player * 2 writes/turn` = **~80 writes**.
+- **Reads:** Every write triggers a read for all connected clients. `80 writes * 4 players` = **~320 reads**.
+This is an efficient model, as it ensures all players have the latest state with minimal reads per action.
 
 ## 4. Core Game Mechanics & Match Flow
 
@@ -94,13 +117,13 @@ A player's turn consists of a series of actions. The game automatically ends a p
 - **Player vs. Player:** The player with the higher total roll wins the battle. In case of a tie, the **defender** wins.
 - **Player vs. Monster:** The player with the higher total roll wins the battle. In case of a tie, the **monster** wins.
 - Defeated armies are not destroyed; they are sent back to their owner's Base tile to regroup.
-- **Combat Dialog Animations:** During the `rolling` phase, both combatants show their `attack` sprite. In the `results` phase, the winner remains in their attack pose, while the loser's sprite changes to the `death` animation.
+- **Combat Dialog Animations:** During the `rolling` phase of combat, both combatants show their `attack` sprite. In the `results` phase, the winner's sprite remains in the `attack` pose, while the loser's sprite changes to the `death` animation.
 
 ## 5. Detailed System Explanations
 
 ### 5.1. Special Cards
 When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog.
-- **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, the human player is in `Debug Mode` and starts with one of every available Special Card.
+- **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, if `Debug Mode` is enabled, the human player starts with one of every available Special Card.
 - **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
 - **Extra Move:** Grants the player an extra move action. One army that has already acted can move again.
 - **Teleport:** Initiates a two-step action. First, select an army. Second, select *any* tile on the map to move it to.
@@ -200,10 +223,3 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priorit
     - **Deploying a new Army:** Medium priority, which decreases as its army count increases to maintain a balanced force.
     - **Exploring:** The bot now has a higher priority to explore new tiles, preventing it from getting stuck and encouraging expansion.
 3.  The bot executes the single action with the highest priority score. After that action, its turn ends. This creates a focused but adaptable AI opponent that balances long-term strategy with opportunistic plays.
-
-## 7. Blueprint for Future Development
-- **Always Modify State via `handleGameAction`:** All new features must be implemented as actions that flow through the central `handleGameAction` reducer.
-- **Keep Action Handlers Pure:** Functions in `src/lib/actions/` should not have side effects. They take a game state and a payload and return a *new* game state object.
-- **Use Dialogs for Multi-Step Actions:** For actions that require choices (like `Teleport` or `Sabotage`), create a new state property (e.g., `sabotageDialogState`) and a corresponding dialog component. The action handler sets this state, and the dialog component dispatches further actions.
-- **Decouple UI from Logic:** UI components should only read from the `GameState` and dispatch actions. They should never contain complex game rule calculations.
-- **Update This Document:** When a new feature is added, this `README.md` file must be updated to reflect the new mechanics to maintain it as our source of truth.
