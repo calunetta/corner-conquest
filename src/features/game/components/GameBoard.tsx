@@ -49,6 +49,16 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const selectedArmy = useMemo(() => {
+    if (!gameState || selectedArmyId === null || !localPlayer) return null;
+    return localPlayer.armies.find(a => a.id === selectedArmyId) || null;
+  }, [gameState, selectedArmyId, localPlayer]);
+  
+  const sortedPlayers = useMemo(() => {
+    if (!gameState?.players) return [];
+    return [...gameState.players].sort((a, b) => a.id - b.id);
+  }, [gameState?.players]);
+
   useEffect(() => {
     setIsPlayerInfoOpen(!isMobile);
   }, [isMobile]);
@@ -63,11 +73,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setCardsDialogPlayerId(null);
     }
   }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex]);
-
-  const selectedArmy = useMemo(() => {
-    if (!gameState || selectedArmyId === null || !localPlayer) return null;
-    return localPlayer.armies.find(a => a.id === selectedArmyId) || null;
-  }, [gameState, selectedArmyId, localPlayer]);
 
   useEffect(() => {
     if (isMyTurn && gameState && gameState.status === 'playing') {
@@ -322,9 +327,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   const isTeleporting = !!teleportState;
   const isScouting = !!scoutingState && scoutingState.count > 0;
-  
-  const sortedPlayers = useMemo(() => [...players].sort((a, b) => a.id - b.id), [players]);
-
 
   return (
     <div className="relative flex h-screen w-full flex-col gap-2 overflow-auto p-2 sm:gap-4 sm:p-4">
@@ -478,6 +480,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
 
     
 
