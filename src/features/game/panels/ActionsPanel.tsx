@@ -33,7 +33,7 @@ type ActionConfig = {
 
 export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDuration, currentAction, selectedArmy, onToggleCards, cardsDialogPlayerId }: ActionsPanelProps) {
   const { playerId } = usePlayer();
-  const { currentPlayerIndex, players, map, specialCardsDeck, teleportState, scoutingState, settings, abilitiesShopState } = gameState;
+  const { currentPlayerIndex, players, map, specialCardsDeck, teleportState, scoutingState, settings, abilitiesShopState, useCardDialogState, sabotageDialogState, wealthyDialogState, stealResourceDialogState } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   const localPlayer = players.find(p => p.playerId === playerId)!;
   
@@ -54,7 +54,7 @@ export function ActionsPanel({ onAction, gameState, isMyTurn, timeLeft, turnDura
   const canBuyCard = currentPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !currentPlayer.actionsThisTurn.includes(GameAction.BuyCard);
   const canUpgrade = currentPlayer.resources.iron >= upgradeCost && !currentPlayer.actionsThisTurn.includes(GameAction.Upgrade) && currentPlayer.attackPower < 4;
   
-  const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0) || currentPlayer.hasExtraMove;
+  const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0) || !!useCardDialogState || !!sabotageDialogState || !!wealthyDialogState || !!stealResourceDialogState || currentPlayer.hasExtraMove;
 
   const mainActions: ActionConfig[] = [
     { id: GameAction.Collect, label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasArmyActed, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Collect, null) },
