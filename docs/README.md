@@ -212,6 +212,22 @@ This log provides crucial context and a narrative for the unfolding game.
     -   **Complete Map Visibility:** It overrides any Fog of War setting, making the entire map and all armies visible from the start of the match.
     -   **All Special Cards:** The player begins the game with one of every available Special Card, allowing for immediate testing of card mechanics.
 
+### 5.8. Responsive Design & Mobile Experience
+
+The application is designed to be fully responsive, with key adjustments made for smaller screens. The core of this is the `useIsMobile` hook, which checks for screen widths below 768px.
+
+-   **Layout Scalability:**
+    -   On mobile, the `GameBoard` displays as a single, vertical column to prioritize the map view. The Actions Panel and Game Log appear below the map.
+    -   On desktop (or screens wider than 1024px), the layout shifts to a two-column grid, with the Actions Panel and Game Log positioned to the right of the map for easier access.
+    -   The `PlayerInfo` panel at the top is collapsed by default on mobile to conserve vertical space and can be expanded by the user.
+
+-   **Map & Interaction:**
+    -   The `MapGrid` itself scales down for mobile. Tile sizes are reduced from 120px to 75px, and the gap between them shrinks from 32px to 16px.
+    -   To improve performance and reduce visual clutter on smaller screens, the decorative rocks in the water background are disabled on the mobile version.
+
+-   **Starting a Game:**
+    -   The "Start Game" button's location is consistent across both mobile and desktop. When in a "waiting" lobby, it appears in the header area at the top of the screen. It is only visible to the game's host and only appears once at least one other player has joined.
+
 ## 6. Bot Logic
 The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priority-based system to make decisions.
 1.  At the start of its turn, the bot evaluates all possible strategic and army actions.
