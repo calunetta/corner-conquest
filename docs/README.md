@@ -93,11 +93,13 @@ A player's turn consists of a series of actions. The game automatically ends a p
 - Combat is resolved through dice rolls. Each player rolls a number of dice equal to their **Attack Power + 1**.
 - The player with the higher total roll wins the battle.
 - Defeated armies are not destroyed; they are sent back to their owner's Base tile to regroup.
+- **Combat Dialog Animations:** During the `rolling` phase, both combatants show their `attack` sprite. In the `results` phase, the winner remains in their attack pose, while the loser's sprite changes to the `death` animation.
+- **Player vs. Monster Combat:** This follows the same dice roll mechanic. Monsters have a `level` which determines the number of dice they roll. The `MonsterCombatDialog` may include checkboxes for relevant special cards (`War Chief`, `Decide Dice Roll`, `Overcome`).
 
 ## 5. Detailed System Explanations
 
 ### 5.1. Special Cards
-When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn.
+When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog.
 - **Extra Move:** Grants the player an extra move action. One army that has already acted can move again.
 - **Teleport:** Initiates a two-step action. First, select an army. Second, select *any* tile on the map to move it to.
 - **Scout:** Initiates a multi-step action. The player can click on 3 different hidden tiles to reveal them. This does not involve any army movement.
@@ -107,9 +109,9 @@ When a player uses a card, it is removed from their hand and placed in the `disc
 - **Master Builder:** The player's next `Upgrade` action this turn costs 50% less Iron.
 - **Steal Resource:** Opens a dialog to choose a player, then a resource type. Steals 2 of that resource from the target.
 - **Wealthy:** Opens a dialog to choose a resource type. The player gains 5 of that resource.
-- **Overcome:** Automatically win the next combat encounter (vs. player or monster).
-- **War Chief:** Gain +2 to your attack power for the next combat encounter.
-- **Decide Dice Roll:** In the next *monster* combat, you can choose the value of one of your dice.
+- **Overcome:** Automatically win the next combat encounter (vs. player or monster). Appears as a checkbox in the combat dialog.
+- **War Chief:** Gain +2 to your attack power for the next combat encounter. Appears as a checkbox in the combat dialog.
+- **Decide Dice Roll:** In the next *monster* combat, you can choose the value of one of your dice. Appears as a checkbox and slider in the monster combat dialog.
 - **Productive:** A passive card. At the start of your turn, if you are positioned to collect resources, a dialog opens allowing you to spend this card to double the yield of one resource type.
 
 ### 5.2. UI/UX and Interactions
@@ -149,6 +151,7 @@ This UI element provides a real-time summary for each player in the game, displa
 - **Resources:** Current count of Wheat, Iron, and Gems.
 - **Special Cards:** Total number of cards in hand.
 - **Status Effects:** Icons for `Sabotage` (miss next turn) or `Extra Move`.
+- **Layout:** The panel uses a responsive grid (`grid-cols-2 lg:grid-cols-4`), accommodating up to 4 players. Empty slots are filled with "Waiting for player..." placeholders in the lobby.
 
 ### 5.4. Player Exiting the Game
 - **Normal Player:** If a non-host player leaves, their armies are removed from the board, they are removed from the `players` array in the game state, and a log message is generated. The game continues for the remaining players.
@@ -172,9 +175,22 @@ The game log is a running, public history of major events in the match, displaye
 
 This log provides crucial context and a narrative for the unfolding game.
 
-## 6. Blueprint for Future Development
+## 6. Bot Logic
+The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a priority-based system to make decisions.
+1.  At the start of its turn, the bot evaluates all possible strategic and army actions.
+2.  Each action is assigned a numeric `priority`. Examples:
+    - **Positioning on a resource:** Very high priority (9).
+    - **Buying an Ability:** High priority (8).
+    - **Upgrading Attack Power:** Medium priority (7, decreases as power increases).
+    - **Deploying a new Army:** Medium priority (6, decreases as army count increases).
+    - **Exploring a new tile:** Medium priority (5).
+    - **Moving to a resource island:** Medium priority (4).
+3.  The bot executes the single action with the highest priority score. After that action, its turn ends. This creates a focused but effective AI opponent that prioritizes long-term strategic advantage (positioning, upgrading) over simple movement.
+
+## 7. Blueprint for Future Development
 - **Always Modify State via `handleGameAction`:** All new features must be implemented as actions that flow through the central `handleGameAction` reducer.
 - **Keep Action Handlers Pure:** Functions in `src/lib/actions/` should not have side effects. They take a game state and a payload and return a *new* game state object.
 - **Use Dialogs for Multi-Step Actions:** For actions that require choices (like `Teleport` or `Sabotage`), create a new state property (e.g., `sabotageDialogState`) and a corresponding dialog component. The action handler sets this state, and the dialog component dispatches further actions.
 - **Decouple UI from Logic:** UI components should only read from the `GameState` and dispatch actions. They should never contain complex game rule calculations.
 - **Update This Document:** When a new feature is added, this `README.md` file must be updated to reflect the new mechanics to maintain it as our source of truth.
+```
