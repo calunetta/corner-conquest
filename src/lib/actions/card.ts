@@ -34,7 +34,7 @@ export function handleBuyCardAction(state: GameState): GameState {
     player.actionsThisTurn.push(GameAction.BuyCard);
     newState.log.push(`${player.name} bought a special card: "${drawnCard}"!`);
 
-    return checkAndEndTurnIfNoActions(newState);
+    return newState;
 }
 
 export const handleUseCard = (state: GameState, cardName: CardName): ActionHandlerResult => {
@@ -48,100 +48,61 @@ export const handleUseCard = (state: GameState, cardName: CardName): ActionHandl
     const cardIndex = player.specialCards.indexOf(cardName);
     if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
     
-    let shouldCheckEndTurn = false;
-    let shouldOpenConfirmation = false;
+    // Mark card as used up-front for multi-step actions
+    player.actionsThisTurn.push(GameAction.UseCard);
+    const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+    newState.discardPile.push(usedCard);
+
     let selectedArmyId = null;
 
     switch (cardName) {
         case CardName.ExtraMove:
             player.hasExtraMove = true;
             newState.log.push(`${player.name} activated 'Extra Move'. One army can move again this turn.`);
-            selectedArmyId = null; // Deselect to force re-selection for extra move
-            break;
+            return { newState, selectedArmyId: null }; // Deselect to force re-selection
         case CardName.Teleport:
             newState.teleportState = { armyId: null };
-            shouldCheckEndTurn = false;
             break;
         case CardName.Scout:
             newState.scoutingState = { count: 3 };
             newState.log.push(`${player.name} activated 'Scout'. Click 3 hidden tiles to reveal them.`);
-            shouldCheckEndTurn = false;
             break;
         case CardName.Reinforce:
             player.reinforceActive = true;
             newState.log.push(`${player.name} activated 'Reinforce'. Their next deployment is free.`);
-            shouldCheckEndTurn = true;
             break;
         case CardName.Efficient:
             player.efficientActive = true;
             newState.log.push(`${player.name} activated 'Efficient'. Their next deployment costs 50% less.`);
-            shouldCheckEndTurn = true;
             break;
         case CardName.MasterBuilder:
             player.masterBuilderActive = true;
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
-            shouldCheckEndTurn = true;
             break;
         case CardName.Sabotage:
+            newState.sabotageDialogState = { isOpen: true };
+            break;
         case CardName.StealResource:
+            newState.stealResourceDialogState = { targetPlayerId: null };
+            break;
         case CardName.Wealthy:
-            shouldOpenConfirmation = true;
-            shouldCheckEndTurn = false; // Don't end turn, wait for dialog
+            newState.wealthyDialogState = { isOpen: true };
             break;
         default:
+             // Revert card use if it's not a valid action card
+            player.actionsThisTurn.pop();
+            player.specialCards.push(usedCard);
+            newState.discardPile.pop();
             throw new Error(`The card "${cardName}" does not have a defined use action.`);
     }
-    
-    if (shouldOpenConfirmation) {
-        newState.useCardDialogState = { cardName };
-    } else {
-        // For immediate effects, mark as used
-        player.actionsThisTurn.push(GameAction.UseCard);
-        const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-        newState.discardPile.push(usedCard);
-    }
 
-    if (shouldCheckEndTurn) {
-        return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
-    }
     return { newState, selectedArmyId };
 };
 
 export const handleConfirmUseCard = (state: GameState, cardName: CardName): GameState => {
-    let newState = { ...state, useCardDialogState: null }; // Close confirmation dialog
-    let dialogState: Partial<GameState> = {};
-    
-    const player = newState.players[newState.currentPlayerIndex];
-    
-    // Mark card as used
-    if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
-        player.actionsThisTurn.push(GameAction.UseCard);
-        const cardIndex = player.specialCards.indexOf(cardName);
-        if (cardIndex > -1) {
-            const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-            newState.discardPile.push(usedCard);
-        } else {
-             // This case should ideally not happen if logic is correct
-            console.error(`Card ${cardName} not found for player ${player.name} when trying to confirm its use.`);
-        }
-    }
-
-    switch (cardName) {
-        case CardName.StealResource:
-            dialogState = { stealResourceDialogState: { targetPlayerId: null } };
-            break;
-        case CardName.Sabotage:
-            dialogState = { sabotageDialogState: { isOpen: true } };
-            break;
-        case CardName.Wealthy:
-            dialogState = { wealthyDialogState: { isOpen: true } };
-            break;
-        default:
-            // This path shouldn't be taken for dialog cards, but as a fallback, we do nothing.
-            return newState;
-    }
-
-    return { ...newState, ...dialogState };
+    // This function is now only for simple confirmations, not for multi-step dialogs.
+    let newState = { ...state, useCardDialogState: null }; 
+    return newState;
 }
 
 export function handleSabotagePlayer(state: GameState, targetPlayerId: number): ActionHandlerResult {
@@ -155,7 +116,7 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
     }
 
     newState.sabotageDialogState = null;
-    return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
+    return { newState, selectedArmyId: null };
 }
 
 export function handleGainWealth(state: GameState, resource: ResourceType): ActionHandlerResult {
@@ -166,7 +127,7 @@ export function handleGainWealth(state: GameState, resource: ResourceType): Acti
     newState.log.push(`${player.name} used 'Wealthy' to gain 5 ${resource}.`);
     
     newState.wealthyDialogState = null;
-    return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
+    return { newState, selectedArmyId: null };
 }
 
 export const handleStealResource = (state: GameState, payload: { targetPlayerId: number; resource: ResourceType }): ActionHandlerResult => {
@@ -190,7 +151,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
     }
 
     newState.stealResourceDialogState = null;
-    return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
+    return { newState, selectedArmyId: null };
 };
 
 export function handleOpenAbilitiesShop(state: GameState): GameState {
@@ -221,5 +182,5 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ac
     newState.log.push(`${player.name} has acquired the '${abilityName.charAt(0).toUpperCase() + abilityName.slice(1)}' passive ability!`);
 
     newState.abilitiesShopState = null;
-    return {newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null};
+    return {newState, selectedArmyId: null};
 }
