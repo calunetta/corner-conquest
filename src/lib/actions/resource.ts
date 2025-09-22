@@ -1,9 +1,10 @@
 
 
+
 import type { GameState, Army, IslandResource, CardName, ActionHandlerResult } from '@/lib/types';
-import { ResourceType, GameAction, IslandType } from '../types';
+import { ResourceType, GameAction, IslandType, MAP_COLS } from '../types';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
-import { MAP_COLS } from '../game-logic';
+
 
 export function handlePositionAction(state: GameState, selectedArmy: Army | null): ActionHandlerResult {
   const { players, currentPlayerIndex, map } = state;

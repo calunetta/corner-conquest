@@ -1,10 +1,11 @@
 
+
 import type { Island, Player, DeathAnimation } from '@/lib/types';
 import { IslandTile } from './IslandTile';
 import { useMemo } from 'react';
 import Image from 'next/image';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MAP_COLS, MAP_ROWS } from '@/lib/game-logic';
+import { MAP_COLS, MAP_ROWS } from '@/lib/types';
 
 
 const ROCK_SPRITES = [
@@ -136,5 +137,3 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
     </div>
   );
 }
-
-    

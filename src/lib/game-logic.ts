@@ -1,13 +1,13 @@
 
 
+
 import type { GameState, Player, PlayerColor, BaseTileInfo } from './types';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './game-initializer';
-import { GameStatus, IslandType } from './types';
+import { GameStatus, IslandType, MAP_COLS, MAP_ROWS } from './types';
 
 export const BASE_TILE_SIZE = 150;
-export const MAP_ROWS = 6;
-export const MAP_COLS = 5;
+
 
 export function addPlayerToGame(
     gameState: GameState,

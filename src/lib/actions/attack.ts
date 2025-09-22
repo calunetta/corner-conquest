@@ -1,10 +1,11 @@
 
 
+
 import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
-import { GameAction, IslandType } from '../types';
-import { MAP_COLS } from '../game-logic';
+import { GameAction, IslandType, MAP_COLS } from '../types';
+
 
 export function handleAttackAction(state: GameState, selectedArmy: Army | null): ActionHandlerResult {
     let newState = { ...state };

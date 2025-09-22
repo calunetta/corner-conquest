@@ -1,11 +1,11 @@
 
 
+
 import type { GameState, Island, Player, IslandResource, Monster, GameSettings, BaseTileInfo } from './types';
 import { CardName } from './types';
 import { BASE_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
-import { MAP_COLS, MAP_ROWS } from './game-logic';
-import { IslandType, ResourceType, PlayerColor, MonsterName, GameStatus, AbilityName } from './types';
+import { IslandType, ResourceType, PlayerColor, MonsterName, GameStatus, AbilityName, MAP_COLS, MAP_ROWS } from './types';
 
 export const defaultGameSettings: GameSettings = {
     victoryPointGoal: 30,
@@ -19,6 +19,7 @@ export const defaultGameSettings: GameSettings = {
     availableCards: [...BASE_CARDS],
     availableAbilities: [AbilityName.Explorer, AbilityName.Collector],
     fogOfWar: true,
+    gridSize: { rows: MAP_ROWS, cols: MAP_COLS },
 };
 
 const MONSTER_DATA: Record<number, { name: MonsterName, sprite: { idle: string, attack: string, death: string } }> = {
@@ -130,7 +131,6 @@ export function createPlayer(
         efficientActive: false,
         masterBuilderActive: false,
         reinforceActive: false,
-        teleportState: null,
         revealedTiles,
     };
 }
@@ -294,15 +294,10 @@ export function initializeGame(
     monsterCombatState: null,
     positionDialogState: null,
     collectDialogState: null,
-    stealResourceDialogState: null,
     useCardDialogState: null,
     abilitiesShopState: null,
     showHostLeaveDialog: false,
-    sabotageDialogState: null,
-    wealthyDialogState: null,
     scoutingState: null,
-    armySelectionDialogState: null,
-    attackSelectionDialogState: null,
     deathAnimations: [],
   };
 

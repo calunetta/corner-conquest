@@ -1,5 +1,6 @@
 
-import type { GameState, PassiveAbilities, ResourceType, ActionHandlerResult } from '@/lib/types';
+
+import type { GameState, Player, ResourceType, ActionHandlerResult } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
 import { GameAction, CardName, AbilityName } from '../types';
 
@@ -48,6 +49,8 @@ export const handleUseCard = (state: GameState, cardName: CardName): ActionHandl
     const cardIndex = player.specialCards.indexOf(cardName);
     if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
     
+    newState.log.push(`${player.name} used the '${cardName}' card.`);
+    
     // Mark card as used up-front for multi-step actions
     player.actionsThisTurn.push(GameAction.UseCard);
     const usedCard = player.specialCards.splice(cardIndex, 1)[0];
@@ -83,7 +86,7 @@ export const handleUseCard = (state: GameState, cardName: CardName): ActionHandl
             newState.sabotageDialogState = { isOpen: true };
             break;
         case CardName.StealResource:
-            newState.stealResourceDialogState = { targetPlayerId: null };
+            newState.stealResourceDialogState = { isOpen: true };
             break;
         case CardName.Wealthy:
             newState.wealthyDialogState = { isOpen: true };
@@ -98,12 +101,6 @@ export const handleUseCard = (state: GameState, cardName: CardName): ActionHandl
 
     return { newState, selectedArmyId };
 };
-
-export const handleConfirmUseCard = (state: GameState, cardName: CardName): GameState => {
-    // This function is now only for simple confirmations, not for multi-step dialogs.
-    let newState = { ...state, useCardDialogState: null }; 
-    return newState;
-}
 
 export function handleSabotagePlayer(state: GameState, targetPlayerId: number): ActionHandlerResult {
     let newState = { ...state };
@@ -137,7 +134,8 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
     const targetPlayer = players.find(p => p.id === payload.targetPlayerId);
 
     if (!targetPlayer) {
-        return {newState: { ...newState, stealResourceDialogState: null }, selectedArmyId: null};
+        newState.stealResourceDialogState = null;
+        return {newState, selectedArmyId: null};
     }
     
     const stolenAmount = Math.min(targetPlayer.resources[payload.resource], 2);

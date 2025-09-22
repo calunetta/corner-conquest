@@ -110,5 +110,3 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
     </AlertDialog>
   );
 }
-
-    

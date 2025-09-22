@@ -1,9 +1,9 @@
 
 
+
 import type { GameState, Player, Army, CardName, ActionHandlerResult } from '@/lib/types';
 import { db, doc, deleteDoc, runTransaction, arrayUnion } from '@/lib/firebase';
-import { GameAction, AbilityName, IslandType } from '../types';
-import { MAP_COLS } from '../game-logic';
+import { GameAction, AbilityName, IslandType, MAP_COLS } from '../types';
 import { getPossibleMoves } from './movement';
 
 export function canArmyPerformAnyAction(state: GameState, army: Army): boolean {
@@ -271,7 +271,6 @@ export function handleEndTurn(state: GameState): GameState {
     newState.positionDialogState = null;
     newState.collectDialogState = null;
     newState.stealResourceDialogState = null;
-    newState.useCardDialogState = null;
     newState.abilitiesShopState = null;
     newState.sabotageDialogState = null;
     newState.wealthyDialogState = null;
@@ -304,7 +303,6 @@ export function handleCancelAction(state: GameState): GameState {
     newState.attackSelectionDialogState = null;
     newState.positionDialogState = null;
     newState.collectDialogState = null;
-    newState.useCardDialogState = null;
     newState.sabotageDialogState = null;
     newState.wealthyDialogState = null;
     newState.stealResourceDialogState = null;

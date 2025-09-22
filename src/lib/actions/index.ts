@@ -1,9 +1,10 @@
 
+
 import type { GameState, ActionHandlerResult, Army } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 
 import { handleAttackAction, handleSelectDefender, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
-import { handleBuyCardAction, handleUseCard, handleConfirmUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleOpenAbilitiesShop, handleBuyAbility } from './card';
+import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleOpenAbilitiesShop, handleBuyAbility } from './card';
 import { handleTileClick, handleSelectArmy } from './movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn, handlePlayerExit, handleConfirmHostLeave, handleCancelAction, handleDeselectArmy } from './player';
 import { handlePositionAction, handleCollectAction, handleConfirmCollection, handleSelectResourceForPosition } from './resource';
@@ -62,22 +63,16 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
             return { newState: handleCombatRoll(gameState, payload.useWarChief, selectedArmy) };
         case GameAction.CloseCombat:
             return handleCloseCombat(gameState);
-        case GameAction.CloseCombatViewer:
-            return { newState: { ...gameState, combatState: null } };
         case GameAction.MonsterCombatRoll:
             return { newState: handleMonsterCombatRoll(gameState, payload, selectedArmy) };
         case GameAction.CloseMonsterCombat:
             return handleCloseMonsterCombat(gameState, selectedArmy);
-        case GameAction.CloseMonsterCombatViewer:
-            return { newState: { ...gameState, monsterCombatState: null } };
 
         // Card actions
         case GameAction.BuyCard:
             return { newState: handleBuyCardAction(gameState), selectedArmyId: null };
         case GameAction.UseCard:
             return handleUseCard(gameState, payload.cardName);
-        case GameAction.ConfirmUseCard:
-            return { newState: handleConfirmUseCard(gameState, payload.cardName) };
         case GameAction.SabotagePlayer:
             return handleSabotagePlayer(gameState, payload.targetPlayerId);
         case GameAction.GainWealth:

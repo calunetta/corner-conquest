@@ -1,12 +1,12 @@
 
+
 import type { GameState, Army, ResourceType, ActionHandlerResult } from './types';
-import { GameAction, AbilityName, CardName, IslandType } from './types';
+import { GameAction, AbilityName, CardName, IslandType, MAP_COLS } from './types';
 import { handleAttackAction, handleMonsterCombatRoll, handleCloseMonsterCombat } from './actions/attack';
 import { handleBuyAbility, handleBuyCardAction } from './actions/card';
 import { getPossibleMoves, handleTileClick } from './actions/movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn } from './actions/player';
 import { handleCollectAction, handleConfirmCollection, handleSelectResourceForPosition } from './actions/resource';
-import { MAP_COLS } from './game-logic';
 
 
 function selectRandom<T>(array: T[]): T | null {

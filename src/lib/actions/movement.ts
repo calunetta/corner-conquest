@@ -1,10 +1,11 @@
 
 
+
 import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
-import { GameAction, IslandType } from '../types';
-import { MAP_COLS, MAP_ROWS } from '../game-logic';
+import { GameAction, IslandType, MAP_COLS, MAP_ROWS } from '../types';
+
 
 export function getPossibleMoves(state: GameState, army: Army): { x: number; y: number }[] {
     const { x, y } = army.position;
@@ -115,11 +116,6 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         
         if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
             player.actionsThisTurn.push(GameAction.UseCard);
-            const cardIndex = player.specialCards.indexOf(CardName.ExtraMove);
-            if (cardIndex > -1) {
-                const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-                discardPile.push(usedCard);
-            }
         }
     } else {
         army.hasActed = true;
@@ -272,29 +268,8 @@ export const handleTeleport = (state: GameState, x: number, y: number): ActionHa
         newState = revealIsland(newState, x, y);
     }
     
-    if (targetTile.type === IslandType.Special && isFirstDiscovery) {
-        if (player.specialCards.length >= 7 && !newState.debugMode) {
-             newState.log.push(`${player.name} teleported to a special island, but their hand is full!`);
-        } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
-            if (newState.specialCardsDeck.length === 0) {
-                 newState.log.push("The deck is empty. Reshuffling the discard pile...");
-                 newState.specialCardsDeck = [...newState.discardPile];
-                 newState.discardPile = [];
-            }
-            const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
-            const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
-            player.specialCards.push(drawnCard);
-            newState.log.push(`${player.name} teleported to a special island and found a card: "${drawnCard}"!`);
-        }
-    }
-    
     if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
-        const cardIndex = player.specialCards.indexOf(CardName.Teleport);
-        if (cardIndex > -1) {
-            const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-            discardPile.push(usedCard);
-            player.actionsThisTurn.push(GameAction.UseCard);
-        }
+        player.actionsThisTurn.push(GameAction.UseCard);
     }
     
     newState.log.push(`${player.name} used 'Teleport' to move an army!`);
@@ -316,16 +291,9 @@ export function handleScout(state: GameState, x: number, y: number): GameState {
         newState.log.push(`Scouting complete.`);
         if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
             player.actionsThisTurn.push(GameAction.UseCard);
-            const cardIndex = player.specialCards.indexOf(CardName.Scout);
-            if (cardIndex > -1) {
-                const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-                newState.discardPile.push(usedCard);
-            }
         }
         newState.scoutingState = null;
         newState = checkAndEndTurnIfNoActions(newState);
     }
     return newState;
 }
-
-
