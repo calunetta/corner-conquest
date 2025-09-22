@@ -90,12 +90,12 @@ export function CombatDialog({ gameState, onRoll, onClose, isAttacker }: CombatD
                 <h3 className="font-bold" style={{ color: defender.color }}>{defender.name}</h3>
                 {isCombatOver ? (
                   <>
-                    <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} />
+                    <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} className="-scale-x-100" />
                     {renderDice(defenderRolls)}
                     <p className="text-xl font-bold">Total: {defenderRolls.reduce((a, b) => a + b, 0)}</p>
                   </>
                 ) : (
-                    <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} />
+                    <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} className="-scale-x-100" />
                 )}
             </div>
         </div>
