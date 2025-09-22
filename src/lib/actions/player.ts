@@ -273,7 +273,6 @@ export function handleEndTurn(state: GameState): GameState {
     newState.stealResourceDialogState = null;
     newState.useCardDialogState = null;
     newState.abilitiesShopState = null;
-    newState.showHostLeaveDialog = false;
     newState.sabotageDialogState = null;
     newState.wealthyDialogState = null;
     newState.armySelectionDialogState = null;
@@ -296,28 +295,8 @@ export function handleCancelAction(state: GameState): GameState {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     
-    // Reverse card consumption if applicable
-    if (newState.teleportState || newState.scoutingState || newState.useCardDialogState || newState.sabotageDialogState || newState.wealthyDialogState || newState.stealResourceDialogState) {
-        const usedCardIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
-        if (usedCardIndex > -1) {
-             player.actionsThisTurn.splice(usedCardIndex, 1);
-        }
-        
-        let cardToReturn: CardName | undefined;
-        if(newState.useCardDialogState) cardToReturn = newState.useCardDialogState.cardName;
-        else if (newState.teleportState) cardToReturn = CardName.Teleport;
-        else if (newState.scoutingState) cardToReturn = CardName.Scout;
-        else if (newState.sabotageDialogState) cardToReturn = CardName.Sabotage;
-        else if (newState.wealthyDialogState) cardToReturn = CardName.Wealthy;
-        else if (newState.stealResourceDialogState) cardToReturn = CardName.StealResource;
-
-        if (cardToReturn) {
-            const cardFromDiscard = newState.discardPile.pop();
-            if(cardFromDiscard && cardFromDiscard === cardToReturn) {
-                player.specialCards.push(cardFromDiscard);
-            }
-        }
-    }
+    // This function now only clears the states without trying to refund cards,
+    // as the card is only consumed upon successful final action.
     
     newState.teleportState = null;
     newState.scoutingState = null;
@@ -329,21 +308,10 @@ export function handleCancelAction(state: GameState): GameState {
     newState.sabotageDialogState = null;
     newState.wealthyDialogState = null;
     newState.stealResourceDialogState = null;
-    newState.showHostLeaveDialog = false;
     
     if (player.hasExtraMove) {
-        const cardIndex = player.specialCards.indexOf(CardName.ExtraMove);
-        if (cardIndex === -1) { // If card was already used
-             const discardIndex = newState.discardPile.indexOf(CardName.ExtraMove);
-             if (discardIndex > -1) {
-                const card = newState.discardPile.splice(discardIndex, 1)[0];
-                if (card) {
-                    player.specialCards.push(card);
-                }
-                const actionIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
-                if (actionIndex > -1) player.actionsThisTurn.splice(actionIndex, 1);
-             }
-        }
+        // If extra move was activated but not used, we can consider if it should be refunded.
+        // For now, let's keep it simple: cancelling the action means losing the opportunity.
         player.hasExtraMove = false;
     }
     

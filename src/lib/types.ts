@@ -25,6 +25,7 @@ export enum GameAction {
   SelectDefender = 'select-defender',
   CombatRoll = 'combat-roll',
   CloseCombat = 'close-combat',
+  CloseCombatViewer = 'close-combat-viewer',
   MonsterCombatRoll = 'monster-combat-roll',
   CloseMonsterCombat = 'close-monster-combat',
   StealResource = 'steal-resource',
@@ -280,18 +281,23 @@ export type GameState = {
   winner: Player | null;
   specialCardsDeck: CardName[];
   discardPile: CardName[];
+  // The following states should only be active for the current player,
+  // and are not intended to be synced to all players in real-time.
+  // Their presence in the main state is for the active player's client-side logic.
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
   positionDialogState: PositionDialogState | null;
   collectDialogState: CollectDialogState | null;
   stealResourceDialogState: StealResourceDialogState | null;
   abilitiesShopState: AbilitiesShopState | null;
-  showHostLeaveDialog: boolean;
   sabotageDialogState: SabotageDialogState | null;
   wealthyDialogState: WealthyDialogState | null;
   scoutingState: ScoutingState | null;
   armySelectionDialogState: ArmySelectionDialogState | null;
   attackSelectionDialogState: AttackSelectionDialogState | null;
+  // This state is an exception and needs to be seen by the host.
+  showHostLeaveDialog: boolean;
+  // This is purely for client-side rendering effects
   deathAnimations: DeathAnimation[];
 };
 

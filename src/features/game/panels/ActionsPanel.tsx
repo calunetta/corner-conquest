@@ -31,7 +31,7 @@ type ActionConfig = {
 };
 
 export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeLeft, turnDuration, currentAction, selectedArmy, onToggleCards, cardsDialogPlayerId }: ActionsPanelProps) {
-  const { map, specialCardsDeck, teleportState, scoutingState, settings, abilitiesShopState, useCardDialogState, sabotageDialogState, wealthyDialogState, stealResourceDialogState } = gameState;
+  const { map, specialCardsDeck, teleportState, scoutingState, settings } = gameState;
   
   const currentTile = (selectedArmy && map) 
     ? map[selectedArmy.position.y * settings.gridSize.cols + selectedArmy.position.x] 
@@ -50,7 +50,7 @@ export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeL
   const canBuyCard = localPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !localPlayer.actionsThisTurn.includes(GameAction.BuyCard);
   const canUpgrade = localPlayer.resources.iron >= upgradeCost && !localPlayer.actionsThisTurn.includes(GameAction.Upgrade) && localPlayer.attackPower < 4;
   
-  const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0) || !!useCardDialogState || !!sabotageDialogState || !!wealthyDialogState || !!stealResourceDialogState || localPlayer.hasExtraMove;
+  const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0) || !!gameState.useCardDialogState || !!gameState.sabotageDialogState || !!gameState.wealthyDialogState || !!gameState.stealResourceDialogState || localPlayer.hasExtraMove;
 
   const mainActions: ActionConfig[] = [
     { id: GameAction.Collect, label: 'Collect', icon: <Gem/>, disabled: !canCollect || hasArmyActed, tooltip: "Collect resources from an island where you have a positioned army. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Collect, null) },
@@ -96,7 +96,7 @@ export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeL
       disabled: false, 
       tooltip: "Purchase permanent passive abilities for your empire.",
       onClick: () => {
-          const action: GameAction = abilitiesShopState?.isOpen ? GameAction.CloseAbilitiesShop : GameAction.OpenAbilitiesShop;
+          const action: GameAction = gameState.abilitiesShopState?.isOpen ? GameAction.CloseAbilitiesShop : GameAction.OpenAbilitiesShop;
           onAction(action, null);
       }
     },

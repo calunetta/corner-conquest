@@ -16,9 +16,6 @@ type IslandTileProps = {
   onClick: (x: number, y: number) => void;
   isPossibleMove: boolean;
   isSelected: boolean;
-  isCurrentPlayerTile: boolean;
-  isArmySelectedOnTile: boolean;
-  currentPlayerId: number;
   isTeleporting?: boolean;
   isScoutTarget?: boolean;
   deathAnimations: DeathAnimation[];
@@ -39,13 +36,6 @@ const playerColorMap: Record<PlayerColor, { bg: string, border: string }> = {
   [PlayerColor.Purple]: { bg: 'bg-purple-500', border: 'border-purple-300' },
   [PlayerColor.Yellow]: { bg: 'bg-yellow-400', border: 'border-yellow-200' },
 };
-
-const playerTileIndicatorClasses: Record<string, string> = {
-    'blue': 'shadow-blue-500/50',
-    'red': 'shadow-red-500/50',
-    'purple': 'shadow-purple-500/50',
-    'yellow': 'shadow-yellow-400/50',
-}
 
 const AnimatedMonster = ({ monster }: { monster: Monster }) => {
     const [isAttacking, setIsAttacking] = useState(false);
@@ -101,7 +91,7 @@ const AnimatedMonster = ({ monster }: { monster: Monster }) => {
     )
 }
 
-export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, currentPlayerId, isTeleporting, isScoutTarget, deathAnimations, fogOfWar, localPlayer, globallyRevealedTiles }: IslandTileProps) {
+export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isTeleporting, isScoutTarget, deathAnimations, fogOfWar, localPlayer, globallyRevealedTiles }: IslandTileProps) {
   
   const occupants = island.occupants.map(o => {
       const player = players.find(p => p.id === o.playerId);
@@ -111,15 +101,12 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
 
   const positionedBy = island.positionedBy || [];
   
-  const currentPlayerOnTile = isCurrentPlayerTile ? players.find(p => p.id === currentPlayerId) : undefined;
-
   const baseOwner = island.type === IslandType.Base ? players.find(p => p.id === island.owner) : null;
   
   const deathAnimationOnTile = deathAnimations.find(anim => anim.x === island.x && anim.y === island.y);
   
   const isPersonallyRevealed = localPlayer.revealedTiles.includes(island.id);
 
-  // Determine if the island details (resources, monsters) are visible
   const isTileVisible = useMemo(() => {
     if (island.type === IslandType.Base) return true;
     if (fogOfWar) {
@@ -235,9 +222,6 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
           'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200',
           isSelected ? 'shadow-2xl shadow-primary/80' : '',
           isPossibleMove ? 'border-2 border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'border border-transparent hover:border-foreground/50',
-          isCurrentPlayerTile && currentPlayerOnTile ? `shadow-lg ${playerTileIndicatorClasses[currentPlayerOnTile.color]}`: '',
-          isArmySelectedOnTile && !isTeleporting && 'shadow-2xl shadow-primary/80',
-          isArmySelectedOnTile && isTeleporting && 'shadow-lg shadow-purple-500/70',
           isTeleporting && isPossibleMove && 'border-2 border-purple-500 hover:border-purple-400 shadow-lg shadow-purple-500/30',
           isScoutTarget && 'cursor-pointer border-2 border-blue-400 hover:border-blue-300 shadow-lg shadow-blue-500/30'
         )}
@@ -263,21 +247,21 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
         <div className="absolute inset-0 z-30 pointer-events-none">
             {occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
+
+                if (deathAnimations.some(anim => anim.id === `army-${player.id}-${army.id}`)) {
+                    return null;
+                }
                 
                 let isArmyVisible;
                 if (fogOfWar) {
-                    // Your own army is always visible. An opponent's army is only visible on their base or a tile you've revealed.
+                    // With fog, own armies are visible. Opponent armies are visible on bases or personally revealed tiles.
                     isArmyVisible = player.id === localPlayer.id || island.type === IslandType.Base || isPersonallyRevealed;
                 } else {
-                    // If fog of war is off, all armies are visible.
+                    // Without fog, all armies are always visible.
                     isArmyVisible = true;
                 }
-                
-                if (!isArmyVisible) {
-                    return null;
-                }
 
-                if (deathAnimations.some(anim => anim.id === `army-${player.id}-${army.id}`)) {
+                if (!isArmyVisible) {
                     return null;
                 }
                 
@@ -335,3 +319,4 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     </TooltipProvider>
   );
 }
+

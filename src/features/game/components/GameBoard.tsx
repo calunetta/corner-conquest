@@ -65,10 +65,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex]);
 
   const selectedArmy = useMemo(() => {
-    if (!gameState || selectedArmyId === null) return null;
-    const player = isMyTurn ? gameState.players[gameState.currentPlayerIndex] : localPlayer;
-    return player?.armies.find(a => a.id === selectedArmyId) || null;
-  }, [gameState, selectedArmyId, localPlayer, isMyTurn]);
+    if (!gameState || selectedArmyId === null || !localPlayer) return null;
+    return localPlayer.armies.find(a => a.id === selectedArmyId) || null;
+  }, [gameState, selectedArmyId, localPlayer]);
 
   useEffect(() => {
     if (isMyTurn && gameState && gameState.status === 'playing') {
@@ -102,7 +101,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
     if (isPerformingAction) return;
 
-    if (!isMyTurn && ![GameAction.ShowCards, GameAction.OpenAbilitiesShop, GameAction.CloseCards, GameAction.CloseAbilitiesShop].includes(action)) {
+    if (!isMyTurn && ![GameAction.ShowCards, GameAction.CloseCards].includes(action)) {
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
       return;
     }
@@ -273,7 +272,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (!gameState || !localPlayer) return;
 
     if (isHost) {
-        setGameState({ ...gameState, showHostLeaveDialog: true });
+        handleConfirmHostLeaveGame();
         return;
     }
 
@@ -316,7 +315,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     );
   }
 
-  const { players, currentPlayerIndex, log, status, maxPlayers, teleportState, scoutingState, armySelectionDialogState, winner, settings, deathAnimations, map } = gameState;
+  const { players, currentPlayerIndex, log, status, maxPlayers, teleportState, scoutingState, winner, settings, deathAnimations, map } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
@@ -397,8 +396,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                   <div className='pointer-events-none absolute bottom-4 right-4 z-20 rounded-lg bg-background/80 p-2 text-center shadow-md backdrop-blur-sm'>
                       {status === 'waiting' ? (
                       <p className='text-base font-semibold text-accent sm:text-lg'>Waiting for players... ({players.length}/{maxPlayers})</p>
-                      ) : armySelectionDialogState?.isOpen ? (
-                      <p className='text-base font-semibold text-accent sm:text-lg animate-pulse'>Select an army to command</p>
                       ) : (
                       <>
                           {isTeleporting && isMyTurn ? (
