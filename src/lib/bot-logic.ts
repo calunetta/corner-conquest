@@ -1,6 +1,6 @@
 
 import type { GameState, Army, ResourceType, ActionHandlerResult } from './types';
-import { GameAction, AbilityName, CardName } from './types';
+import { GameAction, AbilityName, CardName, IslandType } from './types';
 import { handleAttackAction, handleMonsterCombatRoll, handleCloseMonsterCombat } from './actions/attack';
 import { handleBuyAbility, handleBuyCardAction } from './actions/card';
 import { getPossibleMoves, handleTileClick } from './actions/movement';
@@ -31,16 +31,16 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     const botPlayer = state.players[state.currentPlayerIndex];
     console.log(`--- Bot Turn Start: ${botPlayer.name} ---`);
     
-    // --- Evaluate all possible strategic actions ---
     const possibleActions: BotAction[] = [];
 
+    // --- Strategic (non-army) Actions ---
     // Buy Ability
     const abilityCost = state.settings.abilityCost;
     const unownedAbilities = state.settings.availableAbilities.filter(a => !botPlayer.passiveAbilities[a as AbilityName]);
     if (canAfford(botPlayer, abilityCost, 'gems' as ResourceType) && unownedAbilities.length > 0) {
         possibleActions.push({
             name: 'buy-ability',
-            priority: 8, // High priority if affordable
+            priority: 8,
             execute: (s) => {
                 try {
                     const { newState } = handleBuyAbility(s, unownedAbilities[0] as AbilityName);
@@ -55,7 +55,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     if (canAfford(botPlayer, upgradeCost, 'iron' as ResourceType) && botPlayer.attackPower < 4 && !botPlayer.actionsThisTurn.includes(GameAction.Upgrade)) {
         possibleActions.push({
             name: 'upgrade-attack',
-            priority: 7 - botPlayer.attackPower, // Lower priority as power increases
+            priority: 7 - botPlayer.attackPower,
             execute: (s) => {
                 try {
                     return handleUpgradeAction(s);
@@ -69,7 +69,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     if ((canAfford(botPlayer, deployCost, 'wheat' as ResourceType) || botPlayer.reinforceActive) && botPlayer.armyCount < 5 && !botPlayer.actionsThisTurn.includes(GameAction.Deploy)) {
         possibleActions.push({
             name: 'deploy-army',
-            priority: 6 - botPlayer.armyCount, // Lower priority as army grows
+            priority: 6 - botPlayer.armyCount,
             execute: (s) => {
                 try {
                     return handleDeployAction(s);
@@ -82,7 +82,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     if (canAfford(botPlayer, 10, 'gems' as ResourceType) && !botPlayer.actionsThisTurn.includes(GameAction.BuyCard)) {
         possibleActions.push({
             name: 'buy-card',
-            priority: botPlayer.resources.gems > 20 ? 4 : 1, // Only if gems are plentiful
+            priority: botPlayer.resources.gems > 20 ? 4 : 1,
             execute: (s) => {
                 try {
                     return handleBuyCardAction(s);
@@ -91,118 +91,91 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         });
     }
 
-    // --- Execute best strategic action if any ---
-    if (possibleActions.length > 0) {
-        possibleActions.sort((a, b) => b.priority - a.priority);
-        const bestAction = possibleActions[0];
-        console.log(`Bot: Choosing strategic action '${bestAction.name}' with priority ${bestAction.priority}`);
-        const nextState = bestAction.execute(state);
-        if (nextState) {
-            state = nextState;
-        }
-    }
 
-
-    // --- Army-Specific Actions (iterate through armies) ---
+    // --- Army-Specific Actions (Evaluate all possibilities) ---
     const unactedArmies = botPlayer.armies.filter((a: Army) => !a.hasActed);
     for (const army of unactedArmies) {
         const currentTile = state.map[army.position.y * MAP_COLS + army.position.x];
 
-        // 1. Collect from a positioned spot
+        // Action: Collect
         const position = botPlayer.positions.find((p: any) => p.armyId === army.id);
         if (position) {
-            console.log(`Bot: Army ${army.id} collecting resources.`);
-            try {
-                let { newState: tempState } = handleCollectAction(state, army);
-                if (tempState.collectDialogState) {
-                    tempState = handleConfirmCollection(tempState, false, army).newState;
+            possibleActions.push({
+                name: `collect-${army.id}`,
+                priority: 10, // Collecting is usually a top priority
+                execute: (s) => {
+                     try {
+                        let { newState: tempState } = handleCollectAction(s, army);
+                        if (tempState.collectDialogState) {
+                            return handleConfirmCollection(tempState, false, army).newState;
+                        }
+                        return null;
+                    } catch { return null; }
                 }
-                return handleEndTurn(tempState);
-            } catch (e) { console.warn("Bot: Collect failed.", e); }
-        }
-
-        // 2. Attack monsters if present
-        if (currentTile.type === 'monster' && currentTile.monsters && currentTile.monsters.length > 0) {
-             console.log(`Bot: Army ${army.id} attacking monster.`);
-             try {
-                 const { newState: attackState } = handleAttackAction(state, army);
-                 const { monsterCombatState } = attackState;
-                 if (monsterCombatState) {
-                    const combatResultState = handleMonsterCombatRoll(attackState, {
-                        monster: monsterCombatState.monster,
-                        useDecideCard: botPlayer.specialCards.includes(CardName.DecideDiceRoll),
-                        decidedValue: 6,
-                        useOvercomeCard: botPlayer.specialCards.includes(CardName.Overcome),
-                        useWarChief: botPlayer.specialCards.includes(CardName.WarChief),
-                    }, army);
-                    const {newState: finalState} = handleCloseMonsterCombat(combatResultState, army);
-                    return handleEndTurn(finalState);
-                 }
-             } catch (e) { console.warn("Bot: Monster attack failed.", e); }
-        }
-
-        // 3. Position on an un-claimed resource on the current tile
-        const isAlreadyPositioned = botPlayer.positions.some((p: any) => p.armyId === army.id);
-        if (!isAlreadyPositioned && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0) {
-            const availableResource = currentTile.resources.find((res: any) => !(currentTile.positionedBy || []).some((p: any) => p.resource === res.type));
-            if (availableResource) {
-                console.log(`Bot: Army ${army.id} positioning on ${availableResource.type}.`);
-                try {
-                    const {newState: posState} = handleSelectResourceForPosition(state, availableResource.type, army);
-                    return handleEndTurn(posState);
-                } catch (e) { console.warn("Bot: Position failed.", e); }
-            }
+            });
         }
         
-        // 4. Move to a promising new tile
+        // Action: Position on current tile
+        const isAlreadyPositioned = botPlayer.positions.some((p: any) => p.armyId === army.id);
+        if (!isAlreadyPositioned && (currentTile.type === IslandType.Resource || currentTile.type === IslandType.Base) && currentTile.resources.length > 0) {
+            const availableResource = currentTile.resources.find((res: any) => !(currentTile.positionedBy || []).some((p: any) => p.resource === res.type));
+            if (availableResource) {
+                possibleActions.push({
+                    name: `position-${army.id}`,
+                    priority: 9, // Positioning is very important
+                    execute: (s) => {
+                        try {
+                            return handleSelectResourceForPosition(s, availableResource.type, army).newState;
+                        } catch { return null; }
+                    }
+                });
+            }
+        }
+
+        // Action: Move
         const validMoves = getPossibleMoves(state, army);
-        const unrevealedTiles = validMoves.filter(move => {
-            const tile = state.map[move.y * MAP_COLS + move.x];
-            return !botPlayer.revealedTiles.includes(tile.id);
-        });
-
-        if (unrevealedTiles.length > 0) {
-            const target = selectRandom(unrevealedTiles);
-            if (target) {
-                console.log(`Bot: Army ${army.id} moving to explore unrevealed tile.`);
-                try {
-                    const { newState: moveState } = handleTileClick(state, target.x, target.y, army, getPossibleMoves(state, army));
-                    return handleEndTurn(moveState);
-                } catch (e) { console.warn("Bot: Explore move failed.", e); }
+        for (const move of validMoves) {
+            const targetTile = state.map[move.y * MAP_COLS + move.x];
+            let priority = 1; // Base priority for any move
+            
+            // Prioritize exploring unrevealed tiles
+            if (state.settings.fogOfWar && !botPlayer.revealedTiles.includes(targetTile.id)) {
+                priority = 5;
+            } 
+            // Prioritize moving to unoccupied resource islands
+            else if ((targetTile.type === IslandType.Resource || targetTile.type === IslandType.Base) && targetTile.resources.length > 0 && targetTile.occupants.length === 0) {
+                priority = 4;
             }
-        }
-
-        const resourceTiles = validMoves.filter(move => {
-             const tile = state.map[move.y * MAP_COLS + move.x];
-             return (tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0 && tile.occupants.length === 0;
-        });
-        if (resourceTiles.length > 0) {
-            const target = selectRandom(resourceTiles);
-            if (target) {
-                 console.log(`Bot: Army ${army.id} moving to resource tile.`);
-                 try {
-                    const { newState: moveState } = handleTileClick(state, target.x, target.y, army, getPossibleMoves(state, army));
-                    return handleEndTurn(moveState);
-                } catch (e) { console.warn("Bot: Resource move failed.", e); }
+            // Prioritize special tiles
+            else if (targetTile.type === IslandType.Special) {
+                priority = 3;
             }
+
+            possibleActions.push({
+                name: `move-${army.id}-to-${move.x},${move.y}`,
+                priority: priority,
+                execute: (s) => {
+                    try {
+                        return handleTileClick(s, move.x, move.y, army, getPossibleMoves(s, army)).newState;
+                    } catch { return null; }
+                }
+            });
         }
     }
 
 
-    // --- Fallback: If no other action taken, just move a random army to a random valid spot ---
-    const armyToMove = selectRandom(unactedArmies);
-    if(armyToMove) {
-        const validMoves = getPossibleMoves(state, armyToMove);
-        const target = selectRandom(validMoves);
-        if (target) {
-             console.log(`Bot: Army ${armyToMove.id} making a random fallback move.`);
-             try {
-                const { newState: moveState } = handleTileClick(state, target.x, target.y, armyToMove, getPossibleMoves(state, armyToMove));
-                return handleEndTurn(moveState);
-            } catch (e) { console.warn('Bot: Fallback move failed:', e); }
+    // --- Execute Best Action ---
+    if (possibleActions.length > 0) {
+        possibleActions.sort((a, b) => b.priority - a.priority);
+        const bestAction = possibleActions[0];
+        console.log(`Bot: Choosing action '${bestAction.name}' with priority ${bestAction.priority}`);
+        const nextState = bestAction.execute(state);
+        if (nextState) {
+            // End the turn after a successful action
+            return handleEndTurn(nextState);
         }
     }
-
+    
     // --- Final Fallback ---
     console.log(`Bot: No valid actions found. Ending turn.`);
     return handleEndTurn(state);
