@@ -5,7 +5,6 @@ export const MAP_COLS = 5;
 
 export enum GameAction {
   Deploy = 'deploy',
-  Collect = 'collect',
   Move = 'move',
   Attack = 'attack',
   Position = 'position',
@@ -16,6 +15,7 @@ export enum GameAction {
   ShowCards = 'show-cards',
   CloseCards = 'close-cards',
   UseCard = 'use-card',
+  UseProductiveCard = 'use-productive-card',
   EndTurn = 'end-turn',
   Teleport = 'teleport',
   BuyAbility = 'buy-ability',
@@ -23,7 +23,6 @@ export enum GameAction {
   DeselectArmy = 'deselect-army',
   TileClick = 'tile-click',
   SelectResourcePosition = 'select-resource-position',
-  ConfirmCollection = 'confirm-collection',
   SelectArmy = 'select-army',
   SelectDefender = 'select-defender',
   CombatRoll = 'combat-roll',
@@ -205,12 +204,14 @@ export type PositionDialogState = {
   resources: IslandResource[];
 }
 
-export type CollectDialogState = {
+export type ProductiveCardDialogState = {
     isOpen: boolean;
-    x: number;
-    y: number;
-    resource: IslandResource;
-    hasProductiveCard: boolean;
+    options: {
+        resource: ResourceType;
+        amount: number;
+        x: number;
+        y: number;
+    }[];
 }
 
 export type StealResourceDialogState = {
@@ -286,13 +287,10 @@ export type GameState = {
   specialCardsDeck: CardName[];
   discardPile: CardName[];
   deathAnimations: DeathAnimation[];
-  // The following states should only be active for the current player,
-  // and are not intended to be synced to all players in real-time.
-  // Their presence in the main state is for the active player's client-side logic.
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
   positionDialogState: PositionDialogState | null;
-  collectDialogState: CollectDialogState | null;
+  productiveCardDialogState: ProductiveCardDialogState | null;
   stealResourceDialogState: StealResourceDialogState | null;
   abilitiesShopState: AbilitiesShopState | null;
   sabotageDialogState: SabotageDialogState | null;
@@ -301,11 +299,9 @@ export type GameState = {
   teleportState: TeleportState | null;
   armySelectionDialogState: ArmySelectionDialogState | null;
   attackSelectionDialogState: AttackSelectionDialogState | null;
-  // This state is an exception and needs to be seen by the host.
   showHostLeaveDialog: boolean;
 };
 
-// Represents the output of a game action handler
 export type ActionHandlerResult = {
     newState: GameState;
     selectedArmyId?: number | null;

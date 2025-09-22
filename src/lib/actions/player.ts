@@ -1,8 +1,8 @@
 
 
-import type { GameState, Player, Army, CardName, ActionHandlerResult } from '@/lib/types';
+import type { GameState, Player, Army, CardName, ActionHandlerResult, IslandResource, ResourceType } from '@/lib/types';
 import { db, doc, deleteDoc, runTransaction, arrayUnion } from '@/lib/firebase';
-import { GameAction, AbilityName, IslandType, MAP_COLS } from '../types';
+import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum } from '../types';
 import { getPossibleMoves } from './movement';
 
 export function canArmyPerformAnyAction(state: GameState, army: Army): boolean {
@@ -26,9 +26,6 @@ export function canArmyPerformAnyAction(state: GameState, army: Army): boolean {
        const hasAvailableResourceSlot = tile.resources.some(res => !(tile.positionedBy || []).some(p => p.resource === res.type));
        if (hasAvailableResourceSlot) return true;
     }
-
-    // Can Collect?
-    if (isPositioned) return true;
 
     return false;
 }
@@ -188,10 +185,24 @@ export function handleUpgradeAction(state: GameState): GameState {
     return checkAndEndTurnIfNoActions(newState);
 }
 
+function applyAutomaticCollection(state: GameState, player: Player): { newState: GameState, collectedResources: Record<string, number> } {
+    const collectedResources: Record<string, number> = {};
+    
+    player.positions.forEach(pos => {
+        const tile = state.map[pos.y * MAP_COLS + pos.x];
+        const resourceSpot = tile.resources.find(r => r.type === pos.resource);
+        if (resourceSpot) {
+            player.resources[resourceSpot.type] += resourceSpot.amount;
+            collectedResources[resourceSpot.type] = (collectedResources[resourceSpot.type] || 0) + resourceSpot.amount;
+        }
+    });
+
+    return { newState: state, collectedResources };
+}
+
 export function handleEndTurn(state: GameState): GameState {
     let newState = JSON.parse(JSON.stringify(state)); 
     
-    // Add a sanity check for the currentPlayerIndex
     if (newState.currentPlayerIndex >= newState.players.length) {
         newState.currentPlayerIndex = 0;
     }
@@ -241,12 +252,10 @@ export function handleEndTurn(state: GameState): GameState {
     currentPlayer.armies.forEach((army: Army) => army.hasActed = false);
     currentPlayer.actionsThisTurn = [];
 
-
-    // Determine the next player
+    // --- Automatic Collection Logic at Turn Start ---
     let nextPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
     let nextPlayer = newState.players[nextPlayerIndex];
 
-    // Handle Sabotage
     if (nextPlayer.isSabotaged) {
         nextPlayer.isSabotaged = false; 
         newState.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
@@ -255,6 +264,31 @@ export function handleEndTurn(state: GameState): GameState {
     }
     
     newState.currentPlayerIndex = nextPlayerIndex;
+    
+    const hasProductiveCard = nextPlayer.specialCards.includes(CardNameEnum.Productive);
+    const positionedArmies = nextPlayer.positions;
+
+    if (positionedArmies.length > 0) {
+        if (hasProductiveCard) {
+            const options = positionedArmies.map(pos => {
+                const tile = newState.map[pos.y * MAP_COLS + pos.x];
+                const resource = tile.resources.find(r => r.type === pos.resource);
+                return resource ? { resource: resource.type, amount: resource.amount, x: pos.x, y: pos.y } : null;
+            }).filter((opt): opt is { resource: ResourceType; amount: number; x: number; y: number } => opt !== null);
+            
+            newState.productiveCardDialogState = {
+                isOpen: true,
+                options: options
+            };
+            newState.log.push(`${nextPlayer.name}, you have a 'Productive' card. Choose a resource to double.`);
+        } else {
+            const { collectedResources } = applyAutomaticCollection(newState, nextPlayer);
+            const collectedStrings = Object.entries(collectedResources).map(([type, amount]) => `${amount} ${type}`);
+            if (collectedStrings.length > 0) {
+                newState.log.push(`${nextPlayer.name} automatically collected ${collectedStrings.join(', ')}.`);
+            }
+        }
+    }
 
     if (newState.currentPlayerIndex === 0) {
       newState.turn += 1;
@@ -262,13 +296,11 @@ export function handleEndTurn(state: GameState): GameState {
     
     newState.log.push(`It's now ${nextPlayer.name}'s turn.`);
     
-    // Reset all dialogs and temporary states
     newState.teleportState = null;
     newState.scoutingState = null;
     newState.combatState = null;
     newState.monsterCombatState = null;
     newState.positionDialogState = null;
-    newState.collectDialogState = null;
     newState.stealResourceDialogState = null;
     newState.abilitiesShopState = null;
     newState.sabotageDialogState = null;
@@ -297,7 +329,6 @@ export function handleCancelAction(state: GameState): GameState {
     newState.monsterCombatState = null;
     newState.attackSelectionDialogState = null;
     newState.positionDialogState = null;
-    newState.collectDialogState = null;
     newState.sabotageDialogState = null;
     newState.wealthyDialogState = null;
     newState.stealResourceDialogState = null;

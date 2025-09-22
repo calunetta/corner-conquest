@@ -2,7 +2,7 @@
 
 import type { GameState, Player, ResourceType, ActionHandlerResult } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
-import { GameAction, CardName, AbilityName } from '../types';
+import { GameAction, CardName, AbilityName, MAP_COLS } from '../types';
 
 export function handleBuyCardAction(state: GameState): GameState {
     let newState = { ...state };
@@ -105,6 +105,44 @@ export const handleUseCard = (state: GameState, cardName: CardName): ActionHandl
     return { newState, selectedArmyId };
 };
 
+export function handleUseProductiveCard(state: GameState, selectedResource: ResourceType | null): ActionHandlerResult {
+    let newState = { ...state };
+    const player = newState.players[newState.currentPlayerIndex];
+    let collectedResources: Record<string, number> = {};
+    let doubledResourceString = '';
+
+    // Consume the card if a resource was selected to be doubled
+    if (selectedResource) {
+        player.actionsThisTurn.push(GameAction.UseCard);
+        const cardIndex = player.specialCards.indexOf(CardName.Productive);
+        if (cardIndex > -1) {
+            newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
+        }
+    }
+
+    player.positions.forEach(pos => {
+        const tile = newState.map[pos.y * MAP_COLS + pos.x];
+        const resourceSpot = tile.resources.find(r => r.type === pos.resource);
+        if (resourceSpot) {
+            let amount = resourceSpot.amount;
+            if (pos.resource === selectedResource) {
+                amount *= 2;
+                doubledResourceString = ` (doubled ${pos.resource})`;
+            }
+            player.resources[resourceSpot.type] += amount;
+            collectedResources[resourceSpot.type] = (collectedResources[resourceSpot.type] || 0) + amount;
+        }
+    });
+
+    const collectedStrings = Object.entries(collectedResources).map(([type, amount]) => `${amount} ${type}`);
+    if (collectedStrings.length > 0) {
+        newState.log.push(`${player.name} collected ${collectedStrings.join(', ')}${doubledResourceString}.`);
+    }
+
+    newState.productiveCardDialogState = null;
+    return { newState, selectedArmyId: null };
+}
+
 export function handleSabotagePlayer(state: GameState, targetPlayerId: number): ActionHandlerResult {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
@@ -163,7 +201,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
         newState.log.push(`${currentPlayer.name} tried to steal ${payload.resource} from ${targetPlayer.name}, but they had none.`);
     }
 
-    currentPlayer.actionsThisTurn.push(GameAction.UseCard);
+    player.actionsThisTurn.push(GameAction.UseCard);
     const cardIndex = currentPlayer.specialCards.indexOf(CardName.StealResource);
     if (cardIndex > -1) {
         newState.discardPile.push(currentPlayer.specialCards.splice(cardIndex, 1)[0]);

@@ -12,9 +12,9 @@ import { HostLeaveDialog } from './HostLeaveDialog';
 import { AbilitiesDialog } from './AbilitiesDialog';
 import { SabotageDialog } from './SabotageDialog';
 import { WealthyDialog } from './WealthyDialog';
-import { CollectDialog } from './CollectDialog';
 import { ArmySelectionDialog } from './ArmySelectionDialog';
 import { AttackSelectionDialog } from './AttackSelectionDialog';
+import { ProductiveCardDialog } from './ProductiveCardDialog';
 
 type GameDialogsProps = {
   gameState: GameState;
@@ -42,6 +42,7 @@ export function GameDialogs({
   } = gameState;
   
   const playerForCardsDialog = cardsDialogPlayerId !== null ? players.find(p => p.id === cardsDialogPlayerId) : null;
+  const isViewingOwnCards = playerForCardsDialog?.id === localPlayer.id;
 
   return (
     <>
@@ -50,7 +51,6 @@ export function GameDialogs({
           gameState={gameState}
           onRoll={(useWarChief) => handleAction(GameAction.CombatRoll, { useWarChief })}
           onClose={() => handleAction(GameAction.CloseCombat)}
-          isMyTurn={isMyTurn}
           localPlayerId={localPlayer.id}
         />
       )}
@@ -75,12 +75,10 @@ export function GameDialogs({
                 />
             )}
 
-            {gameState.collectDialogState?.isOpen && (
-                <CollectDialog
-                    state={gameState.collectDialogState}
-                    onConfirm={(useProductive) => handleAction(GameAction.ConfirmCollection, { useProductive })}
-                    onClose={() => handleAction(GameAction.CancelAction)}
-                    isMyTurn={isMyTurn}
+            {gameState.productiveCardDialogState?.isOpen && (
+                <ProductiveCardDialog
+                    state={gameState.productiveCardDialogState}
+                    onConfirm={(selectedResource) => handleAction(GameAction.UseProductiveCard, { selectedResource })}
                 />
             )}
 
@@ -155,7 +153,7 @@ export function GameDialogs({
             handleAction(GameAction.UseCard, { cardName });
             onCloseCardsDialog();
           }}
-          canUseCards={isMyTurn && playerForCardsDialog.id === localPlayer.id}
+          canUseCards={isMyTurn && isViewingOwnCards}
         />
       )}
     </>

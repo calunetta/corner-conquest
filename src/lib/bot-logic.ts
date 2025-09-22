@@ -6,7 +6,7 @@ import { handleAttackAction, handleMonsterCombatRoll, handleCloseMonsterCombat }
 import { handleBuyAbility, handleBuyCardAction } from './actions/card';
 import { getPossibleMoves, handleTileClick } from './actions/movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn } from './actions/player';
-import { handleCollectAction, handleConfirmCollection, handleSelectResourceForPosition } from './actions/resource';
+import { handleSelectResourceForPosition } from './actions/resource';
 
 
 function selectRandom<T>(array: T[]): T | null {
@@ -97,24 +97,6 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     for (const army of unactedArmies) {
         const currentTile = state.map[army.position.y * MAP_COLS + army.position.x];
 
-        // Action: Collect
-        const position = botPlayer.positions.find((p: any) => p.armyId === army.id);
-        if (position) {
-            possibleActions.push({
-                name: `collect-${army.id}`,
-                priority: 10, // Collecting is usually a top priority
-                execute: (s) => {
-                     try {
-                        let { newState: tempState } = handleCollectAction(s, army);
-                        if (tempState.collectDialogState) {
-                            return handleConfirmCollection(tempState, false, army).newState;
-                        }
-                        return null;
-                    } catch { return null; }
-                }
-            });
-        }
-        
         // Action: Position on current tile
         const isAlreadyPositioned = botPlayer.positions.some((p: any) => p.armyId === army.id);
         if (!isAlreadyPositioned && (currentTile.type === IslandType.Resource || currentTile.type === IslandType.Base) && currentTile.resources.length > 0) {

@@ -4,10 +4,10 @@ import type { GameState, ActionHandlerResult, Army } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 
 import { handleAttackAction, handleSelectDefender, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
-import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleOpenAbilitiesShop, handleBuyAbility } from './card';
+import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleOpenAbilitiesShop, handleBuyAbility, handleUseProductiveCard } from './card';
 import { handleTileClick, handleSelectArmy } from './movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn, handlePlayerExit, handleConfirmHostLeave, handleCancelAction, handleDeselectArmy } from './player';
-import { handlePositionAction, handleCollectAction, handleConfirmCollection, handleSelectResourceForPosition } from './resource';
+import { handlePositionAction, handleSelectResourceForPosition } from './resource';
 
 interface HandleActionParams {
     action: GameAction;
@@ -39,12 +39,8 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
         // Resource actions
         case GameAction.Position:
             return handlePositionAction(gameState, selectedArmy);
-        case GameAction.Collect:
-            return handleCollectAction(gameState, selectedArmy);
         case GameAction.SelectResourcePosition:
             return handleSelectResourceForPosition(gameState, payload, selectedArmy);
-        case GameAction.ConfirmCollection:
-            return handleConfirmCollection(gameState, payload.useProductive, selectedArmy);
 
         // Movement & Tile actions
         case GameAction.TileClick:
@@ -73,6 +69,8 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
             return { newState: handleBuyCardAction(gameState), selectedArmyId: null };
         case GameAction.UseCard:
             return handleUseCard(gameState, payload.cardName);
+        case GameAction.UseProductiveCard:
+            return handleUseProductiveCard(gameState, payload.selectedResource);
         case GameAction.SabotagePlayer:
             return handleSabotagePlayer(gameState, payload.targetPlayerId);
         case GameAction.GainWealth:
