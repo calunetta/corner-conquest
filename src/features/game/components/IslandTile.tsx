@@ -264,17 +264,14 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             {occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
-                // Determine if the army sprite is visible
-                const isArmyVisible = useMemo(() => {
-                    // Own armies are always visible
-                    if (player.id === localPlayer.id) return true;
-                    
-                    // If Fog of War is off, all armies are visible
-                    if (!fogOfWar) return true;
-
-                    // If Fog of War is on, opponents are visible only on bases or personally revealed tiles
-                    return island.type === IslandType.Base || isPersonallyRevealed;
-                }, [player.id, localPlayer.id, fogOfWar, island.type, isPersonallyRevealed]);
+                let isArmyVisible;
+                if (fogOfWar) {
+                    // Your own army is always visible. An opponent's army is only visible on their base or a tile you've revealed.
+                    isArmyVisible = player.id === localPlayer.id || island.type === IslandType.Base || isPersonallyRevealed;
+                } else {
+                    // If fog of war is off, all armies are visible.
+                    isArmyVisible = true;
+                }
                 
                 if (!isArmyVisible) {
                     return null;
