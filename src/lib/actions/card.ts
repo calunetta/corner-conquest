@@ -1,5 +1,4 @@
 
-
 import type { GameState, Player, ResourceType, ActionHandlerResult } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
 import { GameAction, CardName, AbilityName, MAP_COLS } from '../types';
@@ -290,4 +289,3 @@ export function handleRollOnSpecialIsland(state: GameState): GameState {
 export function handleCloseSpecialIslandDialog(state: GameState): GameState {
   return { ...state, specialIslandRollDialogState: null };
 }
-
