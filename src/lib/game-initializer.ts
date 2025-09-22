@@ -1,6 +1,5 @@
 
 
-
 import type { GameState, Island, Player, IslandResource, Monster, GameSettings, BaseTileInfo } from './types';
 import { CardName } from './types';
 import { BASE_CARDS } from './card-data';
@@ -99,7 +98,7 @@ export function createPlayer(
     settings: GameSettings,
     debugMode: boolean
 ): Player {
-    let startingCards: CardName[] = [CardName.ExtraMove, CardName.StealResource, CardName.DecideDiceRoll, CardName.Scout];
+    let startingCards: CardName[] = [];
     if (debugMode) {
         startingCards = [...new Set(BASE_CARDS)];
     }
