@@ -117,7 +117,8 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   
   const deathAnimationOnTile = deathAnimations.find(anim => anim.x === island.x && anim.y === island.y);
   
-  const isTileVisible = fogOfWar ? localPlayer.revealedTiles.includes(island.id) : globallyRevealedTiles.has(island.id);
+  const isPersonallyRevealed = localPlayer.revealedTiles.includes(island.id);
+  const isTileVisible = island.type === IslandType.Base || (fogOfWar ? isPersonallyRevealed : globallyRevealedTiles.has(island.id));
   
   const borderImageSequence = useMemo(() => {
     const middleImage = BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)];
@@ -254,9 +255,10 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             {occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
-                // Only show armies on revealed tiles OR if it's the local player's army OR it's a base tile
-                const isBase = island.type === IslandType.Base;
-                if (!isTileVisible && player.id !== localPlayer.id && !isBase) {
+                // An army is visible if it's the local player's, if the tile is a base, or if the tile has been personally revealed.
+                const isArmyVisible = player.id === localPlayer.id || island.type === IslandType.Base || isPersonallyRevealed;
+                
+                if (!isArmyVisible) {
                     return null;
                 }
 
