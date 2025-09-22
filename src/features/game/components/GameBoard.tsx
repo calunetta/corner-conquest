@@ -101,7 +101,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
     if (isPerformingAction) return;
 
-    if (!isMyTurn && ![GameAction.ShowCards, GameAction.CloseCards].includes(action)) {
+    if (!isMyTurn && ![GameAction.ShowCards, GameAction.CloseCards, GameAction.CloseCombatViewer, GameAction.CloseMonsterCombatViewer].includes(action)) {
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
       return;
     }
@@ -322,6 +322,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   const isTeleporting = !!teleportState;
   const isScouting = !!scoutingState && scoutingState.count > 0;
+  
+  const sortedPlayers = useMemo(() => [...players].sort((a, b) => a.id - b.id), [players]);
+
 
   return (
     <div className="relative flex h-screen w-full flex-col gap-2 overflow-auto p-2 sm:gap-4 sm:p-4">
@@ -366,7 +369,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                     <div
                     className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4"
                     >
-                    {players.map(p => (
+                    {sortedPlayers.map(p => (
                         <PlayerInfo key={p.playerId} player={p} isCurrentPlayer={p.id === currentPlayerIndex} />
                     ))}
                     {status === 'waiting' && Array.from({ length: maxPlayers - players.length}).map((_, i) => (
