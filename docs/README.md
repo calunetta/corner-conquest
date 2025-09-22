@@ -7,8 +7,8 @@ This document outlines the architecture and key logic flows of the "Corner Conqu
 - **Framework:** Next.js with App Router
 - **Language:** TypeScript
 - **UI:** React, ShadCN UI Components, Tailwind CSS
-- **State Management (Client):** React Context (`usePlayer`, `useToast`)
-- **State Management (Game):** Firestore real-time listeners (`useGame-engine`)
+- **State Management (Client):** React Hooks (`usePlayer`, `useToast`)
+- **State Management (Game):** Firestore real-time listeners (`useGameEngine`)
 - **Backend/Database:** Firebase (Firestore)
 
 ## 2. Project Structure
@@ -44,7 +44,7 @@ The application uses a "state machine" pattern where the game state is managed c
 
 5.  **State Update:**
     - The new `GameState` object is returned to `GameBoard.tsx`.
-    - The `setGameState` function from the `useGameEngine` hook is called. This function writes the entire new state object back to Firestore, overwriting the old one.
+    - The `setGameState` function (which is an alias for `updateGameState` from `useGameEngine`) is called. This function writes the entire new state object back to Firestore, overwriting the old one.
 
 6.  **Real-Time Propagation:** The write to Firestore triggers the `onSnapshot` listener in the `useGameEngine` hook for **all connected players**, ensuring their UIs are updated in real-time with the new state.
 
