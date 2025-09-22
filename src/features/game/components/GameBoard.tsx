@@ -18,9 +18,7 @@ import { handleGameAction, handlePlayerExit, handleConfirmHostLeave } from '@/li
 import { startGame } from '@/lib/game-initializer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import Image from 'next/image';
 import { ConfirmExitDialog } from '@/features/game/dialogs/ConfirmExitDialog';
-import { MAP_COLS } from '@/lib/game-logic';
 import { getPossibleMoves } from '@/lib/actions/movement';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
@@ -40,7 +38,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [isExiting, setIsExiting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TURN_DURATION);
   const [activeInstructionToastId, setActiveInstructionToastId] = useState<string | null>(null);
-  const [locallyDismissedDialogs, setLocallyDismissedDialogs] = useState<(keyof GameState)[]>([]);
   const [showConfirmExitDialog, setShowConfirmExitDialog] = useState(false);
   const [isPerformingAction, setIsPerformingAction] = useState(false);
   
@@ -57,22 +54,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMobile]);
   
   useEffect(() => {
-    if (isMyTurn) {
-        setLocallyDismissedDialogs([]);
-    } else {
+    // When turn changes, reset local UI state
+    if (!isMyTurn) {
         setSelectedArmyId(null);
         setSelectedTile(null);
         setPossibleMoves([]);
         setCurrentAction(null);
         setCardsDialogPlayerId(null);
-        if (gameState) {
-            // Dismiss all active dialogs locally when it's not our turn
-            const dialogKeys = Object.keys(gameState).filter(k => 
-                (k.endsWith('State') && gameState[k as keyof GameState] !== null) || 
-                k.endsWith('Dialog')
-            );
-            setLocallyDismissedDialogs(dialogKeys as (keyof GameState)[]);
-        }
     }
   }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex]);
 
@@ -98,11 +86,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     } else if (!isMyTurn) {
         setSelectedArmyId(null);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMyTurn, gameState?.turn, gameState?.players, gameState?.status]);
+  }, [isMyTurn, gameState?.turn, gameState?.status, selectedArmyId, gameState?.players, gameState?.currentPlayerIndex]);
   
   useEffect(() => {
-    if (selectedArmy && gameState) {
+    if (selectedArmy && gameState && isMyTurn) {
         const moves = getPossibleMoves(gameState, selectedArmy);
         setPossibleMoves(moves);
         setSelectedTile(selectedArmy.position);
@@ -110,7 +97,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setPossibleMoves([]);
         setSelectedTile(null);
     }
-  }, [selectedArmyId, gameState, selectedArmy]);
+  }, [selectedArmyId, gameState, selectedArmy, isMyTurn]);
   
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
     if (isPerformingAction) return;
@@ -138,7 +125,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             if (uiState.selectedTile !== undefined) setSelectedTile(uiState.selectedTile);
             if (uiState.possibleMoves !== undefined) setPossibleMoves(uiState.possibleMoves);
 
-            // Reset UI state for most actions, but preserve it for dialog flows
             if (action !== GameAction.SelectArmy && action !== GameAction.CancelAction) {
                 const isDialogAction = Object.keys(newState).some(k => (k.endsWith('State') || k.endsWith('Dialog')) && newState[k as keyof GameState] !== null);
                 if (!isDialogAction) {
@@ -205,7 +191,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setTimeLeft(prevTime => {
             if (prevTime <= 1) {
                 clearInterval(timerRef.current!);
-                if (isMyTurn) { // Double check it's still my turn
+                if (isMyTurn) { 
                     onAction(GameAction.EndTurn, null);
                 }
                 return 0;
@@ -251,7 +237,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setActiveInstructionToastId(null);
     }
     
-    if (gameState?.teleportState && isMyTurn) {
+    if (isMyTurn && gameState?.teleportState) {
       if (gameState.teleportState.armyId === null) {
         const { id } = toast({ title: 'Teleport: Step 1', description: 'Select an army on the map to teleport.' });
         setActiveInstructionToastId(id);
@@ -259,7 +245,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         const { id } = toast({ title: 'Teleport: Step 2', description: 'Now, select any destination tile on the map.' });
         setActiveInstructionToastId(id);
       }
-    } else if (gameState?.scoutingState && gameState.scoutingState.count > 0 && isMyTurn) {
+    } else if (isMyTurn && gameState?.scoutingState && gameState.scoutingState.count > 0) {
         const { id } = toast({ title: 'Scout Activated', description: `Click a hidden tile to reveal it. ${gameState.scoutingState.count} reveals remaining.` });
         setActiveInstructionToastId(id);
     }
@@ -401,8 +387,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                       onTileClick={handleTileClick} 
                       possibleMoves={isTeleporting && teleportState?.armyId !== null ? map.map(t => ({x: t.x, y: t.y})) : possibleMoves} 
                       selectedTile={selectedTile} 
-                      currentPlayerId={currentPlayer.id} 
-                      selectedArmyId={selectedArmyId}
                       isTeleporting={isTeleporting}
                       isScouting={isScouting}
                       deathAnimations={deathAnimations}
@@ -440,6 +424,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 <aside className="flex flex-col justify-start gap-4">
                 <ActionsPanel 
                     onAction={onAction} 
+                    localPlayer={localPlayer}
                     gameState={gameState} 
                     isMyTurn={isMyTurn && status === 'playing'}
                     timeLeft={timeLeft}
@@ -486,8 +471,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         localPlayer={localPlayer}
         isMyTurn={isMyTurn}
         onConfirmHostLeave={handleConfirmHostLeaveGame}
-        locallyDismissedDialogs={locallyDismissedDialogs}
-        setLocallyDismissedDialogs={setLocallyDismissedDialogs}
         handleAction={onAction}
         cardsDialogPlayerId={cardsDialogPlayerId}
         onCloseCardsDialog={() => setCardsDialogPlayerId(null)}
@@ -495,3 +478,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    

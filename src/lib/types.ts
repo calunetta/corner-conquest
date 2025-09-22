@@ -13,7 +13,6 @@ export enum GameAction {
   ShowCards = 'show-cards',
   CloseCards = 'close-cards',
   UseCard = 'use-card',
-  ConfirmUseCard = 'confirm-use-card',
   EndTurn = 'end-turn',
   Teleport = 'teleport',
   BuyAbility = 'buy-ability',
@@ -26,10 +25,8 @@ export enum GameAction {
   SelectDefender = 'select-defender',
   CombatRoll = 'combat-roll',
   CloseCombat = 'close-combat',
-  CloseCombatViewer = 'close-combat-viewer',
   MonsterCombatRoll = 'monster-combat-roll',
   CloseMonsterCombat = 'close-monster-combat',
-  CloseMonsterCombatViewer = 'close-monster-combat-viewer',
   StealResource = 'steal-resource',
   SabotagePlayer = 'sabotage-player',
   GainWealth = 'gain-wealth',
@@ -103,6 +100,7 @@ export type GameSettings = {
     availableCards: CardName[];
     availableAbilities: AbilityName[];
     fogOfWar: boolean;
+    gridSize: { rows: number, cols: number };
 };
 
 export type IslandResource = {
@@ -221,10 +219,6 @@ export type StealResourceDialogState = {
     targetPlayerId: number | null;
 }
 
-export type UseCardDialogState = {
-    cardName: CardName;
-}
-
 export type SabotageDialogState = {
   isOpen: boolean;
 }
@@ -291,7 +285,6 @@ export type GameState = {
   positionDialogState: PositionDialogState | null;
   collectDialogState: CollectDialogState | null;
   stealResourceDialogState: StealResourceDialogState | null;
-  useCardDialogState: UseCardDialogState | null;
   abilitiesShopState: AbilitiesShopState | null;
   showHostLeaveDialog: boolean;
   sabotageDialogState: SabotageDialogState | null;
@@ -310,3 +303,5 @@ export type ActionHandlerResult = {
     currentAction?: GameAction | null;
     selectedTile?: {x: number, y: number} | null;
 }
+
+    

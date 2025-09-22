@@ -1,12 +1,11 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { db, doc, onSnapshot, getDoc, updateDoc } from '@/lib/firebase';
-import type { GameState, Player, Island } from '@/lib/types';
+import type { GameState } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
 import { handleEndTurn } from '@/lib/actions/player';
-import { isEqual } from 'lodash';
 
 export function useGameEngine(gameId: string, playerId: string | null) {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -31,12 +30,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
         if (docSnapshot.exists()) {
             const data = docSnapshot.data() as GameState;
-            
-            // Clear locally dismissed dialogs when turn changes
-            if (gameStateRef.current && gameStateRef.current.turn !== data.turn) {
-                // This logic is now handled in GameBoard.tsx
-            }
-
             setGameState(data);
             setIsLoading(false);
         } else {
@@ -52,7 +45,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     return () => {
         unsubscribe();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, toast, router]);
 
   const updateGameState = useCallback(async (newStateOrFn: any) => {
@@ -201,3 +193,5 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
   return { gameState, setGameState: updateGameState, isMyTurn, localPlayer, isHost, isLoading, globallyRevealedTiles };
 }
+
+    

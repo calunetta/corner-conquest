@@ -21,7 +21,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
-import { MAP_COLS } from '@/lib/game-logic';
 
 type MonsterCombatDialogProps = {
   gameState: GameState;
@@ -29,10 +28,9 @@ type MonsterCombatDialogProps = {
   onRoll: (payload: { monster: Monster; useDecideCard: boolean; decidedValue: number; useOvercomeCard: boolean; useWarChief: boolean }) => void;
   onClose: () => void;
   onCancel: () => void;
-  isAttacker: boolean;
 };
 
-export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCancel, isAttacker }: MonsterCombatDialogProps) {
+export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCancel }: MonsterCombatDialogProps) {
   const [selectedMonster, setSelectedMonster] = useState<Monster | null>(null);
   const [useDecideCard, setUseDecideCard] = useState(false);
   const [decidedValue, setDecidedValue] = useState(6);
@@ -73,7 +71,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   }
   
   const handleAttack = () => {
-    if (selectedMonster && isAttacker) {
+    if (selectedMonster) {
       onRoll({ monster: selectedMonster, useDecideCard, decidedValue, useOvercomeCard, useWarChief });
     }
   };
@@ -103,57 +101,49 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
                 )}
             </div>
             
-            {isAttacker && (
-              <div className='space-y-4'>
-                  {hasOvercomeCard && (
-                  <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
-                      <Checkbox id="use-overcome-card" checked={useOvercomeCard} onCheckedChange={(checked) => { setUseOvercomeCard(!!checked); if(!!checked) setUseDecideCard(false); }} />
-                      <Label htmlFor="use-overcome-card" className='font-bold'>Use '{CardName.Overcome}' card to win automatically?</Label>
-                  </div>
-                  )}
-                  {hasWarChiefCard && (
-                      <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
-                          <Checkbox id="use-warchief-card" disabled={useOvercomeCard} checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
-                          <Label htmlFor="use-warchief-card" className='font-bold'>Use '{CardName.WarChief}' card for +2 attack power?</Label>
-                      </div>
-                  )}
-                  {hasDecideCard && (
-                  <div className="space-y-4 rounded-md border bg-muted/50 p-4">
-                      <div className="flex items-center space-x-2">
-                          <Checkbox id="use-decide-card" checked={useDecideCard} disabled={useOvercomeCard} onCheckedChange={(checked) => setUseDecideCard(!!checked)} />
-                          <Label htmlFor="use-decide-card" className='font-bold'>Use '{CardName.DecideDiceRoll}' card?</Label>
-                      </div>
-                      {useDecideCard && (
-                          <div className='space-y-2 pt-2'>
-                              <div className='flex justify-between'>
-                                  <Label>Choose Dice Value</Label>
-                                  <span className='font-bold text-primary'>{decidedValue}</span>
-                              </div>
-                              <Slider
-                                  min={1}
-                                  max={6}
-                                  step={1}
-                                  value={[decidedValue]}
-                                  onValueChange={(value) => setDecidedValue(value[0])}
-                                  disabled={useOvercomeCard}
-                              />
-                          </div>
-                      )}
-                  </div>
-                  )}
-              </div>
-            )}
-            <AlertDialogFooter className="mt-4 flex-col-reverse gap-2 sm:flex-row">
-                {isAttacker ? (
-                    <>
-                        <AlertDialogCancel onClick={onCancel} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
-                        <Button onClick={handleAttack} disabled={!selectedMonster} className="w-full sm:w-auto">
-                            Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}!
-                        </Button>
-                    </>
-                ) : (
-                  <Button variant="outline" onClick={onClose} className="w-full">Close</Button>
+            <div className='space-y-4'>
+                {hasOvercomeCard && (
+                <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
+                    <Checkbox id="use-overcome-card" checked={useOvercomeCard} onCheckedChange={(checked) => { setUseOvercomeCard(!!checked); if(!!checked) setUseDecideCard(false); }} />
+                    <Label htmlFor="use-overcome-card" className='font-bold'>Use '{CardName.Overcome}' card to win automatically?</Label>
+                </div>
                 )}
+                {hasWarChiefCard && (
+                    <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
+                        <Checkbox id="use-warchief-card" disabled={useOvercomeCard} checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
+                        <Label htmlFor="use-warchief-card" className='font-bold'>Use '{CardName.WarChief}' card for +2 attack power?</Label>
+                    </div>
+                )}
+                {hasDecideCard && (
+                <div className="space-y-4 rounded-md border bg-muted/50 p-4">
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="use-decide-card" checked={useDecideCard} disabled={useOvercomeCard} onCheckedChange={(checked) => setUseDecideCard(!!checked)} />
+                        <Label htmlFor="use-decide-card" className='font-bold'>Use '{CardName.DecideDiceRoll}' card?</Label>
+                    </div>
+                    {useDecideCard && (
+                        <div className='space-y-2 pt-2'>
+                            <div className='flex justify-between'>
+                                <Label>Choose Dice Value</Label>
+                                <span className='font-bold text-primary'>{decidedValue}</span>
+                            </div>
+                            <Slider
+                                min={1}
+                                max={6}
+                                step={1}
+                                value={[decidedValue]}
+                                onValueChange={(value) => setDecidedValue(value[0])}
+                                disabled={useOvercomeCard}
+                            />
+                        </div>
+                    )}
+                </div>
+                )}
+            </div>
+            <AlertDialogFooter className="mt-4 flex-col-reverse gap-2 sm:flex-row">
+                <AlertDialogCancel onClick={onCancel} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                <Button onClick={handleAttack} disabled={!selectedMonster} className="w-full sm:w-auto">
+                    Attack {selectedMonster ? getMonsterName(selectedMonster) : 'Monster'}!
+                </Button>
             </AlertDialogFooter>
         </>
     );
@@ -170,8 +160,8 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         {monsters.map((monster, i) => (
           <Card 
             key={i} 
-            className={`flex cursor-pointer flex-col items-center gap-2 p-4 transition-all hover:bg-muted ${selectedMonster?.name === monster.name ? 'ring-2 ring-primary' : ''} ${!isAttacker && 'cursor-not-allowed'}`}
-            onClick={() => isAttacker && setSelectedMonster(monster)}
+            className={`flex cursor-pointer flex-col items-center gap-2 p-4 transition-all hover:bg-muted ${selectedMonster?.name === monster.name ? 'ring-2 ring-primary' : ''}`}
+            onClick={() => setSelectedMonster(monster)}
           >
             <div className='relative h-24 w-24'>
                 <Image src={monster.sprite.idle} alt={monster.name} width={96} height={96} />
@@ -184,16 +174,10 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         ))}
       </div>
        <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row">
-        {isAttacker ? (
-            <>
-                <AlertDialogCancel onClick={onCancel} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
-                <Button onClick={() => { /* This button just closes the selection screen and moves to attack screen */ setSelectedMonster(selectedMonster)}} disabled={!selectedMonster} className="w-full sm:w-auto">
-                    Confirm
-                </Button>
-            </>
-        ): (
-            <Button variant="outline" onClick={onClose} className="w-full">Close</Button>
-        )}
+            <AlertDialogCancel onClick={onCancel} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+            <Button onClick={() => { /* This button just closes the selection screen and moves to attack screen */ setSelectedMonster(selectedMonster)}} disabled={!selectedMonster} className="w-full sm:w-auto">
+                Confirm
+            </Button>
       </AlertDialogFooter>
     </>
   );
@@ -238,13 +222,9 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         </div>
 
         <AlertDialogFooter>
-            {isAttacker ? (
-                <AlertDialogAction onClick={onClose} className="w-full">
-                    Continue
-                </AlertDialogAction>
-            ) : (
-                <Button variant="outline" onClick={onClose} className="w-full">Close</Button>
-            )}
+            <AlertDialogAction onClick={onClose} className="w-full">
+                Continue
+            </AlertDialogAction>
         </AlertDialogFooter>
       </>
     );
@@ -261,7 +241,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
   }
 
   return (
-    <AlertDialog open={true} onOpenChange={isAttacker ? onCancel : onClose}>
+    <AlertDialog open={true} onOpenChange={onCancel}>
       <AlertDialogContent>
         {renderContent()}
       </AlertDialogContent>

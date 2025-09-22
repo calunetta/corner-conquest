@@ -1,9 +1,8 @@
 
 
 'use client';
-import type { GameState } from '@/lib/types';
-import { CardName } from '@/lib/types';
-import { useState } from 'react';
+import { GameState, CardName } from '@/lib/types';
+import { useState, useEffect } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,12 +22,22 @@ type CombatDialogProps = {
   gameState: GameState;
   onRoll: (useWarChief: boolean) => void;
   onClose: () => void;
-  isAttacker: boolean;
+  isMyTurn: boolean;
+  localPlayerId: number;
 };
 
-export function CombatDialog({ gameState, onRoll, onClose, isAttacker }: CombatDialogProps) {
+export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayerId }: CombatDialogProps) {
   const [useWarChief, setUseWarChief] = useState(false);
   const { combatState, players } = gameState;
+
+  useEffect(() => {
+    if (combatState?.phase === 'results' && !isMyTurn) {
+        const timer = setTimeout(() => {
+            onClose();
+        }, 5000);
+        return () => clearTimeout(timer);
+    }
+  }, [combatState?.phase, isMyTurn, onClose]);
 
   if (!combatState) return null;
 
@@ -45,6 +54,7 @@ export function CombatDialog({ gameState, onRoll, onClose, isAttacker }: CombatD
   const attackerSprite = isCombatOver && loserId === attackerId ? PLAYER_DATA[attacker.color].sprite.death : PLAYER_DATA[attacker.color].sprite.attack;
   const defenderSprite = isCombatOver && loserId === defenderId ? PLAYER_DATA[defender.color].sprite.death : PLAYER_DATA[defender.color].sprite.attack;
 
+  const isAttacker = localPlayerId === attackerId;
 
   const renderDice = (rolls: number[]) => (
     <div className="flex flex-wrap justify-center gap-2">
@@ -55,7 +65,46 @@ export function CombatDialog({ gameState, onRoll, onClose, isAttacker }: CombatD
       ))}
     </div>
   );
+  
+  // Viewer-only results screen
+  if (phase === 'results' && !isAttacker) {
+    return (
+      <AlertDialog open={true}>
+        <AlertDialogContent>
+           <AlertDialogHeader>
+            <AlertDialogTitle>Combat Results</AlertDialogTitle>
+            <AlertDialogDescription>
+              {attacker.name} is attacking {defender.name}!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex flex-col justify-around gap-4 sm:flex-row">
+            <div className="flex flex-col items-center gap-2">
+                <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
+                <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} />
+                {renderDice(attackerRolls)}
+                <p className="text-xl font-bold">Total: {attackerRolls.reduce((a, b) => a + b, 0)}</p>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+                <h3 className="font-bold" style={{ color: defender.color }}>{defender.name}</h3>
+                <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} className="-scale-x-100" />
+                {renderDice(defenderRolls)}
+                <p className="text-xl font-bold">Total: {defenderRolls.reduce((a, b) => a + b, 0)}</p>
+            </div>
+        </div>
+         <div className="mt-4 text-center">
+            <h2 className="text-2xl font-bold">
+              <span style={{ color: players[winnerId!].color }}>{players[winnerId!].name}</span> wins!
+            </h2>
+          </div>
+           <AlertDialogFooter>
+             <Button variant="outline" onClick={onClose}>Close</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+  }
 
+  // Interactive dialog for the attacker
   return (
     <AlertDialog open={true}>
       <AlertDialogContent>
@@ -66,7 +115,7 @@ export function CombatDialog({ gameState, onRoll, onClose, isAttacker }: CombatD
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        {phase === 'rolling' && hasWarChiefCard && isAttacker && (
+        {phase === 'rolling' && hasWarChiefCard && (
             <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
                 <Checkbox id="use-warchief-card" checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
                 <Label htmlFor="use-warchief-card" className='font-bold'>Use '{CardName.WarChief}' card for +2 attack power?</Label>
@@ -109,12 +158,12 @@ export function CombatDialog({ gameState, onRoll, onClose, isAttacker }: CombatD
         )}
 
         <AlertDialogFooter>
-          {phase === 'rolling' && isAttacker && (
+          {phase === 'rolling' && (
             <Button onClick={() => onRoll(useWarChief)} className="w-full">
               Roll Dice!
             </Button>
           )}
-          {phase === 'results' && isAttacker && (
+          {phase === 'results' && (
             <AlertDialogAction onClick={onClose} className="w-full">
               Continue
             </AlertDialogAction>
@@ -124,3 +173,5 @@ export function CombatDialog({ gameState, onRoll, onClose, isAttacker }: CombatD
     </AlertDialog>
   );
 }
+
+    
