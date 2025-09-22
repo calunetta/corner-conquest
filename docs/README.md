@@ -49,3 +49,59 @@ The application uses a "state machine" pattern where the game state is managed c
 6.  **Real-Time Propagation:** The write to Firestore triggers the `onSnapshot` listener in the `useGameEngine` hook for **all connected players**, ensuring their UIs are updated in real-time with the new state.
 
 This architecture ensures that the game logic is predictable, testable, and decoupled from the UI. UI components are responsible for *displaying* the state and *dispatching* actions, while the `lib/actions` files are responsible for *calculating* state changes.
+
+## 4. Core Game Mechanics
+
+This section describes the rules and flow of a typical match.
+
+### Objective
+
+The first player to reach the `victoryPointGoal` (default: 30 VP) wins the game. Victory Points are primarily earned by:
+- Winning battles against other players or powerful monsters.
+- Being the first to discover a new island (`vpPerIslandDiscovery`).
+- Passive abilities like `Explorer`.
+
+### The Map & Islands
+
+The game is played on a grid of islands. Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to an adjacent tile.
+
+- **Base:** Your starting point. Where you deploy new armies and where defeated armies respawn. Bases also generate all three resource types.
+- **Resource Islands:** Contain **Wheat**, **Iron**, or **Gems**.
+- **Monster Islands:** Inhabited by hostile creatures that must be defeated to claim the island and its resources.
+- **Special Islands:** Discovering these grants the player a random Special Card.
+
+### Resources & Player Progression
+
+- **Wheat:** Used to **Deploy** new armies. The cost increases with each new army.
+- **Iron:** Used to **Upgrade** the Attack Power of all your armies permanently.
+- **Gems:** A valuable resource used to **Buy Special Cards** or purchase permanent **Passive Abilities**.
+
+### Turn Structure & Actions
+
+A player's turn consists of a series of actions. The game automatically ends a player's turn if they have no more possible moves or actions.
+
+1.  **Start of Turn (Automatic Collection):**
+    - If a player has armies "positioned" on resources from a previous turn, they are automatically collected.
+    - If the player has the **"Productive"** card, a dialog appears, allowing them to double the yield of one resource.
+
+2.  **Player Actions:** A player can perform several actions per turn, with some limitations:
+    - **Army Actions:** Each army can perform **one** major action per turn (either `Attack`/`Position` OR `Move`).
+        - **Position:** Move an army to an unoccupied resource spot on its current island. The army will collect that resource at the start of your next turn. This action ends the army's turn.
+        - **Attack:** Initiate combat with a monster or another player's army on the same island. This action ends the army's turn.
+        - **Move:** Move an army to a new island within its move radius. This can only be done if the army has not attacked or positioned this turn.
+    - **Strategic Actions (once per turn each):**
+        - **Deploy:** Spend Wheat to create a new army at your Base.
+        - **Upgrade:** Spend Iron to increase your global Attack Power.
+        - **Buy Card:** Spend Gems to draw a Special Card.
+        - **Use Card:** Play one Special Card from your hand.
+
+### Combat
+
+- Combat is resolved through dice rolls. Each player rolls a number of dice equal to their **Attack Power + 1**.
+- The player with the higher total roll wins the battle.
+- Defeated armies are not destroyed; they are sent back to their owner's Base tile to regroup.
+
+### Special Cards & Abilities
+
+- **Special Cards:** Provide powerful, one-time effects like moving an army anywhere (`Teleport`), getting a free army (`Reinforce`), or forcing an opponent to miss their turn (`Sabotage`).
+- **Passive Abilities:** Players can spend Gems to buy permanent upgrades from the "Abilities Shop", such as `Explorer` (gain 1 VP per turn for each island you occupy) or `Collector` (automatically gather 1 of each resource from every island you occupy at the end of your turn).
