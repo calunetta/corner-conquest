@@ -112,7 +112,35 @@ When a player uses a card, it is removed from their hand and placed in the `disc
 - **Decide Dice Roll:** In the next *monster* combat, you can choose the value of one of your dice.
 - **Productive:** A passive card. At the start of your turn, if you are positioned to collect resources, a dialog opens allowing you to spend this card to double the yield of one resource type.
 
-### 5.2. Player Info Panel
+### 5.2. UI/UX and Interactions
+
+#### 5.2.1. Dialogs and Player Scope
+- **Local Dialogs:** Most dialogs for actions (`Sabotage`, `Wealthy`, `Position`, etc.) are rendered **only for the current player**. This is managed by the `isMyTurn` flag within `GameDialogs.tsx`.
+- **Global Dialogs:** The `CombatDialog` is an exception. It shows an interactive view to the attacker and a read-only "results" view to all other players, ensuring everyone can follow the action.
+
+#### 5.2.2. Army and Tile Selection
+- **Auto-Selection:** If a player has only one army at the start of their turn, it is automatically selected.
+- **Manual Selection:** Clicking a tile containing one of your armies selects it.
+- **Multi-Army Selection:** Clicking a tile with multiple friendly armies opens the `ArmySelectionDialog` to choose a specific unit.
+- **Deselection:** An army can be deselected by:
+    1.  Clicking the "Deselect Army" button.
+    2.  Clicking on any tile that is not a valid move for the currently selected army.
+
+#### 5.2.3. Visual Feedback
+- **Selected Army:** The tile of a selected army gets a prominent glowing shadow (`shadow-2xl shadow-primary/80`).
+- **Player-Owned Tiles:** Tiles occupied by the local player's armies have a subtle, color-coded glow (`shadow-blue-500/50`, `shadow-red-500/50`, etc.) for easy identification.
+- **Possible Moves:** Valid move destinations for a selected army are highlighted with a dashed border (`border-accent/70`).
+- **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a purple border (`border-purple-500`) to indicate they are valid destinations.
+- **Animations & Scenery:**
+    - Game sprites (armies, monsters, death animations) are located in `public/sprites/`.
+    - The water background and island terrain textures are defined in `tailwind.config.ts`.
+    - Decorative rocks in the water are procedurally placed by `MapGrid.tsx` for visual variety.
+
+#### 5.2.4. Confirmation Dialogs
+- `ConfirmExitDialog`: Appears if a player attempts to leave a match that is in progress.
+- `HostLeaveDialog`: A special dialog for the host, warning them that leaving will delete the game room and end the match for all players.
+
+### 5.3. Player Info Panel
 This UI element provides a real-time summary for each player in the game, displaying:
 - Player Name and Army Sprite
 - **Victory Points (VP)**
@@ -122,17 +150,17 @@ This UI element provides a real-time summary for each player in the game, displa
 - **Special Cards:** Total number of cards in hand.
 - **Status Effects:** Icons for `Sabotage` (miss next turn) or `Extra Move`.
 
-### 5.3. Player Exiting the Game
+### 5.4. Player Exiting the Game
 - **Normal Player:** If a non-host player leaves, their armies are removed from the board, they are removed from the `players` array in the game state, and a log message is generated. The game continues for the remaining players.
 - **Host Player:** If the host leaves, the entire game document is **deleted from Firestore**. The game ends for all players, and they are returned to the lobby.
 
-### 5.4. Game Customization
+### 5.5. Game Customization
 From the Lobby, players can create a new game and access a "Customize Match" sheet with the following options:
 - **General:** Victory Point goal, enable/disable Fog of War, set VP for island discovery, and adjust the density of resource islands vs. monster islands.
 - **Costs:** Set the initial cost for deploying armies, the cost increment for subsequent deployments, and the costs for upgrades and passive abilities.
 - **Content:** Selectively enable or disable which Special Cards and Passive Abilities are available to be drawn or purchased during the match.
 
-### 5.5. Game Log
+### 5.6. Game Log
 The game log is a running, public history of major events in the match, displayed to all players. It records:
 - Players joining or leaving.
 - Game start and end.
