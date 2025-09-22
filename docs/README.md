@@ -76,7 +76,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
 
 1.  **Start of Turn (Automatic Collection):**
     - If a player has armies "positioned" on resources from a previous turn, they are automatically collected.
-    - If the player has the **"Productive"** card, a dialog appears, allowing them to double the yield of one resource type. Otherwise, collection is instant.
+    - If the player has the **"Productive"** card, a dialog appears, allowing them to spend this card to double the yield of one resource type. Otherwise, collection is instant.
 
 2.  **Player Actions:** A player can perform several actions per turn, with some limitations:
     - **Army Actions:** Each army can perform **one** major action per turn (either `Attack`/`Position` OR `Move`).
@@ -174,6 +174,18 @@ The game log is a running, public history of major events in the match, displaye
 - Special card usage (`Player X used 'Teleport'!`).
 
 This log provides crucial context and a narrative for the unfolding game.
+
+### 5.7. Fog of War & Debug Mode
+
+-   **Fog of War (Enabled):** This is the default, tactical experience.
+    -   Each player has their own, independent visibility of the map.
+    -   Tiles (and any armies on them) are only revealed to a player when they move one of their armies to an adjacent tile.
+    -   Opponent armies are only visible on their starting Base or on islands you have personally explored.
+-   **Fog of War (Disabled):** This mode provides a more open, chess-like experience.
+    -   Map visibility is shared. When any player reveals a tile, it becomes visible to *all* players for the rest of the game.
+-   **Debug Mode:** This is a special mode intended for testing, which is automatically enabled for "Player vs. Bot" games started from the lobby.
+    -   **Complete Map Visibility:** It overrides any Fog of War setting, making the entire map and all armies visible from the start of the match.
+    -   **All Special Cards:** The player begins the game with one of every available Special Card, allowing for immediate testing of card mechanics.
 
 ## 6. Bot Logic
 The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priority-based system to make decisions.
