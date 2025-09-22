@@ -82,9 +82,10 @@ type MapGridProps = {
   deathAnimations: DeathAnimation[];
   fogOfWar: boolean;
   localPlayer: Player;
+  globallyRevealedTiles: Set<string>;
 };
 
-export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting, isScouting, deathAnimations, fogOfWar, localPlayer }: MapGridProps) {
+export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, currentPlayerId, selectedArmyId, isTeleporting, isScouting, deathAnimations, fogOfWar, localPlayer, globallyRevealedTiles }: MapGridProps) {
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const selectedArmy = selectedArmyId !== null && currentPlayer ? currentPlayer.armies.find(a => a.id === selectedArmyId) : null;
   const teleportingArmyId = isTeleporting && players[currentPlayerId]?.teleportState?.armyId !== null ? players[currentPlayerId]?.teleportState?.armyId : null;
@@ -145,6 +146,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
                 deathAnimations={deathAnimations}
                 fogOfWar={fogOfWar}
                 localPlayer={localPlayer}
+                globallyRevealedTiles={globallyRevealedTiles}
             />
           );
         })}

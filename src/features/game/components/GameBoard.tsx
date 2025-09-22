@@ -32,7 +32,7 @@ type GameBoardProps = {
 
 export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const { playerId } = usePlayer();
-  const { gameState, setGameState, isMyTurn, localPlayer, isHost, isLoading } = useGameEngine(gameId, playerId);
+  const { gameState, setGameState, isMyTurn, localPlayer, isHost, isLoading, globallyRevealedTiles } = useGameEngine(gameId, playerId);
   const { toast, dismiss } = useToast();
   const isMobile = useIsMobile();
   
@@ -83,7 +83,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [gameState, selectedArmyId, localPlayer, isMyTurn]);
 
   useEffect(() => {
-    if (isMyTurn && gameState) {
+    if (isMyTurn && gameState && gameState.status === 'playing') {
         const myPlayer = gameState.players[gameState.currentPlayerIndex];
         if (myPlayer.armies.length > 1 && selectedArmyId !== null) {
             const armyStillExists = myPlayer.armies.some(a => a.id === selectedArmyId);
@@ -99,7 +99,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setSelectedArmyId(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMyTurn, gameState?.turn, gameState?.players]);
+  }, [isMyTurn, gameState?.turn, gameState?.players, gameState?.status]);
   
   useEffect(() => {
     if (selectedArmy && gameState) {
@@ -161,29 +161,31 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     
     try {
         setIsPerformingAction(true);
-        await setGameState(currentGameState => {
+        const result = await setGameState(currentGameState => {
             if (!currentGameState) return null;
 
-            const result = handleGameAction({
+            const { newState, selectedArmyId: newSelectedArmyId, currentAction: newCurrentAction, selectedTile: newSelectedTile, possibleMoves: newPossibleMoves } = handleGameAction({
                 action: GameAction.TileClick,
                 gameState: currentGameState,
                 selectedArmyId: selectedArmyId,
                 payload: { x, y, possibleMoves }
             });
             
-            const { newState, selectedArmyId: newSelectedArmyId, currentAction: newCurrentAction, selectedTile: newSelectedTile, possibleMoves: newPossibleMoves } = result;
-            
-            setSelectedArmyId(newSelectedArmyId === undefined ? selectedArmyId : newSelectedArmyId);
-            setCurrentAction(newCurrentAction === undefined ? currentAction : newCurrentAction);
-            setSelectedTile(newSelectedTile === undefined ? selectedTile : newSelectedTile);
-            setPossibleMoves(newPossibleMoves === undefined ? possibleMoves : newPossibleMoves);
+            return { state: newState, ui: { newSelectedArmyId, newCurrentAction, newSelectedTile, newPossibleMoves } };
+        });
+
+        if (result) {
+            const { ui } = result;
+             setSelectedArmyId(ui.newSelectedArmyId === undefined ? selectedArmyId : ui.newSelectedArmyId);
+            setCurrentAction(ui.newCurrentAction === undefined ? currentAction : ui.newCurrentAction);
+            setSelectedTile(ui.newSelectedTile === undefined ? selectedTile : ui.newSelectedTile);
+            setPossibleMoves(ui.newPossibleMoves === undefined ? possibleMoves : ui.newPossibleMoves);
 
             if (activeInstructionToastId) {
                 dismiss(activeInstructionToastId);
                 setActiveInstructionToastId(null);
             }
-            return newState;
-        });
+        }
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
     } finally {
@@ -406,6 +408,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                       deathAnimations={deathAnimations}
                       fogOfWar={settings.fogOfWar}
                       localPlayer={localPlayer}
+                      globallyRevealedTiles={globallyRevealedTiles}
                   />
                   <div className='pointer-events-none absolute bottom-4 right-4 z-20 rounded-lg bg-background/80 p-2 text-center shadow-md backdrop-blur-sm'>
                       {status === 'waiting' ? (
@@ -493,6 +496,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 }
 
     
+
 
 
 

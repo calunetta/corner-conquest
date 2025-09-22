@@ -31,10 +31,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
         if (docSnapshot.exists()) {
             const data = docSnapshot.data() as GameState;
-            // Only update state if data has actually changed to prevent loops
-            if (!isEqual(gameStateRef.current, data)) {
-                setGameState(data);
-            }
+            setGameState(data);
             setIsLoading(false);
         } else {
             toast({ title: "Game Over", description: "This game session no longer exists." });
@@ -52,17 +49,20 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, toast, router]);
 
-  const updateGameState = useCallback(async (newStateOrFn: GameState | null | ((prevState: GameState | null) => GameState | null)) => {
+  const updateGameState = useCallback(async (newStateOrFn: any) => {
     
     let finalState: GameState | null = null;
+    let uiResult = null;
     
     if (typeof newStateOrFn === 'function') {
-        const currentState = gameStateRef.current;
-        if (!currentState) {
-            console.error("Cannot update state based on function because current state is null.");
-            return;
+        const currentState = await getDoc(doc(db, 'games', gameId)).then(d => d.data() as GameState);
+        const result = newStateOrFn(currentState);
+        if (result && 'state' in result && 'ui' in result) {
+            finalState = result.state;
+            uiResult = result.ui;
+        } else {
+            finalState = result;
         }
-        finalState = newStateOrFn(currentState);
     } else {
       finalState = newStateOrFn;
     }
@@ -74,10 +74,8 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     
     try {
         const gameDocRef = doc(db, 'games', gameId);
-        // Use setDoc to overwrite the entire document. This is simpler and safer
-        // than calculating diffs, especially with complex nested state.
-        // It ensures atomicity for the entire game state object.
         await updateDoc(gameDocRef, finalState);
+        return uiResult;
 
     } catch (error) {
         console.error("Error updating game state:", error);
@@ -88,6 +86,19 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   const localPlayer = useMemo(() => {
     return gameState?.players.find(p => p.playerId === playerId) || null;
   }, [gameState, playerId]);
+  
+  const globallyRevealedTiles = useMemo(() => {
+    const revealed = new Set<string>();
+    if (gameState) {
+        gameState.players.forEach(p => {
+            p.revealedTiles.forEach(tileId => {
+                revealed.add(tileId);
+            });
+        });
+    }
+    return revealed;
+  }, [gameState?.players]);
+
 
   const currentPlayer = useMemo(() => {
     if (!gameState) return null;
@@ -116,14 +127,14 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   }, [isLoading, gameState, localPlayer, router, toast]);
   
   useEffect(() => {
-    if (!isHost || !gameStateRef.current?.deathAnimations || gameStateRef.current.deathAnimations.length === 0) {
+    if (!isHost || !gameState?.deathAnimations || gameState.deathAnimations.length === 0) {
         return;
     }
     
-    const animations = gameStateRef.current.deathAnimations;
+    const animations = gameState.deathAnimations;
     const animationTimers = animations.map(anim => 
         setTimeout(() => {
-            updateGameState(currentState => {
+            updateGameState((currentState: GameState | null) => {
                 if (!currentState) return null;
                 return {
                     ...currentState,
@@ -148,7 +159,10 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     setTimeout(async () => {
       try {
           if (!isProcessingBotTurn.current) return;
-          const latestState = gameStateRef.current;
+          
+          const latestStateDoc = await getDoc(doc(db, 'games', gameId));
+          const latestState = latestStateDoc.data() as GameState;
+
           if (!latestState || !latestState.players[latestState.currentPlayerIndex]?.isBot) {
               isProcessingBotTurn.current = false;
               return;
@@ -176,8 +190,8 @@ export function useGameEngine(gameId: string, playerId: string | null) {
       }
     }, 2000);
     
-  }, [gameState, isHost, updateGameState]);
+  }, [gameState, isHost, updateGameState, gameId]);
 
 
-  return { gameState, setGameState: updateGameState, isMyTurn, localPlayer, isHost, isLoading };
+  return { gameState, setGameState: updateGameState, isMyTurn, localPlayer, isHost, isLoading, globallyRevealedTiles };
 }

@@ -24,6 +24,7 @@ type IslandTileProps = {
   deathAnimations: DeathAnimation[];
   fogOfWar: boolean;
   localPlayer: Player;
+  globallyRevealedTiles: Set<string>;
 };
 
 const BORDER_IMAGES = [
@@ -100,7 +101,7 @@ const AnimatedMonster = ({ monster }: { monster: Monster }) => {
     )
 }
 
-export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, currentPlayerId, isTeleporting, isScoutTarget, deathAnimations, fogOfWar, localPlayer }: IslandTileProps) {
+export function IslandTile({ island, players, onClick, isPossibleMove, isSelected, isCurrentPlayerTile, isArmySelectedOnTile, currentPlayerId, isTeleporting, isScoutTarget, deathAnimations, fogOfWar, localPlayer, globallyRevealedTiles }: IslandTileProps) {
   
   const occupants = island.occupants.map(o => {
       const player = players.find(p => p.id === o.playerId);
@@ -116,7 +117,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   
   const deathAnimationOnTile = deathAnimations.find(anim => anim.x === island.x && anim.y === island.y);
   
-  const isHiddenForPlayer = fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id);
+  const isTileVisible = fogOfWar ? localPlayer.revealedTiles.includes(island.id) : globallyRevealedTiles.has(island.id);
   
   const borderImageSequence = useMemo(() => {
     const middleImage = BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)];
@@ -183,7 +184,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   }
 
   const getIcon = () => {
-    if (isHiddenForPlayer) return <HelpCircle className="h-full w-full text-muted-foreground/50" />;
+    if (!isTileVisible) return <HelpCircle className="h-full w-full text-muted-foreground/50" />;
     
     switch (island.type) {
       case IslandType.Base: 
@@ -245,14 +246,20 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             </div>
         )}
 
-        <div className={cn("h-full w-full p-1 z-20", isHiddenForPlayer ? 'bg-transparent' : 'bg-transparent')}>
+        <div className={cn("h-full w-full p-1 z-20", !isTileVisible ? 'bg-transparent' : 'bg-transparent')}>
           {getIcon()}
         </div>
 
         <div className="absolute inset-0 z-30 pointer-events-none">
-            {!isHiddenForPlayer && occupants.map(({ player, army }, index) => {
+            {occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
                 
+                // Only show armies on revealed tiles OR if it's the local player's army OR it's a base tile
+                const isBase = island.type === IslandType.Base;
+                if (!isTileVisible && player.id !== localPlayer.id && !isBase) {
+                    return null;
+                }
+
                 if (deathAnimations.some(anim => anim.id === `army-${player.id}-${army.id}`)) {
                     return null;
                 }
