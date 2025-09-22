@@ -91,10 +91,10 @@ A player's turn consists of a series of actions. The game automatically ends a p
 
 ### 4.5. Combat
 - Combat is resolved through dice rolls. Each player rolls a number of dice equal to their **Attack Power + 1**.
-- The player with the higher total roll wins the battle. In case of a tie, the defender wins.
+- **Player vs. Player:** The player with the higher total roll wins the battle. In case of a tie, the **defender** wins.
+- **Player vs. Monster:** The player with the higher total roll wins the battle. In case of a tie, the **monster** wins.
 - Defeated armies are not destroyed; they are sent back to their owner's Base tile to regroup.
 - **Combat Dialog Animations:** During the `rolling` phase, both combatants show their `attack` sprite. In the `results` phase, the winner remains in their attack pose, while the loser's sprite changes to the `death` animation.
-- **Player vs. Monster Combat:** This follows the same dice roll mechanic. Monsters have a `level` which determines the number of dice they roll. The `MonsterCombatDialog` may include checkboxes for relevant special cards (`War Chief`, `Decide Dice Roll`, `Overcome`).
 
 ## 5. Detailed System Explanations
 
@@ -193,5 +193,3 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priorit
 - **Use Dialogs for Multi-Step Actions:** For actions that require choices (like `Teleport` or `Sabotage`), create a new state property (e.g., `sabotageDialogState`) and a corresponding dialog component. The action handler sets this state, and the dialog component dispatches further actions.
 - **Decouple UI from Logic:** UI components should only read from the `GameState` and dispatch actions. They should never contain complex game rule calculations.
 - **Update This Document:** When a new feature is added, this `README.md` file must be updated to reflect the new mechanics to maintain it as our source of truth.
-
-    
