@@ -17,7 +17,7 @@ import { usePlayer } from '@/hooks/use-player';
 import { useGameEngine } from '@/hooks/use-game-engine';
 import { handleGameAction, handlePlayerExit } from '@/lib/actions';
 import { startGame } from '@/lib/game-initializer';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ConfirmExitDialog } from '@/features/game/dialogs/ConfirmExitDialog';
 import { HostLeaveDialog } from '@/features/game/dialogs/HostLeaveDialog';
@@ -152,8 +152,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           case GameAction.local_CancelAction:
               if(pendingAction) {
                   setPendingAction(null);
-              } else if (localPlayer?.hasExtraMove) {
-                  await onAction(GameAction.CancelAction); // Dispatch shared action to clear flags
+                  await onAction(GameAction.CancelAction); // Dispatch shared action to clear flags & refund card use
               }
               break;
           case GameAction.local_ShowCards:
