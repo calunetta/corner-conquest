@@ -76,6 +76,7 @@ When `handleEndTurn` is called, a sequence of events occurs:
 ### 3.2. Firebase & React/Next.js Common Pitfalls
 - **Firestore Cannot Store `undefined`:** A recurring critical bug is caused by attempting to write a `GameState` object with `undefined` properties. Firestore will silently strip these properties, causing the `GameState` read by clients to have a different shape than expected, leading to crashes. **Rule: Always use `null` instead of `undefined`** for optional or empty state properties.
 - **React's Rules of Hooks:** You **cannot** call hooks (`useState`, `useEffect`, `useMemo`, etc.) inside loops, conditions, or nested functions. A common mistake is trying to use `useMemo` inside a `.map()` function. Hooks must always be called at the top level of your component.
+- **Asynchronous State Updates:** When a state update depends on complex calculations (like `handleGameAction`), it's often performed within an asynchronous function passed to the state setter (e.g., `setGameState(async () => { ... })`). It is critical to `await` the result of this setter in the component before attempting to use any UI state that was calculated inside it. Failure to do so can lead to race conditions where the component tries to use stale or `undefined` state values, causing UI inconsistencies or crashes.
 
 ### 3.3. Estimated Firestore Usage
 A full 4-player game to 30 Victory Points is highly variable, but a rough estimate can be made:
@@ -154,7 +155,7 @@ The application ensures that every player has a unique username.
 ### 5.2. Special Cards
 - **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, if `Debug Mode` is enabled, the human player starts with one of every available Special Card.
 - **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
-- **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog.
+- **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog. If a player activates a card like "Extra Move" or "Teleport" but cannot or chooses not to use it, they can use the "Cancel" button. This **refunds the 'Use Card' action**, allowing them to use a different card during the same turn.
 - **Extra Move:** This card provides a flexible move action. The effect is consumed for the turn once used.
     - If used on an army that has **not yet acted** this turn, it allows that army to move. After the move, the army is still considered "fresh" and can perform a subsequent action (like Attack or Position).
     - If used on an army that **has already acted**, it allows that army to perform one final move action. After this move, the army's turn is over. The "Extra Move" effect is a single-use-per-turn benefit.
@@ -185,7 +186,14 @@ The application ensures that every player has a unique username.
     1.  Clicking the "Deselect Army" button.
     2.  Clicking on any tile that is not a valid move for the currently selected army.
 
-#### 5.3.3. Visual Feedback
+#### 5.3.3. The Actions Panel
+Located on the right side of the screen on desktop (or below the map on mobile), the Actions Panel is the central hub for the current player. It contains buttons for all available army and strategic actions.
+- **Army Actions (`Attack`, `Position`):** These buttons are enabled only when a valid army is selected and the action is possible on the army's current tile.
+- **Strategic Actions (`Deploy`, `Upgrade`, `Buy Card`):** These are available once per turn and their buttons are disabled after use or if the player cannot afford the cost.
+- **Card & Ability Actions (`My Cards`, `Abilities Shop`):** The "My Cards" button opens a dialog showing the player's current hand. From here, they can select and use a card. The "Abilities Shop" opens a dialog for purchasing permanent passive abilities.
+- **Turn Management (`End Turn`, `Cancel`, `Deselect Army`):** These buttons allow the player to manage their turn flow.
+
+#### 5.3.4. Visual Feedback
 - **Selected Army:** The tile of a selected army gets a prominent glowing shadow (`shadow-2xl shadow-primary/80`).
 - **Player-Owned Tiles:** Tiles occupied by the local player's armies have a subtle, color-coded glow (`shadow-blue-500/50`, `shadow-red-500/50`, etc.) for easy identification.
 - **Possible Moves:** Valid move destinations for a selected army are highlighted with a subtle yellow glow (`shadow-lg shadow-accent/20`).
@@ -199,7 +207,7 @@ The application ensures that every player has a unique username.
     - An animated border appears at the bottom of each island tile to give the illusion of water movement. This is created in `IslandTile.tsx` by combining three separate GIF images (`island_edge_1.gif`, `island_edge_2.gif`, `island_edge_3.gif`) in a randomized sequence.
     - Decorative rocks in the water are procedurally placed by `MapGrid.tsx` for visual variety. This is disabled on mobile for performance and clarity.
 
-#### 5.3.4. Confirmation Dialogs
+#### 5.3.5. Confirmation Dialogs
 - `ConfirmExitDialog`: Appears if a player attempts to leave a match that is in progress.
 - `HostLeaveDialog`: A special dialog for the host, warning them that leaving will delete the game room and end the match for all players.
 

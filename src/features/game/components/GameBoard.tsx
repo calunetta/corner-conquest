@@ -168,7 +168,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             return { state: newState, ui: { newSelectedArmyId, newCurrentAction, newSelectedTile, newPossibleMoves } };
         });
 
-        if (result) {
+        if (result && result.ui) {
             const { ui } = result;
              setSelectedArmyId(ui.newSelectedArmyId === undefined ? selectedArmyId : ui.newSelectedArmyId);
             setCurrentAction(ui.newCurrentAction === undefined ? currentAction : ui.newCurrentAction);
