@@ -11,7 +11,6 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
     
     const currentPlayer = state.players[state.currentPlayerIndex];
     
-    // An army that has acted can only move if the player has an Extra Move available.
     if (army.hasActed && !currentPlayer.hasExtraMove) {
         return [];
     }
@@ -25,7 +24,7 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
                 const newY = y + j;
                 if (newX >= 0 && newX < MAP_COLS && newY >= 0 && newY < MAP_ROWS) {
                     const targetTile = map[newY * MAP_COLS + newX];
-                    if (targetTile.type === IslandType.Resource && targetTile.resources.length === 0 && (!targetTile.monsters || targetTile.monsters.length === 0)) {
+                    if (targetTile.type === IslandType.Empty) {
                         continue;
                     }
                     moves.push({ x: newX, y: newY });
@@ -53,7 +52,6 @@ export function revealIsland(state: GameState, x: number, y: number): GameState 
 
     player.revealedTiles.push(tileId);
 
-    // Only grant VP if the player is the first to discover it among all players
     const isFirstEverDiscovery = !newState.players.some(p => p.id !== player.id && p.revealedTiles.includes(tileId));
     if (isFirstEverDiscovery && newState.settings.vpPerIslandDiscovery > 0) {
         player.victoryPoints += newState.settings.vpPerIslandDiscovery;
@@ -87,8 +85,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     const armyInState = player.armies.find(a => a.id === army.id);
     if (!armyInState) throw new Error("Army not found for move action.");
 
-    if (armyInState.position.x === x && armyInState.position.y === y) {
-        // This is an invalid move, but we don't want to crash. Just return the state.
+    if (!isTeleport && (armyInState.position.x === x && armyInState.position.y === y)) {
         console.warn("Attempted to move to the same tile.");
         return newState;
     }
@@ -124,7 +121,6 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     if (isFirstDiscovery && !isTeleport) { // Don't trigger island effects on teleport
         newState = revealIsland(newState, x, y);
     } else if (targetTile.type === IslandType.Special && !isTeleport) {
-        // Subsequent landing on a special island triggers the dice roll dialog
         newState.specialIslandRollDialogState = { isOpen: true, roll: null, cardDrawn: null };
         armyInState.hasActed = true;
         return newState;

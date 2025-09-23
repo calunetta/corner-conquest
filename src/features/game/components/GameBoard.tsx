@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { GameState, Army, CardName, Island, Player, PendingAction, ArmySelectionDialogState, AttackSelectionDialogState, PositionDialogState, SabotageDialogState, WealthyDialogState, StealResourceDialogState, ProductiveCardDialogState, SpecialIslandRollDialogState } from '@/lib/types';
+import type { GameState, Army, CardName, PendingAction, ArmySelectionDialogState, AttackSelectionDialogState, PositionDialogState, SabotageDialogState, WealthyDialogState, StealResourceDialogState } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from '@/features/game/panels/PlayerInfo';
@@ -59,8 +59,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [stealResourceDialog, setStealResourceDialog] = useState<StealResourceDialogState>(null);
   const [showConfirmExitDialog, setShowConfirmExitDialog] = useState(false);
   const [showHostLeaveDialog, setShowHostLeaveDialog] = useState(false);
-  const [productiveCardDialogState, setProductiveCardDialogState] = useState<ProductiveCardDialogState>(null);
-  const [specialIslandRollDialogState, setSpecialIslandRollDialogState] = useState<SpecialIslandRollDialogState>(null);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -80,8 +78,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMobile]);
   
   useEffect(() => {
-    if (gameState?.autoSelectArmyFor?.playerId === playerId) {
-        setSelectedArmyId(gameState.autoSelectArmyFor.armyId);
+    if (gameState?.autoSelectArmyFor === playerId && localPlayer?.armies.length === 1) {
+        setSelectedArmyId(localPlayer.armies[0].id);
         setGameState(gs => gs ? { ...gs, autoSelectArmyFor: null } : null);
     } else if (!isMyTurn) {
         // Clear all local UI state when turn ends
@@ -96,19 +94,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setSabotageDialog(null);
         setWealthyDialog(null);
         setStealResourceDialog(null);
-        setProductiveCardDialogState(null);
-        setSpecialIslandRollDialogState(null);
     }
-  }, [isMyTurn, gameState, playerId, setGameState]);
-
-  useEffect(() => {
-    if(gameState?.productiveCardDialogState) {
-        setProductiveCardDialogState(gameState.productiveCardDialogState);
-    }
-     if(gameState?.specialIslandRollDialogState) {
-        setSpecialIslandRollDialogState(gameState.specialIslandRollDialogState);
-    }
-  }, [gameState?.productiveCardDialogState, gameState?.specialIslandRollDialogState])
+  }, [isMyTurn, gameState, playerId, setGameState, localPlayer]);
   
   useEffect(() => {
     if (selectedArmy && gameState && isMyTurn) {
@@ -119,23 +106,81 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     }
   }, [selectedArmyId, gameState, selectedArmy, isMyTurn]);
 
-  // Shared actions: these modify the synchronized GameState in Firebase.
+  // Unified action handler for both local and shared actions
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
+    // --- Local Action Handling ---
+    if (action.startsWith('local:')) {
+        switch(action) {
+            case GameAction.DeselectArmy:
+                setSelectedArmyId(null);
+                setPossibleMoves([]);
+                setPendingAction(null);
+                break;
+            case GameAction.CancelAction:
+                setPendingAction(null);
+                if (localPlayer?.actionsThisTurn.includes(GameAction.UseCard) || localPlayer?.hasExtraMove) {
+                    await setGameState(gs => handleGameAction({ action, gameState: gs, payload }));
+                }
+                break;
+            case GameAction.ShowCards:
+                setCardsDialogPlayerId(prev => prev === payload.playerId ? null : payload.playerId);
+                break;
+            case GameAction.CloseCards:
+                setCardsDialogPlayerId(null);
+                break;
+            case GameAction.OpenAbilitiesShop:
+                setAbilitiesShopOpen(true);
+                break;
+            case GameAction.CloseAbilitiesShop:
+                setAbilitiesShopOpen(false);
+                break;
+            case GameAction.Position:
+                const { army } = payload;
+                const tile = gameState?.map[army.position.y * gameState.settings.gridSize.cols + army.position.x];
+                const availableResources = tile?.resources.filter(resource => !(tile.positionedBy || []).some(p => p.resource === resource.type));
+                if (availableResources && availableResources.length > 0) {
+                    setPositionDialog({ x: army.position.x, y: army.position.y, resources: availableResources, armyId: army.id });
+                } else {
+                    toast({ title: "No available spots", description: "All resource spots on this island are occupied.", variant: "destructive" });
+                }
+                break;
+            case GameAction.UseCard:
+                const { cardName } = payload;
+                if (cardName === CardName.Teleport) {
+                    setPendingAction({ type: 'teleport', cardName });
+                    setSelectedArmyId(null); // Force re-selection for teleport
+                } else if (cardName === CardName.Scout) {
+                    setPendingAction({ type: 'scout', cardName, count: 3 });
+                } else if (cardName === CardName.Sabotage) {
+                    setSabotageDialog({ isOpen: true });
+                } else if (cardName === CardName.Wealthy) {
+                    setWealthyDialog({ isOpen: true });
+                } else if (cardName === CardName.StealResource) {
+                    setStealResourceDialog({ isOpen: true });
+                } else {
+                     onAction(GameAction.UseCard, payload); // For cards with immediate effects, dispatch as shared action
+                }
+                break;
+            default:
+                console.warn("Unhandled local action:", action);
+        }
+        return;
+    }
+
+    // --- Shared Action Handling ---
     if (isPerformingAction) return;
-    if (!isMyTurn && action !== GameAction.EndTurn) {
-      // Allow rolling/closing dialogs even if not turn, but restrict primary actions
-      const allowedOffTurnActions = [GameAction.CombatRoll, GameAction.CloseCombat, GameAction.MonsterCombatRoll, GameAction.CloseMonsterCombat, GameAction.RollOnSpecialIsland, GameAction.CloseSpecialIslandDialog];
-      if (!allowedOffTurnActions.includes(action)) {
+
+    const allowedOffTurnActions = [GameAction.CombatRoll, GameAction.CloseCombat, GameAction.MonsterCombatRoll, GameAction.CloseMonsterCombat, GameAction.RollOnSpecialIsland, GameAction.CloseSpecialIslandDialog];
+    if (!isMyTurn && !allowedOffTurnActions.includes(action)) {
         toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
         return;
-      }
     }
     
     try {
         setIsPerformingAction(true);
         const result = await setGameState(gs => handleGameAction({ action, gameState: gs, payload }));
 
-        // Handle UI side-effects returned from actions
+        // Handle UI side-effects returned from actions (e.g. opening dialogs)
         if (result?.newAttackSelectionDialogState) {
           setAttackSelectionDialog(result.newAttackSelectionDialogState);
         }
@@ -145,86 +190,20 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     } finally {
         setIsPerformingAction(false);
     }
-  }, [isPerformingAction, isMyTurn, toast, setGameState]);
-  
-  // Local UI actions: these only modify the component's state.
-  const handleLocalAction = (action: GameAction, payload?: any) => {
-    switch(action) {
-      case GameAction.DeselectArmy:
-        setSelectedArmyId(null);
-        setPossibleMoves([]);
-        setPendingAction(null);
-        break;
-      case GameAction.CancelAction:
-        setSelectedArmyId(null);
-        setPossibleMoves([]);
-        setPendingAction(null);
-        // If a card use was pending, refund it.
-        if (localPlayer?.actionsThisTurn.includes(GameAction.UseCard)) {
-            onAction(GameAction.CancelAction);
-        }
-        break;
-      case GameAction.ShowCards:
-        setCardsDialogPlayerId(prev => prev === payload.playerId ? null : payload.playerId);
-        break;
-      case GameAction.CloseCards:
-        setCardsDialogPlayerId(null);
-        break;
-      case GameAction.OpenAbilitiesShop:
-        setAbilitiesShopOpen(true);
-        break;
-      case GameAction.CloseAbilitiesShop:
-        setAbilitiesShopOpen(false);
-        break;
-      case GameAction.Position:
-        const { army } = payload;
-        const tile = gameState?.map[army.position.y * gameState.settings.gridSize.cols + army.position.x];
-        const availableResources = tile?.resources.filter(resource => !(tile.positionedBy || []).some(p => p.resource === resource.type));
-        if (availableResources && availableResources.length > 0) {
-          setPositionDialog({ x: army.position.x, y: army.position.y, resources: availableResources, armyId: army.id });
-        } else {
-          toast({ title: "No available spots", description: "All resource spots on this island are occupied.", variant: "destructive" });
-        }
-        break;
-      case GameAction.UseCard:
-        const { cardName } = payload;
-        if (cardName === CardName.Teleport) {
-            setPendingAction({ type: 'teleport', cardName });
-            setSelectedArmyId(null); // Force re-selection for teleport
-        } else if (cardName === CardName.Scout) {
-            setPendingAction({ type: 'scout', cardName, count: 3 });
-        } else if (cardName === CardName.Sabotage) {
-            setSabotageDialog({ isOpen: true });
-        } else if (cardName === CardName.Wealthy) {
-            setWealthyDialog({ isOpen: true });
-        } else if (cardName === CardName.StealResource) {
-            setStealResourceDialog({ isOpen: true });
-        } else {
-             onAction(GameAction.UseCard, payload); // For cards with immediate effects
-        }
-        break;
-      default:
-        console.warn("Unhandled local action:", action);
-    }
-  }
+  }, [isPerformingAction, isMyTurn, toast, setGameState, localPlayer, gameState]);
   
   const handleTileClick = async (x: number, y: number) => {
     if (!gameState || !isMyTurn || gameState.status !== 'playing' || isPerformingAction) return;
 
+    // --- Local Pending Action Handling (Scout, Teleport) ---
     if (pendingAction?.type === 'scout') {
       const tileId = `${x}-${y}`;
       if (!localPlayer?.revealedTiles.includes(tileId)) {
-        await setGameState(gs => {
-          if(!gs) return gs;
-          const player = gs.players[gs.currentPlayerIndex];
-          player.revealedTiles.push(tileId);
-          gs.log.push(`${player.name} revealed a tile at (${x},${y}) with Scout.`);
-          return {...gs};
-        });
+        await onAction(GameAction.Scout, { x, y }); // Dispatch as a shared action to update revealed tiles
         const newCount = pendingAction.count - 1;
         if (newCount <= 0) {
           setPendingAction(null);
-          await onAction(GameAction.UseCard, { cardName: pendingAction.cardName, isScout: true }); // This will just mark the action as used
+          await onAction(GameAction.UseCard, { cardName: pendingAction.cardName, isScout: true });
         } else {
           setPendingAction({ ...pendingAction, count: newCount });
         }
@@ -248,6 +227,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       return;
     }
     
+    // --- Standard Tile Click Logic (Move or Select) ---
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
     if (selectedArmy && isPossibleMove) {
         await onAction(GameAction.Move, { army: selectedArmy, x, y });
@@ -457,8 +437,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 </main>
                 <aside className="flex flex-col justify-start gap-4">
                 <ActionsPanel 
-                    onAction={onAction} 
-                    handleLocalAction={handleLocalAction}
+                    onAction={onAction}
                     localPlayer={localPlayer}
                     gameState={gameState} 
                     isMyTurn={isMyTurn && status === 'playing'}
@@ -466,8 +445,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                     turnDuration={TURN_DURATION}
                     selectedArmy={selectedArmy}
                     pendingAction={pendingAction}
-                    cardsDialogPlayerId={cardsDialogPlayerId}
-                    abilitiesShopOpen={abilitiesShopOpen}
                 />
                 <GameLog logs={log} />
                 </aside>
@@ -509,9 +486,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         showHostLeaveDialog={showHostLeaveDialog}
         onCloseHostLeaveDialog={() => setShowHostLeaveDialog(false)}
         cardsDialogPlayerId={cardsDialogPlayerId}
-        onCloseCardsDialog={() => handleLocalAction(GameAction.CloseCards)}
         abilitiesShopOpen={abilitiesShopOpen}
-        onCloseAbilitiesShop={() => handleLocalAction(GameAction.CloseAbilitiesShop)}
         armySelectionDialog={armySelectionDialog}
         onCloseArmySelectionDialog={() => setArmySelectionDialog(null)}
         onSelectArmyFromDialog={(armyId) => {
@@ -528,8 +503,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         onCloseWealthyDialog={() => setWealthyDialog(null)}
         stealResourceDialog={stealResourceDialog}
         onCloseStealResourceDialog={() => setStealResourceDialog(null)}
-        productiveCardDialogState={productiveCardDialogState}
-        specialIslandRollDialogState={specialIslandRollDialogState}
       />
     </div>
   );

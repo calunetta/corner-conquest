@@ -21,7 +21,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     try {
         const gameDocRef = doc(db, 'games', gameId);
         
-        // Optimistically get the state from our ref if available, otherwise fetch.
         const currentState = gameStateRef.current ?? await getDoc(gameDocRef).then(d => d.data() as GameState);
         
         if (!currentState) {
@@ -124,15 +123,13 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
 
   useEffect(() => {
-    if (isLoading || !gameState || !localPlayer) return;
-    
-    if (!localPlayer) {
+    if (!isLoading && !localPlayer) {
       toast({ title: "Not in Game", description: "You are not a player in this game. Returning to lobby." });
       setTimeout(() => {
           router.push('/');
       }, 3000);
     }
-  }, [isLoading, gameState, localPlayer, router, toast]);
+  }, [isLoading, localPlayer, router, toast]);
   
   useEffect(() => {
     if (!isHost || !gameState?.deathAnimations || gameState.deathAnimations.length === 0) {

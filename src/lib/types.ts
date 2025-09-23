@@ -3,10 +3,11 @@ export const MAP_ROWS = 6;
 export const MAP_COLS = 5;
 
 export enum GameAction {
+  // Shared Game State Actions
   Deploy = 'deploy',
   Move = 'move',
   Attack = 'attack',
-  Position = 'position',
+  SelectResourcePosition = 'select-resource-position',
   BuyCard = 'buy-card',
   Upgrade = 'upgrade',
   EndTurn = 'end-turn',
@@ -18,25 +19,24 @@ export enum GameAction {
   RollOnSpecialIsland = 'roll-on-special-island',
   CloseSpecialIslandDialog = 'close-special-island-dialog',
   HostLeave = 'host-leave',
-
-  // Local UI Actions - Not sent to Firebase
-  SelectArmy = 'select-army',
-  DeselectArmy = 'deselect-army',
-  TileClick = 'tile-click',
-  CancelAction = 'cancel-action',
-  ShowCards = 'show-cards',
-  CloseCards = 'close-cards',
-  OpenAbilitiesShop = 'open-abilities-shop',
-  CloseAbilitiesShop = 'close-abilities-shop',
-  UseCard = 'use-card', // The initiation is local
-
-  // Shared Actions that resolve from local ones
-  SelectResourcePosition = 'select-resource-position',
   SelectDefender = 'select-defender',
   CombatRoll = 'combat-roll',
   CloseCombat = 'close-combat',
   MonsterCombatRoll = 'monster-combat-roll',
   CloseMonsterCombat = 'close-monster-combat',
+  UseCard = 'use-card',
+  Scout = 'scout',
+  CancelAction = 'cancel-action',
+
+  // Local UI Actions (prefixed with 'local:')
+  local_DeselectArmy = 'local:deselect-army',
+  local_CancelAction = 'local:cancel-action',
+  local_ShowCards = 'local:show-cards',
+  local_CloseCards = 'local:close-cards',
+  local_OpenAbilitiesShop = 'local:open-abilities-shop',
+  local_CloseAbilitiesShop = 'local:close-abilities-shop',
+  local_UseCard = 'local:use-card',
+  local_Position = 'local:position',
 }
 
 export enum CardName {
@@ -230,11 +230,6 @@ export type BaseTileInfo = {
     y: number;
 }
 
-export type AutoSelectArmyInfo = {
-    playerId: string;
-    armyId: number;
-}
-
 export type GameState = {
   id: string;
   name: string;
@@ -252,12 +247,11 @@ export type GameState = {
   specialCardsDeck: CardName[];
   discardPile: CardName[];
   deathAnimations: DeathAnimation[];
-  autoSelectArmyFor: AutoSelectArmyInfo | null;
+  autoSelectArmyFor: string | null;
   
   // SHARED DIALOG STATES (Only those that require all players to see or interact)
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
-  // Transitory states that need to be seen by the next player on their turn start.
   productiveCardDialogState: ProductiveCardDialogState | null; 
   specialIslandRollDialogState: SpecialIslandRollDialogState | null;
 };

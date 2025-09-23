@@ -6,45 +6,41 @@ import { getPossibleMoves } from './movement';
 import { takeBotTurn } from '../bot-logic';
 
 export function handleCancelAction(state: GameState): GameState {
-  // This function is now mostly a failsafe. 
-  // The primary cancellation logic should be handled on the client.
-  // Its only job in the shared state is to refund a card use if one was pending.
   const newState = { ...state };
   const player = newState.players[newState.currentPlayerIndex];
   
   const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
   if (cardUseIndex > -1) {
     player.actionsThisTurn.splice(cardUseIndex, 1);
+    newState.log.push(`${player.name} cancelled their card action.`);
   }
 
   // Reset all temporary flags that could be set by a card
-  player.hasExtraMove = false;
+  if (player.hasExtraMove) {
+    player.hasExtraMove = false;
+    newState.log.push(`${player.name} cancelled their Extra Move.`);
+  }
   player.reinforceActive = false;
   player.efficientActive = false;
   player.masterBuilderActive = false;
   
-  newState.log.push(`${player.name} cancelled their action.`);
-
   return newState;
 }
 
 
 export function canArmyPerformAnyAction(state: GameState, army: Army): boolean {
     const player = state.players[state.currentPlayerIndex];
-    if (player.id !== state.currentPlayerIndex) return false; // Not the current player
+    if (player.id !== state.currentPlayerIndex) return false;
 
     if (army.hasActed && !player.hasExtraMove) return false;
 
-    // Can Move?
     if (getPossibleMoves(state, army).length > 0) return true;
 
     const tile = state.map[army.position.y * MAP_COLS + army.position.x];
 
-    // Can Attack?
     const canAttack = tile.occupants.some(o => o.playerId !== player.id) || (tile.type === IslandType.Monster && !!tile.monsters && tile.monsters.length > 0);
     if (canAttack) return true;
 
-    // Can Position?
     const isPositioned = player.positions.some(p => p.armyId === army.id);
     if (!isPositioned && (tile.type === IslandType.Resource || tile.type === IslandType.Base) && tile.resources.length > 0 && (!tile.monsters || tile.monsters.length === 0)) {
        const hasAvailableResourceSlot = tile.resources.some(res => !(tile.positionedBy || []).some(p => p.resource === res.type));
@@ -58,7 +54,6 @@ export function canArmyPerformAnyAction(state: GameState, army: Army): boolean {
 export function canPlayerPerformAnyAction(state: GameState): boolean {
     const player = state.players[state.currentPlayerIndex];
 
-    // Check if any army can perform an action
     if (player.armies.some(army => canArmyPerformAnyAction(state, army))) {
         return true;
     }
@@ -66,7 +61,6 @@ export function canPlayerPerformAnyAction(state: GameState): boolean {
     const { settings, specialCardsDeck, discardPile } = state;
     const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
 
-    // Check strategic (non-army) actions
     const upgradeCost = player.masterBuilderActive ? Math.ceil(settings.upgradeCost / 2) : settings.upgradeCost;
     if (player.resources.iron >= upgradeCost && !player.actionsThisTurn.includes(GameAction.Upgrade) && player.attackPower < 4) {
         return true;
@@ -98,8 +92,6 @@ export function canPlayerPerformAnyAction(state: GameState): boolean {
 export function checkAndEndTurnIfNoActions(state: GameState): GameState {
     if (!canPlayerPerformAnyAction(state)) {
         state.log.push(`${state.players[state.currentPlayerIndex].name} has no more actions. Ending turn automatically.`);
-        // Note: The payload for EndTurn is not available here, so we assume it's not the host triggering a bot.
-        // This is a safe assumption as this function is only called after a player's own action.
         return handleEndTurn(state, { isHost: false, gameId: state.id });
     }
     return state;
@@ -215,7 +207,6 @@ function applyAutomaticCollection(state: GameState, player: Player): { newState:
         }
     });
 
-    // Reset positions after collecting
     player.positions.forEach(pos => {
         const tile = newState.map[pos.y * MAP_COLS + pos.x];
         if (tile && tile.positionedBy) {
@@ -236,6 +227,20 @@ export function handleEndTurn(state: GameState, payload: { isHost: boolean, game
     
     let outgoingPlayer = newState.players[newState.currentPlayerIndex];
     
+    // --- Post-Turn Passive Abilities for OUTGOING Player ---
+    if (outgoingPlayer.passiveAbilities.explorer) {
+        const occupiedIslands = new Set<string>();
+        outgoingPlayer.armies.forEach((army: Army) => {
+            const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
+            occupiedIslands.add(tile.id);
+        });
+        const vpGained = occupiedIslands.size;
+        if (vpGained > 0) {
+            outgoingPlayer.victoryPoints += vpGained;
+            newState.log.push(`${outgoingPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
+        }
+    }
+
     outgoingPlayer.hasExtraMove = false;
     outgoingPlayer.efficientActive = false;
     outgoingPlayer.masterBuilderActive = false;
@@ -252,26 +257,12 @@ export function handleEndTurn(state: GameState, payload: { isHost: boolean, game
         nextPlayer.isSabotaged = false; 
         newState.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
         newState.currentPlayerIndex = nextPlayerIndex;
-        // Re-call end turn to advance to the *next* player after the sabotaged one
         return handleEndTurn(newState, payload);
     }
     
     newState.currentPlayerIndex = nextPlayerIndex;
     
-    // --- Pre-Turn Passive Abilities for NEW Player ---
-    if (nextPlayer.passiveAbilities.explorer) {
-        const occupiedIslands = new Set<string>();
-        nextPlayer.armies.forEach((army: Army) => {
-            const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
-            occupiedIslands.add(tile.id);
-        });
-        const vpGained = occupiedIslands.size;
-        if (vpGained > 0) {
-            nextPlayer.victoryPoints += vpGained;
-            newState.log.push(`${nextPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
-        }
-    }
-
+    // --- Pre-Turn Actions for NEW Player ---
     if (nextPlayer.passiveAbilities.collector) {
         let resourcesCollected: Partial<Record<string, number>> = {};
         const occupiedIslands = new Set<string>();
@@ -296,7 +287,7 @@ export function handleEndTurn(state: GameState, payload: { isHost: boolean, game
     }
 
     if (nextPlayer.armies.length === 1) {
-        newState.autoSelectArmyFor = { playerId: nextPlayer.playerId, armyId: nextPlayer.armies[0].id };
+        newState.autoSelectArmyFor = nextPlayer.playerId;
     } else {
         newState.autoSelectArmyFor = null;
     }
@@ -363,31 +354,24 @@ export async function handlePlayerExit(gameId: string, playerId: string, onExit:
                 return;
             }
             
-            const isCurrentPlayerExiting = currentState.currentPlayerIndex === playerIndex;
-
             if (currentState.players.length <= 1) {
                 transaction.delete(gameDocRef);
             } else {
-                
-                const playerLeaving = currentState.players[playerIndex];
-                currentState.log.push(`${playerLeaving.name} has left the game.`);
+                const isCurrentPlayerExiting = currentState.currentPlayerIndex === playerIndex;
+
+                currentState.log.push(`${currentState.players[playerIndex].name} has left the game.`);
                 currentState.players.splice(playerIndex, 1);
 
                 // Re-assign player IDs (seat indices)
                 currentState.players.forEach((p, i) => p.id = i);
 
-                // Current player index might now be out of bounds or point to the wrong player
                 if (isCurrentPlayerExiting) {
-                    // The current player left. The next player is now at the same index.
-                    // We must decrement to counteract the upcoming increment in handleEndTurn.
-                     currentState.currentPlayerIndex = (playerIndex - 1 + currentState.players.length) % currentState.players.length;
-                     currentState = handleEndTurn(currentState, { isHost: false, gameId });
+                    currentState.currentPlayerIndex = (playerIndex - 1 + currentState.players.length) % currentState.players.length;
+                    currentState = handleEndTurn(currentState, { isHost: false, gameId });
                 } else if (playerIndex < currentState.currentPlayerIndex) {
-                    // A player *before* the current one left, so the index needs to shift down.
                     currentState.currentPlayerIndex -= 1;
                 }
                 
-                // Make sure index is always valid
                 if(currentState.currentPlayerIndex >= currentState.players.length) {
                     currentState.currentPlayerIndex = 0;
                 }
@@ -404,10 +388,8 @@ export async function handlePlayerExit(gameId: string, playerId: string, onExit:
 
 export function handleHostLeave(state: GameState): GameState {
   if (state.players.length <= 1) {
-    // This will cause the game document to be deleted on the client
     return { ...state, status: GameStatus.Finished }; 
   } else {
-    // If there are other players, we just log it. The client will handle the rest.
     return { ...state, log: [...state.log, 'The host has left the game. The game will now end.'] };
   }
 }

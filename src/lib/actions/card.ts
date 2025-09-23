@@ -242,3 +242,15 @@ export function handleRollOnSpecialIsland(state: GameState): GameState {
 export function handleCloseSpecialIslandDialog(state: GameState): GameState {
   return { ...state, specialIslandRollDialogState: null };
 }
+
+export function handleScoutAction(state: GameState, x: number, y: number): GameState {
+    let newState = { ...state };
+    const player = newState.players[newState.currentPlayerIndex];
+    const tileId = `${x}-${y}`;
+
+    if (!player.revealedTiles.includes(tileId)) {
+        player.revealedTiles.push(tileId);
+        newState.log.push(`${player.name} revealed a tile at (${x},${y}) with Scout.`);
+    }
+    return newState;
+}

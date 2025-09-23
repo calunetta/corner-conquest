@@ -3,10 +3,10 @@ import type { GameState, ActionHandlerResult, Army } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 
 import { handleAttackAction, handleSelectDefender, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
-import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleBuyAbility, handleUseProductiveCard, handleRollOnSpecialIsland, handleCloseSpecialIslandDialog } from './card';
+import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleBuyAbility, handleUseProductiveCard, handleRollOnSpecialIsland, handleCloseSpecialIslandDialog, handleScoutAction } from './card';
 import { handleMoveAction } from './movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn, handleCancelAction, handleHostLeave } from './player';
-import { handlePositionAction, handleSelectResourceForPosition } from './resource';
+import { handleSelectResourceForPosition } from './resource';
 
 interface HandleActionParams {
     action: GameAction;
@@ -42,9 +42,6 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
             break;
 
         // Resource actions
-        case GameAction.Position:
-            newState = handlePositionAction(newState, payload.army);
-            break;
         case GameAction.SelectResourcePosition:
             newState = handleSelectResourceForPosition(newState, payload.resource, payload.army);
             break;
@@ -98,6 +95,9 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
             break;
         case GameAction.CloseSpecialIslandDialog:
             newState = handleCloseSpecialIslandDialog(newState);
+            break;
+        case GameAction.Scout:
+            newState = handleScoutAction(newState, payload.x, payload.y);
             break;
         
         // Abilities Shop

@@ -10,7 +10,6 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 
 type ActionsPanelProps = {
   onAction: (action: GameAction, payload?: any) => void;
-  handleLocalAction: (action: GameAction, payload?: any) => void;
   localPlayer: Player;
   gameState: GameState;
   isMyTurn: boolean;
@@ -18,8 +17,6 @@ type ActionsPanelProps = {
   turnDuration: number;
   selectedArmy: Army | null;
   pendingAction: PendingAction;
-  cardsDialogPlayerId: number | null;
-  abilitiesShopOpen: boolean;
 };
 
 type ActionConfig = {
@@ -33,16 +30,13 @@ type ActionConfig = {
 
 export function ActionsPanel({ 
     onAction, 
-    handleLocalAction, 
     localPlayer, 
     gameState, 
     isMyTurn, 
     timeLeft, 
     turnDuration, 
     selectedArmy, 
-    pendingAction,
-    cardsDialogPlayerId,
-    abilitiesShopOpen
+    pendingAction
 }: ActionsPanelProps) {
   const { map, specialCardsDeck, settings } = gameState;
   
@@ -67,7 +61,7 @@ export function ActionsPanel({
 
   const mainActions: ActionConfig[] = [
     { id: GameAction.Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed || isCardActionInProgress, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Attack, { army: selectedArmy }) },
-    { id: GameAction.Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress, tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => handleLocalAction(GameAction.Position, { army: selectedArmy }) },
+    { id: GameAction.local_Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress, tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.local_Position, { army: selectedArmy }) },
   ];
   
   const deployLabel = localPlayer.reinforceActive
@@ -102,23 +96,23 @@ export function ActionsPanel({
       onClick: () => onAction(GameAction.Deploy)
     },
     { 
-      id: GameAction.OpenAbilitiesShop, 
+      id: GameAction.local_OpenAbilitiesShop, 
       label: 'Abilities Shop', 
       icon: <University />, 
       disabled: false, 
       tooltip: "Purchase permanent passive abilities for your empire.",
-      onClick: () => handleLocalAction(GameAction.OpenAbilitiesShop)
+      onClick: () => onAction(GameAction.local_OpenAbilitiesShop)
     },
   ];
   
   const alwaysAvailableActions: ActionConfig[] = [
       { 
-        id: GameAction.ShowCards, 
+        id: GameAction.local_ShowCards, 
         label: 'My Cards', 
         icon: <Album />, 
         disabled: localPlayer.specialCards.length === 0, 
         tooltip: "View your collected special cards. You can use one per turn.", 
-        onClick: () => handleLocalAction(GameAction.ShowCards, { playerId: localPlayer.id })
+        onClick: () => onAction(GameAction.local_ShowCards, { playerId: localPlayer.id })
       },
   ]
   
@@ -146,13 +140,13 @@ export function ActionsPanel({
             if (!selectedArmy) return "You must select an army first.";
             if (!currentTile || (!currentTile.occupants.some(o => o.playerId !== localPlayer.id) && (!currentTile.monsters || currentTile.monsters.length === 0))) return "There is nothing to attack on this tile.";
             return "This action is not available.";
-        case GameAction.Position:
+        case GameAction.local_Position:
             if (!selectedArmy) return "You must select an army first.";
             if (localPlayer.positions.some(p => p.armyId === selectedArmy?.id)) return "You are already positioned here.";
             if (!currentTile || (currentTile.type !== 'resource' && currentTile.type !== 'base') || currentTile.resources.length === 0) return "This tile has no resources to position on.";
             if (currentTile.monsters && currentTile.monsters.length > 0) return "Cannot position on an island with monsters.";
             return "This action is not available.";
-        case GameAction.ShowCards:
+        case GameAction.local_ShowCards:
             if (localPlayer.specialCards.length === 0) return "You have no special cards.";
             return "This action is not available.";
         default:
@@ -161,7 +155,7 @@ export function ActionsPanel({
   };
 
   const renderButton = (action: ActionConfig, isMain: boolean) => {
-    const isDisabled = action.id !== GameAction.ShowCards ? (!isMyTurn || action.disabled) : action.disabled;
+    const isDisabled = action.id.startsWith('local:') ? action.disabled : (!isMyTurn || action.disabled);
 
     return (
         <TooltipProvider key={action.id}>
@@ -169,7 +163,7 @@ export function ActionsPanel({
                 <TooltipTrigger asChild>
                     <div className={isMain ? "w-full" : ""}>
                         <Button
-                            variant={pendingAction?.type === action.id.toLowerCase() || (action.id === GameAction.ShowCards && cardsDialogPlayerId === localPlayer.id) || (action.id === GameAction.OpenAbilitiesShop && abilitiesShopOpen) ? 'default' : 'outline'}
+                            variant={pendingAction?.type === action.id.toLowerCase() ? 'default' : 'outline'}
                             onClick={action.onClick}
                             disabled={isDisabled}
                             className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}
@@ -182,7 +176,7 @@ export function ActionsPanel({
                 <TooltipContent>
                     <p>{action.tooltip}</p>
                     {isDisabled && <p className="mt-1 text-xs text-destructive">
-                        {!isMyTurn && action.id !== GameAction.ShowCards ? "It's not your turn." : (hasArmyActed && [GameAction.Attack, GameAction.Position].includes(action.id) ? "This army has already acted." : getDisabledReason(action.id))}
+                        {!isMyTurn && !action.id.startsWith('local:') ? "It's not your turn." : (hasArmyActed && [GameAction.Attack, GameAction.local_Position].includes(action.id) ? "This army has already acted." : getDisabledReason(action.id))}
                     </p>}
                 </TooltipContent>
             </Tooltip>
@@ -196,13 +190,13 @@ export function ActionsPanel({
         <CardTitle className="text-lg">Actions</CardTitle>
         <div className="flex flex-wrap items-center justify-end gap-2">
             {isMyTurn && isCancellableActionInProgress && (
-                 <Button variant="destructive" size="sm" onClick={() => handleLocalAction(GameAction.CancelAction)}>
+                 <Button variant="destructive" size="sm" onClick={() => onAction(GameAction.local_CancelAction)}>
                     <XCircle />
                     Cancel
                 </Button>
             )}
             {isMyTurn && selectedArmy && (
-                 <Button variant="secondary" size="sm" onClick={() => handleLocalAction(GameAction.DeselectArmy)}>
+                 <Button variant="secondary" size="sm" onClick={() => onAction(GameAction.local_DeselectArmy)}>
                     <XCircle className="mr-2 h-4 w-4" />
                     Deselect Army
                 </Button>

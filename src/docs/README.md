@@ -65,14 +65,14 @@ This architecture ensures that the game logic is predictable and testable, and t
 It is critical to distinguish between actions that only affect the local user's interface and actions that must be synchronized across all players via Firebase. Storing local UI state in the shared `GameState` is inefficient, costly, and a primary source of bugs. The following is a definitive list of all game actions and their correct category.
 
 #### 3.1.1. Local UI Actions (Client-Side Only)
-These actions are managed by `useState` within `GameBoard.tsx` and **do not** result in a Firebase write.
+These actions are managed by `useState` within `GameBoard.tsx` and **do not** result in a Firebase write. They are prefixed with `local:` in the `GameAction` enum.
 
--   **`TileClick` / `SelectArmy` / `DeselectArmy`:** The act of selecting or deselecting an army is a purely local UI event. It updates local state variables like `selectedArmyId` and `possibleMoves` to show highlights and available actions to the current player. A shared action is only dispatched when the player *commits* to a move or attack with the selected army.
--   **`ShowCards` / `CloseCards`:** Toggling the visibility of the "My Cards" dialog is a local UI change.
--   **`OpenAbilitiesShop` / `CloseAbilitiesShop`:** Toggling the visibility of the Abilities Shop dialog is a local UI change.
--   **`UseCard` (Initiation Phase):** When a player clicks "Use" on a card like `Teleport`, `Scout`, or `Sabotage`, it initiates a *local* pending action state (e.g., `pendingAction: 'teleport'`, `sabotageDialogOpen: true`). The game then waits for further local input (clicking an army, selecting a player). The shared state is only modified when the action is *completed* and the card's effect is confirmed.
--   **`CancelAction`:** This is a local action that resets any pending UI state (like a `teleport` or `scout` action) and allows the player to continue their turn. If a card's use was provisionally marked in the shared state (a rare exception), this can also trigger a shared update to refund the `UseCard` action for the turn.
--   **`Position` (Initiation):** Clicking the "Position" button is a local action that opens the `PositionDialog` on the client. A shared action (`SelectResourcePosition`) is only dispatched when the player confirms their choice in the dialog.
+-   **`local_DeselectArmy`:** Clears the currently selected army and its possible moves from the local UI.
+-   **`local_ShowCards` / `local_CloseCards`:** Toggles the visibility of the "My Cards" dialog.
+-   **`local_OpenAbilitiesShop` / `local_CloseAbilitiesShop`:** Toggles the visibility of the Abilities Shop dialog.
+-   **`local_UseCard` (Initiation Phase):** When a player clicks "Use" on a card like `Teleport`, `Scout`, or `Sabotage`, it initiates a *local* pending action state (e.g., `pendingAction: 'teleport'`, `sabotageDialogOpen: true`). The game then waits for further local input (clicking an army, selecting a player). The shared state is only modified when the action is *completed* and the card's effect is confirmed.
+-   **`local_CancelAction`:** This is a local action that resets any pending UI state (like a `teleport` or `scout` action) and allows the player to continue their turn. If a card's use was provisionally marked in the shared state (a rare exception), this can also trigger a shared update to refund the `UseCard` action for the turn.
+-   **`local_Position` (Initiation):** Clicking the "Position" button is a local action that opens the `PositionDialog` on the client. A shared action (`SelectResourcePosition`) is only dispatched when the player confirms their choice in the dialog.
 
 #### 3.1.2. Shared Game State Actions (Synchronized via Firebase)
 These actions modify the core `GameState` and are synchronized for all players.
@@ -83,16 +83,16 @@ These actions modify the core `GameState` and are synchronized for all players.
     -   `Attack`, `SelectDefender`, `CombatRoll`, `CloseCombat`, `MonsterCombatRoll`, `CloseMonsterCombat`: These initiate and progress combat. The `CombatState` is shared, so all players can see the "results" phase of a battle, even if they aren't involved.
 -   **Resource Actions:** `SelectResourcePosition`.
 -   **Card Effect Actions:** These are dispatched when a card's effect is confirmed and alters the shared state.
-    -   `UseProductiveCard`, `SabotagePlayer`, `GainWealth`, `StealResource`, `RollOnSpecialIsland`, `CloseSpecialIslandDialog`: All these actions directly modify player resources, status effects, or dialog states stored in `GameState`.
+    -   `UseCard` (for immediate effects like `Extra Move`), `UseProductiveCard`, `SabotagePlayer`, `GainWealth`, `StealResource`, `RollOnSpecialIsland`, `CloseSpecialIslandDialog`, `Scout`: All these actions directly modify player resources, status effects, or the shared game map.
 
 ### 3.2. Turn Change Logic
 When `handleEndTurn` is called, a sequence of events occurs:
-1.  The outgoing player's temporary flags (`hasExtraMove`, etc.) and `actionsThisTurn` are cleared.
+1.  The outgoing player's temporary flags (`hasExtraMove`, etc.) and `actionsThisTurn` are cleared. Passive abilities for the *outgoing* player (like `Explorer`) are calculated and applied.
 2.  The `currentPlayerIndex` is incremented.
 3.  A check is performed to see if the *new* player is sabotaged. If so, their turn is skipped, and the turn change logic is re-triggered for the next player.
-4.  Passive abilities for the *new* current player (like `Explorer`) are calculated and applied.
+4.  Pre-turn passive abilities for the *new* current player (like `Collector`) are calculated and applied.
 5.  A check for the *new* player's pre-turn actions is performed (e.g., Automatic Resource Collection). If they are positioned on resources, the appropriate collection logic or dialog (`ProductiveCardDialog`) is triggered.
-6.  If the new player has only one army, `autoSelectArmyFor` is set in the game state. The client's `GameBoard` component will see this and locally auto-select the army.
+6.  If the new player has only one army, a one-time `autoSelectArmyFor` directive is set to their `playerId`. The client's `GameBoard` component will see this and locally auto-select the army.
 7.  A log message announces the new turn.
 8.  All temporary shared dialog states (`combatState`, `productiveCardDialogState`, etc.) are reset to `null`.
 9.  **Bot Turn:** If the new current player is a bot and the current user is the host, the bot's turn logic (`takeBotTurn`) is immediately executed. The resulting new game state is then saved to Firebase.
