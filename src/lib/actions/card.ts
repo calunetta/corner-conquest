@@ -1,4 +1,5 @@
 
+
 import type { GameState, Player, ResourceType, ActionHandlerResult } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
 import { GameAction, CardName, AbilityName, MAP_COLS } from '../types';
@@ -39,7 +40,7 @@ export function handleBuyCardAction(state: GameState): GameState {
 
 export const handleUseCard = (state: GameState, cardName: CardName): ActionHandlerResult => {
     let newState = { ...state };
-    const { players, currentPlayerIndex } = newState;
+    const { players, currentPlayerIndex, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
     const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
@@ -73,20 +74,16 @@ export const handleUseCard = (state: GameState, cardName: CardName): ActionHandl
             break;
         case CardName.Reinforce:
             player.reinforceActive = true;
-            const rCardIndex = player.specialCards.indexOf(CardName.Reinforce);
-            if (rCardIndex > -1) newState.discardPile.push(player.specialCards.splice(rCardIndex, 1)[0]);
             newState.log.push(`${player.name} activated 'Reinforce'. Their next deployment is free.`);
             break;
         case CardName.Efficient:
             player.efficientActive = true;
-            const eCardIndex = player.specialCards.indexOf(CardName.Efficient);
-            if (eCardIndex > -1) newState.discardPile.push(player.specialCards.splice(eCardIndex, 1)[0]);
             newState.log.push(`${player.name} activated 'Efficient'. Their next deployment costs 50% less.`);
             break;
         case CardName.MasterBuilder:
             player.masterBuilderActive = true;
             const mbCardIndex = player.specialCards.indexOf(CardName.MasterBuilder);
-            if (mbCardIndex > -1) newState.discardPile.push(player.specialCards.splice(mbCardIndex, 1)[0]);
+            if (mbCardIndex > -1) discardPile.push(player.specialCards.splice(mbCardIndex, 1)[0]);
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
             break;
         case CardName.Sabotage:

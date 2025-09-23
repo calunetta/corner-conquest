@@ -1,6 +1,6 @@
 
 
-import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult } from '@/lib/types';
+import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult, ResourceType } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
 import { GameAction, IslandType, MAP_COLS } from '../types';
@@ -354,6 +354,10 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
         
         if (currentTile.monsters?.length === 0) {
           currentTile.type = IslandType.Resource;
+          const resourceTypes: ResourceType[] = ['gems', 'iron', 'wheat'];
+          const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+          currentTile.resources.push({ type: randomResource, amount: 1 });
+          newState.log.push(`The defeated monster revealed a new resource on the island: ${randomResource}!`);
         }
         
         const canStillAct = canArmyPerformAnyAction(newState, attackingArmy);

@@ -1,4 +1,5 @@
 
+
 import type { GameState, Player, Army, CardName, ActionHandlerResult, IslandResource, ResourceType } from '@/lib/types';
 import { db, doc, deleteDoc, runTransaction, arrayUnion } from '@/lib/firebase';
 import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum } from '../types';
@@ -87,13 +88,14 @@ export function handleDeployAction(state: GameState): GameState {
     
     let cost = player.nextArmyCost;
     let isReinforceUsed = false;
+    let isEfficientUsed = false;
     
-    if (player.efficientActive) {
-        cost = Math.ceil(cost / 2);
-    }
     if (player.reinforceActive) {
         cost = 0;
         isReinforceUsed = true;
+    } else if (player.efficientActive) {
+        cost = Math.ceil(cost / 2);
+        isEfficientUsed = true;
     }
 
     if (player.resources.wheat < cost) throw new Error(`Not enough wheat. Cost: ${cost}`);
@@ -111,14 +113,11 @@ export function handleDeployAction(state: GameState): GameState {
     player.armies.push(newArmy);
     map[baseTileInfo.y * MAP_COLS + baseTileInfo.x].occupants.push({ playerId: player.id, armyId: newArmy.id });
     
-    const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
-
-    if (player.efficientActive && canUseCard) {
+    if (isEfficientUsed) {
       newState.log.push(`${player.name} used 'Efficient' for a cheaper deployment!`);
       player.efficientActive = false;
       const cardIndex = player.specialCards.indexOf(CardName.Efficient);
       if (cardIndex > -1) {
-          player.actionsThisTurn.push(GameAction.UseCard);
           const usedCard = player.specialCards.splice(cardIndex, 1)[0];
           discardPile.push(usedCard);
       }
@@ -127,13 +126,10 @@ export function handleDeployAction(state: GameState): GameState {
     if (isReinforceUsed) {
       newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
       player.reinforceActive = false;
-      if (canUseCard) {
-          const cardIndex = player.specialCards.indexOf(CardName.Reinforce);
-          if (cardIndex > -1) {
-              player.actionsThisTurn.push(GameAction.UseCard);
-              const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-              discardPile.push(usedCard);
-          }
+      const cardIndex = player.specialCards.indexOf(CardName.Reinforce);
+      if (cardIndex > -1) {
+          const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+          discardPile.push(usedCard);
       }
     }
 
@@ -336,23 +332,31 @@ export function handleCancelAction(state: GameState): GameState {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     
-    newState.teleportState = null;
-    newState.scoutingState = null;
-    newState.monsterCombatState = null;
-    newState.attackSelectionDialogState = null;
-    newState.positionDialogState = null;
-    newState.sabotageDialogState = null;
-    newState.wealthyDialogState = null;
-    newState.stealResourceDialogState = null;
-    newState.armySelectionDialogState = null;
-    newState.abilitiesShopState = null;
-    newState.specialIslandRollDialogState = null;
+    // Reset any pending action states
+    if (newState.teleportState) newState.teleportState = null;
+    if (newState.scoutingState) newState.scoutingState = null;
+    if (newState.monsterCombatState) newState.monsterCombatState = null;
+    if (newState.attackSelectionDialogState) newState.attackSelectionDialogState = null;
+    if (newState.positionDialogState) newState.positionDialogState = null;
+    if (newState.sabotageDialogState) newState.sabotageDialogState = null;
+    if (newState.wealthyDialogState) newState.wealthyDialogState = null;
+    if (newState.stealResourceDialogState) newState.stealResourceDialogState = null;
+    if (newState.armySelectionDialogState) newState.armySelectionDialogState = null;
+    if (newState.abilitiesShopState) newState.abilitiesShopState = null;
+    if (newState.specialIslandRollDialogState) newState.specialIslandRollDialogState = null;
+    
+    // Deactivate flags that might have been set
+    if (player.reinforceActive) player.reinforceActive = false;
+    if (player.efficientActive) player.efficientActive = false;
+    if (player.masterBuilderActive) player.masterBuilderActive = false;
 
     // Refund the "Use Card" action if one was pending
     const useCardIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
     if (useCardIndex > -1) {
         player.actionsThisTurn.splice(useCardIndex, 1);
     }
+    
+    newState.log.push(`${player.name} cancelled their action.`);
     
     return newState;
 }
