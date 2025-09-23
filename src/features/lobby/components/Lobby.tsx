@@ -191,14 +191,14 @@ export function Lobby({ onJoinGame }: LobbyProps) {
               <Power className="h-4 w-4" />
             </Button>
           </div>
-          <div className="flex w-full items-start justify-between">
+          <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <CardTitle>Game Lobby</CardTitle>
               <CardDescription>
                 Join a game or create one to begin your conquest.
               </CardDescription>
             </div>
-            <Button onClick={() => setIsCreatingGame(true)}>Create New Game</Button>
+            <Button onClick={() => setIsCreatingGame(true)} className="w-full sm:w-auto">Create New Game</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -288,3 +288,5 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     </div>
   );
 }
+
+    
