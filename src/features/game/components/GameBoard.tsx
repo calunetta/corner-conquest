@@ -1,9 +1,9 @@
 
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { GameState, Army, CardName } from '@/lib/types';
+import type { GameState, Army } from '@/lib/types';
 import type { PendingAction, ArmySelectionDialogState, AttackSelectionDialogState, PositionDialogState, SabotageDialogState, WealthyDialogState, StealResourceDialogState, ProductiveCardDialogState, SpecialIslandRollDialogState } from '../types';
-import { GameAction } from '@/lib/types';
+import { GameAction, CardName } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from '@/features/game/panels/PlayerInfo';
 import { ActionsPanel } from '@/features/game/panels/ActionsPanel';
@@ -17,12 +17,12 @@ import { usePlayer } from '@/hooks/use-player';
 import { useGameEngine } from '@/hooks/use-game-engine';
 import { handleGameAction, handlePlayerExit } from '@/lib/actions';
 import { startGame } from '@/lib/game-initializer';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ConfirmExitDialog } from '@/features/game/dialogs/ConfirmExitDialog';
+import { HostLeaveDialog } from '@/features/game/dialogs/HostLeaveDialog';
 import { getPossibleMoves } from '@/lib/actions/movement';
 import { cloneDeep } from 'lodash';
-import { HostLeaveDialog } from '@/features/game/dialogs/HostLeaveDialog';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
 
