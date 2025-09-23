@@ -1,7 +1,7 @@
 
 
 import type { GameState, Player, Army, CardName, ActionHandlerResult, IslandResource, ResourceType } from '@/lib/types';
-import { db, doc, deleteDoc, runTransaction, arrayUnion } from '@/lib/firebase';
+import { db, doc, deleteDoc, writeBatch, getDoc, arrayUnion } from '@/lib/firebase';
 import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum } from '../types';
 import { getPossibleMoves } from './movement';
 
@@ -163,14 +163,10 @@ export function handleUpgradeAction(state: GameState): GameState {
     if (player.masterBuilderActive) {
       newState.log.push(`${player.name} used 'Master Builder' for a cheaper upgrade!`);
       player.masterBuilderActive = false;
-      const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
-      if (canUseCard) {
-          const cardIndex = player.specialCards.indexOf(CardName.MasterBuilder);
-          if (cardIndex > -1) {
-              player.actionsThisTurn.push(GameAction.UseCard);
-              const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-              discardPile.push(usedCard);
-          }
+      const cardIndex = player.specialCards.indexOf(CardName.MasterBuilder);
+      if (cardIndex > -1) {
+          const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+          discardPile.push(usedCard);
       }
     }
 
@@ -370,37 +366,33 @@ interface PlayerExitParams {
 export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerExitParams): Promise<boolean> {
     try {
         const gameDocRef = doc(db, 'games', gameId);
-        let isLastPlayer = false;
+        const gameDoc = await getDoc(gameDocRef);
+
+        if (!gameDoc.exists()) {
+            onExit();
+            return true;
+        }
+
+        const currentState = gameDoc.data() as GameState;
         
-        await runTransaction(db, async (transaction) => {
-            const gameDoc = await transaction.get(gameDocRef);
-
-            if (!gameDoc.exists()) return;
-
-            const currentState = gameDoc.data() as GameState;
-            
-            if (currentState.players.length <= 1) {
-                isLastPlayer = true;
-                return; 
-            }
-
-            let newPlayers = currentState.players.filter((p: Player) => p.playerId !== localPlayer.playerId);
+        if (currentState.players.length <= 1) {
+            await deleteDoc(gameDocRef);
+        } else {
+            const batch = writeBatch(db);
+            const newPlayers = currentState.players.filter((p: Player) => p.playerId !== localPlayer.playerId);
             const newLog = arrayUnion(`${localPlayer.name} has left the room.`);
             
             let newCurrentPlayerIndex = currentState.currentPlayerIndex;
             if (currentState.currentPlayerIndex >= newPlayers.length) {
                 newCurrentPlayerIndex = 0;
             }
-            
-            transaction.update(gameDocRef, { 
+
+            batch.update(gameDocRef, { 
                 players: newPlayers, 
                 log: newLog,
                 currentPlayerIndex: newCurrentPlayerIndex,
             });
-        });
-
-        if (isLastPlayer) {
-             await deleteDoc(gameDocRef);
+            await batch.commit();
         }
         
         onExit();

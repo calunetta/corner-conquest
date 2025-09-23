@@ -147,7 +147,7 @@ The application ensures that every player has a unique username.
 - **Sabotage:** Opens a dialog to choose an opponent. That opponent will miss their next turn.
 - **Reinforce:** The player's next `Deploy` action this turn is free. The card is only consumed upon a successful deployment.
 - **Efficient:** The player's next `Deploy` action this turn costs 50% less Wheat. The card is only consumed upon a successful deployment.
-- **Master Builder:** The player's next `Upgrade` action this turn costs 50% less Iron.
+- **Master Builder:** The player's next `Upgrade` action this turn costs 50% less Iron. The card is only consumed upon a successful upgrade.
 - **Steal Resource:** Opens a dialog to choose a player, then a resource type. Steals 2 of that resource from the target.
 - **Wealthy:** Opens a dialog to choose a resource type. The player gains 5 of that resource.
 - **Overcome:** Automatically win the next combat encounter (vs. player or monster). Appears as a checkbox in the combat dialog.

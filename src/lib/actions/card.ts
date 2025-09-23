@@ -40,7 +40,7 @@ export function handleBuyCardAction(state: GameState): GameState {
 
 export const handleUseCard = (state: GameState, cardName: CardName): ActionHandlerResult => {
     let newState = { ...state };
-    const { players, currentPlayerIndex, discardPile } = newState;
+    const { players, currentPlayerIndex } = newState;
     const player = players[currentPlayerIndex];
 
     const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
@@ -82,8 +82,6 @@ export const handleUseCard = (state: GameState, cardName: CardName): ActionHandl
             break;
         case CardName.MasterBuilder:
             player.masterBuilderActive = true;
-            const mbCardIndex = player.specialCards.indexOf(CardName.MasterBuilder);
-            if (mbCardIndex > -1) discardPile.push(player.specialCards.splice(mbCardIndex, 1)[0]);
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
             break;
         case CardName.Sabotage:
