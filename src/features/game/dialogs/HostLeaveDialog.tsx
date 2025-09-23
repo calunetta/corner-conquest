@@ -11,17 +11,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 type HostLeaveDialogProps = {
-  isLastPlayer: boolean;
-  onConfirm: () => Promise<void>;
+  open: boolean;
   onClose: () => void;
+  onConfirm: () => Promise<void>;
+  isLastPlayer: boolean;
   gameStatus: GameStatus;
 };
 
-export function HostLeaveDialog({ isLastPlayer, onConfirm, onClose, gameStatus }: HostLeaveDialogProps) {
+export function HostLeaveDialog({ open, onClose, onConfirm, isLastPlayer, gameStatus }: HostLeaveDialogProps) {
   const description = () => {
     if (gameStatus === GameStatus.Playing) {
       return "You are the host. If you leave a game in progress, the game room will be deleted, and the match will end for all players.";
@@ -33,7 +32,7 @@ export function HostLeaveDialog({ isLastPlayer, onConfirm, onClose, gameStatus }
   }
 
   return (
-    <AlertDialog open={true} onOpenChange={onClose}>
+    <AlertDialog open={open} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>

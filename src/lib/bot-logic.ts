@@ -1,13 +1,10 @@
 
-
 import type { GameState, Army, ResourceType } from './types';
 import { GameAction, AbilityName, CardName, IslandType, MAP_COLS } from './types';
 import { handleGameAction } from './actions';
 import { cloneDeep } from 'lodash';
-
-// This function needs to be imported to the file that uses it
-// import { db, doc, updateDoc } from '@/lib/firebase';
-
+import { getPossibleMoves } from './actions/movement';
+import { db, doc, updateDoc } from './firebase';
 
 function selectRandom<T>(array: T[]): T | null {
     if (array.length === 0) return null;
@@ -186,14 +183,14 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
                 // If the action results in combat, the bot needs to resolve it.
                 if(nextState.monsterCombatState) {
                     const combatResult = handleGameAction({ action: GameAction.MonsterCombatRoll, gameState: nextState, payload: { monster: nextState.monsterCombatState.monster, useDecideCard: false, decidedValue: 0, useOvercomeCard: false, useWarChief: false }});
-                    const finalState = handleGameAction({ action: GameAction.CloseMonsterCombat, gameState: combatResult.state });
+                    const finalState = handleGameAction({ action: GameAction.CloseMonsterCombat, gameState: combatResult.state! });
                     if (finalState.state) {
-                         // await updateDoc(doc(db, 'games', gameId), { ...finalState.state });
+                         await updateDoc(doc(db, 'games', gameId), { ...finalState.state });
                          return;
                     }
                 }
 
-                // await updateDoc(doc(db, 'games', gameId), { ...nextState });
+                await updateDoc(doc(db, 'games', gameId), { ...nextState });
                 return;
             }
 
@@ -206,6 +203,6 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     console.log(`Bot: No valid actions found or all failed. Ending turn.`);
     const endTurnState = handleGameAction({ action: GameAction.EndTurn, gameState: state });
     if (endTurnState.state) {
-        // await updateDoc(doc(db, 'games', gameId), { ...endTurnState.state });
+        await updateDoc(doc(db, 'games', gameId), { ...endTurnState.state });
     }
 }

@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { GameState, Army, CardName } from '@/lib/types';
@@ -18,7 +17,7 @@ import { usePlayer } from '@/hooks/use-player';
 import { useGameEngine } from '@/hooks/use-game-engine';
 import { handleGameAction, handlePlayerExit } from '@/lib/actions';
 import { startGame } from '@/lib/game-initializer';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ConfirmExitDialog } from '@/features/game/dialogs/ConfirmExitDialog';
 import { getPossibleMoves } from '@/lib/actions/movement';
@@ -502,18 +501,23 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             onClose={() => setShowConfirmExitDialog(false)}
           />
       )}
+      
+      <HostLeaveDialog
+        open={showHostLeaveDialog}
+        onClose={() => setShowHostLeaveDialog(false)}
+        onConfirm={handleConfirmHostLeave}
+        isLastPlayer={players.length === 1}
+        gameStatus={status}
+      />
 
       <GameDialogs 
         gameState={gameState} 
         localPlayer={localPlayer}
         isMyTurn={isMyTurn}
         onAction={onAction}
-        showHostLeaveDialog={showHostLeaveDialog}
-        onConfirmHostLeave={handleConfirmHostLeave}
-        onCloseHostLeaveDialog={() => setShowHostLeaveDialog(false)}
+        onLocalAction={handleLocalAction}
         cardsDialogPlayerId={cardsDialogPlayerId}
         onCloseCardsDialog={() => setCardsDialogPlayerId(null)}
-        onUseCard={(cardName) => handleLocalAction(GameAction.local_UseCard, { cardName })}
         abilitiesShopOpen={abilitiesShopOpen}
         onCloseAbilitiesShop={() => setAbilitiesShopOpen(false)}
         armySelectionDialog={armySelectionDialog}

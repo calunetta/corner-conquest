@@ -1,5 +1,4 @@
 
-
 import type { Player, Army, CardName, IslandResource, ResourceType } from '@/lib/types';
 
 // This file contains types that are EXCLUSIVELY for local client-side UI state

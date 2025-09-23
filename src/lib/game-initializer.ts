@@ -1,5 +1,4 @@
 
-
 import type { GameState, Island, Player, IslandResource, Monster, GameSettings, BaseTileInfo } from './types';
 import { CardName, HAND_LIMIT } from './types';
 import { BASE_CARDS } from './card-data';
@@ -287,9 +286,9 @@ export function initializeGame(
     maxPlayers: maxPlayers === 1 ? numBots + 1 : maxPlayers,
     debugMode,
     settings,
-    players,
     map,
     baseTiles,
+    players,
     currentPlayerIndex: 0,
     turn: 0,
     log: [`Game '${gameName}' created by ${creator.name}! Waiting for players...`],
@@ -310,7 +309,10 @@ export function startGame(gameState: GameState, starterName: string): GameState 
     newState.turn = 1;
     newState.log.push(`${starterName} started the game! It's now ${newState.players[0].name}'s turn.`);
     
-    // The bot turn is now handled by the `handleEndTurn` logic
+    const currentPlayer = newState.players[newState.currentPlayerIndex];
+    if (currentPlayer.isBot) {
+        setTimeout(() => takeBotTurn(newState), 1000);
+    }
     
     return newState;
 }

@@ -1,5 +1,4 @@
 
-
 import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
@@ -123,7 +122,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     
     const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);
     if (isFirstDiscovery) {
-        const revealResult = revealIsland(newState, x, y);
+        const revealResult = revealIsland(newState, x, y, isTeleport);
         newState = revealResult.newState;
     } else if (targetTile.type === IslandType.Special) {
         armyInState.hasActed = true;

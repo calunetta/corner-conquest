@@ -1,5 +1,4 @@
 
-
 export const MAP_ROWS = 6;
 export const MAP_COLS = 5;
 export const HAND_LIMIT = 7;
