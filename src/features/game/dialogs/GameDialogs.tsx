@@ -22,9 +22,11 @@ type GameDialogsProps = {
   localPlayer: Player;
   isMyTurn: boolean;
   onConfirmHostLeave: () => void;
-  handleAction: (action: GameAction, payload?: any) => Promise<void>;
+  handleSharedAction: (action: GameAction, payload?: any) => Promise<void>;
   cardsDialogPlayerId: number | null;
   onCloseCardsDialog: () => void;
+  abilitiesShopOpen: boolean;
+  onCloseAbilitiesShop: () => void;
 };
 
 export function GameDialogs({ 
@@ -32,9 +34,11 @@ export function GameDialogs({
     localPlayer, 
     isMyTurn, 
     onConfirmHostLeave,
-    handleAction,
+    handleSharedAction,
     cardsDialogPlayerId,
-    onCloseCardsDialog
+    onCloseCardsDialog,
+    abilitiesShopOpen,
+    onCloseAbilitiesShop,
 }: GameDialogsProps) {
   const { 
     combatState, 
@@ -50,8 +54,9 @@ export function GameDialogs({
       {combatState && (
         <CombatDialog
           gameState={gameState}
-          onRoll={(useWarChief) => handleAction(GameAction.CombatRoll, { useWarChief })}
-          onClose={() => handleAction(GameAction.CloseCombat)}
+          onRoll={(useWarChief) => handleSharedAction(GameAction.CombatRoll, { useWarChief, army: localPlayer.armies.find(a => a.id === combatState.attackingArmyId) })}
+          onClose={() => handleSharedAction(GameAction.CloseCombat)}
+          isMyTurn={isMyTurn}
           localPlayerId={localPlayer.id}
         />
       )}
@@ -62,32 +67,32 @@ export function GameDialogs({
                 <MonsterCombatDialog 
                     gameState={gameState} 
                     monsters={gameState.map[gameState.monsterCombatState.attackerPosition.y * gameState.settings.gridSize.cols + gameState.monsterCombatState.attackerPosition.x].monsters || []}
-                    onRoll={(payload) => handleAction(GameAction.MonsterCombatRoll, payload)}
-                    onClose={() => handleAction(GameAction.CloseMonsterCombat)}
-                    onCancel={() => handleAction(GameAction.CancelAction)}
+                    onRoll={(payload) => handleSharedAction(GameAction.MonsterCombatRoll, { ...payload, army: localPlayer.armies.find(a => a.position.x === gameState.monsterCombatState?.attackerPosition.x && a.position.y === gameState.monsterCombatState?.attackerPosition.y)})}
+                    onClose={() => handleSharedAction(GameAction.CloseMonsterCombat)}
+                    onCancel={() => {}}
                 />
             )}
 
             {gameState.positionDialogState && (
                 <PositionDialog 
                     resources={gameState.positionDialogState.resources}
-                    onSelect={(resource) => handleAction(GameAction.SelectResourcePosition, resource)}
-                    onClose={() => handleAction(GameAction.CancelAction)}
+                    onSelect={(resource) => handleSharedAction(GameAction.SelectResourcePosition, { resource, army: localPlayer.armies.find(a => a.position.x === gameState.positionDialogState?.x && a.position.y === gameState.positionDialogState?.y)})}
+                    onClose={() => handleSharedAction(GameAction.CancelAction)}
                 />
             )}
 
             {gameState.productiveCardDialogState?.isOpen && (
                 <ProductiveCardDialog
                     state={gameState.productiveCardDialogState}
-                    onConfirm={(selectedResource) => handleAction(GameAction.UseProductiveCard, { selectedResource })}
+                    onConfirm={(selectedResource) => handleSharedAction(GameAction.UseProductiveCard, { selectedResource })}
                 />
             )}
 
              {gameState.specialIslandRollDialogState?.isOpen && (
               <SpecialIslandRollDialog
                 state={gameState.specialIslandRollDialogState}
-                onRoll={() => handleAction(GameAction.RollOnSpecialIsland)}
-                onClose={() => handleAction(GameAction.CloseSpecialIslandDialog)}
+                onRoll={() => handleSharedAction(GameAction.RollOnSpecialIsland)}
+                onClose={() => handleSharedAction(GameAction.CloseSpecialIslandDialog)}
               />
             )}
 
@@ -95,8 +100,8 @@ export function GameDialogs({
                 <ArmySelectionDialog
                     state={gameState.armySelectionDialogState}
                     player={localPlayer}
-                    onSelectArmy={(armyId) => handleAction(GameAction.SelectArmy, { armyId })}
-                    onClose={() => handleAction(GameAction.CancelAction)}
+                    onSelectArmy={(armyId) => handleSharedAction(GameAction.SelectArmy, { armyId })}
+                    onClose={() => {}}
                     isMyTurn={isMyTurn}
                 />
             )}
@@ -104,17 +109,17 @@ export function GameDialogs({
             {gameState.attackSelectionDialogState?.isOpen && (
                 <AttackSelectionDialog
                     state={gameState.attackSelectionDialogState}
-                    onSelectTarget={(defenderArmyId) => handleAction(GameAction.SelectDefender, { defenderArmyId, attackingArmyId: gameState.attackSelectionDialogState!.attackingArmyId })}
-                    onClose={() => handleAction(GameAction.CancelAction)}
+                    onSelectTarget={(defenderArmyId) => handleSharedAction(GameAction.SelectDefender, { defenderArmyId, attackingArmyId: gameState.attackSelectionDialogState!.attackingArmyId })}
+                    onClose={() => {}}
                     isMyTurn={isMyTurn}
                 />
             )}
 
-            {gameState.abilitiesShopState?.isOpen && (
+            {abilitiesShopOpen && (
                 <AbilitiesDialog
                     player={localPlayer}
-                    onClose={() => handleAction(GameAction.CloseAbilitiesShop)}
-                    onBuyAbility={(abilityName: AbilityName) => handleAction(GameAction.BuyAbility, { abilityName })}
+                    onClose={onCloseAbilitiesShop}
+                    onBuyAbility={(abilityName: AbilityName) => handleSharedAction(GameAction.BuyAbility, { abilityName })}
                     gameState={gameState}
                     isMyTurn={isMyTurn}
                 />
@@ -123,8 +128,8 @@ export function GameDialogs({
             {gameState.stealResourceDialogState && (
                 <StealResourceDialog
                     players={gameState.players.filter(p => p.id !== gameState.currentPlayerIndex)}
-                    onSteal={(target, resource) => handleAction(GameAction.StealResource, {targetPlayerId: target, resource: resource})}
-                    onClose={() => handleAction(GameAction.CancelAction)}
+                    onSteal={(target, resource) => handleSharedAction(GameAction.StealResource, {targetPlayerId: target, resource: resource})}
+                    onClose={() => handleSharedAction(GameAction.CancelAction)}
                 />
             )}
 
@@ -132,7 +137,7 @@ export function GameDialogs({
                 <HostLeaveDialog
                     isLastPlayer={gameState.players.length === 1}
                     onConfirm={onConfirmHostLeave}
-                    onClose={() => handleAction(GameAction.CancelAction)}
+                    onClose={() => {}}
                     gameStatus={status}
                 />
             )}
@@ -140,15 +145,15 @@ export function GameDialogs({
             {gameState.sabotageDialogState?.isOpen && (
                 <SabotageDialog
                     players={gameState.players.filter(p => p.id !== gameState.currentPlayerIndex)}
-                    onSabotage={(targetPlayerId) => handleAction(GameAction.SabotagePlayer, { targetPlayerId })}
-                    onClose={() => handleAction(GameAction.CancelAction)}
+                    onSabotage={(targetPlayerId) => handleSharedAction(GameAction.SabotagePlayer, { targetPlayerId })}
+                    onClose={() => {}}
                 />
             )}
 
             {gameState.wealthyDialogState?.isOpen && (
                 <WealthyDialog
-                    onSelectResource={(resource) => handleAction(GameAction.GainWealth, { resource })}
-                    onClose={() => handleAction(GameAction.CancelAction)}
+                    onSelectResource={(resource) => handleSharedAction(GameAction.GainWealth, { resource })}
+                    onClose={() => {}}
                 />
             )}
         </>
@@ -159,7 +164,7 @@ export function GameDialogs({
           player={playerForCardsDialog}
           onClose={onCloseCardsDialog}
           onUseCard={(cardName: CardName) => {
-            handleAction(GameAction.UseCard, { cardName });
+            handleSharedAction(GameAction.UseCard, { cardName });
             onCloseCardsDialog();
           }}
           canUseCards={isMyTurn && isViewingOwnCards}

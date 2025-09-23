@@ -11,15 +11,16 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 
 type ActionsPanelProps = {
   onAction: (action: GameAction, payload?: any) => void;
+  handleLocalAction: (action: GameAction, payload?: any) => void;
   localPlayer: Player;
   gameState: GameState;
   isMyTurn: boolean;
   timeLeft: number;
   turnDuration: number;
-  currentAction: GameAction | null;
   selectedArmy: Army | null;
-  onToggleCards: (playerId: number) => void;
+  pendingAction: any; // Simplified for this context
   cardsDialogPlayerId: number | null;
+  abilitiesShopOpen: boolean;
 };
 
 type ActionConfig = {
@@ -31,17 +32,27 @@ type ActionConfig = {
   onClick: () => void;
 };
 
-export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeLeft, turnDuration, currentAction, selectedArmy, onToggleCards, cardsDialogPlayerId }: ActionsPanelProps) {
-  const { map, specialCardsDeck, teleportState, scoutingState, settings } = gameState;
+export function ActionsPanel({ 
+    onAction, 
+    handleLocalAction, 
+    localPlayer, 
+    gameState, 
+    isMyTurn, 
+    timeLeft, 
+    turnDuration, 
+    selectedArmy, 
+    pendingAction,
+    cardsDialogPlayerId,
+    abilitiesShopOpen
+}: ActionsPanelProps) {
+  const { map, specialCardsDeck, settings } = gameState;
   
   const currentTile = (selectedArmy && map) 
     ? map[selectedArmy.position.y * settings.gridSize.cols + selectedArmy.position.x] 
     : null;
 
   const hasArmyActed = !!selectedArmy?.hasActed;
-  
-  const isCardActionInProgress = !!teleportState || !!scoutingState;
-
+  const isCardActionInProgress = !!pendingAction;
 
   const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !localPlayer.positions.some(p => p.armyId === selectedArmy.id) && (!currentTile.monsters || currentTile.monsters.length === 0);
   const canAttack = selectedArmy && currentTile && (currentTile.occupants.some(o => o.playerId !== localPlayer.id) || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
@@ -53,11 +64,11 @@ export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeL
   const canBuyCard = localPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !localPlayer.actionsThisTurn.includes(GameAction.BuyCard);
   const canUpgrade = localPlayer.resources.iron >= upgradeCost && !localPlayer.actionsThisTurn.includes(GameAction.Upgrade) && localPlayer.attackPower < 4;
   
-  const isCancellableActionInProgress = !!teleportState || (!!scoutingState && scoutingState.count > 0) || !!gameState.useCardDialogState || !!gameState.sabotageDialogState || !!gameState.wealthyDialogState || !!gameState.stealResourceDialogState || localPlayer.hasExtraMove;
+  const isCancellableActionInProgress = isCardActionInProgress || localPlayer.hasExtraMove;
 
   const mainActions: ActionConfig[] = [
-    { id: GameAction.Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed || isCardActionInProgress, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Attack, null) },
-    { id: GameAction.Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress, tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Position, null) },
+    { id: GameAction.Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed || isCardActionInProgress, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Attack, { army: selectedArmy }) },
+    { id: GameAction.Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress, tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Position, { army: selectedArmy }) },
   ];
   
   const deployLabel = localPlayer.reinforceActive
@@ -97,10 +108,7 @@ export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeL
       icon: <University />, 
       disabled: false, 
       tooltip: "Purchase permanent passive abilities for your empire.",
-      onClick: () => {
-          const action: GameAction = gameState.abilitiesShopState?.isOpen ? GameAction.CloseAbilitiesShop : GameAction.OpenAbilitiesShop;
-          onAction(action, null);
-      }
+      onClick: () => handleLocalAction(GameAction.OpenAbilitiesShop)
     },
   ];
   
@@ -111,7 +119,7 @@ export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeL
         icon: <Album />, 
         disabled: localPlayer.specialCards.length === 0, 
         tooltip: "View your collected special cards. You can use one per turn.", 
-        onClick: () => onToggleCards(localPlayer.id)
+        onClick: () => handleLocalAction(GameAction.ShowCards, { playerId: localPlayer.id })
       },
   ]
   
@@ -154,7 +162,6 @@ export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeL
   };
 
   const renderButton = (action: ActionConfig, isMain: boolean) => {
-    // The "ShowCards" button is always interactive for the local player.
     const isDisabled = action.id !== GameAction.ShowCards ? (!isMyTurn || action.disabled) : action.disabled;
 
     return (
@@ -163,7 +170,7 @@ export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeL
                 <TooltipTrigger asChild>
                     <div className={isMain ? "w-full" : ""}>
                         <Button
-                            variant={currentAction === action.id || (action.id === GameAction.ShowCards && cardsDialogPlayerId === localPlayer.id) ? 'default' : 'outline'}
+                            variant={pendingAction?.type === action.id.toLowerCase() || (action.id === GameAction.ShowCards && cardsDialogPlayerId === localPlayer.id) || (action.id === GameAction.OpenAbilitiesShop && abilitiesShopOpen) ? 'default' : 'outline'}
                             onClick={action.onClick}
                             disabled={isDisabled}
                             className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}
@@ -190,13 +197,13 @@ export function ActionsPanel({ onAction, localPlayer, gameState, isMyTurn, timeL
         <CardTitle className="text-lg">Actions</CardTitle>
         <div className="flex flex-wrap items-center justify-end gap-2">
             {isMyTurn && isCancellableActionInProgress && (
-                 <Button variant="destructive" size="sm" onClick={() => onAction(GameAction.CancelAction, null)}>
+                 <Button variant="destructive" size="sm" onClick={() => handleLocalAction(GameAction.CancelAction)}>
                     <XCircle />
                     Cancel
                 </Button>
             )}
             {isMyTurn && selectedArmy && (
-                 <Button variant="secondary" size="sm" onClick={() => onAction(GameAction.DeselectArmy, null)}>
+                 <Button variant="secondary" size="sm" onClick={() => handleLocalAction(GameAction.DeselectArmy)}>
                     <XCircle className="mr-2 h-4 w-4" />
                     Deselect Army
                 </Button>

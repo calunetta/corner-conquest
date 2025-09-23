@@ -1,4 +1,5 @@
 
+
 import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
@@ -79,9 +80,9 @@ export function revealIsland(state: GameState, x: number, y: number): GameState 
     return newState;
 }
 
-export function handleMoveAction(state: GameState, x: number, y: number, army: Army): ActionHandlerResult {
+export function handleMoveAction(state: GameState, x: number, y: number, army: Army): GameState {
     let newState = { ...state };
-    const { players, currentPlayerIndex, map, discardPile } = newState;
+    const { players, currentPlayerIndex, map } = newState;
     const player = players[currentPlayerIndex];
 
     if (army.position.x === x && army.position.y === y) {
@@ -111,7 +112,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         // Subsequent landing on a special island triggers the dice roll dialog
         newState.specialIslandRollDialogState = { isOpen: true, roll: null, cardDrawn: null };
         army.hasActed = true;
-        return { newState, selectedArmyId: army.id };
+        return newState;
     }
     
     if (army.hasActed && player.hasExtraMove) {
@@ -121,184 +122,5 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         army.hasActed = true;
     }
 
-    const canStillAct = canArmyPerformAnyAction(newState, army);
-    if (!canStillAct) {
-        newState = checkAndEndTurnIfNoActions(newState);
-        return { newState, selectedArmyId: null };
-    }
-
-    return { newState, selectedArmyId: army.id };
+    return checkAndEndTurnIfNoActions(newState);
 }
-
-export function handleTileClick(
-    state: GameState, 
-    x: number, 
-    y: number, 
-    currentSelectedArmy: Army | null,
-    currentPossibleMoves: {x: number, y: number}[]
-): ActionHandlerResult {
-    let newState = { ...state };
-    const { players, currentPlayerIndex, teleportState, scoutingState, settings } = newState;
-    const currentPlayer = players[currentPlayerIndex];
-    const clickedTile = newState.map[y * MAP_COLS + x];
-    
-    if (!currentPlayer || !clickedTile) {
-        return { newState: state };
-    }
-
-    let isTileRevealed = true;
-    if (settings.fogOfWar && !settings.debugMode) {
-        isTileRevealed = currentPlayer.revealedTiles.includes(clickedTile.id);
-    }
-    
-    let selectedArmyId: number | null = currentSelectedArmy?.id ?? null;
-    let selectedTile: {x: number, y: number} | null = {x, y};
-    let possibleMoves: {x: number, y: number}[] = currentPossibleMoves;
-    let currentAction: GameAction | null = null;
-    
-    const armiesOnTile = clickedTile.occupants
-        .filter(o => o.playerId === currentPlayer.id)
-        .map(o => currentPlayer.armies.find(a => a.id === o.armyId))
-        .filter((army): army is Army => !!army);
-    
-    const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
-
-    if (currentSelectedArmy && isPossibleMove && !teleportState) {
-        const moveResult = handleMoveAction(newState, x, y, currentSelectedArmy);
-        if (moveResult.selectedArmyId === null) {
-            return { newState: moveResult.newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
-        }
-        return moveResult;
-    }
-    
-    if (scoutingState && scoutingState.count > 0 && !isTileRevealed) {
-        newState = handleScout(newState, x, y);
-        return { newState, selectedArmyId, selectedTile: null, possibleMoves, currentAction: null };
-    }
-    
-    if (teleportState) {
-        if (teleportState.armyId === null) {
-            if (armiesOnTile.length === 0) throw new Error("You must select a tile with one of your own armies.");
-
-            if (armiesOnTile.length === 1) {
-                newState.teleportState.armyId = armiesOnTile[0]!.id;
-            } else {
-                 newState.armySelectionDialogState = { isOpen: true, x, y, armies: armiesOnTile };
-            }
-        } else {
-            const { newState: teleportedState, selectedArmyId: deselectedArmy } = handleTeleport(newState, x, y);
-            newState = teleportedState;
-            return { newState, selectedArmyId: deselectedArmy, selectedTile: null, possibleMoves: [], currentAction: null };
-        }
-        return { newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
-    }
-    
-    if (armiesOnTile.length > 0) {
-        if (armiesOnTile.length === 1) {
-            const army = armiesOnTile[0];
-            selectedArmyId = army.id;
-            possibleMoves = getPossibleMoves(newState, army);
-            currentAction = GameAction.Move; 
-        } else { 
-            newState.armySelectionDialogState = { isOpen: true, x, y, armies: armiesOnTile };
-            selectedArmyId = null;
-            possibleMoves = [];
-            currentAction = null;
-        }
-    } else {
-        selectedArmyId = null;
-        possibleMoves = [];
-        currentAction = null;
-        selectedTile = null;
-    }
-
-    return { newState, selectedArmyId, selectedTile, possibleMoves, currentAction };
-}
-
-export function handleSelectArmy(state: GameState, armyId: number): ActionHandlerResult {
-    let newState = { ...state };
-    newState.armySelectionDialogState = null; 
-
-    const player = newState.players[newState.currentPlayerIndex];
-    const army = player.armies.find(a => a.id === armyId);
-
-    if (!army) {
-        return { newState, selectedArmyId: null, possibleMoves: [], currentAction: null };
-    }
-    
-    if (newState.teleportState) {
-        newState.teleportState.armyId = armyId;
-        return { newState, selectedArmyId: armyId, possibleMoves: [], currentAction: GameAction.Teleport };
-    }
-
-    const possibleMoves = getPossibleMoves(newState, army);
-    const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
-    const canAttack = tile.occupants.some(o => o.playerId !== player.id) || (tile.type === IslandType.Monster && !!tile.monsters && tile.monsters.length > 0);
-    
-    if (possibleMoves.length > 0) {
-        return { newState, selectedArmyId: armyId, possibleMoves, currentAction: GameAction.Move, selectedTile: {x: army.position.x, y: army.position.y} };
-    } else if (canAttack && !army.hasActed) {
-        const attackResult = handleAttackAction(newState, army);
-        return { ...attackResult, currentAction: GameAction.Attack };
-    }
-
-    return { newState, selectedArmyId: armyId, possibleMoves: [], currentAction: null };
-}
-
-export const handleTeleport = (state: GameState, x: number, y: number): ActionHandlerResult => {
-    let newState = { ...state };
-    const { players, currentPlayerIndex, teleportState, map, discardPile } = newState;
-    const player = players[currentPlayerIndex];
-
-    if (!teleportState || teleportState.armyId === null || !teleportState.cardName) return { newState };
-    
-    const armyToMove = player.armies.find(a => a.id === teleportState.armyId);
-    if (!armyToMove) return { newState };
-    
-    const oldTile = map[armyToMove.position.y * MAP_COLS + armyToMove.position.x];
-    oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== armyToMove.id);
-
-    armyToMove.position = { x, y };
-    const targetTile = map[y * MAP_COLS + x];
-    targetTile.occupants.push({ playerId: player.id, armyId: armyToMove.id });
-    
-    const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);
-    if (isFirstDiscovery) {
-        newState = revealIsland(newState, x, y);
-    }
-    
-    const cardIndex = player.specialCards.indexOf(teleportState.cardName);
-    if (cardIndex > -1) {
-        discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
-    }
-    
-    newState.log.push(`${player.name} used 'Teleport' to move an army!`);
-    
-    newState.teleportState = null;
-    return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
-}
-
-export function handleScout(state: GameState, x: number, y: number): GameState {
-    let newState = { ...state };
-    const player = newState.players[newState.currentPlayerIndex];
-    if (!newState.scoutingState) return newState;
-
-    newState = revealIsland(newState, x, y);
-    newState.scoutingState.count--;
-    newState.log.push(`${player.name} revealed a tile at (${x},${y}) with Scout. ${newState.scoutingState.count} reveals left.`);
-    
-    if (newState.scoutingState.count === 0) {
-        newState.log.push(`Scouting complete.`);
-        
-        const cardIndex = player.specialCards.indexOf(newState.scoutingState.cardName);
-        if (cardIndex > -1) {
-            newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
-        }
-
-        newState.scoutingState = null;
-        newState = checkAndEndTurnIfNoActions(newState);
-    }
-    return newState;
-}
-
-    

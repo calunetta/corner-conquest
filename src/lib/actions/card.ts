@@ -38,9 +38,9 @@ export function handleBuyCardAction(state: GameState): GameState {
     return newState;
 }
 
-export const handleUseCard = (state: GameState, cardName: CardName): ActionHandlerResult => {
+export const handleUseCard = (state: GameState, cardName: CardName): GameState => {
     let newState = { ...state };
-    const { players, currentPlayerIndex } = newState;
+    const { players, currentPlayerIndex, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
     const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
@@ -51,26 +51,10 @@ export const handleUseCard = (state: GameState, cardName: CardName): ActionHandl
     
     newState.log.push(`${player.name} is using the '${cardName}' card.`);
     
-    // Mark the action as used *provisionally*. It will be refunded if cancelled.
-    player.actionsThisTurn.push(GameAction.UseCard);
-
-    let selectedArmyId = null;
-
     switch (cardName) {
         case CardName.ExtraMove:
             player.hasExtraMove = true;
-            const emCardIndex = player.specialCards.indexOf(CardName.ExtraMove);
-            if (emCardIndex > -1) newState.discardPile.push(player.specialCards.splice(emCardIndex, 1)[0]);
             newState.log.push(`${player.name} activated 'Extra Move'. One army can move again this turn.`);
-            return { newState, selectedArmyId: null };
-        case CardName.Teleport:
-            newState.teleportState = { armyId: null, cardName: CardName.Teleport };
-            selectedArmyId = null;
-            break;
-        case CardName.Scout:
-            newState.scoutingState = { count: 3, cardName: CardName.Scout };
-            newState.log.push(`${player.name} activated 'Scout'. Click 3 hidden tiles to reveal them.`);
-            selectedArmyId = null;
             break;
         case CardName.Reinforce:
             player.reinforceActive = true;
@@ -85,24 +69,39 @@ export const handleUseCard = (state: GameState, cardName: CardName): ActionHandl
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
             break;
         case CardName.Sabotage:
-            newState.sabotageDialogState = { isOpen: true };
-            break;
+             newState.sabotageDialogState = { isOpen: true };
+             break;
         case CardName.StealResource:
-            newState.stealResourceDialogState = { isOpen: true };
-            break;
+             newState.stealResourceDialogState = { isOpen: true };
+             break;
         case CardName.Wealthy:
-            newState.wealthyDialogState = { isOpen: true };
+             newState.wealthyDialogState = { isOpen: true };
+             break;
+        case CardName.Teleport:
+        case CardName.Scout:
+            // These now just set local state in the UI. 
+            // The card is consumed when the action completes.
             break;
         default:
-             // If we got here, the card wasn't one that needs a follow-up action. Refund the turn.
-            player.actionsThisTurn.pop();
             throw new Error(`The card "${cardName}" does not have a defined use action.`);
     }
 
-    return { newState, selectedArmyId };
+    // Mark the card as used for the turn
+    player.actionsThisTurn.push(GameAction.UseCard);
+
+    // Some cards are consumed immediately without a follow-up action.
+    const immediateConsumeCards = [CardName.ExtraMove, CardName.Reinforce, CardName.Efficient, CardName.MasterBuilder];
+    if (immediateConsumeCards.includes(cardName)) {
+        const cIndex = player.specialCards.indexOf(cardName);
+        if(cIndex > -1) {
+            discardPile.push(player.specialCards.splice(cIndex, 1)[0]);
+        }
+    }
+
+    return newState;
 };
 
-export function handleUseProductiveCard(state: GameState, selectedResource: ResourceType | null): ActionHandlerResult {
+export function handleUseProductiveCard(state: GameState, selectedResource: ResourceType | null): GameState {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     let collectedResources: Record<string, number> = {};
@@ -145,10 +144,10 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
 
 
     newState.productiveCardDialogState = null;
-    return { newState, selectedArmyId: null };
+    return newState;
 }
 
-export function handleSabotagePlayer(state: GameState, targetPlayerId: number): ActionHandlerResult {
+export function handleSabotagePlayer(state: GameState, targetPlayerId: number): GameState {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     const targetPlayer = newState.players.find(p => p.id === targetPlayerId);
@@ -164,10 +163,10 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
     }
 
     newState.sabotageDialogState = null;
-    return { newState, selectedArmyId: null };
+    return newState;
 }
 
-export function handleGainWealth(state: GameState, resource: ResourceType): ActionHandlerResult {
+export function handleGainWealth(state: GameState, resource: ResourceType): GameState {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     
@@ -180,10 +179,10 @@ export function handleGainWealth(state: GameState, resource: ResourceType): Acti
     }
 
     newState.wealthyDialogState = null;
-    return { newState, selectedArmyId: null };
+    return newState;
 }
 
-export const handleStealResource = (state: GameState, payload: { targetPlayerId: number; resource: ResourceType }): ActionHandlerResult => {
+export const handleStealResource = (state: GameState, payload: { targetPlayerId: number; resource: ResourceType }): GameState => {
     let newState = { ...state };
     const { players, currentPlayerIndex } = newState;
     const currentPlayer = players[currentPlayerIndex];
@@ -191,7 +190,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
 
     if (!targetPlayer) {
         newState.stealResourceDialogState = null;
-        return {newState, selectedArmyId: null};
+        return newState;
     }
     
     const stolenAmount = Math.min(targetPlayer.resources[payload.resource], 2);
@@ -210,18 +209,10 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
     }
 
     newState.stealResourceDialogState = null;
-    return { newState, selectedArmyId: null };
+    return newState;
 };
 
-export function handleOpenAbilitiesShop(state: GameState): GameState {
-    const availableAbilities = state.settings.availableAbilities;
-    if (availableAbilities.length === 0) {
-        throw new Error("The host has disabled all passive abilities for this match.");
-    }
-    return { ...state, abilitiesShopState: { isOpen: true } };
-}
-
-export function handleBuyAbility(state: GameState, abilityName: AbilityName): ActionHandlerResult {
+export function handleBuyAbility(state: GameState, abilityName: AbilityName): GameState {
     let newState = { ...state };
     const player = newState.players[newState.currentPlayerIndex];
     const cost = newState.settings.abilityCost;
@@ -240,8 +231,7 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ac
     player.passiveAbilities[abilityName] = true;
     newState.log.push(`${player.name} has acquired the '${abilityName.charAt(0).toUpperCase() + abilityName.slice(1)}' passive ability!`);
 
-    newState.abilitiesShopState = null;
-    return {newState, selectedArmyId: null};
+    return newState;
 }
 
 

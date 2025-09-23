@@ -305,63 +305,16 @@ export function handleEndTurn(state: GameState): GameState {
     
     newState.log.push(`It's now ${nextPlayer.name}'s turn.`);
     
-    newState.teleportState = null;
-    newState.scoutingState = null;
     newState.combatState = null;
     newState.monsterCombatState = null;
     newState.positionDialogState = null;
     newState.stealResourceDialogState = null;
-    newState.abilitiesShopState = null;
     newState.sabotageDialogState = null;
     newState.wealthyDialogState = null;
     newState.armySelectionDialogState = null;
     newState.attackSelectionDialogState = null;
     newState.specialIslandRollDialogState = null;
 
-    return newState;
-}
-
-export function handleDeselectArmy(): Partial<ActionHandlerResult> {
-    return {
-        selectedArmyId: null,
-        selectedTile: null,
-        possibleMoves: [],
-        currentAction: null,
-    }
-}
-
-
-export function handleCancelAction(state: GameState): GameState {
-    let newState = { ...state };
-    const player = newState.players[newState.currentPlayerIndex];
-    
-    // Reset any pending action states
-    if (newState.teleportState) newState.teleportState = null;
-    if (newState.scoutingState) newState.scoutingState = null;
-    if (newState.monsterCombatState) newState.monsterCombatState = null;
-    if (newState.attackSelectionDialogState) newState.attackSelectionDialogState = null;
-    if (newState.positionDialogState) newState.positionDialogState = null;
-    if (newState.sabotageDialogState) newState.sabotageDialogState = null;
-    if (newState.wealthyDialogState) newState.wealthyDialogState = null;
-    if (newState.stealResourceDialogState) newState.stealResourceDialogState = null;
-    if (newState.armySelectionDialogState) newState.armySelectionDialogState = null;
-    if (newState.abilitiesShopState) newState.abilitiesShopState = null;
-    if (newState.specialIslandRollDialogState) newState.specialIslandRollDialogState = null;
-    
-    // Deactivate flags that might have been set
-    if (player.reinforceActive) player.reinforceActive = false;
-    if (player.efficientActive) player.efficientActive = false;
-    if (player.masterBuilderActive) player.masterBuilderActive = false;
-    if (player.hasExtraMove) player.hasExtraMove = false;
-
-    // Refund the "Use Card" action if one was pending
-    const useCardIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
-    if (useCardIndex > -1) {
-        player.actionsThisTurn.splice(useCardIndex, 1);
-    }
-    
-    newState.log.push(`${player.name} cancelled their action.`);
-    
     return newState;
 }
 
@@ -420,5 +373,3 @@ export async function handleConfirmHostLeave(gameId: string, onExit: () => void)
     console.error("Error during host leave confirmation:", error);
   }
 }
-
-    

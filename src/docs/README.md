@@ -11,7 +11,7 @@ This document outlines the architecture and key logic flows of the "Corner Conqu
 - **Framework:** Next.js with App Router
 - **Language:** TypeScript
 - **UI:** React, ShadCN UI Components, Tailwind CSS
-- **State Management (Client):** React Hooks (`usePlayer`, `useToast`)
+- **State Management (Client):** React Hooks (`usePlayer`, `useToast`, `useState`)
 - **State Management (Game):** Firestore real-time listeners (`useGameEngine`)
 - **Backend/Database:** Firebase (Firestore)
 
@@ -53,15 +53,38 @@ The application uses a "state machine" pattern where the game state is managed c
 
 3.  **User Actions & State Updates (Writing):**
     - A user interaction (e.g., clicking a tile) in a component like `GameBoard.tsx` triggers an action.
-    - It calls `handleGameAction` in `src/lib/actions/index.ts`. This is the **single entry point** for all game logic modifications.
-    - `handleGameAction` acts as a router, delegating the action to a specific, more granular function (e.g., `handleMoveAction`, `handleAttackAction`).
-    - These granular functions are **pure**: they receive the current `GameState` and a payload, perform calculations, and return a **new `GameState` object**. They **do not** modify the state directly.
-    - The new `GameState` object is returned up the chain to `GameBoard.tsx`.
-    - The `setGameState` function (which is an alias for `updateGameState` from `useGameEngine`) is called. This function writes the entire new state object back to Firestore, overwriting the old one in a single transaction.
+    - **Crucially, there is a distinction between local and shared actions.**
+        - **Local Actions** (like selecting an army or opening a dialog) are handled entirely on the client-side using React's `useState` hook. They do **not** call `setGameState` and do **not** write to Firebase.
+        - **Shared Actions** (like moving an army or ending a turn) are those that affect the game for all players. These actions call `setGameState`, which in turn calls a reducer function from `lib/actions`. This function takes the current game state and a payload, performs calculations, and returns a new `GameState` object.
+    - The new `GameState` object is then written back to Firestore, overwriting the old one in a single transaction.
 
-This architecture ensures that the game logic is predictable, testable, and decoupled from the UI. UI components are responsible for *displaying* the state and *dispatching* actions, while the `lib/actions` files are responsible for *calculating* state changes.
+This architecture ensures that the game logic is predictable and testable, and the UI remains responsive by handling local interactions instantly without waiting for a server round-trip.
 
-### 3.1. Turn Change Logic
+### 3.1. Local vs. Shared State Actions
+It is critical to distinguish between actions that only affect the local user's interface and actions that must be synchronized across all players via Firebase. Storing local UI state (like which dialog is open) in the shared `GameState` is inefficient and causes bugs. The following is a definitive list of all game actions and their correct category.
+
+#### 3.1.1. Local UI Actions (Client-Side Only)
+These actions are managed by `useState` within `GameBoard.tsx` and **do not** result in a Firebase write.
+
+-   **`SelectArmy` / `DeselectArmy` / `TileClick` (for selection):** The act of selecting or deselecting an army is a purely local UI event. It updates local state variables like `selectedArmyId` and `possibleMoves` to show highlights and available actions to the current player. A shared action is only dispatched when the player *commits* to a move or attack with the selected army.
+-   **`ShowCards` / `CloseCards`:** Toggling the visibility of the "My Cards" dialog is a local UI change.
+-   **`OpenAbilitiesShop` / `CloseAbilitiesShop`:** Toggling the visibility of the Abilities Shop dialog is a local UI change.
+-   **`UseCard` (Initiation Phase):** When a player clicks "Use" on a card like `Teleport` or `Scout`, it initiates a *local* pending action state (e.g., `pendingAction: 'teleport'`). The game then waits for further local input (clicking an army, clicking a tile). The card is only truly "used" and a shared action dispatched when the action is completed.
+-   **`CancelAction`:** This is a local action that resets any pending UI state (like a `teleport` or `scout` action) and allows the player to continue their turn. If a card's use was provisionally marked, this action will also trigger a shared state update to refund the `UseCard` action for the turn.
+
+#### 3.1.2. Shared Game State Actions (Synchronized via Firebase)
+These actions modify the core `GameState` and are synchronized for all players.
+
+-   **Strategic Actions:** `Deploy`, `Upgrade`, `EndTurn`, `BuyCard`, `BuyAbility`.
+-   **Movement & Combat:**
+    -   `Move`: Dispatched *after* a local selection and tile click confirm a valid move. Changes the army's position in `GameState`. If Fog of War is disabled, all players see the move. If enabled, only players who have already revealed the destination tile will see the army arrive.
+    -   `Attack`, `SelectDefender`, `CombatRoll`, `MonsterCombatRoll`: These initiate and progress combat. The `CombatState` is shared, so all players can see the "results" phase of a battle, even if they aren't involved.
+    -   `CloseCombat`, `CloseMonsterCombat`: These actions resolve the combat, update player/army states (VP, respawning), and are shared with all players.
+-   **Resource Actions:** `Position`, `SelectResourcePosition`.
+-   **Card Effect Actions:** These are dispatched when a card's effect is confirmed and alters the shared state.
+    -   `UseProductiveCard`, `SabotagePlayer`, `GainWealth`, `StealResource`, `RollOnSpecialIsland`, `CloseSpecialIslandDialog`: All these actions directly modify player resources, status effects, or dialog states stored in `GameState`.
+
+### 3.2. Turn Change Logic
 When `handleEndTurn` is called, a sequence of events occurs:
 1.  The `currentPlayerIndex` is incremented.
 2.  The new current player's armies have their `hasActed` status reset to `false`, and their `actionsThisTurn` array is cleared.
@@ -69,24 +92,9 @@ When `handleEndTurn` is called, a sequence of events occurs:
 4.  Passive abilities for the *outgoing* player (like `Explorer`) are calculated and applied.
 5.  A check is performed to see if the *new* player is sabotaged. If so, their turn is skipped.
 6.  A check for the *new* player's pre-turn actions is performed (e.g., Automatic Resource Collection). If they are positioned on resources, the appropriate collection logic or dialog (`ProductiveCardDialog`) is triggered.
-7.  If the new player has only one army, it is automatically selected for them.
+7.  If the new player has only one army, it is automatically selected for them by setting `autoSelectArmyFor` in the game state.
 8.  A log message announces the new turn.
-9.  All temporary dialog states (`combatState`, `positionDialogState`, etc.) are reset to `null`.
-
-### 3.2. Local vs. Shared State Actions
-It's critical to distinguish between actions that only affect the local user's interface and actions that must be synchronized across all players via Firebase.
-
--   **Local UI Actions (Client-Side Only):** These actions do **not** call `setGameState` and do not result in a Firebase write. They are managed entirely by React state (`useState`) within the `GameBoard` component.
-    -   **`DeselectArmy`**: Deselecting an army is a purely local UI change. It updates local state like `selectedArmyId` to `null` so the UI removes highlights, but it does not need to inform other players.
-    -   **`ShowCards`, `CloseCards`**: Toggling the visibility of the Special Cards dialog is a local UI change that does not affect the underlying game state.
-
--   **Shared Game State Actions (Synchronized via Firebase):** These actions **must** go through the `handleGameAction` and `setGameState` flow because they modify the core `GameState` that all players share.
-    -   **Strategic Actions:** `Deploy`, `Upgrade`, `EndTurn`, `BuyCard`, `BuyAbility`, `OpenAbilitiesShop`, `CloseAbilitiesShop`.
-    -   **Movement & Selection:** `Move`, `Teleport`, `TileClick`, `SelectArmy`.
-    -   **Resource Actions:** `Position`, `SelectResourcePosition`.
-    -   **Combat Actions:** `Attack`, `SelectDefender`, `CombatRoll`, `CloseCombat`, `MonsterCombatRoll`, `CloseMonsterCombat`.
-    -   **Card Effect Actions:** `UseCard`, `UseProductiveCard`, `SabotagePlayer`, `GainWealth`, `StealResource`, `RollOnSpecialIsland`, `CloseSpecialIslandDialog`.
-    -   **Meta Actions:** `CancelAction`.
+9.  All temporary shared dialog states (`combatState`, `positionDialogState`, etc.) are reset to `null`.
 
 ### 3.3. Firebase & React/Next.js Common Pitfalls
 - **Firestore Cannot Store `undefined`:** A recurring critical bug is caused by attempting to write a `GameState` object with `undefined` properties. Firestore will silently strip these properties, causing the `GameState` read by clients to have a different shape than expected, leading to crashes. **Rule: Always use `null` instead of `undefined`** for optional or empty state properties.
@@ -190,14 +198,14 @@ The application ensures that every player has a unique username.
 ### 5.3. UI/UX and Interactions
 
 #### 5.3.1. Dialogs and Player Scope
-- **Local Dialogs:** Most dialogs for actions (`Sabotage`, `Wealthy`, `Position`, etc.) are rendered **only for the current player**. This is managed by the `isMyTurn` flag within `GameDialogs.tsx`.
+- **Local Dialogs:** Most dialogs for actions (`Sabotage`, `Wealthy`, `Position`, `My Cards`, `Abilities Shop`) are rendered **only for the current player**. Their open/closed state is managed locally in the `GameBoard` component and is not part of the shared `GameState`.
 - **Global Dialogs:** The `CombatDialog` is an exception. It shows an interactive view to the attacker and a read-only "results" view to all other players, ensuring everyone can follow the action.
 
 #### 5.3.2. Army and Tile Selection
 - **Auto-Selection:** If a player has only one army at the start of their turn, it is automatically selected.
-- **Manual Selection:** Clicking a tile containing one of your armies selects it.
+- **Manual Selection:** Clicking a tile containing one of your armies selects it. This is a local UI action.
 - **Multi-Army Selection:** Clicking a tile with multiple friendly armies opens the `ArmySelectionDialog` to choose a specific unit.
-- **Deselection:** An army can be deselected by:
+- **Deselection:** An army can be deselected locally by:
     1.  Clicking the "Deselect Army" button.
     2.  Clicking on any tile that is not a valid move for the currently selected army.
 
@@ -205,7 +213,7 @@ The application ensures that every player has a unique username.
 Located on the right side of the screen on desktop (or below the map on mobile), the Actions Panel is the central hub for the current player. It contains buttons for all available army and strategic actions.
 - **Army Actions (`Attack`, `Position`):** These buttons are enabled only when a valid army is selected and the action is possible on the army's current tile.
 - **Strategic Actions (`Deploy`, `Upgrade`, `Buy Card`):** These are available once per turn and their buttons are disabled after use or if the player cannot afford the cost.
-- **Card & Ability Actions (`My Cards`, `Abilities Shop`):** The "My Cards" button opens a dialog showing the player's current hand. From here, they can select and use a card. The "Abilities Shop" opens a dialog for purchasing permanent passive abilities.
+- **Card & Ability Actions (`My Cards`, `Abilities Shop`):** The "My Cards" button opens a local dialog showing the player's current hand. From here, they can select and use a card. The "Abilities Shop" opens a local dialog for purchasing permanent passive abilities.
 - **Turn Management (`End Turn`, `Cancel`, `Deselect Army`):** These buttons allow the player to manage their turn flow.
 
 #### 5.3.4. Visual Feedback

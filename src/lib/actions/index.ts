@@ -1,74 +1,66 @@
 
+
 import type { GameState, ActionHandlerResult, Army } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 
 import { handleAttackAction, handleSelectDefender, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
-import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleOpenAbilitiesShop, handleBuyAbility, handleUseProductiveCard, handleRollOnSpecialIsland, handleCloseSpecialIslandDialog } from './card';
-import { handleTileClick, handleSelectArmy } from './movement';
-import { handleDeployAction, handleUpgradeAction, handleEndTurn, handlePlayerExit, handleConfirmHostLeave, handleCancelAction, handleDeselectArmy } from './player';
+import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleBuyAbility, handleUseProductiveCard, handleRollOnSpecialIsland, handleCloseSpecialIslandDialog } from './card';
+import { handleMoveAction } from './movement';
+import { handleDeployAction, handleUpgradeAction, handleEndTurn, handlePlayerExit, handleConfirmHostLeave } from './player';
 import { handlePositionAction, handleSelectResourceForPosition } from './resource';
 
 interface HandleActionParams {
     action: GameAction;
     gameState: GameState;
-    selectedArmyId: number | null;
     payload?: any;
 }
 
 export { handlePlayerExit, handleConfirmHostLeave };
 
-export function handleGameAction({ action, gameState, selectedArmyId, payload }: HandleActionParams): ActionHandlerResult {
-    const selectedArmy = selectedArmyId !== null 
-        ? gameState.players[gameState.currentPlayerIndex]?.armies.find(a => a.id === selectedArmyId) ?? null
-        : null;
+export function handleGameAction({ action, gameState, payload }: HandleActionParams): GameState {
 
     switch(action) {
         // Player actions
         case GameAction.Deploy:
-            return { newState: handleDeployAction(gameState), selectedArmyId: null };
+            return handleDeployAction(gameState);
         case GameAction.Upgrade:
-            return { newState: handleUpgradeAction(gameState), selectedArmyId: null };
+            return handleUpgradeAction(gameState);
         case GameAction.EndTurn:
-            return { newState: handleEndTurn(gameState), selectedArmyId: null };
-        case GameAction.DeselectArmy:
-             // This is now primarily a client-side action. 
-             // We return a simple result, but the main logic is in GameBoard.tsx.
-            return handleDeselectArmy();
-        case GameAction.CancelAction:
-             return { newState: handleCancelAction(gameState), selectedArmyId: selectedArmy?.id ?? null };
+            return handleEndTurn(gameState);
 
         // Resource actions
         case GameAction.Position:
-            return handlePositionAction(gameState, selectedArmy);
+            return handlePositionAction(gameState, payload.army);
         case GameAction.SelectResourcePosition:
-            return handleSelectResourceForPosition(gameState, payload, selectedArmy);
-
-        // Movement & Tile actions
-        case GameAction.TileClick:
-            const { x, y, possibleMoves } = payload;
-            return handleTileClick(gameState, x, y, selectedArmy, possibleMoves);
-        case GameAction.SelectArmy:
-            return handleSelectArmy(gameState, payload.armyId);
+            return handleSelectResourceForPosition(gameState, payload.resource, payload.army);
+        
+        // Movement Actions
+        case GameAction.Move:
+            return handleMoveAction(gameState, payload.x, payload.y, payload.army);
+        case GameAction.Teleport:
+            // This case might be simplified if teleport state is handled locally
+             return gameState; 
 
         // Attack actions
         case GameAction.Attack:
-            return handleAttackAction(gameState, selectedArmy);
+            return handleAttackAction(gameState, payload.army);
         case GameAction.SelectDefender:
-            const { defenderArmyId, attackingArmyId } = payload;
-            return { newState: handleSelectDefender(gameState, defenderArmyId, attackingArmyId), selectedArmyId: attackingArmyId };
+            return handleSelectDefender(gameState, payload.defenderArmyId, payload.attackingArmyId);
         case GameAction.CombatRoll:
-            return { newState: handleCombatRoll(gameState, payload.useWarChief, selectedArmy) };
+            return handleCombatRoll(gameState, payload.useWarChief, payload.army);
         case GameAction.CloseCombat:
             return handleCloseCombat(gameState);
         case GameAction.MonsterCombatRoll:
-            return { newState: handleMonsterCombatRoll(gameState, payload, selectedArmy) };
+            return handleMonsterCombatRoll(gameState, payload, payload.army);
         case GameAction.CloseMonsterCombat:
-            return handleCloseMonsterCombat(gameState, selectedArmy);
+            return handleCloseMonsterCombat(gameState);
 
         // Card actions
         case GameAction.BuyCard:
-            return { newState: handleBuyCardAction(gameState), selectedArmyId: null };
+            return handleBuyCardAction(gameState);
         case GameAction.UseCard:
+             // The initial card use action might just set a local state.
+             // The actual effect is a separate shared action.
             return handleUseCard(gameState, payload.cardName);
         case GameAction.UseProductiveCard:
             return handleUseProductiveCard(gameState, payload.selectedResource);
@@ -79,21 +71,15 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
         case GameAction.StealResource:
             return handleStealResource(gameState, payload);
         case GameAction.RollOnSpecialIsland:
-            return { newState: handleRollOnSpecialIsland(gameState) };
+            return handleRollOnSpecialIsland(gameState);
         case GameAction.CloseSpecialIslandDialog:
-            return { newState: handleCloseSpecialIslandDialog(gameState) };
+            return handleCloseSpecialIslandDialog(gameState);
         
         // Abilities Shop
-        case GameAction.OpenAbilitiesShop:
-            return { newState: handleOpenAbilitiesShop(gameState) };
-        case GameAction.CloseAbilitiesShop:
-             return { newState: { ...gameState, abilitiesShopState: null } };
         case GameAction.BuyAbility:
             return handleBuyAbility(gameState, payload.abilityName);
 
         default:
-            return { newState: gameState };
+            return gameState;
     }
 }
-
-    

@@ -234,21 +234,6 @@ export type WealthyDialogState = {
     isOpen: boolean;
 }
 
-export type ScoutingState = {
-    count: number;
-    cardName: CardName;
-}
-
-export type TeleportState = {
-    armyId: number | null;
-    cardName: CardName;
-};
-
-
-export type AbilitiesShopState = {
-    isOpen: boolean;
-}
-
 export type ArmySelectionDialogState = {
     isOpen: boolean;
     x: number;
@@ -307,11 +292,8 @@ export type GameState = {
   productiveCardDialogState: ProductiveCardDialogState | null;
   specialIslandRollDialogState: SpecialIslandRollDialogState | null;
   stealResourceDialogState: StealResourceDialogState | null;
-  abilitiesShopState: AbilitiesShopState | null;
   sabotageDialogState: SabotageDialogState | null;
   wealthyDialogState: WealthyDialogState | null;
-  scoutingState: ScoutingState | null;
-  teleportState: TeleportState | null;
   armySelectionDialogState: ArmySelectionDialogState | null;
   attackSelectionDialogState: AttackSelectionDialogState | null;
   showHostLeaveDialog: boolean;

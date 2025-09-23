@@ -1,10 +1,10 @@
 
 
-import type { GameState, Army, ResourceType, ActionHandlerResult } from './types';
+import type { GameState, Army, ResourceType } from './types';
 import { GameAction, AbilityName, CardName, IslandType, MAP_COLS } from './types';
 import { handleAttackAction, handleMonsterCombatRoll, handleCloseMonsterCombat } from './actions/attack';
 import { handleBuyAbility, handleBuyCardAction, handleGainWealth } from './actions/card';
-import { getPossibleMoves, handleTileClick } from './actions/movement';
+import { getPossibleMoves, handleMoveAction } from './actions/movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn } from './actions/player';
 import { handleSelectResourceForPosition } from './actions/resource';
 
@@ -55,8 +55,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             priority: 8,
             execute: (s) => {
                 try {
-                    const { newState } = handleBuyAbility(s, unownedAbilities[0] as AbilityName);
-                    return newState;
+                    return handleBuyAbility(s, unownedAbilities[0] as AbilityName);
                 } catch { return null; }
             }
         });
@@ -119,7 +118,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
                 priority: 8, // Very high priority to unblock other actions
                 execute: (s) => {
                     try {
-                        return handleGainWealth(s, resourceToGain).newState;
+                        return handleGainWealth(s, resourceToGain);
                     } catch { return null; }
                 }
             })
@@ -197,7 +196,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
                 priority: priority,
                 execute: (s) => {
                     try {
-                        return handleTileClick(s, move.x, move.y, army, getPossibleMoves(s, army)).newState;
+                        return handleMoveAction(s, move.x, move.y, army);
                     } catch { return null; }
                 }
             });
@@ -221,4 +220,3 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     console.log(`Bot: No valid actions found. Ending turn.`);
     return handleEndTurn(state);
 }
-
