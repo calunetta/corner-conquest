@@ -78,10 +78,15 @@ It's critical to distinguish between actions that only affect the local user's i
 
 -   **Local UI Actions (Client-Side Only):** These actions do **not** call `setGameState` and do not result in a Firebase write. They are managed entirely by React state (`useState`) within the `GameBoard` component.
     -   **`DeselectArmy`**: Deselecting an army is a purely local UI change. It updates local state like `selectedArmyId` to `null` so the UI removes highlights, but it does not need to inform other players.
+    -   **`ShowCards`, `CloseCards`**: Toggling the visibility of the Special Cards dialog is a local UI change that does not affect the underlying game state.
 
 -   **Shared Game State Actions (Synchronized via Firebase):** These actions **must** go through the `handleGameAction` and `setGameState` flow because they modify the core `GameState` that all players share.
-    -   **Examples:** `Move`, `Attack`, `EndTurn`, `Deploy`, `Upgrade`, `UseCard`, `BuyCard`, `Position`, etc.
-    -   Any action that changes army positions, player resources, victory points, turn order, or the contents of the map is a shared action.
+    -   **Strategic Actions:** `Deploy`, `Upgrade`, `EndTurn`, `BuyCard`, `BuyAbility`, `OpenAbilitiesShop`, `CloseAbilitiesShop`.
+    -   **Movement & Selection:** `Move`, `Teleport`, `TileClick`, `SelectArmy`.
+    -   **Resource Actions:** `Position`, `SelectResourcePosition`.
+    -   **Combat Actions:** `Attack`, `SelectDefender`, `CombatRoll`, `CloseCombat`, `MonsterCombatRoll`, `CloseMonsterCombat`.
+    -   **Card Effect Actions:** `UseCard`, `UseProductiveCard`, `SabotagePlayer`, `GainWealth`, `StealResource`, `RollOnSpecialIsland`, `CloseSpecialIslandDialog`.
+    -   **Meta Actions:** `CancelAction`.
 
 ### 3.3. Firebase & React/Next.js Common Pitfalls
 - **Firestore Cannot Store `undefined`:** A recurring critical bug is caused by attempting to write a `GameState` object with `undefined` properties. Firestore will silently strip these properties, causing the `GameState` read by clients to have a different shape than expected, leading to crashes. **Rule: Always use `null` instead of `undefined`** for optional or empty state properties.
@@ -312,5 +317,3 @@ This section details the project's build and styling setup. Changes to these fil
     -   `backgroundImage`: Custom patterns for water and terrain textures.
     -   `fontFamily`: A custom font, `Lilita One`, for body and headline text.
     -   `plugins`: `tailwindcss-animate` is included for keyframe animations.
-
-    
