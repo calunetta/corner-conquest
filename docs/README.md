@@ -326,7 +326,7 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priorit
 2.  Each action is assigned a numeric `priority` based on the current game state.
     - **Positioning on a resource:** Very high priority (9). This is the bot's primary way to build its economy.
     - **Attacking:** High priority, especially if the bot has a power advantage or if it needs to clear a monster from a valuable island.
-    - **Using Strategic Cards:** The bot will intelligently use cards like `Wealthy` if it is low on a resource needed for a high-priority action (like deploying an army). It will also use `Reinforce`, `Efficient`, and `Master Builder` to save resources.
+    - **Using Strategic Cards:** The bot will intelligently use cards like `Wealthy` if it is low on a resource needed for a high-priority action (like deploying an army). It will also use `Reinforce`, `Efficient`, and `MasterBuilder` to save resources.
     - **Upgrading Attack Power:** Medium priority, which decreases as its power level increases to avoid over-investing.
     - **Deploying a new Army:** Medium priority, which decreases as its army count increases to maintain a balanced force.
     - **Exploring:** The bot now has a higher priority to explore new tiles, preventing it from getting stuck and encouraging expansion.

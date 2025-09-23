@@ -12,7 +12,6 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
     
     const currentPlayer = state.players[state.currentPlayerIndex];
     
-    // This is the critical check. An army that has acted cannot move unless the player has an "Extra Move" card active.
     if (army.hasActed && !currentPlayer.hasExtraMove) {
         return [];
     }
@@ -49,7 +48,7 @@ export function revealIsland(state: GameState, x: number, y: number, isScout: bo
     let cardDrawn: CardName | null = null;
 
     if (player.revealedTiles.includes(tileId)) {
-        return { newState, cardDrawn: null }; // Already revealed for this player
+        return { newState, cardDrawn: null };
     }
 
     player.revealedTiles.push(tileId);
@@ -127,20 +126,17 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         newState = revealResult.newState;
     } else if (targetTile.type === IslandType.Special) {
         armyInState.hasActed = true;
-        // Don't auto-end turn, let the dialog flow handle it
         return { state: newState, ui: { specialIslandRoll: { roll: 0, cardDrawn: null } } };
     }
     
-    // Handle "Extra Move" consumption logic
     if (player.hasExtraMove) {
-        player.hasExtraMove = false; // Consume the extra move
+        player.hasExtraMove = false; 
         newState.log.push(`${player.name} used their Extra Move on an army.`);
-        // Per README, if used on an un-acted army, it does NOT get hasActed = true
-        if (armyInState.hasActed) {
-            // If the army had already acted, it just gets the move. hasActed is already true.
+        if (!army.hasActed) {
+           // Army was fresh, remains fresh. Do not set hasActed.
         } else {
-             // The army was fresh, so it remains fresh after the extra move.
-             // We do NOT set hasActed to true here.
+           // Army had already acted, this move is its final action.
+           // hasActed is already true, so no change needed.
         }
     } else {
         armyInState.hasActed = true;
@@ -148,5 +144,3 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
 
     return { state: checkAndEndTurnIfNoActions(newState), ui: null };
 }
-
-    

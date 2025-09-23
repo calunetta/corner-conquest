@@ -10,7 +10,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     const player = players[currentPlayerIndex];
 
     if (!selectedArmy) {
-        return newState;
+        throw new Error("No army selected for positioning.");
     }
     
     const { x, y } = selectedArmy.position;
@@ -20,8 +20,11 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     if (!tile.positionedBy) tile.positionedBy = [];
     tile.positionedBy.push({playerId: player.id, resource});
 
-    const army = player.armies.find(a => a.id === selectedArmy.id);
-    if (army) army.hasActed = true;
+    const armyInState = player.armies.find(a => a.id === selectedArmy.id);
+    if (armyInState) {
+        armyInState.hasActed = true; // Commit the action
+    }
+    
     newState.log.push(`${player.name} positioned an army on ${resource}.`);
     
     newState = checkAndEndTurnIfNoActions(newState);

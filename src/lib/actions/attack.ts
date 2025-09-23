@@ -15,11 +15,8 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
 
     const currentTile = map[selectedArmy.position.y * MAP_COLS + selectedArmy.position.x];
     const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
-
-    // Immediately mark the army as having acted for initiating an attack
-    const armyInState = attacker.armies.find(a => a.id === selectedArmy.id);
-    if(armyInState) armyInState.hasActed = true;
-
+    
+    // DO NOT set hasActed here. The action is only committed when the dice are rolled.
 
     if (otherPlayersOccupants.length > 0) {
         const defenderPlayerId = otherPlayersOccupants[0].playerId;
@@ -45,7 +42,6 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
                 phase: 'rolling',
             };
         } else {
-             // This is now a UI concern, so we return the data needed for the local dialog
              return { 
                 state: newState, 
                 ui: { 
@@ -68,9 +64,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
         phase: 'rolling',
       };
     } else {
-        newState.log.push(`${attacker.name}'s army attacks, but finds no target!`);
-        // We already set hasActed, so just check for turn end
-        newState = checkAndEndTurnIfNoActions(newState);
+        newState.log.push(`${attacker.name}'s army prepares to attack, but finds no target.`);
     }
     return { state: newState, ui: null };
 }
@@ -113,6 +107,11 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean): GameSt
     const defender = players.find(p => p.id === combatState.defenderId);
     if(!defender) return state;
 
+    const attackingArmy = attacker.armies.find(a => a.id === combatState.attackingArmyId);
+    if (attackingArmy) {
+        attackingArmy.hasActed = true; // Commit the action
+    }
+
     let attackerBonusPower = 0;
     const canUseCard = !attacker.actionsThisTurn.includes(GameAction.UseCard);
 
@@ -137,8 +136,6 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean): GameSt
 
     combatState.winnerId = attackerScore > defenderScore ? combatState.attackerId : combatState.defenderId;
     combatState.phase = 'results';
-
-    // hasActed is set when the attack is initiated, not on roll.
     
     return newState;
 };
@@ -228,6 +225,9 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
     const attackingArmy = attacker.armies.find(a => a.position.x === monsterCombatState.attackerPosition.x && a.position.y === monsterCombatState.attackerPosition.y);
     if (!attackingArmy) return newState;
 
+    // Commit the action
+    attackingArmy.hasActed = true;
+
     const { monster, useDecideCard, decidedValue, useOvercomeCard, useWarChief } = payload;
 
     let attackerRolls: number[] = [];
@@ -297,7 +297,6 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
         }
     }
     
-    // hasActed is set when the attack is initiated, not on roll.
 
     newState.monsterCombatState = {
       attackerId: attacker.id,
