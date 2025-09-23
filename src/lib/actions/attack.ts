@@ -1,5 +1,4 @@
 
-
 import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult, ResourceType, IslandResource } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
@@ -409,3 +408,5 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
     newState.monsterCombatState = null;
     return {newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
 }
+
+    
