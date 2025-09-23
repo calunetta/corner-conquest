@@ -105,6 +105,32 @@ The game is played on a grid of islands. Each player starts at their **Base** in
 - **Iron:** Used to **Upgrade** the Attack Power of all your armies permanently.
 - **Gems:** Used to **Buy Special Cards** or purchase permanent **Passive Abilities**.
 
+### 5.4. Turn Structure & Actions
+A player's turn consists of a series of actions. The game automatically ends a player's turn if they have no more possible moves or actions.
+
+1.  **Start of Turn (Automatic Collection):**
+    - This mechanic triggers at the beginning of a player's turn, *after* the first turn of the game. It does not run at the very start of the match, as no armies could be positioned yet.
+    - If a player has armies "positioned" on resources from a previous turn, they are automatically collected.
+    - If the player has the **"Productive"** card, a dialog appears, allowing them to spend this card to double the yield of one resource type. Otherwise, collection is instant.
+
+2.  **Player Actions:** A player can perform several actions per turn, with some limitations:
+    - **Army Actions:** Each army can perform **one** major action per turn (either `Attack`/`Position` OR `Move`).
+        - **Position:** Move an army to an unoccupied resource spot on its current island. The army will collect that resource at the start of your next turn. This action ends the army's turn.
+        - **Attack:** Initiate combat with a monster or another player's army on the same island. This action ends the army's turn.
+        - **Move:** Move an army to a new island within its move radius. This can only be done if the army has not attacked or positioned this turn.
+    - **Strategic Actions (once per turn each):**
+        - **Deploy:** Spend Wheat to create a new army at your Base.
+        - **Upgrade:** Spend Iron to increase your global Attack Power.
+        - **Buy Card:** Spend Gems to draw a Special Card.
+        - **Use Card:** Play one Special Card from your hand.
+
+### 5.5. Combat
+- Combat is resolved through dice rolls. Each player rolls a number of dice equal to their **Attack Power + 1**.
+- **Player vs. Player:** The player with the higher total roll wins the battle. In case of a tie, the **defender** wins.
+- **Player vs. Monster:** The player with the higher total roll wins the battle. In case of a tie, the **monster** wins.
+- Defeated armies are not destroyed; they are sent back to their owner's Base tile to regroup, and their `hasActed` status is reset.
+- **Combat Dialog Animations:** During the `rolling` phase of combat, both combatants show their `attack` sprite. In the `results` phase, the winner's sprite remains in the `attack` pose, while the loser's sprite changes to the `death` animation. All army and monster sprites are animated GIFs defined in `src/lib/player-data.ts` and `src/lib/game-initializer.ts`, respectively. To ensure combatants face each other, the sprite for the combatant on the right side of the dialog (the defender/monster) is horizontally flipped.
+
 ## 6. Detailed Interaction Flows
 
 This section provides a meticulous, step-by-step breakdown of every interaction in the game. It serves as the definitive blueprint for expected behavior.
@@ -144,7 +170,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
             2.  **UI Flow:** No dialog.
             3.  **Resolution (Shared):** A `GameAction.Deploy` action is dispatched. The `GameState` is updated: Wheat is subtracted, a new army is added to the player's Base tile, and the `deploy` action is marked as used for the turn.
         -   **Upgrade:**
-            1.  **Trigger:** Player clicks the "Upgrade" button in the `ActionsPanel`. Enabled only if the player has enough Iron (or `Master Builder` card is active), their attack power is less than the max, and they haven't used this action this turn.
+            1.  **Trigger:** Player clicks the "Upgrade" button in the `ActionsPanel`. Enabled only if the player has enough Iron (or `MasterBuilder` card is active), their attack power is less than the max, and they haven't used this action this turn.
             2.  **UI Flow:** No dialog.
             3.  **Resolution (Shared):** A `GameAction.Upgrade` action is dispatched. `GameState` is updated: Iron is subtracted, the player's global `attackPower` is increased, and the `upgrade` action is marked as used for the turn.
         -   **Buy Card:**

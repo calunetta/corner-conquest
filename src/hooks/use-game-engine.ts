@@ -5,7 +5,6 @@ import { db, doc, onSnapshot, getDoc, updateDoc } from '@/lib/firebase';
 import type { GameState, ActionHandlerResult } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
-import { takeBotTurn } from '@/lib/bot-logic';
 
 export function useGameEngine(gameId: string, playerId: string | null) {
   const [gameState, setInternalGameState] = useState<GameState | null>(null);
