@@ -102,7 +102,7 @@ The game is played on a grid of islands. Each player starts at their **Base** in
 A player's turn consists of a series of actions. The game automatically ends a player's turn if they have no more possible moves or actions.
 
 1.  **Start of Turn (Automatic Collection):**
-    - This mechanic triggers at the beginning of a player's turn, *after* the first turn of the game.
+    - This mechanic triggers at the beginning of a player's turn, *after* the first turn of the game. It does not run at the very start of the match, as no armies could be positioned yet.
     - If a player has armies "positioned" on resources from a previous turn, they are automatically collected.
     - If the player has the **"Productive"** card, a dialog appears, allowing them to spend this card to double the yield of one resource type. Otherwise, collection is instant.
 
@@ -127,7 +127,6 @@ A player's turn consists of a series of actions. The game automatically ends a p
 ## 5. Detailed System Explanations
 
 ### 5.1. Special Cards
-When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog.
 - **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, if `Debug Mode` is enabled, the human player starts with one of every available Special Card.
 - **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
 - **Extra Move:** Grants the player an extra move action. One army that has already acted can move again.
@@ -227,6 +226,7 @@ The application is designed to be fully responsive, with key adjustments made fo
     -   On mobile, the `GameBoard` displays as a single, vertical column to prioritize the map view. The Actions Panel and Game Log appear below the map.
     -   On desktop (or screens wider than 1024px), the layout shifts to a two-column grid, with the Actions Panel and Game Log positioned to the right of the map for easier access.
     -   The `PlayerInfo` panel at the top is collapsed by default on mobile to conserve vertical space and can be expanded by the user.
+    -   In the lobby, the main header (containing the "Game Lobby" title and "Create New Game" button) will stack vertically on mobile screens to prevent overflow and improve usability.
 
 -   **Map & Interaction:**
     -   The `MapGrid` itself scales down for mobile. Tile sizes are reduced from 120px to 75px, and the gap between them shrinks from 32px to 16px.
