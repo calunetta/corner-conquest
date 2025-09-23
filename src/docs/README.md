@@ -104,61 +104,146 @@ The game is played on a grid of islands. Each player starts at their **Base** in
 - **Iron:** Used to **Upgrade** the Attack Power of all your armies permanently.
 - **Gems:** Used to **Buy Special Cards** or purchase permanent **Passive Abilities**.
 
-### 5.4. Turn Structure & Actions
+## 6. Detailed Interaction Flows
+
+This section provides a meticulous, step-by-step breakdown of every interaction in the game. It serves as the definitive blueprint for expected behavior.
+
+### 6.1. Turn Structure & Actions
 A player's turn consists of a series of actions. The game automatically ends a player's turn if they have no more possible moves or actions.
 
 1.  **Start of Turn (Automatic Collection):**
-    - This mechanic triggers at the beginning of a player's turn, *after* the first turn of the game. It does not run at the very start of the match, as no armies could be positioned yet.
-    - If a player has armies "positioned" on resources from a previous turn, they are automatically collected.
-    - If the player has the **"Productive"** card, a dialog appears, allowing them to spend this card to double the yield of one resource type. Otherwise, collection is instant.
+    -   This mechanic triggers at the beginning of a player's turn, *after* the first turn of the game. It does not run at the very start of the match.
+    -   If a player has armies "positioned" on resources from a previous turn, they are automatically collected.
+    -   If the player has the **"Productive"** card, a local dialog appears, allowing them to spend this card to double the yield of one resource type. Otherwise, collection is instant and silent.
 
 2.  **Player Actions:** A player can perform several actions per turn, with some limitations:
-    - **Army Actions:** Each army can perform **one** major action per turn (either `Attack`/`Position` OR `Move`).
-        - **Position:** Move an army to an unoccupied resource spot on its current island. The army will collect that resource at the start of your next turn. This action ends the army's turn.
-        - **Attack:** Initiate combat with a monster or another player's army on the same island. This action ends the army's turn.
-        - **Move:** Move an army to a new island within its move radius. This can only be done if the army has not attacked or positioned this turn.
-    - **Strategic Actions (once per turn each):**
-        - **Deploy:** Spend Wheat to create a new army at your Base.
-        - **Upgrade:** Spend Iron to increase your global Attack Power.
-        - **Buy Card:** Spend Gems to draw a Special Card.
-        - **Use Card:** Play one Special Card from your hand.
+    -   **Army Actions:** Each army can perform **one** major action per turn (either `Attack`/`Position` OR `Move`).
+        -   **Position:**
+            1.  **Trigger:** Player clicks the "Position" button in the `ActionsPanel` while a valid, un-acted army is selected on a resource island with no monsters.
+            2.  **UI Flow:** A local `PositionDialog` opens, showing the available resource spots on the current island.
+            3.  **Input:** Player clicks on a resource button in the dialog.
+            4.  **Resolution (Shared):** A `GameAction.SelectResourcePosition` action is dispatched. The `GameState` is updated to mark the army as positioned on that resource. The army's `hasActed` flag is set to `true`. This action ends the army's turn.
+        -   **Attack:**
+            1.  **Trigger:** Player clicks the "Attack" button in the `ActionsPanel` while a valid, un-acted army is selected on an island with a valid target (enemy army or monster).
+            2.  **UI Flow (vs. Player):**
+                -   If there is one target army, the shared `combatState` is set in `GameState`, and the `CombatDialog` opens for both attacker and defender.
+                -   If there are multiple target armies, a local `AttackSelectionDialog` opens for the attacker. Upon selection, the shared `combatState` is set, and the `CombatDialog` opens.
+            3.  **UI Flow (vs. Monster):**
+                -   If there is one monster, the shared `monsterCombatState` is set in `GameState`, and the `MonsterCombatDialog` opens for the attacker.
+                -   If there are multiple monsters, a local `MonsterSelectionDialog` opens for the attacker. Upon selection, the shared `monsterCombatState` is set, and the `MonsterCombatDialog` opens.
+            4.  **Resolution (Shared):** Combat is resolved via dice rolls within the dialogs, updating the `GameState` with the result. The attacking army's `hasActed` flag is set to `true`. This action ends the army's turn.
+        -   **Move:**
+            1.  **Trigger:** Player has a valid army selected and clicks on a highlighted tile on the map that is a valid move destination.
+            2.  **UI Flow:** No dialogs. The army's sprite appears to move to the new tile.
+            3.  **Resolution (Shared):** A `GameAction.Move` action is dispatched. The `GameState` is updated with the army's new `position`. The army's `hasActed` flag is set to `true`. If the destination tile was previously unrevealed by this player, `revealIsland` logic is triggered.
 
-### 5.5. Combat
+    -   **Strategic Actions (once per turn each):**
+        -   **Deploy:**
+            1.  **Trigger:** Player clicks the "Deploy" button in the `ActionsPanel`. This is enabled only if the player has enough Wheat (or the `Reinforce` card is active), has fewer than 5 armies, and has not already used this action this turn.
+            2.  **UI Flow:** No dialog.
+            3.  **Resolution (Shared):** A `GameAction.Deploy` action is dispatched. The `GameState` is updated: Wheat is subtracted, a new army is added to the player's Base tile, and the `deploy` action is marked as used for the turn.
+        -   **Upgrade:**
+            1.  **Trigger:** Player clicks the "Upgrade" button in the `ActionsPanel`. Enabled only if the player has enough Iron (or `Master Builder` card is active), their attack power is less than the max, and they haven't used this action this turn.
+            2.  **UI Flow:** No dialog.
+            3.  **Resolution (Shared):** A `GameAction.Upgrade` action is dispatched. `GameState` is updated: Iron is subtracted, the player's global `attackPower` is increased, and the `upgrade` action is marked as used for the turn.
+        -   **Buy Card:**
+            1.  **Trigger:** Player clicks the "Buy Card" button in the `ActionsPanel`. Enabled if the player has >= 10 Gems, their hand is not full, and they haven't used this action this turn.
+            2.  **UI Flow:** No dialog. A message appears in the game log.
+            3.  **Resolution (Shared):** A `GameAction.BuyCard` action is dispatched. `GameState` is updated: Gems are subtracted, a random card is moved from the `specialCardsDeck` to the player's hand, and the `buy-card` action is marked as used.
+        -   **Use Card:**
+            1.  **Trigger:** Player clicks the "My Cards" button to open the local `CardsDialog`, then clicks the "Use" button on a specific card. The "Use" button is only enabled if the player has not already used a card this turn.
+            2.  **UI Flow & Resolution:** Varies by card. See "Special Card Interactions" below.
+
+### 6.2. Combat Flow
 - Combat is resolved through dice rolls. Each player rolls a number of dice equal to their **Attack Power + 1**.
 - **Player vs. Player:** The player with the higher total roll wins the battle. In case of a tie, the **defender** wins.
 - **Player vs. Monster:** The player with the higher total roll wins the battle. In case of a tie, the **monster** wins.
 - Defeated armies are not destroyed; they are sent back to their owner's Base tile to regroup, and their `hasActed` status is reset.
 - **Combat Dialog Animations:** During the `rolling` phase of combat, both combatants show their `attack` sprite. In the `results` phase, the winner's sprite remains in the `attack` pose, while the loser's sprite changes to the `death` animation. All army and monster sprites are animated GIFs defined in `src/lib/player-data.ts` and `src/lib/game-initializer.ts`, respectively. To ensure combatants face each other, the sprite for the combatant on the right side of the dialog (the defender/monster) is horizontally flipped.
 
-## 6. Detailed System Explanations
+### 6.3. Special Card Interactions
+-   **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, if `Debug Mode` is enabled, the human player starts with one of every available Special Card.
+-   **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
+-   **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog. If a player activates a card like "Extra Move" or "Teleport" but cannot or chooses not to use it, they can use the "Cancel" button. This is a local action that resets the UI and **refunds the 'Use Card' action**, allowing them to use a different card during the same turn.
 
-### 6.1. Special Cards
-- **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, if `Debug Mode` is enabled, the human player starts with one of every available Special Card.
-- **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
-- **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog. If a player activates a card like "Extra Move" or "Teleport" but cannot or chooses not to use it, they can use the "Cancel" button. This is a local action that resets the UI and **refunds the 'Use Card' action**, allowing them to use a different card during the same turn.
-- **Extra Move:** This card provides a flexible move action. The effect is consumed for the turn once used.
-    - If used on an army that has **not yet acted** this turn, it allows that army to move. After the move, the army is still considered "fresh" and can perform a subsequent action (like Attack or Position).
-    - If used on an army that **has already acted**, it allows that army to perform one final move action. After this move, the army's turn is over. The "Extra Move" effect is a single-use-per-turn benefit.
-- **Teleport:** Initiates a two-step local action. Using this card will automatically deselect any currently selected army, forcing the player to choose the army they wish to teleport. First, select an army. Second, select *any* tile on the map to move it to. This action does not award discovery VP.
-- **Scout:** Initiates a multi-step local action where the player can click on 3 different hidden tiles to reveal them. This action does not involve any army movement and does not select an army. Because no army moves, no Victory Points are awarded for island discovery during a scout action.
-- **Sabotage:** Opens a local dialog to choose an opponent. That opponent will miss their next turn.
-- **Reinforce:** The player's next `Deploy` action this turn is free. The card is only consumed upon a successful deployment.
-- **Efficient:** The player's next `Deploy` action this turn costs 50% less Wheat. The card is only consumed upon a successful deployment.
-- **Master Builder:** The player's next `Upgrade` action this turn costs 50% less Iron. The card is only consumed upon a successful upgrade.
-- **Steal Resource:** Opens a local dialog to choose a player, then a resource type. Steals 2 of that resource from the target.
-- **Wealthy:** Opens a local dialog to choose a resource type. The player gains 5 of that resource.
-- **Overcome:** Automatically win the next combat encounter (vs. player or monster). Appears as a checkbox in the combat dialog.
-- **War Chief:** Gain +2 to your attack power for the next combat encounter. Appears as a checkbox in the combat dialog.
-- **Decide Dice Roll:** In the next *monster* combat, you can choose the value of one of your dice. Appears as a checkbox and slider in the monster combat dialog.
-- **Productive:** A passive card. At the start of your turn, if you are positioned to collect resources, a local dialog opens allowing you to spend this card to double the yield of one resource type.
+-   **Extra Move:**
+    1.  **Trigger:** Player uses the card from the `CardsDialog`.
+    2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The card is consumed and the player's `hasExtraMove` flag is set to `true` in `GameState`.
+    3.  **Effect:** This flag allows any one army (even one that has already acted) to perform one `Move` action. The flag is consumed (`false`) after the move is completed.
 
-### 6.2. UI/UX and Interactions
+-   **Teleport:**
+    1.  **Trigger:** Player uses the card from the `CardsDialog`.
+    2.  **UI Flow (Local):** A `pendingAction` of `{ type: 'teleport' }` is set in local state. The `GameBoard` UI indicates that the player must first select an army, and then a destination. Any selected army is deselected.
+    3.  **Input:** Player clicks one of their armies, then clicks *any* tile on the map.
+    4.  **Resolution (Shared):** A `GameAction.Move` action with an `isTeleport: true` flag is dispatched. The card is consumed, the army is moved, and its `hasActed` flag is set. This action does not award discovery VP.
 
-#### 6.2.1. Dialogs and Player Scope
+-   **Scout:**
+    1.  **Trigger:** Player uses the card from the `CardsDialog`.
+    2.  **UI Flow (Local):** A `pendingAction` of `{ type: 'scout', count: 3 }` is set in local state. The UI prompts the player to click on 3 hidden tiles.
+    3.  **Input:** Player clicks on a hidden tile. A local `GameAction.Scout` is dispatched to reveal it. This is repeated three times.
+    4.  **Resolution (Shared):** After the third tile is revealed, a `GameAction.UseCard` is dispatched to consume the card from the player's hand. This action does not award discovery VP.
+
+-   **Sabotage:**
+    1.  **Trigger:** Player uses the card from the `CardsDialog`.
+    2.  **UI Flow (Local):** A local `SabotageDialog` opens, listing all opponent players.
+    3.  **Input:** Player clicks on an opponent's name.
+    4.  **Resolution (Shared):** A `GameAction.SabotagePlayer` action is dispatched. The card is consumed, and the target player's `isSabotaged` flag is set to `true` in `GameState`.
+
+-   **Reinforce:**
+    1.  **Trigger:** Player uses the card from the `CardsDialog`.
+    2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The player's `reinforceActive` flag is set to `true`.
+    3.  **Effect:** The next "Deploy" action this turn has its cost reduced to 0. The card is **consumed upon successful deployment**.
+
+-   **Efficient:**
+    1.  **Trigger:** Player uses the card from the `CardsDialog`.
+    2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The player's `efficientActive` flag is set to `true`.
+    3.  **Effect:** The next "Deploy" action this turn costs 50% less Wheat. The card is **consumed upon successful deployment**.
+
+-   **Master Builder:**
+    1.  **Trigger:** Player uses the card from the `CardsDialog`.
+    2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The player's `masterBuilderActive` flag is set to `true`.
+    3.  **Effect:** The next "Upgrade" action this turn costs 50% less Iron. The card is **consumed upon successful upgrade**.
+
+-   **Steal Resource:**
+    1.  **Trigger:** Player uses the card from the `CardsDialog`.
+    2.  **UI Flow (Local):** A local `StealResourceDialog` opens. First, it lists opponents to choose from. After selecting a player, it shows which resources can be stolen.
+    3.  **Input:** Player selects a target player, then a resource type.
+    4.  **Resolution (Shared):** A `GameAction.StealResource` action is dispatched. The card is consumed, and resources are transferred between players in `GameState`.
+
+-   **Wealthy:**
+    1.  **Trigger:** Player uses the card from the `CardsDialog`.
+    2.  **UI Flow (Local):** A local `WealthyDialog` opens, showing the three resource types.
+    3.  **Input:** Player clicks a resource icon.
+    4.  **Resolution (Shared):** A `GameAction.GainWealth` action is dispatched. The card is consumed, and the player gains 5 of the selected resource.
+
+-   **Overcome:**
+    1.  **Trigger:** This card is used contextually during combat. It appears as a checkbox in the `CombatDialog` or `MonsterCombatDialog`.
+    2.  **Input:** Player checks the "Use Overcome" box before initiating the roll.
+    3.  **Resolution (Shared):** The combat is automatically won by the player. The card is consumed during the combat resolution action.
+
+-   **War Chief:**
+    1.  **Trigger:** Appears as a checkbox in the combat dialogs.
+    2.  **Input:** Player checks the "Use War Chief" box before rolling.
+    3.  **Resolution (Shared):** The player gains +2 attack power for that single combat. The card is consumed during combat resolution.
+
+-   **Decide Dice Roll:**
+    1.  **Trigger:** Appears as a checkbox and slider in the *monster* combat dialog.
+    2.  **Input:** Player checks the box and uses the slider to pick a dice value.
+    3.  **Resolution (Shared):** One of the player's dice rolls is forced to the chosen value. The card is consumed during combat resolution.
+
+-   **Productive:**
+    1.  **Trigger:** Passive card. At the start of a player's turn, if they are positioned to collect resources, a local `ProductiveCardDialog` opens.
+    2.  **UI Flow:** The dialog shows which resources will be collected and allows the player to select one to double.
+    3.  **Input:** Player can select one resource type and click "Collect".
+    4.  **Resolution (Shared):** A `GameAction.UseProductiveCard` is dispatched. If a resource was selected, the card is consumed, and the yield for that resource is doubled. Resources are added to the player's total.
+
+### 6.4. UI/UX and Interactions
+
+#### 6.4.1. Dialogs and Player Scope
 - **Local Dialogs:** Most dialogs for actions (`Sabotage`, `Wealthy`, `Position`, `My Cards`, `Abilities Shop`) are rendered **only for the current player**. Their open/closed state is managed locally in the `GameBoard` component and is not part of the shared `GameState`.
 - **Global Dialogs:** The `CombatDialog` and `MonsterCombatDialog` are exceptions. Their state (`combatState`, `monsterCombatState`) is stored in `GameState` because all players need to see the outcome or have the potential to be involved.
 
-#### 6.2.2. Army and Tile Selection
+#### 6.4.2. Army and Tile Selection
 - **Auto-Selection:** If a player has only one army at the start of their turn, it is automatically selected for them locally by the `GameBoard` component.
 - **Manual Selection:** Clicking a tile containing one of your armies selects it. This is a local UI action.
 - **Multi-Army Selection:** Clicking a tile with multiple friendly armies opens a local `ArmySelectionDialog` to choose a specific unit.
@@ -166,7 +251,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
     1.  Clicking the "Deselect Army" button.
     2.  Clicking on any tile that is not a valid move for the currently selected army.
 
-### 6.3. Fog of War & Debug Mode
+### 6.5. Fog of War & Debug Mode
 
 -   **Fog of War (Enabled):** This is the default, tactical experience.
     -   Each player has their own, independent visibility of the map stored in `player.revealedTiles`.
@@ -178,7 +263,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
     -   **Complete Map Visibility:** It overrides any Fog of War setting, making the entire map and all armies visible from the start of the match.
     -   **All Special Cards:** The player begins the game with one of every available Special Card, allowing for immediate testing of card mechanics.
 
-### 6.4. Bot Logic
+### 6.6. Bot Logic
 The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priority-based system to make decisions.
 1.  At the start of its turn, the bot evaluates all possible strategic and army actions.
 2.  Each action is assigned a numeric `priority` based on the current game state.
@@ -189,5 +274,3 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priorit
     - **Deploying a new Army:** Medium priority, which decreases as its army count increases to maintain a balanced force.
     - **Exploring:** The bot now has a higher priority to explore new tiles, preventing it from getting stuck and encouraging expansion.
 3.  The bot executes the single action with the highest priority score. If no action is possible or an error occurs, it will safely end its turn as a fallback.
-
-    
