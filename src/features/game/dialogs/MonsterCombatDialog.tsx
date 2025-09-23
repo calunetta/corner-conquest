@@ -205,7 +205,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
           </div>
           {monsterForDisplay && <div className="flex flex-col items-center gap-2">
               <h3 className="font-bold capitalize text-destructive">{getMonsterName(monsterForDisplay)}</h3>
-               {monsterSprite && <Image src={monsterSprite} alt={`${monsterForDisplay.name} sprite`} width={64} height={64} unoptimized />}
+               {monsterSprite && <Image src={monsterSprite} alt={`${monsterForDisplay.name} sprite`} width={64} height={64} className="-scale-x-100" unoptimized />}
               {renderDice(monsterRolls)}
               <p className="text-xl font-bold">Total: {monsterRolls.reduce((a, b) => a + b, 0)}</p>
           </div>}
