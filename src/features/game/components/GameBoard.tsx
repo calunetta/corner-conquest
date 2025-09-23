@@ -22,6 +22,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescript
 import { ConfirmExitDialog } from '@/features/game/dialogs/ConfirmExitDialog';
 import { getPossibleMoves } from '@/lib/actions/movement';
 import { cloneDeep } from 'lodash';
+import { HostLeaveDialog } from '@/features/game/dialogs/HostLeaveDialog';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
 
@@ -544,3 +545,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
