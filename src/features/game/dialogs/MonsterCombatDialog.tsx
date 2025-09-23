@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { GameState, Monster } from '@/lib/types';
 import { CardName } from '@/lib/types';
@@ -87,14 +88,14 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
             <div className="flex flex-col justify-around gap-4 py-4 sm:flex-row">
                  <div className="flex flex-col items-center gap-2">
                     <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
-                    <Image src={attackerSprite} alt={`${attacker.name} attacking`} width={64} height={64} />
+                    <Image src={attackerSprite} alt={`${attacker.name} attacking`} width={64} height={64} unoptimized />
                     <p className="text-sm font-bold">Attack Power: {attacker.attackPower + 1}</p>
                  </div>
 
                 {selectedMonster && (
                     <div className="flex flex-col items-center gap-2">
                         <h3 className="font-bold capitalize text-destructive">{getMonsterName(selectedMonster)}</h3>
-                        <Image src={selectedMonster.sprite.attack} alt={selectedMonster.name} width={64} height={64} className='-scale-x-100'/>
+                        <Image src={selectedMonster.sprite.attack} alt={selectedMonster.name} width={64} height={64} className='-scale-x-100' unoptimized />
                         <p className="text-sm font-bold">Power: {selectedMonster.level}</p>
                     </div>
                 )}
@@ -163,7 +164,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
             onClick={() => setSelectedMonster(monster)}
           >
             <div className='relative h-24 w-24'>
-                <Image src={monster.sprite.idle} alt={monster.name} width={96} height={96} />
+                <Image src={monster.sprite.idle} alt={monster.name} width={96} height={96} unoptimized />
             </div>
             <div className="text-center">
                 <p className="font-bold capitalize">{getMonsterName(monster)}</p>
@@ -198,13 +199,13 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         <div className="flex flex-col justify-around gap-4 sm:flex-row">
           <div className="flex flex-col items-center gap-2">
             <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
-            <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} />
+            <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} unoptimized />
             {renderDice(attackerRolls)}
             <p className="text-xl font-bold">Total: {attackerRolls.reduce((a, b) => a + b, 0)}</p>
           </div>
           {monsterForDisplay && <div className="flex flex-col items-center gap-2">
               <h3 className="font-bold capitalize text-destructive">{getMonsterName(monsterForDisplay)}</h3>
-               {monsterSprite && <Image src={monsterSprite} alt={`${monsterForDisplay.name} sprite`} width={64} height={64} />}
+               {monsterSprite && <Image src={monsterSprite} alt={`${monsterForDisplay.name} sprite`} width={64} height={64} unoptimized />}
               {renderDice(monsterRolls)}
               <p className="text-xl font-bold">Total: {monsterRolls.reduce((a, b) => a + b, 0)}</p>
           </div>}
@@ -252,5 +253,3 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
     </AlertDialog>
   );
 }
-
-    

@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect } from 'react';
 import {
@@ -138,7 +139,7 @@ export function CreateGameDialog({
                 <SelectTrigger className="col-span-3 h-auto">
                    <SelectValue>
                       <span className="flex items-center gap-2">
-                        <Image src={PLAYER_DATA[playerColor].sprite.idle} alt={PLAYER_DATA[playerColor].name} width={54} height={54} />
+                        <Image src={PLAYER_DATA[playerColor].sprite.idle} alt={PLAYER_DATA[playerColor].name} width={54} height={54} unoptimized />
                         <span>{PLAYER_DATA[playerColor].name}</span>
                       </span>
                     </SelectValue>
@@ -147,7 +148,7 @@ export function CreateGameDialog({
                   {PLAYER_COLORS.map((color) => (
                     <SelectItem key={color} value={color}>
                       <span className="flex items-center gap-2">
-                        <Image src={PLAYER_DATA[color].sprite.idle} alt={PLAYER_DATA[color].name} width={54} height={54} />
+                        <Image src={PLAYER_DATA[color].sprite.idle} alt={PLAYER_DATA[color].name} width={54} height={54} unoptimized />
                         <span>{PLAYER_DATA[color].name}</span>
                       </span>
                     </SelectItem>

@@ -81,13 +81,13 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
           <div className="flex flex-col justify-around gap-4 sm:flex-row">
             <div className="flex flex-col items-center gap-2">
                 <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
-                <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} />
+                <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} unoptimized />
                 {renderDice(attackerRolls)}
                 <p className="text-xl font-bold">Total: {attackerRolls.reduce((a, b) => a + b, 0)}</p>
             </div>
             <div className="flex flex-col items-center gap-2">
                 <h3 className="font-bold" style={{ color: defender.color }}>{defender.name}</h3>
-                <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} className="-scale-x-100" />
+                <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} className="-scale-x-100" unoptimized />
                 {renderDice(defenderRolls)}
                 <p className="text-xl font-bold">Total: {defenderRolls.reduce((a, b) => a + b, 0)}</p>
             </div>
@@ -128,24 +128,24 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
                 <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
                 {isCombatOver ? (
                   <>
-                    <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} />
+                    <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} unoptimized />
                     {renderDice(attackerRolls)}
                     <p className="text-xl font-bold">Total: {attackerRolls.reduce((a, b) => a + b, 0)}</p>
                   </>
                 ) : (
-                   <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} />
+                   <Image src={attackerSprite} alt={`${attacker.name} sprite`} width={64} height={64} unoptimized />
                 )}
             </div>
             <div className="flex flex-col items-center gap-2">
                 <h3 className="font-bold" style={{ color: defender.color }}>{defender.name}</h3>
                 {isCombatOver ? (
                   <>
-                    <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} className="-scale-x-100" />
+                    <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} className="-scale-x-100" unoptimized />
                     {renderDice(defenderRolls)}
                     <p className="text-xl font-bold">Total: {defenderRolls.reduce((a, b) => a + b, 0)}</p>
                   </>
                 ) : (
-                    <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} className="-scale-x-100" />
+                    <Image src={defenderSprite} alt={`${defender.name} sprite`} width={64} height={64} className="-scale-x-100" unoptimized />
                 )}
             </div>
         </div>

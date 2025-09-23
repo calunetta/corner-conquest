@@ -91,6 +91,7 @@ const AnimatedMonster = ({ monster }: { monster: Monster }) => {
                         height={64}
                         className="drop-shadow-lg transition-transform duration-1000 ease-in-out"
                         style={{ transform: isAttacking ? (isFlipped ? 'scaleX(-1)' : '') : transform }}
+                        unoptimized
                     />
                 </div>
             </TooltipTrigger>
@@ -261,6 +262,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                     alt="Death animation"
                     width={64}
                     height={64}
+                    unoptimized
                 />
             </div>
         )}
@@ -323,6 +325,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                                 pos.origin.includes('right') && 'right-0',
                                 army.hasActed ? 'opacity-50' : ''
                             )}
+                            unoptimized
                         />
                     </div>
                 )
