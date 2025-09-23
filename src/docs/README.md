@@ -24,108 +24,71 @@ Understanding the project's structure is key to making changes efficiently and c
 - `src/components/`: Reusable, generic UI components (mostly from ShadCN).
 - `src/features/`: Contains domain-specific components and logic.
   - `game/`: All components, dialogs, and panels related to the active game board.
+    - `types.ts`: **(Local State)** Type definitions for client-side UI state (dialogs, pending actions).
   - `lobby/`: Components for creating and joining games.
 - `src/hooks/`: Custom React hooks for managing client-side state and browser events. The most important are `useGameEngine` (Firestore sync) and `usePlayer` (session management).
 - `src/lib/`: Core application logic, type definitions, and Firebase configuration.
-  - `actions/`: **The "brain" of the game.** Contains pure functions that take the current `GameState` and an action, and return the new `GameState`. *All new game mechanics must be implemented here.*
+  - `actions/`: **The "brain" of the game.** Contains pure functions that take the current `GameState` and an action, and return the new `GameState`.
   - `game-initializer.ts`: Logic for creating the initial game state, including map generation.
   - `game-logic.ts`: Higher-level logic, such as adding a player to a game.
   - `bot-logic.ts`: The AI logic for bot players.
-  - `types.ts`: Central repository for all TypeScript types used in the application. This is a critical file for maintaining type safety.
+  - `types.ts`: **(Shared State)** Central repository for the `GameState` object and its constituent types, which are synchronized with Firestore.
 
-### 2.1. The Importance of Enums
-The project uses TypeScript `enum`s extensively (e.g., `GameAction`, `IslandType`, `CardName`), all defined in `src/lib/types.ts`.
-- **Why?** Enums prevent bugs caused by typos and ensure that actions and types are used consistently across the entire codebase. Using `GameAction.Deploy` is safe; typing `"deploi"` is not.
-- **Critical Note:** A common source of hard-to-debug errors has been incorrect enum imports. **Always double-check that you are importing the correct enum** from `types.ts` when implementing new logic.
+## 3. State Management: A Clear Separation
 
-### 2.2. Root Cause Analysis & Debugging Philosophy
+The application's architecture is built on a strict separation between **Shared State** (the game's source of truth) and **Local State** (a single player's UI status). Understanding this distinction is critical to preventing bugs and maintaining performance.
+
+### 3.1. Shared State: The `GameState` Object
+
+-   **Definition File:** `src/lib/types.ts`
+-   **What It Is:** The `GameState` object is the single, authoritative state of the match. It contains only the data that **must** be synchronized across all players.
+-   **Synchronization:** It is stored as a single document in Firestore. The `useGameEngine` hook subscribes to this document, and any change to it is automatically pushed to all connected clients, causing a UI re-render.
+-   **Key `GameState` Variables:**
+    -   `players: Player[]`: The array of all player objects, including their resources, victory points, army positions, and status effects.
+    -   `map: Island[]`: The array representing the game board, including island types, resources, and occupants.
+    -   `currentPlayerIndex: number`: The index of the player whose turn it is.
+    -   `turn: number`: The current turn number.
+    -   `log: string[]`: The public history of game events.
+    -   `combatState`, `monsterCombatState`: Shared state for combat encounters, so all players can see the results.
+-   **When to Modify:** Only when an action occurs that irrevocably changes the game for **all** players (e.g., an army moves, a resource is spent, a turn ends).
+
+### 3.2. Local State: The `GameBoard.tsx` Component
+
+-   **Definition File:** `src/features/game/types.ts`
+-   **What It Is:** Local state refers to any variable that represents the temporary UI status for a single player. It is irrelevant to other players and is never sent to the server.
+-   **Synchronization:** It is managed entirely within the `GameBoard.tsx` component using React hooks like `useState` and `useMemo`. It is never written to Firestore.
+-   **Key Local State Variables (`GameBoard.tsx`):**
+    -   `selectedArmyId: number | null`: The ID of the army the local player has clicked on.
+    -   `possibleMoves: {x, y}[]`: The array of valid move locations for the selected army, used for highlighting tiles.
+    -   `pendingAction: PendingAction | null`: The state for a multi-step local action (e.g., after clicking the "Teleport" card, the `pendingAction` is set to `{ type: 'teleport' }`, waiting for the player to select an army and then a destination).
+    -   **All Dialog States:** `armySelectionDialog`, `attackSelectionDialog`, `positionDialog`, `sabotageDialog`, `wealthyDialog`, `stealResourceDialog`, `cardsDialogPlayerId`, `abilitiesShopOpen`, `productiveCardDialog`, `specialIslandRollDialog`. The open/closed status of these dialogs is purely a local concern.
+
+### 3.3. The Action Flow: From Click to Update
+
+1.  **Local Intent:** A player clicks on an army. `handleTileClick` in `GameBoard.tsx` updates the local `selectedArmyId` state. The UI re-renders instantly to show the selection. **No Firebase write occurs.**
+2.  **Local Validation:** The player clicks a valid destination tile. `handleTileClick` verifies this is a possible move.
+3.  **Shared Action Dispatch:** Now that the action is confirmed, `handleTileClick` calls `onAction(GameAction.Move, ...)`. This is the crossover from local to shared.
+4.  **Shared State Update:** The `onAction` handler calls the `setGameState` function, which executes the `handleMoveAction` reducer from `lib/actions`. This pure function calculates the new army position and returns a brand new `GameState` object.
+5.  **Synchronization:** `setGameState` writes the new `GameState` object to Firestore. Firestore then pushes this update to all connected players, who see the army move on their screens.
+
+This architecture ensures the UI is fast and responsive for local interactions, while maintaining a single, consistent source of truth for the game itself.
+
+## 4. Root Cause Analysis & Debugging Philosophy
 A guiding principle for this project is to **fix the root cause of a bug, not just its symptoms**. A recurring bug often indicates a flaw in the underlying architecture or state management logic.
 -   **Symptom:** An observable, incorrect behavior (e.g., "The 'Deselect Army' button doesn't work.").
 -   **Root Cause:** The fundamental reason the symptom occurs (e.g., "A `useEffect` hook for auto-selection is incorrectly re-selecting an army immediately after it was deselected, creating a state race condition.").
 -   **Our Approach:** When a bug is identified, especially a recurring one, the first step is to analyze the entire data and action flow related to the feature. We must resist the urge to apply a "quick fix" that only patches the symptom. Instead, we must identify the core conflict in the logic and refactor it. This prevents the bug from reappearing in a different form later and leads to a more robust and maintainable codebase.
 
-## 3. Game State Management & Firebase Logic
+## 5. Core Game Mechanics & Match Flow
 
-The application uses a "state machine" pattern where the game state is managed centrally in Firestore and modified by pure functions.
-
-1.  **Central State:** The entire `GameState` object is stored as a single document in a Firestore collection named `games`. This object contains only data that **must** be synchronized across all players.
-
-2.  **Client-Side Subscription (Reading):** The `useGameEngine` hook (`src/hooks/use-game-engine.ts`) is the primary connection to the game state. It subscribes to real-time updates for the current game document in Firestore using `onSnapshot`. When the document changes on the backend, it automatically updates the local React state, causing the UI to re-render for **all connected players**.
-
-3.  **User Actions & State Updates (Writing):**
-    - A user interaction (e.g., clicking a tile) in a component like `GameBoard.tsx` triggers an action.
-    - **Crucially, there is a strict separation between local and shared actions.**
-        - **Local Actions** (like selecting an army or opening a dialog) are handled entirely on the client-side within `GameBoard.tsx` using React's `useState` hook. They **do not** call `setGameState` and **do not** write to Firebase.
-        - **Shared Actions** (like moving an army or ending a turn) are those that affect the game for all players. These actions call the `onAction` function, which wraps `setGameState`. This in turn calls a reducer function from `lib/actions`. The reducer takes the current game state and a payload, performs calculations, and returns a new `GameState` object.
-    - The new `GameState` object is then written back to Firestore, overwriting the old one in a single transaction.
-
-This architecture ensures that the game logic is predictable and testable, and the UI remains highly responsive by handling local interactions instantly without waiting for a server round-trip.
-
-### 3.1. Local vs. Shared State Actions
-It is critical to distinguish between actions that only affect the local user's interface and actions that must be synchronized across all players via Firebase. Storing local UI state in the shared `GameState` is inefficient, costly, and a primary source of bugs. The following is a definitive list of all game actions and their correct category.
-
-#### 3.1.1. Local UI Actions (Client-Side Only)
-These actions are managed by `useState` within `GameBoard.tsx` and **do not** result in a Firebase write. They are prefixed with `local:` in the `GameAction` enum.
-
--   **`local_DeselectArmy`:** Clears the currently selected army and its possible moves from the local UI.
--   **`local_ShowCards` / `local_CloseCards`:** Toggles the visibility of the "My Cards" dialog.
--   **`local_OpenAbilitiesShop` / `local_CloseAbilitiesShop`:** Toggles the visibility of the Abilities Shop dialog.
--   **`local_UseCard` (Initiation Phase):** When a player clicks "Use" on a card like `Teleport`, `Scout`, or `Sabotage`, it initiates a *local* pending action state (e.g., `pendingAction: 'teleport'`, `sabotageDialogOpen: true`). The game then waits for further local input (clicking an army, selecting a player). The shared state is only modified when the action is *completed* and the card's effect is confirmed.
--   **`local_CancelAction`:** This is a local action that resets any pending UI state (like a `teleport` or `scout` action) and allows the player to continue their turn. If a card's use was provisionally marked in the shared state (a rare exception), this can also trigger a shared update to refund the `UseCard` action for the turn.
--   **`local_Position` (Initiation):** Clicking the "Position" button is a local action that opens the `PositionDialog` on the client. A shared action (`SelectResourcePosition`) is only dispatched when the player confirms their choice in the dialog.
-
-#### 3.1.2. Shared Game State Actions (Synchronized via Firebase)
-These actions modify the core `GameState` and are synchronized for all players.
-
--   **Strategic Actions:** `Deploy`, `Upgrade`, `EndTurn`, `BuyCard`, `BuyAbility`.
--   **Movement & Combat:**
-    -   `Move`: Dispatched *after* a local selection and tile click confirm a valid move. Changes the army's position in `GameState`. If Fog of War is disabled, all players see the move. If enabled, only players who have already revealed the destination tile will see the army arrive.
-    -   `Attack`, `SelectDefender`, `CombatRoll`, `CloseCombat`, `MonsterCombatRoll`, `CloseMonsterCombat`: These initiate and progress combat. The `CombatState` is shared, so all players can see the "results" phase of a battle, even if they aren't involved.
--   **Resource Actions:** `SelectResourcePosition`.
--   **Card Effect Actions:** These are dispatched when a card's effect is confirmed and alters the shared state.
-    -   `UseCard` (for immediate effects like `Extra Move`), `UseProductiveCard`, `SabotagePlayer`, `GainWealth`, `StealResource`, `RollOnSpecialIsland`, `CloseSpecialIslandDialog`, `Scout`: All these actions directly modify player resources, status effects, or the shared game map.
-
-### 3.2. Turn Change Logic
-When `handleEndTurn` is called, a sequence of events occurs:
-1.  The outgoing player's temporary flags (`hasExtraMove`, etc.) and `actionsThisTurn` are cleared. Passive abilities for the *outgoing* player (like `Explorer`) are calculated and applied.
-2.  The `currentPlayerIndex` is incremented.
-3.  A check is performed to see if the *new* player is sabotaged. If so, their turn is skipped, and the turn change logic is re-triggered for the next player.
-4.  Pre-turn passive abilities for the *new* current player (like `Collector`) are calculated and applied.
-5.  A check for the *new* player's pre-turn actions is performed (e.g., Automatic Resource Collection). If they are positioned on resources, the appropriate collection logic or dialog (`ProductiveCardDialog`) is triggered.
-6.  If the new player has only one army, a one-time `autoSelectArmyFor` directive is set to their `playerId`. The client's `GameBoard` component will see this and locally auto-select the army.
-7.  A log message announces the new turn.
-8.  All temporary shared dialog states (`combatState`, `productiveCardDialogState`, etc.) are reset to `null`.
-9.  **Bot Turn:** If the new current player is a bot and the current user is the host, the bot's turn logic (`takeBotTurn`) is immediately executed. The resulting new game state is then saved to Firebase.
-
-### 3.3. Firebase & React/Next.js Common Pitfalls
-- **Firestore Cannot Store `undefined`:** A recurring critical bug is caused by attempting to write a `GameState` object with `undefined` properties. Firestore will silently strip these properties, causing the `GameState` read by clients to have a different shape than expected, leading to crashes. **Rule: Always use `null` instead of `undefined`** for optional or empty state properties.
-- **React's Rules of Hooks:** You **cannot** call hooks (`useState`, `useEffect`, `useMemo`, etc.) inside loops, conditions, or nested functions. A common mistake is trying to use `useMemo` inside a `.map()` function. Hooks must always be called at the top level of your component.
-- **Asynchronous State Updates:** When a state update depends on complex calculations (like `handleGameAction`), it's often performed within an asynchronous function passed to the state setter (e.g., `setGameState(async () => { ... })`). It is critical to `await` the result of this setter in the component before attempting to use any UI state that was calculated inside it. Failure to do so can lead to race conditions where the component tries to use stale or `undefined` state values, causing UI inconsistencies or crashes.
-
-### 3.4. Estimated Firestore Usage
-A full 4-player game to 30 Victory Points is highly variable, but a rough estimate can be made:
-- **Assumptions:** ~10 turns per player, ~2 actions (writes) per turn.
-- **Writes:** `4 players * 10 turns/player * 2 writes/turn` = **~80 writes**.
-- **Reads:** Every write triggers a read for all connected clients. `80 writes * 4 players` = **~320 reads**.
-This is an efficient model, as it ensures all players have the latest state with minimal reads per action.
-
-### 3.5. Firebase Best Practices & Cost Optimization
-To keep the application performant and cost-effective, it is crucial to use the correct Firestore operation for the task.
-
--   **`runTransaction`**: Use this when you need to **read a document and then write to it based on its current state**. A transaction ensures that no other process modifies the document between your read and write, preventing race conditions. This is essential for operations like joining a game, where you must check if the lobby is full before adding a new player.
--   **`writeBatch`**: Use this when you need to perform **multiple write operations (create, update, or delete) in a single atomic unit**, but these writes *do not* depend on reading data first. A batch is more efficient and costs less than a transaction because it involves fewer round trips to the server.
--   **`updateDoc`**: The most common operation. Use this to update fields on an existing document. All shared actions in the game use this.
-
-## 4. Core Game Mechanics & Match Flow
-
-### 4.1. Objective & Winning
+### 5.1. Objective & Winning
 The first player to reach the `victoryPointGoal` (default: 30 VP) wins the game. When this occurs, the game `status` changes to 'finished', a `winner` is declared in the game state by creating a deep copy of the winning player object, and a dialog appears announcing the winner. Victory Points (VP) are earned from:
 - **Winning Battles:** +5 VP for defeating another player's army.
 - **Defeating Monsters:** Variable VP based on monster level (2 for Lvl 1, 5 for Lvl 2, etc.).
-- **Island Discovery:** +`vpPerIslandDiscovery` VP for being the first player in the game to reveal a new island.
+- **Island Discovery:** +`vpPerIslandDiscovery` VP for being the first player in the game to reveal a new island. This is only awarded for army movement, not for the 'Scout' card.
 - **Passive Abilities:** The `Explorer` ability grants VP each turn for every island you occupy.
 
-### 4.2. The Map & Islands
+### 5.2. The Map & Islands
 The game is played on a grid of islands. Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to a tile, revealing it. The procedural generation of the map is governed by the `game-initializer.ts` file and can be tweaked via the "Customize Match" settings in the lobby.
 - **Base:** Your starting point. Where you deploy new armies and where defeated armies respawn. Bases also generate all three resource types. The Base's appearance is a castle sprite specific to the player's color, defined in `src/lib/player-data.ts`.
 - **Resource Islands:** Contain **Wheat**, **Iron**, or **Gems**. The generation logic is as follows:
@@ -136,12 +99,12 @@ The game is played on a grid of islands. Each player starts at their **Base** in
 - **Special Islands:** Discovering these grants the player a random Special Card. On subsequent landings on the same island, a dialog appears prompting the player to roll a die. On a roll of 3 or 6, they receive another card.
 - **Island Distribution:** The balance between Resource, Monster, and Special islands is controlled by the `resourceDensity` setting (default 60%). This value roughly corresponds to the probability that a tile will be a resource island. The remaining percentage is split between Monster and Special islands, with Special islands being rarer. The distribution also changes based on distance from the map's center, with more valuable and dangerous islands appearing closer to the middle.
 
-### 4.3. Resources & Progression
+### 5.3. Resources & Progression
 - **Wheat:** Used to **Deploy** new armies. The cost increases with each new new army.
 - **Iron:** Used to **Upgrade** the Attack Power of all your armies permanently.
 - **Gems:** Used to **Buy Special Cards** or purchase permanent **Passive Abilities**.
 
-### 4.4. Turn Structure & Actions
+### 5.4. Turn Structure & Actions
 A player's turn consists of a series of actions. The game automatically ends a player's turn if they have no more possible moves or actions.
 
 1.  **Start of Turn (Automatic Collection):**
@@ -160,23 +123,16 @@ A player's turn consists of a series of actions. The game automatically ends a p
         - **Buy Card:** Spend Gems to draw a Special Card.
         - **Use Card:** Play one Special Card from your hand.
 
-### 4.5. Combat
+### 5.5. Combat
 - Combat is resolved through dice rolls. Each player rolls a number of dice equal to their **Attack Power + 1**.
 - **Player vs. Player:** The player with the higher total roll wins the battle. In case of a tie, the **defender** wins.
 - **Player vs. Monster:** The player with the higher total roll wins the battle. In case of a tie, the **monster** wins.
-- Defeated armies are not destroyed; they are sent back to their owner's Base tile to regroup.
+- Defeated armies are not destroyed; they are sent back to their owner's Base tile to regroup, and their `hasActed` status is reset.
 - **Combat Dialog Animations:** During the `rolling` phase of combat, both combatants show their `attack` sprite. In the `results` phase, the winner's sprite remains in the `attack` pose, while the loser's sprite changes to the `death` animation. All army and monster sprites are animated GIFs defined in `src/lib/player-data.ts` and `src/lib/game-initializer.ts`, respectively. To ensure combatants face each other, the sprite for the combatant on the right side of the dialog (the defender/monster) is horizontally flipped.
 
-## 5. Detailed System Explanations
+## 6. Detailed System Explanations
 
-### 5.1. Player Login & Username Uniqueness
-The application ensures that every player has a unique username.
-- When a user enters a username in the `Login` component (`src/app/page.tsx`), it calls the `setUsername` function from the `usePlayer` hook.
-- This function queries a `usernames` collection in Firestore to check if a document with that name already exists.
-- If the document exists and is associated with a different player's ID, `setUsername` returns `false`.
-- The `Login` component then displays an "Username Taken" dialog, prompting the user to choose a different name. This prevents duplicate usernames in the lobby and game.
-
-### 5.2. Special Cards
+### 6.1. Special Cards
 - **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, if `Debug Mode` is enabled, the human player starts with one of every available Special Card.
 - **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
 - **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog. If a player activates a card like "Extra Move" or "Teleport" but cannot or chooses not to use it, they can use the "Cancel" button. This is a local action that resets the UI and **refunds the 'Use Card' action**, allowing them to use a different card during the same turn.
@@ -194,84 +150,26 @@ The application ensures that every player has a unique username.
 - **Overcome:** Automatically win the next combat encounter (vs. player or monster). Appears as a checkbox in the combat dialog.
 - **War Chief:** Gain +2 to your attack power for the next combat encounter. Appears as a checkbox in the combat dialog.
 - **Decide Dice Roll:** In the next *monster* combat, you can choose the value of one of your dice. Appears as a checkbox and slider in the monster combat dialog.
-- **Productive:** A passive card. At the start of your turn, if you are positioned to collect resources, a shared dialog opens allowing you to spend this card to double the yield of one resource type.
+- **Productive:** A passive card. At the start of your turn, if you are positioned to collect resources, a local dialog opens allowing you to spend this card to double the yield of one resource type.
 
-### 5.3. UI/UX and Interactions
+### 6.2. UI/UX and Interactions
 
-#### 5.3.1. Dialogs and Player Scope
+#### 6.2.1. Dialogs and Player Scope
 - **Local Dialogs:** Most dialogs for actions (`Sabotage`, `Wealthy`, `Position`, `My Cards`, `Abilities Shop`) are rendered **only for the current player**. Their open/closed state is managed locally in the `GameBoard` component and is not part of the shared `GameState`.
-- **Global Dialogs:** The `CombatDialog`, `MonsterCombatDialog`, and `ProductiveCardDialog` are exceptions. Their state is stored in `GameState` because all players need to see the outcome or have the potential to be involved.
+- **Global Dialogs:** The `CombatDialog` and `MonsterCombatDialog` are exceptions. Their state (`combatState`, `monsterCombatState`) is stored in `GameState` because all players need to see the outcome or have the potential to be involved.
 
-#### 5.3.2. Army and Tile Selection
-- **Auto-Selection:** If a player has only one army at the start of their turn, a one-time `autoSelectArmyFor` directive is set in `GameState`. The local client sees this and updates its local `selectedArmyId` state.
+#### 6.2.2. Army and Tile Selection
+- **Auto-Selection:** If a player has only one army at the start of their turn, it is automatically selected for them locally by the `GameBoard` component.
 - **Manual Selection:** Clicking a tile containing one of your armies selects it. This is a local UI action.
 - **Multi-Army Selection:** Clicking a tile with multiple friendly armies opens a local `ArmySelectionDialog` to choose a specific unit.
 - **Deselection:** An army can be deselected locally by:
     1.  Clicking the "Deselect Army" button.
     2.  Clicking on any tile that is not a valid move for the currently selected army.
 
-#### 5.3.3. The Actions Panel
-Located on the right side of the screen on desktop (or below the map on mobile), the Actions Panel is the central hub for the current player. It contains buttons for all available army and strategic actions.
-- **Army Actions (`Attack`, `Position`):** These buttons are enabled only when a valid army is selected and the action is possible on the army's current tile.
-- **Strategic Actions (`Deploy`, `Upgrade`, `Buy Card`):** These are available once per turn and their buttons are disabled after use or if the player cannot afford the cost.
-- **Card & Ability Actions (`My Cards`, `Abilities Shop`):** The "My Cards" button opens a local dialog showing the player's current hand. From here, they can select and use a card. The "Abilities Shop" opens a local dialog for purchasing permanent passive abilities.
-- **Turn Management (`End Turn`, `Cancel`, `Deselect Army`):** These buttons allow the player to manage their turn flow.
-
-#### 5.3.4. Visual Feedback
-- **Selected Army:** The tile of a selected army gets a prominent glowing shadow (`shadow-2xl shadow-primary/80`).
-- **Player-Owned Tiles:** Tiles occupied by the local player's armies have a subtle, color-coded glow (`shadow-blue-500/50`, `shadow-red-500/50`, etc.) for easy identification.
-- **Possible Moves:** Valid move destinations for a selected army are highlighted with a subtle yellow glow (`shadow-lg shadow-accent/20`).
-- **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a glowing purple shadow (`shadow-lg shadow-purple-500/30`) to indicate they are valid destinations.
-- **Scout Action:** When `Scout` is active, all hidden tiles are highlighted with a glowing blue shadow (`shadow-lg shadow-blue-500/30`) to indicate they can be revealed.
-- **Fog of War Indicator:** When Fog of War is active, undiscovered islands display a '?' icon (`HelpCircle` from lucide-react) instead of their true contents. This is rendered in `IslandTile.tsx`.
-- **Animations & Scenery:**
-    - Game sprites (armies, monsters, death animations) are animated GIFs located in `public/sprites/`. The specific sprites for each player's army are defined in `src/lib/player-data.ts`. The castle base sprites are high-quality PNGs.
-    - **Note on Animated GIFs and Next.js:** When using animated GIFs with the Next.js `<Image>` component, the `unoptimized` prop **must** be used. Next.js's default image optimization can break GIF animations or remove transparency. Using `unoptimized` serves the original file, ensuring it renders correctly. This may slightly increase initial load times as the file size is not reduced, but it is necessary for functionality. The blurriness seen in some animations is a result of using low-resolution source images in larger display containers, a trade-off for correct animation playback. The ideal solution is to use higher-resolution source GIFs.
-    - The water background (`bg-water-pattern`) and island terrain textures (`bg-terrain`) are defined in `tailwind.config.ts` and applied in their respective components.
-    - An animated border appears at the bottom of each island tile to give the illusion of water movement. This is created in `IslandTile.tsx` by combining three separate GIF images (`island_edge_1.gif`, `island_edge_2.gif`, `island_edge_3.gif`) in a randomized sequence.
-    - Decorative rocks in the water are procedurally placed by `MapGrid.tsx` for visual variety. This is disabled on mobile for performance and clarity.
-
-#### 5.3.5. Confirmation Dialogs
-- `ConfirmExitDialog`: Appears if a player attempts to leave a match that is in progress.
-- `HostLeaveDialog`: A special dialog for the host, warning them that leaving will delete the game room and end the match for all players.
-
-### 5.4. Player Info Panel
-This UI element provides a real-time summary for each player in the game, displaying:
-- Player Name and Army Sprite
-- **Victory Points (VP)**
-- **Army Count:** Total number of armies on the board.
-- **Attack Power:** Global modifier for all armies.
-- **Resources:** Current count of Wheat, Iron, and Gems.
-- **Special Cards:** Total number of cards in hand.
-- **Status Effects:** Icons for `Sabotage` (miss next turn) or `Extra Move`.
-- **Layout:** The panel uses a responsive grid (`grid-cols-2 lg:grid-cols-4`), accommodating up to 4 players. Empty slots are filled with "Waiting for player..." placeholders in the lobby.
-
-### 5.5. Player Exiting the Game
-- **Normal Player:** If a non-host player leaves, their armies are removed from the board, they are removed from the `players` array in the game state, and a log message is generated. The game continues for the remaining players. The logic correctly handles adjusting the `currentPlayerIndex` to prevent crashes.
-- **Host Player:** If the host leaves, the entire game document is **deleted from Firestore**. The game ends for all players, and they are returned to the lobby.
-
-### 5.6. Game Customization
-From the Lobby, players can create a new game and access a "Customize Match" sheet with the following options:
-- **General:** Victory Point goal, enable/disable Fog of War, set VP for island discovery, and adjust the density of resource islands vs. monster islands.
-- **Costs:** Set the initial cost for deploying armies, the cost increment for subsequent deployments, and the costs for upgrades and passive abilities.
-- **Content:** Selectively enable or disable which Special Cards and Passive Abilities are available to be drawn or purchased during the match.
-
-### 5.7. Game Log
-The game log is a running, public history of major events in the match, displayed to all players. It records:
-- Players joining or leaving.
-- Game start and end.
-- Turn progression (`It's now Player X's turn.`).
-- Key actions like deploying armies, upgrading power, and buying cards.
-- Combat outcomes (`Player A defeated Player B!`).
-- Resource collection and VP gains.
-- Special card usage (`Player X used 'Teleport'!`).
-
-This log provides crucial context and a narrative for the unfolding game.
-
-### 5.8. Fog of War & Debug Mode
+### 6.3. Fog of War & Debug Mode
 
 -   **Fog of War (Enabled):** This is the default, tactical experience.
-    -   Each player has their own, independent visibility of the map.
+    -   Each player has their own, independent visibility of the map stored in `player.revealedTiles`.
     -   Tiles (and any armies on them) are only revealed to a player when they move one of their armies to an adjacent tile.
     -   Opponent armies are only visible on their starting Base or on islands you have personally explored.
 -   **Fog of War (Disabled):** This mode provides a more open, chess-like experience.
@@ -280,24 +178,7 @@ This log provides crucial context and a narrative for the unfolding game.
     -   **Complete Map Visibility:** It overrides any Fog of War setting, making the entire map and all armies visible from the start of the match.
     -   **All Special Cards:** The player begins the game with one of every available Special Card, allowing for immediate testing of card mechanics.
 
-### 5.9. Responsive Design & Mobile Experience
-
-The application is designed to be fully responsive, with key adjustments made for smaller screens. The core of this is the `useIsMobile` hook, which checks for screen widths below 768px.
-
--   **Layout Scalability:**
-    -   On mobile, the `GameBoard` displays as a single, vertical column to prioritize the map view. The Actions Panel and Game Log appear below the map.
-    -   On desktop (or screens wider than 1024px), the layout shifts to a two-column grid, with the Actions Panel and Game Log positioned to the right of the map for easier access.
-    -   The `PlayerInfo` panel at the top is collapsed by default on mobile to conserve vertical space and can be expanded by the user.
-    -   In the lobby, the main header (containing the "Game Lobby" title and "Create New Game" button) stacks vertically on mobile screens to prevent overflow and improve usability. The list of available games also adjusts, grouping player information more cleanly on smaller screens.
-
--   **Map & Interaction:**
-    -   The `MapGrid` itself scales down for mobile. Tile sizes are reduced from 75px to 120px, and the gap between them shrinks from 16px to 32px.
-    -   To improve performance and reduce visual clutter on smaller screens, the decorative rocks in the water background are disabled on the mobile version.
-
--   **Starting a Game:**
-    -   The "Start Game" button's location is consistent across both mobile and desktop. When in a "waiting" lobby, it appears in the header area at the top of the screen. It is only visible to the game's host and only appears once at least one other player has joined. When the game starts, this header is hidden.
-
-## 6. Bot Logic
+### 6.4. Bot Logic
 The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priority-based system to make decisions.
 1.  At the start of its turn, the bot evaluates all possible strategic and army actions.
 2.  Each action is assigned a numeric `priority` based on the current game state.
@@ -309,20 +190,4 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priorit
     - **Exploring:** The bot now has a higher priority to explore new tiles, preventing it from getting stuck and encouraging expansion.
 3.  The bot executes the single action with the highest priority score. If no action is possible or an error occurs, it will safely end its turn as a fallback.
 
-## 7. Build & Styling Configuration
-
-This section details the project's build and styling setup. Changes to these files can have a significant impact on the application's functionality and appearance.
-
-### 7.1. Next.js Configuration (`next.config.ts`)
-
--   **Error Handling:** The configuration is currently set to `ignoreBuildErrors: true` for TypeScript and `ignoreDuringBuilds: true` for ESLint. This is for rapid development and should be reviewed before a production deployment.
--   **Image Optimization:** The `images.remotePatterns` array is configured to allow image optimization for URLs from `placehold.co`, `images.unsplash.com`, and `picsum.photos`. If you need to use images from a new, external domain, you **must** add its hostname to this list.
-
-### 7.2. Tailwind CSS Configuration (`tailwind.config.ts`)
-
--   **Content Scanning:** The `content` array tells Tailwind which files to scan for class names. It is currently set to `['./src/app/**/*.{js,ts,jsx,tsx,mdx}', './src/components/**/*.{js,ts,jsx,tsx,mdx}', './src/features/**/*.{js,ts,jsx,tsx,mdx}']`. If you create a new top-level directory (e.g., `src/new-feature/`) that uses Tailwind classes, you **must** add its path to this array.
--   **Theming:** The theme is built using CSS variables defined in `src/app/globals.css` (e.g., `hsl(var(--background))`). This allows for dynamic theming (like dark/light mode) and should be the preferred way to manage colors, rather than using hard-coded color classes.
--   **Custom Extensions:** The configuration extends Tailwind's default theme with:
-    -   `backgroundImage`: Custom patterns for water and terrain textures.
-    -   `fontFamily`: A custom font, `Lilita One`, for body and headline text.
-    -   `plugins`: `tailwindcss-animate` is included for keyframe animations.
+    
