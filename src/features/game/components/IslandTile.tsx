@@ -216,8 +216,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                     <Image 
                         src={PLAYER_DATA[baseOwner.color].base}
                         alt={`${baseOwner.color} base`}
-                        width={64}
-                        height={64}
+                        fill
                         className="p-1 h-full w-full object-contain"
                     />
                 ) : <Home className="h-full w-full p-2" />}

@@ -26,6 +26,7 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
                 width={48}
                 height={48}
                 className="h-12 w-12 object-contain"
+                unoptimized
             />
             <CardTitle className="text-sm font-medium">{player.name}</CardTitle>
           </div>
