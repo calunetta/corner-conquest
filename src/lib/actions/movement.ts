@@ -1,4 +1,5 @@
 
+
 import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
@@ -73,7 +74,7 @@ export function revealIsland(state: GameState, x: number, y: number, isScout: bo
                 const drawnCardResult = newState.specialCardsDeck.splice(cardIndex, 1)[0];
                 player.specialCards.push(drawnCardResult);
                 cardDrawn = drawnCardResult;
-                newState.log.push(`${player.name} discovered a special island and found a card: "${drawnCard}"!`);
+                newState.log.push(`${player.name} discovered a special island and found a card: "${cardDrawn}"!`);
             }
         }
     }
@@ -127,7 +128,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     } else if (targetTile.type === IslandType.Special) {
         armyInState.hasActed = true;
         // Don't auto-end turn, let the dialog flow handle it
-        return { state: newState, ui: { specialIslandRoll: true } };
+        return { state: newState, ui: { specialIslandRoll: { roll: 0, cardDrawn: null } } };
     }
     
     if (armyInState.hasActed && player.hasExtraMove) {

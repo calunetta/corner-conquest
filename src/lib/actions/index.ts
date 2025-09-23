@@ -1,4 +1,5 @@
 
+
 import type { GameState, ActionHandlerResult, Army } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 import { cloneDeep } from 'lodash';
@@ -85,7 +86,7 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
             case GameAction.RollOnSpecialIsland:
                 const rollResult = handleRollOnSpecialIsland(state);
                 state = rollResult.state;
-                ui = { cardDrawn: rollResult.cardDrawn, roll: rollResult.roll };
+                ui = { specialIslandRoll: { roll: rollResult.roll, cardDrawn: rollResult.cardDrawn } };
                 break;
             case GameAction.CloseSpecialIslandDialog:
                 state = handleCloseSpecialIslandDialog(state);

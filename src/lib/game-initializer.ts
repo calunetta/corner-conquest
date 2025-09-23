@@ -1,4 +1,5 @@
 
+
 import type { GameState, Island, Player, IslandResource, Monster, GameSettings, BaseTileInfo } from './types';
 import { CardName, HAND_LIMIT } from './types';
 import { BASE_CARDS } from './card-data';
@@ -99,7 +100,7 @@ export function createPlayer(
     debugMode: boolean
 ): Player {
     let startingCards: CardName[] = [];
-    if (debugMode) {
+    if (debugMode && !isBot) { // Only give debug cards to the human player
         startingCards = [...new Set(BASE_CARDS)];
     }
     
@@ -309,11 +310,7 @@ export function startGame(gameState: GameState, starterName: string): GameState 
     newState.turn = 1;
     newState.log.push(`${starterName} started the game! It's now ${newState.players[0].name}'s turn.`);
     
-    // If the first player is a bot, kick off their turn immediately.
-    if(newState.players[0].isBot) {
-        // Need to run this in a macrotask to allow the current transaction to complete.
-        setTimeout(() => takeBotTurn(newState), 0);
-    }
+    // The bot turn is now handled by the `handleEndTurn` logic
     
     return newState;
 }

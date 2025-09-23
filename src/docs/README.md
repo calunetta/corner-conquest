@@ -1,4 +1,5 @@
 
+
 # Corner Conquest - Application Architecture
 
 This document outlines the architecture and key logic flows of the "Corner Conquest" application. It serves as a shared context for AI-assisted development to ensure consistency and accuracy.

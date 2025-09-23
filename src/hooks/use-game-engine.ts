@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { db, doc, onSnapshot, getDoc, updateDoc } from '@/lib/firebase';
 import type { GameState, ActionHandlerResult } from '@/lib/types';
@@ -22,6 +23,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     try {
         const gameDocRef = doc(db, 'games', gameId);
         
+        // Use the ref for the most current state, but fall back to a fetch if it's null
         const currentState = gameStateRef.current ?? await getDoc(gameDocRef).then(d => d.data() as GameState);
         
         if (!currentState) {
@@ -133,6 +135,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     }
   }, [isLoading, localPlayer, router, toast]);
   
+  // Host is responsible for clearing death animations
   useEffect(() => {
     if (!isHost || !gameState?.deathAnimations || gameState.deathAnimations.length === 0) {
         return;

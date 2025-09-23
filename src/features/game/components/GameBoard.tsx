@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { GameState, Army, CardName } from '@/lib/types';
@@ -132,10 +133,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           setAttackSelectionDialog(result.newAttackSelectionDialogState);
         }
         if (result?.specialIslandRoll) {
-            setSpecialIslandRollDialog({ isOpen: true, roll: null, cardDrawn: null });
-        }
-        if (result?.cardDrawn !== undefined && result?.roll !== undefined) {
-            setSpecialIslandRollDialog(prev => prev ? { ...prev, roll: result.roll, cardDrawn: result.cardDrawn } : null);
+            setSpecialIslandRollDialog({ isOpen: true, roll: result.specialIslandRoll.roll, cardDrawn: result.specialIslandRoll.cardDrawn });
         }
 
     } catch (error: any) {

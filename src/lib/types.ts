@@ -1,4 +1,5 @@
 
+
 export const MAP_ROWS = 6;
 export const MAP_COLS = 5;
 export const HAND_LIMIT = 7;
@@ -247,6 +248,7 @@ export type ActionHandlerResult = {
             attackingArmyId: number;
             defendingPlayer: Player;
             armies: Army[];
-        }
+        },
+        specialIslandRoll?: { roll: number, cardDrawn: CardName | null }
     } | null
 }
