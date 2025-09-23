@@ -246,3 +246,22 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priorit
     - **Deploying a new Army:** Medium priority, which decreases as its army count increases to maintain a balanced force.
     - **Exploring:** The bot now has a higher priority to explore new tiles, preventing it from getting stuck and encouraging expansion.
 3.  The bot executes the single action with the highest priority score. After that action, its turn ends. This creates a focused but adaptable AI opponent that balances long-term strategy with opportunistic plays.
+
+## 7. Build & Styling Configuration
+
+This section details the project's build and styling setup. Changes to these files can have a significant impact on the application's functionality and appearance.
+
+### 7.1. Next.js Configuration (`next.config.ts`)
+
+-   **Error Handling:** The configuration is currently set to `ignoreBuildErrors: true` for TypeScript and `ignoreDuringBuilds: true` for ESLint. This is for rapid development and should be reviewed before a production deployment.
+-   **Image Optimization:** The `images.remotePatterns` array is configured to allow image optimization for URLs from `placehold.co`, `images.unsplash.com`, and `picsum.photos`. If you need to use images from a new, external domain, you **must** add its hostname to this list.
+
+### 7.2. Tailwind CSS Configuration (`tailwind.config.ts`)
+
+-   **Content Scanning:** The `content` array tells Tailwind which files to scan for class names. It is currently set to `['./src/app/**/*.{js,ts,jsx,tsx,mdx}', './src/components/**/*.{js,ts,jsx,tsx,mdx}', './src/features/**/*.{js,ts,jsx,tsx,mdx}']`. If you create a new top-level directory (e.g., `src/new-feature/`) that uses Tailwind classes, you **must** add its path to this array.
+-   **Theming:** The theme is built using CSS variables defined in `src/app/globals.css` (e.g., `hsl(var(--background))`). This allows for dynamic theming (like dark/light mode) and should be the preferred way to manage colors, rather than using hard-coded color classes.
+-   **Custom Extensions:** The configuration extends Tailwind's default theme with:
+    -   `backgroundImage`: Custom patterns for water and terrain textures.
+    -   `fontFamily`: A custom font, `Lilita One`, for body and headline text.
+    -   `plugins`: `tailwindcss-animate` is included for keyframe animations.
+```
