@@ -116,6 +116,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
           const isPossible = possibleMoves.some(p => p.x === island.x && p.y === island.y);
           const isSelected = !!selectedTile && selectedTile.x === island.x && selectedTile.y === island.y;
           const isScoutTarget = isScouting && (debugMode ? false : fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id));
+          const isTeleportTarget = isTeleporting && (!selectedTile || island.id !== selectedTile.id);
           
           return (
             <IslandTile
@@ -125,7 +126,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
                 onClick={onTileClick}
                 isPossibleMove={isPossible}
                 isSelected={isSelected}
-                isTeleporting={isTeleporting}
+                isTeleporting={isTeleportTarget}
                 isScoutTarget={isScoutTarget}
                 deathAnimations={deathAnimations}
                 fogOfWar={fogOfWar}

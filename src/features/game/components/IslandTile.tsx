@@ -219,6 +219,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                         alt={`${baseOwner.color} base`}
                         fill
                         className="p-1 h-full w-full object-contain"
+                        unoptimized
                     />
                 ) : <Home className="h-full w-full p-2" />}
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-end justify-center gap-4">
@@ -247,7 +248,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
           'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200',
           isSelected ? 'shadow-2xl shadow-primary/80' : '',
           isPossibleMove ? 'border-2 border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'border border-transparent hover:border-foreground/50',
-          isTeleporting && isPossibleMove && 'border-2 border-purple-500 hover:border-purple-400 shadow-lg shadow-purple-500/30',
+          isTeleporting && 'shadow-lg shadow-purple-500/30',
           isScoutTarget && 'cursor-pointer border-2 border-blue-400 hover:border-blue-300 shadow-lg shadow-blue-500/30',
           tilePlayerColor && !isSelected && `shadow-lg ${playerTileIndicatorClasses[tilePlayerColor]}`
         )}

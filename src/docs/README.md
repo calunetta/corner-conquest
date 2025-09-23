@@ -149,7 +149,7 @@ The application ensures that every player has a unique username.
 - **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
 - **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog.
 - **Extra Move:** Grants the player an extra move action. One army that has already acted can move again.
-- **Teleport:** Initiates a two-step action. First, select an army. Second, select *any* tile on the map to move it to.
+- **Teleport:** Initiates a two-step action. First, select an army. Second, select *any* tile on the map to move it to. Using this card will automatically deselect any currently selected army, forcing the player to choose the army they wish to teleport.
 - **Scout:** Initiates a multi-step action where the player can click on 3 different hidden tiles to reveal them. This action does not involve any army movement and does not select an army. Because no army moves, no Victory Points are awarded for island discovery during a scout action.
 - **Sabotage:** Opens a dialog to choose an opponent. That opponent will miss their next turn.
 - **Reinforce:** The player's next `Deploy` action this turn is free. The card is only consumed upon a successful deployment.
@@ -180,7 +180,7 @@ The application ensures that every player has a unique username.
 - **Selected Army:** The tile of a selected army gets a prominent glowing shadow (`shadow-2xl shadow-primary/80`).
 - **Player-Owned Tiles:** Tiles occupied by the local player's armies have a subtle, color-coded glow (`shadow-blue-500/50`, `shadow-red-500/50`, etc.) for easy identification.
 - **Possible Moves:** Valid move destinations for a selected army are highlighted with a dashed border (`border-accent/70`).
-- **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a purple border (`border-purple-500`) to indicate they are valid destinations.
+- **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a glowing purple shadow (`shadow-lg shadow-purple-500/30`) to indicate they are valid destinations.
 - **Fog of War Indicator:** When Fog of War is active, undiscovered islands display a '?' icon (`HelpCircle` from lucide-react) instead of their true contents. This is rendered in `IslandTile.tsx`.
 - **Animations & Scenery:**
     - Game sprites (armies, monsters, death animations) are animated GIFs located in `public/sprites/`. The specific sprites for each player's army are defined in `src/lib/player-data.ts`. The castle base sprites are high-quality PNGs.
