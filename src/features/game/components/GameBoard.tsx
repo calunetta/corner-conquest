@@ -66,7 +66,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMobile]);
   
   useEffect(() => {
-    if (gameState?.autoSelectArmyFor?.playerId === localPlayer?.id) {
+    if (gameState && gameState.autoSelectArmyFor?.playerId === localPlayer?.id) {
         if (gameState && gameState.autoSelectArmyFor) {
             setSelectedArmyId(gameState.autoSelectArmyFor.armyId);
         }
@@ -438,7 +438,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                     turnDuration={TURN_DURATION}
                     currentAction={currentAction}
                     selectedArmy={selectedArmy}
-                    onToggleCards={onToggleCards}
+                    onToggleCards={handleToggleCards}
                     cardsDialogPlayerId={cardsDialogPlayerId}
                 />
                 <GameLog logs={log} />
