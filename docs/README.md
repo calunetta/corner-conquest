@@ -102,6 +102,7 @@ The game is played on a grid of islands. Each player starts at their **Base** in
 A player's turn consists of a series of actions. The game automatically ends a player's turn if they have no more possible moves or actions.
 
 1.  **Start of Turn (Automatic Collection):**
+    - This mechanic triggers at the beginning of a player's turn, *after* the first turn of the game.
     - If a player has armies "positioned" on resources from a previous turn, they are automatically collected.
     - If the player has the **"Productive"** card, a dialog appears, allowing them to spend this card to double the yield of one resource type. Otherwise, collection is instant.
 
