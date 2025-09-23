@@ -215,8 +215,8 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             ) : (
               <TooltipProvider>
                 {games.map((game) => (
-                  <div key={game.id} className="flex flex-col items-start gap-3 rounded-lg border bg-card p-3 transition-all hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-                    <div className="flex flex-1 items-center gap-4">
+                  <div key={game.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border bg-card p-3 transition-all hover:bg-muted/50 sm:p-4">
+                    <div className="flex flex-1 items-center gap-4 min-w-[200px]">
                       <div className="flex -space-x-2">
                         {game.players.map(p => (
                            <Tooltip key={p.playerId}>
@@ -233,20 +233,20 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                           </Tooltip>
                         ))}
                       </div>
-                      <div>
-                        <h3 className="font-bold">{game.name}</h3>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1.5">
-                                <Crown className="h-4 w-4 text-yellow-500" />
-                                <span>{game.players[0]?.name || '...'}</span>
-                            </div>
-                             <div className="flex items-center gap-1.5">
-                                <Users className="h-4 w-4" />
-                                <span>{game.players.length} / {game.maxPlayers} players</span>
-                            </div>
-                        </div>
-                      </div>
+                      <h3 className="font-bold truncate">{game.name}</h3>
                     </div>
+
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                            <Crown className="h-4 w-4 text-yellow-500" />
+                            <span>{game.players[0]?.name || '...'}</span>
+                        </div>
+                          <div className="flex items-center gap-1.5">
+                            <Users className="h-4 w-4" />
+                            <span>{game.players.length} / {game.maxPlayers}</span>
+                        </div>
+                    </div>
+
                     <div className='flex items-center gap-2'>
                         <Popover>
                             <PopoverTrigger asChild>
@@ -266,7 +266,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                         <Button 
                         onClick={() => handleJoinGame(game.id)} 
                         disabled={isJoiningGame !== null || game.players.length >= game.maxPlayers} 
-                        className="w-full sm:w-auto"
+                        className="min-w-[80px]"
                         variant={game.players.length >= game.maxPlayers ? 'secondary' : 'default'}
                         >
                         {isJoiningGame === game.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
