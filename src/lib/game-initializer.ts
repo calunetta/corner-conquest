@@ -1,9 +1,10 @@
 
 import type { GameState, Island, Player, IslandResource, Monster, GameSettings, BaseTileInfo } from './types';
-import { CardName } from './types';
+import { CardName, HAND_LIMIT } from './types';
 import { BASE_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
 import { IslandType, ResourceType, PlayerColor, MonsterName, GameStatus, AbilityName, MAP_COLS, MAP_ROWS } from './types';
+import { takeBotTurn } from './bot-logic';
 
 export const defaultGameSettings: GameSettings = {
     victoryPointGoal: 30,
@@ -295,25 +296,23 @@ export function initializeGame(
     specialCardsDeck: [...finalCardDeck, ...finalCardDeck],
     discardPile: [],
     deathAnimations: [],
-    autoSelectArmyFor: null,
     combatState: null,
     monsterCombatState: null,
-    productiveCardDialogState: null,
-    specialIslandRollDialogState: null,
   };
 
   return gameState;
 }
 
 export function startGame(gameState: GameState, starterName: string): GameState {
-    const newState = { ...gameState };
+    let newState = { ...gameState };
     newState.status = GameStatus.Playing;
     newState.turn = 1;
     newState.log.push(`${starterName} started the game! It's now ${newState.players[0].name}'s turn.`);
     
-    // If the first player is a bot, the host needs to kick off their turn.
+    // If the first player is a bot, kick off their turn immediately.
     if(newState.players[0].isBot) {
-        return takeBotTurn(newState);
+        // Need to run this in a macrotask to allow the current transaction to complete.
+        setTimeout(() => takeBotTurn(newState), 0);
     }
     
     return newState;

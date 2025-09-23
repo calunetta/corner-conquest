@@ -1,5 +1,4 @@
 
-
 import type { Island, Player, ResourceType, IslandResource, Army, Monster, DeathAnimation } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ResourceIcon } from '@/components/icons';
@@ -245,12 +244,13 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       <button
         onClick={() => onClick(island.x, island.y)}
         className={cn(
-          'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200 border border-transparent hover:border-foreground/50',
-          isSelected && 'shadow-2xl shadow-primary/80',
-          isPossibleMove && 'shadow-lg shadow-accent/40',
-          isTeleporting && 'shadow-lg shadow-purple-500/40',
-          isScoutTarget && 'cursor-pointer shadow-lg shadow-blue-500/40',
-          tilePlayerColor && !isSelected && `shadow-lg ${playerTileIndicatorClasses[tilePlayerColor]}`
+          'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200 border-2',
+          isSelected ? 'border-primary shadow-2xl shadow-primary/80' : 'border-transparent',
+          isPossibleMove && 'border-accent/50 shadow-lg shadow-accent/40',
+          isTeleporting && 'border-purple-500/50 shadow-lg shadow-purple-500/40',
+          isScoutTarget && 'cursor-pointer border-blue-500/50 shadow-lg shadow-blue-500/40',
+          tilePlayerColor && !isSelected && `shadow-lg ${playerTileIndicatorClasses[tilePlayerColor]}`,
+           'hover:border-foreground/50'
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
       >

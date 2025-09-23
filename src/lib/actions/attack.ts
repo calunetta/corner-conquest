@@ -320,8 +320,6 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
     const { winnerId, monster, attackerId, attackerPosition } = newState.monsterCombatState;
     const attacker = newState.players[attackerId];
     
-    const attackingArmy = attacker.armies.find(a => a.position.x === attackerPosition.x && a.position.y === attackerPosition.y);
-
     const currentTile = newState.map[attackerPosition.y * MAP_COLS + attackerPosition.x];
 
     if (winnerId === attacker.id) {
@@ -372,7 +370,7 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
     } else {
         newState.log.push(`${attacker.name} was defeated by the ${monster.name}!`);
         const baseTile = baseTiles.find(t => t.owner === attacker.id);
-        const losingArmy = attackingArmy;
+        const losingArmy = attacker.armies.find(a => a.position.x === attackerPosition.x && a.position.y === attackerPosition.y);
         if (losingArmy && baseTile) {
             const deathAnim: DeathAnimation = {
                 id: `army-${attacker.id}-${losingArmy.id}`,

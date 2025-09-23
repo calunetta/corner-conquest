@@ -2,7 +2,7 @@
 import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
-import { GameAction, IslandType, MAP_COLS, MAP_ROWS } from '../types';
+import { GameAction, IslandType, MAP_COLS, MAP_ROWS, HAND_LIMIT } from '../types';
 import { cloneDeep } from 'lodash';
 
 
@@ -40,15 +40,15 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
     });
 }
 
-export function revealIsland(state: GameState, x: number, y: number, isScout: boolean = false): GameState {
+export function revealIsland(state: GameState, x: number, y: number, isScout: boolean = false): { newState: GameState, cardDrawn: CardName | null } {
     let newState = cloneDeep(state);
     const player = newState.players[newState.currentPlayerIndex];
     const tile = newState.map[y * MAP_COLS + x];
     const tileId = tile.id;
-    const HAND_LIMIT = 7;
+    let cardDrawn: CardName | null = null;
 
     if (player.revealedTiles.includes(tileId)) {
-        return newState; // Already revealed for this player
+        return { newState, cardDrawn: null }; // Already revealed for this player
     }
 
     player.revealedTiles.push(tileId);
@@ -68,17 +68,20 @@ export function revealIsland(state: GameState, x: number, y: number, isScout: bo
                  newState.specialCardsDeck = [...newState.discardPile];
                  newState.discardPile = [];
             }
-            const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
-            const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
-            player.specialCards.push(drawnCard);
-            newState.log.push(`${player.name} discovered a special island and found a card: "${drawnCard}"!`);
+            if (newState.specialCardsDeck.length > 0) {
+                const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
+                const drawnCardResult = newState.specialCardsDeck.splice(cardIndex, 1)[0];
+                player.specialCards.push(drawnCardResult);
+                cardDrawn = drawnCardResult;
+                newState.log.push(`${player.name} discovered a special island and found a card: "${drawnCard}"!`);
+            }
         }
     }
     
-    return newState;
+    return { newState, cardDrawn };
 }
 
-export function handleMoveAction(state: GameState, x: number, y: number, army: Army, isTeleport: boolean = false): GameState {
+export function handleMoveAction(state: GameState, x: number, y: number, army: Army, isTeleport: boolean = false): ActionHandlerResult {
     let newState = cloneDeep(state);
     const { players, currentPlayerIndex, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
@@ -114,16 +117,17 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
             newState.log.push(`${player.name} teleported an army!`);
         }
         armyInState.hasActed = true;
-        return checkAndEndTurnIfNoActions(newState);
+        return { state: checkAndEndTurnIfNoActions(newState), ui: null };
     }
     
     const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);
     if (isFirstDiscovery) {
-        newState = revealIsland(newState, x, y);
+        const revealResult = revealIsland(newState, x, y);
+        newState = revealResult.newState;
     } else if (targetTile.type === IslandType.Special) {
-        newState.specialIslandRollDialogState = { isOpen: true, roll: null, cardDrawn: null };
         armyInState.hasActed = true;
-        return newState;
+        // Don't auto-end turn, let the dialog flow handle it
+        return { state: newState, ui: { specialIslandRoll: true } };
     }
     
     if (armyInState.hasActed && player.hasExtraMove) {
@@ -133,5 +137,5 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         armyInState.hasActed = true;
     }
 
-    return checkAndEndTurnIfNoActions(newState);
+    return { state: checkAndEndTurnIfNoActions(newState), ui: null };
 }

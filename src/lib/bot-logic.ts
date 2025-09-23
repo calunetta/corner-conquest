@@ -2,10 +2,11 @@
 import type { GameState, Army, ResourceType } from './types';
 import { GameAction, AbilityName, CardName, IslandType, MAP_COLS } from './types';
 import { handleAttackAction, handleMonsterCombatRoll, handleCloseMonsterCombat } from './actions/attack';
-import { handleBuyAbility, handleBuyCardAction, handleGainWealth, handleUseCard } from './actions/card';
+import { handleBuyAbility, handleBuyCardAction, handleGainWealth, handleUseCard, handleSabotagePlayer } from './actions/card';
 import { getPossibleMoves, handleMoveAction } from './actions/movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn } from './actions/player';
 import { handleSelectResourceForPosition } from './actions/resource';
+import { cloneDeep } from 'lodash';
 
 
 function selectRandom<T>(array: T[]): T | null {
@@ -25,8 +26,8 @@ type BotAction = {
 
 
 // --- Main Decision Logic ---
-export function takeBotTurn(initialState: GameState): GameState {
-    let state = JSON.parse(JSON.stringify(initialState));
+export async function takeBotTurn(initialState: GameState): Promise<GameState> {
+    let state = cloneDeep(initialState);
     const botPlayer = state.players[state.currentPlayerIndex];
     console.log(`--- Bot Turn Start: ${botPlayer.name} ---`);
     
@@ -88,14 +89,27 @@ export function takeBotTurn(initialState: GameState): GameState {
         else if (!canAfford(botPlayer, upgradeCost, 'iron' as ResourceType) && botPlayer.attackPower < 4) neededResource = 'iron' as ResourceType;
         else if (botPlayer.resources.gems < 5) neededResource = 'gems' as ResourceType;
         else if (botPlayer.resources.wheat < 5) neededResource = 'wheat' as ResourceType; // Proactive use
+        else if (botPlayer.resources.iron < 5) neededResource = 'iron' as ResourceType; // Proactive use
         
         if (neededResource) {
             const resourceToGain = neededResource;
             possibleActions.push({
-                name: 'use-wealthy',
+                name: `use-wealthy-for-${resourceToGain}`,
                 priority: 8.5,
                 execute: (s) => {
                     try { return handleGainWealth(s, resourceToGain); } catch { return null; }
+                }
+            });
+        }
+    }
+     if (botPlayer.specialCards.includes(CardName.Sabotage) && !botPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
+        const opponentToSabotage = state.players.find(p => !p.isBot && p.id !== botPlayer.id);
+        if (opponentToSabotage) {
+             possibleActions.push({
+                name: `use-sabotage-on-${opponentToSabotage.name}`,
+                priority: 8,
+                execute: (s) => {
+                    try { return handleSabotagePlayer(s, opponentToSabotage.id); } catch { return null; }
                 }
             });
         }
@@ -181,5 +195,5 @@ export function takeBotTurn(initialState: GameState): GameState {
     
     // Fallback: If all attempted actions failed or no actions were possible, end the turn.
     console.log(`Bot: No valid actions found or all failed. Ending turn.`);
-    return handleEndTurn(state, false, state.id);
+    return handleEndTurn(state);
 }

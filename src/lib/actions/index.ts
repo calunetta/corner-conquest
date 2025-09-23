@@ -23,98 +23,86 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
         return { state: null, ui: null };
     }
 
-    // Use a deep clone to prevent direct state mutation, ensuring pure function behavior.
-    let newState: GameState = cloneDeep(gameState);
-    let uiResult = null;
+    let state: GameState = cloneDeep(gameState);
+    let ui = null;
 
     try {
         switch(action) {
-            // Player actions
             case GameAction.Deploy:
-                newState = handleDeployAction(newState);
+                state = handleDeployAction(state);
                 break;
             case GameAction.Upgrade:
-                newState = handleUpgradeAction(newState);
+                state = handleUpgradeAction(state);
                 break;
             case GameAction.EndTurn:
-                newState = handleEndTurn(newState, payload.isHost, payload.gameId);
+                state = handleEndTurn(state);
                 break;
             case GameAction.CancelAction:
-                newState = handleCancelAction(newState);
+                state = handleCancelAction(state);
                 break;
-            
-            // Resource actions
             case GameAction.SelectResourcePosition:
-                newState = handleSelectResourceForPosition(newState, payload.resource, payload.army);
+                state = handleSelectResourceForPosition(state, payload.resource, payload.army);
                 break;
-            
-            // Movement Actions
             case GameAction.Move:
-                newState = handleMoveAction(newState, payload.x, payload.y, payload.army, payload.isTeleport);
+                ({ state, ui } = handleMoveAction(state, payload.x, payload.y, payload.army, payload.isTeleport));
                 break;
-
-            // Attack actions
             case GameAction.Attack:
-                ({ state: newState, ui: uiResult } = handleAttackAction(newState, payload.army));
+                ({ state, ui } = handleAttackAction(state, payload.army));
                 break;
             case GameAction.SelectDefender:
-                newState = handleSelectDefender(newState, payload.defenderArmyId, payload.attackingArmyId);
+                 state = handleSelectDefender(state, payload.defenderArmyId, payload.attackingArmyId);
                 break;
             case GameAction.CombatRoll:
-                newState = handleCombatRoll(newState, payload.useWarChief, payload.army);
+                state = handleCombatRoll(state, payload.useWarChief, payload.army);
                 break;
             case GameAction.CloseCombat:
-                newState = handleCloseCombat(newState);
+                state = handleCloseCombat(state);
                 break;
             case GameAction.MonsterCombatRoll:
-                newState = handleMonsterCombatRoll(newState, payload);
+                state = handleMonsterCombatRoll(state, payload);
                 break;
             case GameAction.CloseMonsterCombat:
-                newState = handleCloseMonsterCombat(newState);
+                state = handleCloseMonsterCombat(state);
                 break;
-
-            // Card actions
             case GameAction.BuyCard:
-                newState = handleBuyCardAction(newState);
+                state = handleBuyCardAction(state);
                 break;
             case GameAction.UseCard:
-                newState = handleUseCard(newState, payload);
+                state = handleUseCard(state, payload);
                 break;
             case GameAction.UseProductiveCard:
-                newState = handleUseProductiveCard(newState, payload.selectedResource);
+                state = handleUseProductiveCard(state, payload.selectedResource);
                 break;
             case GameAction.SabotagePlayer:
-                newState = handleSabotagePlayer(newState, payload.targetPlayerId);
+                state = handleSabotagePlayer(state, payload.targetPlayerId);
                 break;
             case GameAction.GainWealth:
-                newState = handleGainWealth(newState, payload.resource);
+                state = handleGainWealth(state, payload.resource);
                 break;
             case GameAction.StealResource:
-                newState = handleStealResource(newState, payload);
+                state = handleStealResource(state, payload);
                 break;
             case GameAction.RollOnSpecialIsland:
-                newState = handleRollOnSpecialIsland(newState);
+                const rollResult = handleRollOnSpecialIsland(state);
+                state = rollResult.state;
+                ui = { cardDrawn: rollResult.cardDrawn, roll: rollResult.roll };
                 break;
             case GameAction.CloseSpecialIslandDialog:
-                newState = handleCloseSpecialIslandDialog(newState);
+                state = handleCloseSpecialIslandDialog(state);
                 break;
             case GameAction.Scout:
-                newState = handleScoutAction(newState, payload.x, payload.y);
+                state = handleScoutAction(state, payload.x, payload.y);
                 break;
-            
-            // Abilities Shop
             case GameAction.BuyAbility:
-                newState = handleBuyAbility(newState, payload.abilityName);
+                state = handleBuyAbility(state, payload.abilityName);
                 break;
-
             default:
                 console.warn(`Action ${action} is not a shared game state action or is unhandled.`);
                 return { state: gameState, ui: null };
         }
     } catch (error: any) {
         console.error(`Error handling action ${action}:`, error);
-        // Optionally, re-throw the error to be caught by the UI layer and shown in a toast.
         throw error;
     }
-    return { state: newState, ui: uiResult };
+    return { state, ui };
 }

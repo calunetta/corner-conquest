@@ -1,14 +1,13 @@
 
 import type { GameState, Player, ResourceType, ActionHandlerResult, CardName, Army } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
-import { GameAction, AbilityName, MAP_COLS } from '../types';
+import { GameAction, AbilityName, MAP_COLS, HAND_LIMIT } from '../types';
 import { cloneDeep } from 'lodash';
 
 export function handleBuyCardAction(state: GameState): GameState {
     let newState = cloneDeep(state);
     const { players, currentPlayerIndex, specialCardsDeck, discardPile, debugMode } = newState;
     const player = players[currentPlayerIndex];
-    const HAND_LIMIT = 7;
 
     if (player.actionsThisTurn.includes(GameAction.BuyCard)) throw new Error("You can only buy one card per turn.");
     if (player.resources.gems < 10) throw new Error("Not enough gems to buy a card.");
@@ -117,7 +116,6 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
     });
     player.positions = [];
 
-    newState.productiveCardDialogState = null;
     return newState;
 }
 
@@ -207,12 +205,9 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ga
 }
 
 
-export function handleRollOnSpecialIsland(state: GameState): GameState {
+export function handleRollOnSpecialIsland(state: GameState): {state: GameState, cardDrawn: CardName | null, roll: number} {
   let newState = cloneDeep(state);
   const player = newState.players[newState.currentPlayerIndex];
-  const HAND_LIMIT = 7;
-
-  if (!newState.specialIslandRollDialogState) return newState;
 
   const roll = Math.floor(Math.random() * 6) + 1;
   let cardDrawn: CardName | null = null;
@@ -220,32 +215,29 @@ export function handleRollOnSpecialIsland(state: GameState): GameState {
   if (roll === 3 || roll === 6) {
     if (player.specialCards.length >= HAND_LIMIT && !newState.debugMode) {
       newState.log.push(`${player.name} was lucky, but their hand is full!`);
-    } else {
-      if (newState.specialCardsDeck.length === 0 && newState.discardPile.length > 0) {
+    } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
+      if (newState.specialCardsDeck.length === 0) {
         newState.log.push("The deck is empty. Reshuffling the discard pile...");
         newState.specialCardsDeck = [...newState.discardPile];
         newState.discardPile = [];
       }
-
       if (newState.specialCardsDeck.length > 0) {
-        const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
-        const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
-        player.specialCards.push(drawnCard);
-        cardDrawn = drawnCard;
-        newState.log.push(`${player.name} rolled a ${roll} and found a card: "${drawnCard}"!`);
+          const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
+          const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
+          player.specialCards.push(drawnCard);
+          cardDrawn = drawnCard;
+          newState.log.push(`${player.name} rolled a ${roll} and found a card: "${drawnCard}"!`);
       }
     }
   } else {
     newState.log.push(`${player.name} rolled a ${roll} and found nothing.`);
   }
 
-  newState.specialIslandRollDialogState = { isOpen: true, roll, cardDrawn };
-  return newState;
+  return { state: newState, cardDrawn, roll };
 }
 
 export function handleCloseSpecialIslandDialog(state: GameState): GameState {
   let newState = cloneDeep(state);
-  newState.specialIslandRollDialogState = null;
   return checkAndEndTurnIfNoActions(newState);
 }
 

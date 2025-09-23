@@ -1,6 +1,6 @@
 
 'use client';
-import type { SpecialIslandRollDialogState } from '@/lib/types';
+import type { SpecialIslandRollDialogState } from '../types';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -24,7 +24,7 @@ export function SpecialIslandRollDialog({ state, onRoll, onClose }: SpecialIslan
   const isRolled = roll !== null;
 
   return (
-    <AlertDialog open={true}>
+    <AlertDialog open={true} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Special Island</AlertDialogTitle>

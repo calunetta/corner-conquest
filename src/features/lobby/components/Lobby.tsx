@@ -75,7 +75,7 @@ const SettingsDisplay = ({ settings }: { settings: GameSettings }) => (
 export function Lobby({ onJoinGame }: LobbyProps) {
   const [games, setGames] = useState<GameState[]>([]);
   const [isGamesLoading, setIsGamesLoading] = useState(true);
-  const [isCreatingGame, setIsCreatingGame] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isJoiningGame, setIsJoiningGame] = useState<string | null>(null);
   const { playerId, username, logout } = usePlayer();
   const { toast } = useToast();
@@ -200,8 +200,8 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 Join a game or create one to begin your conquest.
               </CardDescription>
             </div>
-            <Button onClick={() => setIsCreatingGame(true)} disabled={isCreatingGame} className="w-full sm:w-auto">
-              {isCreatingGame && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={() => setIsCreateDialogOpen(true)} disabled={isJoiningGame !== null} className="w-full sm:w-auto">
+              {isJoiningGame && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create New Game
             </Button>
           </div>
@@ -286,8 +286,8 @@ export function Lobby({ onJoinGame }: LobbyProps) {
         </CardContent>
       </Card>
       <CreateGameDialog 
-        open={isCreatingGame}
-        onOpenChange={setIsCreatingGame}
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
         onCreateGame={handleCreateGame}
       />
     </div>

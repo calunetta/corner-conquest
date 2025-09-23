@@ -1,7 +1,7 @@
 
-
 export const MAP_ROWS = 6;
 export const MAP_COLS = 5;
+export const HAND_LIMIT = 7;
 
 export enum GameAction {
   // Shared Game State Actions
@@ -215,6 +215,7 @@ export type BaseTileInfo = {
     y: number;
 }
 
+// THIS IS THE AUTHORITATIVE SHARED STATE OBJECT
 export type GameState = {
   id: string;
   name: string;

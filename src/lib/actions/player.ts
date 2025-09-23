@@ -93,7 +93,7 @@ export function canPlayerPerformAnyAction(state: GameState): boolean {
 export function checkAndEndTurnIfNoActions(state: GameState): GameState {
     if (!canPlayerPerformAnyAction(state)) {
         state.log.push(`${state.players[state.currentPlayerIndex].name} has no more actions. Ending turn automatically.`);
-        return handleEndTurn(state, false, state.id);
+        return handleEndTurn(state);
     }
     return state;
 }
@@ -222,7 +222,7 @@ function applyAutomaticCollection(state: GameState, player: Player): { newState:
     return { newState, collectedResources };
 }
 
-export function handleEndTurn(state: GameState, isHost: boolean, gameId: string): GameState {
+export function handleEndTurn(state: GameState): GameState {
     let newState = cloneDeep(state); 
     
     if (newState.currentPlayerIndex >= newState.players.length) {
@@ -239,16 +239,15 @@ export function handleEndTurn(state: GameState, isHost: boolean, gameId: string)
     outgoingPlayer.actionsThisTurn = [];
 
     let nextPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+    
+    newState.currentPlayerIndex = nextPlayerIndex;
     let nextPlayer = newState.players[nextPlayerIndex];
 
     if (nextPlayer.isSabotaged) {
         nextPlayer.isSabotaged = false; 
         newState.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
-        newState.currentPlayerIndex = nextPlayerIndex;
-        return handleEndTurn(newState, isHost, gameId);
+        return handleEndTurn(newState);
     }
-    
-    newState.currentPlayerIndex = nextPlayerIndex;
     
     // --- Pre-Turn Passive Abilities for NEW Player ---
     if (nextPlayer.passiveAbilities.explorer) {
@@ -292,17 +291,8 @@ export function handleEndTurn(state: GameState, isHost: boolean, gameId: string)
 
     if (positionedArmies.length > 0 && newState.turn > 0) {
         if (hasProductiveCard) {
-            const options = positionedArmies.map(pos => {
-                const tile = newState.map[pos.y * MAP_COLS + pos.x];
-                const resource = tile.resources.find(r => r.type === pos.resource);
-                return resource ? { resource: resource.type, amount: resource.amount, x: pos.x, y: pos.y } : null;
-            }).filter((opt): opt is { resource: ResourceType; amount: number; x: number; y: number } => opt !== null);
-            
-            newState.productiveCardDialogState = {
-                isOpen: true,
-                options: options
-            };
-            newState.log.push(`${nextPlayer.name}, you have a 'Productive' card. Choose a resource to double.`);
+            // Let the client handle this via a dialog
+            newState.log.push(`${nextPlayer.name}, you have a 'Productive' card. You will be prompted to use it.`);
         } else {
             const collectionResult = applyAutomaticCollection(newState, nextPlayer);
             newState = collectionResult.newState;
@@ -321,33 +311,26 @@ export function handleEndTurn(state: GameState, isHost: boolean, gameId: string)
     
     newState.combatState = null;
     newState.monsterCombatState = null;
-    if (!newState.productiveCardDialogState?.isOpen) {
-        newState.productiveCardDialogState = null;
-    }
-    newState.specialIslandRollDialogState = null;
-    newState.autoSelectArmyFor = null; // Clear this flag
 
-    if (isHost && nextPlayer.isBot) {
-        return takeBotTurn(newState);
+    if (nextPlayer.isBot) {
+        setTimeout(() => takeBotTurn(newState), 1000);
     }
 
     return newState;
 }
 
-export async function handlePlayerExit(gameId: string, playerId: string, onExit: () => void): Promise<void> {
+export async function handlePlayerExit(gameId: string, playerId: string): Promise<void> {
     try {
         const gameDocRef = doc(db, 'games', gameId);
         
         await runTransaction(db, async (transaction) => {
             const gameDoc = await transaction.get(gameDocRef);
             if (!gameDoc.exists()) {
-                onExit();
                 return;
             }
             let currentState = gameDoc.data() as GameState;
             const playerIndex = currentState.players.findIndex(p => p.playerId === playerId);
             if (playerIndex === -1) {
-                onExit();
                 return;
             }
             
@@ -381,16 +364,19 @@ export async function handlePlayerExit(gameId: string, playerId: string, onExit:
                     if (p.playerId > playerIndex) p.playerId--;
                 });
             });
-
+            
             if (currentState.combatState) {
                 if (currentState.combatState.attackerId > playerIndex) currentState.combatState.attackerId--;
                 if (currentState.combatState.defenderId > playerIndex) currentState.combatState.defenderId--;
+                if(currentState.combatState.attackerId === playerIndex || currentState.combatState.defenderId === playerIndex) {
+                    currentState.combatState = null;
+                }
             }
 
 
             if (isCurrentPlayerExiting) {
                 currentState.currentPlayerIndex = playerIndex % currentState.players.length;
-                currentState = handleEndTurn(currentState, false, gameId);
+                currentState = handleEndTurn(currentState);
             } else if (playerIndex < currentState.currentPlayerIndex) {
                 currentState.currentPlayerIndex--;
             }
@@ -402,7 +388,6 @@ export async function handlePlayerExit(gameId: string, playerId: string, onExit:
             transaction.set(gameDocRef, currentState);
         });
         
-        onExit();
     } catch (error) {
         console.error("Error leaving game:", error);
     }

@@ -1,6 +1,7 @@
 
 'use client';
-import type { GameState, Player, Army, CardName, PendingAction } from '@/lib/types';
+import type { GameState, Player, Army, CardName } from '@/lib/types';
+import type { PendingAction } from '@/features/game/types';
 import { GameAction } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 
 type ActionsPanelProps = {
   onAction: (action: GameAction, payload?: any) => void;
+  onLocalAction: (action: GameAction, payload?: any) => void;
   localPlayer: Player;
   gameState: GameState;
   isMyTurn: boolean;
@@ -30,6 +32,7 @@ type ActionConfig = {
 
 export function ActionsPanel({ 
     onAction, 
+    onLocalAction,
     localPlayer, 
     gameState, 
     isMyTurn, 
@@ -61,7 +64,7 @@ export function ActionsPanel({
 
   const mainActions: ActionConfig[] = [
     { id: GameAction.Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed || isCardActionInProgress, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Attack, { army: selectedArmy }) },
-    { id: GameAction.local_Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress, tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.local_Position, { army: selectedArmy }) },
+    { id: GameAction.local_Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress, tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onLocalAction(GameAction.local_Position, { army: selectedArmy }) },
   ];
   
   const deployLabel = localPlayer.reinforceActive
@@ -101,7 +104,7 @@ export function ActionsPanel({
       icon: <University />, 
       disabled: false, 
       tooltip: "Purchase permanent passive abilities for your empire.",
-      onClick: () => onAction(GameAction.local_OpenAbilitiesShop)
+      onClick: () => onLocalAction(GameAction.local_OpenAbilitiesShop)
     },
   ];
   
@@ -112,7 +115,7 @@ export function ActionsPanel({
         icon: <Album />, 
         disabled: localPlayer.specialCards.length === 0, 
         tooltip: "View your collected special cards. You can use one per turn.", 
-        onClick: () => onAction(GameAction.local_ShowCards, { playerId: localPlayer.id })
+        onClick: () => onLocalAction(GameAction.local_ShowCards, { playerId: localPlayer.id })
       },
   ]
   
@@ -190,13 +193,13 @@ export function ActionsPanel({
         <CardTitle className="text-lg">Actions</CardTitle>
         <div className="flex flex-wrap items-center justify-end gap-2">
             {isMyTurn && isCancellableActionInProgress && (
-                 <Button variant="destructive" size="sm" onClick={() => onAction(GameAction.local_CancelAction)}>
+                 <Button variant="destructive" size="sm" onClick={() => onLocalAction(GameAction.local_CancelAction)}>
                     <XCircle />
                     Cancel
                 </Button>
             )}
             {isMyTurn && selectedArmy && (
-                 <Button variant="secondary" size="sm" onClick={() => onAction(GameAction.local_DeselectArmy)}>
+                 <Button variant="secondary" size="sm" onClick={() => onLocalAction(GameAction.local_DeselectArmy)}>
                     <XCircle className="mr-2 h-4 w-4" />
                     Deselect Army
                 </Button>

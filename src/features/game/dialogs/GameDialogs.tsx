@@ -1,6 +1,7 @@
 
 'use client';
-import type { GameState, Player, CardName, AbilityName, Army, IslandResource, ArmySelectionDialogState, AttackSelectionDialogState, SabotageDialogState, PositionDialogState, WealthyDialogState, StealResourceDialogState } from '@/lib/types';
+import type { GameState, Player, CardName, AbilityName, Army, IslandResource } from '@/lib/types';
+import type { ArmySelectionDialogState, AttackSelectionDialogState, SabotageDialogState, PositionDialogState, WealthyDialogState, StealResourceDialogState, ProductiveCardDialogState, SpecialIslandRollDialogState } from '../types';
 import { GameAction } from '@/lib/types';
 import { CombatDialog } from './CombatDialog';
 import { MonsterCombatDialog } from './MonsterCombatDialog';
@@ -24,9 +25,13 @@ type GameDialogsProps = {
   
   // Local dialog states managed by GameBoard
   showHostLeaveDialog: boolean;
+  onConfirmHostLeave: () => void;
   onCloseHostLeaveDialog: () => void;
   cardsDialogPlayerId: number | null;
+  onCloseCardsDialog: () => void;
+  onUseCard: (cardName: CardName) => void;
   abilitiesShopOpen: boolean;
+  onCloseAbilitiesShop: () => void;
   armySelectionDialog: ArmySelectionDialogState;
   onCloseArmySelectionDialog: () => void;
   onSelectArmyFromDialog: (armyId: number) => void;
@@ -40,6 +45,10 @@ type GameDialogsProps = {
   onCloseWealthyDialog: () => void;
   stealResourceDialog: StealResourceDialogState;
   onCloseStealResourceDialog: () => void;
+  productiveCardDialog: ProductiveCardDialogState;
+  onCloseProductiveCardDialog: () => void;
+  specialIslandRollDialog: SpecialIslandRollDialogState;
+  onCloseSpecialIslandRollDialog: () => void;
 };
 
 export function GameDialogs({ 
@@ -48,9 +57,13 @@ export function GameDialogs({
     isMyTurn, 
     onAction,
     showHostLeaveDialog,
+    onConfirmHostLeave,
     onCloseHostLeaveDialog,
     cardsDialogPlayerId,
+    onCloseCardsDialog,
+    onUseCard,
     abilitiesShopOpen,
+    onCloseAbilitiesShop,
     armySelectionDialog,
     onCloseArmySelectionDialog,
     onSelectArmyFromDialog,
@@ -64,14 +77,16 @@ export function GameDialogs({
     onCloseWealthyDialog,
     stealResourceDialog,
     onCloseStealResourceDialog,
+    productiveCardDialog,
+    onCloseProductiveCardDialog,
+    specialIslandRollDialog,
+    onCloseSpecialIslandRollDialog,
 }: GameDialogsProps) {
   const { 
     combatState, 
     status,
     players,
     monsterCombatState,
-    productiveCardDialogState,
-    specialIslandRollDialogState,
   } = gameState;
   
   const playerForCardsDialog = cardsDialogPlayerId !== null ? players.find(p => p.id === cardsDialogPlayerId) : null;
@@ -100,18 +115,24 @@ export function GameDialogs({
           />
       )}
 
-      {productiveCardDialogState?.isOpen && isMyTurn && (
+      {productiveCardDialog?.isOpen && isMyTurn && (
           <ProductiveCardDialog
-              state={productiveCardDialogState}
-              onConfirm={(selectedResource) => onAction(GameAction.UseProductiveCard, { selectedResource })}
+              state={productiveCardDialog}
+              onConfirm={(selectedResource) => {
+                onAction(GameAction.UseProductiveCard, { selectedResource });
+                onCloseProductiveCardDialog();
+              }}
           />
       )}
 
-      {specialIslandRollDialogState?.isOpen && isMyTurn && (
+      {specialIslandRollDialog?.isOpen && isMyTurn && (
         <SpecialIslandRollDialog
-          state={specialIslandRollDialogState}
+          state={specialIslandRollDialog}
           onRoll={() => onAction(GameAction.RollOnSpecialIsland)}
-          onClose={() => onAction(GameAction.CloseSpecialIslandDialog)}
+          onClose={() => {
+            onAction(GameAction.CloseSpecialIslandDialog);
+            onCloseSpecialIslandRollDialog();
+          }}
         />
       )}
 
@@ -162,7 +183,7 @@ export function GameDialogs({
             {abilitiesShopOpen && (
                 <AbilitiesDialog
                     player={localPlayer}
-                    onClose={() => onAction(GameAction.local_CloseAbilitiesShop)}
+                    onClose={onCloseAbilitiesShop}
                     onBuyAbility={(abilityName: AbilityName) => onAction(GameAction.BuyAbility, { abilityName })}
                     gameState={gameState}
                     isMyTurn={isMyTurn}
@@ -206,10 +227,10 @@ export function GameDialogs({
       {playerForCardsDialog && (
         <CardsDialog 
           player={playerForCardsDialog}
-          onClose={() => onAction(GameAction.local_CloseCards)}
+          onClose={onCloseCardsDialog}
           onUseCard={(cardName: CardName) => {
-            onAction(GameAction.local_CloseCards)
-            onAction(GameAction.local_UseCard, { cardName });
+            onCloseCardsDialog();
+            onUseCard(cardName);
           }}
           canUseCards={isMyTurn && isViewingOwnCards}
         />
@@ -218,7 +239,7 @@ export function GameDialogs({
       {showHostLeaveDialog && (
         <HostLeaveDialog
             isLastPlayer={players.length === 1}
-            onConfirm={() => onAction(GameAction.HostLeave)}
+            onConfirm={onConfirmHostLeave}
             onClose={onCloseHostLeaveDialog}
             gameStatus={status}
         />
