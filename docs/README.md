@@ -126,7 +126,14 @@ A player's turn consists of a series of actions. The game automatically ends a p
 
 ## 5. Detailed System Explanations
 
-### 5.1. Special Cards
+### 5.1. Player Login & Username Uniqueness
+The application ensures that every player has a unique username.
+- When a user enters a username in the `Login` component (`src/app/page.tsx`), it calls the `setUsername` function from the `usePlayer` hook.
+- This function queries a `usernames` collection in Firestore to check if a document with that name already exists.
+- If the document exists and is associated with a different player's ID, `setUsername` returns `false`.
+- The `Login` component then displays an "Username Taken" dialog, prompting the user to choose a different name. This prevents duplicate usernames in the lobby and game.
+
+### 5.2. Special Cards
 - **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, if `Debug Mode` is enabled, the human player starts with one of every available Special Card.
 - **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
 - **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog.
@@ -144,13 +151,13 @@ A player's turn consists of a series of actions. The game automatically ends a p
 - **Decide Dice Roll:** In the next *monster* combat, you can choose the value of one of your dice. Appears as a checkbox and slider in the monster combat dialog.
 - **Productive:** A passive card. At the start of your turn, if you are positioned to collect resources, a dialog opens allowing you to spend this card to double the yield of one resource type.
 
-### 5.2. UI/UX and Interactions
+### 5.3. UI/UX and Interactions
 
-#### 5.2.1. Dialogs and Player Scope
+#### 5.3.1. Dialogs and Player Scope
 - **Local Dialogs:** Most dialogs for actions (`Sabotage`, `Wealthy`, `Position`, etc.) are rendered **only for the current player**. This is managed by the `isMyTurn` flag within `GameDialogs.tsx`.
 - **Global Dialogs:** The `CombatDialog` is an exception. It shows an interactive view to the attacker and a read-only "results" view to all other players, ensuring everyone can follow the action.
 
-#### 5.2.2. Army and Tile Selection
+#### 5.3.2. Army and Tile Selection
 - **Auto-Selection:** If a player has only one army at the start of their turn, it is automatically selected.
 - **Manual Selection:** Clicking a tile containing one of your armies selects it.
 - **Multi-Army Selection:** Clicking a tile with multiple friendly armies opens the `ArmySelectionDialog` to choose a specific unit.
@@ -158,7 +165,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
     1.  Clicking the "Deselect Army" button.
     2.  Clicking on any tile that is not a valid move for the currently selected army.
 
-#### 5.2.3. Visual Feedback
+#### 5.3.3. Visual Feedback
 - **Selected Army:** The tile of a selected army gets a prominent glowing shadow (`shadow-2xl shadow-primary/80`).
 - **Player-Owned Tiles:** Tiles occupied by the local player's armies have a subtle, color-coded glow (`shadow-blue-500/50`, `shadow-red-500/50`, etc.) for easy identification.
 - **Possible Moves:** Valid move destinations for a selected army are highlighted with a dashed border (`border-accent/70`).
@@ -170,11 +177,11 @@ A player's turn consists of a series of actions. The game automatically ends a p
     - An animated border appears at the bottom of each island tile to give the illusion of water movement. This is created in `IslandTile.tsx` by combining three separate GIF images (`island_edge_1.gif`, `island_edge_2.gif`, `island_edge_3.gif`) in a randomized sequence.
     - Decorative rocks in the water are procedurally placed by `MapGrid.tsx` for visual variety. This is disabled on mobile for performance and clarity.
 
-#### 5.2.4. Confirmation Dialogs
+#### 5.3.4. Confirmation Dialogs
 - `ConfirmExitDialog`: Appears if a player attempts to leave a match that is in progress.
 - `HostLeaveDialog`: A special dialog for the host, warning them that leaving will delete the game room and end the match for all players.
 
-### 5.3. Player Info Panel
+### 5.4. Player Info Panel
 This UI element provides a real-time summary for each player in the game, displaying:
 - Player Name and Army Sprite
 - **Victory Points (VP)**
@@ -185,17 +192,17 @@ This UI element provides a real-time summary for each player in the game, displa
 - **Status Effects:** Icons for `Sabotage` (miss next turn) or `Extra Move`.
 - **Layout:** The panel uses a responsive grid (`grid-cols-2 lg:grid-cols-4`), accommodating up to 4 players. Empty slots are filled with "Waiting for player..." placeholders in the lobby.
 
-### 5.4. Player Exiting the Game
+### 5.5. Player Exiting the Game
 - **Normal Player:** If a non-host player leaves, their armies are removed from the board, they are removed from the `players` array in the game state, and a log message is generated. The game continues for the remaining players.
 - **Host Player:** If the host leaves, the entire game document is **deleted from Firestore**. The game ends for all players, and they are returned to the lobby.
 
-### 5.5. Game Customization
+### 5.6. Game Customization
 From the Lobby, players can create a new game and access a "Customize Match" sheet with the following options:
 - **General:** Victory Point goal, enable/disable Fog of War, set VP for island discovery, and adjust the density of resource islands vs. monster islands.
 - **Costs:** Set the initial cost for deploying armies, the cost increment for subsequent deployments, and the costs for upgrades and passive abilities.
 - **Content:** Selectively enable or disable which Special Cards and Passive Abilities are available to be drawn or purchased during the match.
 
-### 5.6. Game Log
+### 5.7. Game Log
 The game log is a running, public history of major events in the match, displayed to all players. It records:
 - Players joining or leaving.
 - Game start and end.
@@ -207,7 +214,7 @@ The game log is a running, public history of major events in the match, displaye
 
 This log provides crucial context and a narrative for the unfolding game.
 
-### 5.7. Fog of War & Debug Mode
+### 5.8. Fog of War & Debug Mode
 
 -   **Fog of War (Enabled):** This is the default, tactical experience.
     -   Each player has their own, independent visibility of the map.
@@ -219,7 +226,7 @@ This log provides crucial context and a narrative for the unfolding game.
     -   **Complete Map Visibility:** It overrides any Fog of War setting, making the entire map and all armies visible from the start of the match.
     -   **All Special Cards:** The player begins the game with one of every available Special Card, allowing for immediate testing of card mechanics.
 
-### 5.8. Responsive Design & Mobile Experience
+### 5.9. Responsive Design & Mobile Experience
 
 The application is designed to be fully responsive, with key adjustments made for smaller screens. The core of this is the `useIsMobile` hook, which checks for screen widths below 768px.
 
@@ -227,7 +234,7 @@ The application is designed to be fully responsive, with key adjustments made fo
     -   On mobile, the `GameBoard` displays as a single, vertical column to prioritize the map view. The Actions Panel and Game Log appear below the map.
     -   On desktop (or screens wider than 1024px), the layout shifts to a two-column grid, with the Actions Panel and Game Log positioned to the right of the map for easier access.
     -   The `PlayerInfo` panel at the top is collapsed by default on mobile to conserve vertical space and can be expanded by the user.
-    -   In the lobby, the main header (containing the "Game Lobby" title and "Create New Game" button) will stack vertically on mobile screens to prevent overflow and improve usability.
+    -   In the lobby, the main header (containing the "Game Lobby" title and "Create New Game" button) stacks vertically on mobile screens to prevent overflow and improve usability. The list of available games also adjusts, grouping player information more cleanly on smaller screens.
 
 -   **Map & Interaction:**
     -   The `MapGrid` itself scales down for mobile. Tile sizes are reduced from 120px to 75px, and the gap between them shrinks from 32px to 16px.
