@@ -74,7 +74,7 @@ const SettingsDisplay = ({ settings }: { settings: GameSettings }) => (
 
 export function Lobby({ onJoinGame }: LobbyProps) {
   const [games, setGames] = useState<GameState[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isGamesLoading, setIsGamesLoading] = useState(true);
   const [isCreatingGame, setIsCreatingGame] = useState(false);
   const [isJoiningGame, setIsJoiningGame] = useState<string | null>(null);
   const { playerId, username, logout } = usePlayer();
@@ -93,10 +93,10 @@ export function Lobby({ onJoinGame }: LobbyProps) {
         });
       });
       setGames(gamesList);
-      setIsLoading(false);
+      setIsGamesLoading(false);
     }, (error) => {
       console.error("Lobby snapshot error:", error);
-      setIsLoading(false);
+      setIsGamesLoading(false);
       toast({title: "Lobby Error", description: "Could not fetch open games.", variant: "destructive"})
     });
 
@@ -121,7 +121,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     
     const isBotGame = maxPlayers === 1;
     if (isBotGame) {
-      newGame = startGame(newGame);
+      newGame = startGame(newGame, newGame.players[0].name);
     }
 
     try {
@@ -203,7 +203,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {isLoading ? (
+            {isGamesLoading ? (
               <div className="flex justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
@@ -281,7 +281,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
         </CardContent>
       </Card>
       <CreateGameDialog 
-        open={isJoiningGame === null && isCreatingGame}
+        open={!isJoiningGame && isCreatingGame}
         onOpenChange={setIsCreatingGame}
         onCreateGame={handleCreateGame}
       />

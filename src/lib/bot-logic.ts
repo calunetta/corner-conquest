@@ -25,12 +25,11 @@ type BotAction = {
 
 
 // --- Main Decision Logic ---
-export async function takeBotTurn(initialState: GameState): Promise<GameState> {
+export function takeBotTurn(initialState: GameState): GameState {
     let state = JSON.parse(JSON.stringify(initialState));
     const botPlayer = state.players[state.currentPlayerIndex];
     console.log(`--- Bot Turn Start: ${botPlayer.name} ---`);
     
-    // Check for useful cards and activate them pre-turn
     if (botPlayer.specialCards.includes(CardName.Reinforce)) {
         botPlayer.reinforceActive = true;
     }
@@ -45,7 +44,6 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     const possibleActions: BotAction[] = [];
 
     // --- Strategic (non-army) Actions ---
-    // Buy Ability
     const abilityCost = state.settings.abilityCost;
     const unownedAbilities = state.settings.availableAbilities.filter(a => !botPlayer.passiveAbilities[a as AbilityName]);
     if (canAfford(botPlayer, abilityCost, 'gems' as ResourceType) && unownedAbilities.length > 0) {
@@ -60,7 +58,6 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         });
     }
     
-    // Upgrade Attack
     const upgradeCost = botPlayer.masterBuilderActive ? Math.ceil(state.settings.upgradeCost / 2) : state.settings.upgradeCost;
     if (canAfford(botPlayer, upgradeCost, 'iron' as ResourceType) && botPlayer.attackPower < 4 && !botPlayer.actionsThisTurn.includes(GameAction.Upgrade)) {
         possibleActions.push({
@@ -74,7 +71,6 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         });
     }
 
-    // Deploy Army
     const deployCost = botPlayer.efficientActive ? Math.ceil(botPlayer.nextArmyCost / 2) : botPlayer.nextArmyCost;
     if ((canAfford(botPlayer, deployCost, 'wheat' as ResourceType) || botPlayer.reinforceActive) && botPlayer.armyCount < 5 && !botPlayer.actionsThisTurn.includes(GameAction.Deploy)) {
         possibleActions.push({
@@ -88,7 +84,6 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         });
     }
 
-    // Buy Card
     if (canAfford(botPlayer, 10, 'gems' as ResourceType) && !botPlayer.actionsThisTurn.includes(GameAction.BuyCard)) {
         possibleActions.push({
             name: 'buy-card',
@@ -108,7 +103,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             neededResource = 'wheat' as ResourceType;
         } else if (!canAfford(botPlayer, upgradeCost, 'iron' as ResourceType) && botPlayer.attackPower < 4) {
             neededResource = 'iron' as ResourceType;
-        } else if (botPlayer.resources.gems < 5) { // Proactively get gems
+        } else if (botPlayer.resources.gems < 5) {
             neededResource = 'gems' as ResourceType;
         }
         
@@ -116,7 +111,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             const resourceToGain = neededResource;
             possibleActions.push({
                 name: 'use-wealthy',
-                priority: 8, // Very high priority to unblock other actions
+                priority: 8,
                 execute: (s) => {
                     try {
                         let tempState = handleUseCard(s, { cardName: CardName.Wealthy });
@@ -133,7 +128,6 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     for (const army of unactedArmies) {
         const currentTile = state.map[army.position.y * MAP_COLS + army.position.x];
         
-        // --- High Priority: Attack ---
         const enemyOnTile = currentTile.occupants.find(o => o.playerId !== botPlayer.id);
         const monsterOnTile = currentTile.monsters && currentTile.monsters.length > 0;
         
@@ -142,7 +136,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
              if (enemyPlayer) {
                  possibleActions.push({
                      name: `attack-player-${army.id}`,
-                     priority: 8 + (botPlayer.attackPower - enemyPlayer.attackPower), // Higher priority if bot is stronger
+                     priority: 8 + (botPlayer.attackPower - enemyPlayer.attackPower),
                      execute: (s) => handleAttackAction(s, army).state,
                  });
              }
@@ -151,20 +145,18 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         if(monsterOnTile) {
              possibleActions.push({
                 name: `attack-monster-${army.id}`,
-                priority: 7, // High priority to clear islands
+                priority: 7,
                 execute: (s) => handleAttackAction(s, army).state,
              });
         }
 
-
-        // Action: Position on current tile
         const isAlreadyPositioned = botPlayer.positions.some((p: any) => p.armyId === army.id);
         if (!isAlreadyPositioned && (currentTile.type === IslandType.Resource || currentTile.type === IslandType.Base) && currentTile.resources.length > 0 && !monsterOnTile) {
             const availableResource = currentTile.resources.find((res: any) => !(currentTile.positionedBy || []).some((p: any) => p.resource === res.type));
             if (availableResource) {
                 possibleActions.push({
                     name: `position-${army.id}`,
-                    priority: 9, // Positioning is very important
+                    priority: 9,
                     execute: (s) => {
                         try {
                             return handleSelectResourceForPosition(s, availableResource.type, army);
@@ -174,11 +166,10 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             }
         }
 
-        // Action: Move
         const validMoves = getPossibleMoves(state, army);
         for (const move of validMoves) {
             const targetTile = state.map[move.y * MAP_COLS + move.x];
-            let priority = 5; // Higher base priority for exploring
+            let priority = 5;
             
             if (state.settings.fogOfWar && !botPlayer.revealedTiles.includes(targetTile.id)) {
                 priority = 6;
@@ -203,7 +194,6 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
     }
 
 
-    // --- Execute Best Action ---
     if (possibleActions.length > 0) {
         possibleActions.sort((a, b) => b.priority - a.priority);
         const bestAction = possibleActions[0];
@@ -214,7 +204,6 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         }
     }
     
-    // --- Final Fallback ---
     console.log(`Bot: No valid actions found. Ending turn.`);
-    return handleEndTurn(state);
+    return handleEndTurn(state, { isHost: false, gameId: state.id });
 }

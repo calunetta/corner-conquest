@@ -17,6 +17,7 @@ export enum GameAction {
   StealResource = 'steal-resource',
   RollOnSpecialIsland = 'roll-on-special-island',
   CloseSpecialIslandDialog = 'close-special-island-dialog',
+  HostLeave = 'host-leave',
 
   // Local UI Actions - Not sent to Firebase
   SelectArmy = 'select-army',
@@ -198,12 +199,8 @@ export type MonsterCombatState = {
   monsterRolls: number[];
   winnerId: number | null;
   phase: CombatPhase;
-  useDecideDiceRollCard: boolean;
-  decidedRollValue: number;
 };
 
-// These dialog states are now managed locally in GameBoard.tsx
-// But the shared state might need to trigger them.
 export type ProductiveCardDialogState = {
     isOpen: boolean;
     options: {
@@ -219,18 +216,6 @@ export type SpecialIslandRollDialogState = {
   roll: number | null;
   cardDrawn: CardName | null;
 };
-
-export type StealResourceDialogState = {
-    isOpen: boolean;
-}
-
-export type SabotageDialogState = {
-  isOpen: boolean;
-}
-
-export type WealthyDialogState = {
-    isOpen: boolean;
-}
 
 export type DeathAnimation = {
     id: string; // "army-playerId-armyId" or "monster-x-y-name"
@@ -272,20 +257,9 @@ export type GameState = {
   // SHARED DIALOG STATES (Only those that require all players to see or interact)
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
-  productiveCardDialogState: ProductiveCardDialogState | null;
+  // Transitory states that need to be seen by the next player on their turn start.
+  productiveCardDialogState: ProductiveCardDialogState | null; 
   specialIslandRollDialogState: SpecialIslandRollDialogState | null;
-  
-  // DEPRECATED / MOVED TO LOCAL STATE
-  positionDialogState: any | null; // Kept for type safety during transition, but logically null
-  stealResourceDialogState: any | null;
-  abilitiesShopState: any | null;
-  sabotageDialogState: any | null;
-  wealthyDialogState: any | null;
-  scoutingState: any | null;
-  teleportState: any | null;
-  armySelectionDialogState: any | null;
-  attackSelectionDialogState: any | null;
-  showHostLeaveDialog: any | null;
 };
 
 // Result of a reducer. Can include state changes and/or UI events.

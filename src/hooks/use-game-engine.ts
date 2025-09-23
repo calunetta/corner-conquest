@@ -4,8 +4,6 @@ import { db, doc, onSnapshot, getDoc, updateDoc } from '@/lib/firebase';
 import type { GameState, ActionHandlerResult } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
-import { takeBotTurn } from '@/lib/bot-logic';
-import { handleEndTurn } from '@/lib/actions/player';
 
 export function useGameEngine(gameId: string, playerId: string | null) {
   const [gameState, setInternalGameState] = useState<GameState | null>(null);
@@ -13,7 +11,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   const { toast } = useToast();
   const router = useRouter();
 
-  const isProcessingBotTurn = useRef(false);
   const gameStateRef = useRef<GameState | null>(null);
 
   useEffect(() => {
@@ -127,7 +124,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
 
   useEffect(() => {
-    if (isLoading || !gameState) return;
+    if (isLoading || !gameState || !localPlayer) return;
     
     if (!localPlayer) {
       toast({ title: "Not in Game", description: "You are not a player in this game. Returning to lobby." });
@@ -157,60 +154,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
     return () => animationTimers.forEach(clearTimeout);
   }, [gameState?.deathAnimations, isHost, setGameState]);
-
-
-  useEffect(() => {
-    const currentState = gameStateRef.current;
-    if (isProcessingBotTurn.current || !currentState || currentState.status !== 'playing' || !currentState.players[currentState.currentPlayerIndex]?.isBot || !isHost) {
-        return;
-    }
-
-    isProcessingBotTurn.current = true;
-    
-    setTimeout(async () => {
-      try {
-          if (!isProcessingBotTurn.current) return;
-          
-          const latestStateDoc = await getDoc(doc(db, 'games', gameId));
-          let latestState = latestStateDoc.data() as GameState;
-
-          if (!latestState || !latestState.players[latestState.currentPlayerIndex]?.isBot) {
-              isProcessingBotTurn.current = false;
-              return;
-          }
-
-          console.log('Bot turn starting...');
-          
-          let botState = latestState;
-          
-          if(botState.productiveCardDialogState) {
-              botState = handleEndTurn(botState);
-          }
-          
-          const nextState = await takeBotTurn(botState);
-          await updateDoc(doc(db, 'games', gameId), { ...nextState });
-          console.log('Bot turn finished and state updated.');
-
-      } catch (error) {
-        console.error("Error during bot turn: ", error);
-        const stateAfterError = gameStateRef.current;
-        if (stateAfterError) {
-            try {
-                const errorState = handleEndTurn(stateAfterError);
-                await updateDoc(doc(db, 'games', gameId), { ...errorState });
-            } catch (e) {
-                 console.error("Failed to end turn after bot error:", e);
-            }
-        }
-      } finally {
-          setTimeout(() => {
-              isProcessingBotTurn.current = false;
-          }, 500);
-      }
-    }, 2000);
-    
-  }, [gameState, isHost, gameId]);
-
 
   return { gameState, setGameState, isMyTurn, localPlayer, isHost, isLoading, globallyRevealedTiles };
 }

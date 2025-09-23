@@ -87,14 +87,15 @@ These actions modify the core `GameState` and are synchronized for all players.
 
 ### 3.2. Turn Change Logic
 When `handleEndTurn` is called, a sequence of events occurs:
-1.  Passive abilities for the *outgoing* player (like `Explorer`) are calculated and applied.
-2.  The outgoing player's temporary flags (`hasExtraMove`, etc.) and `actionsThisTurn` are cleared.
-3.  The `currentPlayerIndex` is incremented.
-4.  A check is performed to see if the *new* player is sabotaged. If so, their turn is skipped.
+1.  The outgoing player's temporary flags (`hasExtraMove`, etc.) and `actionsThisTurn` are cleared.
+2.  The `currentPlayerIndex` is incremented.
+3.  A check is performed to see if the *new* player is sabotaged. If so, their turn is skipped, and the turn change logic is re-triggered for the next player.
+4.  Passive abilities for the *new* current player (like `Explorer`) are calculated and applied.
 5.  A check for the *new* player's pre-turn actions is performed (e.g., Automatic Resource Collection). If they are positioned on resources, the appropriate collection logic or dialog (`ProductiveCardDialog`) is triggered.
-6.  If the new player has only one army, `autoSelectArmyFor` is set in the game state, which the client uses to locally auto-select the army.
+6.  If the new player has only one army, `autoSelectArmyFor` is set in the game state. The client's `GameBoard` component will see this and locally auto-select the army.
 7.  A log message announces the new turn.
 8.  All temporary shared dialog states (`combatState`, `productiveCardDialogState`, etc.) are reset to `null`.
+9.  **Bot Turn:** If the new current player is a bot and the current user is the host, the bot's turn logic (`takeBotTurn`) is immediately executed. The resulting new game state is then saved to Firebase.
 
 ### 3.3. Firebase & React/Next.js Common Pitfalls
 - **Firestore Cannot Store `undefined`:** A recurring critical bug is caused by attempting to write a `GameState` object with `undefined` properties. Firestore will silently strip these properties, causing the `GameState` read by clients to have a different shape than expected, leading to crashes. **Rule: Always use `null` instead of `undefined`** for optional or empty state properties.
@@ -202,7 +203,7 @@ The application ensures that every player has a unique username.
 - **Global Dialogs:** The `CombatDialog`, `MonsterCombatDialog`, and `ProductiveCardDialog` are exceptions. Their state is stored in `GameState` because all players need to see the outcome or have the potential to be involved.
 
 #### 5.3.2. Army and Tile Selection
-- **Auto-Selection:** If a player has only one army at the start of their turn, it is automatically selected locally.
+- **Auto-Selection:** If a player has only one army at the start of their turn, a one-time `autoSelectArmyFor` directive is set in `GameState`. The local client sees this and updates its local `selectedArmyId` state.
 - **Manual Selection:** Clicking a tile containing one of your armies selects it. This is a local UI action.
 - **Multi-Army Selection:** Clicking a tile with multiple friendly armies opens a local `ArmySelectionDialog` to choose a specific unit.
 - **Deselection:** An army can be deselected locally by:

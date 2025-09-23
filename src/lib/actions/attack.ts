@@ -60,8 +60,6 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
         monsterRolls: [],
         winnerId: null,
         phase: 'rolling',
-        useDecideDiceRollCard: false,
-        decidedRollValue: 1,
       };
     } else {
         newState.log.push(`${attacker.name}'s army attacks, but finds no target!`);
@@ -222,12 +220,15 @@ export function handleCloseCombat(state: GameState): GameState {
     return checkAndEndTurnIfNoActions(newState);
 }
 
-export function handleMonsterCombatRoll(state: GameState, payload: {monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean}, attackingArmy: Army | null): GameState {
+export function handleMonsterCombatRoll(state: GameState, payload: {monster: Monster; useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean}): GameState {
     const newState = { ...state };
-    const { players, currentPlayerIndex, discardPile } = newState;
-    const attacker = players[currentPlayerIndex];
+    const { players, currentPlayerIndex, discardPile, monsterCombatState } = newState;
+    if(!monsterCombatState) return newState;
 
+    const attacker = players[currentPlayerIndex];
+    const attackingArmy = attacker.armies.find(a => a.position.x === monsterCombatState.attackerPosition.x && a.position.y === monsterCombatState.attackerPosition.y);
     if (!attackingArmy) return newState;
+
     const { monster, useDecideCard, decidedValue, useOvercomeCard, useWarChief } = payload;
 
     let attackerRolls: number[] = [];
@@ -308,24 +309,23 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
       monsterRolls,
       winnerId: winnerId,
       phase: 'results',
-      useDecideDiceRollCard: useDecideCard,
-      decidedRollValue: decidedValue,
     };
     return newState;
 };
 
-export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army | null): GameState {
+export function handleCloseMonsterCombat(state: GameState): GameState {
     let newState = { ...state };
     const { monsterCombatState, baseTiles, settings } = newState;
     if (!monsterCombatState || monsterCombatState.phase !== 'results') {
         return { ...newState, monsterCombatState: null };
     }
     
-    const { winnerId, monster, attackerId } = newState.monsterCombatState;
+    const { winnerId, monster, attackerId, attackerPosition } = newState.monsterCombatState;
     const attacker = newState.players[attackerId];
-    if (!attackingArmy) return { ...newState, monsterCombatState: null };
+    
+    const attackingArmy = attacker.armies.find(a => a.position.x === attackerPosition.x && a.position.y === attackerPosition.y);
 
-    const currentTile = newState.map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
+    const currentTile = newState.map[attackerPosition.y * MAP_COLS + attackerPosition.x];
 
     if (winnerId === attacker.id) {
         const monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
@@ -375,7 +375,7 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
     } else {
         newState.log.push(`${attacker.name} was defeated by the ${monster.name}!`);
         const baseTile = baseTiles.find(t => t.owner === attacker.id);
-        const losingArmy = attacker.armies.find(a => a.id === attackingArmy.id);
+        const losingArmy = attackingArmy;
         if (losingArmy && baseTile) {
             const deathAnim: DeathAnimation = {
                 id: `army-${attacker.id}-${losingArmy.id}`,

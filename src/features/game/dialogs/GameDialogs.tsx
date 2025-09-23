@@ -1,6 +1,6 @@
 
 'use client';
-import type { GameState, Player, CardName, AbilityName, Army, IslandResource, ArmySelectionDialogState, AttackSelectionDialogState, SabotageDialogState, PositionDialogState, WealthyDialogState } from '@/lib/types';
+import type { GameState, Player, CardName, AbilityName, Army, IslandResource, ArmySelectionDialogState, AttackSelectionDialogState, SabotageDialogState, PositionDialogState, WealthyDialogState, StealResourceDialogState, ProductiveCardDialogState, SpecialIslandRollDialogState } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 import { CombatDialog } from './CombatDialog';
 import { MonsterCombatDialog } from './MonsterCombatDialog';
@@ -15,6 +15,7 @@ import { ArmySelectionDialog } from './ArmySelectionDialog';
 import { AttackSelectionDialog } from './AttackSelectionDialog';
 import { ProductiveCardDialog } from './ProductiveCardDialog';
 import { SpecialIslandRollDialog } from './SpecialIslandRollDialog';
+import { handlePlayerExit } from '@/lib/actions/player';
 
 type GameDialogsProps = {
   gameState: GameState;
@@ -34,7 +35,6 @@ type GameDialogsProps = {
   onSelectArmyFromDialog: (armyId: number) => void;
   attackSelectionDialog: AttackSelectionDialogState;
   onCloseAttackSelectionDialog: () => void;
-  onSelectAttackTarget: (defenderArmyId: number) => void;
   positionDialog: PositionDialogState;
   onClosePositionDialog: () => void;
   sabotageDialog: SabotageDialogState;
@@ -43,6 +43,8 @@ type GameDialogsProps = {
   onCloseWealthyDialog: () => void;
   stealResourceDialog: StealResourceDialogState;
   onCloseStealResourceDialog: () => void;
+  productiveCardDialogState: ProductiveCardDialogState | null;
+  specialIslandRollDialogState: SpecialIslandRollDialogState | null;
 };
 
 export function GameDialogs({ 
@@ -61,7 +63,6 @@ export function GameDialogs({
     onSelectArmyFromDialog,
     attackSelectionDialog,
     onCloseAttackSelectionDialog,
-    onSelectAttackTarget,
     positionDialog,
     onClosePositionDialog,
     sabotageDialog,
@@ -70,14 +71,14 @@ export function GameDialogs({
     onCloseWealthyDialog,
     stealResourceDialog,
     onCloseStealResourceDialog,
+    productiveCardDialogState,
+    specialIslandRollDialogState,
 }: GameDialogsProps) {
   const { 
     combatState, 
     status,
     players,
     monsterCombatState,
-    productiveCardDialogState,
-    specialIslandRollDialogState,
   } = gameState;
   
   const playerForCardsDialog = cardsDialogPlayerId !== null ? players.find(p => p.id === cardsDialogPlayerId) : null;
@@ -101,10 +102,12 @@ export function GameDialogs({
               gameState={gameState} 
               monsters={gameState.map[monsterCombatState.attackerPosition.y * gameState.settings.gridSize.cols + monsterCombatState.attackerPosition.x].monsters || []}
               onRoll={(payload) => onAction(GameAction.MonsterCombatRoll, { ...payload, army: localPlayer.armies.find(a => a.position.x === monsterCombatState?.attackerPosition.x && a.position.y === monsterCombatState?.attackerPosition.y)})}
-              onClose={() => onAction(GameAction.CloseMonsterCombat, { army: localPlayer.armies.find(a => a.position.x === monsterCombatState?.attackerPosition.x && a.position.y === monsterCombatState?.attackerPosition.y)})}
+              onClose={() => onAction(GameAction.CloseMonsterCombat)}
               onCancel={() => onAction(GameAction.CancelAction)}
           />
       )}
+
+      {/* LOCAL DIALOGS (visible only to the current player) */}
 
       {productiveCardDialogState?.isOpen && isMyTurn && (
           <ProductiveCardDialog
@@ -121,8 +124,6 @@ export function GameDialogs({
         />
       )}
 
-
-      {/* LOCAL DIALOGS (visible only to the current player) */}
       {isMyTurn && (
         <>
             {positionDialog && (
@@ -149,7 +150,15 @@ export function GameDialogs({
             {attackSelectionDialog && (
                 <AttackSelectionDialog
                     state={attackSelectionDialog}
-                    onSelectTarget={onSelectAttackTarget}
+                    onSelectTarget={(defenderArmyId: number) => {
+                        if (attackSelectionDialog) {
+                            onAction(GameAction.SelectDefender, {
+                                defenderArmyId,
+                                attackingArmyId: attackSelectionDialog.attackingArmyId,
+                            });
+                        }
+                        onCloseAttackSelectionDialog();
+                    }}
                     onClose={onCloseAttackSelectionDialog}
                     isMyTurn={isMyTurn}
                 />
@@ -195,8 +204,8 @@ export function GameDialogs({
           player={playerForCardsDialog}
           onClose={onCloseCardsDialog}
           onUseCard={(cardName: CardName) => {
-            onAction(GameAction.UseCard, { cardName });
             onCloseCardsDialog();
+            onAction(GameAction.UseCard, { cardName });
           }}
           canUseCards={isMyTurn && isViewingOwnCards}
         />
@@ -205,22 +214,11 @@ export function GameDialogs({
       {showHostLeaveDialog && (
         <HostLeaveDialog
             isLastPlayer={players.length === 1}
-            onConfirm={async () => await handleConfirmHostLeave(gameState.id, onCloseHostLeaveDialog)}
+            onConfirm={() => onAction(GameAction.HostLeave)}
             onClose={onCloseHostLeaveDialog}
             gameStatus={status}
         />
       )}
     </>
   );
-}
-
-// Standalone function needed for HostLeaveDialog
-async function handleConfirmHostLeave(gameId: string, onExit: () => void) {
-  try {
-      const gameDocRef = doc(db, 'games', gameId);
-      await deleteDoc(gameDocRef);
-      onExit();
-  } catch (error) {
-    console.error("Error during host leave confirmation:", error);
-  }
 }

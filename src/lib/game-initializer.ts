@@ -1,5 +1,4 @@
 
-
 import type { GameState, Island, Player, IslandResource, Monster, GameSettings, BaseTileInfo } from './types';
 import { CardName } from './types';
 import { BASE_CARDS } from './card-data';
@@ -296,30 +295,26 @@ export function initializeGame(
     specialCardsDeck: [...finalCardDeck, ...finalCardDeck],
     discardPile: [],
     deathAnimations: [],
+    autoSelectArmyFor: null,
     combatState: null,
     monsterCombatState: null,
-    positionDialogState: null,
     productiveCardDialogState: null,
-    stealResourceDialogState: null,
-    abilitiesShopState: null,
-    sabotageDialogState: null,
-    wealthyDialogState: null,
-    scoutingState: null,
-    teleportState: null,
-    armySelectionDialogState: null,
-    attackSelectionDialogState: null,
     specialIslandRollDialogState: null,
-    showHostLeaveDialog: false,
   };
 
   return gameState;
 }
 
-export function startGame(gameState: GameState): GameState {
+export function startGame(gameState: GameState, starterName: string): GameState {
     const newState = { ...gameState };
     newState.status = GameStatus.Playing;
-    newState.turn = 1; // Start the first turn
-    newState.log.push(`The game has started! It's now ${newState.players[0].name}'s turn.`);
+    newState.turn = 1;
+    newState.log.push(`${starterName} started the game! It's now ${newState.players[0].name}'s turn.`);
+    
+    // If the first player is a bot, the host needs to kick off their turn.
+    if(newState.players[0].isBot) {
+        return takeBotTurn(newState);
+    }
+    
     return newState;
 }
-

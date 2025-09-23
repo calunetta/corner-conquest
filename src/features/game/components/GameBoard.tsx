@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { GameState, Army, CardName, Island, Player, PendingAction, ArmySelectionDialogState, AttackSelectionDialogState, PositionDialogState, IslandResource, SabotageDialogState, WealthyDialogState, StealResourceDialogState } from '@/lib/types';
+import type { GameState, Army, CardName, Island, Player, PendingAction, ArmySelectionDialogState, AttackSelectionDialogState, PositionDialogState, SabotageDialogState, WealthyDialogState, StealResourceDialogState, ProductiveCardDialogState, SpecialIslandRollDialogState } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from '@/features/game/panels/PlayerInfo';
@@ -59,6 +59,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [stealResourceDialog, setStealResourceDialog] = useState<StealResourceDialogState>(null);
   const [showConfirmExitDialog, setShowConfirmExitDialog] = useState(false);
   const [showHostLeaveDialog, setShowHostLeaveDialog] = useState(false);
+  const [productiveCardDialogState, setProductiveCardDialogState] = useState<ProductiveCardDialogState>(null);
+  const [specialIslandRollDialogState, setSpecialIslandRollDialogState] = useState<SpecialIslandRollDialogState>(null);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -94,8 +96,19 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setSabotageDialog(null);
         setWealthyDialog(null);
         setStealResourceDialog(null);
+        setProductiveCardDialogState(null);
+        setSpecialIslandRollDialogState(null);
     }
   }, [isMyTurn, gameState, playerId, setGameState]);
+
+  useEffect(() => {
+    if(gameState?.productiveCardDialogState) {
+        setProductiveCardDialogState(gameState.productiveCardDialogState);
+    }
+     if(gameState?.specialIslandRollDialogState) {
+        setSpecialIslandRollDialogState(gameState.specialIslandRollDialogState);
+    }
+  }, [gameState?.productiveCardDialogState, gameState?.specialIslandRollDialogState])
   
   useEffect(() => {
     if (selectedArmy && gameState && isMyTurn) {
@@ -110,8 +123,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
     if (isPerformingAction) return;
     if (!isMyTurn && action !== GameAction.EndTurn) {
-      toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
-      return;
+      // Allow rolling/closing dialogs even if not turn, but restrict primary actions
+      const allowedOffTurnActions = [GameAction.CombatRoll, GameAction.CloseCombat, GameAction.MonsterCombatRoll, GameAction.CloseMonsterCombat, GameAction.RollOnSpecialIsland, GameAction.CloseSpecialIslandDialog];
+      if (!allowedOffTurnActions.includes(action)) {
+        toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
+        return;
+      }
     }
     
     try {
@@ -207,7 +224,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         const newCount = pendingAction.count - 1;
         if (newCount <= 0) {
           setPendingAction(null);
-          await onAction(GameAction.UseCard, { cardName: pendingAction.cardName }); // This will just mark the action as used
+          await onAction(GameAction.UseCard, { cardName: pendingAction.cardName, isScout: true }); // This will just mark the action as used
         } else {
           setPendingAction({ ...pendingAction, count: newCount });
         }
@@ -503,15 +520,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         }}
         attackSelectionDialog={attackSelectionDialog}
         onCloseAttackSelectionDialog={() => setAttackSelectionDialog(null)}
-        onSelectAttackTarget={(defenderArmyId) => {
-            if (attackSelectionDialog) {
-                onAction(GameAction.SelectDefender, {
-                    defenderArmyId,
-                    attackingArmyId: attackSelectionDialog.attackingArmyId,
-                });
-            }
-            setAttackSelectionDialog(null);
-        }}
         positionDialog={positionDialog}
         onClosePositionDialog={() => setPositionDialog(null)}
         sabotageDialog={sabotageDialog}
@@ -520,6 +528,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         onCloseWealthyDialog={() => setWealthyDialog(null)}
         stealResourceDialog={stealResourceDialog}
         onCloseStealResourceDialog={() => setStealResourceDialog(null)}
+        productiveCardDialogState={productiveCardDialogState}
+        specialIslandRollDialogState={specialIslandRollDialogState}
       />
     </div>
   );

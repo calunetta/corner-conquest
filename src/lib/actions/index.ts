@@ -5,7 +5,7 @@ import { GameAction } from '@/lib/types';
 import { handleAttackAction, handleSelectDefender, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
 import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleBuyAbility, handleUseProductiveCard, handleRollOnSpecialIsland, handleCloseSpecialIslandDialog } from './card';
 import { handleMoveAction } from './movement';
-import { handleDeployAction, handleUpgradeAction, handleEndTurn, handleCancelAction } from './player';
+import { handleDeployAction, handleUpgradeAction, handleEndTurn, handleCancelAction, handleHostLeave } from './player';
 import { handlePositionAction, handleSelectResourceForPosition } from './resource';
 
 interface HandleActionParams {
@@ -32,10 +32,13 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
             newState = handleUpgradeAction(newState);
             break;
         case GameAction.EndTurn:
-            newState = handleEndTurn(newState);
+            newState = handleEndTurn(newState, { isHost: payload.isHost, gameId: payload.gameId });
             break;
-        case GameAction.CancelAction: // Failsafe on backend
+        case GameAction.CancelAction:
             newState = handleCancelAction(newState);
+            break;
+        case GameAction.HostLeave:
+            newState = handleHostLeave(newState);
             break;
 
         // Resource actions
@@ -65,10 +68,10 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
             newState = handleCloseCombat(newState);
             break;
         case GameAction.MonsterCombatRoll:
-            newState = handleMonsterCombatRoll(newState, payload, payload.army);
+            newState = handleMonsterCombatRoll(newState, payload);
             break;
         case GameAction.CloseMonsterCombat:
-            newState = handleCloseMonsterCombat(newState, payload.army);
+            newState = handleCloseMonsterCombat(newState);
             break;
 
         // Card actions

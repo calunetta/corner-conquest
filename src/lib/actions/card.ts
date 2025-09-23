@@ -37,66 +37,40 @@ export function handleBuyCardAction(state: GameState): GameState {
     return newState;
 }
 
-export const handleUseCard = (state: GameState, payload: { cardName: CardName, army?: Army }): GameState => {
+export const handleUseCard = (state: GameState, payload: { cardName: CardName, army?: Army, isScout?: boolean }): GameState => {
     let newState = { ...state };
     const { players, currentPlayerIndex, discardPile } = newState;
     const player = players[currentPlayerIndex];
-    const { cardName, army } = payload;
+    const { cardName, isScout } = payload;
 
     const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
     if (!canUseCard) throw new Error("You can only use one card per turn.");
     
     const cardIndex = player.specialCards.indexOf(cardName);
-    if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
+    if (cardIndex === -1 && !isScout) throw new Error(`You do not have the ${cardName} card.`);
     
     newState.log.push(`${player.name} is using the '${cardName}' card.`);
     
-    switch (cardName) {
-        case 'Extra Move':
-            player.hasExtraMove = true;
-            newState.log.push(`${player.name} activated 'Extra Move'. One army can move again this turn.`);
-            break;
-        case 'Reinforce':
-            player.reinforceActive = true;
-            newState.log.push(`${player.name} activated 'Reinforce'. Their next deployment is free.`);
-            break;
-        case 'Efficient':
-            player.efficientActive = true;
-            newState.log.push(`${player.name} activated 'Efficient'. Their next deployment costs 50% less.`);
-            break;
-        case 'Master Builder':
-            player.masterBuilderActive = true;
-            newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
-            break;
-        case 'Sabotage':
-             newState.sabotageDialogState = { isOpen: true };
-             break;
-        case 'Steal Resource':
-             newState.stealResourceDialogState = { isOpen: true };
-             break;
-        case 'Wealthy':
-             newState.wealthyDialogState = { isOpen: true };
-             break;
-        case 'Teleport':
-        case 'Scout':
-            // The card is only consumed when the action completes via a shared action (e.g., Move)
-            break;
-        default:
-            throw new Error(`The card "${cardName}" does not have a defined use action.`);
-    }
-
-    // Mark the card as used for the turn
     player.actionsThisTurn.push(GameAction.UseCard);
 
     // Some cards are consumed immediately without a follow-up action.
     const immediateConsumeCards: CardName[] = ['Extra Move', 'Reinforce', 'Efficient', 'Master Builder'];
     if (immediateConsumeCards.includes(cardName)) {
+        player.hasExtraMove = cardName === 'Extra Move';
+        player.reinforceActive = cardName === 'Reinforce';
+        player.efficientActive = cardName === 'Efficient';
+        player.masterBuilderActive = cardName === 'Master Builder';
+        newState.log.push(`${player.name} activated '${cardName}'.`);
+    }
+
+    // consume card
+    if (immediateConsumeCards.includes(cardName) || isScout) {
         const cIndex = player.specialCards.indexOf(cardName);
         if(cIndex > -1) {
             discardPile.push(player.specialCards.splice(cIndex, 1)[0]);
         }
     }
-
+    
     return newState;
 };
 
@@ -160,8 +134,6 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
             newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
         }
     }
-
-    newState.sabotageDialogState = null;
     return newState;
 }
 
@@ -177,7 +149,6 @@ export function handleGainWealth(state: GameState, resource: ResourceType): Game
         newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
     }
 
-    newState.wealthyDialogState = null;
     return newState;
 }
 
@@ -188,7 +159,6 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
     const targetPlayer = players.find(p => p.id === payload.targetPlayerId);
 
     if (!targetPlayer) {
-        newState.stealResourceDialogState = null;
         return newState;
     }
     
@@ -207,7 +177,6 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
         newState.discardPile.push(currentPlayer.specialCards.splice(cardIndex, 1)[0]);
     }
 
-    newState.stealResourceDialogState = null;
     return newState;
 };
 
