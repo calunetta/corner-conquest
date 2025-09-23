@@ -88,9 +88,9 @@ The first player to reach the `victoryPointGoal` (default: 30 VP) wins the game.
 
 ### 4.2. The Map & Islands
 The game is played on a grid of islands. Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to a tile, revealing it.
-- **Base:** Your starting point. Where you deploy new armies and where defeated armies respawn. Bases also generate all three resource types.
+- **Base:** Your starting point. Where you deploy new armies and where defeated armies respawn. Bases also generate all three resource types. The Base's appearance is a castle sprite specific to the player's color, defined in `src/lib/player-data.ts`.
 - **Resource Islands:** Contain **Wheat**, **Iron**, or **Gems**.
-- **Monster Islands:** Inhabited by hostile creatures that must be defeated. When monsters are present, they are rendered with a dynamic idle animation within the `IslandTile` component. Their sprites randomly shift left and right and have a chance to play their `attack` animation to make them feel alive.
+- **Monster Islands:** Inhabited by hostile creatures that must be defeated. When monsters are present, they are rendered with a dynamic idle animation within the `IslandTile` component. Their sprites randomly shift left and right and have a chance to play their `attack` animation to make them feel alive. All monster sprites are animated GIFs.
 - **Special Islands:** Discovering these grants the player a random Special Card. On subsequent landings on the same island, a dialog appears prompting the player to roll a die. On a roll of 3 or 6, they receive another card.
 
 ### 4.3. Resources & Progression
@@ -122,7 +122,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
 - **Player vs. Player:** The player with the higher total roll wins the battle. In case of a tie, the **defender** wins.
 - **Player vs. Monster:** The player with the higher total roll wins the battle. In case of a tie, the **monster** wins.
 - Defeated armies are not destroyed; they are sent back to their owner's Base tile to regroup.
-- **Combat Dialog Animations:** During the `rolling` phase of combat, both combatants show their `attack` sprite. In the `results` phase, the winner's sprite remains in the `attack` pose, while the loser's sprite changes to the `death` animation.
+- **Combat Dialog Animations:** During the `rolling` phase of combat, both combatants show their `attack` sprite. In the `results` phase, the winner's sprite remains in the `attack` pose, while the loser's sprite changes to the `death` animation. All army and monster sprites are animated GIFs defined in `src/lib/player-data.ts` and `src/lib/game-initializer.ts`, respectively.
 
 ## 5. Detailed System Explanations
 
@@ -163,10 +163,12 @@ When a player uses a card, it is removed from their hand and placed in the `disc
 - **Player-Owned Tiles:** Tiles occupied by the local player's armies have a subtle, color-coded glow (`shadow-blue-500/50`, `shadow-red-500/50`, etc.) for easy identification.
 - **Possible Moves:** Valid move destinations for a selected army are highlighted with a dashed border (`border-accent/70`).
 - **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a purple border (`border-purple-500`) to indicate they are valid destinations.
+- **Fog of War Indicator:** When Fog of War is active, undiscovered islands display a '?' icon (`HelpCircle` from lucide-react) instead of their true contents. This is rendered in `IslandTile.tsx`.
 - **Animations & Scenery:**
-    - Game sprites (armies, monsters, death animations) are located in `public/sprites/`.
-    - The water background and island terrain textures are defined in `tailwind.config.ts`.
-    - Decorative rocks in the water are procedurally placed by `MapGrid.tsx` for visual variety.
+    - Game sprites (armies, monsters, death animations) are animated GIFs located in `public/sprites/`. The specific sprites for each player's army are defined in `src/lib/player-data.ts`.
+    - The water background (`bg-water-pattern`) and island terrain textures (`bg-terrain`) are defined in `tailwind.config.ts` and applied in their respective components.
+    - An animated border appears at the bottom of each island tile to give the illusion of water movement. This is created in `IslandTile.tsx` by combining three separate GIF images (`island_edge_1.gif`, `island_edge_2.gif`, `island_edge_3.gif`) in a randomized sequence.
+    - Decorative rocks in the water are procedurally placed by `MapGrid.tsx` for visual variety. This is disabled on mobile for performance and clarity.
 
 #### 5.2.4. Confirmation Dialogs
 - `ConfirmExitDialog`: Appears if a player attempts to leave a match that is in progress.
