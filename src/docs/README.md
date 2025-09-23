@@ -73,19 +73,29 @@ When `handleEndTurn` is called, a sequence of events occurs:
 8.  A log message announces the new turn.
 9.  All temporary dialog states (`combatState`, `positionDialogState`, etc.) are reset to `null`.
 
-### 3.2. Firebase & React/Next.js Common Pitfalls
+### 3.2. Local vs. Shared State Actions
+It's critical to distinguish between actions that only affect the local user's interface and actions that must be synchronized across all players via Firebase.
+
+-   **Local UI Actions (Client-Side Only):** These actions do **not** call `setGameState` and do not result in a Firebase write. They are managed entirely by React state (`useState`) within the `GameBoard` component.
+    -   **`DeselectArmy`**: Deselecting an army is a purely local UI change. It updates local state like `selectedArmyId` to `null` so the UI removes highlights, but it does not need to inform other players.
+
+-   **Shared Game State Actions (Synchronized via Firebase):** These actions **must** go through the `handleGameAction` and `setGameState` flow because they modify the core `GameState` that all players share.
+    -   **Examples:** `Move`, `Attack`, `EndTurn`, `Deploy`, `Upgrade`, `UseCard`, `BuyCard`, `Position`, etc.
+    -   Any action that changes army positions, player resources, victory points, turn order, or the contents of the map is a shared action.
+
+### 3.3. Firebase & React/Next.js Common Pitfalls
 - **Firestore Cannot Store `undefined`:** A recurring critical bug is caused by attempting to write a `GameState` object with `undefined` properties. Firestore will silently strip these properties, causing the `GameState` read by clients to have a different shape than expected, leading to crashes. **Rule: Always use `null` instead of `undefined`** for optional or empty state properties.
 - **React's Rules of Hooks:** You **cannot** call hooks (`useState`, `useEffect`, `useMemo`, etc.) inside loops, conditions, or nested functions. A common mistake is trying to use `useMemo` inside a `.map()` function. Hooks must always be called at the top level of your component.
 - **Asynchronous State Updates:** When a state update depends on complex calculations (like `handleGameAction`), it's often performed within an asynchronous function passed to the state setter (e.g., `setGameState(async () => { ... })`). It is critical to `await` the result of this setter in the component before attempting to use any UI state that was calculated inside it. Failure to do so can lead to race conditions where the component tries to use stale or `undefined` state values, causing UI inconsistencies or crashes.
 
-### 3.3. Estimated Firestore Usage
+### 3.4. Estimated Firestore Usage
 A full 4-player game to 30 Victory Points is highly variable, but a rough estimate can be made:
 - **Assumptions:** ~10 turns per player, ~2 actions (writes) per turn.
 - **Writes:** `4 players * 10 turns/player * 2 writes/turn` = **~80 writes**.
 - **Reads:** Every write triggers a read for all connected clients. `80 writes * 4 players` = **~320 reads**.
 This is an efficient model, as it ensures all players have the latest state with minimal reads per action.
 
-### 3.4. Firebase Best Practices & Cost Optimization
+### 3.5. Firebase Best Practices & Cost Optimization
 To keep the application performant and cost-effective, it is crucial to use the correct Firestore operation for the task.
 
 -   **`runTransaction`**: Use this when you need to **read a document and then write to it based on its current state**. A transaction ensures that no other process modifies the document between your read and write, preventing race conditions. This is essential for operations like joining a game, where you must check if the lobby is full before adding a new player.
@@ -302,3 +312,5 @@ This section details the project's build and styling setup. Changes to these fil
     -   `backgroundImage`: Custom patterns for water and terrain textures.
     -   `fontFamily`: A custom font, `Lilita One`, for body and headline text.
     -   `plugins`: `tailwindcss-animate` is included for keyframe animations.
+
+    

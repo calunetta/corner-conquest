@@ -67,9 +67,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   
   useEffect(() => {
     if (gameState && gameState.autoSelectArmyFor?.playerId === localPlayer?.id) {
-        if (gameState && gameState.autoSelectArmyFor) {
-            setSelectedArmyId(gameState.autoSelectArmyFor.armyId);
-        }
+        setSelectedArmyId(gameState.autoSelectArmyFor.armyId);
         // We need to clear this from the state so it doesn't re-trigger on every render
         setGameState((gs: GameState | null) => gs ? { ...gs, autoSelectArmyFor: null } : null);
     } else if (!isMyTurn) {
@@ -100,24 +98,18 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       return;
     }
     
+    // Handle pure client-side actions first
+    if (action === GameAction.DeselectArmy) {
+        setSelectedArmyId(null);
+        setSelectedTile(null);
+        setPossibleMoves([]);
+        setCurrentAction(null);
+        return;
+    }
+    
     try {
         setIsPerformingAction(true);
         
-        // Handle pure client-side actions first
-        if (action === GameAction.DeselectArmy) {
-            const { newState, ...uiState } = handleGameAction({
-                action,
-                gameState: gameState!,
-                selectedArmyId: selectedArmyId,
-                payload
-            });
-            if (uiState.selectedArmyId !== undefined) setSelectedArmyId(uiState.selectedArmyId);
-            if (uiState.selectedTile !== undefined) setSelectedTile(uiState.selectedTile);
-            if (uiState.possibleMoves !== undefined) setPossibleMoves(uiState.possibleMoves);
-            if (uiState.currentAction !== undefined) setCurrentAction(uiState.currentAction);
-            return;
-        }
-
         await setGameState((currentGameState) => {
             if (!currentGameState || !localPlayer) return currentGameState;
             
@@ -485,3 +477,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    

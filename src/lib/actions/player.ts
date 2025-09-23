@@ -420,3 +420,5 @@ export async function handleConfirmHostLeave(gameId: string, onExit: () => void)
     console.error("Error during host leave confirmation:", error);
   }
 }
+
+    

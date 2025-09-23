@@ -31,7 +31,9 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
         case GameAction.EndTurn:
             return { newState: handleEndTurn(gameState), selectedArmyId: null };
         case GameAction.DeselectArmy:
-            return { newState: gameState, ...handleDeselectArmy() };
+             // This is now primarily a client-side action. 
+             // We return a simple result, but the main logic is in GameBoard.tsx.
+            return handleDeselectArmy();
         case GameAction.CancelAction:
              return { newState: handleCancelAction(gameState), selectedArmyId: selectedArmy?.id ?? null };
 
@@ -93,3 +95,5 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
             return { newState: gameState };
     }
 }
+
+    
