@@ -1,9 +1,8 @@
 
-
 import type { GameState, Army, ResourceType } from './types';
 import { GameAction, AbilityName, CardName, IslandType, MAP_COLS } from './types';
 import { handleAttackAction, handleMonsterCombatRoll, handleCloseMonsterCombat } from './actions/attack';
-import { handleBuyAbility, handleBuyCardAction, handleGainWealth } from './actions/card';
+import { handleBuyAbility, handleBuyCardAction, handleGainWealth, handleUseCard } from './actions/card';
 import { getPossibleMoves, handleMoveAction } from './actions/movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn } from './actions/player';
 import { handleSelectResourceForPosition } from './actions/resource';
@@ -102,23 +101,26 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         });
     }
     
-    // Use Wealthy card if low on resources needed for high-priority actions
     if (botPlayer.specialCards.includes(CardName.Wealthy)) {
+        const canUseCard = !botPlayer.actionsThisTurn.includes(GameAction.UseCard);
         let neededResource: ResourceType | null = null;
         if (!canAfford(botPlayer, deployCost, 'wheat' as ResourceType) && botPlayer.armyCount < 5) {
             neededResource = 'wheat' as ResourceType;
         } else if (!canAfford(botPlayer, upgradeCost, 'iron' as ResourceType) && botPlayer.attackPower < 4) {
             neededResource = 'iron' as ResourceType;
+        } else if (botPlayer.resources.gems < 5) { // Proactively get gems
+            neededResource = 'gems' as ResourceType;
         }
         
-        if (neededResource) {
+        if (neededResource && canUseCard) {
             const resourceToGain = neededResource;
             possibleActions.push({
                 name: 'use-wealthy',
                 priority: 8, // Very high priority to unblock other actions
                 execute: (s) => {
                     try {
-                        return handleGainWealth(s, resourceToGain);
+                        let tempState = handleUseCard(s, { cardName: CardName.Wealthy });
+                        return handleGainWealth(tempState, resourceToGain);
                     } catch { return null; }
                 }
             })
@@ -141,7 +143,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
                  possibleActions.push({
                      name: `attack-player-${army.id}`,
                      priority: 8 + (botPlayer.attackPower - enemyPlayer.attackPower), // Higher priority if bot is stronger
-                     execute: (s) => handleAttackAction(s, army).newState,
+                     execute: (s) => handleAttackAction(s, army).state,
                  });
              }
         }
@@ -150,7 +152,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
              possibleActions.push({
                 name: `attack-monster-${army.id}`,
                 priority: 7, // High priority to clear islands
-                execute: (s) => handleAttackAction(s, army).newState,
+                execute: (s) => handleAttackAction(s, army).state,
              });
         }
 
@@ -165,7 +167,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
                     priority: 9, // Positioning is very important
                     execute: (s) => {
                         try {
-                            return handleSelectResourceForPosition(s, availableResource.type, army).newState;
+                            return handleSelectResourceForPosition(s, availableResource.type, army);
                         } catch { return null; }
                     }
                 });
@@ -176,7 +178,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         const validMoves = getPossibleMoves(state, army);
         for (const move of validMoves) {
             const targetTile = state.map[move.y * MAP_COLS + move.x];
-            let priority = 1; // Base priority for any move
+            let priority = 2; // Base priority for any move to prevent getting stuck
             
             // Prioritize exploring unrevealed tiles
             if (state.settings.fogOfWar && !botPlayer.revealedTiles.includes(targetTile.id)) {
@@ -211,8 +213,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         console.log(`Bot: Choosing action '${bestAction.name}' with priority ${bestAction.priority}`);
         const result = bestAction.execute(state);
         if (result) {
-            // End the turn after a successful action
-            return handleEndTurn(result);
+            return result;
         }
     }
     

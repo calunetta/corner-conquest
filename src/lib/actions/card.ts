@@ -1,8 +1,7 @@
 
-
-import type { GameState, Player, ResourceType, ActionHandlerResult } from '@/lib/types';
+import type { GameState, Player, ResourceType, ActionHandlerResult, CardName, Army } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
-import { GameAction, CardName, AbilityName, MAP_COLS } from '../types';
+import { GameAction, AbilityName, MAP_COLS } from '../types';
 
 export function handleBuyCardAction(state: GameState): GameState {
     let newState = { ...state };
@@ -38,10 +37,11 @@ export function handleBuyCardAction(state: GameState): GameState {
     return newState;
 }
 
-export const handleUseCard = (state: GameState, cardName: CardName): GameState => {
+export const handleUseCard = (state: GameState, payload: { cardName: CardName, army?: Army }): GameState => {
     let newState = { ...state };
     const { players, currentPlayerIndex, discardPile } = newState;
     const player = players[currentPlayerIndex];
+    const { cardName, army } = payload;
 
     const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
     if (!canUseCard) throw new Error("You can only use one card per turn.");
@@ -52,35 +52,34 @@ export const handleUseCard = (state: GameState, cardName: CardName): GameState =
     newState.log.push(`${player.name} is using the '${cardName}' card.`);
     
     switch (cardName) {
-        case CardName.ExtraMove:
+        case 'Extra Move':
             player.hasExtraMove = true;
             newState.log.push(`${player.name} activated 'Extra Move'. One army can move again this turn.`);
             break;
-        case CardName.Reinforce:
+        case 'Reinforce':
             player.reinforceActive = true;
             newState.log.push(`${player.name} activated 'Reinforce'. Their next deployment is free.`);
             break;
-        case CardName.Efficient:
+        case 'Efficient':
             player.efficientActive = true;
             newState.log.push(`${player.name} activated 'Efficient'. Their next deployment costs 50% less.`);
             break;
-        case CardName.MasterBuilder:
+        case 'Master Builder':
             player.masterBuilderActive = true;
             newState.log.push(`${player.name} activated 'Master Builder'. Their next upgrade costs 50% less.`);
             break;
-        case CardName.Sabotage:
+        case 'Sabotage':
              newState.sabotageDialogState = { isOpen: true };
              break;
-        case CardName.StealResource:
+        case 'Steal Resource':
              newState.stealResourceDialogState = { isOpen: true };
              break;
-        case CardName.Wealthy:
+        case 'Wealthy':
              newState.wealthyDialogState = { isOpen: true };
              break;
-        case CardName.Teleport:
-        case CardName.Scout:
-            // These now just set local state in the UI. 
-            // The card is consumed when the action completes.
+        case 'Teleport':
+        case 'Scout':
+            // The card is only consumed when the action completes via a shared action (e.g., Move)
             break;
         default:
             throw new Error(`The card "${cardName}" does not have a defined use action.`);
@@ -90,7 +89,7 @@ export const handleUseCard = (state: GameState, cardName: CardName): GameState =
     player.actionsThisTurn.push(GameAction.UseCard);
 
     // Some cards are consumed immediately without a follow-up action.
-    const immediateConsumeCards = [CardName.ExtraMove, CardName.Reinforce, CardName.Efficient, CardName.MasterBuilder];
+    const immediateConsumeCards: CardName[] = ['Extra Move', 'Reinforce', 'Efficient', 'Master Builder'];
     if (immediateConsumeCards.includes(cardName)) {
         const cIndex = player.specialCards.indexOf(cardName);
         if(cIndex > -1) {
@@ -109,7 +108,7 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
 
     if (selectedResource) {
         player.actionsThisTurn.push(GameAction.UseCard);
-        const cardIndex = player.specialCards.indexOf(CardName.Productive);
+        const cardIndex = player.specialCards.indexOf('Productive');
         if (cardIndex > -1) {
             newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
         }
@@ -156,7 +155,7 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
         targetPlayer.isSabotaged = true;
         newState.log.push(`${player.name} sabotaged ${targetPlayer.name}! They will miss their next turn.`);
         
-        const cardIndex = player.specialCards.indexOf(CardName.Sabotage);
+        const cardIndex = player.specialCards.indexOf('Sabotage');
         if (cardIndex > -1) {
             newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
         }
@@ -173,7 +172,7 @@ export function handleGainWealth(state: GameState, resource: ResourceType): Game
     player.resources[resource] += 5;
     newState.log.push(`${player.name} used 'Wealthy' to gain 5 ${resource}.`);
     
-    const cardIndex = player.specialCards.indexOf(CardName.Wealthy);
+    const cardIndex = player.specialCards.indexOf('Wealthy');
     if (cardIndex > -1) {
         newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
     }
@@ -203,7 +202,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
         newState.log.push(`${currentPlayer.name} tried to steal ${payload.resource} from ${targetPlayer.name}, but they had none.`);
     }
 
-    const cardIndex = currentPlayer.specialCards.indexOf(CardName.StealResource);
+    const cardIndex = currentPlayer.specialCards.indexOf('Steal Resource');
     if (cardIndex > -1) {
         newState.discardPile.push(currentPlayer.specialCards.splice(cardIndex, 1)[0]);
     }

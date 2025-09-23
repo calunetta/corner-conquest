@@ -1,7 +1,6 @@
 
-
 'use client';
-import type { GameState, Player, CardName, AbilityName } from '@/lib/types';
+import type { GameState, Player, CardName, AbilityName, Army } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 import { CombatDialog } from './CombatDialog';
 import { MonsterCombatDialog } from './MonsterCombatDialog';
@@ -17,28 +16,47 @@ import { AttackSelectionDialog } from './AttackSelectionDialog';
 import { ProductiveCardDialog } from './ProductiveCardDialog';
 import { SpecialIslandRollDialog } from './SpecialIslandRollDialog';
 
+type ArmySelectionDialogState = { armies: Army[], x: number, y: number } | null;
+type AttackSelectionDialogState = { armies: Army[], defendingPlayer: Player, attackingArmyId: number } | null;
+
 type GameDialogsProps = {
   gameState: GameState;
   localPlayer: Player;
   isMyTurn: boolean;
+  showHostLeaveDialog: boolean;
   onConfirmHostLeave: () => void;
+  onCloseHostLeaveDialog: () => void;
   handleSharedAction: (action: GameAction, payload?: any) => Promise<void>;
   cardsDialogPlayerId: number | null;
   onCloseCardsDialog: () => void;
   abilitiesShopOpen: boolean;
   onCloseAbilitiesShop: () => void;
+  armySelectionDialog: ArmySelectionDialogState;
+  onCloseArmySelectionDialog: () => void;
+  onSelectArmyFromDialog: (armyId: number) => void;
+  attackSelectionDialog: AttackSelectionDialogState;
+  onCloseAttackSelectionDialog: () => void;
+  onSelectAttackTarget: (defenderArmyId: number) => void;
 };
 
 export function GameDialogs({ 
     gameState, 
     localPlayer, 
     isMyTurn, 
+    showHostLeaveDialog,
     onConfirmHostLeave,
+    onCloseHostLeaveDialog,
     handleSharedAction,
     cardsDialogPlayerId,
     onCloseCardsDialog,
     abilitiesShopOpen,
     onCloseAbilitiesShop,
+    armySelectionDialog,
+    onCloseArmySelectionDialog,
+    onSelectArmyFromDialog,
+    attackSelectionDialog,
+    onCloseAttackSelectionDialog,
+    onSelectAttackTarget,
 }: GameDialogsProps) {
   const { 
     combatState, 
@@ -96,21 +114,21 @@ export function GameDialogs({
               />
             )}
 
-            {gameState.armySelectionDialogState?.isOpen && (
+            {armySelectionDialog && (
                 <ArmySelectionDialog
-                    state={gameState.armySelectionDialogState}
+                    state={armySelectionDialog}
                     player={localPlayer}
-                    onSelectArmy={(armyId) => handleSharedAction(GameAction.SelectArmy, { armyId })}
-                    onClose={() => handleSharedAction(GameAction.CancelAction)}
+                    onSelectArmy={onSelectArmyFromDialog}
+                    onClose={onCloseArmySelectionDialog}
                     isMyTurn={isMyTurn}
                 />
             )}
 
-            {gameState.attackSelectionDialogState?.isOpen && (
+            {attackSelectionDialog && (
                 <AttackSelectionDialog
-                    state={gameState.attackSelectionDialogState}
-                    onSelectTarget={(defenderArmyId) => handleSharedAction(GameAction.SelectDefender, { defenderArmyId, attackingArmyId: gameState.attackSelectionDialogState!.attackingArmyId })}
-                    onClose={() => handleSharedAction(GameAction.CancelAction)}
+                    state={attackSelectionDialog}
+                    onSelectTarget={onSelectAttackTarget}
+                    onClose={onCloseAttackSelectionDialog}
                     isMyTurn={isMyTurn}
                 />
             )}
@@ -133,11 +151,11 @@ export function GameDialogs({
                 />
             )}
 
-            {gameState.showHostLeaveDialog && (
+            {showHostLeaveDialog && (
                 <HostLeaveDialog
                     isLastPlayer={gameState.players.length === 1}
                     onConfirm={onConfirmHostLeave}
-                    onClose={() => {}}
+                    onClose={onCloseHostLeaveDialog}
                     gameStatus={status}
                 />
             )}
@@ -164,7 +182,11 @@ export function GameDialogs({
           player={playerForCardsDialog}
           onClose={onCloseCardsDialog}
           onUseCard={(cardName: CardName) => {
-            // Using a card is a local action initially
+            // Using a card that initiates a flow is a local action first
+            if ([CardName.Teleport, CardName.Scout].includes(cardName)) {
+                // This will be handled by GameBoard's local state
+            }
+            // All other cards have immediate shared effects
             handleSharedAction(GameAction.UseCard, { cardName });
             onCloseCardsDialog();
           }}

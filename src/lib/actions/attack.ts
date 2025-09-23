@@ -1,9 +1,8 @@
 
-import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult, ResourceType, IslandResource } from '@/lib/types';
+import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult, ResourceType, IslandResource, Player } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
 import { GameAction, IslandType, MAP_COLS, ResourceType as ResourceTypeEnum } from '../types';
-
 
 export function handleAttackAction(state: GameState, selectedArmy: Army | null): ActionHandlerResult {
     let newState = { ...state };
@@ -40,13 +39,16 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
                 phase: 'rolling',
             };
         } else {
-             newState.attackSelectionDialogState = {
-                isOpen: true,
-                x: selectedArmy.position.x,
-                y: selectedArmy.position.y,
-                attackingArmyId: selectedArmy.id,
-                defendingPlayer: defendingPlayer,
-                armies: defendingArmies,
+             // This is now a UI concern, so we return the data needed for the local dialog
+             return { 
+                state: newState, 
+                ui: { 
+                    newAttackSelectionDialogState: {
+                        attackingArmyId: selectedArmy.id,
+                        defendingPlayer: defendingPlayer,
+                        armies: defendingArmies,
+                    }
+                } 
             };
         }
     } else if (currentTile.type === IslandType.Monster && currentTile.monsters && currentTile.monsters.length > 0) {
@@ -65,26 +67,26 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
         newState.log.push(`${attacker.name}'s army attacks, but finds no target!`);
         const army = attacker.armies.find(a => a.id === selectedArmy.id);
         if (army) army.hasActed = true;
-        const canStillAct = army ? canArmyPerformAnyAction(newState, army) : false;
-        if (!canStillAct) {
-             newState = checkAndEndTurnIfNoActions(newState);
-             return { newState, selectedArmyId: null };
-        }
-        return { newState, selectedArmyId: army?.id ?? null };
+        newState = checkAndEndTurnIfNoActions(newState);
     }
-    return { newState, selectedArmyId: selectedArmy.id };
+    return { state: newState, ui: null };
 }
-
 
 export function handleSelectDefender(state: GameState, defenderArmyId: number, attackingArmyId: number): GameState {
     let newState = { ...state };
-    const { attackSelectionDialogState, players, currentPlayerIndex } = newState;
-
-    if (!attackSelectionDialogState) return newState;
-
+    const { players, currentPlayerIndex } = newState;
     const attacker = players[currentPlayerIndex];
-    const defender = attackSelectionDialogState.defendingPlayer;
 
+    const attackingArmy = attacker.armies.find(a => a.id === attackingArmyId);
+    if (!attackingArmy) return newState;
+    
+    const tile = newState.map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
+    const defenderOccupant = tile.occupants.find(o => o.playerId !== attacker.id);
+    if (!defenderOccupant) return newState;
+    
+    const defender = players.find(p => p.id === defenderOccupant.playerId);
+    if (!defender) return newState;
+    
     newState.combatState = {
         attackerId: attacker.id,
         attackingArmyId: attackingArmyId,
@@ -96,7 +98,6 @@ export function handleSelectDefender(state: GameState, defenderArmyId: number, a
         phase: 'rolling',
     };
 
-    newState.attackSelectionDialogState = null;
     return newState;
 }
 
@@ -147,11 +148,11 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean, attacki
     return newState;
 };
 
-export function handleCloseCombat(state: GameState): ActionHandlerResult {
+export function handleCloseCombat(state: GameState): GameState {
     let newState = { ...state };
     const { combatState, players, map, baseTiles } = newState;
     if (!combatState || combatState.phase !== 'results' || combatState.winnerId === null) {
-        return { newState: { ...newState, combatState: null }, selectedArmyId: null };
+        return { ...newState, combatState: null };
     }
     
     const { winnerId, attackerId, defenderId, attackingArmyId, defendingArmyId } = combatState;
@@ -161,7 +162,7 @@ export function handleCloseCombat(state: GameState): ActionHandlerResult {
     
     const attackingArmy = players.find(p=>p.id === attackerId)?.armies.find(a => a.id === attackingArmyId);
 
-    if (!attackingArmy) return { newState: { ...newState, combatState: null }, selectedArmyId: null };
+    if (!attackingArmy) return { ...newState, combatState: null };
     
     const combatTile = map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
 
@@ -218,17 +219,7 @@ export function handleCloseCombat(state: GameState): ActionHandlerResult {
     newState.log.push(`${winner.name} defeated ${loser.name} in battle!`);
     newState.combatState = null;
     
-    const winningArmy = winner.id === attackerId ? attackingArmy : null;
-    if (winningArmy) {
-        const canStillAct = canArmyPerformAnyAction(newState, winningArmy);
-        if (!canStillAct) {
-            newState = checkAndEndTurnIfNoActions(newState);
-            return { newState, selectedArmyId: null };
-        }
-        return { newState, selectedArmyId: winningArmy.id };
-    }
-
-    return { newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
+    return checkAndEndTurnIfNoActions(newState);
 }
 
 export function handleMonsterCombatRoll(state: GameState, payload: {monster: Monster, useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean}, attackingArmy: Army | null): GameState {
@@ -323,16 +314,16 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
     return newState;
 };
 
-export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army | null): ActionHandlerResult {
+export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army | null): GameState {
     let newState = { ...state };
     const { monsterCombatState, baseTiles, settings } = newState;
     if (!monsterCombatState || monsterCombatState.phase !== 'results') {
-        return { newState: { ...newState, monsterCombatState: null }, selectedArmyId: null };
+        return { ...newState, monsterCombatState: null };
     }
     
     const { winnerId, monster, attackerId } = newState.monsterCombatState;
     const attacker = newState.players[attackerId];
-    if (!attackingArmy) return { newState: { ...newState, monsterCombatState: null }, selectedArmyId: null };
+    if (!attackingArmy) return { ...newState, monsterCombatState: null };
 
     const currentTile = newState.map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
 
@@ -378,13 +369,8 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
             newState.log.push(`The defeated monster revealed new resources on the island: ${resourceNames}!`);
         }
         
-        const canStillAct = canArmyPerformAnyAction(newState, attackingArmy);
-        if (!canStillAct) {
-            newState = checkAndEndTurnIfNoActions(newState);
-            return { newState, selectedArmyId: null };
-        }
         newState.monsterCombatState = null;
-        return { newState, selectedArmyId: attackingArmy.id };
+        return checkAndEndTurnIfNoActions(newState);
 
     } else {
         newState.log.push(`${attacker.name} was defeated by the ${monster.name}!`);
@@ -406,7 +392,5 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
     }
 
     newState.monsterCombatState = null;
-    return {newState: checkAndEndTurnIfNoActions(newState), selectedArmyId: null };
+    return checkAndEndTurnIfNoActions(newState);
 }
-
-    

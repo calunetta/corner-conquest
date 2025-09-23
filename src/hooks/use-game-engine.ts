@@ -8,7 +8,7 @@ import { takeBotTurn } from '@/lib/bot-logic';
 import { handleEndTurn } from '@/lib/actions/player';
 
 export function useGameEngine(gameId: string, playerId: string | null) {
-  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [gameState, setInternalGameState] = useState<GameState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
@@ -20,6 +20,50 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     gameStateRef.current = gameState;
   }, [gameState]);
 
+  const setGameState = useCallback(async (updateFn: (gs: GameState | null) => GameState | null): Promise<ActionHandlerResult['ui'] | null> => {
+    try {
+        const gameDocRef = doc(db, 'games', gameId);
+        
+        // Optimistically get the state from our ref if available, otherwise fetch.
+        const currentState = gameStateRef.current ?? await getDoc(gameDocRef).then(d => d.data() as GameState);
+        
+        if (!currentState) {
+             console.error("Could not fetch current game state to perform an update.");
+             return null;
+        }
+
+        const result = updateFn(currentState);
+        
+        if (!result) {
+            console.warn("updateFn returned null. No update will be performed.");
+            return null;
+        }
+        
+        let finalState: GameState;
+        let uiResult: ActionHandlerResult['ui'] = null;
+
+        if ('state' in result && 'ui' in result) {
+            finalState = result.state as GameState;
+            uiResult = result.ui;
+        } else {
+            finalState = result as GameState;
+        }
+
+        if (!finalState) {
+            console.error("updateGameState was called with null or returned null.");
+            return null;
+        }
+    
+        await updateDoc(gameDocRef, { ...finalState });
+        return uiResult;
+
+    } catch (error) {
+        console.error("Error updating game state:", error);
+        toast({ title: "Sync Error", description: "Could not save game state.", variant: 'destructive' });
+        return null;
+    }
+  }, [gameId, toast]);
+
   useEffect(() => {
     if (!gameId) return;
 
@@ -30,7 +74,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     const unsubscribe = onSnapshot(gameDocRef, (docSnapshot) => {
         if (docSnapshot.exists()) {
             const data = docSnapshot.data() as GameState;
-            setGameState(data);
+            setInternalGameState(data);
             setIsLoading(false);
         } else {
             toast({ title: "Game Over", description: "This game session no longer exists." });
@@ -47,43 +91,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     };
   }, [gameId, toast, router]);
 
-  const updateGameState = useCallback(async (updateFn: (gs: GameState) => ActionHandlerResult | GameState): Promise<any> => {
-    
-    try {
-        const gameDocRef = doc(db, 'games', gameId);
-        const currentState = await getDoc(gameDocRef).then(d => d.data() as GameState);
-        
-        if (!currentState) {
-             console.error("Could not fetch current game state to perform an update.");
-             return null;
-        }
-
-        const result = updateFn(currentState);
-        
-        let finalState: GameState;
-        let uiResult: any = null;
-
-        if (result && 'state' in result && 'ui' in result) {
-            finalState = result.state as GameState;
-            uiResult = result.ui;
-        } else {
-            finalState = result as GameState;
-        }
-
-        if (!finalState) {
-            console.error("updateGameState was called with null or returned null.");
-            return null;
-        }
-    
-        await updateDoc(gameDocRef, finalState);
-        return uiResult;
-
-    } catch (error) {
-        console.error("Error updating game state:", error);
-        toast({ title: "Sync Error", description: "Could not save game state.", variant: 'destructive' });
-        return null;
-    }
-  }, [gameId, toast]);
 
   const localPlayer = useMemo(() => {
     return gameState?.players.find(p => p.playerId === playerId) || null;
@@ -136,7 +143,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     const animations = gameState.deathAnimations;
     const animationTimers = animations.map(anim => 
         setTimeout(() => {
-            updateGameState((currentState: GameState | null) => {
+            setGameState((currentState: GameState | null) => {
                 if (!currentState) return null;
                 return {
                     ...currentState,
@@ -147,7 +154,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     );
 
     return () => animationTimers.forEach(clearTimeout);
-  }, [gameState?.deathAnimations, isHost, updateGameState]);
+  }, [gameState?.deathAnimations, isHost, setGameState]);
 
 
   useEffect(() => {
@@ -163,7 +170,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
           if (!isProcessingBotTurn.current) return;
           
           const latestStateDoc = await getDoc(doc(db, 'games', gameId));
-          const latestState = latestStateDoc.data() as GameState;
+          let latestState = latestStateDoc.data() as GameState;
 
           if (!latestState || !latestState.players[latestState.currentPlayerIndex]?.isBot) {
               isProcessingBotTurn.current = false;
@@ -171,16 +178,24 @@ export function useGameEngine(gameId: string, playerId: string | null) {
           }
 
           console.log('Bot turn starting...');
-          const nextState = await takeBotTurn(latestState);
-          await updateGameState(() => nextState);
+          
+          let botState = latestState;
+          
+          if(botState.productiveCardDialogState) {
+              botState = handleEndTurn(botState);
+          }
+          
+          const nextState = await takeBotTurn(botState);
+          await updateDoc(doc(db, 'games', gameId), { ...nextState });
           console.log('Bot turn finished and state updated.');
+
       } catch (error) {
         console.error("Error during bot turn: ", error);
         const stateAfterError = gameStateRef.current;
         if (stateAfterError) {
             try {
                 const errorState = handleEndTurn(stateAfterError);
-                await updateGameState(() => errorState);
+                await updateDoc(doc(db, 'games', gameId), { ...errorState });
             } catch (e) {
                  console.error("Failed to end turn after bot error:", e);
             }
@@ -192,8 +207,8 @@ export function useGameEngine(gameId: string, playerId: string | null) {
       }
     }, 2000);
     
-  }, [gameState, isHost, updateGameState, gameId]);
+  }, [gameState, isHost, gameId]);
 
 
-  return { gameState, setGameState: updateGameState, isMyTurn, localPlayer, isHost, isLoading, globallyRevealedTiles };
+  return { gameState, setGameState, isMyTurn, localPlayer, isHost, isLoading, globallyRevealedTiles };
 }

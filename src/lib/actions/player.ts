@@ -1,5 +1,4 @@
 
-
 import type { GameState, Player, Army, CardName, ActionHandlerResult, IslandResource, ResourceType } from '@/lib/types';
 import { db, doc, deleteDoc, writeBatch, getDoc, arrayUnion } from '@/lib/firebase';
 import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum } from '../types';
@@ -9,19 +8,17 @@ export function handleCancelAction(state: GameState): GameState {
   const newState = { ...state };
   const player = newState.players[newState.currentPlayerIndex];
   
-  // Refund the UseCard action if it was provisionally taken
   const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
   if (cardUseIndex > -1) {
     player.actionsThisTurn.splice(cardUseIndex, 1);
   }
 
-  // Reset any temporary flags that were set by a card
+  // Reset all temporary flags that could be set by a card
   player.hasExtraMove = false;
   player.reinforceActive = false;
   player.efficientActive = false;
   player.masterBuilderActive = false;
   
-  // Close any dialogs that were opened by a card
   newState.sabotageDialogState = null;
   newState.stealResourceDialogState = null;
   newState.wealthyDialogState = null;
@@ -248,15 +245,6 @@ export function handleEndTurn(state: GameState): GameState {
     let nextPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
     let nextPlayer = newState.players[nextPlayerIndex];
 
-    if (nextPlayer.isSabotaged) {
-        nextPlayer.isSabotaged = false; 
-        newState.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
-        nextPlayerIndex = (nextPlayerIndex + 1) % newState.players.length;
-        nextPlayer = newState.players[nextPlayerIndex];
-    }
-    
-    newState.currentPlayerIndex = nextPlayerIndex;
-    
     // --- Pre-Turn Passive Abilities for NEW Player ---
      if (nextPlayer.passiveAbilities.explorer) {
         const occupiedIslands = new Set<string>();
@@ -270,6 +258,23 @@ export function handleEndTurn(state: GameState): GameState {
             newState.log.push(`${nextPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
         }
     }
+
+    if (nextPlayer.isSabotaged) {
+        nextPlayer.isSabotaged = false; 
+        newState.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
+        
+        // Skip to the player after the sabotaged one
+        const skippedPlayerIndex = nextPlayerIndex;
+        nextPlayerIndex = (nextPlayerIndex + 1) % newState.players.length;
+        nextPlayer = newState.players[nextPlayerIndex];
+
+        // If we have looped back to the sabotaged player (e.g. 2 player game) end their turn properly
+        if(nextPlayerIndex === skippedPlayerIndex) {
+            return handleEndTurn(newState);
+        }
+    }
+    
+    newState.currentPlayerIndex = nextPlayerIndex;
     
     if (nextPlayer.passiveAbilities.collector) {
         let resourcesCollected: Partial<Record<string, number>> = {};
@@ -294,8 +299,6 @@ export function handleEndTurn(state: GameState): GameState {
         }
     }
 
-    
-    // Auto-select army if the next player has only one
     if (nextPlayer.armies.length === 1) {
         newState.autoSelectArmyFor = { playerId: nextPlayer.playerId, armyId: nextPlayer.armies[0].id };
     } else {
@@ -340,56 +343,49 @@ export function handleEndTurn(state: GameState): GameState {
     newState.stealResourceDialogState = null;
     newState.sabotageDialogState = null;
     newState.wealthyDialogState = null;
-    newState.armySelectionDialogState = null;
-    newState.attackSelectionDialogState = null;
     newState.specialIslandRollDialogState = null;
 
     return newState;
 }
 
-interface PlayerExitParams {
-    gameId: string;
-    localPlayer: Player;
-    onExit: () => void;
-}
-
-export async function handlePlayerExit({ gameId, localPlayer, onExit }: PlayerExitParams): Promise<boolean> {
+export async function handlePlayerExit(gameId: string, playerId: string, onExit: () => void): Promise<void> {
     try {
         const gameDocRef = doc(db, 'games', gameId);
-        const gameDoc = await getDoc(gameDocRef);
-
-        if (!gameDoc.exists()) {
-            onExit();
-            return true;
-        }
-
-        const currentState = gameDoc.data() as GameState;
         
-        if (currentState.players.length <= 1) {
-            await deleteDoc(gameDocRef);
-        } else {
-            const batch = writeBatch(db);
-            const newPlayers = currentState.players.filter((p: Player) => p.playerId !== localPlayer.playerId);
-            const newLog = arrayUnion(`${localPlayer.name} has left the room.`);
-            
-            let newCurrentPlayerIndex = currentState.currentPlayerIndex;
-            if (currentState.currentPlayerIndex >= newPlayers.length) {
-                newCurrentPlayerIndex = 0;
+        await runTransaction(db, async (transaction) => {
+            const gameDoc = await transaction.get(gameDocRef);
+            if (!gameDoc.exists()) {
+                return;
             }
+            const currentState = gameDoc.data() as GameState;
+            const playerIndex = currentState.players.findIndex(p => p.playerId === playerId);
+            if (playerIndex === -1) {
+                return; // Player not in game
+            }
+            
+            if (currentState.players.length <= 1) {
+                transaction.delete(gameDocRef);
+            } else {
+                const updatedState = { ...currentState };
+                const playerLeaving = updatedState.players[playerIndex];
+                updatedState.players.splice(playerIndex, 1);
+                updatedState.log.push(`${playerLeaving.name} has left the game.`);
 
-            batch.update(gameDocRef, { 
-                players: newPlayers, 
-                log: newLog,
-                currentPlayerIndex: newCurrentPlayerIndex,
-            });
-            await batch.commit();
-        }
+                if (playerIndex < updatedState.currentPlayerIndex) {
+                    updatedState.currentPlayerIndex -= 1;
+                } else if (playerIndex === updatedState.currentPlayerIndex) {
+                    // If the current player leaves, end their turn
+                    const finalState = handleEndTurn(updatedState);
+                    transaction.set(gameDocRef, finalState);
+                    return;
+                }
+                transaction.set(gameDocRef, updatedState);
+            }
+        });
         
         onExit();
-        return true;
     } catch (error) {
         console.error("Error leaving game:", error);
-        return false;
     }
 }
 

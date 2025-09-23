@@ -1,13 +1,14 @@
 
-
 'use client';
-import type { GameState, Player, Army } from '@/lib/types';
+import type { GameState, Player, Army, CardName } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Sword, ShoppingCart, Anchor, Zap, Album, University, XCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+
+type PendingAction = { type: 'teleport', cardName: CardName } | { type: 'scout', cardName: CardName, count: number } | null;
 
 type ActionsPanelProps = {
   onAction: (action: GameAction, payload?: any) => void;
@@ -18,7 +19,7 @@ type ActionsPanelProps = {
   timeLeft: number;
   turnDuration: number;
   selectedArmy: Army | null;
-  pendingAction: any; // Simplified for this context
+  pendingAction: PendingAction;
   cardsDialogPlayerId: number | null;
   abilitiesShopOpen: boolean;
 };
@@ -84,7 +85,7 @@ export function ActionsPanel({
       icon: <Zap />, 
       disabled: !canUpgrade, 
       tooltip: "Spend iron to permanently increase your army's attack power by 1. Can only be done once per turn.",
-      onClick: () => onAction(GameAction.Upgrade, null)
+      onClick: () => onAction(GameAction.Upgrade)
     },
     { 
       id: GameAction.BuyCard, 
@@ -92,7 +93,7 @@ export function ActionsPanel({
       icon: <ShoppingCart />, 
       disabled: !canBuyCard, 
       tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn.",
-      onClick: () => onAction(GameAction.BuyCard, null)
+      onClick: () => onAction(GameAction.BuyCard)
     },
     { 
       id: GameAction.Deploy, 
@@ -100,7 +101,7 @@ export function ActionsPanel({
       icon: <Sword />, 
       disabled: !canDeploy, 
       tooltip: "Spend wheat to deploy a new army at your base. The cost increases with each new army.",
-      onClick: () => onAction(GameAction.Deploy, null)
+      onClick: () => onAction(GameAction.Deploy)
     },
     { 
       id: GameAction.OpenAbilitiesShop, 
@@ -209,7 +210,7 @@ export function ActionsPanel({
                 </Button>
             )}
             {isMyTurn && (
-                <Button size="sm" onClick={() => onAction(GameAction.EndTurn, null)} className="relative overflow-hidden">
+                <Button size="sm" onClick={() => onAction(GameAction.EndTurn)} className="relative overflow-hidden">
                     <span 
                         className="absolute left-0 top-0 h-full bg-primary/50 transition-all duration-1000 ease-linear"
                         style={{ width: `${timerPercentage}%` }}

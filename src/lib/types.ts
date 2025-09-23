@@ -1,5 +1,4 @@
 
-
 export const MAP_ROWS = 6;
 export const MAP_COLS = 5;
 
@@ -21,9 +20,7 @@ export enum GameAction {
   BuyAbility = 'buy-ability',
   CancelAction = 'cancel-action',
   DeselectArmy = 'deselect-army',
-  TileClick = 'tile-click',
   SelectResourcePosition = 'select-resource-position',
-  SelectArmy = 'select-army',
   SelectDefender = 'select-defender',
   CombatRoll = 'combat-roll',
   CloseCombat = 'close-combat',
@@ -126,7 +123,7 @@ export type Army = {
 }
 
 export type PassiveAbilities = {
-    [key in AbilityName]: boolean;
+    [key in AbilityName]?: boolean;
 }
 
 export type Player = {
@@ -234,22 +231,6 @@ export type WealthyDialogState = {
     isOpen: boolean;
 }
 
-export type ArmySelectionDialogState = {
-    isOpen: boolean;
-    x: number;
-    y: number;
-    armies: Army[];
-}
-
-export type AttackSelectionDialogState = {
-    isOpen: boolean;
-    x: number;
-    y: number;
-    attackingArmyId: number;
-    defendingPlayer: Player;
-    armies: Army[];
-}
-
 export type DeathAnimation = {
     id: string; // "army-playerId-armyId" or "monster-x-y-name"
     x: number;
@@ -294,15 +275,15 @@ export type GameState = {
   stealResourceDialogState: StealResourceDialogState | null;
   sabotageDialogState: SabotageDialogState | null;
   wealthyDialogState: WealthyDialogState | null;
-  armySelectionDialogState: ArmySelectionDialogState | null;
-  attackSelectionDialogState: AttackSelectionDialogState | null;
-  showHostLeaveDialog: boolean;
 };
 
 export type ActionHandlerResult = {
-    newState: GameState;
-    selectedArmyId?: number | null;
-    possibleMoves?: {x:number, y:number}[];
-    currentAction?: GameAction | null;
-    selectedTile?: {x: number, y: number} | null;
+    state: GameState | null;
+    ui?: {
+        newAttackSelectionDialogState?: {
+            attackingArmyId: number;
+            defendingPlayer: Player;
+            armies: Army[];
+        }
+    } | null
 }

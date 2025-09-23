@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { GameState, Army, CardName } from '@/lib/types';
+import type { GameState, Army, CardName, Island, Player } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from '@/features/game/panels/PlayerInfo';
@@ -14,7 +14,8 @@ import { GameDialogs } from '@/features/game/dialogs/GameDialogs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { usePlayer } from '@/hooks/use-player';
 import { useGameEngine } from '@/hooks/use-game-engine';
-import { handleGameAction, handlePlayerExit, handleConfirmHostLeave } from '@/lib/actions';
+import { handleGameAction } from '@/lib/actions';
+import { handlePlayerExit, handleConfirmHostLeave } from '@/lib/actions/player';
 import { startGame } from '@/lib/game-initializer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -29,31 +30,37 @@ type GameBoardProps = {
     onExit: () => void;
 };
 
+// Local UI State Types
+type PendingAction = { type: 'teleport', cardName: CardName } | { type: 'scout', cardName: CardName, count: number } | null;
+type ArmySelectionDialogState = { armies: Army[], x: number, y: number } | null;
+type AttackSelectionDialogState = { armies: Army[], defendingPlayer: Player, attackingArmyId: number } | null;
+
+
 export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const { playerId } = usePlayer();
   const { gameState, setGameState, isMyTurn, localPlayer, isHost, isLoading, globallyRevealedTiles } = useGameEngine(gameId, playerId);
   const { toast, dismiss } = useToast();
   const isMobile = useIsMobile();
   
+  // --- Global UI State ---
   const [isPlayerInfoOpen, setIsPlayerInfoOpen] = useState(!isMobile);
   const [isExiting, setIsExiting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TURN_DURATION);
   const [activeInstructionToastId, setActiveInstructionToastId] = useState<string | null>(null);
   const [showConfirmExitDialog, setShowConfirmExitDialog] = useState(false);
+  const [showHostLeaveDialog, setShowHostLeaveDialog] = useState(false);
   const [isPerformingAction, setIsPerformingAction] = useState(false);
   
-  // --- Local UI State ---
-  const [selectedTile, setSelectedTile] = useState<{ x: number, y: number } | null>(null);
+  // --- Local UI State (Managed entirely on the client) ---
   const [selectedArmyId, setSelectedArmyId] = useState<number | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<{ x: number, y: number }[]>([]);
-  
-  // Pending Action State (local UI)
-  type PendingAction = { type: 'teleport', cardName: CardName } | { type: 'scout', cardName: CardName, count: number } | null;
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
-
+  
   // Dialog Visibility State (local UI)
   const [cardsDialogPlayerId, setCardsDialogPlayerId] = useState<number | null>(null);
   const [abilitiesShopOpen, setAbilitiesShopOpen] = useState(false);
+  const [armySelectionDialog, setArmySelectionDialog] = useState<ArmySelectionDialogState>(null);
+  const [attackSelectionDialog, setAttackSelectionDialog] = useState<AttackSelectionDialogState>(null);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -73,45 +80,66 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMobile]);
   
   useEffect(() => {
-    if (gameState?.autoSelectArmyFor?.playerId === localPlayer?.playerId) {
+    if (gameState?.autoSelectArmyFor?.playerId === playerId) {
         setSelectedArmyId(gameState.autoSelectArmyFor.armyId);
         // We need to clear this from the state so it doesn't re-trigger on every render
-        setGameState((gs: GameState | null) => gs ? { ...gs, autoSelectArmyFor: null } : null);
+        setGameState(gs => gs ? { ...gs, autoSelectArmyFor: null } : null);
     } else if (!isMyTurn) {
         setSelectedArmyId(null);
-        setSelectedTile(null);
         setPossibleMoves([]);
         setPendingAction(null);
         setCardsDialogPlayerId(null);
+        setAbilitiesShopOpen(false);
+        setArmySelectionDialog(null);
+        setAttackSelectionDialog(null);
     }
-  }, [isMyTurn, gameState, localPlayer?.id, setGameState, localPlayer?.playerId]);
+  }, [isMyTurn, gameState, playerId, setGameState]);
   
   useEffect(() => {
     if (selectedArmy && gameState && isMyTurn) {
         const moves = getPossibleMoves(gameState, selectedArmy);
         setPossibleMoves(moves);
-        setSelectedTile(selectedArmy.position);
     } else {
         setPossibleMoves([]);
     }
   }, [selectedArmyId, gameState, selectedArmy, isMyTurn]);
 
+  const onAction = useCallback(async (action: GameAction, payload?: any) => {
+    if (isPerformingAction) return;
+
+    if (!isMyTurn && ![GameAction.ShowCards, GameAction.CloseCards].includes(action)) {
+      toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
+      return;
+    }
+    
+    try {
+        setIsPerformingAction(true);
+        const result = await setGameState(gs => handleGameAction({ action, gameState: gs, payload }));
+
+        if (result?.newAttackSelectionDialogState) {
+          setAttackSelectionDialog(result.newAttackSelectionDialogState);
+        }
+
+    } catch (error: any) {
+        toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
+    } finally {
+        setIsPerformingAction(false);
+    }
+  }, [isPerformingAction, isMyTurn, toast, setGameState]);
+  
   // --- NEW: Local Action Handler ---
   const handleLocalAction = (action: GameAction, payload?: any) => {
     switch(action) {
       case GameAction.DeselectArmy:
         setSelectedArmyId(null);
-        setSelectedTile(null);
         setPossibleMoves([]);
         setPendingAction(null);
         break;
       case GameAction.CancelAction:
         setSelectedArmyId(null);
-        setSelectedTile(null);
         setPossibleMoves([]);
         setPendingAction(null);
-        // If an action was provisionally marked as used, we need to refund it.
-        onAction(GameAction.CancelAction);
+        onAction(GameAction.CancelAction); // Also inform shared state to refund card use
         break;
       case GameAction.ShowCards:
         setCardsDialogPlayerId(prev => prev === payload.playerId ? null : payload.playerId);
@@ -125,55 +153,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       case GameAction.CloseAbilitiesShop:
         setAbilitiesShopOpen(false);
         break;
-      case GameAction.UseCard:
-        // Handle cards that initiate a local UI flow
-        if (payload.cardName === CardName.Teleport) {
-          setPendingAction({ type: 'teleport', cardName: CardName.Teleport });
-        } else if (payload.cardName === CardName.Scout) {
-          setPendingAction({ type: 'scout', cardName: CardName.Scout, count: 3 });
-        }
-        // For cards with immediate shared effects, we need to call the shared handler
-        onAction(action, payload);
-        break;
       default:
         console.warn("Unhandled local action:", action);
     }
   }
   
-  const onAction = useCallback(async (action: GameAction, payload?: any) => {
-    if (isPerformingAction) return;
-
-    if (!isMyTurn && ![GameAction.ShowCards, GameAction.CloseCards, GameAction.CancelAction].includes(action)) {
-      toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
-      return;
-    }
-    
-    try {
-        setIsPerformingAction(true);
-        const result = await setGameState((currentGameState: GameState) => {
-            if (!currentGameState || !localPlayer) return currentGameState;
-            return handleGameAction({
-                action,
-                gameState: currentGameState,
-                payload
-            });
-        });
-
-        if (result) {
-            setSelectedArmyId(result.selectedArmyId);
-        }
-
-    } catch (error: any) {
-        toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
-    } finally {
-        setIsPerformingAction(false);
-    }
-  }, [isPerformingAction, isMyTurn, toast, setGameState, localPlayer]);
-  
   const handleTileClick = async (x: number, y: number) => {
     if (!gameState || !isMyTurn || gameState.status !== 'playing' || isPerformingAction) return;
-
-    const MAP_COLS = gameState.settings.gridSize.cols;
 
     // Handle pending Scout action
     if (pendingAction?.type === 'scout') {
@@ -201,21 +187,17 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (pendingAction?.type === 'teleport') {
       if (selectedArmyId !== null && selectedArmy) {
         // Step 2: Army is selected, now select destination
-        await onAction(GameAction.Move, { army: selectedArmy, x, y });
-        await onAction(GameAction.UseCard, { cardName: pendingAction.cardName }); // Consume card
+        await onAction(GameAction.Move, { army: selectedArmy, x, y, isTeleport: true });
         setPendingAction(null);
         setSelectedArmyId(null);
       } else {
         // Step 1: No army selected, select one now
-        const armiesOnTile = gameState.map[y * MAP_COLS + x].occupants
-            .filter(o => o.playerId === localPlayer?.id)
-            .map(o => localPlayer?.armies.find(a => a.id === o.armyId))
-            .filter((army): army is Army => !!army);
+        const armiesOnTile = localPlayer?.armies.filter(a => a.position.x === x && a.position.y === y) ?? [];
 
         if (armiesOnTile.length === 1) {
           setSelectedArmyId(armiesOnTile[0].id);
         } else if (armiesOnTile.length > 1) {
-          // Open selection dialog (This part would need a local dialog state)
+          setArmySelectionDialog({ armies: armiesOnTile, x, y });
         }
       }
       return;
@@ -227,16 +209,14 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         await onAction(GameAction.Move, { army: selectedArmy, x, y });
         setSelectedArmyId(null); // Deselect after move
     } else {
-        const armiesOnTile = gameState.map[y * MAP_COLS + x].occupants
-            .filter(o => o.playerId === localPlayer?.id)
-            .map(o => localPlayer?.armies.find(a => a.id === o.armyId))
-            .filter((army): army is Army => !!army);
+        const armiesOnTile = localPlayer?.armies.filter(a => a.position.x === x && a.position.y === y) ?? [];
 
         if (armiesOnTile.length === 1) {
             setSelectedArmyId(armiesOnTile[0].id);
+        } else if (armiesOnTile.length > 1) {
+            setArmySelectionDialog({ armies: armiesOnTile, x, y });
         } else {
             setSelectedArmyId(null);
-            // open army selection dialog
         }
     }
   };
@@ -254,7 +234,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             if (prevTime <= 1) {
                 clearInterval(timerRef.current!);
                 if (isMyTurn) { 
-                    onAction(GameAction.EndTurn, null);
+                    onAction(GameAction.EndTurn);
                 }
                 return 0;
             }
@@ -288,7 +268,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         clearInterval(timerRef.current);
         timerRef.current = null;
         toast({ title: "Time's up!", description: "Your turn has ended automatically."});
-        onAction(GameAction.EndTurn, null);
+        onAction(GameAction.EndTurn);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, isMyTurn]);
@@ -335,7 +315,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (!gameState || !localPlayer) return;
 
     if (isHost) {
-        handleConfirmHostLeaveGame();
+        setShowHostLeaveDialog(true);
         return;
     }
 
@@ -350,15 +330,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     setShowConfirmExitDialog(false);
     if (!localPlayer) return;
     setIsExiting(true);
-    await handlePlayerExit({
-      gameId,
-      localPlayer,
-      onExit,
-    });
+    await handlePlayerExit(gameId, localPlayer.playerId, onExit);
     setIsExiting(false);
   };
 
   const handleConfirmHostLeaveGame = async () => {
+      setShowHostLeaveDialog(false);
       if (!gameState) return;
       setIsExiting(true);
       await handleConfirmHostLeave(gameId, onExit);
@@ -443,7 +420,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                       players={players} 
                       onTileClick={handleTileClick} 
                       possibleMoves={isTeleporting && selectedArmyId !== null ? map.map(t => ({x: t.x, y: t.y})) : possibleMoves} 
-                      selectedTile={selectedTile} 
+                      selectedTile={selectedArmy?.position}
                       isTeleporting={isTeleporting}
                       isScoutTarget={isScouting}
                       deathAnimations={deathAnimations}
@@ -526,13 +503,33 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         gameState={gameState} 
         localPlayer={localPlayer}
         isMyTurn={isMyTurn}
+        showHostLeaveDialog={showHostLeaveDialog}
         onConfirmHostLeave={handleConfirmHostLeaveGame}
+        onCloseHostLeaveDialog={() => setShowHostLeaveDialog(false)}
         handleSharedAction={onAction}
         cardsDialogPlayerId={cardsDialogPlayerId}
         onCloseCardsDialog={() => handleLocalAction(GameAction.CloseCards)}
         abilitiesShopOpen={abilitiesShopOpen}
         onCloseAbilitiesShop={() => handleLocalAction(GameAction.CloseAbilitiesShop)}
+        armySelectionDialog={armySelectionDialog}
+        onCloseArmySelectionDialog={() => setArmySelectionDialog(null)}
+        onSelectArmyFromDialog={(armyId) => {
+            setSelectedArmyId(armyId);
+            setArmySelectionDialog(null);
+        }}
+        attackSelectionDialog={attackSelectionDialog}
+        onCloseAttackSelectionDialog={() => setAttackSelectionDialog(null)}
+        onSelectAttackTarget={(defenderArmyId) => {
+            if (attackSelectionDialog) {
+                onAction(GameAction.SelectDefender, {
+                    defenderArmyId,
+                    attackingArmyId: attackSelectionDialog.attackingArmyId,
+                });
+            }
+            setAttackSelectionDialog(null);
+        }}
       />
     </div>
   );
 }
+

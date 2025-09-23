@@ -1,5 +1,4 @@
 
-
 import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
@@ -80,19 +79,22 @@ export function revealIsland(state: GameState, x: number, y: number): GameState 
     return newState;
 }
 
-export function handleMoveAction(state: GameState, x: number, y: number, army: Army): GameState {
+export function handleMoveAction(state: GameState, x: number, y: number, army: Army, isTeleport: boolean = false): GameState {
     let newState = { ...state };
-    const { players, currentPlayerIndex, map } = newState;
+    const { players, currentPlayerIndex, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
-    if (army.position.x === x && army.position.y === y) {
+    const armyInState = player.armies.find(a => a.id === army.id);
+    if (!armyInState) throw new Error("Army not found for move action.");
+
+    if (armyInState.position.x === x && armyInState.position.y === y) {
         throw new Error("Cannot move to the same tile.");
     }
     
-    const oldTile = map[army.position.y * MAP_COLS + army.position.x];
-    oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== army.id);
+    const oldTile = map[armyInState.position.y * MAP_COLS + armyInState.position.x];
+    oldTile.occupants = oldTile.occupants.filter(o => o.playerId !== player.id || o.armyId !== armyInState.id);
     
-    const positionIndex = player.positions.findIndex(p => p.armyId === army.id);
+    const positionIndex = player.positions.findIndex(p => p.armyId === armyInState.id);
     if (positionIndex > -1) {
         const removedPosition = player.positions.splice(positionIndex, 1)[0];
         if(oldTile.positionedBy) {
@@ -101,9 +103,20 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         newState.log.push(`${player.name}'s army moved and is no longer positioned on ${removedPosition.resource}.`);
     }
 
-    army.position = { x, y };
+    armyInState.position = { x, y };
     const targetTile = newState.map[y * MAP_COLS + x];
-    targetTile.occupants.push({ playerId: player.id, armyId: army.id });
+    targetTile.occupants.push({ playerId: player.id, armyId: armyInState.id });
+    
+    // Consume Teleport card after successful move
+    if (isTeleport) {
+        const cardIndex = player.specialCards.indexOf('Teleport');
+        if (cardIndex > -1) {
+            discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
+            newState.log.push(`${player.name} teleported an army!`);
+        }
+        armyInState.hasActed = true; // Teleporting ends the army's turn
+        return checkAndEndTurnIfNoActions(newState);
+    }
     
     const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);
     if (isFirstDiscovery) {
@@ -111,15 +124,15 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     } else if (targetTile.type === IslandType.Special) {
         // Subsequent landing on a special island triggers the dice roll dialog
         newState.specialIslandRollDialogState = { isOpen: true, roll: null, cardDrawn: null };
-        army.hasActed = true;
+        armyInState.hasActed = true;
         return newState;
     }
     
-    if (army.hasActed && player.hasExtraMove) {
-        player.hasExtraMove = false;
-        newState.log.push(`${player.name} used their Extra Move on an army that has already acted.`);
+    if (armyInState.hasActed && player.hasExtraMove) {
+        player.hasExtraMove = false; // Consume the extra move
+        newState.log.push(`${player.name} used their Extra Move on an army.`);
     } else {
-        army.hasActed = true;
+        armyInState.hasActed = true;
     }
 
     return checkAndEndTurnIfNoActions(newState);
