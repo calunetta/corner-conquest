@@ -245,11 +245,11 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
       <button
         onClick={() => onClick(island.x, island.y)}
         className={cn(
-          'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200',
-          isSelected ? 'shadow-2xl shadow-primary/80' : '',
-          isPossibleMove ? 'border-2 border-accent/70 hover:border-accent shadow-lg shadow-accent/20' : 'border border-transparent hover:border-foreground/50',
-          isTeleporting && 'shadow-lg shadow-purple-500/30',
-          isScoutTarget && 'cursor-pointer border-2 border-blue-400 hover:border-blue-300 shadow-lg shadow-blue-500/30',
+          'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200 border border-transparent hover:border-foreground/50',
+          isSelected && 'shadow-2xl shadow-primary/80',
+          isPossibleMove && 'shadow-lg shadow-accent/40',
+          isTeleporting && 'shadow-lg shadow-purple-500/40',
+          isScoutTarget && 'cursor-pointer shadow-lg shadow-blue-500/40',
           tilePlayerColor && !isSelected && `shadow-lg ${playerTileIndicatorClasses[tilePlayerColor]}`
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}

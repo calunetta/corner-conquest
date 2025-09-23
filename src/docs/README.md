@@ -181,8 +181,9 @@ The application ensures that every player has a unique username.
 #### 5.3.3. Visual Feedback
 - **Selected Army:** The tile of a selected army gets a prominent glowing shadow (`shadow-2xl shadow-primary/80`).
 - **Player-Owned Tiles:** Tiles occupied by the local player's armies have a subtle, color-coded glow (`shadow-blue-500/50`, `shadow-red-500/50`, etc.) for easy identification.
-- **Possible Moves:** Valid move destinations for a selected army are highlighted with a dashed border (`border-accent/70`).
-- **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a glowing purple shadow (`shadow-lg shadow-purple-500/30`) to indicate they are valid destinations.
+- **Possible Moves:** Valid move destinations for a selected army are highlighted with a subtle yellow glow (`shadow-lg shadow-accent/40`).
+- **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a glowing purple shadow (`shadow-lg shadow-purple-500/40`) to indicate they are valid destinations.
+- **Scout Action:** When `Scout` is active, all hidden tiles are highlighted with a glowing blue shadow (`shadow-lg shadow-blue-500/40`) to indicate they can be revealed.
 - **Fog of War Indicator:** When Fog of War is active, undiscovered islands display a '?' icon (`HelpCircle` from lucide-react) instead of their true contents. This is rendered in `IslandTile.tsx`.
 - **Animations & Scenery:**
     - Game sprites (armies, monsters, death animations) are animated GIFs located in `public/sprites/`. The specific sprites for each player's army are defined in `src/lib/player-data.ts`. The castle base sprites are high-quality PNGs.

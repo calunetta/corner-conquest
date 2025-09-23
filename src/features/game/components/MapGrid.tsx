@@ -124,7 +124,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
                 island={island}
                 players={players}
                 onClick={onTileClick}
-                isPossibleMove={isPossible}
+                isPossibleMove={isPossible && !isTeleporting}
                 isSelected={isSelected}
                 isTeleporting={isTeleportTarget}
                 isScoutTarget={isScoutTarget}
