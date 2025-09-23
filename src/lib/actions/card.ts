@@ -2,9 +2,10 @@
 import type { GameState, Player, ResourceType, ActionHandlerResult, CardName, Army } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
 import { GameAction, AbilityName, MAP_COLS } from '../types';
+import { cloneDeep } from 'lodash';
 
 export function handleBuyCardAction(state: GameState): GameState {
-    let newState = { ...state };
+    let newState = cloneDeep(state);
     const { players, currentPlayerIndex, specialCardsDeck, discardPile, debugMode } = newState;
     const player = players[currentPlayerIndex];
     const HAND_LIMIT = 7;
@@ -37,8 +38,8 @@ export function handleBuyCardAction(state: GameState): GameState {
     return newState;
 }
 
-export const handleUseCard = (state: GameState, payload: { cardName: CardName, army?: Army, isScout?: boolean }): GameState => {
-    let newState = { ...state };
+export const handleUseCard = (state: GameState, payload: { cardName: CardName, isScout?: boolean }): GameState => {
+    let newState = cloneDeep(state);
     const { players, currentPlayerIndex, discardPile } = newState;
     const player = players[currentPlayerIndex];
     const { cardName, isScout } = payload;
@@ -47,13 +48,12 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, a
     if (!canUseCard) throw new Error("You can only use one card per turn.");
     
     const cardIndex = player.specialCards.indexOf(cardName);
-    if (cardIndex === -1 && !isScout) throw new Error(`You do not have the ${cardName} card.`);
+    if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
+    
+    player.actionsThisTurn.push(GameAction.UseCard);
     
     newState.log.push(`${player.name} is using the '${cardName}' card.`);
     
-    player.actionsThisTurn.push(GameAction.UseCard);
-
-    // Some cards are consumed immediately without a follow-up action.
     const immediateConsumeCards: CardName[] = ['Extra Move', 'Reinforce', 'Efficient', 'Master Builder'];
     if (immediateConsumeCards.includes(cardName)) {
         player.hasExtraMove = cardName === 'Extra Move';
@@ -63,7 +63,9 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, a
         newState.log.push(`${player.name} activated '${cardName}'.`);
     }
 
-    // consume card
+    // Only consume cards that have an immediate, single-turn effect, or after a multi-step action is complete (like scout).
+    // Cards that open dialogs (Sabotage, Steal) are consumed in their own handlers.
+    // Cards used in combat (Warchief, Overcome) are consumed in combat handlers.
     if (immediateConsumeCards.includes(cardName) || isScout) {
         const cIndex = player.specialCards.indexOf(cardName);
         if(cIndex > -1) {
@@ -75,7 +77,7 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, a
 };
 
 export function handleUseProductiveCard(state: GameState, selectedResource: ResourceType | null): GameState {
-    let newState = { ...state };
+    let newState = cloneDeep(state);
     const player = newState.players[newState.currentPlayerIndex];
     let collectedResources: Record<string, number> = {};
     let doubledResourceString = '';
@@ -115,13 +117,12 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
     });
     player.positions = [];
 
-
     newState.productiveCardDialogState = null;
     return newState;
 }
 
 export function handleSabotagePlayer(state: GameState, targetPlayerId: number): GameState {
-    let newState = { ...state };
+    let newState = cloneDeep(state);
     const player = newState.players[newState.currentPlayerIndex];
     const targetPlayer = newState.players.find(p => p.id === targetPlayerId);
 
@@ -131,6 +132,7 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
         
         const cardIndex = player.specialCards.indexOf('Sabotage');
         if (cardIndex > -1) {
+            player.actionsThisTurn.push(GameAction.UseCard);
             newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
         }
     }
@@ -138,7 +140,7 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
 }
 
 export function handleGainWealth(state: GameState, resource: ResourceType): GameState {
-    let newState = { ...state };
+    let newState = cloneDeep(state);
     const player = newState.players[newState.currentPlayerIndex];
     
     player.resources[resource] += 5;
@@ -146,6 +148,7 @@ export function handleGainWealth(state: GameState, resource: ResourceType): Game
     
     const cardIndex = player.specialCards.indexOf('Wealthy');
     if (cardIndex > -1) {
+        player.actionsThisTurn.push(GameAction.UseCard);
         newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
     }
 
@@ -153,7 +156,7 @@ export function handleGainWealth(state: GameState, resource: ResourceType): Game
 }
 
 export const handleStealResource = (state: GameState, payload: { targetPlayerId: number; resource: ResourceType }): GameState => {
-    let newState = { ...state };
+    let newState = cloneDeep(state);
     const { players, currentPlayerIndex } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const targetPlayer = players.find(p => p.id === payload.targetPlayerId);
@@ -174,6 +177,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
 
     const cardIndex = currentPlayer.specialCards.indexOf('Steal Resource');
     if (cardIndex > -1) {
+        currentPlayer.actionsThisTurn.push(GameAction.UseCard);
         newState.discardPile.push(currentPlayer.specialCards.splice(cardIndex, 1)[0]);
     }
 
@@ -181,7 +185,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
 };
 
 export function handleBuyAbility(state: GameState, abilityName: AbilityName): GameState {
-    let newState = { ...state };
+    let newState = cloneDeep(state);
     const player = newState.players[newState.currentPlayerIndex];
     const cost = newState.settings.abilityCost;
 
@@ -204,7 +208,7 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ga
 
 
 export function handleRollOnSpecialIsland(state: GameState): GameState {
-  let newState = { ...state };
+  let newState = cloneDeep(state);
   const player = newState.players[newState.currentPlayerIndex];
   const HAND_LIMIT = 7;
 
@@ -240,11 +244,13 @@ export function handleRollOnSpecialIsland(state: GameState): GameState {
 }
 
 export function handleCloseSpecialIslandDialog(state: GameState): GameState {
-  return { ...state, specialIslandRollDialogState: null };
+  let newState = cloneDeep(state);
+  newState.specialIslandRollDialogState = null;
+  return checkAndEndTurnIfNoActions(newState);
 }
 
 export function handleScoutAction(state: GameState, x: number, y: number): GameState {
-    let newState = { ...state };
+    let newState = cloneDeep(state);
     const player = newState.players[newState.currentPlayerIndex];
     const tileId = `${x}-${y}`;
 

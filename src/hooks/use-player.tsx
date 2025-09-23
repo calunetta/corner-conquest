@@ -28,6 +28,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('playerId', newPlayerId);
     }
   }, []);
+  
+  const logout = useCallback(async () => {
+    if (username) {
+       try {
+        const usernameDocRef = doc(db, 'usernames', username);
+        await deleteDoc(usernameDocRef);
+       } catch (error) {
+        console.error("Error removing username on logout:", error)
+       }
+    }
+    localStorage.removeItem('username');
+    setUsernameState(null);
+  }, [username]);
 
   const setUsernameCallback = useCallback(async (name: string): Promise<boolean> => {
     if (!playerId) {
@@ -59,14 +72,20 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [playerId, username]);
 
-  const logout = useCallback(async () => {
-    if (username) {
-       const usernameDocRef = doc(db, 'usernames', username);
-       await deleteDoc(usernameDocRef);
-    }
-    localStorage.removeItem('username');
-    setUsernameState(null);
-  }, [username]);
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      // The primary purpose of this is to run the logout logic
+      // if the user closes the tab/browser. It's not guaranteed to run.
+      logout();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [logout]);
+
 
   return (
     <PlayerContext.Provider value={{ playerId, username, setUsername: setUsernameCallback, logout }}>

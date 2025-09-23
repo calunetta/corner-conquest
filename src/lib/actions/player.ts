@@ -4,9 +4,10 @@ import { db, doc, deleteDoc, writeBatch, getDoc, arrayUnion, runTransaction } fr
 import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum, GameStatus } from '../types';
 import { getPossibleMoves } from './movement';
 import { takeBotTurn } from '../bot-logic';
+import { cloneDeep } from 'lodash';
 
 export function handleCancelAction(state: GameState): GameState {
-  const newState = { ...state };
+  const newState = cloneDeep(state);
   const player = newState.players[newState.currentPlayerIndex];
   
   const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
@@ -92,13 +93,13 @@ export function canPlayerPerformAnyAction(state: GameState): boolean {
 export function checkAndEndTurnIfNoActions(state: GameState): GameState {
     if (!canPlayerPerformAnyAction(state)) {
         state.log.push(`${state.players[state.currentPlayerIndex].name} has no more actions. Ending turn automatically.`);
-        return handleEndTurn(state, { isHost: false, gameId: state.id });
+        return handleEndTurn(state, false, state.id);
     }
     return state;
 }
 
 export function handleDeployAction(state: GameState): GameState {
-    let newState = { ...state };
+    let newState = cloneDeep(state);
     const { players, currentPlayerIndex, map, discardPile, settings, baseTiles } = newState;
     const player = players[currentPlayerIndex];
     
@@ -136,6 +137,7 @@ export function handleDeployAction(state: GameState): GameState {
       player.efficientActive = false;
       const cardIndex = player.specialCards.indexOf(CardNameEnum.Efficient);
       if (cardIndex > -1) {
+          player.actionsThisTurn.push(GameAction.UseCard);
           const usedCard = player.specialCards.splice(cardIndex, 1)[0];
           discardPile.push(usedCard);
       }
@@ -146,6 +148,7 @@ export function handleDeployAction(state: GameState): GameState {
       player.reinforceActive = false;
       const cardIndex = player.specialCards.indexOf(CardNameEnum.Reinforce);
       if (cardIndex > -1) {
+          player.actionsThisTurn.push(GameAction.UseCard);
           const usedCard = player.specialCards.splice(cardIndex, 1)[0];
           discardPile.push(usedCard);
       }
@@ -162,7 +165,7 @@ export function handleDeployAction(state: GameState): GameState {
 }
 
 export function handleUpgradeAction(state: GameState): GameState {
-    let newState = { ...state };
+    let newState = cloneDeep(state);
     const { players, currentPlayerIndex, discardPile, settings } = newState;
     const player = players[currentPlayerIndex];
 
@@ -183,6 +186,7 @@ export function handleUpgradeAction(state: GameState): GameState {
       player.masterBuilderActive = false;
       const cardIndex = player.specialCards.indexOf(CardNameEnum.MasterBuilder);
       if (cardIndex > -1) {
+          player.actionsThisTurn.push(GameAction.UseCard);
           const usedCard = player.specialCards.splice(cardIndex, 1)[0];
           discardPile.push(usedCard);
       }
@@ -195,7 +199,7 @@ export function handleUpgradeAction(state: GameState): GameState {
 }
 
 function applyAutomaticCollection(state: GameState, player: Player): { newState: GameState, collectedResources: Record<string, number> } {
-    let newState = { ...state };
+    let newState = cloneDeep(state);
     const collectedResources: Record<string, number> = {};
     
     player.positions.forEach(pos => {
@@ -218,8 +222,8 @@ function applyAutomaticCollection(state: GameState, player: Player): { newState:
     return { newState, collectedResources };
 }
 
-export function handleEndTurn(state: GameState, payload: { isHost: boolean, gameId: string }): GameState {
-    let newState = JSON.parse(JSON.stringify(state)); 
+export function handleEndTurn(state: GameState, isHost: boolean, gameId: string): GameState {
+    let newState = cloneDeep(state); 
     
     if (newState.currentPlayerIndex >= newState.players.length) {
         newState.currentPlayerIndex = 0;
@@ -227,29 +231,13 @@ export function handleEndTurn(state: GameState, payload: { isHost: boolean, game
     
     let outgoingPlayer = newState.players[newState.currentPlayerIndex];
     
-    // --- Post-Turn Passive Abilities for OUTGOING Player ---
-    if (outgoingPlayer.passiveAbilities.explorer) {
-        const occupiedIslands = new Set<string>();
-        outgoingPlayer.armies.forEach((army: Army) => {
-            const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
-            occupiedIslands.add(tile.id);
-        });
-        const vpGained = occupiedIslands.size;
-        if (vpGained > 0) {
-            outgoingPlayer.victoryPoints += vpGained;
-            newState.log.push(`${outgoingPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
-        }
-    }
-
     outgoingPlayer.hasExtraMove = false;
     outgoingPlayer.efficientActive = false;
     outgoingPlayer.masterBuilderActive = false;
     outgoingPlayer.reinforceActive = false;
-    
     outgoingPlayer.armies.forEach((army: Army) => army.hasActed = false);
     outgoingPlayer.actionsThisTurn = [];
 
-    // --- Determine Next Player ---
     let nextPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
     let nextPlayer = newState.players[nextPlayerIndex];
 
@@ -257,12 +245,25 @@ export function handleEndTurn(state: GameState, payload: { isHost: boolean, game
         nextPlayer.isSabotaged = false; 
         newState.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
         newState.currentPlayerIndex = nextPlayerIndex;
-        return handleEndTurn(newState, payload);
+        return handleEndTurn(newState, isHost, gameId);
     }
     
     newState.currentPlayerIndex = nextPlayerIndex;
     
-    // --- Pre-Turn Actions for NEW Player ---
+    // --- Pre-Turn Passive Abilities for NEW Player ---
+    if (nextPlayer.passiveAbilities.explorer) {
+        const occupiedIslands = new Set<string>();
+        nextPlayer.armies.forEach((army: Army) => {
+            const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
+            occupiedIslands.add(tile.id);
+        });
+        const vpGained = occupiedIslands.size;
+        if (vpGained > 0) {
+            nextPlayer.victoryPoints += vpGained;
+            newState.log.push(`${nextPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
+        }
+    }
+
     if (nextPlayer.passiveAbilities.collector) {
         let resourcesCollected: Partial<Record<string, number>> = {};
         const occupiedIslands = new Set<string>();
@@ -274,7 +275,7 @@ export function handleEndTurn(state: GameState, payload: { isHost: boolean, game
             if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0) {
                 occupiedIslands.add(tile.id);
                 tile.resources.forEach((resource: { type: string; }) => {
-                    nextPlayer.resources[resource.type] += 1;
+                    nextPlayer.resources[resource.type as ResourceType] += 1;
                     resourcesCollected[resource.type] = (resourcesCollected[resource.type] || 0) + 1;
                 });
             }
@@ -284,12 +285,6 @@ export function handleEndTurn(state: GameState, payload: { isHost: boolean, game
         if(collectedStrings.length > 0) {
             newState.log.push(`${nextPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`);
         }
-    }
-
-    if (nextPlayer.armies.length === 1) {
-        newState.autoSelectArmyFor = nextPlayer.playerId;
-    } else {
-        newState.autoSelectArmyFor = null;
     }
     
     const hasProductiveCard = nextPlayer.specialCards.includes(CardNameEnum.Productive);
@@ -324,13 +319,15 @@ export function handleEndTurn(state: GameState, payload: { isHost: boolean, game
     
     newState.log.push(`It's now ${nextPlayer.name}'s turn.`);
     
-    // Clear all shared dialog states
     newState.combatState = null;
     newState.monsterCombatState = null;
-    newState.productiveCardDialogState = newState.productiveCardDialogState?.isOpen ? newState.productiveCardDialogState : null;
+    if (!newState.productiveCardDialogState?.isOpen) {
+        newState.productiveCardDialogState = null;
+    }
     newState.specialIslandRollDialogState = null;
+    newState.autoSelectArmyFor = null; // Clear this flag
 
-    if (payload.isHost && nextPlayer.isBot) {
+    if (isHost && nextPlayer.isBot) {
         return takeBotTurn(newState);
     }
 
@@ -350,46 +347,63 @@ export async function handlePlayerExit(gameId: string, playerId: string, onExit:
             let currentState = gameDoc.data() as GameState;
             const playerIndex = currentState.players.findIndex(p => p.playerId === playerId);
             if (playerIndex === -1) {
-                onExit(); // Player already gone, just exit
+                onExit();
                 return;
             }
             
-            if (currentState.players.length <= 1) {
+            const isHost = playerIndex === 0;
+
+            if (isHost || currentState.players.length <= 1) {
                 transaction.delete(gameDocRef);
-            } else {
-                const isCurrentPlayerExiting = currentState.currentPlayerIndex === playerIndex;
-
-                currentState.log.push(`${currentState.players[playerIndex].name} has left the game.`);
-                currentState.players.splice(playerIndex, 1);
-
-                // Re-assign player IDs (seat indices)
-                currentState.players.forEach((p, i) => p.id = i);
-
-                if (isCurrentPlayerExiting) {
-                    currentState.currentPlayerIndex = (playerIndex - 1 + currentState.players.length) % currentState.players.length;
-                    currentState = handleEndTurn(currentState, { isHost: false, gameId });
-                } else if (playerIndex < currentState.currentPlayerIndex) {
-                    currentState.currentPlayerIndex -= 1;
-                }
-                
-                if(currentState.currentPlayerIndex >= currentState.players.length) {
-                    currentState.currentPlayerIndex = 0;
-                }
-
-                transaction.set(gameDocRef, currentState);
+                return;
             }
+
+            const isCurrentPlayerExiting = currentState.currentPlayerIndex === playerIndex;
+
+            currentState.log.push(`${currentState.players[playerIndex].name} has left the game.`);
+            
+            // Remove all remnants of the player
+            currentState.map.forEach(tile => {
+                tile.occupants = tile.occupants.filter(o => o.playerId !== playerIndex);
+                tile.positionedBy = (tile.positionedBy || []).filter(p => p.playerId !== playerIndex);
+            });
+
+            currentState.players.splice(playerIndex, 1);
+
+            // Re-assign player IDs (seat indices) and update references
+            currentState.players.forEach((p, i) => p.id = i);
+            
+            currentState.map.forEach(tile => {
+                tile.occupants.forEach(o => {
+                    if (o.playerId > playerIndex) o.playerId--;
+                });
+                (tile.positionedBy || []).forEach(p => {
+                    if (p.playerId > playerIndex) p.playerId--;
+                });
+            });
+
+            if (currentState.combatState) {
+                if (currentState.combatState.attackerId > playerIndex) currentState.combatState.attackerId--;
+                if (currentState.combatState.defenderId > playerIndex) currentState.combatState.defenderId--;
+            }
+
+
+            if (isCurrentPlayerExiting) {
+                currentState.currentPlayerIndex = playerIndex % currentState.players.length;
+                currentState = handleEndTurn(currentState, false, gameId);
+            } else if (playerIndex < currentState.currentPlayerIndex) {
+                currentState.currentPlayerIndex--;
+            }
+            
+            if(currentState.currentPlayerIndex >= currentState.players.length) {
+                currentState.currentPlayerIndex = 0;
+            }
+
+            transaction.set(gameDocRef, currentState);
         });
         
         onExit();
     } catch (error) {
         console.error("Error leaving game:", error);
     }
-}
-
-export function handleHostLeave(state: GameState): GameState {
-  if (state.players.length <= 1) {
-    return { ...state, status: GameStatus.Finished }; 
-  } else {
-    return { ...state, log: [...state.log, 'The host has left the game. The game will now end.'] };
-  }
 }

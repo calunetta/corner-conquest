@@ -119,13 +119,15 @@ export function Lobby({ onJoinGame }: LobbyProps) {
     const creator = { playerId, name: username, color: playerColor };
     let newGame = initializeGame(newGameId, gameName, maxPlayers, creator, numBots, debugMode, settings);
     
-    const isBotGame = maxPlayers === 1;
-    if (isBotGame) {
-      newGame = startGame(newGame, newGame.players[0].name);
-    }
-
     try {
         await setDoc(gameDocRef, newGame);
+
+        // If it's a bot game, start it immediately.
+        if (maxPlayers === 1) {
+            const startedGame = startGame(newGame, newGame.players[0].name);
+            await setDoc(gameDocRef, startedGame);
+        }
+
         onJoinGame(newGameId);
         return true;
     } catch (error) {
@@ -198,7 +200,10 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 Join a game or create one to begin your conquest.
               </CardDescription>
             </div>
-            <Button onClick={() => setIsCreatingGame(true)} className="w-full sm:w-auto">Create New Game</Button>
+            <Button onClick={() => setIsCreatingGame(true)} disabled={isCreatingGame} className="w-full sm:w-auto">
+              {isCreatingGame && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create New Game
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -281,7 +286,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
         </CardContent>
       </Card>
       <CreateGameDialog 
-        open={!isJoiningGame && isCreatingGame}
+        open={isCreatingGame}
         onOpenChange={setIsCreatingGame}
         onCreateGame={handleCreateGame}
       />

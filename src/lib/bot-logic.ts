@@ -30,16 +30,10 @@ export function takeBotTurn(initialState: GameState): GameState {
     const botPlayer = state.players[state.currentPlayerIndex];
     console.log(`--- Bot Turn Start: ${botPlayer.name} ---`);
     
-    if (botPlayer.specialCards.includes(CardName.Reinforce)) {
-        botPlayer.reinforceActive = true;
-    }
-    if (botPlayer.specialCards.includes(CardName.Efficient)) {
-        botPlayer.efficientActive = true;
-    }
-    if (botPlayer.specialCards.includes(CardName.MasterBuilder)) {
-        botPlayer.masterBuilderActive = true;
-    }
-
+    // Set active card flags
+    if (botPlayer.specialCards.includes(CardName.Reinforce)) botPlayer.reinforceActive = true;
+    if (botPlayer.specialCards.includes(CardName.Efficient)) botPlayer.efficientActive = true;
+    if (botPlayer.specialCards.includes(CardName.MasterBuilder)) botPlayer.masterBuilderActive = true;
 
     const possibleActions: BotAction[] = [];
 
@@ -51,9 +45,7 @@ export function takeBotTurn(initialState: GameState): GameState {
             name: 'buy-ability',
             priority: 8,
             execute: (s) => {
-                try {
-                    return handleBuyAbility(s, unownedAbilities[0] as AbilityName);
-                } catch { return null; }
+                try { return handleBuyAbility(s, unownedAbilities[0] as AbilityName); } catch { return null; }
             }
         });
     }
@@ -64,9 +56,7 @@ export function takeBotTurn(initialState: GameState): GameState {
             name: 'upgrade-attack',
             priority: 7 - botPlayer.attackPower,
             execute: (s) => {
-                try {
-                    return handleUpgradeAction(s);
-                } catch { return null; }
+                try { return handleUpgradeAction(s); } catch { return null; }
             }
         });
     }
@@ -77,9 +67,7 @@ export function takeBotTurn(initialState: GameState): GameState {
             name: 'deploy-army',
             priority: 6 - botPlayer.armyCount,
             execute: (s) => {
-                try {
-                    return handleDeployAction(s);
-                } catch { return null; }
+                try { return handleDeployAction(s); } catch { return null; }
             }
         });
     }
@@ -89,36 +77,27 @@ export function takeBotTurn(initialState: GameState): GameState {
             name: 'buy-card',
             priority: botPlayer.resources.gems > 20 ? 4 : 1,
             execute: (s) => {
-                try {
-                    return handleBuyCardAction(s);
-                } catch { return null; }
+                try { return handleBuyCardAction(s); } catch { return null; }
             }
         });
     }
     
-    if (botPlayer.specialCards.includes(CardName.Wealthy)) {
-        const canUseCard = !botPlayer.actionsThisTurn.includes(GameAction.UseCard);
+    if (botPlayer.specialCards.includes(CardName.Wealthy) && !botPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
         let neededResource: ResourceType | null = null;
-        if (!canAfford(botPlayer, deployCost, 'wheat' as ResourceType) && botPlayer.armyCount < 5) {
-            neededResource = 'wheat' as ResourceType;
-        } else if (!canAfford(botPlayer, upgradeCost, 'iron' as ResourceType) && botPlayer.attackPower < 4) {
-            neededResource = 'iron' as ResourceType;
-        } else if (botPlayer.resources.gems < 5) {
-            neededResource = 'gems' as ResourceType;
-        }
+        if (!canAfford(botPlayer, deployCost, 'wheat' as ResourceType) && botPlayer.armyCount < 5) neededResource = 'wheat' as ResourceType;
+        else if (!canAfford(botPlayer, upgradeCost, 'iron' as ResourceType) && botPlayer.attackPower < 4) neededResource = 'iron' as ResourceType;
+        else if (botPlayer.resources.gems < 5) neededResource = 'gems' as ResourceType;
+        else if (botPlayer.resources.wheat < 5) neededResource = 'wheat' as ResourceType; // Proactive use
         
-        if (neededResource && canUseCard) {
+        if (neededResource) {
             const resourceToGain = neededResource;
             possibleActions.push({
                 name: 'use-wealthy',
-                priority: 8,
+                priority: 8.5,
                 execute: (s) => {
-                    try {
-                        let tempState = handleUseCard(s, { cardName: CardName.Wealthy });
-                        return handleGainWealth(tempState, resourceToGain);
-                    } catch { return null; }
+                    try { return handleGainWealth(s, resourceToGain); } catch { return null; }
                 }
-            })
+            });
         }
     }
 
@@ -158,9 +137,7 @@ export function takeBotTurn(initialState: GameState): GameState {
                     name: `position-${army.id}`,
                     priority: 9,
                     execute: (s) => {
-                        try {
-                            return handleSelectResourceForPosition(s, availableResource.type, army);
-                        } catch { return null; }
+                        try { return handleSelectResourceForPosition(s, availableResource.type, army); } catch { return null; }
                     }
                 });
             }
@@ -169,10 +146,10 @@ export function takeBotTurn(initialState: GameState): GameState {
         const validMoves = getPossibleMoves(state, army);
         for (const move of validMoves) {
             const targetTile = state.map[move.y * MAP_COLS + move.x];
-            let priority = 5;
+            let priority = 2; // Base priority for any move
             
             if (state.settings.fogOfWar && !botPlayer.revealedTiles.includes(targetTile.id)) {
-                priority = 6;
+                priority = 6; // High priority to explore
             } 
             else if ((targetTile.type === IslandType.Resource || targetTile.type === IslandType.Base) && targetTile.resources.length > 0 && targetTile.occupants.length === 0 && !targetTile.monsters) {
                 priority = 4;
@@ -185,9 +162,7 @@ export function takeBotTurn(initialState: GameState): GameState {
                 name: `move-${army.id}-to-${move.x},${move.y}`,
                 priority: priority,
                 execute: (s) => {
-                    try {
-                        return handleMoveAction(s, move.x, move.y, army);
-                    } catch { return null; }
+                    try { return handleMoveAction(s, move.x, move.y, army); } catch { return null; }
                 }
             });
         }
@@ -204,6 +179,7 @@ export function takeBotTurn(initialState: GameState): GameState {
         }
     }
     
-    console.log(`Bot: No valid actions found. Ending turn.`);
-    return handleEndTurn(state, { isHost: false, gameId: state.id });
+    // Fallback: If all attempted actions failed or no actions were possible, end the turn.
+    console.log(`Bot: No valid actions found or all failed. Ending turn.`);
+    return handleEndTurn(state, false, state.id);
 }

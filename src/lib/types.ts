@@ -18,7 +18,6 @@ export enum GameAction {
   StealResource = 'steal-resource',
   RollOnSpecialIsland = 'roll-on-special-island',
   CloseSpecialIslandDialog = 'close-special-island-dialog',
-  HostLeave = 'host-leave',
   SelectDefender = 'select-defender',
   CombatRoll = 'combat-roll',
   CloseCombat = 'close-combat',
@@ -201,6 +200,8 @@ export type MonsterCombatState = {
   phase: CombatPhase;
 };
 
+// These are now part of the *shared* state, as they are initiated by the server
+// but require user input. The client-side UI will mirror these into local state.
 export type ProductiveCardDialogState = {
     isOpen: boolean;
     options: {
@@ -209,13 +210,13 @@ export type ProductiveCardDialogState = {
         x: number;
         y: number;
     }[];
-}
+} | null;
 
 export type SpecialIslandRollDialogState = {
   isOpen: boolean;
   roll: number | null;
   cardDrawn: CardName | null;
-};
+} | null;
 
 export type DeathAnimation = {
     id: string; // "army-playerId-armyId" or "monster-x-y-name"
@@ -247,13 +248,13 @@ export type GameState = {
   specialCardsDeck: CardName[];
   discardPile: CardName[];
   deathAnimations: DeathAnimation[];
-  autoSelectArmyFor: string | null;
+  autoSelectArmyFor: string | null; // This is a temporary directive, will be removed.
   
   // SHARED DIALOG STATES (Only those that require all players to see or interact)
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
-  productiveCardDialogState: ProductiveCardDialogState | null; 
-  specialIslandRollDialogState: SpecialIslandRollDialogState | null;
+  productiveCardDialogState: ProductiveCardDialogState; 
+  specialIslandRollDialogState: SpecialIslandRollDialogState;
 };
 
 // Result of a reducer. Can include state changes and/or UI events.

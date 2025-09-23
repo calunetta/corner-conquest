@@ -3,6 +3,7 @@ import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/l
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
 import { GameAction, IslandType, MAP_COLS, MAP_ROWS } from '../types';
+import { cloneDeep } from 'lodash';
 
 
 export function getPossibleMoves(state: GameState, army: Army): { x: number; y: number }[] {
@@ -39,8 +40,8 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
     });
 }
 
-export function revealIsland(state: GameState, x: number, y: number): GameState {
-    let newState = { ...state };
+export function revealIsland(state: GameState, x: number, y: number, isScout: boolean = false): GameState {
+    let newState = cloneDeep(state);
     const player = newState.players[newState.currentPlayerIndex];
     const tile = newState.map[y * MAP_COLS + x];
     const tileId = tile.id;
@@ -53,12 +54,12 @@ export function revealIsland(state: GameState, x: number, y: number): GameState 
     player.revealedTiles.push(tileId);
 
     const isFirstEverDiscovery = !newState.players.some(p => p.id !== player.id && p.revealedTiles.includes(tileId));
-    if (isFirstEverDiscovery && newState.settings.vpPerIslandDiscovery > 0) {
+    if (isFirstEverDiscovery && newState.settings.vpPerIslandDiscovery > 0 && !isScout) {
         player.victoryPoints += newState.settings.vpPerIslandDiscovery;
         newState.log.push(`${player.name} discovered a new island and gains ${newState.settings.vpPerIslandDiscovery} VP!`);
     }
 
-    if (tile.type === IslandType.Special) {
+    if (tile.type === IslandType.Special && !isScout) {
         if (player.specialCards.length >= HAND_LIMIT && !newState.debugMode) {
              newState.log.push(`${player.name} discovered a special island, but their hand is full!`);
         } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
@@ -78,7 +79,7 @@ export function revealIsland(state: GameState, x: number, y: number): GameState 
 }
 
 export function handleMoveAction(state: GameState, x: number, y: number, army: Army, isTeleport: boolean = false): GameState {
-    let newState = { ...state };
+    let newState = cloneDeep(state);
     const { players, currentPlayerIndex, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
@@ -86,8 +87,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     if (!armyInState) throw new Error("Army not found for move action.");
 
     if (!isTeleport && (armyInState.position.x === x && armyInState.position.y === y)) {
-        console.warn("Attempted to move to the same tile.");
-        return newState;
+        throw new Error("Army cannot move to its current tile.");
     }
     
     const oldTile = map[armyInState.position.y * MAP_COLS + armyInState.position.x];
@@ -106,21 +106,21 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     const targetTile = newState.map[y * MAP_COLS + x];
     targetTile.occupants.push({ playerId: player.id, armyId: armyInState.id });
     
-    // Consume Teleport card after successful move
     if (isTeleport) {
         const cardIndex = player.specialCards.indexOf('Teleport');
         if (cardIndex > -1) {
+            player.actionsThisTurn.push(GameAction.UseCard);
             discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
             newState.log.push(`${player.name} teleported an army!`);
         }
-        armyInState.hasActed = true; // Teleporting ends the army's turn
+        armyInState.hasActed = true;
         return checkAndEndTurnIfNoActions(newState);
     }
     
     const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);
-    if (isFirstDiscovery && !isTeleport) { // Don't trigger island effects on teleport
+    if (isFirstDiscovery) {
         newState = revealIsland(newState, x, y);
-    } else if (targetTile.type === IslandType.Special && !isTeleport) {
+    } else if (targetTile.type === IslandType.Special) {
         newState.specialIslandRollDialogState = { isOpen: true, roll: null, cardDrawn: null };
         armyInState.hasActed = true;
         return newState;
