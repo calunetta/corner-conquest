@@ -256,11 +256,17 @@ export function initializeGame(
         const numResourceTypes = (distance <= 3 && Math.random() < 0.4) ? 2 : 1;
         const islandResources: IslandResource[] = [];
 
-        for(let i=0; i < numResourceTypes; i++) {
+        if (numResourceTypes === 1) {
             const randomIndex = Math.floor(Math.random() * availableResources.length);
-            const selectedResourceType = availableResources.splice(randomIndex, 1)[0];
-            const amount = (Math.random() < 0.3 ? 2 : 1) * settings.baseResourceAmount;
-            islandResources.push({ type: selectedResourceType, amount });
+            const selectedResourceType = availableResources[randomIndex];
+            islandResources.push({ type: selectedResourceType, amount: 2 * settings.baseResourceAmount });
+        } else {
+            for(let i=0; i < numResourceTypes; i++) {
+                const randomIndex = Math.floor(Math.random() * availableResources.length);
+                const selectedResourceType = availableResources.splice(randomIndex, 1)[0];
+                const amount = (Math.random() < 0.5 ? 1 : 2) * settings.baseResourceAmount;
+                islandResources.push({ type: selectedResourceType, amount });
+            }
         }
         map2D[y][x].resources = islandResources;
       } else if(islandType === IslandType.Monster) {
@@ -302,6 +308,7 @@ export function initializeGame(
     teleportState: null,
     armySelectionDialogState: null,
     attackSelectionDialogState: null,
+    specialIslandRollDialogState: null,
     showHostLeaveDialog: false,
   };
 
@@ -315,3 +322,4 @@ export function startGame(gameState: GameState): GameState {
     newState.log.push(`The game has started! It's now ${newState.players[0].name}'s turn.`);
     return newState;
 }
+

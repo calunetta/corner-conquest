@@ -89,7 +89,10 @@ The first player to reach the `victoryPointGoal` (default: 30 VP) wins the game.
 ### 4.2. The Map & Islands
 The game is played on a grid of islands. Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to a tile, revealing it. The procedural generation of the map is governed by the `game-initializer.ts` file and can be tweaked via the "Customize Match" settings in the lobby.
 - **Base:** Your starting point. Where you deploy new armies and where defeated armies respawn. Bases also generate all three resource types. The Base's appearance is a castle sprite specific to the player's color, defined in `src/lib/player-data.ts`.
-- **Resource Islands:** Contain **Wheat**, **Iron**, or **Gems**. An island can have one or two types of resources, and each resource type can have one or two collection spots. This is randomized during map generation.
+- **Resource Islands:** Contain **Wheat**, **Iron**, or **Gems**. The generation logic is as follows:
+    - An island can have one or two types of resources, determined by its distance from the map's center.
+    - If an island has **one** resource type, it will always have **two** collection spots for that resource.
+    - If an island has **two** resource types, each type will have a random number of collection spots (either one or two).
 - **Monster Islands:** Inhabited by hostile creatures that must be defeated. When monsters are present, they are rendered with a dynamic idle animation within the `IslandTile` component. Their sprites randomly shift left and right and have a chance to play their `attack` animation to make them feel alive. All monster sprites are animated GIFs. When the last monster on an island is defeated, the island's type changes to `Resource`, but **note:** no new resources are currently generated on it.
 - **Special Islands:** Discovering these grants the player a random Special Card. On subsequent landings on the same island, a dialog appears prompting the player to roll a die. On a roll of 3 or 6, they receive another card.
 - **Island Distribution:** The balance between Resource, Monster, and Special islands is controlled by the `resourceDensity` setting (default 60%). This value roughly corresponds to the probability that a tile will be a resource island. The remaining percentage is split between Monster and Special islands, with Special islands being rarer. The distribution also changes based on distance from the map's center, with more valuable and dangerous islands appearing closer to the middle.
@@ -173,7 +176,7 @@ The application ensures that every player has a unique username.
 - **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a purple border (`border-purple-500`) to indicate they are valid destinations.
 - **Fog of War Indicator:** When Fog of War is active, undiscovered islands display a '?' icon (`HelpCircle` from lucide-react) instead of their true contents. This is rendered in `IslandTile.tsx`.
 - **Animations & Scenery:**
-    - Game sprites (armies, monsters, death animations) are animated GIFs located in `public/sprites/`. The specific sprites for each player's army are defined in `src/lib/player-data.ts`.
+    - Game sprites (armies, monsters, death animations) are animated GIFs located in `public/sprites/`. The specific sprites for each player's army are defined in `src/lib/player-data.ts`. The castle base sprites are high-quality PNGs.
     - The water background (`bg-water-pattern`) and island terrain textures (`bg-terrain`) are defined in `tailwind.config.ts` and applied in their respective components.
     - An animated border appears at the bottom of each island tile to give the illusion of water movement. This is created in `IslandTile.tsx` by combining three separate GIF images (`island_edge_1.gif`, `island_edge_2.gif`, `island_edge_3.gif`) in a randomized sequence.
     - Decorative rocks in the water are procedurally placed by `MapGrid.tsx` for visual variety. This is disabled on mobile for performance and clarity.
@@ -238,7 +241,7 @@ The application is designed to be fully responsive, with key adjustments made fo
     -   In the lobby, the main header (containing the "Game Lobby" title and "Create New Game" button) stacks vertically on mobile screens to prevent overflow and improve usability. The list of available games also adjusts, grouping player information more cleanly on smaller screens.
 
 -   **Map & Interaction:**
-    -   The `MapGrid` itself scales down for mobile. Tile sizes are reduced from 120px to 75px, and the gap between them shrinks from 32px to 16px.
+    -   The `MapGrid` itself scales down for mobile. Tile sizes are reduced from 75px to 120px, and the gap between them shrinks from 16px to 32px.
     -   To improve performance and reduce visual clutter on smaller screens, the decorative rocks in the water background are disabled on the mobile version.
 
 -   **Starting a Game:**
