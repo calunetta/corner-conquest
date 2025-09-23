@@ -157,7 +157,7 @@ The application ensures that every player has a unique username.
 - **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog.
 - **Extra Move:** This card provides a flexible move action. The effect is consumed for the turn once used.
     - If used on an army that has **not yet acted** this turn, it allows that army to move. After the move, the army is still considered "fresh" and can perform a subsequent action (like Attack or Position).
-    - If used on an army that **has already acted**, it allows that army to perform one final move action. After this move, the army's turn is over.
+    - If used on an army that **has already acted**, it allows that army to perform one final move action. After this move, the army's turn is over. The "Extra Move" effect is a single-use-per-turn benefit.
 - **Teleport:** Initiates a two-step action. Using this card will automatically deselect any currently selected army, forcing the player to choose the army they wish to teleport. First, select an army. Second, select *any* tile on the map to move it to.
 - **Scout:** Initiates a multi-step action where the player can click on 3 different hidden tiles to reveal them. This action does not involve any army movement and does not select an army. Because no army moves, no Victory Points are awarded for island discovery during a scout action.
 - **Sabotage:** Opens a dialog to choose an opponent. That opponent will miss their next turn.
@@ -294,5 +294,3 @@ This section details the project's build and styling setup. Changes to these fil
     -   `backgroundImage`: Custom patterns for water and terrain textures.
     -   `fontFamily`: A custom font, `Lilita One`, for body and headline text.
     -   `plugins`: `tailwindcss-animate` is included for keyframe animations.
-
-    
