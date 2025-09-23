@@ -1,7 +1,8 @@
 
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { GameState, Army, CardName, PendingAction, ArmySelectionDialogState, AttackSelectionDialogState, PositionDialogState, SabotageDialogState, WealthyDialogState, StealResourceDialogState, Island, ProductiveCardDialogState, SpecialIslandRollDialogState } from '@/lib/types';
+import type { GameState, Army, CardName } from '@/lib/types';
+import type { PendingAction, ArmySelectionDialogState, AttackSelectionDialogState, PositionDialogState, SabotageDialogState, WealthyDialogState, StealResourceDialogState, ProductiveCardDialogState, SpecialIslandRollDialogState } from '../types';
 import { GameAction } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from '@/features/game/panels/PlayerInfo';
@@ -78,20 +79,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   useEffect(() => {
     setIsPlayerInfoOpen(!isMobile);
   }, [isMobile]);
-  
-  // This effect handles opening dialogs that are initiated by the server state
-  useEffect(() => {
-    if (gameState?.productiveCardDialogState && isMyTurn) {
-        setProductiveCardDialog(gameState.productiveCardDialogState);
-    } else {
-        setProductiveCardDialog(null);
-    }
-    if (gameState?.specialIslandRollDialogState && isMyTurn) {
-        setSpecialIslandRollDialog(gameState.specialIslandRollDialogState);
-    } else {
-        setSpecialIslandRollDialog(null);
-    }
-  }, [gameState?.productiveCardDialogState, gameState?.specialIslandRollDialogState, isMyTurn]);
 
   // This effect clears local state when the turn changes
   useEffect(() => {

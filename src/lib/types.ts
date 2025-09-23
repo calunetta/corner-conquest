@@ -1,4 +1,5 @@
 
+
 export const MAP_ROWS = 6;
 export const MAP_COLS = 5;
 
@@ -25,6 +26,7 @@ export enum GameAction {
   CloseMonsterCombat = 'close-monster-combat',
   UseCard = 'use-card',
   Scout = 'scout',
+  HostLeave = 'host-leave',
   CancelAction = 'cancel-action',
 
   // Local UI Actions (prefixed with 'local:')
@@ -200,24 +202,6 @@ export type MonsterCombatState = {
   phase: CombatPhase;
 };
 
-// These are now part of the *shared* state, as they are initiated by the server
-// but require user input. The client-side UI will mirror these into local state.
-export type ProductiveCardDialogState = {
-    isOpen: boolean;
-    options: {
-        resource: ResourceType;
-        amount: number;
-        x: number;
-        y: number;
-    }[];
-} | null;
-
-export type SpecialIslandRollDialogState = {
-  isOpen: boolean;
-  roll: number | null;
-  cardDrawn: CardName | null;
-} | null;
-
 export type DeathAnimation = {
     id: string; // "army-playerId-armyId" or "monster-x-y-name"
     x: number;
@@ -248,13 +232,10 @@ export type GameState = {
   specialCardsDeck: CardName[];
   discardPile: CardName[];
   deathAnimations: DeathAnimation[];
-  autoSelectArmyFor: string | null; // This is a temporary directive, will be removed.
   
   // SHARED DIALOG STATES (Only those that require all players to see or interact)
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
-  productiveCardDialogState: ProductiveCardDialogState; 
-  specialIslandRollDialogState: SpecialIslandRollDialogState;
 };
 
 // Result of a reducer. Can include state changes and/or UI events.
@@ -268,12 +249,3 @@ export type ActionHandlerResult = {
         }
     } | null
 }
-
-// Local UI State Types (Not part of GameState)
-export type PendingAction = { type: 'teleport', cardName: CardName } | { type: 'scout', cardName: CardName, count: number } | null;
-export type ArmySelectionDialogState = { armies: Army[], x: number, y: number } | null;
-export type AttackSelectionDialogState = { armies: Army[], defendingPlayer: Player, attackingArmyId: number } | null;
-export type PositionDialogState = { x: number; y: number; resources: IslandResource[]; armyId: number; } | null;
-export type SabotageDialogState = { isOpen: boolean } | null;
-export type StealResourceDialogState = { isOpen: boolean } | null;
-export type WealthyDialogState = { isOpen: boolean } | null;
