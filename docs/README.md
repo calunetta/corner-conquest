@@ -185,7 +185,14 @@ The application ensures that every player has a unique username.
     1.  Clicking the "Deselect Army" button.
     2.  Clicking on any tile that is not a valid move for the currently selected army.
 
-#### 5.3.3. Visual Feedback
+#### 5.3.3. The Actions Panel
+Located on the right side of the screen on desktop (or below the map on mobile), the Actions Panel is the central hub for the current player. It contains buttons for all available army and strategic actions.
+- **Army Actions (`Attack`, `Position`):** These buttons are enabled only when a valid army is selected and the action is possible on the army's current tile.
+- **Strategic Actions (`Deploy`, `Upgrade`, `Buy Card`):** These are available once per turn and their buttons are disabled after use or if the player cannot afford the cost.
+- **Card & Ability Actions (`My Cards`, `Abilities Shop`):** The "My Cards" button opens a dialog showing the player's current hand. From here, they can select and use a card. The "Abilities Shop" opens a dialog for purchasing permanent passive abilities.
+- **Turn Management (`End Turn`, `Cancel`, `Deselect Army`):** These buttons allow the player to manage their turn flow.
+
+#### 5.3.4. Visual Feedback
 - **Selected Army:** The tile of a selected army gets a prominent glowing shadow (`shadow-2xl shadow-primary/80`).
 - **Player-Owned Tiles:** Tiles occupied by the local player's armies have a subtle, color-coded glow (`shadow-blue-500/50`, `shadow-red-500/50`, etc.) for easy identification.
 - **Possible Moves:** Valid move destinations for a selected army are highlighted with a subtle yellow glow (`shadow-lg shadow-accent/20`).
@@ -199,7 +206,7 @@ The application ensures that every player has a unique username.
     - An animated border appears at the bottom of each island tile to give the illusion of water movement. This is created in `IslandTile.tsx` by combining three separate GIF images (`island_edge_1.gif`, `island_edge_2.gif`, `island_edge_3.gif`) in a randomized sequence.
     - Decorative rocks in the water are procedurally placed by `MapGrid.tsx` for visual variety. This is disabled on mobile for performance and clarity.
 
-#### 5.3.4. Confirmation Dialogs
+#### 5.3.5. Confirmation Dialogs
 - `ConfirmExitDialog`: Appears if a player attempts to leave a match that is in progress.
 - `HostLeaveDialog`: A special dialog for the host, warning them that leaving will delete the game room and end the match for all players.
 
@@ -294,5 +301,3 @@ This section details the project's build and styling setup. Changes to these fil
     -   `backgroundImage`: Custom patterns for water and terrain textures.
     -   `fontFamily`: A custom font, `Lilita One`, for body and headline text.
     -   `plugins`: `tailwindcss-animate` is included for keyframe animations.
-
-    
