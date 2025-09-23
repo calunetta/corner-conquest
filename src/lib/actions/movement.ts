@@ -12,8 +12,7 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
     
     const currentPlayer = state.players[state.currentPlayerIndex];
     
-    // This is the critical check that was missing.
-    // An army that has acted cannot move unless the player has an "Extra Move" card active.
+    // This is the critical check. An army that has acted cannot move unless the player has an "Extra Move" card active.
     if (army.hasActed && !currentPlayer.hasExtraMove) {
         return [];
     }
