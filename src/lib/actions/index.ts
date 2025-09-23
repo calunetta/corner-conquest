@@ -16,12 +16,10 @@ interface HandleActionParams {
 
 export function handleGameAction({ action, gameState, payload }: HandleActionParams): ActionHandlerResult {
     if (!gameState) {
-        // This should not happen if called from a valid context, but it's a safe guard.
         console.error("handleGameAction called with null gameState");
         return { state: null, ui: null };
     }
 
-    // Clone the state to ensure we don't mutate the original object.
     let newState: GameState = JSON.parse(JSON.stringify(gameState));
     let uiResult = null;
 
@@ -36,13 +34,13 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
         case GameAction.EndTurn:
             newState = handleEndTurn(newState);
             break;
-        case GameAction.CancelAction:
+        case GameAction.CancelAction: // Failsafe on backend
             newState = handleCancelAction(newState);
             break;
 
         // Resource actions
         case GameAction.Position:
-            ({ state: newState, ui: uiResult } = handlePositionAction(newState, payload.army));
+            newState = handlePositionAction(newState, payload.army);
             break;
         case GameAction.SelectResourcePosition:
             newState = handleSelectResourceForPosition(newState, payload.resource, payload.army);
@@ -105,9 +103,7 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
             break;
 
         default:
-            // For actions that are now local (like SelectArmy), we just return the state unmodified.
-            // The UI will handle the local state change.
-            console.warn(`Action ${action} is not a shared game state action.`);
+            console.warn(`Action ${action} is not a shared game state action or is unhandled.`);
             return { state: gameState, ui: null };
     }
     return { state: newState, ui: uiResult };

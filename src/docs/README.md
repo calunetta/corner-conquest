@@ -1,3 +1,4 @@
+
 # Corner Conquest - Application Architecture
 
 This document outlines the architecture and key logic flows of the "Corner Conquest" application. It serves as a shared context for AI-assisted development to ensure consistency and accuracy.
@@ -11,7 +12,7 @@ This document outlines the architecture and key logic flows of the "Corner Conqu
 - **Framework:** Next.js with App Router
 - **Language:** TypeScript
 - **UI:** React, ShadCN UI Components, Tailwind CSS
-- **State Management (Client):** React Hooks (`usePlayer`, `useToast`, `useState`)
+- **State Management (Client):** React Hooks (`useState`, `useMemo`, `useCallback` within `GameBoard.tsx`)
 - **State Management (Game):** Firestore real-time listeners (`useGameEngine`)
 - **Backend/Database:** Firebase (Firestore)
 
@@ -26,7 +27,7 @@ Understanding the project's structure is key to making changes efficiently and c
   - `lobby/`: Components for creating and joining games.
 - `src/hooks/`: Custom React hooks for managing client-side state and browser events. The most important are `useGameEngine` (Firestore sync) and `usePlayer` (session management).
 - `src/lib/`: Core application logic, type definitions, and Firebase configuration.
-  - `actions/`: **The "brain" of the game.** Contains pure functions that take the current game state and an action, and return the new game state. *All new game mechanics must be implemented here.*
+  - `actions/`: **The "brain" of the game.** Contains pure functions that take the current `GameState` and an action, and return the new `GameState`. *All new game mechanics must be implemented here.*
   - `game-initializer.ts`: Logic for creating the initial game state, including map generation.
   - `game-logic.ts`: Higher-level logic, such as adding a player to a game.
   - `bot-logic.ts`: The AI logic for bot players.
@@ -41,36 +42,37 @@ The project uses TypeScript `enum`s extensively (e.g., `GameAction`, `IslandType
 A guiding principle for this project is to **fix the root cause of a bug, not just its symptoms**. A recurring bug often indicates a flaw in the underlying architecture or state management logic.
 -   **Symptom:** An observable, incorrect behavior (e.g., "The 'Deselect Army' button doesn't work.").
 -   **Root Cause:** The fundamental reason the symptom occurs (e.g., "A `useEffect` hook for auto-selection is incorrectly re-selecting an army immediately after it was deselected, creating a state race condition.").
--   **Our Approach:** When a bug is identified, especially a recurring one, the first step is to analyze the entire data and action flow related to the feature. We must resist the urge to apply a "quick fix" that only patches the symptom. Instead, we must identify the core conflict in the logic and refactor it. This prevents the bug from reappearing in a different form later and leads to a more robust and maintainable codebase. The "Deselect Army" bug was a key example of this: the fix was not to patch the button, but to remove the conflicting `useEffect` and move its logic to a more appropriate place in the state machine (`handleEndTurn`).
+-   **Our Approach:** When a bug is identified, especially a recurring one, the first step is to analyze the entire data and action flow related to the feature. We must resist the urge to apply a "quick fix" that only patches the symptom. Instead, we must identify the core conflict in the logic and refactor it. This prevents the bug from reappearing in a different form later and leads to a more robust and maintainable codebase.
 
 ## 3. Game State Management & Firebase Logic
 
 The application uses a "state machine" pattern where the game state is managed centrally in Firestore and modified by pure functions.
 
-1.  **Central State:** The entire `GameState` object is stored as a single document in a Firestore collection named `games`.
+1.  **Central State:** The entire `GameState` object is stored as a single document in a Firestore collection named `games`. This object contains only data that **must** be synchronized across all players.
 
 2.  **Client-Side Subscription (Reading):** The `useGameEngine` hook (`src/hooks/use-game-engine.ts`) is the primary connection to the game state. It subscribes to real-time updates for the current game document in Firestore using `onSnapshot`. When the document changes on the backend, it automatically updates the local React state, causing the UI to re-render for **all connected players**.
 
 3.  **User Actions & State Updates (Writing):**
     - A user interaction (e.g., clicking a tile) in a component like `GameBoard.tsx` triggers an action.
-    - **Crucially, there is a distinction between local and shared actions.**
-        - **Local Actions** (like selecting an army or opening a dialog) are handled entirely on the client-side using React's `useState` hook. They do **not** call `setGameState` and do **not** write to Firebase.
-        - **Shared Actions** (like moving an army or ending a turn) are those that affect the game for all players. These actions call `setGameState`, which in turn calls a reducer function from `lib/actions`. This function takes the current game state and a payload, performs calculations, and returns a new `GameState` object.
+    - **Crucially, there is a strict separation between local and shared actions.**
+        - **Local Actions** (like selecting an army or opening a dialog) are handled entirely on the client-side within `GameBoard.tsx` using React's `useState` hook. They **do not** call `setGameState` and **do not** write to Firebase.
+        - **Shared Actions** (like moving an army or ending a turn) are those that affect the game for all players. These actions call the `onAction` function, which wraps `setGameState`. This in turn calls a reducer function from `lib/actions`. The reducer takes the current game state and a payload, performs calculations, and returns a new `GameState` object.
     - The new `GameState` object is then written back to Firestore, overwriting the old one in a single transaction.
 
-This architecture ensures that the game logic is predictable and testable, and the UI remains responsive by handling local interactions instantly without waiting for a server round-trip.
+This architecture ensures that the game logic is predictable and testable, and the UI remains highly responsive by handling local interactions instantly without waiting for a server round-trip.
 
 ### 3.1. Local vs. Shared State Actions
-It is critical to distinguish between actions that only affect the local user's interface and actions that must be synchronized across all players via Firebase. Storing local UI state (like which dialog is open) in the shared `GameState` is inefficient and causes bugs. The following is a definitive list of all game actions and their correct category.
+It is critical to distinguish between actions that only affect the local user's interface and actions that must be synchronized across all players via Firebase. Storing local UI state in the shared `GameState` is inefficient, costly, and a primary source of bugs. The following is a definitive list of all game actions and their correct category.
 
 #### 3.1.1. Local UI Actions (Client-Side Only)
 These actions are managed by `useState` within `GameBoard.tsx` and **do not** result in a Firebase write.
 
--   **`SelectArmy` / `DeselectArmy` / `TileClick` (for selection):** The act of selecting or deselecting an army is a purely local UI event. It updates local state variables like `selectedArmyId` and `possibleMoves` to show highlights and available actions to the current player. A shared action is only dispatched when the player *commits* to a move or attack with the selected army.
+-   **`TileClick` / `SelectArmy` / `DeselectArmy`:** The act of selecting or deselecting an army is a purely local UI event. It updates local state variables like `selectedArmyId` and `possibleMoves` to show highlights and available actions to the current player. A shared action is only dispatched when the player *commits* to a move or attack with the selected army.
 -   **`ShowCards` / `CloseCards`:** Toggling the visibility of the "My Cards" dialog is a local UI change.
 -   **`OpenAbilitiesShop` / `CloseAbilitiesShop`:** Toggling the visibility of the Abilities Shop dialog is a local UI change.
--   **`UseCard` (Initiation Phase):** When a player clicks "Use" on a card like `Teleport` or `Scout`, it initiates a *local* pending action state (e.g., `pendingAction: 'teleport'`). The game then waits for further local input (clicking an army, clicking a tile). The card is only truly "used" and a shared action dispatched when the action is completed.
--   **`CancelAction`:** This is a local action that resets any pending UI state (like a `teleport` or `scout` action) and allows the player to continue their turn. If a card's use was provisionally marked, this action will also trigger a shared state update to refund the `UseCard` action for the turn.
+-   **`UseCard` (Initiation Phase):** When a player clicks "Use" on a card like `Teleport`, `Scout`, or `Sabotage`, it initiates a *local* pending action state (e.g., `pendingAction: 'teleport'`, `sabotageDialogOpen: true`). The game then waits for further local input (clicking an army, selecting a player). The shared state is only modified when the action is *completed* and the card's effect is confirmed.
+-   **`CancelAction`:** This is a local action that resets any pending UI state (like a `teleport` or `scout` action) and allows the player to continue their turn. If a card's use was provisionally marked in the shared state (a rare exception), this can also trigger a shared update to refund the `UseCard` action for the turn.
+-   **`Position` (Initiation):** Clicking the "Position" button is a local action that opens the `PositionDialog` on the client. A shared action (`SelectResourcePosition`) is only dispatched when the player confirms their choice in the dialog.
 
 #### 3.1.2. Shared Game State Actions (Synchronized via Firebase)
 These actions modify the core `GameState` and are synchronized for all players.
@@ -78,23 +80,21 @@ These actions modify the core `GameState` and are synchronized for all players.
 -   **Strategic Actions:** `Deploy`, `Upgrade`, `EndTurn`, `BuyCard`, `BuyAbility`.
 -   **Movement & Combat:**
     -   `Move`: Dispatched *after* a local selection and tile click confirm a valid move. Changes the army's position in `GameState`. If Fog of War is disabled, all players see the move. If enabled, only players who have already revealed the destination tile will see the army arrive.
-    -   `Attack`, `SelectDefender`, `CombatRoll`, `MonsterCombatRoll`: These initiate and progress combat. The `CombatState` is shared, so all players can see the "results" phase of a battle, even if they aren't involved.
-    -   `CloseCombat`, `CloseMonsterCombat`: These actions resolve the combat, update player/army states (VP, respawning), and are shared with all players.
--   **Resource Actions:** `Position`, `SelectResourcePosition`.
+    -   `Attack`, `SelectDefender`, `CombatRoll`, `CloseCombat`, `MonsterCombatRoll`, `CloseMonsterCombat`: These initiate and progress combat. The `CombatState` is shared, so all players can see the "results" phase of a battle, even if they aren't involved.
+-   **Resource Actions:** `SelectResourcePosition`.
 -   **Card Effect Actions:** These are dispatched when a card's effect is confirmed and alters the shared state.
     -   `UseProductiveCard`, `SabotagePlayer`, `GainWealth`, `StealResource`, `RollOnSpecialIsland`, `CloseSpecialIslandDialog`: All these actions directly modify player resources, status effects, or dialog states stored in `GameState`.
 
 ### 3.2. Turn Change Logic
 When `handleEndTurn` is called, a sequence of events occurs:
-1.  The `currentPlayerIndex` is incremented.
-2.  The new current player's armies have their `hasActed` status reset to `false`, and their `actionsThisTurn` array is cleared.
-3.  Any temporary statuses (like `hasExtraMove`) are reset.
-4.  Passive abilities for the *outgoing* player (like `Explorer`) are calculated and applied.
-5.  A check is performed to see if the *new* player is sabotaged. If so, their turn is skipped.
-6.  A check for the *new* player's pre-turn actions is performed (e.g., Automatic Resource Collection). If they are positioned on resources, the appropriate collection logic or dialog (`ProductiveCardDialog`) is triggered.
-7.  If the new player has only one army, it is automatically selected for them by setting `autoSelectArmyFor` in the game state.
-8.  A log message announces the new turn.
-9.  All temporary shared dialog states (`combatState`, `positionDialogState`, etc.) are reset to `null`.
+1.  Passive abilities for the *outgoing* player (like `Explorer`) are calculated and applied.
+2.  The outgoing player's temporary flags (`hasExtraMove`, etc.) and `actionsThisTurn` are cleared.
+3.  The `currentPlayerIndex` is incremented.
+4.  A check is performed to see if the *new* player is sabotaged. If so, their turn is skipped.
+5.  A check for the *new* player's pre-turn actions is performed (e.g., Automatic Resource Collection). If they are positioned on resources, the appropriate collection logic or dialog (`ProductiveCardDialog`) is triggered.
+6.  If the new player has only one army, `autoSelectArmyFor` is set in the game state, which the client uses to locally auto-select the army.
+7.  A log message announces the new turn.
+8.  All temporary shared dialog states (`combatState`, `productiveCardDialogState`, etc.) are reset to `null`.
 
 ### 3.3. Firebase & React/Next.js Common Pitfalls
 - **Firestore Cannot Store `undefined`:** A recurring critical bug is caused by attempting to write a `GameState` object with `undefined` properties. Firestore will silently strip these properties, causing the `GameState` read by clients to have a different shape than expected, leading to crashes. **Rule: Always use `null` instead of `undefined`** for optional or empty state properties.
@@ -113,7 +113,7 @@ To keep the application performant and cost-effective, it is crucial to use the 
 
 -   **`runTransaction`**: Use this when you need to **read a document and then write to it based on its current state**. A transaction ensures that no other process modifies the document between your read and write, preventing race conditions. This is essential for operations like joining a game, where you must check if the lobby is full before adding a new player.
 -   **`writeBatch`**: Use this when you need to perform **multiple write operations (create, update, or delete) in a single atomic unit**, but these writes *do not* depend on reading data first. A batch is more efficient and costs less than a transaction because it involves fewer round trips to the server.
--   **Example - Player Exit Logic:** The `handlePlayerExit` function in `src/lib/actions/player.ts` is an example of this optimization. Initially, it might have used a transaction. However, because the act of removing a player from the `players` array is a simple update that doesn't require a conditional read first, it was refactored to use a `writeBatch`. This is a more performant and cost-effective choice for this specific scenario.
+-   **`updateDoc`**: The most common operation. Use this to update fields on an existing document. All shared actions in the game use this.
 
 ## 4. Core Game Mechanics & Match Flow
 
@@ -178,33 +178,33 @@ The application ensures that every player has a unique username.
 ### 5.2. Special Cards
 - **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, if `Debug Mode` is enabled, the human player starts with one of every available Special Card.
 - **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
-- **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog. If a player activates a card like "Extra Move" or "Teleport" but cannot or chooses not to use it, they can use the "Cancel" button. This **refunds the 'Use Card' action**, allowing them to use a different card during the same turn.
+- **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog. If a player activates a card like "Extra Move" or "Teleport" but cannot or chooses not to use it, they can use the "Cancel" button. This is a local action that resets the UI and **refunds the 'Use Card' action**, allowing them to use a different card during the same turn.
 - **Extra Move:** This card provides a flexible move action. The effect is consumed for the turn once used.
     - If used on an army that has **not yet acted** this turn, it allows that army to move. After the move, the army is still considered "fresh" and can perform a subsequent action (like Attack or Position).
     - If used on an army that **has already acted**, it allows that army to perform one final move action. After this move, the army's turn is over. The "Extra Move" effect is a single-use-per-turn benefit.
-- **Teleport:** Initiates a two-step action. Using this card will automatically deselect any currently selected army, forcing the player to choose the army they wish to teleport. First, select an army. Second, select *any* tile on the map to move it to.
-- **Scout:** Initiates a multi-step action where the player can click on 3 different hidden tiles to reveal them. This action does not involve any army movement and does not select an army. Because no army moves, no Victory Points are awarded for island discovery during a scout action.
-- **Sabotage:** Opens a dialog to choose an opponent. That opponent will miss their next turn.
+- **Teleport:** Initiates a two-step local action. Using this card will automatically deselect any currently selected army, forcing the player to choose the army they wish to teleport. First, select an army. Second, select *any* tile on the map to move it to. This action does not award discovery VP.
+- **Scout:** Initiates a multi-step local action where the player can click on 3 different hidden tiles to reveal them. This action does not involve any army movement and does not select an army. Because no army moves, no Victory Points are awarded for island discovery during a scout action.
+- **Sabotage:** Opens a local dialog to choose an opponent. That opponent will miss their next turn.
 - **Reinforce:** The player's next `Deploy` action this turn is free. The card is only consumed upon a successful deployment.
 - **Efficient:** The player's next `Deploy` action this turn costs 50% less Wheat. The card is only consumed upon a successful deployment.
 - **Master Builder:** The player's next `Upgrade` action this turn costs 50% less Iron. The card is only consumed upon a successful upgrade.
-- **Steal Resource:** Opens a dialog to choose a player, then a resource type. Steals 2 of that resource from the target.
-- **Wealthy:** Opens a dialog to choose a resource type. The player gains 5 of that resource.
+- **Steal Resource:** Opens a local dialog to choose a player, then a resource type. Steals 2 of that resource from the target.
+- **Wealthy:** Opens a local dialog to choose a resource type. The player gains 5 of that resource.
 - **Overcome:** Automatically win the next combat encounter (vs. player or monster). Appears as a checkbox in the combat dialog.
 - **War Chief:** Gain +2 to your attack power for the next combat encounter. Appears as a checkbox in the combat dialog.
 - **Decide Dice Roll:** In the next *monster* combat, you can choose the value of one of your dice. Appears as a checkbox and slider in the monster combat dialog.
-- **Productive:** A passive card. At the start of your turn, if you are positioned to collect resources, a dialog opens allowing you to spend this card to double the yield of one resource type.
+- **Productive:** A passive card. At the start of your turn, if you are positioned to collect resources, a shared dialog opens allowing you to spend this card to double the yield of one resource type.
 
 ### 5.3. UI/UX and Interactions
 
 #### 5.3.1. Dialogs and Player Scope
 - **Local Dialogs:** Most dialogs for actions (`Sabotage`, `Wealthy`, `Position`, `My Cards`, `Abilities Shop`) are rendered **only for the current player**. Their open/closed state is managed locally in the `GameBoard` component and is not part of the shared `GameState`.
-- **Global Dialogs:** The `CombatDialog` is an exception. It shows an interactive view to the attacker and a read-only "results" view to all other players, ensuring everyone can follow the action.
+- **Global Dialogs:** The `CombatDialog`, `MonsterCombatDialog`, and `ProductiveCardDialog` are exceptions. Their state is stored in `GameState` because all players need to see the outcome or have the potential to be involved.
 
 #### 5.3.2. Army and Tile Selection
-- **Auto-Selection:** If a player has only one army at the start of their turn, it is automatically selected.
+- **Auto-Selection:** If a player has only one army at the start of their turn, it is automatically selected locally.
 - **Manual Selection:** Clicking a tile containing one of your armies selects it. This is a local UI action.
-- **Multi-Army Selection:** Clicking a tile with multiple friendly armies opens the `ArmySelectionDialog` to choose a specific unit.
+- **Multi-Army Selection:** Clicking a tile with multiple friendly armies opens a local `ArmySelectionDialog` to choose a specific unit.
 - **Deselection:** An army can be deselected locally by:
     1.  Clicking the "Deselect Army" button.
     2.  Clicking on any tile that is not a valid move for the currently selected army.
@@ -246,7 +246,7 @@ This UI element provides a real-time summary for each player in the game, displa
 - **Layout:** The panel uses a responsive grid (`grid-cols-2 lg:grid-cols-4`), accommodating up to 4 players. Empty slots are filled with "Waiting for player..." placeholders in the lobby.
 
 ### 5.5. Player Exiting the Game
-- **Normal Player:** If a non-host player leaves, their armies are removed from the board, they are removed from the `players` array in the game state, and a log message is generated. The game continues for the remaining players. This process uses a Firestore `writeBatch` for efficiency.
+- **Normal Player:** If a non-host player leaves, their armies are removed from the board, they are removed from the `players` array in the game state, and a log message is generated. The game continues for the remaining players. The logic correctly handles adjusting the `currentPlayerIndex` to prevent crashes.
 - **Host Player:** If the host leaves, the entire game document is **deleted from Firestore**. The game ends for all players, and they are returned to the lobby.
 
 ### 5.6. Game Customization
@@ -306,7 +306,7 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priorit
     - **Upgrading Attack Power:** Medium priority, which decreases as its power level increases to avoid over-investing.
     - **Deploying a new Army:** Medium priority, which decreases as its army count increases to maintain a balanced force.
     - **Exploring:** The bot now has a higher priority to explore new tiles, preventing it from getting stuck and encouraging expansion.
-3.  The bot executes the single action with the highest priority score. After that action, its turn ends. This creates a focused but adaptable AI opponent that balances long-term strategy with opportunistic plays.
+3.  The bot executes the single action with the highest priority score. If no action is possible or an error occurs, it will safely end its turn as a fallback.
 
 ## 7. Build & Styling Configuration
 

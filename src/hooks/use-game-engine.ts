@@ -20,7 +20,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     gameStateRef.current = gameState;
   }, [gameState]);
 
-  const setGameState = useCallback(async (updateFn: (gs: GameState | null) => GameState | null): Promise<ActionHandlerResult['ui'] | null> => {
+  const setGameState = useCallback(async (updateFn: (gs: GameState | null) => GameState | null | ActionHandlerResult): Promise<any> => {
     try {
         const gameDocRef = doc(db, 'games', gameId);
         
@@ -42,7 +42,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
         let finalState: GameState;
         let uiResult: ActionHandlerResult['ui'] = null;
 
-        if ('state' in result && 'ui' in result) {
+        if ('state' in result && result.state) {
             finalState = result.state as GameState;
             uiResult = result.ui;
         } else {
@@ -127,11 +127,13 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
 
   useEffect(() => {
-    if (!isLoading && gameState && !localPlayer) {
-        toast({ title: "Not in Game", description: "You are not a player in this game. Returning to lobby." });
-        setTimeout(() => {
-            router.push('/');
-        }, 3000);
+    if (isLoading || !gameState) return;
+    
+    if (!localPlayer) {
+      toast({ title: "Not in Game", description: "You are not a player in this game. Returning to lobby." });
+      setTimeout(() => {
+          router.push('/');
+      }, 3000);
     }
   }, [isLoading, gameState, localPlayer, router, toast]);
   

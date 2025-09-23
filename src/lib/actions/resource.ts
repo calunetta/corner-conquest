@@ -4,7 +4,7 @@ import { IslandType, MAP_COLS } from '../types';
 import { checkAndEndTurnIfNoActions } from './player';
 
 
-export function handlePositionAction(state: GameState, selectedArmy: Army | null): ActionHandlerResult {
+export function handlePositionAction(state: GameState, selectedArmy: Army | null): GameState {
   const { players, currentPlayerIndex, map } = state;
   const player = players[currentPlayerIndex];
   
@@ -29,16 +29,18 @@ export function handlePositionAction(state: GameState, selectedArmy: Army | null
     throw new Error("All resources on this island are already occupied.");
   }
   
-  return { newState: { ...state, positionDialogState: { x: selectedArmy.position.x, y: selectedArmy.position.y, resources: availableResources }}, selectedArmyId: selectedArmy.id };
+  // This action no longer returns a dialog state.
+  // It is expected the UI will open the dialog locally.
+  return state;
 }
 
-export function handleSelectResourceForPosition(state: GameState, resource: ResourceType, selectedArmy: Army | null): ActionHandlerResult {
+export function handleSelectResourceForPosition(state: GameState, resource: ResourceType, selectedArmy: Army | null): GameState {
     let newState = { ...state };
-    const { players, currentPlayerIndex, positionDialogState } = newState;
+    const { players, currentPlayerIndex } = newState;
     const player = players[currentPlayerIndex];
 
-    if (!selectedArmy || !positionDialogState) {
-        return { newState: { ...state, positionDialogState: null }, selectedArmyId: selectedArmy?.id ?? null };
+    if (!selectedArmy) {
+        return newState;
     }
     
     const { x, y } = selectedArmy.position;
@@ -52,9 +54,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     if (army) army.hasActed = true;
     newState.log.push(`${player.name} positioned an army on ${resource}.`);
     
-    newState.positionDialogState = null;
-
     newState = checkAndEndTurnIfNoActions(newState);
     
-    return {newState, selectedArmyId: selectedArmy.id };
+    return newState;
 };

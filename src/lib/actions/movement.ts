@@ -88,7 +88,9 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     if (!armyInState) throw new Error("Army not found for move action.");
 
     if (armyInState.position.x === x && armyInState.position.y === y) {
-        throw new Error("Cannot move to the same tile.");
+        // This is an invalid move, but we don't want to crash. Just return the state.
+        console.warn("Attempted to move to the same tile.");
+        return newState;
     }
     
     const oldTile = map[armyInState.position.y * MAP_COLS + armyInState.position.x];
@@ -119,9 +121,9 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     }
     
     const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);
-    if (isFirstDiscovery) {
+    if (isFirstDiscovery && !isTeleport) { // Don't trigger island effects on teleport
         newState = revealIsland(newState, x, y);
-    } else if (targetTile.type === IslandType.Special) {
+    } else if (targetTile.type === IslandType.Special && !isTeleport) {
         // Subsequent landing on a special island triggers the dice roll dialog
         newState.specialIslandRollDialogState = { isOpen: true, roll: null, cardDrawn: null };
         armyInState.hasActed = true;

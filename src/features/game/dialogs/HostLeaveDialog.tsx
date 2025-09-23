@@ -11,10 +11,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 type HostLeaveDialogProps = {
   isLastPlayer: boolean;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void>;
   onClose: () => void;
   gameStatus: GameStatus;
 };

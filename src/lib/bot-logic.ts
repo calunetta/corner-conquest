@@ -178,17 +178,14 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         const validMoves = getPossibleMoves(state, army);
         for (const move of validMoves) {
             const targetTile = state.map[move.y * MAP_COLS + move.x];
-            let priority = 2; // Base priority for any move to prevent getting stuck
+            let priority = 5; // Higher base priority for exploring
             
-            // Prioritize exploring unrevealed tiles
             if (state.settings.fogOfWar && !botPlayer.revealedTiles.includes(targetTile.id)) {
                 priority = 6;
             } 
-            // Prioritize moving to unoccupied resource islands
             else if ((targetTile.type === IslandType.Resource || targetTile.type === IslandType.Base) && targetTile.resources.length > 0 && targetTile.occupants.length === 0 && !targetTile.monsters) {
                 priority = 4;
             }
-            // Prioritize special tiles
             else if (targetTile.type === IslandType.Special) {
                 priority = 3;
             }

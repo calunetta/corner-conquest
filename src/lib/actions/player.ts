@@ -1,10 +1,13 @@
 
 import type { GameState, Player, Army, CardName, ActionHandlerResult, IslandResource, ResourceType } from '@/lib/types';
-import { db, doc, deleteDoc, writeBatch, getDoc, arrayUnion } from '@/lib/firebase';
+import { db, doc, deleteDoc, writeBatch, getDoc, arrayUnion, runTransaction } from '@/lib/firebase';
 import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum } from '../types';
 import { getPossibleMoves } from './movement';
 
 export function handleCancelAction(state: GameState): GameState {
+  // This function is now mostly a failsafe. 
+  // The primary cancellation logic should be handled on the client.
+  // Its only job in the shared state is to refund a card use if one was pending.
   const newState = { ...state };
   const player = newState.players[newState.currentPlayerIndex];
   
@@ -19,10 +22,6 @@ export function handleCancelAction(state: GameState): GameState {
   player.efficientActive = false;
   player.masterBuilderActive = false;
   
-  newState.sabotageDialogState = null;
-  newState.stealResourceDialogState = null;
-  newState.wealthyDialogState = null;
-
   newState.log.push(`${player.name} cancelled their action.`);
 
   return newState;
@@ -237,6 +236,7 @@ export function handleEndTurn(state: GameState): GameState {
     outgoingPlayer.hasExtraMove = false;
     outgoingPlayer.efficientActive = false;
     outgoingPlayer.masterBuilderActive = false;
+    outgoingPlayer.reinforceActive = false;
     
     outgoingPlayer.armies.forEach((army: Army) => army.hasActed = false);
     outgoingPlayer.actionsThisTurn = [];
@@ -245,19 +245,20 @@ export function handleEndTurn(state: GameState): GameState {
     let nextPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
     let nextPlayer = newState.players[nextPlayerIndex];
 
-    // --- Pre-Turn Passive Abilities for NEW Player ---
-     if (nextPlayer.passiveAbilities.explorer) {
+    // --- Post-Turn Passive Abilities for OUTGOING Player ---
+    if (outgoingPlayer.passiveAbilities.explorer) {
         const occupiedIslands = new Set<string>();
-        nextPlayer.armies.forEach((army: Army) => {
+        outgoingPlayer.armies.forEach((army: Army) => {
             const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
             occupiedIslands.add(tile.id);
         });
         const vpGained = occupiedIslands.size;
         if (vpGained > 0) {
-            nextPlayer.victoryPoints += vpGained;
-            newState.log.push(`${nextPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
+            outgoingPlayer.victoryPoints += vpGained;
+            newState.log.push(`${outgoingPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
         }
     }
+
 
     if (nextPlayer.isSabotaged) {
         nextPlayer.isSabotaged = false; 
@@ -308,7 +309,7 @@ export function handleEndTurn(state: GameState): GameState {
     const hasProductiveCard = nextPlayer.specialCards.includes(CardNameEnum.Productive);
     const positionedArmies = nextPlayer.positions;
 
-    if (positionedArmies.length > 0) {
+    if (positionedArmies.length > 0 && newState.turn > 0) {
         if (hasProductiveCard) {
             const options = positionedArmies.map(pos => {
                 const tile = newState.map[pos.y * MAP_COLS + pos.x];
@@ -337,12 +338,10 @@ export function handleEndTurn(state: GameState): GameState {
     
     newState.log.push(`It's now ${nextPlayer.name}'s turn.`);
     
+    // Clear all shared dialog states
     newState.combatState = null;
     newState.monsterCombatState = null;
-    newState.positionDialogState = null;
-    newState.stealResourceDialogState = null;
-    newState.sabotageDialogState = null;
-    newState.wealthyDialogState = null;
+    newState.productiveCardDialogState = null;
     newState.specialIslandRollDialogState = null;
 
     return newState;
@@ -357,29 +356,39 @@ export async function handlePlayerExit(gameId: string, playerId: string, onExit:
             if (!gameDoc.exists()) {
                 return;
             }
-            const currentState = gameDoc.data() as GameState;
+            let currentState = gameDoc.data() as GameState;
             const playerIndex = currentState.players.findIndex(p => p.playerId === playerId);
             if (playerIndex === -1) {
                 return; // Player not in game
             }
             
+            const isCurrentPlayerExiting = currentState.currentPlayerIndex === playerIndex;
+
             if (currentState.players.length <= 1) {
                 transaction.delete(gameDocRef);
             } else {
-                const updatedState = { ...currentState };
-                const playerLeaving = updatedState.players[playerIndex];
-                updatedState.players.splice(playerIndex, 1);
-                updatedState.log.push(`${playerLeaving.name} has left the game.`);
+                
+                const playerLeaving = currentState.players[playerIndex];
+                currentState.players.splice(playerIndex, 1);
+                currentState.log.push(`${playerLeaving.name} has left the game.`);
 
-                if (playerIndex < updatedState.currentPlayerIndex) {
-                    updatedState.currentPlayerIndex -= 1;
-                } else if (playerIndex === updatedState.currentPlayerIndex) {
-                    // If the current player leaves, end their turn
-                    const finalState = handleEndTurn(updatedState);
-                    transaction.set(gameDocRef, finalState);
-                    return;
+                // If the leaving player's index was before or at the current turn index, we need to adjust.
+                if (playerIndex < currentState.currentPlayerIndex) {
+                    currentState.currentPlayerIndex -= 1;
+                } else if (isCurrentPlayerExiting) {
+                    // The current player left. We need to end their turn to pass control.
+                    // The index is now pointing at the next player, so we just need to "re-end" the turn.
+                    // To do this safely, we decrement the index before calling handleEndTurn.
+                     currentState.currentPlayerIndex = (currentState.currentPlayerIndex - 1 + currentState.players.length) % currentState.players.length;
+                     currentState = handleEndTurn(currentState);
                 }
-                transaction.set(gameDocRef, updatedState);
+                
+                // Make sure index is always valid
+                if(currentState.currentPlayerIndex >= currentState.players.length) {
+                    currentState.currentPlayerIndex = 0;
+                }
+
+                transaction.set(gameDocRef, currentState);
             }
         });
         

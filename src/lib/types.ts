@@ -9,28 +9,33 @@ export enum GameAction {
   Position = 'position',
   BuyCard = 'buy-card',
   Upgrade = 'upgrade',
-  OpenAbilitiesShop = 'open-abilities-shop',
-  CloseAbilitiesShop = 'close-abilities-shop',
+  EndTurn = 'end-turn',
+  BuyAbility = 'buy-ability',
+  UseProductiveCard = 'use-productive-card',
+  SabotagePlayer = 'sabotage-player',
+  GainWealth = 'gain-wealth',
+  StealResource = 'steal-resource',
+  RollOnSpecialIsland = 'roll-on-special-island',
+  CloseSpecialIslandDialog = 'close-special-island-dialog',
+
+  // Local UI Actions - Not sent to Firebase
+  SelectArmy = 'select-army',
+  DeselectArmy = 'deselect-army',
+  TileClick = 'tile-click',
+  CancelAction = 'cancel-action',
   ShowCards = 'show-cards',
   CloseCards = 'close-cards',
-  UseCard = 'use-card',
-  UseProductiveCard = 'use-productive-card',
-  EndTurn = 'end-turn',
-  Teleport = 'teleport',
-  BuyAbility = 'buy-ability',
-  CancelAction = 'cancel-action',
-  DeselectArmy = 'deselect-army',
+  OpenAbilitiesShop = 'open-abilities-shop',
+  CloseAbilitiesShop = 'close-abilities-shop',
+  UseCard = 'use-card', // The initiation is local
+
+  // Shared Actions that resolve from local ones
   SelectResourcePosition = 'select-resource-position',
   SelectDefender = 'select-defender',
   CombatRoll = 'combat-roll',
   CloseCombat = 'close-combat',
   MonsterCombatRoll = 'monster-combat-roll',
   CloseMonsterCombat = 'close-monster-combat',
-  StealResource = 'steal-resource',
-  SabotagePlayer = 'sabotage-player',
-  GainWealth = 'gain-wealth',
-  RollOnSpecialIsland = 'roll-on-special-island',
-  CloseSpecialIslandDialog = 'close-special-island-dialog',
 }
 
 export enum CardName {
@@ -197,12 +202,8 @@ export type MonsterCombatState = {
   decidedRollValue: number;
 };
 
-export type PositionDialogState = {
-  x: number;
-  y: number;
-  resources: IslandResource[];
-}
-
+// These dialog states are now managed locally in GameBoard.tsx
+// But the shared state might need to trigger them.
 export type ProductiveCardDialogState = {
     isOpen: boolean;
     options: {
@@ -267,16 +268,27 @@ export type GameState = {
   discardPile: CardName[];
   deathAnimations: DeathAnimation[];
   autoSelectArmyFor: AutoSelectArmyInfo | null;
+  
+  // SHARED DIALOG STATES (Only those that require all players to see or interact)
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
-  positionDialogState: PositionDialogState | null;
   productiveCardDialogState: ProductiveCardDialogState | null;
   specialIslandRollDialogState: SpecialIslandRollDialogState | null;
-  stealResourceDialogState: StealResourceDialogState | null;
-  sabotageDialogState: SabotageDialogState | null;
-  wealthyDialogState: WealthyDialogState | null;
+  
+  // DEPRECATED / MOVED TO LOCAL STATE
+  positionDialogState: any | null; // Kept for type safety during transition, but logically null
+  stealResourceDialogState: any | null;
+  abilitiesShopState: any | null;
+  sabotageDialogState: any | null;
+  wealthyDialogState: any | null;
+  scoutingState: any | null;
+  teleportState: any | null;
+  armySelectionDialogState: any | null;
+  attackSelectionDialogState: any | null;
+  showHostLeaveDialog: any | null;
 };
 
+// Result of a reducer. Can include state changes and/or UI events.
 export type ActionHandlerResult = {
     state: GameState | null;
     ui?: {
@@ -287,3 +299,12 @@ export type ActionHandlerResult = {
         }
     } | null
 }
+
+// Local UI State Types (Not part of GameState)
+export type PendingAction = { type: 'teleport', cardName: CardName } | { type: 'scout', cardName: CardName, count: number } | null;
+export type ArmySelectionDialogState = { armies: Army[], x: number, y: number } | null;
+export type AttackSelectionDialogState = { armies: Army[], defendingPlayer: Player, attackingArmyId: number } | null;
+export type PositionDialogState = { x: number; y: number; resources: IslandResource[]; armyId: number; } | null;
+export type SabotageDialogState = { isOpen: boolean } | null;
+export type StealResourceDialogState = { isOpen: boolean } | null;
+export type WealthyDialogState = { isOpen: boolean } | null;

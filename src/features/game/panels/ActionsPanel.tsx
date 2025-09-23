@@ -1,14 +1,12 @@
 
 'use client';
-import type { GameState, Player, Army, CardName } from '@/lib/types';
+import type { GameState, Player, Army, CardName, PendingAction } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Sword, ShoppingCart, Anchor, Zap, Album, University, XCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-
-type PendingAction = { type: 'teleport', cardName: CardName } | { type: 'scout', cardName: CardName, count: number } | null;
 
 type ActionsPanelProps = {
   onAction: (action: GameAction, payload?: any) => void;
@@ -69,7 +67,7 @@ export function ActionsPanel({
 
   const mainActions: ActionConfig[] = [
     { id: GameAction.Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed || isCardActionInProgress, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Attack, { army: selectedArmy }) },
-    { id: GameAction.Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress, tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Position, { army: selectedArmy }) },
+    { id: GameAction.Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress, tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => handleLocalAction(GameAction.Position, { army: selectedArmy }) },
   ];
   
   const deployLabel = localPlayer.reinforceActive
