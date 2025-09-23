@@ -129,18 +129,18 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         return { state: newState, ui: { specialIslandRoll: { roll: 0, cardDrawn: null } } };
     }
     
+    // Handle "Extra Move" consumption and its effect on hasActed
     if (player.hasExtraMove) {
-        player.hasExtraMove = false; 
+        player.hasExtraMove = false; // Consume the extra move
         newState.log.push(`${player.name} used their Extra Move on an army.`);
-        if (!army.hasActed) {
-           // Army was fresh, remains fresh. Do not set hasActed.
-        } else {
-           // Army had already acted, this move is its final action.
-           // hasActed is already true, so no change needed.
-        }
+        // Per README, using Extra Move on an army that has NOT acted does not set its `hasActed` to true.
+        // It remains fresh for a subsequent action.
+        // If the army had already acted, its `hasActed` state just remains true.
+        // Therefore, we only modify `hasActed` if the extra move is NOT being used.
     } else {
         armyInState.hasActed = true;
     }
 
     return { state: checkAndEndTurnIfNoActions(newState), ui: null };
 }
+
