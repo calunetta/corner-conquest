@@ -66,32 +66,18 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMobile]);
   
   useEffect(() => {
-    if (!isMyTurn) {
+    if (gameState?.autoSelectArmyFor?.playerId === localPlayer?.id) {
+        setSelectedArmyId(gameState.autoSelectArmyFor.armyId);
+        // We need to clear this from the state so it doesn't re-trigger on every render
+        setGameState((gs: GameState | null) => gs ? { ...gs, autoSelectArmyFor: null } : null);
+    } else if (!isMyTurn) {
         setSelectedArmyId(null);
         setSelectedTile(null);
         setPossibleMoves([]);
         setCurrentAction(null);
         setCardsDialogPlayerId(null);
     }
-  }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex]);
-
-  useEffect(() => {
-    if (isMyTurn && gameState && gameState.status === 'playing') {
-        const myPlayer = gameState.players[gameState.currentPlayerIndex];
-        if (myPlayer.armies.length > 1 && selectedArmyId !== null) {
-            const armyStillExists = myPlayer.armies.some(a => a.id === selectedArmyId);
-            if (!armyStillExists) {
-                setSelectedArmyId(null);
-            }
-        } else if (myPlayer.armies.length === 1 && selectedArmyId === null) {
-             setSelectedArmyId(myPlayer.armies[0].id);
-        } else if (myPlayer.armies.length === 1 && selectedArmyId !== myPlayer.armies[0].id) {
-            setSelectedArmyId(myPlayer.armies[0].id);
-        }
-    } else if (!isMyTurn) {
-        setSelectedArmyId(null);
-    }
-  }, [isMyTurn, gameState?.turn, gameState?.status, selectedArmyId, gameState?.players, gameState?.currentPlayerIndex]);
+  }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex, gameState?.autoSelectArmyFor, localPlayer?.id, setGameState]);
   
   useEffect(() => {
     if (selectedArmy && gameState && isMyTurn) {
@@ -100,7 +86,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setSelectedTile(selectedArmy.position);
     } else {
         setPossibleMoves([]);
-        setSelectedTile(null);
+        // Do not nullify selectedTile here to avoid race conditions on deselection.
     }
   }, [selectedArmyId, gameState, selectedArmy, isMyTurn]);
   
@@ -115,7 +101,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     try {
         setIsPerformingAction(true);
         
-        // Handle client-side only actions first
+        // Handle pure client-side actions first
         if (action === GameAction.DeselectArmy) {
             const { newState, ...uiState } = handleGameAction({
                 action,
@@ -450,7 +436,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                     turnDuration={TURN_DURATION}
                     currentAction={currentAction}
                     selectedArmy={selectedArmy}
-                    onToggleCards={handleToggleCards}
+                    onToggleCards={onToggleCards}
                     cardsDialogPlayerId={cardsDialogPlayerId}
                 />
                 <GameLog logs={log} />

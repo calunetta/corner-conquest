@@ -37,6 +37,12 @@ The project uses TypeScript `enum`s extensively (e.g., `GameAction`, `IslandType
 - **Why?** Enums prevent bugs caused by typos and ensure that actions and types are used consistently across the entire codebase. Using `GameAction.Deploy` is safe; typing `"deploi"` is not.
 - **Critical Note:** A common source of hard-to-debug errors has been incorrect enum imports. **Always double-check that you are importing the correct enum** from `types.ts` when implementing new logic.
 
+### 2.2. Root Cause Analysis & Debugging Philosophy
+A guiding principle for this project is to **fix the root cause of a bug, not just its symptoms**. A recurring bug often indicates a flaw in the underlying architecture or state management logic.
+-   **Symptom:** An observable, incorrect behavior (e.g., "The 'Deselect Army' button doesn't work.").
+-   **Root Cause:** The fundamental reason the symptom occurs (e.g., "A `useEffect` hook for auto-selection is incorrectly re-selecting an army immediately after it was deselected, creating a state race condition.").
+-   **Our Approach:** When a bug is identified, especially a recurring one, the first step is to analyze the entire data and action flow related to the feature. We must resist the urge to apply a "quick fix" that only patches the symptom. Instead, we must identify the core conflict in the logic and refactor it. This prevents the bug from reappearing in a different form later and leads to a more robust and maintainable codebase. The "Deselect Army" bug was a key example of this: the fix was not to patch the button, but to remove the conflicting `useEffect` and move its logic to a more appropriate place in the state machine (`handleEndTurn`).
+
 ## 3. Game State Management & Firebase Logic
 
 The application uses a "state machine" pattern where the game state is managed centrally in Firestore and modified by pure functions.
@@ -63,8 +69,9 @@ When `handleEndTurn` is called, a sequence of events occurs:
 4.  Passive abilities for the *outgoing* player (like `Explorer`) are calculated and applied.
 5.  A check is performed to see if the *new* player is sabotaged. If so, their turn is skipped.
 6.  A check for the *new* player's pre-turn actions is performed (e.g., Automatic Resource Collection). If they are positioned on resources, the appropriate collection logic or dialog (`ProductiveCardDialog`) is triggered.
-7.  A log message announces the new turn.
-8.  All temporary dialog states (`combatState`, `positionDialogState`, etc.) are reset to `null`.
+7.  If the new player has only one army, it is automatically selected for them.
+8.  A log message announces the new turn.
+9.  All temporary dialog states (`combatState`, `positionDialogState`, etc.) are reset to `null`.
 
 ### 3.2. Firebase & React/Next.js Common Pitfalls
 - **Firestore Cannot Store `undefined`:** A recurring critical bug is caused by attempting to write a `GameState` object with `undefined` properties. Firestore will silently strip these properties, causing the `GameState` read by clients to have a different shape than expected, leading to crashes. **Rule: Always use `null` instead of `undefined`** for optional or empty state properties.

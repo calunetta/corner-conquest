@@ -114,7 +114,7 @@ export function handleDeployAction(state: GameState): GameState {
     map[baseTileInfo.y * MAP_COLS + baseTileInfo.x].occupants.push({ playerId: player.id, armyId: newArmy.id });
     
     if (isEfficientUsed) {
-      newState.log.push(`${player.name} used 'Efficient' for a cheaper deployment!`);
+      newState.log.push(`${player.name} used 'Efficient' to deploy!`);
       player.efficientActive = false;
       const cardIndex = player.specialCards.indexOf(CardName.Efficient);
       if (cardIndex > -1) {
@@ -265,6 +265,13 @@ export function handleEndTurn(state: GameState): GameState {
     }
     
     newState.currentPlayerIndex = nextPlayerIndex;
+    
+    // Auto-select army if the next player has only one
+    if (nextPlayer.armies.length === 1) {
+        newState.autoSelectArmyFor = { playerId: nextPlayer.playerId, armyId: nextPlayer.armies[0].id };
+    } else {
+        newState.autoSelectArmyFor = null;
+    }
     
     const hasProductiveCard = nextPlayer.specialCards.includes(CardNameEnum.Productive);
     const positionedArmies = nextPlayer.positions;

@@ -278,6 +278,11 @@ export type BaseTileInfo = {
     y: number;
 }
 
+export type AutoSelectArmyInfo = {
+    playerId: string;
+    armyId: number;
+}
+
 export type GameState = {
   id: string;
   name: string;
@@ -295,6 +300,7 @@ export type GameState = {
   specialCardsDeck: CardName[];
   discardPile: CardName[];
   deathAnimations: DeathAnimation[];
+  autoSelectArmyFor: AutoSelectArmyInfo | null;
   combatState: CombatState | null;
   monsterCombatState: MonsterCombatState | null;
   positionDialogState: PositionDialogState | null;
