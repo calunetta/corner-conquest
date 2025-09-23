@@ -1,4 +1,5 @@
 
+
 'use client';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { db, doc, setDoc, getDoc, deleteDoc } from '@/lib/firebase';
@@ -74,8 +75,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      // The primary purpose of this is to run the logout logic
-      // if the user closes the tab/browser. It's not guaranteed to run.
+      // This is not guaranteed to run, but it's our best effort
+      // to clean up the username if the user closes the tab.
       logout();
     };
 

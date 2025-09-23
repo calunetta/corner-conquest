@@ -53,6 +53,7 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
             case GameAction.SelectDefender:
                  state = handleSelectDefender(state, payload.defenderArmyId, payload.attackingArmyId);
                 break;
+ax
             case GameAction.CombatRoll:
                 state = handleCombatRoll(state, payload.useWarChief, payload.army);
                 break;
