@@ -115,6 +115,21 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     try {
         setIsPerformingAction(true);
         
+        // Handle client-side only actions first
+        if (action === GameAction.DeselectArmy) {
+            const { newState, ...uiState } = handleGameAction({
+                action,
+                gameState: gameState!,
+                selectedArmyId: selectedArmyId,
+                payload
+            });
+            if (uiState.selectedArmyId !== undefined) setSelectedArmyId(uiState.selectedArmyId);
+            if (uiState.selectedTile !== undefined) setSelectedTile(uiState.selectedTile);
+            if (uiState.possibleMoves !== undefined) setPossibleMoves(uiState.possibleMoves);
+            if (uiState.currentAction !== undefined) setCurrentAction(uiState.currentAction);
+            return;
+        }
+
         await setGameState((currentGameState) => {
             if (!currentGameState || !localPlayer) return currentGameState;
             
@@ -145,7 +160,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     } finally {
         setIsPerformingAction(false);
     }
-  }, [isPerformingAction, isMyTurn, toast, setGameState, localPlayer, selectedArmyId]);
+  }, [isPerformingAction, isMyTurn, toast, setGameState, localPlayer, selectedArmyId, gameState]);
   
   const handleTileClick = async (x: number, y: number) => {
     if (!gameState || !isMyTurn || gameState.status !== 'playing' || isPerformingAction) return;

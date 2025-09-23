@@ -31,8 +31,7 @@ export function handleGameAction({ action, gameState, selectedArmyId, payload }:
         case GameAction.EndTurn:
             return { newState: handleEndTurn(gameState), selectedArmyId: null };
         case GameAction.DeselectArmy:
-            const deselectResult = handleDeselectArmy();
-            return { newState: gameState, ...deselectResult };
+            return { newState: gameState, ...handleDeselectArmy() };
         case GameAction.CancelAction:
              return { newState: handleCancelAction(gameState), selectedArmyId: selectedArmy?.id ?? null };
 
