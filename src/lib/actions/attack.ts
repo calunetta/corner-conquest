@@ -1,9 +1,9 @@
 
 
-import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult, ResourceType } from '@/lib/types';
+import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult, ResourceType, IslandResource } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
-import { GameAction, IslandType, MAP_COLS } from '../types';
+import { GameAction, IslandType, MAP_COLS, ResourceType as ResourceTypeEnum } from '../types';
 
 
 export function handleAttackAction(state: GameState, selectedArmy: Army | null): ActionHandlerResult {
@@ -326,7 +326,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
 
 export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army | null): ActionHandlerResult {
     let newState = { ...state };
-    const { monsterCombatState, baseTiles } = newState;
+    const { monsterCombatState, baseTiles, settings } = newState;
     if (!monsterCombatState || monsterCombatState.phase !== 'results') {
         return { newState: { ...newState, monsterCombatState: null }, selectedArmyId: null };
     }
@@ -354,10 +354,29 @@ export function handleCloseMonsterCombat(state: GameState, attackingArmy: Army |
         
         if (currentTile.monsters?.length === 0) {
           currentTile.type = IslandType.Resource;
-          const resourceTypes: ResourceType[] = ['gems', 'iron', 'wheat'];
-          const randomResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
-          currentTile.resources.push({ type: randomResource, amount: 1 });
-          newState.log.push(`The defeated monster revealed a new resource on the island: ${randomResource}!`);
+            
+          const resourceTypes: ResourceType[] = [ResourceTypeEnum.Gems, ResourceTypeEnum.Iron, ResourceTypeEnum.Wheat];
+          const availableResources = [...resourceTypes];
+          const islandResources: IslandResource[] = [];
+          
+          const numResourceTypes = Math.random() < 0.4 ? 2 : 1;
+
+            if (numResourceTypes === 1) {
+                const randomIndex = Math.floor(Math.random() * availableResources.length);
+                const selectedResourceType = availableResources[randomIndex];
+                islandResources.push({ type: selectedResourceType, amount: 2 * settings.baseResourceAmount });
+            } else {
+                for (let i = 0; i < numResourceTypes; i++) {
+                    const randomIndex = Math.floor(Math.random() * availableResources.length);
+                    const selectedResourceType = availableResources.splice(randomIndex, 1)[0];
+                    const amount = (Math.random() < 0.5 ? 1 : 2) * settings.baseResourceAmount;
+                    islandResources.push({ type: selectedResourceType, amount });
+                }
+            }
+            
+            currentTile.resources = islandResources;
+            const resourceNames = islandResources.map(r => r.type).join(' and ');
+            newState.log.push(`The defeated monster revealed new resources on the island: ${resourceNames}!`);
         }
         
         const canStillAct = canArmyPerformAnyAction(newState, attackingArmy);

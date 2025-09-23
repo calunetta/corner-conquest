@@ -93,7 +93,7 @@ The game is played on a grid of islands. Each player starts at their **Base** in
     - An island can have one or two types of resources, determined by its distance from the map's center.
     - If an island has **one** resource type, it will always have **two** collection spots for that resource.
     - If an island has **two** resource types, each type will have a random number of collection spots (either one or two).
-- **Monster Islands:** Inhabited by hostile creatures that must be defeated. When monsters are present, they are rendered with a dynamic idle animation within the `IslandTile` component. Their sprites randomly shift left and right and have a chance to play their `attack` animation to make them feel alive. All monster sprites are animated GIFs. When the last monster on an island is defeated, the island's type changes to `Resource`, and it spawns a single spot of a randomly chosen resource, creating a new strategic objective.
+- **Monster Islands:** Inhabited by hostile creatures that must be defeated. When monsters are present, they are rendered with a dynamic idle animation within the `IslandTile` component. Their sprites randomly shift left and right and have a chance to play their `attack` animation to make them feel alive. All monster sprites are animated GIFs. When the last monster on an island is defeated, the island's type changes to `Resource` and it immediately spawns new resources, following the same generation rules as other resource islands. This makes them valuable strategic targets.
 - **Special Islands:** Discovering these grants the player a random Special Card. On subsequent landings on the same island, a dialog appears prompting the player to roll a die. On a roll of 3 or 6, they receive another card.
 - **Island Distribution:** The balance between Resource, Monster, and Special islands is controlled by the `resourceDensity` setting (default 60%). This value roughly corresponds to the probability that a tile will be a resource island. The remaining percentage is split between Monster and Special islands, with Special islands being rarer. The distribution also changes based on distance from the map's center, with more valuable and dangerous islands appearing closer to the middle.
 
@@ -143,7 +143,7 @@ The application ensures that every player has a unique username.
 - **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog.
 - **Extra Move:** Grants the player an extra move action. One army that has already acted can move again.
 - **Teleport:** Initiates a two-step action. First, select an army. Second, select *any* tile on the map to move it to.
-- **Scout:** Initiates a multi-step action. The player can click on 3 different hidden tiles to reveal them. This does not involve any army movement.
+- **Scout:** Initiates a multi-step action where the player can click on 3 different hidden tiles to reveal them. This action does not involve any army movement and does not select an army. Because no army moves, no Victory Points are awarded for island discovery during a scout action.
 - **Sabotage:** Opens a dialog to choose an opponent. That opponent will miss their next turn.
 - **Reinforce:** The player's next `Deploy` action this turn is free. The card is only consumed upon a successful deployment.
 - **Efficient:** The player's next `Deploy` action this turn costs 50% less Wheat. The card is only consumed upon a successful deployment.
@@ -257,7 +257,7 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priorit
     - **Using Strategic Cards:** The bot will intelligently use cards like `Wealthy` if it is low on a resource needed for a high-priority action (like deploying an army). It will also use `Reinforce`, `Efficient`, and `Master Builder` to save resources.
     - **Upgrading Attack Power:** Medium priority, which decreases as its power level increases to avoid over-investing.
     - **Deploying a new Army:** Medium priority, which decreases as its army count increases to maintain a balanced force.
-    - **Exploring:** The bot now has a higher priority to explore new tiles, preventing it from gettings stuck and encouraging expansion.
+    - **Exploring:** The bot now has a higher priority to explore new tiles, preventing it from getting stuck and encouraging expansion.
 3.  The bot executes the single action with the highest priority score. After that action, its turn ends. This creates a focused but adaptable AI opponent that balances long-term strategy with opportunistic plays.
 
 ## 7. Build & Styling Configuration
