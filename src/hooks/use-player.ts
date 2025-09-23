@@ -17,18 +17,37 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [username, setUsernameState] = useState<string | null>(null);
 
-  useEffect(() => {
-    const storedPlayerId = localStorage.getItem('playerId');
-    const storedUsername = localStorage.getItem('username');
-    if (storedPlayerId && storedUsername) {
-      setPlayerId(storedPlayerId);
-      setUsernameState(storedUsername);
-    } else {
-      const newPlayerId = `player_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      setPlayerId(newPlayerId);
-      localStorage.setItem('playerId', newPlayerId);
+  const validateSession = useCallback(async (pid: string, uname: string) => {
+    try {
+        const usernameDocRef = doc(db, 'usernames', uname);
+        const docSnap = await getDoc(usernameDocRef);
+        if (docSnap.exists() && docSnap.data().playerId === pid) {
+            setUsernameState(uname);
+        } else {
+            // Mismatch or document doesn't exist, clear local session
+            localStorage.removeItem('username');
+            setUsernameState(null);
+        }
+    } catch (error) {
+        console.error("Error validating session:", error);
+        localStorage.removeItem('username');
+        setUsernameState(null);
     }
   }, []);
+
+  useEffect(() => {
+    let storedPlayerId = localStorage.getItem('playerId');
+    if (!storedPlayerId) {
+        storedPlayerId = `player_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        localStorage.setItem('playerId', storedPlayerId);
+    }
+    setPlayerId(storedPlayerId);
+
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername && storedPlayerId) {
+      validateSession(storedPlayerId, storedUsername);
+    }
+  }, [validateSession]);
   
   const logout = useCallback(async () => {
     if (username) {
@@ -54,14 +73,22 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     try {
       const docSnap = await getDoc(usernameDocRef);
       if (docSnap.exists() && docSnap.data().playerId !== playerId) {
+        // Username is taken by someone else
         return false;
       }
       
+      // Reserve the new username
       await setDoc(usernameDocRef, { playerId });
       
+      // Clean up old username if it's different
       if (username && username !== name) {
-          const oldUsernameDocRef = doc(db, 'usernames', username);
-          await deleteDoc(oldUsernameDocRef);
+          try {
+            const oldUsernameDocRef = doc(db, 'usernames', username);
+            await deleteDoc(oldUsernameDocRef);
+          } catch(e) {
+            // Non-critical, log it
+            console.warn("Could not delete old username reservation:", e);
+          }
       }
 
       localStorage.setItem('username', name);
@@ -74,10 +101,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [playerId, username]);
 
   useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      // This is not guaranteed to run, but it's our best effort
-      // to clean up the username if the user closes the tab.
-      logout();
+    const handleBeforeUnload = () => {
+      // This is not guaranteed to run, but it's a best-effort attempt.
+      // A more robust solution would involve server-side heartbeats.
+      if (localStorage.getItem('username')) {
+        logout();
+      }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);

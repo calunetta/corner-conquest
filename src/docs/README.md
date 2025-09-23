@@ -35,11 +35,33 @@ Understanding the project's structure is key to making changes efficiently and c
   - `bot-logic.ts`: The AI logic for bot players.
   - `types.ts`: **(Shared State)** Central repository for the `GameState` object and its constituent types, which are synchronized with Firestore.
 
-## 3. State Management: A Clear Separation
+## 3. State Management & Session Logic
 
-The application's architecture is built on a strict separation between **Shared State** (the game's source of truth) and **Local State** (a single player's UI status). Understanding this distinction is critical to preventing bugs and maintaining performance.
+The application's architecture is built on a strict separation between **Shared State** (the game's source of truth) and **Local State** (a single player's UI status). Understanding this distinction is critical.
 
-### 3.1. Shared State: The `GameState` Object
+### 3.1. Player Session Management (`usePlayer` Hook)
+The player's session (their identity) is managed through a combination of browser `localStorage` and Firestore, orchestrated by the `usePlayer` hook.
+
+1.  **First Visit:**
+    *   The `usePlayer` hook generates a unique `playerId` (e.g., `player_1678886400000_abcdef`).
+    *   This `playerId` is immediately stored in `localStorage`. This ID persists across page reloads and browser sessions, uniquely identifying the user's browser.
+
+2.  **Login (`setUsername`):**
+    *   When a user enters a username, the `setUsername` function creates a document in a Firestore collection named `usernames`. The document's ID is the chosen username (e.g., `usernames/Alice`).
+    *   The content of this document is the user's unique `playerId`. This acts as a "lock," ensuring no one else with a different `playerId` can claim the username "Alice".
+    *   The chosen username is also saved to `localStorage`.
+
+3.  **Session Persistence (Page Reload):**
+    *   When the page is reloaded, `usePlayer` loads both the `playerId` and `username` from `localStorage`.
+    *   **Crucially, it then re-validates this session with Firestore.** It checks if the `usernames/Alice` document still exists and if the `playerId` inside it matches the one stored in the browser.
+    *   If it matches, the session is restored. If it doesn't match (e.g., the document was deleted or taken by another player), the local session is cleared, and the user is returned to the login screen.
+
+4.  **Logout / Tab Close (`logout`):**
+    *   When the user logs out or closes the tab, a cleanup function is triggered.
+    *   It deletes the `usernames/Alice` document from Firestore, freeing up the username for others.
+    *   It also clears the `username` from `localStorage`.
+
+### 3.2. Shared Game State: The `GameState` Object
 
 -   **Definition File:** `src/lib/types.ts`
 -   **What It Is:** The `GameState` object is the single, authoritative state of the match. It contains only the data that **must** be synchronized across all players.
@@ -53,7 +75,7 @@ The application's architecture is built on a strict separation between **Shared 
     -   `combatState`, `monsterCombatState`: Shared state for combat encounters, so all players can see the results.
 -   **When to Modify:** Only when an action occurs that irrevocably changes the game for **all** players (e.g., an army moves, a resource is spent, a turn ends).
 
-### 3.2. Local State: The `GameBoard.tsx` Component
+### 3.3. Local UI State: The `GameBoard.tsx` Component
 
 -   **Definition File:** `src/features/game/types.ts`
 -   **What It Is:** Local state refers to any variable that represents the temporary UI status for a single player. It is irrelevant to other players and is never sent to the server.
@@ -64,7 +86,7 @@ The application's architecture is built on a strict separation between **Shared 
     -   `pendingAction: PendingAction | null`: The state for a multi-step local action (e.g., after clicking the "Teleport" card, the `pendingAction` is set to `{ type: 'teleport' }`, waiting for the player to select an army and then a destination).
     -   **All Dialog States:** `armySelectionDialog`, `attackSelectionDialog`, `positionDialog`, `sabotageDialog`, `wealthyDialog`, `stealResourceDialog`, `cardsDialogPlayerId`, `abilitiesShopOpen`, `productiveCardDialog`, `specialIslandRollDialog`. The open/closed status of these dialogs is purely a local concern.
 
-### 3.3. The Action Flow: From Click to Update
+### 3.4. The Action Flow: From Click to Update
 
 1.  **Local Intent:** A player clicks on an army. `handleTileClick` in `GameBoard.tsx` updates the local `selectedArmyId` state. The UI re-renders instantly to show the selection. **No Firebase write occurs.**
 2.  **Local Validation:** The player clicks a valid destination tile. `handleTileClick` verifies this is a possible move.
@@ -296,7 +318,7 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priorit
 2.  Each action is assigned a numeric `priority` based on the current game state.
     - **Positioning on a resource:** Very high priority (9). This is the bot's primary way to build its economy.
     - **Attacking:** High priority, especially if the bot has a power advantage or if it needs to clear a monster from a valuable island.
-    - **Using Strategic Cards:** The bot will intelligently use cards like `Wealthy` if it is low on a resource needed for a high-priority action (like deploying an army). It will also use `Reinforce`, `Efficient`, and `Master Builder` to save resources.
+    - **Using Strategic Cards:** The bot will intelligently use cards like `Wealthy` if it is low on a resource needed for a high-priority action (like deploying an army). It will also use `Reinforce`, `Efficient`, and `MasterBuilder` to save resources.
     - **Upgrading Attack Power:** Medium priority, which decreases as its power level increases to avoid over-investing.
     - **Deploying a new Army:** Medium priority, which decreases as its army count increases to maintain a balanced force.
     - **Exploring:** The bot now has a higher priority to explore new tiles, preventing it from getting stuck and encouraging expansion.
