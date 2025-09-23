@@ -154,7 +154,7 @@ The application ensures that every player has a unique username.
 ### 5.2. Special Cards
 - **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, if `Debug Mode` is enabled, the human player starts with one of every available Special Card.
 - **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
-- **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog. If a player activates a card like "Extra Move" but cannot or chooses not to use it, they can use the "Cancel" button to undo the card activation.
+- **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog. If a player activates a card like "Extra Move" or "Teleport" but cannot or chooses not to use it, they can use the "Cancel" button. This **refunds the 'Use Card' action**, allowing them to use a different card during the same turn.
 - **Extra Move:** This card provides a flexible move action. The effect is consumed for the turn once used.
     - If used on an army that has **not yet acted** this turn, it allows that army to move. After the move, the army is still considered "fresh" and can perform a subsequent action (like Attack or Position).
     - If used on an army that **has already acted**, it allows that army to perform one final move action. After this move, the army's turn is over. The "Extra Move" effect is a single-use-per-turn benefit.
@@ -294,3 +294,5 @@ This section details the project's build and styling setup. Changes to these fil
     -   `backgroundImage`: Custom patterns for water and terrain textures.
     -   `fontFamily`: A custom font, `Lilita One`, for body and headline text.
     -   `plugins`: `tailwindcss-animate` is included for keyframe animations.
+
+    
