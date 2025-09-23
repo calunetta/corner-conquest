@@ -176,7 +176,8 @@ The application ensures that every player has a unique username.
 - **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a purple border (`border-purple-500`) to indicate they are valid destinations.
 - **Fog of War Indicator:** When Fog of War is active, undiscovered islands display a '?' icon (`HelpCircle` from lucide-react) instead of their true contents. This is rendered in `IslandTile.tsx`.
 - **Animations & Scenery:**
-    - Game sprites (armies, monsters, death animations) are animated GIFs located in `public/sprites/`. The specific sprites for each player's army are defined in `src/lib/player-data.ts`. The castle base sprites are high-quality PNGs. **Note:** When using animated GIFs with the Next.js `<Image>` component, the `unoptimized` prop **must** be used to prevent Next.js's optimization from breaking the animation or removing transparency.
+    - Game sprites (armies, monsters, death animations) are animated GIFs located in `public/sprites/`. The specific sprites for each player's army are defined in `src/lib/player-data.ts`. The castle base sprites are high-quality PNGs.
+    - **Note on Animated GIFs and Next.js:** When using animated GIFs with the Next.js `<Image>` component, the `unoptimized` prop **must** be used. Next.js's default image optimization can break GIF animations or remove transparency. Using `unoptimized` serves the original file, ensuring it renders correctly. This may slightly increase initial load times as the file size is not reduced, but it is necessary for functionality. The blurriness seen in some animations is a result of using low-resolution source images in larger display containers, a trade-off for correct animation playback. The ideal solution is to use higher-resolution source GIFs.
     - The water background (`bg-water-pattern`) and island terrain textures (`bg-terrain`) are defined in `tailwind.config.ts` and applied in their respective components.
     - An animated border appears at the bottom of each island tile to give the illusion of water movement. This is created in `IslandTile.tsx` by combining three separate GIF images (`island_edge_1.gif`, `island_edge_2.gif`, `island_edge_3.gif`) in a randomized sequence.
     - Decorative rocks in the water are procedurally placed by `MapGrid.tsx` for visual variety. This is disabled on mobile for performance and clarity.
@@ -276,3 +277,5 @@ This section details the project's build and styling setup. Changes to these fil
     -   `backgroundImage`: Custom patterns for water and terrain textures.
     -   `fontFamily`: A custom font, `Lilita One`, for body and headline text.
     -   `plugins`: `tailwindcss-animate` is included for keyframe animations.
+
+  
