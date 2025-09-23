@@ -136,10 +136,11 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         player.hasExtraMove = false; // Consume the extra move
         newState.log.push(`${player.name} used their Extra Move on an army.`);
         // Per README, if used on an un-acted army, it does NOT get hasActed = true
-        if (!armyInState.hasActed) {
-             // Do nothing, the army is still fresh
+        if (armyInState.hasActed) {
+            // If the army had already acted, it just gets the move. hasActed is already true.
         } else {
-            // If the army had already acted, its turn is now over. Nothing more to do.
+             // The army was fresh, so it remains fresh after the extra move.
+             // We do NOT set hasActed to true here.
         }
     } else {
         armyInState.hasActed = true;

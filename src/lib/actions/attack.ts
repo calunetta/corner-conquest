@@ -11,10 +11,15 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
     const attacker = players[currentPlayerIndex];
 
     if (!selectedArmy) throw new Error("No army selected.");
-    if (selectedArmy.hasActed && !attacker.hasExtraMove) throw new Error("This army has already acted this turn.");
+    if (selectedArmy.hasActed) throw new Error("This army has already acted this turn.");
 
     const currentTile = map[selectedArmy.position.y * MAP_COLS + selectedArmy.position.x];
     const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
+
+    // Immediately mark the army as having acted for initiating an attack
+    const armyInState = attacker.armies.find(a => a.id === selectedArmy.id);
+    if(armyInState) armyInState.hasActed = true;
+
 
     if (otherPlayersOccupants.length > 0) {
         const defenderPlayerId = otherPlayersOccupants[0].playerId;
@@ -64,8 +69,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
       };
     } else {
         newState.log.push(`${attacker.name}'s army attacks, but finds no target!`);
-        const army = attacker.armies.find(a => a.id === selectedArmy.id);
-        if (army) army.hasActed = true;
+        // We already set hasActed, so just check for turn end
         newState = checkAndEndTurnIfNoActions(newState);
     }
     return { state: newState, ui: null };
@@ -100,9 +104,8 @@ export function handleSelectDefender(state: GameState, defenderArmyId: number, a
     return newState;
 }
 
-export function handleCombatRoll(state: GameState, useWarChief: boolean, attackingArmy: Army | null): GameState {
+export function handleCombatRoll(state: GameState, useWarChief: boolean): GameState {
     if (!state.combatState) return state;
-    if (!attackingArmy) return state;
 
     const newState = cloneDeep(state);
     const { combatState, players, discardPile } = newState;
@@ -135,8 +138,7 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean, attacki
     combatState.winnerId = attackerScore > defenderScore ? combatState.attackerId : combatState.defenderId;
     combatState.phase = 'results';
 
-    const armyInState = attacker.armies.find(a => a.id === attackingArmy.id);
-    if(armyInState) armyInState.hasActed = true;
+    // hasActed is set when the attack is initiated, not on roll.
     
     return newState;
 };
@@ -295,8 +297,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
         }
     }
     
-    const army = attacker.armies.find(a => a.id === attackingArmy.id);
-    if(army) army.hasActed = true;
+    // hasActed is set when the attack is initiated, not on roll.
 
     newState.monsterCombatState = {
       attackerId: attacker.id,
