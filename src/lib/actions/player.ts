@@ -352,6 +352,7 @@ export function handleCancelAction(state: GameState): GameState {
     if (player.reinforceActive) player.reinforceActive = false;
     if (player.efficientActive) player.efficientActive = false;
     if (player.masterBuilderActive) player.masterBuilderActive = false;
+    if (player.hasExtraMove) player.hasExtraMove = false;
 
     // Refund the "Use Card" action if one was pending
     const useCardIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);

@@ -37,6 +37,12 @@ The project uses TypeScript `enum`s extensively (e.g., `GameAction`, `IslandType
 - **Why?** Enums prevent bugs caused by typos and ensure that actions and types are used consistently across the entire codebase. Using `GameAction.Deploy` is safe; typing `"deploi"` is not.
 - **Critical Note:** A common source of hard-to-debug errors has been incorrect enum imports. **Always double-check that you are importing the correct enum** from `types.ts` when implementing new logic.
 
+### 2.2. Root Cause Analysis & Debugging Philosophy
+A guiding principle for this project is to **fix the root cause of a bug, not just its symptoms**. A recurring bug often indicates a flaw in the underlying architecture or state management logic.
+-   **Symptom:** An observable, incorrect behavior (e.g., "The 'Deselect Army' button doesn't work.").
+-   **Root Cause:** The fundamental reason the symptom occurs (e.g., "A `useEffect` hook for auto-selection is incorrectly re-selecting an army immediately after it was deselected, creating a state race condition.").
+-   **Our Approach:** When a bug is identified, especially a recurring one, the first step is to analyze the entire data and action flow related to the feature. We must resist the urge to apply a "quick fix" that only patches the symptom. Instead, we must identify the core conflict in the logic and refactor it. This prevents the bug from reappearing in a different form later and leads to a more robust and maintainable codebase. The "Deselect Army" bug was a key example of this: the fix was not to patch the button, but to remove the conflicting `useEffect` and move its logic to a more appropriate place in the state machine (`handleEndTurn`).
+
 ## 3. Game State Management & Firebase Logic
 
 The application uses a "state machine" pattern where the game state is managed centrally in Firestore and modified by pure functions.
@@ -63,8 +69,9 @@ When `handleEndTurn` is called, a sequence of events occurs:
 4.  Passive abilities for the *outgoing* player (like `Explorer`) are calculated and applied.
 5.  A check is performed to see if the *new* player is sabotaged. If so, their turn is skipped.
 6.  A check for the *new* player's pre-turn actions is performed (e.g., Automatic Resource Collection). If they are positioned on resources, the appropriate collection logic or dialog (`ProductiveCardDialog`) is triggered.
-7.  A log message announces the new turn.
-8.  All temporary dialog states (`combatState`, `positionDialogState`, etc.) are reset to `null`.
+7.  If the new player has only one army, it is automatically selected for them.
+8.  A log message announces the new turn.
+9.  All temporary dialog states (`combatState`, `positionDialogState`, etc.) are reset to `null`.
 
 ### 3.2. Firebase & React/Next.js Common Pitfalls
 - **Firestore Cannot Store `undefined`:** A recurring critical bug is caused by attempting to write a `GameState` object with `undefined` properties. Firestore will silently strip these properties, causing the `GameState` read by clients to have a different shape than expected, leading to crashes. **Rule: Always use `null` instead of `undefined`** for optional or empty state properties.
@@ -76,6 +83,13 @@ A full 4-player game to 30 Victory Points is highly variable, but a rough estima
 - **Writes:** `4 players * 10 turns/player * 2 writes/turn` = **~80 writes**.
 - **Reads:** Every write triggers a read for all connected clients. `80 writes * 4 players` = **~320 reads**.
 This is an efficient model, as it ensures all players have the latest state with minimal reads per action.
+
+### 3.4. Firebase Best Practices & Cost Optimization
+To keep the application performant and cost-effective, it is crucial to use the correct Firestore operation for the task.
+
+-   **`runTransaction`**: Use this when you need to **read a document and then write to it based on its current state**. A transaction ensures that no other process modifies the document between your read and write, preventing race conditions. This is essential for operations like joining a game, where you must check if the lobby is full before adding a new player.
+-   **`writeBatch`**: Use this when you need to perform **multiple write operations (create, update, or delete) in a single atomic unit**, but these writes *do not* depend on reading data first. A batch is more efficient and costs less than a transaction because it involves fewer round trips to the server.
+-   **Example - Player Exit Logic:** The `handlePlayerExit` function in `src/lib/actions/player.ts` is an example of this optimization. Initially, it might have used a transaction. However, because the act of removing a player from the `players` array is a simple update that doesn't require a conditional read first, it was refactored to use a `writeBatch`. This is a more performant and cost-effective choice for this specific scenario.
 
 ## 4. Core Game Mechanics & Match Flow
 
@@ -93,7 +107,7 @@ The game is played on a grid of islands. Each player starts at their **Base** in
     - An island can have one or two types of resources, determined by its distance from the map's center.
     - If an island has **one** resource type, it will always have **two** collection spots for that resource.
     - If an island has **two** resource types, each type will have a random number of collection spots (either one or two).
-- **Monster Islands:** Inhabited by hostile creatures that must be defeated. When monsters are present, they are rendered with a dynamic idle animation within the `IslandTile` component. Their sprites randomly shift left and right and have a chance to play their `attack` animation to make them feel alive. All monster sprites are animated GIFs. When the last monster on an island is defeated, the island's type changes to `Resource`, but **note:** no new resources are currently generated on it.
+- **Monster Islands:** Inhabited by hostile creatures that must be defeated. When monsters are present, they are rendered with a dynamic idle animation within the `IslandTile` component. Their sprites randomly shift left and right and have a chance to play their `attack` animation to make them feel alive. All monster sprites are animated GIFs. When the last monster on an island is defeated, the island's type changes to `Resource` and it immediately spawns new resources, following the same generation rules as other resource islands. This makes them valuable strategic targets.
 - **Special Islands:** Discovering these grants the player a random Special Card. On subsequent landings on the same island, a dialog appears prompting the player to roll a die. On a roll of 3 or 6, they receive another card.
 - **Island Distribution:** The balance between Resource, Monster, and Special islands is controlled by the `resourceDensity` setting (default 60%). This value roughly corresponds to the probability that a tile will be a resource island. The remaining percentage is split between Monster and Special islands, with Special islands being rarer. The distribution also changes based on distance from the map's center, with more valuable and dangerous islands appearing closer to the middle.
 
@@ -140,14 +154,16 @@ The application ensures that every player has a unique username.
 ### 5.2. Special Cards
 - **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, if `Debug Mode` is enabled, the human player starts with one of every available Special Card.
 - **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
-- **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog.
-- **Extra Move:** Grants the player an extra move action. One army that has already acted can move again.
-- **Teleport:** Initiates a two-step action. First, select an army. Second, select *any* tile on the map to move it to.
-- **Scout:** Initiates a multi-step action. The player can click on 3 different hidden tiles to reveal them. This does not involve any army movement.
+- **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog. If a player activates a card like "Extra Move" but cannot or chooses not to use it, they can use the "Cancel" button to undo the card activation.
+- **Extra Move:** This card provides a flexible move action. The effect is consumed for the turn once used.
+    - If used on an army that has **not yet acted** this turn, it allows that army to move. After the move, the army is still considered "fresh" and can perform a subsequent action (like Attack or Position).
+    - If used on an army that **has already acted**, it allows that army to perform one final move action. After this move, the army's turn is over. The "Extra Move" effect is a single-use-per-turn benefit.
+- **Teleport:** Initiates a two-step action. Using this card will automatically deselect any currently selected army, forcing the player to choose the army they wish to teleport. First, select an army. Second, select *any* tile on the map to move it to.
+- **Scout:** Initiates a multi-step action where the player can click on 3 different hidden tiles to reveal them. This action does not involve any army movement and does not select an army. Because no army moves, no Victory Points are awarded for island discovery during a scout action.
 - **Sabotage:** Opens a dialog to choose an opponent. That opponent will miss their next turn.
-- **Reinforce:** The player's next `Deploy` action this turn is free.
-- **Efficient:** The player's next `Deploy` action this turn costs 50% less Wheat.
-- **Master Builder:** The player's next `Upgrade` action this turn costs 50% less Iron.
+- **Reinforce:** The player's next `Deploy` action this turn is free. The card is only consumed upon a successful deployment.
+- **Efficient:** The player's next `Deploy` action this turn costs 50% less Wheat. The card is only consumed upon a successful deployment.
+- **Master Builder:** The player's next `Upgrade` action this turn costs 50% less Iron. The card is only consumed upon a successful upgrade.
 - **Steal Resource:** Opens a dialog to choose a player, then a resource type. Steals 2 of that resource from the target.
 - **Wealthy:** Opens a dialog to choose a resource type. The player gains 5 of that resource.
 - **Overcome:** Automatically win the next combat encounter (vs. player or monster). Appears as a checkbox in the combat dialog.
@@ -172,8 +188,9 @@ The application ensures that every player has a unique username.
 #### 5.3.3. Visual Feedback
 - **Selected Army:** The tile of a selected army gets a prominent glowing shadow (`shadow-2xl shadow-primary/80`).
 - **Player-Owned Tiles:** Tiles occupied by the local player's armies have a subtle, color-coded glow (`shadow-blue-500/50`, `shadow-red-500/50`, etc.) for easy identification.
-- **Possible Moves:** Valid move destinations for a selected army are highlighted with a dashed border (`border-accent/70`).
-- **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a purple border (`border-purple-500`) to indicate they are valid destinations.
+- **Possible Moves:** Valid move destinations for a selected army are highlighted with a subtle yellow glow (`shadow-lg shadow-accent/20`).
+- **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a glowing purple shadow (`shadow-lg shadow-purple-500/30`) to indicate they are valid destinations.
+- **Scout Action:** When `Scout` is active, all hidden tiles are highlighted with a glowing blue shadow (`shadow-lg shadow-blue-500/30`) to indicate they can be revealed.
 - **Fog of War Indicator:** When Fog of War is active, undiscovered islands display a '?' icon (`HelpCircle` from lucide-react) instead of their true contents. This is rendered in `IslandTile.tsx`.
 - **Animations & Scenery:**
     - Game sprites (armies, monsters, death animations) are animated GIFs located in `public/sprites/`. The specific sprites for each player's army are defined in `src/lib/player-data.ts`. The castle base sprites are high-quality PNGs.
@@ -198,7 +215,7 @@ This UI element provides a real-time summary for each player in the game, displa
 - **Layout:** The panel uses a responsive grid (`grid-cols-2 lg:grid-cols-4`), accommodating up to 4 players. Empty slots are filled with "Waiting for player..." placeholders in the lobby.
 
 ### 5.5. Player Exiting the Game
-- **Normal Player:** If a non-host player leaves, their armies are removed from the board, they are removed from the `players` array in the game state, and a log message is generated. The game continues for the remaining players.
+- **Normal Player:** If a non-host player leaves, their armies are removed from the board, they are removed from the `players` array in the game state, and a log message is generated. The game continues for the remaining players. This process uses a Firestore `writeBatch` for efficiency.
 - **Host Player:** If the host leaves, the entire game document is **deleted from Firestore**. The game ends for all players, and they are returned to the lobby.
 
 ### 5.6. Game Customization
