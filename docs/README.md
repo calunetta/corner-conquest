@@ -3,8 +3,8 @@
 This document outlines the architecture and key logic flows of the "Corner Conquest" application. It serves as a shared context for AI-assisted development to ensure consistency and accuracy.
 
 **Development Directives for the AI Assistant:**
-1.  **Synchronized Documentation:** For every code change made, this `README.md` file **must** be updated in the same transaction to reflect those changes. The code and the documentation must always be kept in sync.
-2.  **Blueprint-First Validation:** Before implementing any change, the request **must** first be analyzed against the established architecture and logic documented here. If the request conflicts with this blueprint, the user must be notified of the discrepancy before any modifications are made.
+1.  **Synchronized Documentation:** For every code change I make, I **must** also update this `docs/README.md` file in the same transaction to reflect those changes. The code and the documentation will always be kept in sync.
+2.  **Blueprint-First Validation:** Before I implement any change, I **must** first analyze the request against the established architecture and logic documented here. If the request conflicts with our blueprint, I will notify you of the discrepancy and await your confirmation before proceeding.
 
 ## 1. Core Technologies
 
@@ -176,7 +176,7 @@ The application ensures that every player has a unique username.
 - **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a purple border (`border-purple-500`) to indicate they are valid destinations.
 - **Fog of War Indicator:** When Fog of War is active, undiscovered islands display a '?' icon (`HelpCircle` from lucide-react) instead of their true contents. This is rendered in `IslandTile.tsx`.
 - **Animations & Scenery:**
-    - Game sprites (armies, monsters, death animations) are animated GIFs located in `public/sprites/`. The specific sprites for each player's army are defined in `src/lib/player-data.ts`. The castle base sprites are high-quality PNGs.
+    - Game sprites (armies, monsters, death animations) are animated GIFs located in `public/sprites/`. The specific sprites for each player's army are defined in `src/lib/player-data.ts`. The castle base sprites are high-quality PNGs. **Note:** When using animated GIFs with the Next.js `<Image>` component, the `unoptimized` prop **must** be used to prevent Next.js's optimization from breaking the animation or removing transparency.
     - The water background (`bg-water-pattern`) and island terrain textures (`bg-terrain`) are defined in `tailwind.config.ts` and applied in their respective components.
     - An animated border appears at the bottom of each island tile to give the illusion of water movement. This is created in `IslandTile.tsx` by combining three separate GIF images (`island_edge_1.gif`, `island_edge_2.gif`, `island_edge_3.gif`) in a randomized sequence.
     - Decorative rocks in the water are procedurally placed by `MapGrid.tsx` for visual variety. This is disabled on mobile for performance and clarity.
