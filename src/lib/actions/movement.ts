@@ -12,6 +12,8 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
     
     const currentPlayer = state.players[state.currentPlayerIndex];
     
+    // This is the critical check that was missing.
+    // An army that has acted cannot move unless the player has an "Extra Move" card active.
     if (army.hasActed && !currentPlayer.hasExtraMove) {
         return [];
     }
@@ -130,9 +132,16 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         return { state: newState, ui: { specialIslandRoll: { roll: 0, cardDrawn: null } } };
     }
     
-    if (armyInState.hasActed && player.hasExtraMove) {
+    // Handle "Extra Move" consumption logic
+    if (player.hasExtraMove) {
         player.hasExtraMove = false; // Consume the extra move
         newState.log.push(`${player.name} used their Extra Move on an army.`);
+        // Per README, if used on an un-acted army, it does NOT get hasActed = true
+        if (!armyInState.hasActed) {
+             // Do nothing, the army is still fresh
+        } else {
+            // If the army had already acted, its turn is now over. Nothing more to do.
+        }
     } else {
         armyInState.hasActed = true;
     }

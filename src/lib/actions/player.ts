@@ -33,9 +33,11 @@ export function canArmyPerformAnyAction(state: GameState, army: Army): boolean {
     const player = state.players[state.currentPlayerIndex];
     if (player.id !== state.currentPlayerIndex) return false;
 
-    if (army.hasActed && !player.hasExtraMove) return false;
-
+    // Use the now-correct getPossibleMoves function. If it returns any moves, the army can act.
     if (getPossibleMoves(state, army).length > 0) return true;
+    
+    // An army that has acted can't do anything else, unless an extra move is available (which is handled by getPossibleMoves).
+    if (army.hasActed) return false;
 
     const tile = state.map[army.position.y * MAP_COLS + army.position.x];
 
