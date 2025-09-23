@@ -77,6 +77,13 @@ A full 4-player game to 30 Victory Points is highly variable, but a rough estima
 - **Reads:** Every write triggers a read for all connected clients. `80 writes * 4 players` = **~320 reads**.
 This is an efficient model, as it ensures all players have the latest state with minimal reads per action.
 
+### 3.4. Firebase Best Practices & Cost Optimization
+To keep the application performant and cost-effective, it is crucial to use the correct Firestore operation for the task.
+
+-   **`runTransaction`**: Use this when you need to **read a document and then write to it based on its current state**. A transaction ensures that no other process modifies the document between your read and write, preventing race conditions. This is essential for operations like joining a game, where you must check if the lobby is full before adding a new player.
+-   **`writeBatch`**: Use this when you need to perform **multiple write operations (create, update, or delete) in a single atomic unit**, but these writes *do not* depend on reading data first. A batch is more efficient and costs less than a transaction because it involves fewer round trips to the server.
+-   **Example - Player Exit Logic:** The `handlePlayerExit` function in `src/lib/actions/player.ts` is an example of this optimization. Initially, it might have used a transaction. However, because the act of removing a player from the `players` array is a simple update that doesn't require a conditional read first, it was refactored to use a `writeBatch`. This is a more performant and cost-effective choice for this specific scenario.
+
 ## 4. Core Game Mechanics & Match Flow
 
 ### 4.1. Objective & Winning
@@ -198,7 +205,7 @@ This UI element provides a real-time summary for each player in the game, displa
 - **Layout:** The panel uses a responsive grid (`grid-cols-2 lg:grid-cols-4`), accommodating up to 4 players. Empty slots are filled with "Waiting for player..." placeholders in the lobby.
 
 ### 5.5. Player Exiting the Game
-- **Normal Player:** If a non-host player leaves, their armies are removed from the board, they are removed from the `players` array in the game state, and a log message is generated. The game continues for the remaining players.
+- **Normal Player:** If a non-host player leaves, their armies are removed from the board, they are removed from the `players` array in the game state, and a log message is generated. The game continues for the remaining players. This process uses a Firestore `writeBatch` for efficiency.
 - **Host Player:** If the host leaves, the entire game document is **deleted from Firestore**. The game ends for all players, and they are returned to the lobby.
 
 ### 5.6. Game Customization
