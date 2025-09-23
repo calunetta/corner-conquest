@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { GameState, Army, CardName } from '@/lib/types';
@@ -74,10 +73,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMobile]);
   
   useEffect(() => {
-    if (gameState && gameState.autoSelectArmyFor?.playerId === localPlayer?.id) {
+    if (gameState?.autoSelectArmyFor?.playerId === localPlayer?.playerId) {
         setSelectedArmyId(gameState.autoSelectArmyFor.armyId);
         // We need to clear this from the state so it doesn't re-trigger on every render
-        setGameState(gs => gs ? { ...gs, autoSelectArmyFor: null } : null);
+        setGameState((gs: GameState | null) => gs ? { ...gs, autoSelectArmyFor: null } : null);
     } else if (!isMyTurn) {
         setSelectedArmyId(null);
         setSelectedTile(null);
@@ -85,7 +84,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setPendingAction(null);
         setCardsDialogPlayerId(null);
     }
-  }, [isMyTurn, gameState, localPlayer?.id, setGameState]);
+  }, [isMyTurn, gameState, localPlayer?.id, setGameState, localPlayer?.playerId]);
   
   useEffect(() => {
     if (selectedArmy && gameState && isMyTurn) {
@@ -112,19 +111,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setPossibleMoves([]);
         setPendingAction(null);
         // If an action was provisionally marked as used, we need to refund it.
-        // This requires a shared state update.
-        if (localPlayer?.actionsThisTurn.includes(GameAction.UseCard)) {
-            setGameState(gs => {
-                if (!gs) return null;
-                const player = gs.players[gs.currentPlayerIndex];
-                const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
-                if (cardUseIndex > -1) {
-                    player.actionsThisTurn.splice(cardUseIndex, 1);
-                }
-                player.hasExtraMove = false;
-                return {...gs};
-            })
-        }
+        onAction(GameAction.CancelAction);
         break;
       case GameAction.ShowCards:
         setCardsDialogPlayerId(prev => prev === payload.playerId ? null : payload.playerId);
@@ -144,28 +131,26 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           setPendingAction({ type: 'teleport', cardName: CardName.Teleport });
         } else if (payload.cardName === CardName.Scout) {
           setPendingAction({ type: 'scout', cardName: CardName.Scout, count: 3 });
-        } else {
-          // For cards with immediate shared effects
-          onAction(action, payload);
         }
+        // For cards with immediate shared effects, we need to call the shared handler
+        onAction(action, payload);
         break;
       default:
         console.warn("Unhandled local action:", action);
     }
   }
   
-  // --- REFACTORED: Shared Action Handler ---
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
     if (isPerformingAction) return;
 
-    if (!isMyTurn && ![GameAction.ShowCards, GameAction.CloseCards].includes(action)) {
+    if (!isMyTurn && ![GameAction.ShowCards, GameAction.CloseCards, GameAction.CancelAction].includes(action)) {
       toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
       return;
     }
     
     try {
         setIsPerformingAction(true);
-        await setGameState((currentGameState) => {
+        const result = await setGameState((currentGameState: GameState) => {
             if (!currentGameState || !localPlayer) return currentGameState;
             return handleGameAction({
                 action,
@@ -173,6 +158,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 payload
             });
         });
+
+        if (result) {
+            setSelectedArmyId(result.selectedArmyId);
+        }
 
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
@@ -184,12 +173,14 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleTileClick = async (x: number, y: number) => {
     if (!gameState || !isMyTurn || gameState.status !== 'playing' || isPerformingAction) return;
 
+    const MAP_COLS = gameState.settings.gridSize.cols;
+
     // Handle pending Scout action
     if (pendingAction?.type === 'scout') {
       const tileId = `${x}-${y}`;
       if (!localPlayer?.revealedTiles.includes(tileId)) {
         await setGameState(gs => {
-          if(!gs) return null;
+          if(!gs) return gs;
           const player = gs.players[gs.currentPlayerIndex];
           player.revealedTiles.push(tileId);
           gs.log.push(`${player.name} revealed a tile at (${x},${y}) with Scout.`);
@@ -208,7 +199,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
     // Handle pending Teleport action
     if (pendingAction?.type === 'teleport') {
-      if (selectedArmyId !== null) {
+      if (selectedArmyId !== null && selectedArmy) {
         // Step 2: Army is selected, now select destination
         await onAction(GameAction.Move, { army: selectedArmy, x, y });
         await onAction(GameAction.UseCard, { cardName: pendingAction.cardName }); // Consume card
@@ -337,7 +328,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (!gameState || !isHost) return;
     const newState = startGame(gameState, localPlayer?.name || 'The host');
     toast({ title: "Game Started!", description: "Let the conquest begin!" });
-    await setGameState(newState);
+    await setGameState(() => newState);
   };
 
   const handleExitClick = () => {

@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { db, doc, onSnapshot, getDoc, updateDoc } from '@/lib/firebase';
-import type { GameState } from '@/lib/types';
+import type { GameState, ActionHandlerResult } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
@@ -47,37 +47,41 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     };
   }, [gameId, toast, router]);
 
-  const updateGameState = useCallback(async (newStateOrFn: any) => {
-    
-    let finalState: GameState | null = null;
-    let uiResult = null;
-    
-    if (typeof newStateOrFn === 'function') {
-        const currentState = await getDoc(doc(db, 'games', gameId)).then(d => d.data() as GameState);
-        const result = newStateOrFn(currentState);
-        if (result && 'state' in result && 'ui' in result) {
-            finalState = result.state;
-            uiResult = result.ui;
-        } else {
-            finalState = result;
-        }
-    } else {
-      finalState = newStateOrFn;
-    }
-
-    if (!finalState) {
-        console.error("updateGameState was called with null or returned null.");
-        return;
-    }
+  const updateGameState = useCallback(async (updateFn: (gs: GameState) => ActionHandlerResult | GameState): Promise<any> => {
     
     try {
         const gameDocRef = doc(db, 'games', gameId);
+        const currentState = await getDoc(gameDocRef).then(d => d.data() as GameState);
+        
+        if (!currentState) {
+             console.error("Could not fetch current game state to perform an update.");
+             return null;
+        }
+
+        const result = updateFn(currentState);
+        
+        let finalState: GameState;
+        let uiResult: any = null;
+
+        if (result && 'state' in result && 'ui' in result) {
+            finalState = result.state as GameState;
+            uiResult = result.ui;
+        } else {
+            finalState = result as GameState;
+        }
+
+        if (!finalState) {
+            console.error("updateGameState was called with null or returned null.");
+            return null;
+        }
+    
         await updateDoc(gameDocRef, finalState);
         return uiResult;
 
     } catch (error) {
         console.error("Error updating game state:", error);
         toast({ title: "Sync Error", description: "Could not save game state.", variant: 'destructive' });
+        return null;
     }
   }, [gameId, toast]);
 
@@ -168,7 +172,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
           console.log('Bot turn starting...');
           const nextState = await takeBotTurn(latestState);
-          await updateGameState(nextState);
+          await updateGameState(() => nextState);
           console.log('Bot turn finished and state updated.');
       } catch (error) {
         console.error("Error during bot turn: ", error);
@@ -176,7 +180,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
         if (stateAfterError) {
             try {
                 const errorState = handleEndTurn(stateAfterError);
-                await updateGameState(errorState);
+                await updateGameState(() => errorState);
             } catch (e) {
                  console.error("Failed to end turn after bot error:", e);
             }
@@ -193,5 +197,3 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
   return { gameState, setGameState: updateGameState, isMyTurn, localPlayer, isHost, isLoading, globallyRevealedTiles };
 }
-
-    

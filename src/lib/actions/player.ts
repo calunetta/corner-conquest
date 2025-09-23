@@ -5,6 +5,33 @@ import { db, doc, deleteDoc, writeBatch, getDoc, arrayUnion } from '@/lib/fireba
 import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum } from '../types';
 import { getPossibleMoves } from './movement';
 
+export function handleCancelAction(state: GameState): GameState {
+  const newState = { ...state };
+  const player = newState.players[newState.currentPlayerIndex];
+  
+  // Refund the UseCard action if it was provisionally taken
+  const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
+  if (cardUseIndex > -1) {
+    player.actionsThisTurn.splice(cardUseIndex, 1);
+  }
+
+  // Reset any temporary flags that were set by a card
+  player.hasExtraMove = false;
+  player.reinforceActive = false;
+  player.efficientActive = false;
+  player.masterBuilderActive = false;
+  
+  // Close any dialogs that were opened by a card
+  newState.sabotageDialogState = null;
+  newState.stealResourceDialogState = null;
+  newState.wealthyDialogState = null;
+
+  newState.log.push(`${player.name} cancelled their action.`);
+
+  return newState;
+}
+
+
 export function canArmyPerformAnyAction(state: GameState, army: Army): boolean {
     const player = state.players[state.currentPlayerIndex];
     if (player.id !== state.currentPlayerIndex) return false; // Not the current player
@@ -116,7 +143,7 @@ export function handleDeployAction(state: GameState): GameState {
     if (isEfficientUsed) {
       newState.log.push(`${player.name} used 'Efficient' to deploy!`);
       player.efficientActive = false;
-      const cardIndex = player.specialCards.indexOf(CardName.Efficient);
+      const cardIndex = player.specialCards.indexOf(CardNameEnum.Efficient);
       if (cardIndex > -1) {
           const usedCard = player.specialCards.splice(cardIndex, 1)[0];
           discardPile.push(usedCard);
@@ -126,7 +153,7 @@ export function handleDeployAction(state: GameState): GameState {
     if (isReinforceUsed) {
       newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
       player.reinforceActive = false;
-      const cardIndex = player.specialCards.indexOf(CardName.Reinforce);
+      const cardIndex = player.specialCards.indexOf(CardNameEnum.Reinforce);
       if (cardIndex > -1) {
           const usedCard = player.specialCards.splice(cardIndex, 1)[0];
           discardPile.push(usedCard);
@@ -163,7 +190,7 @@ export function handleUpgradeAction(state: GameState): GameState {
     if (player.masterBuilderActive) {
       newState.log.push(`${player.name} used 'Master Builder' for a cheaper upgrade!`);
       player.masterBuilderActive = false;
-      const cardIndex = player.specialCards.indexOf(CardName.MasterBuilder);
+      const cardIndex = player.specialCards.indexOf(CardNameEnum.MasterBuilder);
       if (cardIndex > -1) {
           const usedCard = player.specialCards.splice(cardIndex, 1)[0];
           discardPile.push(usedCard);
@@ -208,52 +235,16 @@ export function handleEndTurn(state: GameState): GameState {
         newState.currentPlayerIndex = 0;
     }
     
-    let currentPlayer = newState.players[newState.currentPlayerIndex];
+    let outgoingPlayer = newState.players[newState.currentPlayerIndex];
     
-    if (currentPlayer.passiveAbilities.explorer) {
-        const occupiedIslands = new Set<string>();
-        currentPlayer.armies.forEach((army: Army) => {
-            const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
-            occupiedIslands.add(tile.id);
-        });
-        const vpGained = occupiedIslands.size;
-        if (vpGained > 0) {
-            currentPlayer.victoryPoints += vpGained;
-            newState.log.push(`${currentPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
-        }
-    }
+    outgoingPlayer.hasExtraMove = false;
+    outgoingPlayer.efficientActive = false;
+    outgoingPlayer.masterBuilderActive = false;
     
-    if (currentPlayer.passiveAbilities.collector) {
-        let resourcesCollected: Partial<Record<string, number>> = {};
-        const occupiedIslands = new Set<string>();
-        
-        currentPlayer.armies.forEach((army: Army) => {
-            const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
-            if (occupiedIslands.has(tile.id)) return;
-            
-            if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0) {
-                occupiedIslands.add(tile.id);
-                tile.resources.forEach((resource: { type: string; }) => {
-                    currentPlayer.resources[resource.type] += 1;
-                    resourcesCollected[resource.type] = (resourcesCollected[resource.type] || 0) + 1;
-                });
-            }
-        });
+    outgoingPlayer.armies.forEach((army: Army) => army.hasActed = false);
+    outgoingPlayer.actionsThisTurn = [];
 
-        const collectedStrings = Object.entries(resourcesCollected).map(([type, amount]) => `${amount} ${type}`);
-        if(collectedStrings.length > 0) {
-            newState.log.push(`${currentPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`);
-        }
-    }
-    
-    currentPlayer.hasExtraMove = false;
-    currentPlayer.efficientActive = false;
-    currentPlayer.masterBuilderActive = false;
-    
-    currentPlayer.armies.forEach((army: Army) => army.hasActed = false);
-    currentPlayer.actionsThisTurn = [];
-
-    // --- Automatic Collection Logic at Turn Start ---
+    // --- Determine Next Player ---
     let nextPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
     let nextPlayer = newState.players[nextPlayerIndex];
 
@@ -265,6 +256,44 @@ export function handleEndTurn(state: GameState): GameState {
     }
     
     newState.currentPlayerIndex = nextPlayerIndex;
+    
+    // --- Pre-Turn Passive Abilities for NEW Player ---
+     if (nextPlayer.passiveAbilities.explorer) {
+        const occupiedIslands = new Set<string>();
+        nextPlayer.armies.forEach((army: Army) => {
+            const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
+            occupiedIslands.add(tile.id);
+        });
+        const vpGained = occupiedIslands.size;
+        if (vpGained > 0) {
+            nextPlayer.victoryPoints += vpGained;
+            newState.log.push(`${nextPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
+        }
+    }
+    
+    if (nextPlayer.passiveAbilities.collector) {
+        let resourcesCollected: Partial<Record<string, number>> = {};
+        const occupiedIslands = new Set<string>();
+        
+        nextPlayer.armies.forEach((army: Army) => {
+            const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
+            if (occupiedIslands.has(tile.id)) return;
+            
+            if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0) {
+                occupiedIslands.add(tile.id);
+                tile.resources.forEach((resource: { type: string; }) => {
+                    nextPlayer.resources[resource.type] += 1;
+                    resourcesCollected[resource.type] = (resourcesCollected[resource.type] || 0) + 1;
+                });
+            }
+        });
+
+        const collectedStrings = Object.entries(resourcesCollected).map(([type, amount]) => `${amount} ${type}`);
+        if(collectedStrings.length > 0) {
+            newState.log.push(`${nextPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`);
+        }
+    }
+
     
     // Auto-select army if the next player has only one
     if (nextPlayer.armies.length === 1) {

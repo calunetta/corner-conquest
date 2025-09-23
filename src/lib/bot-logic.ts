@@ -180,7 +180,7 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
             
             // Prioritize exploring unrevealed tiles
             if (state.settings.fogOfWar && !botPlayer.revealedTiles.includes(targetTile.id)) {
-                priority = 5;
+                priority = 6;
             } 
             // Prioritize moving to unoccupied resource islands
             else if ((targetTile.type === IslandType.Resource || targetTile.type === IslandType.Base) && targetTile.resources.length > 0 && targetTile.occupants.length === 0 && !targetTile.monsters) {
@@ -209,10 +209,10 @@ export async function takeBotTurn(initialState: GameState): Promise<GameState> {
         possibleActions.sort((a, b) => b.priority - a.priority);
         const bestAction = possibleActions[0];
         console.log(`Bot: Choosing action '${bestAction.name}' with priority ${bestAction.priority}`);
-        const nextState = bestAction.execute(state);
-        if (nextState) {
+        const result = bestAction.execute(state);
+        if (result) {
             // End the turn after a successful action
-            return handleEndTurn(nextState);
+            return handleEndTurn(result);
         }
     }
     

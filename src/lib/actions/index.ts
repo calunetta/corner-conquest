@@ -6,7 +6,7 @@ import { GameAction } from '@/lib/types';
 import { handleAttackAction, handleSelectDefender, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
 import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleBuyAbility, handleUseProductiveCard, handleRollOnSpecialIsland, handleCloseSpecialIslandDialog } from './card';
 import { handleMoveAction } from './movement';
-import { handleDeployAction, handleUpgradeAction, handleEndTurn, handlePlayerExit, handleConfirmHostLeave } from './player';
+import { handleDeployAction, handleUpgradeAction, handleEndTurn, handlePlayerExit, handleConfirmHostLeave, handleCancelAction } from './player';
 import { handlePositionAction, handleSelectResourceForPosition } from './resource';
 
 interface HandleActionParams {
@@ -17,69 +17,92 @@ interface HandleActionParams {
 
 export { handlePlayerExit, handleConfirmHostLeave };
 
-export function handleGameAction({ action, gameState, payload }: HandleActionParams): GameState {
+export function handleGameAction({ action, gameState, payload }: HandleActionParams): ActionHandlerResult {
+
+    let newState: GameState = gameState;
+    let uiResult = null;
 
     switch(action) {
         // Player actions
         case GameAction.Deploy:
-            return handleDeployAction(gameState);
+            newState = handleDeployAction(gameState);
+            break;
         case GameAction.Upgrade:
-            return handleUpgradeAction(gameState);
+            newState = handleUpgradeAction(gameState);
+            break;
         case GameAction.EndTurn:
-            return handleEndTurn(gameState);
+            newState = handleEndTurn(gameState);
+            break;
+        case GameAction.CancelAction:
+            newState = handleCancelAction(gameState);
+            break;
 
         // Resource actions
         case GameAction.Position:
-            return handlePositionAction(gameState, payload.army);
+            ({ newState, ...uiResult } = handlePositionAction(gameState, payload.army));
+            break;
         case GameAction.SelectResourcePosition:
-            return handleSelectResourceForPosition(gameState, payload.resource, payload.army);
+            ({ newState, ...uiResult } = handleSelectResourceForPosition(gameState, payload.resource, payload.army));
+            break;
         
         // Movement Actions
         case GameAction.Move:
-            return handleMoveAction(gameState, payload.x, payload.y, payload.army);
-        case GameAction.Teleport:
-            // This case might be simplified if teleport state is handled locally
-             return gameState; 
+            newState = handleMoveAction(gameState, payload.x, payload.y, payload.army);
+            break;
 
         // Attack actions
         case GameAction.Attack:
-            return handleAttackAction(gameState, payload.army);
+            ({ newState, ...uiResult } = handleAttackAction(gameState, payload.army));
+            break;
         case GameAction.SelectDefender:
-            return handleSelectDefender(gameState, payload.defenderArmyId, payload.attackingArmyId);
+            newState = handleSelectDefender(gameState, payload.defenderArmyId, payload.attackingArmyId);
+            break;
         case GameAction.CombatRoll:
-            return handleCombatRoll(gameState, payload.useWarChief, payload.army);
+            newState = handleCombatRoll(gameState, payload.useWarChief, payload.army);
+            break;
         case GameAction.CloseCombat:
-            return handleCloseCombat(gameState);
+            ({newState, ...uiResult} = handleCloseCombat(gameState));
+            break;
         case GameAction.MonsterCombatRoll:
-            return handleMonsterCombatRoll(gameState, payload, payload.army);
+            newState = handleMonsterCombatRoll(gameState, payload, payload.army);
+            break;
         case GameAction.CloseMonsterCombat:
-            return handleCloseMonsterCombat(gameState);
+            ({newState, ...uiResult} = handleCloseMonsterCombat(gameState, payload.army));
+            break;
 
         // Card actions
         case GameAction.BuyCard:
-            return handleBuyCardAction(gameState);
+            newState = handleBuyCardAction(gameState);
+            break;
         case GameAction.UseCard:
-             // The initial card use action might just set a local state.
-             // The actual effect is a separate shared action.
-            return handleUseCard(gameState, payload.cardName);
+            newState = handleUseCard(gameState, payload.cardName);
+            break;
         case GameAction.UseProductiveCard:
-            return handleUseProductiveCard(gameState, payload.selectedResource);
+            newState = handleUseProductiveCard(gameState, payload.selectedResource);
+            break;
         case GameAction.SabotagePlayer:
-            return handleSabotagePlayer(gameState, payload.targetPlayerId);
+            newState = handleSabotagePlayer(gameState, payload.targetPlayerId);
+            break;
         case GameAction.GainWealth:
-            return handleGainWealth(gameState, payload.resource);
+            newState = handleGainWealth(gameState, payload.resource);
+            break;
         case GameAction.StealResource:
-            return handleStealResource(gameState, payload);
+            newState = handleStealResource(gameState, payload);
+            break;
         case GameAction.RollOnSpecialIsland:
-            return handleRollOnSpecialIsland(gameState);
+            newState = handleRollOnSpecialIsland(gameState);
+            break;
         case GameAction.CloseSpecialIslandDialog:
-            return handleCloseSpecialIslandDialog(gameState);
+            newState = handleCloseSpecialIslandDialog(gameState);
+            break;
         
         // Abilities Shop
         case GameAction.BuyAbility:
-            return handleBuyAbility(gameState, payload.abilityName);
+            newState = handleBuyAbility(gameState, payload.abilityName);
+            break;
 
         default:
-            return gameState;
+            return { state: gameState, ui: null };
     }
+    return { state: newState, ui: uiResult };
 }

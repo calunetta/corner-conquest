@@ -68,8 +68,8 @@ export function GameDialogs({
                     gameState={gameState} 
                     monsters={gameState.map[gameState.monsterCombatState.attackerPosition.y * gameState.settings.gridSize.cols + gameState.monsterCombatState.attackerPosition.x].monsters || []}
                     onRoll={(payload) => handleSharedAction(GameAction.MonsterCombatRoll, { ...payload, army: localPlayer.armies.find(a => a.position.x === gameState.monsterCombatState?.attackerPosition.x && a.position.y === gameState.monsterCombatState?.attackerPosition.y)})}
-                    onClose={() => handleSharedAction(GameAction.CloseMonsterCombat)}
-                    onCancel={() => {}}
+                    onClose={() => handleSharedAction(GameAction.CloseMonsterCombat, { army: localPlayer.armies.find(a => a.position.x === gameState.monsterCombatState?.attackerPosition.x && a.position.y === gameState.monsterCombatState?.attackerPosition.y)})}
+                    onCancel={() => handleSharedAction(GameAction.CancelAction)}
                 />
             )}
 
@@ -101,7 +101,7 @@ export function GameDialogs({
                     state={gameState.armySelectionDialogState}
                     player={localPlayer}
                     onSelectArmy={(armyId) => handleSharedAction(GameAction.SelectArmy, { armyId })}
-                    onClose={() => {}}
+                    onClose={() => handleSharedAction(GameAction.CancelAction)}
                     isMyTurn={isMyTurn}
                 />
             )}
@@ -110,7 +110,7 @@ export function GameDialogs({
                 <AttackSelectionDialog
                     state={gameState.attackSelectionDialogState}
                     onSelectTarget={(defenderArmyId) => handleSharedAction(GameAction.SelectDefender, { defenderArmyId, attackingArmyId: gameState.attackSelectionDialogState!.attackingArmyId })}
-                    onClose={() => {}}
+                    onClose={() => handleSharedAction(GameAction.CancelAction)}
                     isMyTurn={isMyTurn}
                 />
             )}
@@ -146,14 +146,14 @@ export function GameDialogs({
                 <SabotageDialog
                     players={gameState.players.filter(p => p.id !== gameState.currentPlayerIndex)}
                     onSabotage={(targetPlayerId) => handleSharedAction(GameAction.SabotagePlayer, { targetPlayerId })}
-                    onClose={() => {}}
+                    onClose={() => handleSharedAction(GameAction.CancelAction)}
                 />
             )}
 
             {gameState.wealthyDialogState?.isOpen && (
                 <WealthyDialog
                     onSelectResource={(resource) => handleSharedAction(GameAction.GainWealth, { resource })}
-                    onClose={() => {}}
+                    onClose={() => handleSharedAction(GameAction.CancelAction)}
                 />
             )}
         </>
@@ -164,6 +164,7 @@ export function GameDialogs({
           player={playerForCardsDialog}
           onClose={onCloseCardsDialog}
           onUseCard={(cardName: CardName) => {
+            // Using a card is a local action initially
             handleSharedAction(GameAction.UseCard, { cardName });
             onCloseCardsDialog();
           }}
