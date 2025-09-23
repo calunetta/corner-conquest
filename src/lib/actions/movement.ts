@@ -11,6 +11,7 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
     
     const currentPlayer = state.players[state.currentPlayerIndex];
     
+    // An army that has acted can only move if the player has an Extra Move available.
     if (army.hasActed && !currentPlayer.hasExtraMove) {
         return [];
     }
@@ -113,9 +114,9 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         return { newState, selectedArmyId: army.id };
     }
     
-    if (player.hasExtraMove) {
-        player.hasExtraMove = false; 
-        newState.log.push(`${player.name} used their Extra Move!`);
+    if (army.hasActed && player.hasExtraMove) {
+        player.hasExtraMove = false;
+        newState.log.push(`${player.name} used their Extra Move on an army that has already acted.`);
     } else {
         army.hasActed = true;
     }
@@ -162,7 +163,7 @@ export function handleTileClick(
     
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
 
-    if (currentSelectedArmy && isPossibleMove) {
+    if (currentSelectedArmy && isPossibleMove && !teleportState) {
         const moveResult = handleMoveAction(newState, x, y, currentSelectedArmy);
         if (moveResult.selectedArmyId === null) {
             return { newState: moveResult.newState, selectedArmyId: null, selectedTile: null, possibleMoves: [], currentAction: null };
@@ -299,3 +300,5 @@ export function handleScout(state: GameState, x: number, y: number): GameState {
     }
     return newState;
 }
+
+    

@@ -155,10 +155,10 @@ The application ensures that every player has a unique username.
 - **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, if `Debug Mode` is enabled, the human player starts with one of every available Special Card.
 - **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
 - **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog.
-- **Extra Move:** This card provides a flexible move action.
+- **Extra Move:** This card provides a flexible move action. The effect is consumed for the turn once used.
     - If used on an army that has **not yet acted** this turn, it allows that army to move. After the move, the army is still considered "fresh" and can perform a subsequent action (like Attack or Position).
     - If used on an army that **has already acted**, it allows that army to perform one final move action. After this move, the army's turn is over.
-- **Teleport:** Initiates a two-step action. First, select an army. Second, select *any* tile on the map to move it to. Using this card will automatically deselect any currently selected army, forcing the player to choose the army they wish to teleport.
+- **Teleport:** Initiates a two-step action. Using this card will automatically deselect any currently selected army, forcing the player to choose the army they wish to teleport. First, select an army. Second, select *any* tile on the map to move it to.
 - **Scout:** Initiates a multi-step action where the player can click on 3 different hidden tiles to reveal them. This action does not involve any army movement and does not select an army. Because no army moves, no Victory Points are awarded for island discovery during a scout action.
 - **Sabotage:** Opens a dialog to choose an opponent. That opponent will miss their next turn.
 - **Reinforce:** The player's next `Deploy` action this turn is free. The card is only consumed upon a successful deployment.
@@ -188,9 +188,9 @@ The application ensures that every player has a unique username.
 #### 5.3.3. Visual Feedback
 - **Selected Army:** The tile of a selected army gets a prominent glowing shadow (`shadow-2xl shadow-primary/80`).
 - **Player-Owned Tiles:** Tiles occupied by the local player's armies have a subtle, color-coded glow (`shadow-blue-500/50`, `shadow-red-500/50`, etc.) for easy identification.
-- **Possible Moves:** Valid move destinations for a selected army are highlighted with a subtle yellow glow (`shadow-lg shadow-accent/40`).
-- **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a glowing purple shadow (`shadow-lg shadow-purple-500/40`) to indicate they are valid destinations.
-- **Scout Action:** When `Scout` is active, all hidden tiles are highlighted with a glowing blue shadow (`shadow-lg shadow-blue-500/40`) to indicate they can be revealed.
+- **Possible Moves:** Valid move destinations for a selected army are highlighted with a subtle yellow glow (`shadow-lg shadow-accent/20`).
+- **Teleport Action:** When `Teleport` is active, all tiles on the map are highlighted with a glowing purple shadow (`shadow-lg shadow-purple-500/30`) to indicate they are valid destinations.
+- **Scout Action:** When `Scout` is active, all hidden tiles are highlighted with a glowing blue shadow (`shadow-lg shadow-blue-500/30`) to indicate they can be revealed.
 - **Fog of War Indicator:** When Fog of War is active, undiscovered islands display a '?' icon (`HelpCircle` from lucide-react) instead of their true contents. This is rendered in `IslandTile.tsx`.
 - **Animations & Scenery:**
     - Game sprites (armies, monsters, death animations) are animated GIFs located in `public/sprites/`. The specific sprites for each player's army are defined in `src/lib/player-data.ts`. The castle base sprites are high-quality PNGs.
@@ -294,3 +294,5 @@ This section details the project's build and styling setup. Changes to these fil
     -   `backgroundImage`: Custom patterns for water and terrain textures.
     -   `fontFamily`: A custom font, `Lilita One`, for body and headline text.
     -   `plugins`: `tailwindcss-animate` is included for keyframe animations.
+
+    
