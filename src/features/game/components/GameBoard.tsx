@@ -67,7 +67,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   
   useEffect(() => {
     if (gameState?.autoSelectArmyFor?.playerId === localPlayer?.id) {
-        setSelectedArmyId(gameState.autoSelectArmyFor.armyId);
+        if (gameState && gameState.autoSelectArmyFor) {
+            setSelectedArmyId(gameState.autoSelectArmyFor.armyId);
+        }
         // We need to clear this from the state so it doesn't re-trigger on every render
         setGameState((gs: GameState | null) => gs ? { ...gs, autoSelectArmyFor: null } : null);
     } else if (!isMyTurn) {
@@ -77,7 +79,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setCurrentAction(null);
         setCardsDialogPlayerId(null);
     }
-  }, [isMyTurn, gameState?.turn, gameState?.currentPlayerIndex, gameState?.autoSelectArmyFor, localPlayer?.id, setGameState]);
+  }, [isMyTurn, gameState, localPlayer?.id, setGameState]);
   
   useEffect(() => {
     if (selectedArmy && gameState && isMyTurn) {
