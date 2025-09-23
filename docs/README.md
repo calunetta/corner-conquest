@@ -94,7 +94,7 @@ The game is played on a grid of islands. Each player starts at their **Base** in
 - **Special Islands:** Discovering these grants the player a random Special Card. On subsequent landings on the same island, a dialog appears prompting the player to roll a die. On a roll of 3 or 6, they receive another card.
 
 ### 4.3. Resources & Progression
-- **Wheat:** Used to **Deploy** new armies. The cost increases with each new army.
+- **Wheat:** Used to **Deploy** new armies. The cost increases with each new new army.
 - **Iron:** Used to **Upgrade** the Attack Power of all your armies permanently.
 - **Gems:** Used to **Buy Special Cards** or purchase permanent **Passive Abilities**.
 
@@ -233,7 +233,7 @@ The application is designed to be fully responsive, with key adjustments made fo
     -   To improve performance and reduce visual clutter on smaller screens, the decorative rocks in the water background are disabled on the mobile version.
 
 -   **Starting a Game:**
-    -   The "Start Game" button's location is consistent across both mobile and desktop. When in a "waiting" lobby, it appears in the header area at the top of the screen. It is only visible to the game's host and only appears once at least one other player has joined.
+    -   The "Start Game" button's location is consistent across both mobile and desktop. When in a "waiting" lobby, it appears in the header area at the top of the screen. It is only visible to the game's host and only appears once at least one other player has joined. When the game starts, this header is hidden.
 
 ## 6. Bot Logic
 The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priority-based system to make decisions.
@@ -264,4 +264,3 @@ This section details the project's build and styling setup. Changes to these fil
     -   `backgroundImage`: Custom patterns for water and terrain textures.
     -   `fontFamily`: A custom font, `Lilita One`, for body and headline text.
     -   `plugins`: `tailwindcss-animate` is included for keyframe animations.
-```

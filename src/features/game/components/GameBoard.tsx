@@ -351,7 +351,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen} className="w-full">
                 <div className="flex items-center justify-between rounded-md bg-muted/50 p-2">
                     <div className='flex items-center gap-4'>
-                        {status !== 'waiting' && <Button variant="outline" size="icon" onClick={handleExitClick} disabled={isExiting}>
+                        {status === 'playing' && <Button variant="outline" size="icon" onClick={handleExitClick} disabled={isExiting}>
                             {isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft />}
                         </Button>}
                         <h2 className="text-base font-semibold sm:text-lg">Player Information</h2>
