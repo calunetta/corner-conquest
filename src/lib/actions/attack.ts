@@ -1,7 +1,7 @@
 
 import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult, ResourceType, IslandResource, Player } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
-import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
+import { canArmyPerformAnyAction } from './player';
 import { GameAction, IslandType, MAP_COLS, ResourceType as ResourceTypeEnum } from '../types';
 import { cloneDeep } from 'lodash';
 
@@ -16,8 +16,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
     const currentTile = map[selectedArmy.position.y * MAP_COLS + selectedArmy.position.x];
     const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
     
-    // DO NOT set hasActed here. The action is only committed when the dice are rolled.
-
+    // This action does NOT set hasActed. That happens upon dice roll.
     if (otherPlayersOccupants.length > 0) {
         const defenderPlayerId = otherPlayersOccupants[0].playerId;
         const defendingPlayer = players.find(p => p.id === defenderPlayerId);
@@ -107,9 +106,10 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean): GameSt
     const defender = players.find(p => p.id === combatState.defenderId);
     if(!defender) return state;
 
+    // The action is now committed. Set hasActed on the army.
     const attackingArmy = attacker.armies.find(a => a.id === combatState.attackingArmyId);
     if (attackingArmy) {
-        attackingArmy.hasActed = true; // Commit the action
+        attackingArmy.hasActed = true;
     }
 
     let attackerBonusPower = 0;
@@ -144,7 +144,8 @@ export function handleCloseCombat(state: GameState): GameState {
     let newState = cloneDeep(state);
     const { combatState, players, map, baseTiles } = newState;
     if (!combatState || combatState.phase !== 'results' || combatState.winnerId === null) {
-        return { ...newState, combatState: null };
+        newState.combatState = null;
+        return newState;
     }
     
     const { winnerId, attackerId, defenderId, attackingArmyId, defendingArmyId } = combatState;
@@ -154,7 +155,10 @@ export function handleCloseCombat(state: GameState): GameState {
     
     const attackingArmy = players.find(p=>p.id === attackerId)?.armies.find(a => a.id === attackingArmyId);
 
-    if (!attackingArmy) return { ...newState, combatState: null };
+    if (!attackingArmy) {
+        newState.combatState = null;
+        return newState;
+    }
     
     const combatTile = map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
 
@@ -213,7 +217,7 @@ export function handleCloseCombat(state: GameState): GameState {
     newState.log.push(`${winner.name} defeated ${loser.name} in battle!`);
     newState.combatState = null;
     
-    return checkAndEndTurnIfNoActions(newState);
+    return newState;
 }
 
 export function handleMonsterCombatRoll(state: GameState, payload: {monster: Monster; useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean}): GameState {
@@ -314,7 +318,8 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
     let newState = cloneDeep(state);
     const { monsterCombatState, baseTiles, settings } = newState;
     if (!monsterCombatState || monsterCombatState.phase !== 'results') {
-        return { ...newState, monsterCombatState: null };
+        newState.monsterCombatState = null;
+        return newState;
     }
     
     const { winnerId, monster, attackerId, attackerPosition } = newState.monsterCombatState;
@@ -364,9 +369,6 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
             newState.log.push(`The defeated monster revealed new resources on the island: ${resourceNames}!`);
         }
         
-        newState.monsterCombatState = null;
-        return checkAndEndTurnIfNoActions(newState);
-
     } else {
         newState.log.push(`${attacker.name} was defeated by the ${monster.name}!`);
         const baseTile = baseTiles.find(t => t.owner === attacker.id);
@@ -388,5 +390,5 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
     }
 
     newState.monsterCombatState = null;
-    return checkAndEndTurnIfNoActions(newState);
+    return newState;
 }

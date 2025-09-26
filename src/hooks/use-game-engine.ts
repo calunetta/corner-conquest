@@ -21,7 +21,9 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     try {
         const gameDocRef = doc(db, 'games', gameId);
         
-        const currentState = gameStateRef.current ?? await getDoc(gameDocRef).then(d => d.data() as GameState);
+        // Always get the latest state from the server for a transaction
+        const serverDoc = await getDoc(gameDocRef);
+        const currentState = serverDoc.data() as GameState;
         
         if (!currentState) {
              console.error("Could not fetch current game state to perform an update.");

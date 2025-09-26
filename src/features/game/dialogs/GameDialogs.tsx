@@ -18,6 +18,7 @@ import { SpecialIslandRollDialog } from './SpecialIslandRollDialog';
 
 type GameDialogsProps = {
   gameState: GameState;
+  serverGameState: GameState;
   localPlayer: Player;
   isMyTurn: boolean;
   onAction: (action: GameAction, payload?: any) => Promise<void>;
@@ -49,6 +50,7 @@ type GameDialogsProps = {
 
 export function GameDialogs({ 
     gameState, 
+    serverGameState,
     localPlayer, 
     isMyTurn, 
     onAction,
@@ -75,13 +77,14 @@ export function GameDialogs({
     specialIslandRollDialog,
     onCloseSpecialIslandRollDialog,
 }: GameDialogsProps) {
+
+  // Use server state for shared dialogs to ensure all players see the same thing
   const { 
     combatState, 
-    players,
     monsterCombatState,
-  } = gameState;
+  } = serverGameState;
   
-  const playerForCardsDialog = cardsDialogPlayerId !== null ? players.find(p => p.id === cardsDialogPlayerId) : null;
+  const playerForCardsDialog = cardsDialogPlayerId !== null ? gameState.players.find(p => p.id === cardsDialogPlayerId) : null;
   const isViewingOwnCards = playerForCardsDialog?.id === localPlayer.id;
 
   return (
@@ -89,8 +92,8 @@ export function GameDialogs({
       {/* SHARED DIALOGS (visible to multiple players) */}
       {combatState && (
         <CombatDialog
-          gameState={gameState}
-          onRoll={(useWarChief) => onAction(GameAction.CombatRoll, { useWarChief, army: localPlayer.armies.find(a => a.id === combatState.attackingArmyId) })}
+          gameState={serverGameState}
+          onRoll={(useWarChief) => onAction(GameAction.CombatRoll, { useWarChief })}
           onClose={() => onAction(GameAction.CloseCombat)}
           isMyTurn={isMyTurn}
           localPlayerId={localPlayer.id}
@@ -99,8 +102,8 @@ export function GameDialogs({
 
       {monsterCombatState && (
           <MonsterCombatDialog 
-              gameState={gameState} 
-              monsters={gameState.map[monsterCombatState.attackerPosition.y * gameState.settings.gridSize.cols + monsterCombatState.attackerPosition.x].monsters || []}
+              gameState={serverGameState} 
+              monsters={serverGameState.map[monsterCombatState.attackerPosition.y * serverGameState.settings.gridSize.cols + monsterCombatState.attackerPosition.x].monsters || []}
               onRoll={(payload) => onAction(GameAction.MonsterCombatRoll, payload)}
               onClose={() => onAction(GameAction.CloseMonsterCombat)}
               onCancel={() => onLocalAction(GameAction.local_CancelAction)}
@@ -108,9 +111,9 @@ export function GameDialogs({
       )}
 
       {/* LOCAL DIALOGS (visible only to the current player) */}
-
+      {isMyTurn && (
         <>
-            {productiveCardDialog?.isOpen && isMyTurn && (
+            {productiveCardDialog?.isOpen && (
                 <ProductiveCardDialog
                     state={productiveCardDialog}
                     onConfirm={(selectedResource) => {
@@ -120,7 +123,7 @@ export function GameDialogs({
                 />
             )}
 
-            {specialIslandRollDialog?.isOpen && isMyTurn && (
+            {specialIslandRollDialog?.isOpen && (
               <SpecialIslandRollDialog
                 state={specialIslandRollDialog}
                 onRoll={() => onAction(GameAction.RollOnSpecialIsland)}
@@ -131,7 +134,7 @@ export function GameDialogs({
               />
             )}
 
-            {positionDialog && isMyTurn &&(
+            {positionDialog && (
                 <PositionDialog 
                     resources={positionDialog.resources}
                     onSelect={(resource) => {
@@ -143,7 +146,7 @@ export function GameDialogs({
                 />
             )}
 
-            {armySelectionDialog && isMyTurn && (
+            {armySelectionDialog && (
                 <ArmySelectionDialog
                     state={armySelectionDialog}
                     player={localPlayer}
@@ -153,7 +156,7 @@ export function GameDialogs({
                 />
             )}
 
-            {attackSelectionDialog && isMyTurn && (
+            {attackSelectionDialog && (
                 <AttackSelectionDialog
                     state={attackSelectionDialog}
                     onSelectTarget={(defenderArmyId: number) => {
@@ -170,9 +173,9 @@ export function GameDialogs({
                 />
             )}
 
-            {abilitiesShopOpen && isMyTurn &&(
+            {abilitiesShopOpen && (
                 <AbilitiesDialog
-                    player={localPlayer}
+                    player={gameState.players[gameState.currentPlayerIndex]}
                     onClose={onCloseAbilitiesShop}
                     onBuyAbility={(abilityName) => onAction(GameAction.BuyAbility, { abilityName })}
                     gameState={gameState}
@@ -180,9 +183,9 @@ export function GameDialogs({
                 />
             )}
 
-            {stealResourceDialog?.isOpen && isMyTurn && (
+            {stealResourceDialog?.isOpen && (
                 <StealResourceDialog
-                    players={players.filter(p => p.id !== localPlayer.id)}
+                    players={gameState.players.filter(p => p.id !== localPlayer.id)}
                     onSteal={(target, resource) => {
                         onAction(GameAction.StealResource, {targetPlayerId: target, resource: resource});
                         onCloseStealResourceDialog();
@@ -191,9 +194,9 @@ export function GameDialogs({
                 />
             )}
 
-            {sabotageDialog?.isOpen && isMyTurn && (
+            {sabotageDialog?.isOpen && (
                 <SabotageDialog
-                    players={players.filter(p => p.id !== localPlayer.id)}
+                    players={gameState.players.filter(p => p.id !== localPlayer.id)}
                     onSabotage={(targetPlayerId) => {
                         onAction(GameAction.SabotagePlayer, { targetPlayerId });
                         onCloseSabotageDialog();
@@ -202,7 +205,7 @@ export function GameDialogs({
                 />
             )}
 
-            {wealthyDialog?.isOpen && isMyTurn && (
+            {wealthyDialog?.isOpen && (
                 <WealthyDialog
                     onSelectResource={(resource) => {
                         onAction(GameAction.GainWealth, { resource });
@@ -212,6 +215,7 @@ export function GameDialogs({
                 />
             )}
         </>
+      )}
       
       {playerForCardsDialog && (
         <CardsDialog 
