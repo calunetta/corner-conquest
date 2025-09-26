@@ -147,7 +147,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     // These actions MUST be synchronized in real-time
     const serverActions = [
         GameAction.CombatRoll, GameAction.CloseCombat, GameAction.MonsterCombatRoll, 
-        GameAction.CloseMonsterCombat, GameAction.EndTurn, GameAction.SelectDefender, GameAction.Attack
+        GameAction.CloseMonsterCombat, GameAction.EndTurn, GameAction.SelectDefender, GameAction.Attack,
+        GameAction.CancelAction
     ];
     
     if (!isMyTurn && !serverActions.includes(action)) {
@@ -158,11 +159,20 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     try {
         setIsPerformingAction(true);
         
-        // If it's a server action, send it to Firebase immediately.
-        if (serverActions.includes(action)) {
-            const result = await setServerGameState(gs => handleGameAction({ action, gameState: gs, payload }));
-            if (result?.newAttackSelectionDialogState) {
-                setAttackSelectionDialog(result.newAttackSelectionDialogState);
+        // If it's a server action or an end-of-turn action, send it to Firebase.
+        if (serverActions.includes(action) || action === GameAction.EndTurn) {
+            let stateToUpdate = action === GameAction.EndTurn ? localGameState : serverGameState;
+            if (!stateToUpdate) {
+                console.warn("Attempted to end turn with no local state. Using server state as fallback.");
+                stateToUpdate = serverGameState;
+            }
+            if (!stateToUpdate) {
+                 throw new Error("No game state available to process the action.");
+            }
+            const result = await setServerGameState(gs => handleGameAction({ action, gameState: action === GameAction.EndTurn ? stateToUpdate : gs, payload }));
+            
+            if (result?.ui?.newAttackSelectionDialogState) {
+                setAttackSelectionDialog(result.ui.newAttackSelectionDialogState);
             }
             if(action === GameAction.EndTurn) {
                 setLocalGameState(null); // Clear local state after committing turn
@@ -186,7 +196,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     } finally {
         setIsPerformingAction(false);
     }
-  }, [isPerformingAction, isMyTurn, toast, setServerGameState, localGameState]);
+  }, [isPerformingAction, isMyTurn, toast, setServerGameState, localGameState, serverGameState]);
 
 
   const handleLocalAction = useCallback((action: GameAction, payload?: any) => {
@@ -522,8 +532,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 <ActionsPanel 
                     onAction={onAction}
                     onLocalAction={handleLocalAction}
-                    localPlayer={gameState.players.find(p => p.id === localPlayer.id)!}
-                    gameState={gameState} 
+                    localPlayer={gameStateForDisplay.players.find(p => p.id === localPlayer.id)!}
+                    gameState={gameStateForDisplay} 
                     isMyTurn={isMyTurn && status === 'playing'}
                     timeLeft={timeLeft}
                     turnDuration={TURN_DURATION}
