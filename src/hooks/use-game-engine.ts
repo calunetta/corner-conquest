@@ -1,9 +1,11 @@
 
+'use client';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { db, doc, onSnapshot, getDoc, updateDoc } from '@/lib/firebase';
 import type { GameState, ActionHandlerResult } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
+import { takeBotTurn } from '@/lib/bot-logic';
 
 export function useGameEngine(gameId: string, playerId: string | null) {
   const [gameState, setInternalGameState] = useState<GameState | null>(null);
@@ -155,6 +157,18 @@ export function useGameEngine(gameId: string, playerId: string | null) {
 
     return () => animationTimers.forEach(clearTimeout);
   }, [gameState?.deathAnimations, isHost, setGameState]);
+  
+  // Host is responsible for triggering bot turns
+  useEffect(() => {
+    if (isHost && gameState && gameState.players[gameState.currentPlayerIndex]?.isBot) {
+        const botTurnTimeout = setTimeout(() => {
+            takeBotTurn(gameState);
+        }, 1000); // 1 second delay for bot to "think"
+        
+        return () => clearTimeout(botTurnTimeout);
+    }
+  }, [gameState, isHost]);
+
 
   return { gameState, setGameState, isMyTurn, localPlayer, isHost, isLoading, globallyRevealedTiles };
 }

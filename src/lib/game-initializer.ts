@@ -4,7 +4,6 @@ import { CardName, HAND_LIMIT } from './types';
 import { BASE_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
 import { IslandType, ResourceType, PlayerColor, MonsterName, GameStatus, AbilityName, MAP_COLS, MAP_ROWS } from './types';
-import { takeBotTurn } from './bot-logic';
 
 export const defaultGameSettings: GameSettings = {
     victoryPointGoal: 30,
@@ -308,11 +307,6 @@ export function startGame(gameState: GameState, starterName: string): GameState 
     newState.status = GameStatus.Playing;
     newState.turn = 1;
     newState.log.push(`${starterName} started the game! It's now ${newState.players[0].name}'s turn.`);
-    
-    const currentPlayer = newState.players[newState.currentPlayerIndex];
-    if (currentPlayer.isBot) {
-        setTimeout(() => takeBotTurn(newState), 1000);
-    }
     
     return newState;
 }

@@ -3,7 +3,6 @@ import type { GameState, Player, Army, CardName, ActionHandlerResult, IslandReso
 import { db, doc, deleteDoc, writeBatch, getDoc, arrayUnion, runTransaction } from '@/lib/firebase';
 import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum, GameStatus } from '../types';
 import { getPossibleMoves } from './movement';
-import { takeBotTurn } from '../bot-logic';
 import { cloneDeep } from 'lodash';
 
 export function handleCancelAction(state: GameState): GameState {
@@ -312,10 +311,6 @@ export function handleEndTurn(state: GameState): GameState {
     
     newState.combatState = null;
     newState.monsterCombatState = null;
-
-    if (nextPlayer.isBot) {
-        setTimeout(() => takeBotTurn(newState), 1000);
-    }
 
     return newState;
 }
