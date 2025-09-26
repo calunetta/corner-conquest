@@ -31,13 +31,13 @@ export function handleCancelAction(state: GameState): GameState {
 
 export function canArmyPerformAnyAction(state: GameState, army: Army): boolean {
     const player = state.players[state.currentPlayerIndex];
-    if (player.id !== state.currentPlayerIndex) return false;
+    if (!player || player.id !== state.currentPlayerIndex) return false;
 
     // Use the now-correct getPossibleMoves function. If it returns any moves, the army can act.
     if (getPossibleMoves(state, army).length > 0) return true;
     
     // An army that has acted can't do anything else, unless an extra move is available (which is handled by getPossibleMoves).
-    if (army.hasActed) return false;
+    if (army.hasActed && !player.hasExtraMove) return false;
 
     const tile = state.map[army.position.y * MAP_COLS + army.position.x];
 
@@ -231,24 +231,27 @@ export function handleEndTurn(state: GameState): GameState {
         newState.currentPlayerIndex = 0;
     }
     
-    let outgoingPlayer = newState.players[newState.currentPlayerIndex];
-    
-    outgoingPlayer.hasExtraMove = false;
-    outgoingPlayer.efficientActive = false;
-    outgoingPlayer.masterBuilderActive = false;
-    outgoingPlayer.reinforceActive = false;
-    outgoingPlayer.armies.forEach((army: Army) => army.hasActed = false);
-    outgoingPlayer.actionsThisTurn = [];
-
+    // --- Start of a new turn ---
     let nextPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
-    
     newState.currentPlayerIndex = nextPlayerIndex;
     let nextPlayer = newState.players[nextPlayerIndex];
 
+    // Reset all temporary flags and army statuses for the *new* current player
+    nextPlayer.armies.forEach((army: Army) => army.hasActed = false);
+    nextPlayer.actionsThisTurn = [];
+    nextPlayer.hasExtraMove = false;
+    nextPlayer.efficientActive = false;
+    nextPlayer.masterBuilderActive = false;
+    nextPlayer.reinforceActive = false;
+    
     if (nextPlayer.isSabotaged) {
         nextPlayer.isSabotaged = false; 
         newState.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
-        return handleEndTurn(newState);
+        return handleEndTurn(newState); // Immediately recurse to the next player's turn
+    }
+    
+    if (newState.currentPlayerIndex === 0) {
+      newState.turn += 1;
     }
     
     // --- Pre-Turn Passive Abilities for NEW Player ---
@@ -291,9 +294,8 @@ export function handleEndTurn(state: GameState): GameState {
     const hasProductiveCard = nextPlayer.specialCards.includes(CardNameEnum.Productive);
     const positionedArmies = nextPlayer.positions;
 
-    if (positionedArmies.length > 0 && newState.turn > 0) {
+    if (positionedArmies.length > 0) {
         if (hasProductiveCard) {
-            // Let the client handle this via a dialog
             newState.log.push(`${nextPlayer.name}, you have a 'Productive' card. You will be prompted to use it.`);
         } else {
             const collectionResult = applyAutomaticCollection(newState, nextPlayer);
@@ -305,9 +307,6 @@ export function handleEndTurn(state: GameState): GameState {
         }
     }
 
-    if (newState.currentPlayerIndex === 0) {
-      newState.turn += 1;
-    }
     
     newState.log.push(`It's now ${nextPlayer.name}'s turn.`);
     
@@ -394,5 +393,3 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
         console.error("Error leaving game:", error);
     }
 }
-
-    

@@ -120,7 +120,7 @@ The game is played on a grid of islands. Each player starts at their **Base** in
     - If an island has **two** resource types, each type will have a random number of collection spots (either one or two).
 - **Monster Islands:** Inhabited by hostile creatures that must be defeated. When monsters are present, they are rendered with a dynamic idle animation within the `IslandTile` component. Their sprites randomly shift left and right and have a chance to play their `attack` animation to make them feel alive. All monster sprites are animated GIFs. When the last monster on an island is defeated, the island's type changes to `Resource` and it immediately spawns new resources, following the same generation rules as other resource islands. This makes them valuable strategic targets.
 - **Special Islands:** Discovering these grants the player a random Special Card. On subsequent landings on the same island, a dialog appears prompting the player to roll a die. On a roll of 3 or 6, they receive another card.
-- **Island Distribution:** The balance between Resource, Monster, and Special islands is controlled by the `resourceDensity` setting (default 60%). This value roughly corresponds to the probability that a tile will be a resource island. The remaining percentage is split between Monster and Special islands, with Special islands being rarer. The distribution also changes based on distance from the map's center, with more valuable and dangerous islands appearing closer to the middle.
+- **Island Distribution:** The balance between Resource, Monster, and Special islands is controlled by the `resourceDensity` setting (default 60%). This value corresponds to the probability that a tile will be a resource island. The remaining percentage is split between Monster and Special islands, with Special islands being rarer. The distribution also changes based on distance from the map's center, with more valuable and dangerous islands appearing closer to the middle.
 
 ### 5.3. Resources & Progression
 - **Wheat:** Used to **Deploy** new armies. The cost increases with each new new army.
@@ -136,8 +136,9 @@ This section provides a meticulous, step-by-step breakdown of every interaction 
 A player's turn consists of a series of actions. The game automatically ends a player's turn if they have no more possible moves or actions. The core rule is that each army can perform **one** major action per turn (`Attack`, `Position`, or `Move`). This is controlled by the `hasActed` flag on each army object.
 
 1.  **Start of Turn:**
-    - All of the current player's armies have `hasActed: false`.
-    - The player's `actionsThisTurn` array is empty.
+    - When a player's turn begins, the `handleEndTurn` function is called.
+    - This function resets `hasActed` to `false` for all of the **new current player's** armies.
+    - The player's `actionsThisTurn` array is reset to empty.
 
 2.  **Performing an Army Action:**
     - When an army successfully completes a `Move`, `Attack`, or `Position` action, its `hasActed` flag is immediately set to `true`.
@@ -145,7 +146,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
     - The `getPossibleMoves` function will return an empty array `[]` for an army where `hasActed` is `true`.
 
 3.  **End of Turn:**
-    - When the turn passes to the next player, the `handleEndTurn` function resets `hasActed` to `false` for all of the *outgoing* player's armies.
+    - The `hasActed` flags are **not** reset when a player ends their turn. They persist until the start of that player's next turn.
 
 ### 6.2. Army Actions
 
@@ -167,7 +168,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
     -   If there is one monster, the shared `monsterCombatState` is set in `GameState`, and the `MonsterCombatDialog` opens for the attacker.
     -   If there are multiple monsters, a local `MonsterSelectionDialog` opens for the attacker. Upon selection, the shared `monsterCombatState` is set, and the `MonsterCombatDialog` opens.
 4.  **Resolution (Shared):** When the attacker clicks "Roll Dice" in the dialog, the `handleCombatRoll` or `handleMonsterCombatRoll` action is dispatched.
-    -   **The attacking army's `hasActed` flag is immediately set to `true`.**
+    -   **The attacking army's `hasActed` flag is immediately set to `true` upon the dice roll.**
     -   Combat is resolved via dice rolls, updating the `GameState` with the result. This action ends the army's turn.
 
 #### **Move**
@@ -227,7 +228,7 @@ These actions are available once per turn each and do not set the `hasActed` fla
 -   **Extra Move:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.
     2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The card is consumed and the player's `hasExtraMove` flag is set to `true` in `GameState`.
-    3.  **Effect:** This flag allows any one army (even one that has already acted) to perform one `Move` action. The flag is consumed (`false`) after the move is completed. If used on an army that has **not yet acted**, that army remains "fresh" (`hasActed: false`) after the move and can perform a subsequent action (Attack/Position). If used on an army that **has already acted**, it gets to move, and that's its final action.
+    3.  **Effect:** This flag allows any one army to perform one `Move` action. The flag is consumed (`false`) after the move is completed. If used on an army that has **not yet acted**, that army remains "fresh" (`hasActed: false`) after the move and can perform a subsequent action (Attack/Position). If used on an army that **has already acted**, it gets to move, and that's its final action.
 
 -   **Teleport:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.

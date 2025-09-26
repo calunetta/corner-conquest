@@ -126,21 +126,19 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         newState = revealResult.newState;
     } else if (targetTile.type === IslandType.Special) {
         armyInState.hasActed = true;
-        return { state: newState, ui: { specialIslandRoll: { roll: 0, cardDrawn: null } } };
+        return { state: newState, ui: { specialIslandRoll: { roll: null, cardDrawn: null } } };
     }
     
     // Handle "Extra Move" consumption and its effect on hasActed
     if (player.hasExtraMove) {
         player.hasExtraMove = false; // Consume the extra move
         newState.log.push(`${player.name} used their Extra Move on an army.`);
-        // Per README, using Extra Move on an army that has NOT acted does not set its `hasActed` to true.
-        // It remains fresh for a subsequent action.
-        // If the army had already acted, its `hasActed` state just remains true.
-        // Therefore, we only modify `hasActed` if the extra move is NOT being used.
+        // Per README, using Extra Move on an army does not change its `hasActed` status.
+        // It allows a "fresh" army to remain fresh, and an "exhausted" army to move one last time.
+        // Therefore, we explicitly DO NOT change `armyInState.hasActed` here.
     } else {
         armyInState.hasActed = true;
     }
 
     return { state: checkAndEndTurnIfNoActions(newState), ui: null };
 }
-
