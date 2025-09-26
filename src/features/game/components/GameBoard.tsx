@@ -163,16 +163,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         if (serverActions.includes(action) || action === GameAction.EndTurn) {
             let stateToUpdate = action === GameAction.EndTurn ? localGameState : serverGameState;
             if (!stateToUpdate) {
-                console.warn("Attempted to end turn with no local state. Using server state as fallback.");
-                stateToUpdate = serverGameState;
+                console.warn(`Attempted to perform action ${action} with no state available. Aborting.`);
+                return;
             }
-            if (!stateToUpdate) {
-                 throw new Error("No game state available to process the action.");
-            }
-            const result = await setServerGameState(gs => handleGameAction({ action, gameState: action === GameAction.EndTurn ? stateToUpdate : gs, payload }));
+            const result = await setServerGameState(stateToUpdate, (gs) => handleGameAction({ action, gameState: gs, payload }));
             
-            if (result?.ui?.newAttackSelectionDialogState) {
-                setAttackSelectionDialog(result.ui.newAttackSelectionDialogState);
+            if (result?.newAttackSelectionDialogState) {
+                setAttackSelectionDialog(result.newAttackSelectionDialogState);
             }
             if(action === GameAction.EndTurn) {
                 setLocalGameState(null); // Clear local state after committing turn
@@ -368,16 +365,15 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (serverGameState?.status === 'playing') {
         const winner = serverGameState.players.find(p => p.victoryPoints >= serverGameState.settings.victoryPointGoal);
         if (winner && !serverGameState.winner) {
-            setServerGameState(gs => gs ? { ...gs, winner: cloneDeep(winner), status: 'finished' } : null);
+            setServerGameState(serverGameState, (gs) => gs ? { ...gs, winner: cloneDeep(winner), status: 'finished' } : null);
         }
     }
-   }, [serverGameState?.players, serverGameState?.status, serverGameState?.settings.victoryPointGoal, setServerGameState]);
+   }, [serverGameState, setServerGameState]);
    
   const handleStartGame = async () => {
     if (!serverGameState || !isHost) return;
-    const newState = startGame(serverGameState, localPlayer?.name || 'The host');
     toast({ title: "Game Started!", description: "Let the conquest begin!" });
-    await setServerGameState(() => newState);
+    await setServerGameState(serverGameState, (gs) => startGame(gs!, localPlayer?.name || 'The host'));
   };
 
   const handleExitClick = async () => {

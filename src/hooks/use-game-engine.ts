@@ -19,19 +19,13 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     gameStateRef.current = gameState;
   }, [gameState]);
 
-  const setGameState = useCallback(async (updateFn: (gs: GameState | null) => GameState | null | ActionHandlerResult): Promise<any> => {
+  const setGameState = useCallback(async (
+    currentState: GameState, 
+    updateFn: (gs: GameState) => GameState | null | ActionHandlerResult
+  ): Promise<any> => {
     try {
         const gameDocRef = doc(db, 'games', gameId);
         
-        // Always get the latest state from the server for a transaction
-        const serverDoc = await getDoc(gameDocRef);
-        const currentState = serverDoc.data() as GameState;
-        
-        if (!currentState) {
-             console.error("Could not fetch current game state to perform an update.");
-             return null;
-        }
-
         const result = updateFn(currentState);
         
         if (!result) {
@@ -138,25 +132,27 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   
   // Host is responsible for clearing death animations
   useEffect(() => {
-    if (!isHost || !gameState?.deathAnimations || gameState.deathAnimations.length === 0) {
+    if (!isHost || !gameState || !gameState.deathAnimations || gameState.deathAnimations.length === 0) {
         return;
     }
     
     const animations = gameState.deathAnimations;
     const animationTimers = animations.map(anim => 
         setTimeout(() => {
-            setGameState((currentState: GameState | null) => {
-                if (!currentState) return null;
-                return {
-                    ...currentState,
-                    deathAnimations: currentState.deathAnimations.filter(a => a.id !== anim.id),
-                };
+            // Using a functional update to avoid stale state in timeout
+            const gameDocRef = doc(db, 'games', gameId);
+            getDoc(gameDocRef).then(doc => {
+                if (doc.exists()) {
+                    const currentAnims = doc.data().deathAnimations || [];
+                    const newAnims = currentAnims.filter((a: any) => a.id !== anim.id);
+                    updateDoc(gameDocRef, { deathAnimations: newAnims });
+                }
             });
         }, 1500)
     );
 
     return () => animationTimers.forEach(clearTimeout);
-  }, [gameState?.deathAnimations, isHost, setGameState]);
+  }, [gameState?.deathAnimations, isHost, gameId]);
   
   // Host is responsible for triggering bot turns
   useEffect(() => {
