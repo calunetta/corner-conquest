@@ -67,8 +67,10 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
     </div>
   );
   
+  const canPerformAction = isMyTurn && isAttacker;
+
   // Viewer-only results screen
-  if (phase === 'results' && !isAttacker) {
+  if (phase === 'results' && !canPerformAction) {
     return (
       <AlertDialog open={true}>
         <AlertDialogContent>
@@ -116,7 +118,7 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        {phase === 'rolling' && hasWarChiefCard && (
+        {phase === 'rolling' && hasWarChiefCard && canPerformAction && (
             <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
                 <Checkbox id="use-warchief-card" checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
                 <Label htmlFor="use-warchief-card" className='font-bold'>Use '{CardName.WarChief}' card for +2 attack power?</Label>
@@ -159,12 +161,12 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
         )}
 
         <AlertDialogFooter>
-          {phase === 'rolling' && (
+          {phase === 'rolling' && canPerformAction && (
             <Button onClick={() => onRoll(useWarChief)} className="w-full">
               Roll Dice!
             </Button>
           )}
-          {phase === 'results' && (
+          {phase === 'results' && canPerformAction && (
             <AlertDialogAction onClick={onClose} className="w-full">
               Continue
             </AlertDialogAction>

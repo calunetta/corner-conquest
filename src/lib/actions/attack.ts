@@ -16,7 +16,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
     const currentTile = map[selectedArmy.position.y * MAP_COLS + selectedArmy.position.x];
     const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
     
-    // This action does NOT set hasActed. That happens upon dice roll.
+    // The hasActed flag is NOT set here. It is set upon dice roll, which commits the action.
     if (otherPlayersOccupants.length > 0) {
         const defenderPlayerId = otherPlayersOccupants[0].playerId;
         const defendingPlayer = players.find(p => p.id === defenderPlayerId);
@@ -56,7 +56,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
       newState.monsterCombatState = {
         attackerId: attacker.id,
         attackerPosition: selectedArmy.position,
-        monster: currentTile.monsters[0],
+        monster: currentTile.monsters[0], // Default to first monster, selection can override
         attackerRolls: [],
         monsterRolls: [],
         winnerId: null,

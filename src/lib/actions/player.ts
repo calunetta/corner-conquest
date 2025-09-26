@@ -110,10 +110,12 @@ export function handleDeployAction(state: GameState): GameState {
     let isReinforceUsed = false;
     let isEfficientUsed = false;
     
-    if (player.reinforceActive) {
+    const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
+
+    if (player.reinforceActive && canUseCard) {
         cost = 0;
         isReinforceUsed = true;
-    } else if (player.efficientActive) {
+    } else if (player.efficientActive && canUseCard) {
         cost = Math.ceil(cost / 2);
         isEfficientUsed = true;
     }
@@ -172,9 +174,11 @@ export function handleUpgradeAction(state: GameState): GameState {
 
     if (player.actionsThisTurn.includes(GameAction.Upgrade)) throw new Error("You can only upgrade once per turn.");
     if (player.attackPower >= 4) throw new Error("You have reached the maximum attack power.");
+    
+    const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
 
     let cost = settings.upgradeCost;
-    if (player.masterBuilderActive) {
+    if (player.masterBuilderActive && canUseCard) {
         cost = Math.ceil(cost / 2);
     }
     if (player.resources.iron < cost) throw new Error(`Not enough iron. Cost: ${cost}`);
@@ -182,7 +186,7 @@ export function handleUpgradeAction(state: GameState): GameState {
     player.resources.iron -= cost;
     player.attackPower += 1;
 
-    if (player.masterBuilderActive) {
+    if (player.masterBuilderActive && canUseCard) {
       newState.log.push(`${player.name} used 'Master Builder' for a cheaper upgrade!`);
       player.masterBuilderActive = false;
       const cardIndex = player.specialCards.indexOf(CardNameEnum.MasterBuilder);
@@ -293,19 +297,16 @@ export function handleEndTurn(state: GameState): GameState {
     const hasProductiveCard = nextPlayer.specialCards.includes(CardNameEnum.Productive);
     const positionedArmies = nextPlayer.positions;
 
-    if (positionedArmies.length > 0) {
-        if (hasProductiveCard) {
-            newState.log.push(`${nextPlayer.name}, you have a 'Productive' card. You will be prompted to use it.`);
-        } else {
-            const collectionResult = applyAutomaticCollection(newState, nextPlayer);
-            newState = collectionResult.newState;
-            const collectedStrings = Object.entries(collectionResult.collectedResources).map(([type, amount]) => `${amount} ${type}`);
-            if (collectedStrings.length > 0) {
-                newState.log.push(`${nextPlayer.name} automatically collected ${collectedStrings.join(', ')}.`);
-            }
+    if (positionedArmies.length > 0 && !hasProductiveCard) {
+        // If the player does not have the productive card, collect automatically.
+        // If they DO have the card, the collection is deferred to the dialog.
+        const collectionResult = applyAutomaticCollection(newState, nextPlayer);
+        newState = collectionResult.newState;
+        const collectedStrings = Object.entries(collectionResult.collectedResources).map(([type, amount]) => `${amount} ${type}`);
+        if (collectedStrings.length > 0) {
+            newState.log.push(`${nextPlayer.name} automatically collected ${collectedStrings.join(', ')}.`);
         }
     }
-
     
     newState.log.push(`It's now ${nextPlayer.name}'s turn.`);
     

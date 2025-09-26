@@ -10,7 +10,7 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
     const { map, players, currentPlayerIndex } = state;
     const currentPlayer = players[currentPlayerIndex];
 
-    // THE CORE FIX: If an army has acted, it cannot move, unless Extra Move is active.
+    // An army that has acted cannot move, unless Extra Move is active.
     if (army.hasActed && !currentPlayer.hasExtraMove) {
         return [];
     }
@@ -91,9 +91,12 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     if (!armyInState) throw new Error("Army not found for move action.");
 
     if (!isTeleport) {
+        // This is a failsafe to prevent invalid moves from ever being processed.
+        if (armyInState.hasActed && !player.hasExtraMove) {
+             throw new Error(`Invalid move: Army ${armyInState.id} has already acted.`);
+        }
         const possibleMoves = getPossibleMoves(newState, armyInState);
         if (!possibleMoves.some(m => m.x === x && m.y === y)) {
-            // This is a failsafe to prevent invalid moves from ever being processed.
             throw new Error(`Invalid move for army ${armyInState.id} to (${x}, ${y}).`);
         }
     }
@@ -130,19 +133,19 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         const revealResult = revealIsland(newState, x, y, isTeleport);
         newState = revealResult.newState;
     } else if (targetTile.type === IslandType.Special) {
+        // Landing on an already-discovered special island triggers a roll
         armyInState.hasActed = true;
         return { state: newState, ui: { specialIslandRoll: { roll: null, cardDrawn: null } } };
     }
     
-    // Handle "Extra Move" consumption and its effect on hasActed
-    if (player.hasExtraMove) {
-        player.hasExtraMove = false; // Consume the extra move
-        newState.log.push(`${player.name} used their Extra Move on an army.`);
-        // Per README, using Extra Move on an army does not change its `hasActed` status.
-        // It allows a "fresh" army to remain fresh, and an "exhausted" army to move one last time.
-        // Therefore, we explicitly DO NOT change `armyInState.hasActed` here.
-    } else {
+    // Correct "Extra Move" logic
+    if (!player.hasExtraMove) {
+        // This is a normal move.
         armyInState.hasActed = true;
+    } else {
+        // This is an Extra Move. Consume the flag, but DO NOT change hasActed.
+        player.hasExtraMove = false;
+        newState.log.push(`${player.name} used their Extra Move on an army.`);
     }
 
     return { state: checkAndEndTurnIfNoActions(newState), ui: null };

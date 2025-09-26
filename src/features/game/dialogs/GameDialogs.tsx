@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { GameState, Player, CardName, Army } from '@/lib/types';
 import type { ArmySelectionDialogState, AttackSelectionDialogState, SabotageDialogState, PositionDialogState, WealthyDialogState, StealResourceDialogState, ProductiveCardDialogState, SpecialIslandRollDialogState } from '../types';
@@ -18,7 +19,6 @@ import { SpecialIslandRollDialog } from './SpecialIslandRollDialog';
 
 type GameDialogsProps = {
   gameState: GameState;
-  serverGameState: GameState;
   localPlayer: Player;
   isMyTurn: boolean;
   onAction: (action: GameAction, payload?: any) => Promise<void>;
@@ -50,7 +50,6 @@ type GameDialogsProps = {
 
 export function GameDialogs({ 
     gameState, 
-    serverGameState,
     localPlayer, 
     isMyTurn, 
     onAction,
@@ -78,11 +77,10 @@ export function GameDialogs({
     onCloseSpecialIslandRollDialog,
 }: GameDialogsProps) {
 
-  // Use server state for shared dialogs to ensure all players see the same thing
   const { 
     combatState, 
     monsterCombatState,
-  } = serverGameState;
+  } = gameState;
   
   const playerForCardsDialog = cardsDialogPlayerId !== null ? gameState.players.find(p => p.id === cardsDialogPlayerId) : null;
   const isViewingOwnCards = playerForCardsDialog?.id === localPlayer.id;
@@ -92,7 +90,7 @@ export function GameDialogs({
       {/* SHARED DIALOGS (visible to multiple players) */}
       {combatState && (
         <CombatDialog
-          gameState={serverGameState}
+          gameState={gameState}
           onRoll={(useWarChief) => onAction(GameAction.CombatRoll, { useWarChief })}
           onClose={() => onAction(GameAction.CloseCombat)}
           isMyTurn={isMyTurn}
@@ -102,8 +100,8 @@ export function GameDialogs({
 
       {monsterCombatState && (
           <MonsterCombatDialog 
-              gameState={serverGameState} 
-              monsters={serverGameState.map[monsterCombatState.attackerPosition.y * serverGameState.settings.gridSize.cols + monsterCombatState.attackerPosition.x].monsters || []}
+              gameState={gameState} 
+              monsters={gameState.map[monsterCombatState.attackerPosition.y * gameState.settings.gridSize.cols + monsterCombatState.attackerPosition.x].monsters || []}
               onRoll={(payload) => onAction(GameAction.MonsterCombatRoll, payload)}
               onClose={() => onAction(GameAction.CloseMonsterCombat)}
               onCancel={() => onLocalAction(GameAction.local_CancelAction)}
@@ -126,10 +124,12 @@ export function GameDialogs({
             {specialIslandRollDialog?.isOpen && (
               <SpecialIslandRollDialog
                 state={specialIslandRollDialog}
-                onRoll={() => onAction(GameAction.RollOnSpecialIsland)}
+                onRoll={() => {
+                  onAction(GameAction.RollOnSpecialIsland);
+                  // The dialog is closed via the `CloseSpecialIslandDialog` action from the GameBoard
+                }}
                 onClose={() => {
                   onAction(GameAction.CloseSpecialIslandDialog);
-                  onCloseSpecialIslandRollDialog();
                 }}
               />
             )}

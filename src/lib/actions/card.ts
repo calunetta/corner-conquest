@@ -49,12 +49,12 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
     const cardIndex = player.specialCards.indexOf(cardName);
     if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
     
-    player.actionsThisTurn.push(GameAction.UseCard);
     
     newState.log.push(`${player.name} is using the '${cardName}' card.`);
     
     const immediateConsumeCards: CardName[] = ['Extra Move', 'Reinforce', 'Efficient', 'Master Builder'];
     if (immediateConsumeCards.includes(cardName)) {
+        player.actionsThisTurn.push(GameAction.UseCard); // Consume action now
         player.hasExtraMove = cardName === 'Extra Move';
         player.reinforceActive = cardName === 'Reinforce';
         player.efficientActive = cardName === 'Efficient';
@@ -66,6 +66,9 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
     // Cards that open dialogs (Sabotage, Steal) are consumed in their own handlers.
     // Cards used in combat (Warchief, Overcome) are consumed in combat handlers.
     if (immediateConsumeCards.includes(cardName) || isScout) {
+        if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
+            player.actionsThisTurn.push(GameAction.UseCard);
+        }
         const cIndex = player.specialCards.indexOf(cardName);
         if(cIndex > -1) {
             discardPile.push(player.specialCards.splice(cIndex, 1)[0]);

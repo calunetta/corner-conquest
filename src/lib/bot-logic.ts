@@ -30,10 +30,10 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     const botPlayer = state.players[state.currentPlayerIndex];
     console.log(`--- Bot Turn Start: ${botPlayer.name} (Turn ${state.turn}) ---`);
     
-    // Set active card flags
-    if (botPlayer.specialCards.includes(CardName.Reinforce)) botPlayer.reinforceActive = true;
-    if (botPlayer.specialCards.includes(CardName.Efficient)) botPlayer.efficientActive = true;
-    if (botPlayer.specialCards.includes(CardName.MasterBuilder)) botPlayer.masterBuilderActive = true;
+    // Set active card flags based on cards in hand
+    botPlayer.reinforceActive = botPlayer.specialCards.includes(CardName.Reinforce);
+    botPlayer.efficientActive = botPlayer.specialCards.includes(CardName.Efficient);
+    botPlayer.masterBuilderActive = botPlayer.specialCards.includes(CardName.MasterBuilder);
 
     const possibleActions: BotAction[] = [];
 
@@ -177,7 +177,7 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
         console.log(`Bot: Choosing action '${bestAction.name}' with priority ${bestAction.priority}`);
         
         try {
-            const { state: nextState, ui } = handleGameAction({ action: bestAction.action, gameState: state, payload: bestAction.payload });
+            let { state: nextState, ui } = handleGameAction({ action: bestAction.action, gameState: state, payload: bestAction.payload });
 
             if (nextState) {
                 // If the action results in combat, the bot needs to resolve it.

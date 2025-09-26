@@ -13,16 +13,10 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   const { toast } = useToast();
   const router = useRouter();
 
-  const gameStateRef = useRef<GameState | null>(null);
-
-  useEffect(() => {
-    gameStateRef.current = gameState;
-  }, [gameState]);
-
   const setGameState = useCallback(async (
     currentState: GameState, 
     updateFn: (gs: GameState) => GameState | null | ActionHandlerResult
-  ): Promise<any> => {
+  ): Promise<ActionHandlerResult['ui'] | null> => {
     try {
         const gameDocRef = doc(db, 'games', gameId);
         
@@ -156,7 +150,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   
   // Host is responsible for triggering bot turns
   useEffect(() => {
-    if (isHost && gameState && gameState.players[gameState.currentPlayerIndex]?.isBot) {
+    if (isHost && gameState && gameState.status === 'playing' && gameState.players[gameState.currentPlayerIndex]?.isBot) {
         const botTurnTimeout = setTimeout(() => {
             takeBotTurn(gameState);
         }, 1000); // 1 second delay for bot to "think"
