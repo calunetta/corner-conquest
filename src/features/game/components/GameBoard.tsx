@@ -85,7 +85,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   useEffect(() => {
     if (!isMyTurn) {
         setSelectedArmyId(null);
-        setPossibleMoves([]);
         setPendingAction(null);
         setCardsDialogPlayerId(null);
         setAbilitiesShopOpen(false);
@@ -104,6 +103,23 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         }
     }
   }, [isMyTurn, localPlayer]);
+
+  useEffect(() => {
+    // When the shared state indicates a card action is active, reflect it locally.
+    if (gameState && localPlayer && (localPlayer.hasExtraMove || localPlayer.teleportState)) {
+        if(localPlayer.teleportState) {
+            setPendingAction({ type: 'teleport', cardName: CardName.Teleport });
+        }
+    } else {
+       // If no shared state flag is active, ensure local pending action is cleared
+       if (pendingAction?.type === 'teleport' || pendingAction?.type === 'scout') {
+           // Do not clear it if the player initiated it locally
+       } else {
+          setPendingAction(null);
+       }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState, localPlayer?.hasExtraMove, localPlayer?.teleportState]);
   
   useEffect(() => {
     if (selectedArmy && gameState && isMyTurn) {
@@ -147,13 +163,17 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       switch(action) {
           case GameAction.local_DeselectArmy:
               setSelectedArmyId(null);
-              setPendingAction(null); // Deselection should cancel any pending action
+              // A hard deselect should also cancel any pending local action
+              if (pendingAction) {
+                  setPendingAction(null);
+                  // Also tell the server to refund the card use
+                  await onAction(GameAction.CancelAction);
+              }
               break;
           case GameAction.local_CancelAction:
-              if(pendingAction) {
-                  setPendingAction(null);
-                  await onAction(GameAction.CancelAction); // Dispatch shared action to clear flags & refund card use
-              }
+              // This is now the definitive way to cancel a pending card action
+              setPendingAction(null);
+              await onAction(GameAction.CancelAction);
               break;
           case GameAction.local_ShowCards:
               setCardsDialogPlayerId(prev => prev === payload.playerId ? null : payload.playerId);
@@ -544,5 +564,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    

@@ -7,14 +7,15 @@ import { cloneDeep } from 'lodash';
 
 
 export function getPossibleMoves(state: GameState, army: Army): { x: number; y: number }[] {
-    const { x, y } = army.position;
-    const { map } = state;
-    
-    const currentPlayer = state.players[state.currentPlayerIndex];
-    
+    const { map, players, currentPlayerIndex } = state;
+    const currentPlayer = players[currentPlayerIndex];
+
+    // THE CORE FIX: If an army has acted, it cannot move, unless Extra Move is active.
     if (army.hasActed && !currentPlayer.hasExtraMove) {
         return [];
     }
+    
+    const { x, y } = army.position;
 
     let moves = [];
     const moveRadius = 2;
@@ -89,8 +90,12 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     const armyInState = player.armies.find(a => a.id === army.id);
     if (!armyInState) throw new Error("Army not found for move action.");
 
-    if (!isTeleport && (armyInState.position.x === x && armyInState.position.y === y)) {
-        throw new Error("Army cannot move to its current tile.");
+    if (!isTeleport) {
+        const possibleMoves = getPossibleMoves(newState, armyInState);
+        if (!possibleMoves.some(m => m.x === x && m.y === y)) {
+            // This is a failsafe to prevent invalid moves from ever being processed.
+            throw new Error(`Invalid move for army ${armyInState.id} to (${x}, ${y}).`);
+        }
     }
     
     const oldTile = map[armyInState.position.y * MAP_COLS + armyInState.position.x];
