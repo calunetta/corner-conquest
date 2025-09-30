@@ -55,7 +55,7 @@ export function ActionsPanel({
   const canAttack = selectedArmy && currentTile && (currentTile.occupants.some(o => o.playerId !== localPlayer.id) || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
   
   const upgradeCost = localPlayer.masterBuilderActive ? Math.ceil(settings.upgradeCost / 2) : settings.upgradeCost;
-  const deployCost = localPlayer.efficientActive ? Math.ceil(localPlayer.nextArmyCost / 2) : localPlayer.nextArmyCost;
+  const deployCost = localPlayer.efficientActive ? Math.ceil(localPlayer.nextArmyCost / 2) : (localPlayer.reinforceActive ? 0 : localPlayer.nextArmyCost);
 
   const canDeploy = (localPlayer.resources.wheat >= deployCost || localPlayer.reinforceActive) && localPlayer.armyCount < 5 && !localPlayer.actionsThisTurn.includes(GameAction.Deploy);
   const canBuyCard = localPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !localPlayer.actionsThisTurn.includes(GameAction.BuyCard) && localPlayer.specialCards.length < HAND_LIMIT;
@@ -69,7 +69,7 @@ export function ActionsPanel({
   ];
   
   const deployLabel = localPlayer.reinforceActive
-    ? 'Deploy'
+    ? 'Deploy (Free)'
     : `Deploy (${localPlayer.resources.wheat}/${deployCost} Wheat)`;
 
   const buyCardLabel = `Buy Card`;
@@ -149,7 +149,7 @@ export function ActionsPanel({
             return "This action is not available.";
         case GameAction.local_Position:
             if (!selectedArmy) return "You must select an army first.";
-            if (localPlayer.positions.some(p => p.armyId === selectedArmy?.id)) return "You are already positioned here.";
+            if (localPlayer.positions.some(p => p.armyId === selectedArmy?.id)) return "This army is already positioned.";
             if (!currentTile || (currentTile.type !== 'resource' && currentTile.type !== 'base') || currentTile.resources.length === 0) return "This tile has no resources to position on.";
             if (currentTile.monsters && currentTile.monsters.length > 0) return "Cannot position on an island with monsters.";
             return "This action is not available.";

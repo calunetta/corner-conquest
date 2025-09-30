@@ -1,7 +1,5 @@
 
 import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/lib/types';
-import { handleAttackAction } from './attack';
-import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
 import { GameAction, IslandType, MAP_COLS, MAP_ROWS, HAND_LIMIT } from '../types';
 
 export function getPossibleMoves(state: GameState, army: Army): { x: number; y: number }[] {
@@ -76,7 +74,7 @@ export function revealIsland(state: GameState, x: number, y: number, isScout: bo
     return state;
 }
 
-export function handleMoveAction(state: GameState, x: number, y: number, army: Army, isTeleport: boolean = false): GameState {
+export function handleMoveAction(state: GameState, x: number, y: number, army: Army, isTeleport: boolean = false): ActionHandlerResult {
     const { players, currentPlayerIndex, map, discardPile } = state;
     const player = players[currentPlayerIndex];
 
@@ -84,10 +82,10 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     if (!armyInState) throw new Error("Army not found for move action.");
     
     if (isTeleport) {
-        if (armyInState.hasActed) throw new Error(`Invalid move: Army ${armyInState.id} has already acted and cannot be teleported.`);
         const cardIndex = player.specialCards.indexOf('Teleport');
         if (cardIndex > -1) {
             discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
+            player.actionsThisTurn.push(GameAction.UseCard);
             state.log.push(`${player.name} teleported an army!`);
         } else {
              throw new Error("Teleport card not found, but was attempted to be used.");
@@ -123,6 +121,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     } else if (player.hasExtraMove) {
         player.hasExtraMove = false; 
         state.log.push(`${player.name} used their Extra Move on an army.`);
+        // Note: hasActed is NOT set to true, allowing another action.
     } else {
         armyInState.hasActed = true;
     }
@@ -131,7 +130,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     if (isFirstDiscovery) {
         state = revealIsland(state, x, y, isTeleport);
     } else if (targetTile.type === IslandType.Special && !isTeleport) {
-        armyInState.hasActed = true;
+        armyInState.hasActed = true; // Landing on special island ends turn for that army
         
         if (player.dialogState) {
             player.dialogState.specialIslandRoll = { isOpen: true, roll: null, cardDrawn: null };
@@ -140,5 +139,5 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         }
     }
     
-    return state;
+    return { state };
 }

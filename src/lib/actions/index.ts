@@ -1,7 +1,6 @@
 
 import type { GameState, ActionHandlerResult, Army } from '@/lib/types';
 import { GameAction } from '@/lib/types';
-import { cloneDeep } from 'lodash';
 
 import { handleAttackAction, handleSelectDefender, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
 import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleBuyAbility, handleUseProductiveCard, handleRollOnSpecialIsland, handleCloseSpecialIslandDialog, handleScoutAction } from './card';
@@ -23,7 +22,8 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
         return { state: null, ui: null };
     }
 
-    let state: GameState = cloneDeep(gameState);
+    // Only clone the state once at the top level for performance.
+    let state: GameState = JSON.parse(JSON.stringify(gameState));
     let ui: ActionHandlerResult['ui'] = null;
 
     try {
@@ -44,7 +44,7 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
                 state = handleSelectResourceForPosition(state, payload.resource, payload.armyId);
                 break;
             case GameAction.Move:
-                state = handleMoveAction(state, payload.x, payload.y, payload.army, payload.isTeleport);
+                ({ state } = handleMoveAction(state, payload.x, payload.y, payload.army, payload.isTeleport));
                 break;
             case GameAction.Attack:
                 ({ state, ui } = handleAttackAction(state, payload.army));

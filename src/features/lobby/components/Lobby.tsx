@@ -2,7 +2,7 @@
 
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { db, runTransaction, collection, doc, writeBatch, getDoc, arrayUnion, query, where, onSnapshot, updateDoc, setDoc } from '@/lib/firebase';
+import { db, runTransaction, collection, doc, writeBatch, getDoc, arrayUnion, query, where, onSnapshot, updateDoc, setDoc, deleteDoc } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
 import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
 import { addPlayerToGame } from '@/lib/game-logic';
@@ -183,6 +183,13 @@ export function Lobby({ onJoinGame }: LobbyProps) {
         setIsJoiningGame(null);
       }
   };
+  
+    const handleLogout = async () => {
+        if (username) {
+            await deleteDoc(doc(db, 'usernames', username));
+        }
+        logout();
+    };
 
   return (
     <div className="container mx-auto flex h-full flex-col items-center justify-center p-2 sm:p-4">
@@ -190,7 +197,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
         <CardHeader>
           <div className="flex w-full items-center justify-end gap-2 mb-4">
             <span className="text-sm">Welcome, {username}!</span>
-            <Button variant="destructive" size="icon" onClick={logout}>
+            <Button variant="destructive" size="icon" onClick={handleLogout}>
               <Power className="h-4 w-4" />
             </Button>
           </div>

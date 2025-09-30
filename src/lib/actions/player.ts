@@ -2,7 +2,6 @@
 import type { GameState, Player, Army, CardName, ActionHandlerResult, IslandResource, ResourceType } from '@/lib/types';
 import { db, doc, deleteDoc, writeBatch, getDoc, arrayUnion, runTransaction } from '@/lib/firebase';
 import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum, GameStatus } from '../types';
-import { getPossibleMoves } from './movement';
 
 export function handleCancelAction(state: GameState): GameState {
   const player = state.players[state.currentPlayerIndex];
@@ -27,77 +26,6 @@ export function handleCancelAction(state: GameState): GameState {
   player.masterBuilderActive = false;
   
   return state;
-}
-
-
-export function canArmyPerformAnyAction(state: GameState, army: Army): boolean {
-    const player = state.players[state.currentPlayerIndex];
-    if (!player || player.id !== state.currentPlayerIndex) return false;
-
-    if (getPossibleMoves(state, army).length > 0) return true;
-    
-    if (army.hasActed && !player.hasExtraMove) return false;
-
-    const tile = state.map[army.position.y * MAP_COLS + army.position.x];
-
-    const canAttack = tile.occupants.some(o => o.playerId !== player.id) || (tile.type === IslandType.Monster && !!tile.monsters && tile.monsters.length > 0);
-    if (canAttack) return true;
-
-    const isPositioned = player.positions.some(p => p.armyId === army.id);
-    const canPosition = !isPositioned && (tile.type === IslandType.Resource || tile.type === IslandType.Base) && tile.resources.length > 0 && (!tile.monsters || tile.monsters.length === 0);
-    if (canPosition) {
-       const hasAvailableResourceSlot = tile.resources.some(res => !(tile.positionedBy || []).some(p => p.resource === res.type));
-       if (hasAvailableResourceSlot) return true;
-    }
-
-    return false;
-}
-
-
-export function canPlayerPerformAnyAction(state: GameState): boolean {
-    const player = state.players[state.currentPlayerIndex];
-
-    if (player.armies.some(army => canArmyPerformAnyAction(state, army))) {
-        return true;
-    }
-
-    const { settings, specialCardsDeck, discardPile } = state;
-    const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
-
-    const upgradeCost = player.masterBuilderActive ? Math.ceil(settings.upgradeCost / 2) : settings.upgradeCost;
-    if (player.resources.iron >= upgradeCost && !player.actionsThisTurn.includes(GameAction.Upgrade) && player.attackPower < 4) {
-        return true;
-    }
-
-    if (player.resources.gems >= 10 && !player.actionsThisTurn.includes(GameAction.BuyCard) && (specialCardsDeck.length > 0 || discardPile.length > 0)) {
-        return true;
-    }
-
-    const deployCost = player.efficientActive ? Math.ceil(player.nextArmyCost / 2) : player.nextArmyCost;
-    if ((player.resources.wheat >= deployCost || player.reinforceActive) && player.armyCount < 5 && !player.actionsThisTurn.includes(GameAction.Deploy)) {
-        return true;
-    }
-
-    if (canUseCard && player.specialCards.length > 0) {
-        return true;
-    }
-    
-    if (player.resources.gems >= settings.abilityCost && settings.availableAbilities.length > 0) {
-        const unownedAbilities = settings.availableAbilities.filter(a => !player.passiveAbilities[a as AbilityName]);
-        if (unownedAbilities.length > 0) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-export function checkAndEndTurnIfNoActions(state: GameState): GameState {
-    if (!canPlayerPerformAnyAction(state)) {
-        state.log.push(`${state.players[state.currentPlayerIndex].name} has no more actions. Ending turn automatically.`);
-        return handleEndTurn(state);
-    }
-    return state;
 }
 
 export function handleDeployAction(state: GameState): GameState {
@@ -337,6 +265,11 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
             const isHost = playerIndex === 0;
 
             if (isHost && currentState.players.length <= 1) {
+                transaction.delete(gameDocRef);
+                return;
+            }
+            
+            if (currentState.status === GameStatus.Waiting && isHost) {
                 transaction.delete(gameDocRef);
                 return;
             }

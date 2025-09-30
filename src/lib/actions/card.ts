@@ -1,6 +1,5 @@
 
 import type { GameState, Player, ResourceType, ActionHandlerResult, CardName, Army } from '@/lib/types';
-import { checkAndEndTurnIfNoActions } from './player';
 import { GameAction, AbilityName, MAP_COLS, HAND_LIMIT } from '../types';
 
 export function handleBuyCardAction(state: GameState): GameState {
@@ -38,10 +37,10 @@ export function handleBuyCardAction(state: GameState): GameState {
     return state;
 }
 
-export const handleUseCard = (state: GameState, payload: { cardName: CardName }): GameState => {
+export const handleUseCard = (state: GameState, payload: { cardName: CardName, isScout?: boolean }): GameState => {
     const { players, currentPlayerIndex, discardPile } = state;
     const player = players[currentPlayerIndex];
-    const { cardName } = payload;
+    const { cardName, isScout } = payload;
 
     const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
     if (!canUseCard) throw new Error("You can only use one card per turn.");
@@ -59,13 +58,13 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName })
         player.masterBuilderActive = cardName === 'Master Builder';
         state.log.push(`${player.name} activated '${cardName}'.`);
         
+        // Extra Move is consumed on activation, others on use.
         if (cardName === 'Extra Move') {
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
             discardPile.push(usedCard);
         }
-    } else if (cardName === 'Scout') {
-        // The card is consumed after the final tile is revealed.
-        state.log.push(`${player.name} is using the '${cardName}' card.`);
+    } else if (isScout) {
+        state.log.push(`${player.name} used the '${cardName}' card to scout ahead.`);
         const usedCard = player.specialCards.splice(cardIndex, 1)[0];
         discardPile.push(usedCard);
     }
@@ -171,7 +170,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
         state.log.push(`${currentPlayer.name} tried to steal ${payload.resource} from ${targetPlayer.name}, but they had none.`);
     }
 
-    player.actionsThisTurn.push(GameAction.UseCard);
+    currentPlayer.actionsThisTurn.push(GameAction.UseCard);
     const cardIndex = currentPlayer.specialCards.indexOf('Steal Resource');
     if (cardIndex > -1) {
         state.discardPile.push(currentPlayer.specialCards.splice(cardIndex, 1)[0]);
@@ -245,7 +244,7 @@ export function handleCloseSpecialIslandDialog(state: GameState): GameState {
   if(player.dialogState?.specialIslandRoll) {
       player.dialogState.specialIslandRoll = null;
   }
-  return checkAndEndTurnIfNoActions(state);
+  return state;
 }
 
 export function handleScoutAction(state: GameState, x: number, y: number): GameState {
