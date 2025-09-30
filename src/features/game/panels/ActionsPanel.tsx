@@ -166,7 +166,7 @@ export function ActionsPanel({
                 <TooltipTrigger asChild>
                     <div className={isMain ? "w-full" : ""}>
                         <Button
-                            variant={pendingAction?.type === action.id.toLowerCase() ? 'default' : 'outline'}
+                            variant={pendingAction?.cardName.toLowerCase().includes(action.label.toLowerCase()) ? 'default' : 'outline'}
                             onClick={action.onClick}
                             disabled={isDisabled}
                             className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}

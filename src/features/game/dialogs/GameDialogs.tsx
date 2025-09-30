@@ -32,7 +32,7 @@ type GameDialogsProps = {
   armySelectionDialog: ArmySelectionDialogState;
   onCloseArmySelectionDialog: () => void;
   onSelectArmyFromDialog: (armyId: number) => void;
-  attackSelectionDialog: AttackSelectionDialogState;
+  attackSelectionDialog: AttackSelectionDialogState | null;
   onCloseAttackSelectionDialog: () => void;
   positionDialog: PositionDialogState;
   onClosePositionDialog: () => void;
@@ -42,9 +42,9 @@ type GameDialogsProps = {
   onCloseWealthyDialog: () => void;
   stealResourceDialog: StealResourceDialogState;
   onCloseStealResourceDialog: () => void;
-  productiveCardDialog: ProductiveCardDialogState;
+  productiveCardDialog: ProductiveCardDialogState | null;
   onCloseProductiveCardDialog: () => void;
-  specialIslandRollDialog: SpecialIslandRollDialogState;
+  specialIslandRollDialog: SpecialIslandRollDialogState | null;
   onCloseSpecialIslandRollDialog: () => void;
 };
 
@@ -127,7 +127,7 @@ export function GameDialogs({
                   onAction(GameAction.RollOnSpecialIsland);
                 }}
                 onClose={() => {
-                  onAction(GameAction.CloseSpecialIslandDialog);
+                  onCloseSpecialIslandRollDialog();
                 }}
               />
             )}

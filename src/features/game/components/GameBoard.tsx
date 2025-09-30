@@ -64,7 +64,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [cardsDialogPlayerId, setCardsDialogPlayerId] = useState<number | null>(null);
   const [abilitiesShopOpen, setAbilitiesShopOpen] = useState(false);
   const [armySelectionDialog, setArmySelectionDialog] = useState<ArmySelectionDialogState>(null);
-  const [attackSelectionDialog, setAttackSelectionDialog] = useState<AttackSelectionDialogState>(null);
+  const [attackSelectionDialog, setAttackSelectionDialog] = useState<AttackSelectionDialogState | null>(null);
   const [positionDialog, setPositionDialog] = useState<PositionDialogState>(null);
   const [sabotageDialog, setSabotageDialog] = useState<SabotageDialogState>(null);
   const [wealthyDialog, setWealthyDialog] = useState<WealthyDialogState>(null);
@@ -86,7 +86,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (isMyTurn && serverGameState && !localGameState) {
         let localCopy = cloneDeep(serverGameState);
         
-        // This check is now handled by the handleEndTurn action, which sets the dialog state.
         const currentPlayer = localCopy.players[localCopy.currentPlayerIndex];
         const productiveDialogState = currentPlayer.dialogState?.productiveCard;
         if(productiveDialogState) {
@@ -99,6 +98,20 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setLocalGameState(null);
     }
   }, [isMyTurn, serverGameState, localGameState]);
+
+  useEffect(() => {
+      if (gameStateForDisplay) {
+        const currentPlayer = gameStateForDisplay.players[gameStateForDisplay.currentPlayerIndex];
+        if (currentPlayer.id === localPlayer?.id) { // It's my turn
+            if(currentPlayer.dialogState?.productiveCard?.isOpen) {
+                setProductiveCardDialog(currentPlayer.dialogState.productiveCard);
+            }
+            if(currentPlayer.dialogState?.specialIslandRoll?.isOpen) {
+                setSpecialIslandRollDialog(currentPlayer.dialogState.specialIslandRoll);
+            }
+        }
+      }
+  }, [gameStateForDisplay, localPlayer?.id]);
 
   const selectedArmy = useMemo(() => {
     if (!gameStateForDisplay || selectedArmyId === null || !localPlayer) return null;
@@ -213,13 +226,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           case GameAction.local_DeselectArmy:
               setSelectedArmyId(null);
               if (pendingAction) {
-                  onAction(GameAction.CancelAction);
+                  onAction(GameAction.CancelAction); // This refunds the card use action
                   setPendingAction(null);
               }
               break;
           case GameAction.local_CancelAction:
               setPendingAction(null);
-              onAction(GameAction.CancelAction);
+              onAction(GameAction.CancelAction); // This refunds the card use action
               break;
           case GameAction.local_ShowCards:
               setCardsDialogPlayerId(prev => prev === payload.playerId ? null : payload.playerId);
@@ -437,7 +450,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   // Use server state for things that should not reflect local, uncommitted changes
   const { status, maxPlayers, winner, deathAnimations } = serverGameState;
   
-  // Use local state for the UI if it's my turn, otherwise use server state.
   const { players, currentPlayerIndex, turn, settings, map, debugMode, log } = gameStateForDisplay;
   const currentPlayer = players[currentPlayerIndex];
   const localPlayerForPanel = players.find(p => p.id === localPlayer.id)!;
@@ -623,7 +635,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         productiveCardDialog={productiveCardDialog}
         onCloseProductiveCardDialog={() => setProductiveCardDialog(null)}
         specialIslandRollDialog={specialIslandRollDialog}
-        onCloseSpecialIslandRollDialog={() => setSpecialIslandRollDialog(null)}
+        onCloseSpecialIslandRollDialog={() => {
+            setSpecialIslandRollDialog(null)
+            onAction(GameAction.CloseSpecialIslandDialog);
+        }}
       />
     </div>
   );

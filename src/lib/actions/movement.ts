@@ -89,7 +89,6 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     const armyInState = player.armies.find(a => a.id === army.id);
     if (!armyInState) throw new Error("Army not found for move action.");
     
-    // Stricter check
     if (armyInState.hasActed && !player.hasExtraMove && !isTeleport) {
         throw new Error(`Invalid move: Army ${armyInState.id} has already acted.`);
     }

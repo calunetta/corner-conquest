@@ -1,7 +1,7 @@
 
 'use client';
 import type { GameState, Monster } from '@/lib/types';
-import { CardName } from '@/lib/types';
+import { CardName, GameAction } from '@/lib/types';
 import { useState, useEffect } from 'react';
 import {
   AlertDialog,
@@ -96,22 +96,22 @@ export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: Mo
             </div>
             
             <div className='space-y-4'>
-                {hasOvercomeCard && (
+                {hasOvercomeCard && !attacker.actionsThisTurn.includes(GameAction.UseCard) && (
                 <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
                     <Checkbox id="use-overcome-card" checked={useOvercomeCard} onCheckedChange={(checked) => { setUseOvercomeCard(!!checked); if(!!checked) setUseDecideCard(false); }} />
                     <Label htmlFor="use-overcome-card" className='font-bold'>Use '{CardName.Overcome}' card to win automatically?</Label>
                 </div>
                 )}
-                {hasWarChiefCard && (
+                {hasWarChiefCard && !attacker.actionsThisTurn.includes(GameAction.UseCard) && (
                     <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
                         <Checkbox id="use-warchief-card" disabled={useOvercomeCard} checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
                         <Label htmlFor="use-warchief-card" className='font-bold'>Use '{CardName.WarChief}' card for +2 attack power?</Label>
                     </div>
                 )}
-                {hasDecideCard && (
+                {hasDecideCard && !attacker.actionsThisTurn.includes(GameAction.UseCard) && (
                 <div className="space-y-4 rounded-md border bg-muted/50 p-4">
                     <div className="flex items-center space-x-2">
-                        <Checkbox id="use-decide-card" checked={useDecideCard} disabled={useOvercomeCard} onCheckedChange={(checked) => setUseDecideCard(!!checked)} />
+                        <Checkbox id="use-decide-card" checked={useDecideCard} disabled={useOvercomeCard || useWarChief} onCheckedChange={(checked) => setUseDecideCard(!!checked)} />
                         <Label htmlFor="use-decide-card" className='font-bold'>Use '{CardName.DecideDiceRoll}' card?</Label>
                     </div>
                     {useDecideCard && (
@@ -126,7 +126,7 @@ export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: Mo
                                 step={1}
                                 value={[decidedValue]}
                                 onValueChange={(value) => setDecidedValue(value[0])}
-                                disabled={useOvercomeCard}
+                                disabled={useOvercomeCard || useWarChief}
                             />
                         </div>
                     )}

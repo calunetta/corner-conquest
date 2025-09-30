@@ -152,7 +152,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   useEffect(() => {
     if (isHost && gameState && gameState.status === 'playing' && gameState.players[gameState.currentPlayerIndex]?.isBot) {
         const botTurnTimeout = setTimeout(() => {
-            // Pass the authoritative server state to the bot.
             takeBotTurn(gameState);
         }, 1000); // 1 second delay for bot to "think"
         
