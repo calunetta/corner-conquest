@@ -3,24 +3,35 @@ import type { GameState, Player, Army, CardName, ActionHandlerResult, IslandReso
 import { db, doc, deleteDoc, writeBatch, getDoc, arrayUnion, runTransaction } from '@/lib/firebase';
 import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum, GameStatus } from '../types';
 
-export function handleCancelAction(state: GameState): GameState {
+export function handleCancelAction(state: GameState, payload?: { cardName?: CardName }): GameState {
   const player = state.players[state.currentPlayerIndex];
   
-  if (player.hasExtraMove) {
-    const cardIndex = state.discardPile.indexOf(CardNameEnum.ExtraMove);
-    if (cardIndex > -1) {
-        const card = state.discardPile.splice(cardIndex, 1)[0];
+  // If a specific card action was being cancelled (like Teleport or Scout)
+  if (payload?.cardName) {
+      const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
+      if (cardUseIndex > -1) {
+          player.actionsThisTurn.splice(cardUseIndex, 1);
+      }
+      
+      const discardIndex = state.discardPile.indexOf(payload.cardName);
+      if (discardIndex > -1) {
+        const card = state.discardPile.splice(discardIndex, 1)[0];
         player.specialCards.push(card);
-    }
-    player.hasExtraMove = false;
-  }
-  
-  const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
-  if (cardUseIndex > -1) {
-    player.actionsThisTurn.splice(cardUseIndex, 1);
-    state.log.push(`${player.name} cancelled their card action.`);
+      } else if (payload.cardName === CardNameEnum.ExtraMove) {
+          // Extra Move is a special case as it's consumed on activation.
+          player.hasExtraMove = false;
+          // It's assumed it's in the discard pile.
+          const extraMoveIndex = state.discardPile.indexOf(CardNameEnum.ExtraMove);
+          if (extraMoveIndex > -1) {
+             const card = state.discardPile.splice(extraMoveIndex, 1)[0];
+             player.specialCards.push(card);
+          }
+      }
+
+      state.log.push(`${player.name} cancelled their action with ${payload.cardName}.`);
   }
 
+  // Reset all temporary flags regardless
   player.reinforceActive = false;
   player.efficientActive = false;
   player.masterBuilderActive = false;
@@ -268,11 +279,6 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
                 transaction.delete(gameDocRef);
                 return;
             }
-            
-            if (currentState.status === GameStatus.Waiting && isHost) {
-                transaction.delete(gameDocRef);
-                return;
-            }
 
             const isCurrentPlayerExiting = currentState.currentPlayerIndex === playerIndex;
 
@@ -309,12 +315,11 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
                 }
             }
 
-
-            if (isCurrentPlayerExiting) {
+            if (currentState.currentPlayerIndex > playerIndex) {
+                 currentState.currentPlayerIndex--;
+            } else if (isCurrentPlayerExiting) {
                 currentState.currentPlayerIndex = playerIndex % currentState.players.length;
                 currentState = handleEndTurn(currentState);
-            } else if (currentState.currentPlayerIndex > playerIndex) {
-                currentState.currentPlayerIndex--;
             }
             
             if(currentState.currentPlayerIndex >= currentState.players.length) {

@@ -149,7 +149,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     const serverActions = [
         GameAction.CombatRoll, GameAction.CloseCombat, GameAction.MonsterCombatRoll, 
         GameAction.CloseMonsterCombat, GameAction.EndTurn, GameAction.SelectDefender, GameAction.Attack,
-        GameAction.CancelAction, GameAction.HostLeave, GameAction.CloseSpecialIslandDialog, GameAction.RollOnSpecialIsland
+        GameAction.HostLeave, GameAction.CloseSpecialIslandDialog, GameAction.RollOnSpecialIsland
     ];
     
     if (!isMyTurn && !serverActions.includes(action)) {
@@ -161,29 +161,34 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setIsPerformingAction(true);
         
         let stateToUpdate = serverActions.includes(action) ? (action === GameAction.EndTurn ? localGameState : serverGameState) : localGameState;
+        let isLocalUpdate = !serverActions.includes(action);
         
-        if (serverActions.includes(action)) {
-            if (!stateToUpdate) {
-                console.warn(`Attempted to perform server action ${action} with no state available. Aborting.`);
-                setIsPerformingAction(false);
-                return;
-            }
+        if (action === GameAction.CancelAction && localGameState) {
+            // CancelAction always acts on the local state first to refund card usage
+            stateToUpdate = localGameState;
+            isLocalUpdate = true;
+        }
+
+        if (!stateToUpdate) {
+             console.warn(`Attempted to perform action ${action} with no state available. Aborting.`);
+             setIsPerformingAction(false);
+             return;
+        }
+
+        if (isLocalUpdate) {
+             const result = handleGameAction({ action, gameState: stateToUpdate, payload });
+             if(result.state) {
+                 setLocalGameState(result.state);
+             }
+        } else {
             const result = await setGameState(stateToUpdate, (gs) => handleGameAction({ action, gameState: gs, payload }));
-            
             if (result?.newAttackSelectionDialogState) {
                 setAttackSelectionDialog(result.newAttackSelectionDialogState);
             }
             if(action === GameAction.EndTurn) {
                 setLocalGameState(null); // Clear local state after committing turn
             }
-        } 
-        else if (localGameState) {
-            const result = handleGameAction({ action, gameState: localGameState, payload });
-            if(result.state) {
-                setLocalGameState(result.state);
-            }
         }
-
     } catch (error: any) {
         toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
         console.error("Action Error:", error);
@@ -199,13 +204,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           case GameAction.local_DeselectArmy:
               setSelectedArmyId(null);
               if (pendingAction) {
-                  onAction(GameAction.CancelAction);
+                  onAction(GameAction.CancelAction, { cardName: pendingAction.cardName });
                   setPendingAction(null);
               }
               break;
           case GameAction.local_CancelAction:
               setPendingAction(null);
-              onAction(GameAction.CancelAction);
+              onAction(GameAction.CancelAction, { cardName: pendingAction?.cardName });
               break;
           case GameAction.local_ShowCards:
               setCardsDialogPlayerId(prev => prev === payload.playerId ? null : payload.playerId);
@@ -253,10 +258,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                   onAction(GameAction.UseCard, payload);
               } else if (cardName === CardName.Sabotage) {
                   setSabotageDialog({ isOpen: true });
+                  onAction(GameAction.UseCard, payload);
               } else if (cardName === CardName.Wealthy) {
                   setWealthyDialog({ isOpen: true });
+                  onAction(GameAction.UseCard, payload);
               } else if (cardName === CardName.StealResource) {
                   setStealResourceDialog({ isOpen: true });
+                  onAction(GameAction.UseCard, payload);
               } else {
                    onAction(GameAction.UseCard, payload);
               }
@@ -284,23 +292,22 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     }
 
     if (pendingAction?.type === 'teleport') {
-      const armiesOnClickedTile = localPlayer?.armies.filter(a => a.position.x === x && a.position.y === y) || [];
-      if (selectedArmyId !== null && selectedArmy) {
-          await onAction(GameAction.Move, { army: selectedArmy, x, y, isTeleport: true });
-          setPendingAction(null);
-          setSelectedArmyId(null);
-          return;
-      } else {
-          const unactedArmies = armiesOnClickedTile.filter(a => !a.hasActed);
-          if (unactedArmies.length === 1) {
+        if(selectedArmyId === null) {
+            const armiesOnClickedTile = localPlayer?.armies.filter(a => a.position.x === x && a.position.y === y) || [];
+            const unactedArmies = armiesOnClickedTile.filter(a => !a.hasActed);
+            if (unactedArmies.length === 1) {
               setSelectedArmyId(unactedArmies[0].id);
-          } else if (unactedArmies.length > 1) {
+            } else if (unactedArmies.length > 1) {
               setArmySelectionDialog({ armies: unactedArmies, x, y });
-          } else if (armiesOnClickedTile.length > 0){
-             toast({ title: 'Army Exhausted', description: 'This army has already acted and cannot be teleported.', variant: 'destructive'});
-          }
-          return;
-      }
+            } else {
+               toast({ title: 'Army Exhausted', description: 'This army has already acted and cannot be teleported.', variant: 'destructive'});
+            }
+        } else if (selectedArmy) {
+            await onAction(GameAction.Move, { army: selectedArmy, x, y, isTeleport: true });
+            setPendingAction(null);
+            setSelectedArmyId(null);
+        }
+        return;
     }
     
     const isPossibleMove = possibleMoves.some(p => p.x === x && p.y === y);
@@ -316,7 +323,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             setArmySelectionDialog({ armies: armiesOnTile, x, y });
         } else {
             if (pendingAction) {
-                onAction(GameAction.CancelAction);
+                onAction(GameAction.CancelAction, { cardName: pendingAction.cardName });
             }
             setSelectedArmyId(null);
             setPendingAction(null);
@@ -579,7 +586,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
       <GameDialogs 
         gameState={gameStateForDisplay}
-        serverGameState={serverGameState}
         localPlayer={localPlayer}
         isMyTurn={isMyTurn}
         onAction={onAction}

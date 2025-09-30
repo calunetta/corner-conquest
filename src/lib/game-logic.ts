@@ -1,6 +1,4 @@
 
-
-
 import type { GameState, Player, PlayerColor, BaseTileInfo } from './types';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './game-initializer';
@@ -77,6 +75,7 @@ export function addPlayerToGame(
         newGameState.log.push(`The game is full! Starting now.`);
         newGameState.status = GameStatus.Playing;
         newGameState.turn = 1;
+        newGameState.log.push(`It's now ${newGameState.players[0].name}'s turn.`)
     } else {
         newGameState.log.push(`${playerInfo.name} has joined the game!`);
     }

@@ -10,20 +10,14 @@ import { handleSelectResourceForPosition } from './resource';
 
 interface HandleActionParams {
     action: GameAction;
-    gameState: GameState | null;
+    gameState: GameState;
     payload?: any;
 }
 
 export { handlePlayerExit };
 
 export function handleGameAction({ action, gameState, payload }: HandleActionParams): ActionHandlerResult {
-    if (!gameState) {
-        console.error("handleGameAction called with null gameState");
-        return { state: null, ui: null };
-    }
-
-    // Only clone the state once at the top level for performance.
-    let state: GameState = JSON.parse(JSON.stringify(gameState));
+    let state: GameState = gameState;
     let ui: ActionHandlerResult['ui'] = null;
 
     try {
@@ -38,7 +32,7 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
                 state = handleEndTurn(state);
                 break;
             case GameAction.CancelAction:
-                state = handleCancelAction(state);
+                state = handleCancelAction(state, payload);
                 break;
             case GameAction.SelectResourcePosition:
                 state = handleSelectResourceForPosition(state, payload.resource, payload.armyId);

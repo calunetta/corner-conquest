@@ -77,8 +77,8 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
         });
     }
 
-    const deployCost = activeBotPlayer.efficientActive ? Math.ceil(activeBotPlayer.nextArmyCost / 2) : activeBotPlayer.nextArmyCost;
-    if ((canAfford(activeBotPlayer, deployCost, ResourceEnum.Wheat) || activeBotPlayer.reinforceActive) && activeBotPlayer.armyCount < 5 && !activeBotPlayer.actionsThisTurn.includes(GameAction.Deploy)) {
+    const deployCost = activeBotPlayer.efficientActive ? Math.ceil(activeBotPlayer.nextArmyCost / 2) : (activeBotPlayer.reinforceActive ? 0 : activeBotPlayer.nextArmyCost);
+    if (canAfford(activeBotPlayer, deployCost, ResourceEnum.Wheat) && activeBotPlayer.armyCount < 5 && !activeBotPlayer.actionsThisTurn.includes(GameAction.Deploy)) {
         possibleActions.push({
             name: 'deploy-army',
             priority: 6 - activeBotPlayer.armyCount,
@@ -103,7 +103,7 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
         if (neededResource) {
             possibleActions.push({
                 name: `use-wealthy-for-${neededResource}`,
-                priority: 8.5,
+                priority: 8.7, // High priority to unblock other actions
                 action: GameAction.GainWealth,
                 payload: { resource: neededResource }
             });
@@ -114,7 +114,7 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
         if (opponentToSabotage) {
              possibleActions.push({
                 name: `use-sabotage-on-${opponentToSabotage.name}`,
-                priority: 8,
+                priority: 8.8,
                 action: GameAction.SabotagePlayer,
                 payload: { targetPlayerId: opponentToSabotage.id }
             });
