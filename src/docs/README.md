@@ -263,3 +263,41 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priorit
     - **Deploying a new Army:** Medium priority, which decreases as its army count increases to maintain a balanced force.
     - **Exploring:** The bot now has a higher priority to explore new tiles, preventing it from getting stuck and encouraging expansion.
 3.  The bot executes the single action with the highest priority score. If no action is possible or an error occurs, it will safely end its turn as a fallback.
+
+## 7. Future Feature Ideas & Architectural Evaluation
+
+This section outlines potential new features to enhance the game, along with a high-level evaluation of their architectural impact and complexity.
+
+### 7.1. Increase Player Interaction & Drama 🎭
+Right now, player interaction is mostly direct combat. We can add layers of negotiation, alliance, and betrayal.
+
+**Bounties:** When a player gets a significant lead (e.g., 10 VP more than the next player), the game could automatically place a bounty on them. The next player to defeat one of their armies in battle steals some of their resources or earns bonus Victory Points.
+
+*   **Why it's fun:** It’s a natural comeback mechanic that creates a "king of the hill" scenario. It makes being in the lead more exciting and dangerous, and it gives trailing players a clear objective.
+*   **Architectural Impact (Low):** This is relatively simple to add. The `GameState` could have a `bountyOnPlayerId: number | null` field. The logic would be checked in the `handleEndTurn` function.
+
+### 7.2. Create a Dynamic & Living World 🌍
+A static board can become predictable. Introducing elements that change the state of the map keeps players on their toes.
+
+**Global Events:** At the start of every full round of turns (e.g., when the first player starts their turn again), a random global event could occur that lasts for one round.
+
+*   **Examples:** "Bumper Harvest" (+1 to all resource collection), "Monsoon Season" (army movement is reduced by 1), "Monster Uprising" (monsters on the board get +1 attack power for the round).
+*   **Why it's fun:** Events force players to adapt their strategies on the fly and can turn a bad situation into a good one (and vice-versa), creating memorable moments.
+*   **Architectural Impact (Low):** You'd add a `currentEvent: GameEvent | null` to the `GameState`. A new function would be called by `handleEndTurn` when a full round completes to draw a new event.
+
+### 7.3. Deepen Strategic Choices & Customization 💡
+Giving players more ways to develop their faction makes each game feel different and allows for more personal playstyles.
+
+**Asymmetric Player Factions:** Instead of just a color, each player chooses a faction at the start of the game with a small, unique passive bonus.
+
+*   **Examples:** A "Seafarer" faction that can move armies one extra tile, a "Merchant" faction that gets a discount when buying cards, a "Warlord" faction whose armies start with slightly more power, an "Engineer" faction that can deploy armies for less Wheat.
+*   **Why it's fun:** This dramatically increases replayability. A strategy that works for one faction won't work for another, encouraging players to experiment.
+*   **Architectural Impact (Medium):** A `faction` property would be added to the `Player` object. Your core logic functions in `lib/actions` would then simply check for the player's faction before applying costs or calculating moves. It's more work, but requires no major architectural changes.
+
+### 7.4. Improve Game Pacing & Tension ⚖️
+Ensure the game has a clear beginning, middle, and end, without a mid-game "drag" or a runaway leader problem.
+
+**Secret Objectives:** At the start of the game, give each player two private, secret objectives (e.g., "Occupy 3 Gem islands," "Win a battle against every opponent," "Discover 5 islands"). Completing one could grant a big chunk of VP (e.g., 7 VP).
+
+*   **Why it's fun:** It keeps everyone guessing who is really in the lead. A player who seems behind on the public VP track might suddenly surge to victory, creating suspense until the very end. It also gives players direction if they are unsure what to do.
+*   **Architectural Impact (High):** This is the most architecturally challenging idea. Player objectives would need to be stored in a way that is hidden from other players, which would require a private sub-collection in Firestore for each player in the game (e.g., `games/{gameId}/privateData/{playerId}`).
