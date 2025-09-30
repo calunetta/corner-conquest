@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { GameState, Player, CardName, Army } from '@/lib/types';
 import type { ArmySelectionDialogState, AttackSelectionDialogState, SabotageDialogState, PositionDialogState, WealthyDialogState, StealResourceDialogState, ProductiveCardDialogState, SpecialIslandRollDialogState } from '../types';
@@ -33,6 +34,7 @@ type GameDialogsProps = {
   onSelectArmyFromDialog: (armyId: number) => void;
   attackSelectionDialog: AttackSelectionDialogState | null;
   onCloseAttackSelectionDialog: () => void;
+  onSelectDefender: (defenderArmyId: number) => void;
   positionDialog: PositionDialogState;
   onClosePositionDialog: () => void;
   sabotageDialog: SabotageDialogState;
@@ -60,6 +62,7 @@ export function GameDialogs({
     onSelectArmyFromDialog,
     attackSelectionDialog,
     onCloseAttackSelectionDialog,
+    onSelectDefender,
     positionDialog,
     onClosePositionDialog,
     sabotageDialog,
@@ -150,15 +153,7 @@ export function GameDialogs({
             {attackSelectionDialog && (
                 <AttackSelectionDialog
                     state={attackSelectionDialog}
-                    onSelectTarget={(defenderArmyId: number) => {
-                        if (attackSelectionDialog) {
-                            onAction(GameAction.SelectDefender, {
-                                defenderArmyId,
-                                attackingArmyId: attackSelectionDialog.attackingArmyId,
-                            });
-                        }
-                        onCloseAttackSelectionDialog();
-                    }}
+                    onSelectTarget={onSelectDefender}
                     onClose={onCloseAttackSelectionDialog}
                     isMyTurn={isMyTurn}
                 />

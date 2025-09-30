@@ -1,94 +1,45 @@
 
+
 import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult, ResourceType, IslandResource, Player } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { GameAction, IslandType, MAP_COLS, ResourceType as ResourceTypeEnum } from '../types';
 
-export function handleAttackAction(state: GameState, selectedArmy: Army | null): ActionHandlerResult {
+export function handleInitiateCombatAction(state: GameState, payload: { attackingArmyId: number, target: { type: 'player', defenderId: number, defendingArmyId: number } | { type: 'monster', monsterName: string } }): GameState {
     const { players, currentPlayerIndex, map } = state;
     const attacker = players[currentPlayerIndex];
+    const attackingArmy = attacker.armies.find(a => a.id === payload.attackingArmyId);
 
-    if (!selectedArmy) throw new Error("No army selected.");
-    if (selectedArmy.hasActed) throw new Error("This army has already acted this turn.");
+    if (!attackingArmy) throw new Error("Attacking army not found.");
 
-    const currentTile = map[selectedArmy.position.y * MAP_COLS + selectedArmy.position.x];
-    const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
-    
-    if (otherPlayersOccupants.length > 0) {
-        const defenderPlayerId = otherPlayersOccupants[0].playerId;
-        const defendingPlayer = players.find(p => p.id === defenderPlayerId);
-
-        if (!defendingPlayer) {
-            throw new Error("Defending player not found.");
-        }
-
-        const defendingArmies = otherPlayersOccupants
-            .map(o => defendingPlayer.armies.find(a => a.id === o.armyId))
-            .filter((a): a is Army => !!a);
-
-        if (defendingArmies.length === 1) {
-            state.combatState = {
-                attackerId: attacker.id,
-                attackingArmyId: selectedArmy.id,
-                defenderId: defendingPlayer.id,
-                defendingArmyId: defendingArmies[0].id,
-                attackerRolls: [],
-                defenderRolls: [],
-                winnerId: null,
-                phase: 'rolling',
-            };
-        } else {
-             return { 
-                state: state, 
-                ui: { 
-                    newAttackSelectionDialogState: {
-                        attackingArmyId: selectedArmy.id,
-                        defendingPlayer: defendingPlayer,
-                        armies: defendingArmies,
-                    }
-                } 
-            };
-        }
-    } else if (currentTile.type === IslandType.Monster && currentTile.monsters && currentTile.monsters.length > 0) {
-      state.monsterCombatState = {
-        attackerId: attacker.id,
-        attackerPosition: selectedArmy.position,
-        monster: currentTile.monsters.length === 1 ? currentTile.monsters[0] : null,
-        attackerRolls: [],
-        monsterRolls: [],
-        winnerId: null,
-        phase: 'rolling',
-      };
+    if (payload.target.type === 'player') {
+        const { defenderId, defendingArmyId } = payload.target;
+        state.combatState = {
+            attackerId: attacker.id,
+            attackingArmyId: attackingArmy.id,
+            defenderId: defenderId,
+            defendingArmyId: defendingArmyId,
+            attackerRolls: [],
+            defenderRolls: [],
+            winnerId: null,
+            phase: 'rolling',
+        };
     } else {
-        state.log.push(`${attacker.name}'s army prepares to attack, but finds no target.`);
+        const { monsterName } = payload.target;
+        const currentTile = map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
+        const monster = currentTile.monsters?.find(m => m.name === monsterName);
+        if (!monster) throw new Error("Target monster not found on tile.");
+
+        state.monsterCombatState = {
+            attackerId: attacker.id,
+            attackerPosition: attackingArmy.position,
+            monster: monster,
+            attackerRolls: [],
+            monsterRolls: [],
+            winnerId: null,
+            phase: 'rolling',
+        };
     }
-    return { state: state, ui: null };
-}
-
-export function handleSelectDefender(state: GameState, defenderArmyId: number, attackingArmyId: number): GameState {
-    const { players, currentPlayerIndex } = state;
-    const attacker = players[currentPlayerIndex];
-
-    const attackingArmy = attacker.armies.find(a => a.id === attackingArmyId);
-    if (!attackingArmy) return state;
     
-    const tile = state.map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
-    const defenderOccupant = tile.occupants.find(o => o.playerId !== attacker.id);
-    if (!defenderOccupant) return state;
-    
-    const defender = players.find(p => p.id === defenderOccupant.playerId);
-    if (!defender) return state;
-    
-    state.combatState = {
-        attackerId: attacker.id,
-        attackingArmyId: attackingArmyId,
-        defenderId: defender.id,
-        defendingArmyId: defenderArmyId,
-        attackerRolls: [],
-        defenderRolls: [],
-        winnerId: null,
-        phase: 'rolling',
-    };
-
     return state;
 }
 
@@ -212,7 +163,7 @@ export function handleCloseCombat(state: GameState): GameState {
     return state;
 }
 
-export function handleMonsterCombatRoll(state: GameState, payload: {monster: Monster; useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean}): GameState {
+export function handleMonsterCombatRoll(state: GameState, payload: { monster: Monster; useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean }): GameState {
     const { players, currentPlayerIndex, discardPile, monsterCombatState } = state;
     if(!monsterCombatState) return state;
 

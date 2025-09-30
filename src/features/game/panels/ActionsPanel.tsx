@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { GameState, Player, Army, CardName } from '@/lib/types';
 import type { PendingAction } from '@/features/game/types';
@@ -64,7 +65,7 @@ export function ActionsPanel({
   const isCancellableActionInProgress = pendingAction?.type === 'teleport' || pendingAction?.type === 'scout';
 
   const mainActions: ActionConfig[] = [
-    { id: GameAction.Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed || isCardActionInProgress, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Attack, { army: selectedArmy }) },
+    { id: GameAction.local_Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed || isCardActionInProgress, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onLocalAction(GameAction.local_Attack, { army: selectedArmy }) },
     { id: GameAction.local_Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress || localPlayer.positions.some(p => p.armyId === selectedArmy?.id), tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onLocalAction(GameAction.local_Position, { army: selectedArmy }) },
   ];
   
@@ -125,7 +126,7 @@ export function ActionsPanel({
   const getDisabledReason = (action: ActionConfig): string => {
     if (!isMyTurn && action.id !== GameAction.local_ShowCards) return "It's not your turn.";
     if (isCardActionInProgress) return "Complete or cancel your current card action.";
-    if (hasArmyActed && [GameAction.Attack, GameAction.local_Position].includes(action.id)) return "This army has already acted.";
+    if (hasArmyActed && [GameAction.local_Attack, GameAction.local_Position].includes(action.id)) return "This army has already acted.";
 
     switch (action.id) {
         case GameAction.Upgrade:
@@ -144,7 +145,7 @@ export function ActionsPanel({
             if (localPlayer.armyCount >= 5) return "Maximum army size reached.";
             if (localPlayer.actionsThisTurn.includes(GameAction.Deploy)) return "You've already deployed this turn.";
             return "This action is not available.";
-        case GameAction.Attack:
+        case GameAction.local_Attack:
             if (!selectedArmy) return "You must select an army first.";
             if (!currentTile || (!currentTile.occupants.some(o => o.playerId !== localPlayer.id) && (!currentTile.monsters || currentTile.monsters.length === 0))) return "There is nothing to attack on this tile.";
             return "This action is not available.";
@@ -158,6 +159,7 @@ export function ActionsPanel({
             if (localPlayer.specialCards.length === 0) return "You have no special cards.";
             return "This action is not available.";
         case GameAction.local_OpenAbilitiesShop:
+             if (!isMyTurn) return "Can only access shop on your turn.";
              return "This action is not available.";
         default:
             return "This action is not available.";
@@ -170,27 +172,27 @@ export function ActionsPanel({
       : (!isMyTurn && action.id !== GameAction.local_ShowCards) || action.disabled;
 
     return (
-        <Tooltip key={action.id}>
-            <TooltipTrigger asChild>
-                <div className={isMain ? "w-full" : ""}>
-                    <Button
-                        variant={pendingAction?.cardName.toLowerCase().includes(action.label.toLowerCase()) ? 'default' : 'outline'}
-                        onClick={action.onClick}
-                        disabled={isDisabled}
-                        className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}
-                    >
-                        {action.icon}
-                        <span className="whitespace-normal">{action.label}</span>
-                    </Button>
-                </div>
-            </TooltipTrigger>
-            <TooltipContent>
-                <p>{action.tooltip}</p>
-                {isDisabled && <p className="mt-1 text-xs text-destructive">
-                    {getDisabledReason(action)}
-                </p>}
-            </TooltipContent>
-        </Tooltip>
+      <Tooltip key={action.id}>
+          <TooltipTrigger asChild>
+              <div className={isMain ? "w-full" : ""}>
+                  <Button
+                      variant={pendingAction?.cardName.toLowerCase().includes(action.label.toLowerCase()) ? 'default' : 'outline'}
+                      onClick={action.onClick}
+                      disabled={isDisabled}
+                      className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}
+                  >
+                      {action.icon}
+                      <span className="whitespace-normal">{action.label}</span>
+                  </Button>
+              </div>
+          </TooltipTrigger>
+          <TooltipContent>
+              <p>{action.tooltip}</p>
+              {isDisabled && <p className="mt-1 text-xs text-destructive">
+                  {getDisabledReason(action)}
+              </p>}
+          </TooltipContent>
+      </Tooltip>
     )
   };
 

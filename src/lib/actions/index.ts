@@ -1,8 +1,9 @@
 
+
 import type { GameState, ActionHandlerResult, Army } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 
-import { handleAttackAction, handleSelectDefender, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
+import { handleInitiateCombatAction, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
 import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleBuyAbility, handleUseProductiveCard, handleRollOnSpecialIsland, handleCloseSpecialIslandDialog, handleScoutAction } from './card';
 import { handleMoveAction } from './movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn, handleCancelAction, handlePlayerExit } from './player';
@@ -41,11 +42,8 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
             case GameAction.Move:
                 ({ state } = handleMoveAction(state, payload.x, payload.y, payload.army, payload.isTeleport));
                 break;
-            case GameAction.Attack:
-                ({ state, ui } = handleAttackAction(state, payload.army));
-                break;
-            case GameAction.SelectDefender:
-                 state = handleSelectDefender(state, payload.defenderArmyId, payload.attackingArmyId);
+            case GameAction.InitiateCombat:
+                state = handleInitiateCombatAction(state, payload);
                 break;
             case GameAction.CombatRoll:
                 state = handleCombatRoll(state, payload.useWarChief);

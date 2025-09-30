@@ -1,4 +1,5 @@
 
+
 export const MAP_ROWS = 6;
 export const MAP_COLS = 5;
 export const HAND_LIMIT = 7;
@@ -7,7 +8,7 @@ export enum GameAction {
   // Shared Game State Actions
   Deploy = 'deploy',
   Move = 'move',
-  Attack = 'attack',
+  InitiateCombat = 'initiate-combat',
   SelectResourcePosition = 'select-resource-position',
   BuyCard = 'buy-card',
   Upgrade = 'upgrade',
@@ -19,7 +20,6 @@ export enum GameAction {
   StealResource = 'steal-resource',
   RollOnSpecialIsland = 'roll-on-special-island',
   CloseSpecialIslandDialog = 'close-special-island-dialog',
-  SelectDefender = 'select-defender',
   CombatRoll = 'combat-roll',
   CloseCombat = 'close-combat',
   MonsterCombatRoll = 'monster-combat-roll',
@@ -38,6 +38,7 @@ export enum GameAction {
   local_CloseAbilitiesShop = 'local:close-abilities-shop',
   local_UseCard = 'local:use-card',
   local_Position = 'local:position',
+  local_Attack = 'local:attack',
 }
 
 export enum CardName {
