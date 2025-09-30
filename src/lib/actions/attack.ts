@@ -387,5 +387,3 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
     newState.monsterCombatState = null;
     return newState;
 }
-
-    

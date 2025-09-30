@@ -11,14 +11,15 @@ export function handleBuyCardAction(state: GameState): GameState {
 
     if (player.actionsThisTurn.includes(GameAction.BuyCard)) throw new Error("You can only buy one card per turn.");
     if (player.resources.gems < 10) throw new Error("Not enough gems to buy a card.");
-    if (specialCardsDeck.length === 0 && discardPile.length === 0) {
-        newState.log.push(`${player.name} tried to buy a card, but there are none left!`);
-        return newState;
-    }
     if (player.specialCards.length >= HAND_LIMIT && !debugMode) {
         newState.log.push(`${player.name} tried to buy a card, but their hand is full!`);
         return newState;
     }
+    if (specialCardsDeck.length === 0 && discardPile.length === 0) {
+        newState.log.push(`${player.name} tried to buy a card, but there are none left!`);
+        return newState;
+    }
+
 
     if (specialCardsDeck.length === 0) {
         newState.log.push("The deck is empty. Reshuffling the discard pile...");
@@ -55,9 +56,11 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
     
     newState.log.push(`${player.name} is using the '${cardName}' card.`);
     
-    const immediateConsumeCards: CardName[] = ['Extra Move', 'Reinforce', 'Efficient', 'Master Builder'];
-    if (immediateConsumeCards.includes(cardName)) {
+    const immediateEffectCards: CardName[] = ['Extra Move', 'Reinforce', 'Efficient', 'Master Builder'];
+    if (immediateEffectCards.includes(cardName)) {
         player.actionsThisTurn.push(GameAction.UseCard); // Consume action now
+        
+        // These flags will be consumed by other actions (Move, Deploy, Upgrade)
         player.hasExtraMove = cardName === 'Extra Move';
         player.reinforceActive = cardName === 'Reinforce';
         player.efficientActive = cardName === 'Efficient';
@@ -65,6 +68,7 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
         newState.log.push(`${player.name} activated '${cardName}'.`);
     }
 
+    // Scout is special: the card is only consumed after all tiles are revealed.
     if (isScout) {
         if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
             player.actionsThisTurn.push(GameAction.UseCard);
@@ -231,9 +235,9 @@ export function handleRollOnSpecialIsland(state: GameState): {state: GameState, 
       }
       if (newState.specialCardsDeck.length > 0) {
           const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
-          const drawnCard = newState.specialCardsDeck.splice(cardIndex, 1)[0];
-          player.specialCards.push(drawnCard);
-          cardDrawn = drawnCard;
+          const drawnCardResult = newState.specialCardsDeck.splice(cardIndex, 1)[0];
+          player.specialCards.push(drawnCardResult);
+          cardDrawn = drawnCardResult;
           newState.log.push(`${player.name} rolled a ${roll} and found a card: "${drawnCard}"!`);
       }
     }
@@ -266,9 +270,6 @@ export function handleScoutAction(state: GameState, x: number, y: number): GameS
 
     if (!player.revealedTiles.includes(tileId)) {
         player.revealedTiles.push(tileId);
-        newState.log.push(`${player.name} revealed a tile at (${x},${y}) with Scout.`);
     }
     return newState;
 }
-
-    

@@ -40,7 +40,8 @@ export function canArmyPerformAnyAction(state: GameState, army: Army): boolean {
     if (canAttack) return true;
 
     const isPositioned = player.positions.some(p => p.armyId === army.id);
-    if (!isPositioned && (tile.type === IslandType.Resource || tile.type === IslandType.Base) && tile.resources.length > 0 && (!tile.monsters || tile.monsters.length === 0)) {
+    const canPosition = !isPositioned && (tile.type === IslandType.Resource || tile.type === IslandType.Base) && tile.resources.length > 0 && (!tile.monsters || tile.monsters.length === 0);
+    if (canPosition) {
        const hasAvailableResourceSlot = tile.resources.some(res => !(tile.positionedBy || []).some(p => p.resource === res.type));
        if (hasAvailableResourceSlot) return true;
     }
@@ -68,7 +69,7 @@ export function canPlayerPerformAnyAction(state: GameState): boolean {
         return true;
     }
 
-    const deployCost = player.efficientActive ? Math.ceil(player.nextArmyCost / 2) : settings.deployCost;
+    const deployCost = player.efficientActive ? Math.ceil(player.nextArmyCost / 2) : player.nextArmyCost;
     if ((player.resources.wheat >= deployCost || player.reinforceActive) && player.armyCount < 5 && !player.actionsThisTurn.includes(GameAction.Deploy)) {
         return true;
     }
@@ -395,5 +396,3 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
         console.error("Error leaving game:", error);
     }
 }
-
-    

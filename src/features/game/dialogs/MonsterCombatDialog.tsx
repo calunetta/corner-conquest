@@ -47,6 +47,7 @@ export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: Mo
   const hasOvercomeCard = attacker.specialCards.includes(CardName.Overcome);
   const hasWarChiefCard = attacker.specialCards.includes(CardName.WarChief);
   const monsterForDisplay = phase === 'results' ? monsterCombatState.monster : selectedMonster;
+  const canUseCard = !attacker.actionsThisTurn.includes(GameAction.UseCard);
   
   const isSelectionPhase = phase === 'rolling' && monsters.length > 1 && !selectedMonster;
 
@@ -96,19 +97,19 @@ export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: Mo
             </div>
             
             <div className='space-y-4'>
-                {hasOvercomeCard && !attacker.actionsThisTurn.includes(GameAction.UseCard) && (
+                {hasOvercomeCard && canUseCard && (
                 <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
-                    <Checkbox id="use-overcome-card" checked={useOvercomeCard} onCheckedChange={(checked) => { setUseOvercomeCard(!!checked); if(!!checked) setUseDecideCard(false); }} />
+                    <Checkbox id="use-overcome-card" checked={useOvercomeCard} onCheckedChange={(checked) => { setUseOvercomeCard(!!checked); if(!!checked) { setUseDecideCard(false); setUseWarChief(false); } }} />
                     <Label htmlFor="use-overcome-card" className='font-bold'>Use '{CardName.Overcome}' card to win automatically?</Label>
                 </div>
                 )}
-                {hasWarChiefCard && !attacker.actionsThisTurn.includes(GameAction.UseCard) && (
+                {hasWarChiefCard && canUseCard && (
                     <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
-                        <Checkbox id="use-warchief-card" disabled={useOvercomeCard} checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
+                        <Checkbox id="use-warchief-card" disabled={useOvercomeCard} checked={useWarChief} onCheckedChange={(checked) => { setUseWarChief(!!checked); if(!!checked) setUseDecideCard(false); }} />
                         <Label htmlFor="use-warchief-card" className='font-bold'>Use '{CardName.WarChief}' card for +2 attack power?</Label>
                     </div>
                 )}
-                {hasDecideCard && !attacker.actionsThisTurn.includes(GameAction.UseCard) && (
+                {hasDecideCard && canUseCard && (
                 <div className="space-y-4 rounded-md border bg-muted/50 p-4">
                     <div className="flex items-center space-x-2">
                         <Checkbox id="use-decide-card" checked={useDecideCard} disabled={useOvercomeCard || useWarChief} onCheckedChange={(checked) => setUseDecideCard(!!checked)} />

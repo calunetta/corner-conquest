@@ -21,7 +21,7 @@ type CardsDialogProps = {
   player: Player;
   onClose: () => void;
   onUseCard: (cardName: CardName) => void;
-  canUseCards: boolean; // Is it the local player's turn?
+  canUseCards: boolean; // Is it the local player's turn and are they viewing their own cards?
 };
 
 export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDialogProps) {

@@ -200,7 +200,7 @@ export type Island = {
   positionedBy?: {playerId: number, resource: ResourceType}[];
 };
 
-export type CombatPhase = 'rolling' | 'results' | 'death';
+export type CombatPhase = 'rolling' | 'results';
 
 export type CombatState = {
   attackerId: number;
@@ -271,5 +271,3 @@ export type ActionHandlerResult = {
         }
     } | null
 }
-
-    

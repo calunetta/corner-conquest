@@ -91,6 +91,10 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         throw new Error(`Invalid move: Army ${armyInState.id} has already acted.`);
     }
 
+    if (isTeleport && armyInState.hasActed) {
+        throw new Error(`Invalid move: Army ${armyInState.id} has already acted and cannot be teleported.`);
+    }
+
     if (!isTeleport) {
         const possibleMoves = getPossibleMoves(newState, armyInState);
         if (!possibleMoves.some(m => m.x === x && m.y === y)) {
@@ -120,18 +124,24 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
             player.actionsThisTurn.push(GameAction.UseCard);
             discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
             newState.log.push(`${player.name} teleported an army!`);
+        } else {
+             throw new Error("Teleport card not found, but was attempted to be used.");
         }
         armyInState.hasActed = true;
         return { state: newState, ui: null };
     }
     
-    // This is a normal move or an extra move.
     // Handle "Extra Move" consumption logic
     if (player.hasExtraMove && !armyInState.hasActed) {
         player.hasExtraMove = false; // Consume the extra move
+        const cardIndex = player.specialCards.indexOf('Extra Move');
+        if (cardIndex > -1) {
+            // Note: UseCard action was already consumed when the card was activated.
+            // Here we just discard the card itself.
+            discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
+        }
         newState.log.push(`${player.name} used their Extra Move on an army.`);
         // Per README, if used on an un-acted army, it does NOT get hasActed = true.
-        // The army was fresh, so it remains fresh. We do nothing to hasActed.
     } else {
         armyInState.hasActed = true;
     }
@@ -153,5 +163,3 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     
     return { state: newState, ui: null };
 }
-
-    

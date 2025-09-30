@@ -1,7 +1,7 @@
 
 'use client';
 import type { GameState } from '@/lib/types';
-import { CardName } from '@/lib/types';
+import { CardName, GameAction } from '@/lib/types';
 import { useState, useEffect } from 'react';
 import {
   AlertDialog,
@@ -69,6 +69,7 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
   
   const canPerformAction = isMyTurn && isAttacker;
   const isViewer = !isAttacker;
+  const canUseCard = !attacker.actionsThisTurn.includes(GameAction.UseCard);
 
 
   // Viewer-only results screen
@@ -120,7 +121,7 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        {phase === 'rolling' && hasWarChiefCard && canPerformAction && !attacker.actionsThisTurn.includes(GameAction.UseCard) && (
+        {phase === 'rolling' && hasWarChiefCard && canPerformAction && canUseCard && (
             <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
                 <Checkbox id="use-warchief-card" checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
                 <Label htmlFor="use-warchief-card" className='font-bold'>Use '{CardName.WarChief}' card for +2 attack power?</Label>

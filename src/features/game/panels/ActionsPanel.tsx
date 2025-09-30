@@ -60,11 +60,11 @@ export function ActionsPanel({
   const canBuyCard = localPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !localPlayer.actionsThisTurn.includes(GameAction.BuyCard);
   const canUpgrade = localPlayer.resources.iron >= upgradeCost && !localPlayer.actionsThisTurn.includes(GameAction.Upgrade) && localPlayer.attackPower < 4;
   
-  const isCancellableActionInProgress = !!pendingAction;
+  const isCancellableActionInProgress = pendingAction?.type === 'teleport' || pendingAction?.type === 'scout';
 
   const mainActions: ActionConfig[] = [
     { id: GameAction.Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed || isCardActionInProgress, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Attack, { army: selectedArmy }) },
-    { id: GameAction.local_Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress, tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onLocalAction(GameAction.local_Position, { army: selectedArmy }) },
+    { id: GameAction.local_Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress || localPlayer.positions.some(p => p.armyId === selectedArmy?.id), tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onLocalAction(GameAction.local_Position, { army: selectedArmy }) },
   ];
   
   const deployLabel = localPlayer.reinforceActive
@@ -78,7 +78,7 @@ export function ActionsPanel({
       id: GameAction.Upgrade, 
       label: `Upgrade (${localPlayer.resources.iron}/${upgradeCost} Iron)`, 
       icon: <Zap />, 
-      disabled: !canUpgrade, 
+      disabled: !canUpgrade || isCardActionInProgress, 
       tooltip: "Spend iron to permanently increase your army's attack power by 1. Can only be done once per turn.",
       onClick: () => onAction(GameAction.Upgrade)
     },
@@ -86,7 +86,7 @@ export function ActionsPanel({
       id: GameAction.BuyCard, 
       label: buyCardLabel, 
       icon: <ShoppingCart />, 
-      disabled: !canBuyCard, 
+      disabled: !canBuyCard || isCardActionInProgress, 
       tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn.",
       onClick: () => onAction(GameAction.BuyCard)
     },
@@ -94,7 +94,7 @@ export function ActionsPanel({
       id: GameAction.Deploy, 
       label: deployLabel, 
       icon: <Sword />, 
-      disabled: !canDeploy, 
+      disabled: !canDeploy || isCardActionInProgress, 
       tooltip: "Spend wheat to deploy a new army at your base. The cost increases with each new army.",
       onClick: () => onAction(GameAction.Deploy)
     },
@@ -102,7 +102,7 @@ export function ActionsPanel({
       id: GameAction.local_OpenAbilitiesShop, 
       label: 'Abilities Shop', 
       icon: <University />, 
-      disabled: false, 
+      disabled: isCardActionInProgress, 
       tooltip: "Purchase permanent passive abilities for your empire.",
       onClick: () => onLocalAction(GameAction.local_OpenAbilitiesShop)
     },
@@ -121,9 +121,11 @@ export function ActionsPanel({
   
   const timerPercentage = (timeLeft / turnDuration) * 100;
 
-  const getDisabledReason = (actionId: GameAction): string => {
+  const getDisabledReason = (action: ActionConfig): string => {
     if (isCardActionInProgress) return "Complete or cancel your current card action.";
-    switch (actionId) {
+    if (hasArmyActed && [GameAction.Attack, GameAction.local_Position].includes(action.id)) return "This army has already acted.";
+
+    switch (action.id) {
         case GameAction.Upgrade:
             if (localPlayer.attackPower >= 4) return "Maximum attack power reached.";
             if (localPlayer.resources.iron < upgradeCost) return "Not enough iron.";
@@ -179,7 +181,7 @@ export function ActionsPanel({
                 <TooltipContent>
                     <p>{action.tooltip}</p>
                     {isDisabled && <p className="mt-1 text-xs text-destructive">
-                        {!isMyTurn && !action.id.startsWith('local:') ? "It's not your turn." : (hasArmyActed && [GameAction.Attack, GameAction.local_Position].includes(action.id) ? "This army has already acted." : getDisabledReason(action.id))}
+                        {!isMyTurn && !action.id.startsWith('local:') ? "It's not your turn." : getDisabledReason(action)}
                     </p>}
                 </TooltipContent>
             </Tooltip>
