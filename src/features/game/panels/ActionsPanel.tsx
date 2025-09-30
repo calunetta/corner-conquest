@@ -60,7 +60,7 @@ export function ActionsPanel({
   const canBuyCard = localPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !localPlayer.actionsThisTurn.includes(GameAction.BuyCard);
   const canUpgrade = localPlayer.resources.iron >= upgradeCost && !localPlayer.actionsThisTurn.includes(GameAction.Upgrade) && localPlayer.attackPower < 4;
   
-  const isCancellableActionInProgress = isCardActionInProgress || localPlayer.hasExtraMove;
+  const isCancellableActionInProgress = !!pendingAction;
 
   const mainActions: ActionConfig[] = [
     { id: GameAction.Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed || isCardActionInProgress, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onAction(GameAction.Attack, { army: selectedArmy }) },
@@ -194,7 +194,7 @@ export function ActionsPanel({
         <div className="flex flex-wrap items-center justify-end gap-2">
             {isMyTurn && isCancellableActionInProgress && (
                  <Button variant="destructive" size="sm" onClick={() => onLocalAction(GameAction.local_CancelAction)}>
-                    <XCircle />
+                    <XCircle className="mr-2 h-4 w-4" />
                     Cancel
                 </Button>
             )}

@@ -10,7 +10,6 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
     const { map, players, currentPlayerIndex } = state;
     const currentPlayer = players[currentPlayerIndex];
 
-    // An army that has acted cannot move, unless Extra Move is active.
     if (army.hasActed && !currentPlayer.hasExtraMove) {
         return [];
     }
@@ -89,12 +88,13 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
 
     const armyInState = player.armies.find(a => a.id === army.id);
     if (!armyInState) throw new Error("Army not found for move action.");
+    
+    // Stricter check
+    if (armyInState.hasActed && !player.hasExtraMove && !isTeleport) {
+        throw new Error(`Invalid move: Army ${armyInState.id} has already acted.`);
+    }
 
     if (!isTeleport) {
-        // This is a failsafe to prevent invalid moves from ever being processed.
-        if (armyInState.hasActed && !player.hasExtraMove) {
-             throw new Error(`Invalid move: Army ${armyInState.id} has already acted.`);
-        }
         const possibleMoves = getPossibleMoves(newState, armyInState);
         if (!possibleMoves.some(m => m.x === x && m.y === y)) {
             throw new Error(`Invalid move for army ${armyInState.id} to (${x}, ${y}).`);
@@ -133,19 +133,22 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         const revealResult = revealIsland(newState, x, y, isTeleport);
         newState = revealResult.newState;
     } else if (targetTile.type === IslandType.Special) {
-        // Landing on an already-discovered special island triggers a roll
         armyInState.hasActed = true;
-        return { state: newState, ui: { specialIslandRoll: { roll: null, cardDrawn: null } } };
+        
+        if (player.dialogState) {
+            player.dialogState.specialIslandRoll = { isOpen: true, roll: null, cardDrawn: null };
+        } else {
+            player.dialogState = { specialIslandRoll: { isOpen: true, roll: null, cardDrawn: null } };
+        }
+        return { state: newState, ui: null };
     }
     
-    // Correct "Extra Move" logic
-    if (!player.hasExtraMove) {
-        // This is a normal move.
-        armyInState.hasActed = true;
-    } else {
-        // This is an Extra Move. Consume the flag, but DO NOT change hasActed.
+    if (player.hasExtraMove) {
         player.hasExtraMove = false;
         newState.log.push(`${player.name} used their Extra Move on an army.`);
+        // The army's hasActed status is NOT changed, preserving its freshness.
+    } else {
+        armyInState.hasActed = true;
     }
 
     return { state: checkAndEndTurnIfNoActions(newState), ui: null };

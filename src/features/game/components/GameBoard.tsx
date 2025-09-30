@@ -36,7 +36,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const { playerId } = usePlayer();
   const { 
     gameState: serverGameState, 
-    setGameState: setServerGameState, 
+    setGameState, 
     isMyTurn, 
     localPlayer, 
     isHost, 
@@ -70,7 +70,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [wealthyDialog, setWealthyDialog] = useState<WealthyDialogState>(null);
   const [stealResourceDialog, setStealResourceDialog] = useState<StealResourceDialogState>(null);
   const [productiveCardDialog, setProductiveCardDialog] = useState<ProductiveCardDialogState | null>(null);
-  const [specialIslandRollDialog, setSpecialIslandRollDialog] = useState<SpecialIslandRollDialogState>(null);
+  const [specialIslandRollDialog, setSpecialIslandRollDialog] = useState<SpecialIslandRollDialogState | null>(null);
 
 
   const [showConfirmExitDialog, setShowConfirmExitDialog] = useState(false);
@@ -79,43 +79,37 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // The GameState to render. Use local state if it's my turn, otherwise use server state.
-  const gameState = isMyTurn && localGameState ? localGameState : serverGameState;
+  const gameStateForDisplay = isMyTurn && localGameState ? localGameState : serverGameState;
 
   useEffect(() => {
     // When it becomes my turn, create a local copy of the state to modify.
-    if (isMyTurn && serverGameState) {
+    if (isMyTurn && serverGameState && !localGameState) {
         let localCopy = cloneDeep(serverGameState);
         
-        // Check if the productive card dialog should be shown at the start of the turn
+        // This check is now handled by the handleEndTurn action, which sets the dialog state.
         const currentPlayer = localCopy.players[localCopy.currentPlayerIndex];
-        if (currentPlayer.positions.length > 0 && currentPlayer.specialCards.includes(CardName.Productive)) {
-            const productiveOptions = currentPlayer.positions.map(pos => {
-                const tile = localCopy.map[pos.y * localCopy.settings.gridSize.cols + pos.x];
-                const resource = tile.resources.find(r => r.type === pos.resource);
-                return { resource: pos.resource, amount: resource?.amount || 0 };
-            }).filter(opt => opt.amount > 0);
-
-            if (productiveOptions.length > 0) {
-                setProductiveCardDialog({ isOpen: true, options: productiveOptions });
-            }
+        const productiveDialogState = currentPlayer.dialogState?.productiveCard;
+        if(productiveDialogState) {
+            setProductiveCardDialog(productiveDialogState);
         }
+
         setLocalGameState(localCopy);
-    } else if (!isMyTurn) {
+    } else if (!isMyTurn && localGameState) {
         // When it's not my turn, clear the local state.
         setLocalGameState(null);
     }
-  }, [isMyTurn, serverGameState]);
+  }, [isMyTurn, serverGameState, localGameState]);
 
   const selectedArmy = useMemo(() => {
-    if (!gameState || selectedArmyId === null || !localPlayer) return null;
-    const player = gameState.players.find(p => p.id === localPlayer.id);
+    if (!gameStateForDisplay || selectedArmyId === null || !localPlayer) return null;
+    const player = gameStateForDisplay.players.find(p => p.id === localPlayer.id);
     return player?.armies.find(a => a.id === selectedArmyId) || null;
-  }, [gameState, selectedArmyId, localPlayer]);
+  }, [gameStateForDisplay, selectedArmyId, localPlayer]);
   
   const sortedPlayers = useMemo(() => {
-    if (!gameState?.players) return [];
-    return [...gameState.players].sort((a, b) => a.id - b.id);
-  }, [gameState?.players]);
+    if (!gameStateForDisplay?.players) return [];
+    return [...gameStateForDisplay.players].sort((a, b) => a.id - b.id);
+  }, [gameStateForDisplay?.players]);
 
 
   useEffect(() => {
@@ -140,7 +134,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     } else if (localGameState) {
         // Auto-select army if it's my turn and I only have one
         const myArmies = localGameState.players[localGameState.currentPlayerIndex].armies;
-        if (myArmies.length === 1 && selectedArmyId === null) {
+        if (myArmies.length === 1 && selectedArmyId === null && myArmies.every(a => !a.hasActed)) {
             setSelectedArmyId(myArmies[0].id);
         }
     }
@@ -148,13 +142,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   }, [isMyTurn, localGameState]);
 
   useEffect(() => {
-    if (selectedArmy && gameState && isMyTurn) {
-        const moves = getPossibleMoves(gameState, selectedArmy);
+    if (selectedArmy && gameStateForDisplay && isMyTurn) {
+        const moves = getPossibleMoves(gameStateForDisplay, selectedArmy);
         setPossibleMoves(moves);
     } else {
         setPossibleMoves([]);
     }
-  }, [selectedArmy, gameState, isMyTurn]);
+  }, [selectedArmy, gameStateForDisplay, isMyTurn]);
 
   // This function now handles both local and server actions
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
@@ -164,7 +158,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     const serverActions = [
         GameAction.CombatRoll, GameAction.CloseCombat, GameAction.MonsterCombatRoll, 
         GameAction.CloseMonsterCombat, GameAction.EndTurn, GameAction.SelectDefender, GameAction.Attack,
-        GameAction.CancelAction, GameAction.HostLeave
+        GameAction.CancelAction, GameAction.HostLeave, GameAction.CloseSpecialIslandDialog, GameAction.RollOnSpecialIsland
     ];
     
     if (!isMyTurn && !serverActions.includes(action)) {
@@ -175,7 +169,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     try {
         setIsPerformingAction(true);
         
-        let stateToUpdate = action === GameAction.EndTurn ? localGameState : serverGameState;
+        let stateToUpdate = serverActions.includes(action) ? (action === GameAction.EndTurn ? localGameState : serverGameState) : localGameState;
         
         // If it's a server action or an end-of-turn action, send it to Firebase.
         if (serverActions.includes(action)) {
@@ -184,7 +178,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 setIsPerformingAction(false);
                 return;
             }
-            const result = await setServerGameState(stateToUpdate, (gs) => handleGameAction({ action, gameState: gs, payload }));
+            const result = await setGameState(stateToUpdate, (gs) => handleGameAction({ action, gameState: gs, payload }));
             
             if (result?.newAttackSelectionDialogState) {
                 setAttackSelectionDialog(result.newAttackSelectionDialogState);
@@ -210,7 +204,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     } finally {
         setIsPerformingAction(false);
     }
-  }, [isPerformingAction, isMyTurn, toast, setServerGameState, localGameState, serverGameState]);
+  }, [isPerformingAction, isMyTurn, toast, setGameState, localGameState, serverGameState]);
 
 
   const handleLocalAction = useCallback((action: GameAction, payload?: any) => {
@@ -219,17 +213,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           case GameAction.local_DeselectArmy:
               setSelectedArmyId(null);
               if (pendingAction) {
-                  setPendingAction(null);
-                  // We now handle the refund via a dedicated server action
                   onAction(GameAction.CancelAction);
+                  setPendingAction(null);
               }
               break;
           case GameAction.local_CancelAction:
               setPendingAction(null);
-              // Only dispatch the refund action if a pending action was truly cancelled.
-              if (pendingAction) {
-                onAction(GameAction.CancelAction);
-              }
+              onAction(GameAction.CancelAction);
               break;
           case GameAction.local_ShowCards:
               setCardsDialogPlayerId(prev => prev === payload.playerId ? null : payload.playerId);
@@ -244,9 +234,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
               setAbilitiesShopOpen(false);
               break;
           case GameAction.local_Position:
-              if (!gameState) return;
+              if (!gameStateForDisplay) return;
               const { army } = payload;
-              const tile = gameState.map[army.position.y * gameState.settings.gridSize.cols + army.position.x];
+              const tile = gameStateForDisplay.map[army.position.y * gameStateForDisplay.settings.gridSize.cols + army.position.x];
               const availableResources = tile?.resources.filter(resource => !(tile.positionedBy || []).some(p => p.resource === resource.type));
               if (availableResources && availableResources.length > 0) {
                   setPositionDialog({ x: army.position.x, y: army.position.y, resources: availableResources, armyId: army.id });
@@ -256,8 +246,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
               break;
           case GameAction.local_UseCard:
               const { cardName } = payload;
-              const currentPlayer = gameState?.players[gameState.currentPlayerIndex];
-              if (!currentPlayer || !gameState) return;
+              const currentPlayer = gameStateForDisplay?.players[gameStateForDisplay.currentPlayerIndex];
+              if (!currentPlayer || !gameStateForDisplay) return;
 
               if (!currentPlayer.specialCards.includes(cardName)) {
                   toast({ title: "Card not found", description: `You do not have the ${cardName} card.`, variant: "destructive" });
@@ -286,10 +276,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           default:
               console.warn("Unhandled local action:", action);
       }
-  }, [gameState, onAction, pendingAction, toast]);
+  }, [gameStateForDisplay, onAction, pendingAction, toast]);
   
   const handleTileClick = async (x: number, y: number) => {
-    if (!gameState || !isMyTurn || gameState.status !== 'playing' || isPerformingAction) return;
+    if (!gameStateForDisplay || !isMyTurn || gameStateForDisplay.status !== 'playing' || isPerformingAction) return;
 
     // --- Local Pending Action Handling (Scout, Teleport) ---
     if (pendingAction?.type === 'scout') {
@@ -321,8 +311,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
               setSelectedArmyId(armiesOnClickedTile[0].id);
           } else if (armiesOnClickedTile.length > 1) {
               setArmySelectionDialog({ armies: armiesOnClickedTile, x, y });
-          } else {
-            // Clicked an empty tile with no army selected, do nothing
           }
           return; // Wait for destination click
       }
@@ -395,15 +383,15 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (serverGameState?.status === 'playing') {
         const winner = serverGameState.players.find(p => p.victoryPoints >= serverGameState.settings.victoryPointGoal);
         if (winner && !serverGameState.winner) {
-            setServerGameState(serverGameState, (gs) => gs ? { ...gs, winner: cloneDeep(winner), status: 'finished' } : null);
+            setGameState(serverGameState, (gs) => gs ? { ...gs, winner: cloneDeep(winner), status: 'finished' } : null);
         }
     }
-   }, [serverGameState, setServerGameState]);
+   }, [serverGameState, setGameState]);
    
   const handleStartGame = async () => {
     if (!serverGameState || !isHost) return;
     toast({ title: "Game Started!", description: "Let the conquest begin!" });
-    await setServerGameState(serverGameState, (gs) => startGame(gs!, localPlayer?.name || 'The host'));
+    await setGameState(serverGameState, (gs) => startGame(gs!, localPlayer?.name || 'The host'));
   };
 
   const handleExitClick = async () => {
@@ -432,11 +420,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   
   const handleConfirmHostLeave = async () => {
     setShowHostLeaveDialog(false);
-    await handlePlayerExit(gameId, localPlayer!.playerId);
+    if (!localPlayer) return;
+    await handlePlayerExit(gameId, localPlayer.playerId);
     onExit();
   };
 
-  if (isLoading || !serverGameState || !localPlayer || !gameState) {
+  if (isLoading || !serverGameState || !localPlayer || !gameStateForDisplay) {
     return (
       <div className="flex h-screen w-screen items-center justify-center p-4 text-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -449,8 +438,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const { status, maxPlayers, winner, deathAnimations } = serverGameState;
   
   // Use local state for the UI if it's my turn, otherwise use server state.
-  const { players, currentPlayerIndex, turn, settings, map, debugMode, log } = gameState;
+  const { players, currentPlayerIndex, turn, settings, map, debugMode, log } = gameStateForDisplay;
   const currentPlayer = players[currentPlayerIndex];
+  const localPlayerForPanel = players.find(p => p.id === localPlayer.id)!;
+
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
   const isTeleporting = pendingAction?.type === 'teleport';
@@ -555,8 +546,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 <ActionsPanel 
                     onAction={onAction}
                     onLocalAction={handleLocalAction}
-                    localPlayer={gameState.players.find(p => p.id === localPlayer.id)!}
-                    gameState={gameState} 
+                    localPlayer={localPlayerForPanel}
+                    gameState={gameStateForDisplay} 
                     isMyTurn={isMyTurn && status === 'playing'}
                     timeLeft={timeLeft}
                     turnDuration={TURN_DURATION}
@@ -604,7 +595,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       />
 
       <GameDialogs 
-        gameState={gameState}
+        gameState={gameStateForDisplay}
         localPlayer={localPlayer}
         isMyTurn={isMyTurn}
         onAction={onAction}

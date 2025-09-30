@@ -100,8 +100,7 @@ export function GameDialogs({
 
       {monsterCombatState && (
           <MonsterCombatDialog 
-              gameState={gameState} 
-              monsters={gameState.map[monsterCombatState.attackerPosition.y * gameState.settings.gridSize.cols + monsterCombatState.attackerPosition.x].monsters || []}
+              gameState={gameState}
               onRoll={(payload) => onAction(GameAction.MonsterCombatRoll, payload)}
               onClose={() => onAction(GameAction.CloseMonsterCombat)}
               onCancel={() => onLocalAction(GameAction.local_CancelAction)}
@@ -126,7 +125,6 @@ export function GameDialogs({
                 state={specialIslandRollDialog}
                 onRoll={() => {
                   onAction(GameAction.RollOnSpecialIsland);
-                  // The dialog is closed via the `CloseSpecialIslandDialog` action from the GameBoard
                 }}
                 onClose={() => {
                   onAction(GameAction.CloseSpecialIslandDialog);
@@ -138,8 +136,7 @@ export function GameDialogs({
                 <PositionDialog 
                     resources={positionDialog.resources}
                     onSelect={(resource) => {
-                      const army = localPlayer.armies.find(a => a.id === positionDialog.armyId);
-                      onAction(GameAction.SelectResourcePosition, { resource, army });
+                      onAction(GameAction.SelectResourcePosition, { resource, armyId: positionDialog.armyId });
                       onClosePositionDialog();
                     }}
                     onClose={onClosePositionDialog}

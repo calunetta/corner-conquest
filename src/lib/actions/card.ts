@@ -62,10 +62,7 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
         newState.log.push(`${player.name} activated '${cardName}'.`);
     }
 
-    // Only consume cards that have an immediate, single-turn effect, or after a multi-step action is complete (like scout).
-    // Cards that open dialogs (Sabotage, Steal) are consumed in their own handlers.
-    // Cards used in combat (Warchief, Overcome) are consumed in combat handlers.
-    if (immediateConsumeCards.includes(cardName) || isScout) {
+    if (isScout) {
         if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
             player.actionsThisTurn.push(GameAction.UseCard);
         }
@@ -119,6 +116,11 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
     });
     player.positions = [];
 
+    // Clear dialog state
+    if (player.dialogState?.productiveCard) {
+        player.dialogState.productiveCard = null;
+    }
+    
     return newState;
 }
 
@@ -235,12 +237,22 @@ export function handleRollOnSpecialIsland(state: GameState): {state: GameState, 
   } else {
     newState.log.push(`${player.name} rolled a ${roll} and found nothing.`);
   }
+  
+  if(player.dialogState) {
+      player.dialogState.specialIslandRoll = { isOpen: true, roll, cardDrawn };
+  } else {
+      player.dialogState = { specialIslandRoll: { isOpen: true, roll, cardDrawn } };
+  }
 
   return { state: newState, cardDrawn, roll };
 }
 
 export function handleCloseSpecialIslandDialog(state: GameState): GameState {
   let newState = cloneDeep(state);
+  const player = newState.players[newState.currentPlayerIndex];
+  if(player.dialogState?.specialIslandRoll) {
+      player.dialogState.specialIslandRoll = null;
+  }
   return checkAndEndTurnIfNoActions(newState);
 }
 

@@ -24,7 +24,7 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
     }
 
     let state: GameState = cloneDeep(gameState);
-    let ui = null;
+    let ui: ActionHandlerResult['ui'] = null;
 
     try {
         switch(action) {
@@ -41,7 +41,7 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
                 state = handleCancelAction(state);
                 break;
             case GameAction.SelectResourcePosition:
-                state = handleSelectResourceForPosition(state, payload.resource, payload.army);
+                state = handleSelectResourceForPosition(state, payload.resource, payload.armyId);
                 break;
             case GameAction.Move:
                 ({ state, ui } = handleMoveAction(state, payload.x, payload.y, payload.army, payload.isTeleport));
@@ -53,7 +53,7 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
                  state = handleSelectDefender(state, payload.defenderArmyId, payload.attackingArmyId);
                 break;
             case GameAction.CombatRoll:
-                state = handleCombatRoll(state, payload.useWarChief, payload.army);
+                state = handleCombatRoll(state, payload.useWarChief);
                 break;
             case GameAction.CloseCombat:
                 state = handleCloseCombat(state);
@@ -85,7 +85,7 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
             case GameAction.RollOnSpecialIsland:
                 const rollResult = handleRollOnSpecialIsland(state);
                 state = rollResult.state;
-                ui = { specialIslandRoll: { roll: rollResult.roll, cardDrawn: rollResult.cardDrawn } };
+                // UI update is now handled by the dialogState in the main state object
                 break;
             case GameAction.CloseSpecialIslandDialog:
                 state = handleCloseSpecialIslandDialog(state);
@@ -106,5 +106,3 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
     }
     return { state, ui };
 }
-
-    

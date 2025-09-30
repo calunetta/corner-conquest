@@ -4,13 +4,14 @@ import { IslandType, MAP_COLS } from '../types';
 import { checkAndEndTurnIfNoActions } from './player';
 import { cloneDeep } from 'lodash';
 
-export function handleSelectResourceForPosition(state: GameState, resource: ResourceType, selectedArmy: Army | null): GameState {
+export function handleSelectResourceForPosition(state: GameState, resource: ResourceType, armyId: number): GameState {
     let newState = cloneDeep(state);
     const { players, currentPlayerIndex } = newState;
     const player = players[currentPlayerIndex];
 
+    const selectedArmy = player.armies.find(a => a.id === armyId);
     if (!selectedArmy) {
-        throw new Error("No army selected for positioning.");
+        throw new Error("Army not found for positioning.");
     }
     
     const { x, y } = selectedArmy.position;
@@ -20,10 +21,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     if (!tile.positionedBy) tile.positionedBy = [];
     tile.positionedBy.push({playerId: player.id, resource});
 
-    const armyInState = player.armies.find(a => a.id === selectedArmy.id);
-    if (armyInState) {
-        armyInState.hasActed = true; // Commit the action
-    }
+    selectedArmy.hasActed = true;
     
     newState.log.push(`${player.name} positioned an army on ${resource}.`);
     

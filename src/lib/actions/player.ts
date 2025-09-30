@@ -18,7 +18,6 @@ export function handleCancelAction(state: GameState): GameState {
   // Reset all temporary flags that could be set by a card
   if (player.hasExtraMove) {
     player.hasExtraMove = false;
-    newState.log.push(`${player.name} cancelled their Extra Move.`);
   }
   player.reinforceActive = false;
   player.efficientActive = false;
@@ -32,10 +31,8 @@ export function canArmyPerformAnyAction(state: GameState, army: Army): boolean {
     const player = state.players[state.currentPlayerIndex];
     if (!player || player.id !== state.currentPlayerIndex) return false;
 
-    // Use the now-correct getPossibleMoves function. If it returns any moves, the army can act.
     if (getPossibleMoves(state, army).length > 0) return true;
     
-    // An army that has acted can't do anything else, unless an extra move is available (which is handled by getPossibleMoves).
     if (army.hasActed && !player.hasExtraMove) return false;
 
     const tile = state.map[army.position.y * MAP_COLS + army.position.x];
@@ -297,14 +294,24 @@ export function handleEndTurn(state: GameState): GameState {
     const hasProductiveCard = nextPlayer.specialCards.includes(CardNameEnum.Productive);
     const positionedArmies = nextPlayer.positions;
 
-    if (positionedArmies.length > 0 && !hasProductiveCard) {
-        // If the player does not have the productive card, collect automatically.
-        // If they DO have the card, the collection is deferred to the dialog.
-        const collectionResult = applyAutomaticCollection(newState, nextPlayer);
-        newState = collectionResult.newState;
-        const collectedStrings = Object.entries(collectionResult.collectedResources).map(([type, amount]) => `${amount} ${type}`);
-        if (collectedStrings.length > 0) {
-            newState.log.push(`${nextPlayer.name} automatically collected ${collectedStrings.join(', ')}.`);
+    if (positionedArmies.length > 0) {
+        if (!hasProductiveCard) {
+            const collectionResult = applyAutomaticCollection(newState, nextPlayer);
+            newState = collectionResult.newState;
+            const collectedStrings = Object.entries(collectionResult.collectedResources).map(([type, amount]) => `${amount} ${type}`);
+            if (collectedStrings.length > 0) {
+                newState.log.push(`${nextPlayer.name} automatically collected ${collectedStrings.join(', ')}.`);
+            }
+        } else {
+            // Player has Productive card, set state for dialog
+            const productiveOptions = nextPlayer.positions.map(pos => {
+                const tile = newState.map[pos.y * newState.settings.gridSize.cols + pos.x];
+                const resource = tile.resources.find(r => r.type === pos.resource);
+                return { resource: pos.resource, amount: resource?.amount || 0 };
+            }).filter(opt => opt.amount > 0);
+            
+            if (!nextPlayer.dialogState) nextPlayer.dialogState = {};
+            nextPlayer.dialogState.productiveCard = { isOpen: true, options: productiveOptions };
         }
     }
     
@@ -374,7 +381,7 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
             if (isCurrentPlayerExiting) {
                 currentState.currentPlayerIndex = playerIndex % currentState.players.length;
                 currentState = handleEndTurn(currentState);
-            } else if (playerIndex < currentState.currentPlayerIndex) {
+            } else if (currentState.currentPlayerIndex > playerIndex) {
                 currentState.currentPlayerIndex--;
             }
             

@@ -1,5 +1,4 @@
 
-
 'use client';
 import type { GameState } from '@/lib/types';
 import { CardName } from '@/lib/types';
@@ -31,6 +30,8 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
   const [useWarChief, setUseWarChief] = useState(false);
   const { combatState, players } = gameState;
 
+  if (!combatState) return null;
+  
   const isAttacker = localPlayerId === combatState?.attackerId;
 
   useEffect(() => {
@@ -42,7 +43,6 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
     }
   }, [combatState?.phase, isAttacker, onClose]);
 
-  if (!combatState) return null;
 
   const { attackerId, defenderId, attackerRolls, defenderRolls, winnerId, phase } = combatState;
   const attacker = players[attackerId];
@@ -68,9 +68,11 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
   );
   
   const canPerformAction = isMyTurn && isAttacker;
+  const isViewer = !isAttacker;
+
 
   // Viewer-only results screen
-  if (phase === 'results' && !canPerformAction) {
+  if (phase === 'results' && isViewer) {
     return (
       <AlertDialog open={true}>
         <AlertDialogContent>
@@ -96,7 +98,7 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
         </div>
          <div className="mt-4 text-center">
             <h2 className="text-2xl font-bold">
-              <span style={{ color: players[winnerId!].color }}>{players[winnerId!].name}</span> wins!
+              {winnerId !== null ? <span style={{ color: players[winnerId!].color }}>{players[winnerId!].name}</span> : 'Nobody'}{' '}wins!
             </h2>
           </div>
            <AlertDialogFooter>

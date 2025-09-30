@@ -16,7 +16,6 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
     const currentTile = map[selectedArmy.position.y * MAP_COLS + selectedArmy.position.x];
     const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== attacker.id);
     
-    // The hasActed flag is NOT set here. It is set upon dice roll, which commits the action.
     if (otherPlayersOccupants.length > 0) {
         const defenderPlayerId = otherPlayersOccupants[0].playerId;
         const defendingPlayer = players.find(p => p.id === defenderPlayerId);
@@ -106,7 +105,6 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean): GameSt
     const defender = players.find(p => p.id === combatState.defenderId);
     if(!defender) return state;
 
-    // The action is now committed. Set hasActed on the army.
     const attackingArmy = attacker.armies.find(a => a.id === combatState.attackingArmyId);
     if (attackingArmy) {
         attackingArmy.hasActed = true;
@@ -229,7 +227,6 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
     const attackingArmy = attacker.armies.find(a => a.position.x === monsterCombatState.attackerPosition.x && a.position.y === monsterCombatState.attackerPosition.y);
     if (!attackingArmy) return newState;
 
-    // Commit the action
     attackingArmy.hasActed = true;
 
     const { monster, useDecideCard, decidedValue, useOvercomeCard, useWarChief } = payload;
@@ -246,7 +243,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
         if (cardIndex > -1) {
             cardUsedThisAction = true;
             winnerId = attacker.id;
-            newState.log.push(`${attacker.name} used the 'Overcome' card to win automatically!`);
+            newState.log.push(`${attacker.name} used the '${CardName.Overcome}' card to win automatically!`);
         } else {
              throw new Error("Overcome card not found, but was attempted to be used.");
         }
@@ -260,7 +257,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
              if (cardIndex > -1) {
                 cardUsedThisAction = true;
                 attackerBonusPower += 2;
-                newState.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
+                newState.log.push(`${attacker.name} used '${CardName.WarChief}' for +2 power!`);
              }
         }
 
@@ -269,7 +266,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
             const cardIndex = attacker.specialCards.indexOf(CardName.DecideDiceRoll);
             if (cardIndex > -1) {
                 cardUsedThisAction = true;
-                newState.log.push(`${attacker.name} used the 'Decide Dice Roll' card!`);
+                newState.log.push(`${attacker.name} used the '${CardName.DecideDiceRoll}' card!`);
             } else {
                 canUseDecideCard = false;
             }

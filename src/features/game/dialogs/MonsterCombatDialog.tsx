@@ -1,5 +1,4 @@
 
-
 'use client';
 import type { GameState, Monster } from '@/lib/types';
 import { CardName } from '@/lib/types';
@@ -24,30 +23,25 @@ import { PLAYER_DATA } from '@/lib/player-data';
 
 type MonsterCombatDialogProps = {
   gameState: GameState;
-  monsters: Monster[];
   onRoll: (payload: { monster: Monster; useDecideCard: boolean; decidedValue: number; useOvercomeCard: boolean; useWarChief: boolean }) => void;
   onClose: () => void;
   onCancel: () => void;
 };
 
-export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCancel }: MonsterCombatDialogProps) {
-  const [selectedMonster, setSelectedMonster] = useState<Monster | null>(null);
+export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: MonsterCombatDialogProps) {
+  const { monsterCombatState, players, map } = gameState;
+  if (!monsterCombatState) return null;
+
+  const monsters = map[monsterCombatState.attackerPosition.y * gameState.settings.gridSize.cols + monsterCombatState.attackerPosition.x].monsters || [];
+
+  const [selectedMonster, setSelectedMonster] = useState<Monster | null>(monsterCombatState.monster || monsters.length === 1 ? monsters[0] : null);
   const [useDecideCard, setUseDecideCard] = useState(false);
   const [decidedValue, setDecidedValue] = useState(6);
   const [useOvercomeCard, setUseOvercomeCard] = useState(false);
   const [useWarChief, setUseWarChief] = useState(false);
 
-  useEffect(() => {
-    if (monsters.length === 1) {
-      setSelectedMonster(monsters[0]);
-    }
-  }, [monsters]);
 
-  const { monsterCombatState, players, map } = gameState;
-
-  if (!monsterCombatState) return null;
-
-  const { attackerId, attackerRolls, monsterRolls, winnerId, phase, attackerPosition } = monsterCombatState;
+  const { attackerId, attackerRolls, monsterRolls, winnerId, phase } = monsterCombatState;
   const attacker = players[attackerId];
   const hasDecideCard = attacker.specialCards.includes(CardName.DecideDiceRoll);
   const hasOvercomeCard = attacker.specialCards.includes(CardName.Overcome);
@@ -160,7 +154,7 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
         {monsters.map((monster, i) => (
           <Card 
             key={i} 
-            className={`flex cursor-pointer flex-col items-center gap-2 p-4 transition-all hover:bg-muted ${selectedMonster?.name === monster.name ? 'ring-2 ring-primary' : ''}`}
+            className={`flex cursor-pointer flex-col items-center gap-2 p-4 transition-all hover:bg-muted`}
             onClick={() => setSelectedMonster(monster)}
           >
             <div className='relative h-24 w-24'>
@@ -175,9 +169,6 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
       </div>
        <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row">
             <AlertDialogCancel onClick={onCancel} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
-            <Button onClick={() => { /* This button just confirms the selection */ }} disabled={!selectedMonster} className="w-full sm:w-auto">
-                Confirm
-            </Button>
       </AlertDialogFooter>
     </>
   );
@@ -236,11 +227,6 @@ export function MonsterCombatDialog({ gameState, monsters, onRoll, onClose, onCa
     }
     if (isSelectionPhase) {
       return renderSelectionScreen();
-    }
-    // If not selection phase and not results, it's the attack screen.
-    // Ensure a monster is selected if there's only one.
-    if (!selectedMonster && monsters.length === 1) {
-      setSelectedMonster(monsters[0]);
     }
     return renderAttackScreen();
   }

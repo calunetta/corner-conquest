@@ -133,6 +133,26 @@ export type PassiveAbilities = {
     [key in AbilityName]?: boolean;
 }
 
+export type ProductiveCardDialogState = {
+    isOpen: boolean;
+    options: {
+        resource: ResourceType;
+        amount: number;
+    }[];
+} | null;
+
+export type SpecialIslandRollDialogState = {
+  isOpen: boolean;
+  roll: number | null;
+  cardDrawn: CardName | null;
+} | null;
+
+
+export type PlayerDialogStates = {
+    productiveCard?: ProductiveCardDialogState;
+    specialIslandRoll?: SpecialIslandRollDialogState;
+}
+
 export type Player = {
   id: number; // This is the player's seat index (0-3)
   playerId: string; // This is the unique session ID from usePlayer
@@ -155,6 +175,7 @@ export type Player = {
   efficientActive: boolean;
   masterBuilderActive: boolean;
   revealedTiles: string[];
+  dialogState?: PlayerDialogStates | null;
 };
 
 export type Monster = {
@@ -247,7 +268,6 @@ export type ActionHandlerResult = {
             attackingArmyId: number;
             defendingPlayer: Player;
             armies: Army[];
-        },
-        specialIslandRoll?: { roll: number, cardDrawn: CardName | null }
+        }
     } | null
 }

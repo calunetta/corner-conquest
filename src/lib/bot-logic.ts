@@ -30,7 +30,6 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     const botPlayer = state.players[state.currentPlayerIndex];
     console.log(`--- Bot Turn Start: ${botPlayer.name} (Turn ${state.turn}) ---`);
     
-    // Set active card flags based on cards in hand
     botPlayer.reinforceActive = botPlayer.specialCards.includes(CardName.Reinforce);
     botPlayer.efficientActive = botPlayer.specialCards.includes(CardName.Efficient);
     botPlayer.masterBuilderActive = botPlayer.specialCards.includes(CardName.MasterBuilder);
@@ -142,7 +141,7 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
                     name: `position-${army.id}`,
                     priority: 9,
                     action: GameAction.SelectResourcePosition,
-                    payload: { resource: availableResource.type, army }
+                    payload: { resource: availableResource.type, armyId: army.id }
                 });
             }
         }
@@ -180,7 +179,7 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
             let { state: nextState, ui } = handleGameAction({ action: bestAction.action, gameState: state, payload: bestAction.payload });
 
             if (nextState) {
-                // If the action results in combat, the bot needs to resolve it.
+                // If the action results in monster combat, the bot needs to resolve it.
                 if(nextState.monsterCombatState) {
                     const combatResult = handleGameAction({ action: GameAction.MonsterCombatRoll, gameState: nextState, payload: { monster: nextState.monsterCombatState.monster, useDecideCard: false, decidedValue: 0, useOvercomeCard: false, useWarChief: false }});
                     const finalState = handleGameAction({ action: GameAction.CloseMonsterCombat, gameState: combatResult.state! });

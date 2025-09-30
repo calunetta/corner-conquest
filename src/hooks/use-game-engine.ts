@@ -14,13 +14,14 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   const router = useRouter();
 
   const setGameState = useCallback(async (
-    currentState: GameState, 
+    stateToUpdate: GameState, 
     updateFn: (gs: GameState) => GameState | null | ActionHandlerResult
   ): Promise<ActionHandlerResult['ui'] | null> => {
     try {
         const gameDocRef = doc(db, 'games', gameId);
         
-        const result = updateFn(currentState);
+        // The update function now operates on the state passed to it, not a freshly fetched one.
+        const result = updateFn(stateToUpdate);
         
         if (!result) {
             console.warn("updateFn returned null. No update will be performed.");
@@ -38,7 +39,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
         }
 
         if (!finalState) {
-            console.error("updateGameState was called with null or returned null.");
+            console.error("updateGameState was called with null or returned null state.");
             return null;
         }
     
@@ -133,7 +134,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     const animations = gameState.deathAnimations;
     const animationTimers = animations.map(anim => 
         setTimeout(() => {
-            // Using a functional update to avoid stale state in timeout
             const gameDocRef = doc(db, 'games', gameId);
             getDoc(gameDocRef).then(doc => {
                 if (doc.exists()) {
@@ -152,6 +152,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   useEffect(() => {
     if (isHost && gameState && gameState.status === 'playing' && gameState.players[gameState.currentPlayerIndex]?.isBot) {
         const botTurnTimeout = setTimeout(() => {
+            // Pass the authoritative server state to the bot.
             takeBotTurn(gameState);
         }, 1000); // 1 second delay for bot to "think"
         
