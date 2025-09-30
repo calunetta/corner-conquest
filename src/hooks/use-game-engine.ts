@@ -14,41 +14,14 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   const router = useRouter();
 
   const setGameState = useCallback(async (
-    stateToUpdate: GameState, 
-    updateFn: (gs: GameState) => GameState | null | ActionHandlerResult
-  ): Promise<ActionHandlerResult['ui'] | null> => {
+    newState: GameState,
+  ): Promise<void> => {
     try {
         const gameDocRef = doc(db, 'games', gameId);
-        
-        const result = updateFn(stateToUpdate);
-        
-        if (!result) {
-            console.warn("updateFn returned null. No update will be performed.");
-            return null;
-        }
-        
-        let finalState: GameState;
-        let uiResult: ActionHandlerResult['ui'] = null;
-
-        if ('state' in result && result.state) {
-            finalState = result.state as GameState;
-            uiResult = result.ui;
-        } else {
-            finalState = result as GameState;
-        }
-
-        if (!finalState) {
-            console.error("updateGameState was called with null or returned null state.");
-            return null;
-        }
-    
-        await updateDoc(gameDocRef, { ...finalState });
-        return uiResult;
-
+        await updateDoc(gameDocRef, { ...newState });
     } catch (error) {
         console.error("Error updating game state:", error);
         toast({ title: "Sync Error", description: "Could not save game state.", variant: 'destructive' });
-        return null;
     }
   }, [gameId, toast]);
 

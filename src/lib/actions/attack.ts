@@ -237,6 +237,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
             cardUsedThisAction = true;
             winnerId = attacker.id;
             state.log.push(`${attacker.name} used the '${CardName.Overcome}' card to win automatically!`);
+            discardPile.push(attacker.specialCards.splice(cardIndex, 1)[0]);
         } else {
              throw new Error("Overcome card not found, but was attempted to be used.");
         }
@@ -251,6 +252,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
                 cardUsedThisAction = true;
                 attackerBonusPower += 2;
                 state.log.push(`${attacker.name} used '${CardName.WarChief}' for +2 power!`);
+                discardPile.push(attacker.specialCards.splice(cardIndex, 1)[0]);
              }
         }
 
@@ -260,6 +262,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
             if (cardIndex > -1) {
                 cardUsedThisAction = true;
                 state.log.push(`${attacker.name} used the '${CardName.DecideDiceRoll}' card!`);
+                discardPile.push(attacker.specialCards.splice(cardIndex, 1)[0]);
             } else {
                 canUseDecideCard = false;
             }
@@ -280,15 +283,6 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
     
     if (cardUsedThisAction) {
         attacker.actionsThisTurn.push(GameAction.UseCard);
-        let cardToDiscard: CardName | null = null;
-        if (useOvercomeCard) cardToDiscard = CardName.Overcome;
-        else if (useWarChief) cardToDiscard = CardName.WarChief;
-        else if (useDecideCard) cardToDiscard = CardName.DecideDiceRoll;
-
-        if (cardToDiscard) {
-            const cardIndex = attacker.specialCards.indexOf(cardToDiscard);
-            if (cardIndex > -1) discardPile.push(attacker.specialCards.splice(cardIndex, 1)[0]);
-        }
     }
     
 

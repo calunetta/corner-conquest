@@ -102,30 +102,30 @@ export function GameDialogs({
           />
       )}
 
+      {isMyTurn && productiveCardDialog?.isOpen && (
+          <ProductiveCardDialog
+              state={productiveCardDialog}
+              onConfirm={(selectedResource) => {
+                onAction(GameAction.UseProductiveCard, { selectedResource });
+              }}
+          />
+      )}
+
+      {isMyTurn && specialIslandRollDialog?.isOpen && (
+        <SpecialIslandRollDialog
+          state={specialIslandRollDialog}
+          onRoll={() => {
+            onAction(GameAction.RollOnSpecialIsland);
+          }}
+          onClose={() => {
+            onAction(GameAction.CloseSpecialIslandDialog);
+          }}
+        />
+      )}
+
       {/* LOCAL DIALOGS (visible only to the current player) */}
       {isMyTurn && (
         <>
-            {productiveCardDialog?.isOpen && (
-                <ProductiveCardDialog
-                    state={productiveCardDialog}
-                    onConfirm={(selectedResource) => {
-                      onAction(GameAction.UseProductiveCard, { selectedResource });
-                    }}
-                />
-            )}
-
-            {specialIslandRollDialog?.isOpen && (
-              <SpecialIslandRollDialog
-                state={specialIslandRollDialog}
-                onRoll={() => {
-                  onAction(GameAction.RollOnSpecialIsland);
-                }}
-                onClose={() => {
-                  onAction(GameAction.CloseSpecialIslandDialog);
-                }}
-              />
-            )}
-
             {positionDialog && (
                 <PositionDialog 
                     resources={positionDialog.resources}

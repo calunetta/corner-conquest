@@ -7,6 +7,7 @@ import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWea
 import { handleMoveAction } from './movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn, handleCancelAction, handlePlayerExit } from './player';
 import { handleSelectResourceForPosition } from './resource';
+import { cloneDeep } from 'lodash';
 
 interface HandleActionParams {
     action: GameAction;
@@ -17,7 +18,7 @@ interface HandleActionParams {
 export { handlePlayerExit };
 
 export function handleGameAction({ action, gameState, payload }: HandleActionParams): ActionHandlerResult {
-    let state: GameState = gameState;
+    let state: GameState = cloneDeep(gameState);
     let ui: ActionHandlerResult['ui'] = null;
 
     try {
@@ -94,7 +95,8 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
         }
     } catch (error: any) {
         console.error(`Error handling action ${action}:`, error);
-        throw error;
+        // Do not re-throw, instead return original state to prevent client crash
+        return { state: gameState, ui: null };
     }
     return { state, ui };
 }

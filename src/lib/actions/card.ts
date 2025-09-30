@@ -44,6 +44,7 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
     
     const cardIndex = player.specialCards.indexOf(cardName);
     if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
+    if (player.actionsThisTurn.includes(GameAction.UseCard)) throw new Error("You can only use one card per turn.");
     
     // Defer consuming the card action for cards that have a follow-up step
     const immediateEffectCards: CardName[] = ['Extra Move', 'Reinforce', 'Efficient', 'Master Builder'];
@@ -55,7 +56,6 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
         player.masterBuilderActive = cardName === 'Master Builder';
         state.log.push(`${player.name} activated '${cardName}'.`);
         
-        // Extra Move is consumed on activation, others on use.
         if (cardName === 'Extra Move') {
             const usedCard = player.specialCards.splice(cardIndex, 1)[0];
             discardPile.push(usedCard);

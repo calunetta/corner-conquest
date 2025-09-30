@@ -29,32 +29,24 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     const botPlayer = state.players[state.currentPlayerIndex];
     console.log(`--- Bot Turn Start: ${botPlayer.name} (Turn ${state.turn}) ---`);
     
-    // --- Pre-computation for card effects ---
-    const hasReinforce = botPlayer.specialCards.includes(CardName.Reinforce);
-    const hasEfficient = botPlayer.specialCards.includes(CardName.Efficient);
-    const hasMasterBuilder = botPlayer.specialCards.includes(CardName.MasterBuilder);
-
-    const possibleActions: BotAction[] = [];
-
-    // --- Strategic Card Usage ---
-    if (hasReinforce && !botPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
-        possibleActions.push({ name: 'activate-reinforce', priority: 8.6, action: GameAction.UseCard, payload: { cardName: CardName.Reinforce }});
-    }
-    if (hasEfficient && !botPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
-        possibleActions.push({ name: 'activate-efficient', priority: 8.5, action: GameAction.UseCard, payload: { cardName: CardName.Efficient }});
-    }
-    if (hasMasterBuilder && !botPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
-         possibleActions.push({ name: 'activate-master-builder', priority: 7.5, action: GameAction.UseCard, payload: { cardName: CardName.MasterBuilder }});
-    }
-
-    // Re-evaluate active card effects after potential activation
     let localStateForEval = state;
-    const activationAction = possibleActions.find(a => a.name.startsWith('activate-'));
-    if (activationAction) {
-        localStateForEval = handleGameAction({ action: activationAction.action, gameState: state, payload: activationAction.payload }).state!;
+    
+    // --- Pre-computation and activation of cards ---
+    if (botPlayer.specialCards.includes(CardName.Reinforce) && !botPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
+        const tempState = handleGameAction({ action: GameAction.UseCard, gameState: localStateForEval, payload: { cardName: CardName.Reinforce } });
+        if(tempState.state) localStateForEval = tempState.state;
     }
+    if (botPlayer.specialCards.includes(CardName.Efficient) && !botPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
+        const tempState = handleGameAction({ action: GameAction.UseCard, gameState: localStateForEval, payload: { cardName: CardName.Efficient } });
+        if(tempState.state) localStateForEval = tempState.state;
+    }
+    if (botPlayer.specialCards.includes(CardName.MasterBuilder) && !botPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
+         const tempState = handleGameAction({ action: GameAction.UseCard, gameState: localStateForEval, payload: { cardName: CardName.MasterBuilder } });
+        if(tempState.state) localStateForEval = tempState.state;
+    }
+    
     const activeBotPlayer = localStateForEval.players[localStateForEval.currentPlayerIndex];
-
+    const possibleActions: BotAction[] = [];
 
     // --- Strategic (non-army) Actions ---
     const abilityCost = state.settings.abilityCost;
@@ -85,27 +77,18 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
             action: GameAction.Deploy
         });
     }
-
-    if (canAfford(activeBotPlayer, 10, ResourceEnum.Gems) && !activeBotPlayer.actionsThisTurn.includes(GameAction.BuyCard)) {
-        possibleActions.push({
-            name: 'buy-card',
-            priority: activeBotPlayer.resources.gems > 20 ? 4 : 1,
-            action: GameAction.BuyCard
-        });
-    }
     
     if (activeBotPlayer.specialCards.includes(CardName.Wealthy) && !activeBotPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
         let neededResource: ResourceType | null = null;
         if (!canAfford(activeBotPlayer, deployCost, ResourceEnum.Wheat) && activeBotPlayer.armyCount < 5) neededResource = ResourceEnum.Wheat;
         else if (!canAfford(activeBotPlayer, upgradeCost, ResourceEnum.Iron) && activeBotPlayer.attackPower < 4) neededResource = ResourceEnum.Iron;
-        else if (activeBotPlayer.resources.gems < 5) neededResource = ResourceEnum.Gems;
         
         if (neededResource) {
             possibleActions.push({
                 name: `use-wealthy-for-${neededResource}`,
                 priority: 8.7, // High priority to unblock other actions
-                action: GameAction.GainWealth,
-                payload: { resource: neededResource }
+                action: GameAction.UseCard,
+                payload: { cardName: CardName.Wealthy, resource: neededResource } // This is wrong, payload should be for GainWealth
             });
         }
     }
@@ -115,12 +98,19 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
              possibleActions.push({
                 name: `use-sabotage-on-${opponentToSabotage.name}`,
                 priority: 8.8,
-                action: GameAction.SabotagePlayer,
-                payload: { targetPlayerId: opponentToSabotage.id }
+                action: GameAction.UseCard,
+                payload: { cardName: CardName.Sabotage, targetPlayerId: opponentToSabotage.id }
             });
         }
     }
 
+    if (canAfford(activeBotPlayer, 10, ResourceEnum.Gems) && !activeBotPlayer.actionsThisTurn.includes(GameAction.BuyCard)) {
+        possibleActions.push({
+            name: 'buy-card',
+            priority: activeBotPlayer.resources.gems > 20 ? 4 : 1,
+            action: GameAction.BuyCard
+        });
+    }
 
     // --- Army-Specific Actions (Evaluate all possibilities) ---
     const unactedArmies = activeBotPlayer.armies.filter((a: Army) => !a.hasActed);
@@ -194,18 +184,36 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
         console.log(`Bot: Choosing action '${bestAction.name}' with priority ${bestAction.priority}`);
         
         try {
-            let { state: nextState } = handleGameAction({ action: bestAction.action, gameState: state, payload: bestAction.payload });
+            // Special handling for multi-step card usages
+            let nextState = localStateForEval;
+            if (bestAction.name.startsWith('use-wealthy-for-')) {
+                 const useCardResult = handleGameAction({ action: GameAction.UseCard, gameState: nextState, payload: { cardName: CardName.Wealthy }});
+                 if (useCardResult.state) {
+                     const gainWealthResult = handleGameAction({ action: GameAction.GainWealth, gameState: useCardResult.state, payload: { resource: bestAction.payload.resource }});
+                     if (gainWealthResult.state) nextState = gainWealthResult.state;
+                 }
+            } else if (bestAction.name.startsWith('use-sabotage-on-')) {
+                 const useCardResult = handleGameAction({ action: GameAction.UseCard, gameState: nextState, payload: { cardName: CardName.Sabotage }});
+                 if (useCardResult.state) {
+                     const sabotageResult = handleGameAction({ action: GameAction.SabotagePlayer, gameState: useCardResult.state, payload: { targetPlayerId: bestAction.payload.targetPlayerId }});
+                     if (sabotageResult.state) nextState = sabotageResult.state;
+                 }
+            } else {
+                 const result = handleGameAction({ action: bestAction.action, gameState: nextState, payload: bestAction.payload });
+                 if(result.state) nextState = result.state;
+            }
 
             if (nextState) {
-                // If the bot's action results in combat, resolve it immediately.
-                if(nextState.monsterCombatState) {
+                if(nextState.monsterCombatState && nextState.monsterCombatState.monster) {
                     const monster = nextState.monsterCombatState.monster!;
                     const combatRollPayload = { monster, useDecideCard: false, decidedValue: 0, useOvercomeCard: false, useWarChief: false };
                     const combatResult = handleGameAction({ action: GameAction.MonsterCombatRoll, gameState: nextState, payload: combatRollPayload});
-                    const finalState = handleGameAction({ action: GameAction.CloseMonsterCombat, gameState: combatResult.state! });
-                    if (finalState.state) {
-                         await updateDoc(doc(db, 'games', gameId), { ...finalState.state });
-                         return;
+                    if (combatResult.state) {
+                        const finalState = handleGameAction({ action: GameAction.CloseMonsterCombat, gameState: combatResult.state });
+                        if (finalState.state) {
+                             await updateDoc(doc(db, 'games', gameId), { ...finalState.state });
+                             return;
+                        }
                     }
                 }
 

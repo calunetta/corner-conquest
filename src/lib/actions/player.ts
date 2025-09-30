@@ -6,35 +6,31 @@ import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum
 export function handleCancelAction(state: GameState, payload?: { cardName?: CardName }): GameState {
   const player = state.players[state.currentPlayerIndex];
   
-  // If a specific card action was being cancelled (like Teleport or Scout)
   if (payload?.cardName) {
       const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
       if (cardUseIndex > -1) {
           player.actionsThisTurn.splice(cardUseIndex, 1);
       }
       
-      const discardIndex = state.discardPile.indexOf(payload.cardName);
-      if (discardIndex > -1) {
-        const card = state.discardPile.splice(discardIndex, 1)[0];
-        player.specialCards.push(card);
-      } else if (payload.cardName === CardNameEnum.ExtraMove) {
-          // Extra Move is a special case as it's consumed on activation.
-          player.hasExtraMove = false;
-          // It's assumed it's in the discard pile.
-          const extraMoveIndex = state.discardPile.indexOf(CardNameEnum.ExtraMove);
-          if (extraMoveIndex > -1) {
-             const card = state.discardPile.splice(extraMoveIndex, 1)[0];
-             player.specialCards.push(card);
+      const cardIsConsumedOnActivation = [CardNameEnum.ExtraMove, CardNameEnum.Scout, CardNameEnum.Teleport].includes(payload.cardName);
+
+      if (cardIsConsumedOnActivation) {
+          // Find card in discard and return to hand
+          const discardIndex = state.discardPile.indexOf(payload.cardName);
+          if (discardIndex > -1) {
+            const card = state.discardPile.splice(discardIndex, 1)[0];
+            player.specialCards.push(card);
           }
       }
+      
+      // Reset flags associated with cards that set them
+      if (payload.cardName === CardNameEnum.ExtraMove) player.hasExtraMove = false;
+      if (payload.cardName === CardNameEnum.Reinforce) player.reinforceActive = false;
+      if (payload.cardName === CardNameEnum.Efficient) player.efficientActive = false;
+      if (payload.cardName === CardNameEnum.MasterBuilder) player.masterBuilderActive = false;
 
       state.log.push(`${player.name} cancelled their action with ${payload.cardName}.`);
   }
-
-  // Reset all temporary flags regardless
-  player.reinforceActive = false;
-  player.efficientActive = false;
-  player.masterBuilderActive = false;
   
   return state;
 }
@@ -291,12 +287,10 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
 
             currentState.players.splice(playerIndex, 1);
             
-            if (isHost) {
-                currentState.log.push(`${currentState.players[0].name} is the new host.`);
-            }
-
+            // Re-assign player IDs to be contiguous (0, 1, 2...)
             currentState.players.forEach((p, i) => p.id = i);
             
+            // Update references in map occupants and positionedBy
             currentState.map.forEach(tile => {
                 tile.occupants.forEach(o => {
                     if (o.playerId > playerIndex) o.playerId--;
@@ -306,6 +300,7 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
                 });
             });
             
+            // Update references in combat state
             if (currentState.combatState) {
                 if(currentState.combatState.attackerId === playerIndex || currentState.combatState.defenderId === playerIndex) {
                     currentState.combatState = null;
@@ -315,11 +310,14 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
                 }
             }
 
-            if (currentState.currentPlayerIndex > playerIndex) {
+            // Adjust currentPlayerIndex
+            if (isCurrentPlayerExiting) {
+                 // The turn needs to end for the player who is now at the exited player's index.
+                 // The index doesn't need to change, but the turn effectively passes.
+                 currentState.currentPlayerIndex = playerIndex % currentState.players.length;
+                 currentState = handleEndTurn(currentState);
+            } else if (currentState.currentPlayerIndex > playerIndex) {
                  currentState.currentPlayerIndex--;
-            } else if (isCurrentPlayerExiting) {
-                currentState.currentPlayerIndex = playerIndex % currentState.players.length;
-                currentState = handleEndTurn(currentState);
             }
             
             if(currentState.currentPlayerIndex >= currentState.players.length) {
