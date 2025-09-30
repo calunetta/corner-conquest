@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Sword, ShoppingCart, Anchor, Zap, Album, University, XCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { HAND_LIMIT } from '@/lib/types';
 
 type ActionsPanelProps = {
   onAction: (action: GameAction, payload?: any) => void;
@@ -57,7 +58,7 @@ export function ActionsPanel({
   const deployCost = localPlayer.efficientActive ? Math.ceil(localPlayer.nextArmyCost / 2) : localPlayer.nextArmyCost;
 
   const canDeploy = (localPlayer.resources.wheat >= deployCost || localPlayer.reinforceActive) && localPlayer.armyCount < 5 && !localPlayer.actionsThisTurn.includes(GameAction.Deploy);
-  const canBuyCard = localPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !localPlayer.actionsThisTurn.includes(GameAction.BuyCard);
+  const canBuyCard = localPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !localPlayer.actionsThisTurn.includes(GameAction.BuyCard) && localPlayer.specialCards.length < HAND_LIMIT;
   const canUpgrade = localPlayer.resources.iron >= upgradeCost && !localPlayer.actionsThisTurn.includes(GameAction.Upgrade) && localPlayer.attackPower < 4;
   
   const isCancellableActionInProgress = pendingAction?.type === 'teleport' || pendingAction?.type === 'scout';
@@ -133,6 +134,7 @@ export function ActionsPanel({
             return "This action is not available.";
         case GameAction.BuyCard:
             if (localPlayer.resources.gems < 10) return "Not enough gems.";
+            if (localPlayer.specialCards.length >= HAND_LIMIT) return "Your hand is full.";
             if (specialCardsDeck.length === 0) return "No cards left in the deck.";
             if (localPlayer.actionsThisTurn.includes(GameAction.BuyCard)) return "You've already bought a card this turn.";
             return "This action is not available.";

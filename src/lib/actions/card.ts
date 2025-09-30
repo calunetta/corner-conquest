@@ -2,33 +2,31 @@
 import type { GameState, Player, ResourceType, ActionHandlerResult, CardName, Army } from '@/lib/types';
 import { checkAndEndTurnIfNoActions } from './player';
 import { GameAction, AbilityName, MAP_COLS, HAND_LIMIT } from '../types';
-import { cloneDeep } from 'lodash';
 
 export function handleBuyCardAction(state: GameState): GameState {
-    let newState = state;
-    const { players, currentPlayerIndex, specialCardsDeck, discardPile, debugMode } = newState;
+    const { players, currentPlayerIndex, specialCardsDeck, discardPile, debugMode } = state;
     const player = players[currentPlayerIndex];
 
     if (player.actionsThisTurn.includes(GameAction.BuyCard)) throw new Error("You can only buy one card per turn.");
     if (player.resources.gems < 10) throw new Error("Not enough gems to buy a card.");
     if (player.specialCards.length >= HAND_LIMIT && !debugMode) {
-        newState.log.push(`${player.name} tried to buy a card, but their hand is full!`);
-        return newState;
+        state.log.push(`${player.name} tried to buy a card, but their hand is full!`);
+        return state;
     }
     if (specialCardsDeck.length === 0 && discardPile.length === 0) {
-        newState.log.push(`${player.name} tried to buy a card, but there are none left!`);
-        return newState;
+        state.log.push(`${player.name} tried to buy a card, but there are none left!`);
+        return state;
     }
 
 
     if (specialCardsDeck.length === 0) {
-        newState.log.push("The deck is empty. Reshuffling the discard pile...");
+        state.log.push("The deck is empty. Reshuffling the discard pile...");
         for (let i = discardPile.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [discardPile[i], discardPile[j]] = [discardPile[j], discardPile[i]];
         }
-        newState.specialCardsDeck = [...discardPile];
-        newState.discardPile = [];
+        state.specialCardsDeck = [...discardPile];
+        state.discardPile = [];
     }
 
     player.resources.gems -= 10;
@@ -36,14 +34,13 @@ export function handleBuyCardAction(state: GameState): GameState {
     const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
     player.specialCards.push(drawnCard);
     player.actionsThisTurn.push(GameAction.BuyCard);
-    newState.log.push(`${player.name} bought a special card: "${drawnCard}"!`);
+    state.log.push(`${player.name} bought a special card: "${drawnCard}"!`);
 
-    return newState;
+    return state;
 }
 
 export const handleUseCard = (state: GameState, payload: { cardName: CardName, isScout?: boolean }): GameState => {
-    let newState = state;
-    const { players, currentPlayerIndex, discardPile } = newState;
+    const { players, currentPlayerIndex, discardPile } = state;
     const player = players[currentPlayerIndex];
     const { cardName, isScout } = payload;
 
@@ -54,7 +51,7 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
     if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
     
     
-    newState.log.push(`${player.name} is using the '${cardName}' card.`);
+    state.log.push(`${player.name} is using the '${cardName}' card.`);
     
     const immediateEffectCards: CardName[] = ['Extra Move', 'Reinforce', 'Efficient', 'Master Builder'];
     if (immediateEffectCards.includes(cardName)) {
@@ -65,7 +62,7 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
         player.reinforceActive = cardName === 'Reinforce';
         player.efficientActive = cardName === 'Efficient';
         player.masterBuilderActive = cardName === 'Master Builder';
-        newState.log.push(`${player.name} activated '${cardName}'.`);
+        state.log.push(`${player.name} activated '${cardName}'.`);
     }
 
     // Scout is special: the card is only consumed after all tiles are revealed.
@@ -79,12 +76,11 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
         }
     }
     
-    return newState;
+    return state;
 };
 
 export function handleUseProductiveCard(state: GameState, selectedResource: ResourceType | null): GameState {
-    let newState = state;
-    const player = newState.players[newState.currentPlayerIndex];
+    const player = state.players[state.currentPlayerIndex];
     let collectedResources: Record<string, number> = {};
     let doubledResourceString = '';
 
@@ -92,12 +88,12 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
         player.actionsThisTurn.push(GameAction.UseCard);
         const cardIndex = player.specialCards.indexOf('Productive');
         if (cardIndex > -1) {
-            newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
+            state.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
         }
     }
 
     player.positions.forEach(pos => {
-        const tile = newState.map[pos.y * MAP_COLS + pos.x];
+        const tile = state.map[pos.y * MAP_COLS + pos.x];
         const resourceSpot = tile.resources.find(r => r.type === pos.resource);
         if (resourceSpot) {
             let amount = resourceSpot.amount;
@@ -112,11 +108,11 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
 
     const collectedStrings = Object.entries(collectedResources).map(([type, amount]) => `${amount} ${type}`);
     if (collectedStrings.length > 0) {
-        newState.log.push(`${player.name} collected ${collectedStrings.join(', ')}${doubledResourceString}.`);
+        state.log.push(`${player.name} collected ${collectedStrings.join(', ')}${doubledResourceString}.`);
     }
 
     player.positions.forEach(pos => {
-        const tile = newState.map[pos.y * MAP_COLS + pos.x];
+        const tile = state.map[pos.y * MAP_COLS + pos.x];
         if (tile && tile.positionedBy) {
             tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === pos.resource));
         }
@@ -128,51 +124,48 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
         player.dialogState.productiveCard = null;
     }
     
-    return newState;
+    return state;
 }
 
 export function handleSabotagePlayer(state: GameState, targetPlayerId: number): GameState {
-    let newState = state;
-    const player = newState.players[newState.currentPlayerIndex];
-    const targetPlayer = newState.players.find(p => p.id === targetPlayerId);
+    const player = state.players[state.currentPlayerIndex];
+    const targetPlayer = state.players.find(p => p.id === targetPlayerId);
 
     if (targetPlayer) {
         targetPlayer.isSabotaged = true;
-        newState.log.push(`${player.name} sabotaged ${targetPlayer.name}! They will miss their next turn.`);
+        state.log.push(`${player.name} sabotaged ${targetPlayer.name}! They will miss their next turn.`);
         
         const cardIndex = player.specialCards.indexOf('Sabotage');
         if (cardIndex > -1) {
             player.actionsThisTurn.push(GameAction.UseCard);
-            newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
+            state.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
         }
     }
-    return newState;
+    return state;
 }
 
 export function handleGainWealth(state: GameState, resource: ResourceType): GameState {
-    let newState = state;
-    const player = newState.players[newState.currentPlayerIndex];
+    const player = state.players[state.currentPlayerIndex];
     
     player.resources[resource] += 5;
-    newState.log.push(`${player.name} used 'Wealthy' to gain 5 ${resource}.`);
+    state.log.push(`${player.name} used 'Wealthy' to gain 5 ${resource}.`);
     
     const cardIndex = player.specialCards.indexOf('Wealthy');
     if (cardIndex > -1) {
         player.actionsThisTurn.push(GameAction.UseCard);
-        newState.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
+        state.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
     }
 
-    return newState;
+    return state;
 }
 
 export const handleStealResource = (state: GameState, payload: { targetPlayerId: number; resource: ResourceType }): GameState => {
-    let newState = state;
-    const { players, currentPlayerIndex } = newState;
+    const { players, currentPlayerIndex } = state;
     const currentPlayer = players[currentPlayerIndex];
     const targetPlayer = players.find(p => p.id === payload.targetPlayerId);
 
     if (!targetPlayer) {
-        return newState;
+        return state;
     }
     
     const stolenAmount = Math.min(targetPlayer.resources[payload.resource], 2);
@@ -180,24 +173,23 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
     if (stolenAmount > 0) {
         targetPlayer.resources[payload.resource] -= stolenAmount;
         currentPlayer.resources[payload.resource] += stolenAmount;
-        newState.log.push(`${currentPlayer.name} stole ${stolenAmount} ${payload.resource} from ${targetPlayer.name}!`);
+        state.log.push(`${currentPlayer.name} stole ${stolenAmount} ${payload.resource} from ${targetPlayer.name}!`);
     } else {
-        newState.log.push(`${currentPlayer.name} tried to steal ${payload.resource} from ${targetPlayer.name}, but they had none.`);
+        state.log.push(`${currentPlayer.name} tried to steal ${payload.resource} from ${targetPlayer.name}, but they had none.`);
     }
 
     const cardIndex = currentPlayer.specialCards.indexOf('Steal Resource');
     if (cardIndex > -1) {
         currentPlayer.actionsThisTurn.push(GameAction.UseCard);
-        newState.discardPile.push(currentPlayer.specialCards.splice(cardIndex, 1)[0]);
+        state.discardPile.push(currentPlayer.specialCards.splice(cardIndex, 1)[0]);
     }
 
-    return newState;
+    return state;
 };
 
 export function handleBuyAbility(state: GameState, abilityName: AbilityName): GameState {
-    let newState = state;
-    const player = newState.players[newState.currentPlayerIndex];
-    const cost = newState.settings.abilityCost;
+    const player = state.players[state.currentPlayerIndex];
+    const cost = state.settings.abilityCost;
 
     if (player.resources.gems < cost) {
         throw new Error("Not enough gems to buy this ability.");
@@ -205,44 +197,45 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ga
     if (player.passiveAbilities[abilityName]) {
         throw new Error("You already have this ability.");
     }
-    if (!newState.settings.availableAbilities.includes(abilityName)) {
+    if (!state.settings.availableAbilities.includes(abilityName)) {
         throw new Error("This ability is not available in this match.");
     }
 
     player.resources.gems -= cost;
     player.passiveAbilities[abilityName] = true;
-    newState.log.push(`${player.name} has acquired the '${abilityName.charAt(0).toUpperCase() + abilityName.slice(1)}' passive ability!`);
+    state.log.push(`${player.name} has acquired the '${abilityName.charAt(0).toUpperCase() + abilityName.slice(1)}' passive ability!`);
 
-    return newState;
+    return state;
 }
 
 
-export function handleRollOnSpecialIsland(state: GameState): {state: GameState, cardDrawn: CardName | null, roll: number} {
-  let newState = state;
-  const player = newState.players[newState.currentPlayerIndex];
+export function handleRollOnSpecialIsland(state: GameState): GameState {
+  const player = state.players[state.currentPlayerIndex];
 
   const roll = Math.floor(Math.random() * 6) + 1;
   let cardDrawn: CardName | null = null;
 
   if (roll === 3 || roll === 6) {
-    if (player.specialCards.length >= HAND_LIMIT && !newState.debugMode) {
-      newState.log.push(`${player.name} was lucky, but their hand is full!`);
-    } else if (newState.specialCardsDeck.length > 0 || newState.discardPile.length > 0) {
-      if (newState.specialCardsDeck.length === 0) {
-        newState.log.push("The deck is empty. Reshuffling the discard pile...");
-        newState.specialCardsDeck = [...newState.discardPile];
-        newState.discardPile = [];
+    if (player.specialCards.length >= HAND_LIMIT && !state.debugMode) {
+      state.log.push(`${player.name} was lucky, but their hand is full!`);
+    } else if (state.specialCardsDeck.length > 0 || state.discardPile.length > 0) {
+      if (state.specialCardsDeck.length === 0) {
+        state.log.push("The deck is empty. Reshuffling the discard pile...");
+        state.specialCardsDeck = [...state.discardPile];
+        state.discardPile = [];
       }
-      if (newState.specialCardsDeck.length > 0) {
-          const cardIndex = Math.floor(Math.random() * newState.specialCardsDeck.length);
-          const drawnCardResult = newState.specialCardsDeck.splice(cardIndex, 1)[0];
+      if (state.specialCardsDeck.length > 0) {
+          const cardIndex = Math.floor(Math.random() * state.specialCardsDeck.length);
+          const drawnCardResult = state.specialCardsDeck.splice(cardIndex, 1)[0];
           player.specialCards.push(drawnCardResult);
           cardDrawn = drawnCardResult;
-          newState.log.push(`${player.name} rolled a ${roll} and found a card: "${drawnCard}"!`);
+          state.log.push(`${player.name} rolled a ${roll} and found a card: "${cardDrawn}"!`);
       }
+    } else {
+        state.log.push(`${player.name} rolled a ${roll} but the deck is completely empty!`);
     }
   } else {
-    newState.log.push(`${player.name} rolled a ${roll} and found nothing.`);
+    state.log.push(`${player.name} rolled a ${roll} and found nothing.`);
   }
   
   if(player.dialogState) {
@@ -251,25 +244,23 @@ export function handleRollOnSpecialIsland(state: GameState): {state: GameState, 
       player.dialogState = { specialIslandRoll: { isOpen: true, roll, cardDrawn } };
   }
 
-  return { state: newState, cardDrawn, roll };
+  return state;
 }
 
 export function handleCloseSpecialIslandDialog(state: GameState): GameState {
-  let newState = state;
-  const player = newState.players[newState.currentPlayerIndex];
+  const player = state.players[state.currentPlayerIndex];
   if(player.dialogState?.specialIslandRoll) {
       player.dialogState.specialIslandRoll = null;
   }
-  return checkAndEndTurnIfNoActions(newState);
+  return checkAndEndTurnIfNoActions(state);
 }
 
 export function handleScoutAction(state: GameState, x: number, y: number): GameState {
-    let newState = state;
-    const player = newState.players[newState.currentPlayerIndex];
+    const player = state.players[state.currentPlayerIndex];
     const tileId = `${x}-${y}`;
 
     if (!player.revealedTiles.includes(tileId)) {
         player.revealedTiles.push(tileId);
     }
-    return newState;
+    return state;
 }

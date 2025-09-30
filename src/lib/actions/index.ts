@@ -44,7 +44,7 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
                 state = handleSelectResourceForPosition(state, payload.resource, payload.armyId);
                 break;
             case GameAction.Move:
-                ({ state, ui } = handleMoveAction(state, payload.x, payload.y, payload.army, payload.isTeleport));
+                state = handleMoveAction(state, payload.x, payload.y, payload.army, payload.isTeleport);
                 break;
             case GameAction.Attack:
                 ({ state, ui } = handleAttackAction(state, payload.army));
@@ -83,9 +83,7 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
                 state = handleStealResource(state, payload);
                 break;
             case GameAction.RollOnSpecialIsland:
-                const rollResult = handleRollOnSpecialIsland(state);
-                state = rollResult.state;
-                // UI update is now handled by the dialogState in the main state object
+                state = handleRollOnSpecialIsland(state);
                 break;
             case GameAction.CloseSpecialIslandDialog:
                 state = handleCloseSpecialIslandDialog(state);
@@ -106,5 +104,3 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
     }
     return { state, ui };
 }
-
-    

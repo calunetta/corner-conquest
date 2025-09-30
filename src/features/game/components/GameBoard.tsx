@@ -69,8 +69,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [sabotageDialog, setSabotageDialog] = useState<SabotageDialogState>(null);
   const [wealthyDialog, setWealthyDialog] = useState<WealthyDialogState>(null);
   const [stealResourceDialog, setStealResourceDialog] = useState<StealResourceDialogState>(null);
-  const [productiveCardDialog, setProductiveCardDialog] = useState<ProductiveCardDialogState | null>(null);
-  const [specialIslandRollDialog, setSpecialIslandRollDialog] = useState<SpecialIslandRollDialogState | null>(null);
 
 
   const [showConfirmExitDialog, setShowConfirmExitDialog] = useState(false);
@@ -85,13 +83,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     // When it becomes my turn, create a local copy of the state to modify.
     if (isMyTurn && serverGameState && !localGameState) {
         let localCopy = cloneDeep(serverGameState);
-        
-        const currentPlayer = localCopy.players[localCopy.currentPlayerIndex];
-        const productiveDialogState = currentPlayer.dialogState?.productiveCard;
-        if(productiveDialogState) {
-            setProductiveCardDialog(productiveDialogState);
-        }
-
         setLocalGameState(localCopy);
     } else if (!isMyTurn && localGameState) {
         // When it's not my turn, clear the local state.
@@ -99,19 +90,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     }
   }, [isMyTurn, serverGameState, localGameState]);
 
-  useEffect(() => {
-      if (gameStateForDisplay) {
-        const currentPlayer = gameStateForDisplay.players[gameStateForDisplay.currentPlayerIndex];
-        if (currentPlayer.id === localPlayer?.id) { // It's my turn
-            if(currentPlayer.dialogState?.productiveCard?.isOpen) {
-                setProductiveCardDialog(currentPlayer.dialogState.productiveCard);
-            }
-            if(currentPlayer.dialogState?.specialIslandRoll?.isOpen) {
-                setSpecialIslandRollDialog(currentPlayer.dialogState.specialIslandRoll);
-            }
-        }
-      }
-  }, [gameStateForDisplay, localPlayer?.id]);
+  const productiveCardDialog = gameStateForDisplay?.players[gameStateForDisplay.currentPlayerIndex]?.dialogState?.productiveCard;
+  const specialIslandRollDialog = gameStateForDisplay?.players[gameStateForDisplay.currentPlayerIndex]?.dialogState?.specialIslandRoll;
 
   const selectedArmy = useMemo(() => {
     if (!gameStateForDisplay || selectedArmyId === null || !localPlayer) return null;
@@ -142,8 +122,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setSabotageDialog(null);
         setWealthyDialog(null);
         setStealResourceDialog(null);
-        setProductiveCardDialog(null);
-        setSpecialIslandRollDialog(null);
     } else if (localGameState) {
         // Auto-select army if it's my turn and I only have one
         const myArmies = localGameState.players[localGameState.currentPlayerIndex].armies;
@@ -205,9 +183,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             const result = handleGameAction({ action, gameState: localGameState, payload });
             if(result.state) {
                 setLocalGameState(result.state);
-            }
-            if (result.ui?.specialIslandRoll) {
-                setSpecialIslandRollDialog({ isOpen: true, ...result.ui.specialIslandRoll });
             }
         }
 
@@ -320,10 +295,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           return;
       } else {
           // No army selected, this click is to select an army
-          if (armiesOnClickedTile.length === 1) {
-              setSelectedArmyId(armiesOnClickedTile[0].id);
-          } else if (armiesOnClickedTile.length > 1) {
-              setArmySelectionDialog({ armies: armiesOnClickedTile, x, y });
+          const unactedArmies = armiesOnClickedTile.filter(a => !a.hasActed);
+          if (unactedArmies.length === 1) {
+              setSelectedArmyId(unactedArmies[0].id);
+          } else if (unactedArmies.length > 1) {
+              setArmySelectionDialog({ armies: unactedArmies, x, y });
+          } else if (unactedArmies.length === 0 && armiesOnClickedTile.length > 0){
+             toast({ title: 'Army Exhausted', description: 'This army has already acted and cannot be teleported.', variant: 'destructive'});
           }
           return; // Wait for destination click
       }
@@ -469,7 +447,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                         <Button variant="outline" size="icon" onClick={handleExitClick} disabled={isExiting}>
                         {isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft />}
                         </Button>
-                        <h1 className="text-xl font-bold sm:text-2xl">{serverGameState.name}</h1>
+                        <h1 className="text-xl font-bold sm:text-2xl">{gameStateForDisplay.name}</h1>
                     </div>
                     {canStartGame && (
                         <Button onClick={handleStartGame}><Play /> Start Game</Button>
@@ -633,10 +611,11 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         stealResourceDialog={stealResourceDialog}
         onCloseStealResourceDialog={() => setStealResourceDialog(null)}
         productiveCardDialog={productiveCardDialog}
-        onCloseProductiveCardDialog={() => setProductiveCardDialog(null)}
+        onCloseProductiveCardDialog={() => {
+             onAction(GameAction.UseProductiveCard, { selectedResource: null });
+        }}
         specialIslandRollDialog={specialIslandRollDialog}
         onCloseSpecialIslandRollDialog={() => {
-            setSpecialIslandRollDialog(null)
             onAction(GameAction.CloseSpecialIslandDialog);
         }}
       />

@@ -115,7 +115,6 @@ export function GameDialogs({
                     state={productiveCardDialog}
                     onConfirm={(selectedResource) => {
                       onAction(GameAction.UseProductiveCard, { selectedResource });
-                      onCloseProductiveCardDialog();
                     }}
                 />
             )}

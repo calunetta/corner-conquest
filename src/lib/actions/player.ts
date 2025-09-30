@@ -5,13 +5,12 @@ import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum
 import { getPossibleMoves } from './movement';
 
 export function handleCancelAction(state: GameState): GameState {
-  const newState = state;
-  const player = newState.players[newState.currentPlayerIndex];
+  const player = state.players[state.currentPlayerIndex];
   
   const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
   if (cardUseIndex > -1) {
     player.actionsThisTurn.splice(cardUseIndex, 1);
-    newState.log.push(`${player.name} cancelled their card action.`);
+    state.log.push(`${player.name} cancelled their card action.`);
   }
 
   // Reset all temporary flags that could be set by a card
@@ -22,7 +21,7 @@ export function handleCancelAction(state: GameState): GameState {
   player.efficientActive = false;
   player.masterBuilderActive = false;
   
-  return newState;
+  return state;
 }
 
 
@@ -97,8 +96,7 @@ export function checkAndEndTurnIfNoActions(state: GameState): GameState {
 }
 
 export function handleDeployAction(state: GameState): GameState {
-    let newState = state;
-    const { players, currentPlayerIndex, map, discardPile, settings, baseTiles } = newState;
+    const { players, currentPlayerIndex, map, discardPile, settings, baseTiles } = state;
     const player = players[currentPlayerIndex];
     
     if (player.actionsThisTurn.includes(GameAction.Deploy)) throw new Error("You can only deploy one army per turn.");
@@ -133,7 +131,7 @@ export function handleDeployAction(state: GameState): GameState {
     map[baseTileInfo.y * MAP_COLS + baseTileInfo.x].occupants.push({ playerId: player.id, armyId: newArmy.id });
     
     if (isEfficientUsed) {
-      newState.log.push(`${player.name} used 'Efficient' to deploy!`);
+      state.log.push(`${player.name} used 'Efficient' to deploy!`);
       player.efficientActive = false;
       const cardIndex = player.specialCards.indexOf(CardNameEnum.Efficient);
       if (cardIndex > -1) {
@@ -144,7 +142,7 @@ export function handleDeployAction(state: GameState): GameState {
     }
 
     if (isReinforceUsed) {
-      newState.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
+      state.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
       player.reinforceActive = false;
       const cardIndex = player.specialCards.indexOf(CardNameEnum.Reinforce);
       if (cardIndex > -1) {
@@ -159,14 +157,13 @@ export function handleDeployAction(state: GameState): GameState {
     }
     
     player.actionsThisTurn.push(GameAction.Deploy);
-    newState.log.push(`${player.name} deployed a new army!`);
+    state.log.push(`${player.name} deployed a new army!`);
     
-    return newState;
+    return state;
 }
 
 export function handleUpgradeAction(state: GameState): GameState {
-    let newState = state;
-    const { players, currentPlayerIndex, discardPile, settings } = newState;
+    const { players, currentPlayerIndex, discardPile, settings } = state;
     const player = players[currentPlayerIndex];
 
     if (player.actionsThisTurn.includes(GameAction.Upgrade)) throw new Error("You can only upgrade once per turn.");
@@ -184,7 +181,7 @@ export function handleUpgradeAction(state: GameState): GameState {
     player.attackPower += 1;
 
     if (player.masterBuilderActive && canUseCard) {
-      newState.log.push(`${player.name} used 'Master Builder' for a cheaper upgrade!`);
+      state.log.push(`${player.name} used 'Master Builder' for a cheaper upgrade!`);
       player.masterBuilderActive = false;
       const cardIndex = player.specialCards.indexOf(CardNameEnum.MasterBuilder);
       if (cardIndex > -1) {
@@ -195,17 +192,16 @@ export function handleUpgradeAction(state: GameState): GameState {
     }
 
     player.actionsThisTurn.push(GameAction.Upgrade);
-    newState.log.push(`${player.name} upgraded their army's attack power to ${player.attackPower + 1}.`);
+    state.log.push(`${player.name} upgraded their army's attack power to ${player.attackPower + 1}.`);
     
-    return newState;
+    return state;
 }
 
-function applyAutomaticCollection(state: GameState, player: Player): { newState: GameState, collectedResources: Record<string, number> } {
-    let newState = state;
+function applyAutomaticCollection(state: GameState, player: Player): GameState {
     const collectedResources: Record<string, number> = {};
     
     player.positions.forEach(pos => {
-        const tile = newState.map[pos.y * MAP_COLS + pos.x];
+        const tile = state.map[pos.y * MAP_COLS + pos.x];
         const resourceSpot = tile.resources.find(r => r.type === pos.resource);
         if (resourceSpot) {
             player.resources[resourceSpot.type as ResourceType] += resourceSpot.amount;
@@ -213,28 +209,32 @@ function applyAutomaticCollection(state: GameState, player: Player): { newState:
         }
     });
 
+    const collectedStrings = Object.entries(collectedResources).map(([type, amount]) => `${amount} ${type}`);
+    if (collectedStrings.length > 0) {
+        state.log.push(`${player.name} automatically collected ${collectedStrings.join(', ')}.`);
+    }
+
     player.positions.forEach(pos => {
-        const tile = newState.map[pos.y * MAP_COLS + pos.x];
+        const tile = state.map[pos.y * MAP_COLS + pos.x];
         if (tile && tile.positionedBy) {
             tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === pos.resource));
         }
     });
     player.positions = [];
 
-    return { newState, collectedResources };
+    return state;
 }
 
 export function handleEndTurn(state: GameState): GameState {
-    let newState = state; 
     
-    if (newState.currentPlayerIndex >= newState.players.length) {
-        newState.currentPlayerIndex = 0;
+    if (state.currentPlayerIndex >= state.players.length) {
+        state.currentPlayerIndex = 0;
     }
     
     // --- Start of a new turn ---
-    let nextPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
-    newState.currentPlayerIndex = nextPlayerIndex;
-    let nextPlayer = newState.players[nextPlayerIndex];
+    let nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
+    state.currentPlayerIndex = nextPlayerIndex;
+    let nextPlayer = state.players[nextPlayerIndex];
 
     // Reset all temporary flags and army statuses for the *new* current player
     nextPlayer.armies.forEach((army: Army) => army.hasActed = false);
@@ -246,25 +246,25 @@ export function handleEndTurn(state: GameState): GameState {
     
     if (nextPlayer.isSabotaged) {
         nextPlayer.isSabotaged = false; 
-        newState.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
-        return handleEndTurn(newState); // Immediately recurse to the next player's turn
+        state.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
+        return handleEndTurn(state); // Immediately recurse to the next player's turn
     }
     
-    if (newState.currentPlayerIndex === 0) {
-      newState.turn += 1;
+    if (state.currentPlayerIndex === 0) {
+      state.turn += 1;
     }
     
     // --- Pre-Turn Passive Abilities for NEW Player ---
     if (nextPlayer.passiveAbilities.explorer) {
         const occupiedIslands = new Set<string>();
         nextPlayer.armies.forEach((army: Army) => {
-            const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
+            const tile = state.map[army.position.y * MAP_COLS + army.position.x];
             occupiedIslands.add(tile.id);
         });
         const vpGained = occupiedIslands.size;
         if (vpGained > 0) {
             nextPlayer.victoryPoints += vpGained;
-            newState.log.push(`${nextPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
+            state.log.push(`${nextPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
         }
     }
 
@@ -273,7 +273,7 @@ export function handleEndTurn(state: GameState): GameState {
         const occupiedIslands = new Set<string>();
         
         nextPlayer.armies.forEach((army: Army) => {
-            const tile = newState.map[army.position.y * MAP_COLS + army.position.x];
+            const tile = state.map[army.position.y * MAP_COLS + army.position.x];
             if (occupiedIslands.has(tile.id)) return;
             
             if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0) {
@@ -287,7 +287,7 @@ export function handleEndTurn(state: GameState): GameState {
 
         const collectedStrings = Object.entries(resourcesCollected).map(([type, amount]) => `${amount} ${type}`);
         if(collectedStrings.length > 0) {
-            newState.log.push(`${nextPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`);
+            state.log.push(`${nextPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`);
         }
     }
     
@@ -296,16 +296,11 @@ export function handleEndTurn(state: GameState): GameState {
 
     if (positionedArmies.length > 0) {
         if (!hasProductiveCard) {
-            const collectionResult = applyAutomaticCollection(newState, nextPlayer);
-            newState = collectionResult.newState;
-            const collectedStrings = Object.entries(collectionResult.collectedResources).map(([type, amount]) => `${amount} ${type}`);
-            if (collectedStrings.length > 0) {
-                newState.log.push(`${nextPlayer.name} automatically collected ${collectedStrings.join(', ')}.`);
-            }
+            state = applyAutomaticCollection(state, nextPlayer);
         } else {
             // Player has Productive card, set state for dialog
             const productiveOptions = nextPlayer.positions.map(pos => {
-                const tile = newState.map[pos.y * newState.settings.gridSize.cols + pos.x];
+                const tile = state.map[pos.y * state.settings.gridSize.cols + pos.x];
                 const resource = tile.resources.find(r => r.type === pos.resource);
                 return { resource: pos.resource, amount: resource?.amount || 0 };
             }).filter(opt => opt.amount > 0);
@@ -315,12 +310,12 @@ export function handleEndTurn(state: GameState): GameState {
         }
     }
     
-    newState.log.push(`It's now ${nextPlayer.name}'s turn.`);
+    state.log.push(`It's now ${nextPlayer.name}'s turn.`);
     
-    newState.combatState = null;
-    newState.monsterCombatState = null;
+    state.combatState = null;
+    state.monsterCombatState = null;
 
-    return newState;
+    return state;
 }
 
 export async function handlePlayerExit(gameId: string, playerId: string): Promise<void> {

@@ -203,5 +203,3 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
         await updateDoc(doc(db, 'games', gameId), { ...endTurnState.state });
     }
 }
-
-    
