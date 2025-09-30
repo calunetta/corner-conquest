@@ -18,7 +18,6 @@ export function handleBuyCardAction(state: GameState): GameState {
         return state;
     }
 
-
     if (specialCardsDeck.length === 0) {
         state.log.push("The deck is empty. Reshuffling the discard pile...");
         for (let i = discardPile.length - 1; i > 0; i--) {
@@ -39,10 +38,10 @@ export function handleBuyCardAction(state: GameState): GameState {
     return state;
 }
 
-export const handleUseCard = (state: GameState, payload: { cardName: CardName, isScout?: boolean }): GameState => {
+export const handleUseCard = (state: GameState, payload: { cardName: CardName }): GameState => {
     const { players, currentPlayerIndex, discardPile } = state;
     const player = players[currentPlayerIndex];
-    const { cardName, isScout } = payload;
+    const { cardName } = payload;
 
     const canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard);
     if (!canUseCard) throw new Error("You can only use one card per turn.");
@@ -50,30 +49,25 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
     const cardIndex = player.specialCards.indexOf(cardName);
     if (cardIndex === -1) throw new Error(`You do not have the ${cardName} card.`);
     
-    
-    state.log.push(`${player.name} is using the '${cardName}' card.`);
+    player.actionsThisTurn.push(GameAction.UseCard);
     
     const immediateEffectCards: CardName[] = ['Extra Move', 'Reinforce', 'Efficient', 'Master Builder'];
     if (immediateEffectCards.includes(cardName)) {
-        player.actionsThisTurn.push(GameAction.UseCard); // Consume action now
-        
-        // These flags will be consumed by other actions (Move, Deploy, Upgrade)
         player.hasExtraMove = cardName === 'Extra Move';
         player.reinforceActive = cardName === 'Reinforce';
         player.efficientActive = cardName === 'Efficient';
         player.masterBuilderActive = cardName === 'Master Builder';
         state.log.push(`${player.name} activated '${cardName}'.`);
-    }
-
-    // Scout is special: the card is only consumed after all tiles are revealed.
-    if (isScout) {
-        if (!player.actionsThisTurn.includes(GameAction.UseCard)) {
-            player.actionsThisTurn.push(GameAction.UseCard);
+        
+        if (cardName === 'Extra Move') {
+            const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+            discardPile.push(usedCard);
         }
-        const cIndex = player.specialCards.indexOf(cardName);
-        if(cIndex > -1) {
-            discardPile.push(player.specialCards.splice(cIndex, 1)[0]);
-        }
+    } else if (cardName === 'Scout') {
+        // The card is consumed after the final tile is revealed.
+        state.log.push(`${player.name} is using the '${cardName}' card.`);
+        const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+        discardPile.push(usedCard);
     }
     
     return state;
@@ -119,7 +113,6 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
     });
     player.positions = [];
 
-    // Clear dialog state
     if (player.dialogState?.productiveCard) {
         player.dialogState.productiveCard = null;
     }
@@ -135,9 +128,9 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
         targetPlayer.isSabotaged = true;
         state.log.push(`${player.name} sabotaged ${targetPlayer.name}! They will miss their next turn.`);
         
+        player.actionsThisTurn.push(GameAction.UseCard);
         const cardIndex = player.specialCards.indexOf('Sabotage');
         if (cardIndex > -1) {
-            player.actionsThisTurn.push(GameAction.UseCard);
             state.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
         }
     }
@@ -150,9 +143,9 @@ export function handleGainWealth(state: GameState, resource: ResourceType): Game
     player.resources[resource] += 5;
     state.log.push(`${player.name} used 'Wealthy' to gain 5 ${resource}.`);
     
+    player.actionsThisTurn.push(GameAction.UseCard);
     const cardIndex = player.specialCards.indexOf('Wealthy');
     if (cardIndex > -1) {
-        player.actionsThisTurn.push(GameAction.UseCard);
         state.discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
     }
 
@@ -178,9 +171,9 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
         state.log.push(`${currentPlayer.name} tried to steal ${payload.resource} from ${targetPlayer.name}, but they had none.`);
     }
 
+    player.actionsThisTurn.push(GameAction.UseCard);
     const cardIndex = currentPlayer.specialCards.indexOf('Steal Resource');
     if (cardIndex > -1) {
-        currentPlayer.actionsThisTurn.push(GameAction.UseCard);
         state.discardPile.push(currentPlayer.specialCards.splice(cardIndex, 1)[0]);
     }
 

@@ -19,6 +19,7 @@ import { SpecialIslandRollDialog } from './SpecialIslandRollDialog';
 
 type GameDialogsProps = {
   gameState: GameState;
+  serverGameState: GameState;
   localPlayer: Player;
   isMyTurn: boolean;
   onAction: (action: GameAction, payload?: any) => Promise<void>;
@@ -43,13 +44,12 @@ type GameDialogsProps = {
   stealResourceDialog: StealResourceDialogState;
   onCloseStealResourceDialog: () => void;
   productiveCardDialog: ProductiveCardDialogState | null;
-  onCloseProductiveCardDialog: () => void;
   specialIslandRollDialog: SpecialIslandRollDialogState | null;
-  onCloseSpecialIslandRollDialog: () => void;
 };
 
 export function GameDialogs({ 
     gameState, 
+    serverGameState,
     localPlayer, 
     isMyTurn, 
     onAction,
@@ -72,15 +72,13 @@ export function GameDialogs({
     stealResourceDialog,
     onCloseStealResourceDialog,
     productiveCardDialog,
-    onCloseProductiveCardDialog,
     specialIslandRollDialog,
-    onCloseSpecialIslandRollDialog,
 }: GameDialogsProps) {
 
   const { 
     combatState, 
     monsterCombatState,
-  } = gameState;
+  } = serverGameState;
   
   const playerForCardsDialog = cardsDialogPlayerId !== null ? gameState.players.find(p => p.id === cardsDialogPlayerId) : null;
   const isViewingOwnCards = playerForCardsDialog?.id === localPlayer.id;
@@ -90,7 +88,7 @@ export function GameDialogs({
       {/* SHARED DIALOGS (visible to multiple players) */}
       {combatState && (
         <CombatDialog
-          gameState={gameState}
+          gameState={serverGameState}
           onRoll={(useWarChief) => onAction(GameAction.CombatRoll, { useWarChief })}
           onClose={() => onAction(GameAction.CloseCombat)}
           isMyTurn={isMyTurn}
@@ -100,7 +98,7 @@ export function GameDialogs({
 
       {monsterCombatState && (
           <MonsterCombatDialog 
-              gameState={gameState}
+              gameState={serverGameState}
               onRoll={(payload) => onAction(GameAction.MonsterCombatRoll, payload)}
               onClose={() => onAction(GameAction.CloseMonsterCombat)}
               onCancel={() => onLocalAction(GameAction.local_CancelAction)}
@@ -126,7 +124,7 @@ export function GameDialogs({
                   onAction(GameAction.RollOnSpecialIsland);
                 }}
                 onClose={() => {
-                  onCloseSpecialIslandRollDialog();
+                  onAction(GameAction.CloseSpecialIslandDialog);
                 }}
               />
             )}

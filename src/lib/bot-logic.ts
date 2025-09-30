@@ -1,6 +1,6 @@
 
 import type { GameState, Army, ResourceType } from './types';
-import { GameAction, AbilityName, CardName, IslandType, MAP_COLS } from './types';
+import { GameAction, AbilityName, CardName, IslandType, MAP_COLS, ResourceType as ResourceEnum } from './types';
 import { handleGameAction } from './actions';
 import { cloneDeep } from 'lodash';
 import { getPossibleMoves } from './actions/movement';
@@ -39,7 +39,7 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     // --- Strategic (non-army) Actions ---
     const abilityCost = state.settings.abilityCost;
     const unownedAbilities = state.settings.availableAbilities.filter(a => !botPlayer.passiveAbilities[a as AbilityName]);
-    if (canAfford(botPlayer, abilityCost, ResourceType.Gems) && unownedAbilities.length > 0) {
+    if (canAfford(botPlayer, abilityCost, ResourceEnum.Gems) && unownedAbilities.length > 0) {
         possibleActions.push({
             name: 'buy-ability',
             priority: 8,
@@ -49,7 +49,7 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     }
     
     const upgradeCost = botPlayer.masterBuilderActive ? Math.ceil(state.settings.upgradeCost / 2) : state.settings.upgradeCost;
-    if (canAfford(botPlayer, upgradeCost, ResourceType.Iron) && botPlayer.attackPower < 4 && !botPlayer.actionsThisTurn.includes(GameAction.Upgrade)) {
+    if (canAfford(botPlayer, upgradeCost, ResourceEnum.Iron) && botPlayer.attackPower < 4 && !botPlayer.actionsThisTurn.includes(GameAction.Upgrade)) {
         possibleActions.push({
             name: 'upgrade-attack',
             priority: 7 - botPlayer.attackPower,
@@ -58,7 +58,7 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     }
 
     const deployCost = botPlayer.efficientActive ? Math.ceil(botPlayer.nextArmyCost / 2) : botPlayer.nextArmyCost;
-    if ((canAfford(botPlayer, deployCost, ResourceType.Wheat) || botPlayer.reinforceActive) && botPlayer.armyCount < 5 && !botPlayer.actionsThisTurn.includes(GameAction.Deploy)) {
+    if ((canAfford(botPlayer, deployCost, ResourceEnum.Wheat) || botPlayer.reinforceActive) && botPlayer.armyCount < 5 && !botPlayer.actionsThisTurn.includes(GameAction.Deploy)) {
         possibleActions.push({
             name: 'deploy-army',
             priority: 6 - botPlayer.armyCount,
@@ -66,7 +66,7 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
         });
     }
 
-    if (canAfford(botPlayer, 10, ResourceType.Gems) && !botPlayer.actionsThisTurn.includes(GameAction.BuyCard)) {
+    if (canAfford(botPlayer, 10, ResourceEnum.Gems) && !botPlayer.actionsThisTurn.includes(GameAction.BuyCard)) {
         possibleActions.push({
             name: 'buy-card',
             priority: botPlayer.resources.gems > 20 ? 4 : 1,
@@ -76,9 +76,9 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     
     if (botPlayer.specialCards.includes(CardName.Wealthy) && !botPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
         let neededResource: ResourceType | null = null;
-        if (!canAfford(botPlayer, deployCost, ResourceType.Wheat) && botPlayer.armyCount < 5) neededResource = ResourceType.Wheat;
-        else if (!canAfford(botPlayer, upgradeCost, ResourceType.Iron) && botPlayer.attackPower < 4) neededResource = ResourceType.Iron;
-        else if (botPlayer.resources.gems < 5) neededResource = ResourceType.Gems;
+        if (!canAfford(botPlayer, deployCost, ResourceEnum.Wheat) && botPlayer.armyCount < 5) neededResource = ResourceEnum.Wheat;
+        else if (!canAfford(botPlayer, upgradeCost, ResourceEnum.Iron) && botPlayer.attackPower < 4) neededResource = ResourceEnum.Iron;
+        else if (botPlayer.resources.gems < 5) neededResource = ResourceEnum.Gems;
         
         if (neededResource) {
             possibleActions.push({
@@ -150,7 +150,7 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
             let priority = 2; // Base priority for any move
             
             if (state.settings.fogOfWar && !botPlayer.revealedTiles.includes(targetTile.id)) {
-                priority = 6; // High priority to explore
+                priority = 6;
             } 
             else if ((targetTile.type === IslandType.Resource || targetTile.type === IslandType.Base) && targetTile.resources.length > 0 && targetTile.occupants.length === 0 && !targetTile.monsters) {
                 priority = 4;
@@ -174,10 +174,9 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
         console.log(`Bot: Choosing action '${bestAction.name}' with priority ${bestAction.priority}`);
         
         try {
-            let { state: nextState, ui } = handleGameAction({ action: bestAction.action, gameState: state, payload: bestAction.payload });
+            let { state: nextState } = handleGameAction({ action: bestAction.action, gameState: state, payload: bestAction.payload });
 
             if (nextState) {
-                // If the action results in monster combat, the bot needs to resolve it.
                 if(nextState.monsterCombatState) {
                     const combatResult = handleGameAction({ action: GameAction.MonsterCombatRoll, gameState: nextState, payload: { monster: nextState.monsterCombatState.monster, useDecideCard: false, decidedValue: 0, useOvercomeCard: false, useWarChief: false }});
                     const finalState = handleGameAction({ action: GameAction.CloseMonsterCombat, gameState: combatResult.state! });

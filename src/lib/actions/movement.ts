@@ -83,21 +83,19 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     const armyInState = player.armies.find(a => a.id === army.id);
     if (!armyInState) throw new Error("Army not found for move action.");
     
-    if (armyInState.hasActed && !player.hasExtraMove && !isTeleport) {
-        throw new Error(`Invalid move: Army ${armyInState.id} has already acted.`);
-    }
-
     if (isTeleport) {
         if (armyInState.hasActed) throw new Error(`Invalid move: Army ${armyInState.id} has already acted and cannot be teleported.`);
         const cardIndex = player.specialCards.indexOf('Teleport');
         if (cardIndex > -1) {
-            player.actionsThisTurn.push(GameAction.UseCard);
             discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
             state.log.push(`${player.name} teleported an army!`);
         } else {
              throw new Error("Teleport card not found, but was attempted to be used.");
         }
     } else {
+        if (armyInState.hasActed && !player.hasExtraMove) {
+            throw new Error(`Invalid move: Army ${armyInState.id} has already acted.`);
+        }
         const possibleMoves = getPossibleMoves(state, armyInState);
         if (!possibleMoves.some(m => m.x === x && m.y === y)) {
             throw new Error(`Invalid move for army ${armyInState.id} to (${x}, ${y}).`);
@@ -120,17 +118,10 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     const targetTile = state.map[y * MAP_COLS + x];
     targetTile.occupants.push({ playerId: player.id, armyId: armyInState.id });
     
-    // Handle action consumption
     if (isTeleport) {
         armyInState.hasActed = true;
     } else if (player.hasExtraMove) {
-        // Consume the flag, but do NOT change hasActed status.
-        // If army was fresh, it stays fresh. If it was acted, it stays acted.
         player.hasExtraMove = false; 
-        const cardIndex = player.specialCards.indexOf('Extra Move');
-        if (cardIndex > -1) {
-            discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
-        }
         state.log.push(`${player.name} used their Extra Move on an army.`);
     } else {
         armyInState.hasActed = true;
@@ -139,7 +130,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);
     if (isFirstDiscovery) {
         state = revealIsland(state, x, y, isTeleport);
-    } else if (targetTile.type === IslandType.Special) {
+    } else if (targetTile.type === IslandType.Special && !isTeleport) {
         armyInState.hasActed = true;
         
         if (player.dialogState) {

@@ -4,7 +4,7 @@ import type { Island, Player, DeathAnimation } from '@/lib/types';
 import { IslandTile } from './IslandTile';
 import { useMemo } from 'react';
 import Image from 'next/image';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { MAP_COLS, MAP_ROWS } from '@/lib/types';
 
 
@@ -72,7 +72,7 @@ type MapGridProps = {
   possibleMoves: { x: number, y: number }[];
   selectedTile: { x: number, y: number } | null;
   isTeleporting?: boolean;
-  isScouting?: boolean;
+  isScoutTarget?: boolean;
   deathAnimations: DeathAnimation[];
   fogOfWar: boolean;
   localPlayer: Player;
@@ -109,7 +109,6 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
         style={{
           gridTemplateColumns: `repeat(${MAP_COLS}, ${tileSize}px)`,
           gap: `${gap}px`,
-          marginLeft: isMobile ? '180px' : '0',
         }}
       >
         {map.map((island) => {

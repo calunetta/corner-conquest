@@ -7,16 +7,21 @@ import { getPossibleMoves } from './movement';
 export function handleCancelAction(state: GameState): GameState {
   const player = state.players[state.currentPlayerIndex];
   
+  if (player.hasExtraMove) {
+    const cardIndex = state.discardPile.indexOf(CardNameEnum.ExtraMove);
+    if (cardIndex > -1) {
+        const card = state.discardPile.splice(cardIndex, 1)[0];
+        player.specialCards.push(card);
+    }
+    player.hasExtraMove = false;
+  }
+  
   const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
   if (cardUseIndex > -1) {
     player.actionsThisTurn.splice(cardUseIndex, 1);
     state.log.push(`${player.name} cancelled their card action.`);
   }
 
-  // Reset all temporary flags that could be set by a card
-  if (player.hasExtraMove) {
-    player.hasExtraMove = false;
-  }
   player.reinforceActive = false;
   player.efficientActive = false;
   player.masterBuilderActive = false;
@@ -231,12 +236,10 @@ export function handleEndTurn(state: GameState): GameState {
         state.currentPlayerIndex = 0;
     }
     
-    // --- Start of a new turn ---
     let nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
     state.currentPlayerIndex = nextPlayerIndex;
     let nextPlayer = state.players[nextPlayerIndex];
 
-    // Reset all temporary flags and army statuses for the *new* current player
     nextPlayer.armies.forEach((army: Army) => army.hasActed = false);
     nextPlayer.actionsThisTurn = [];
     nextPlayer.hasExtraMove = false;
@@ -247,14 +250,13 @@ export function handleEndTurn(state: GameState): GameState {
     if (nextPlayer.isSabotaged) {
         nextPlayer.isSabotaged = false; 
         state.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
-        return handleEndTurn(state); // Immediately recurse to the next player's turn
+        return handleEndTurn(state);
     }
     
     if (state.currentPlayerIndex === 0) {
       state.turn += 1;
     }
     
-    // --- Pre-Turn Passive Abilities for NEW Player ---
     if (nextPlayer.passiveAbilities.explorer) {
         const occupiedIslands = new Set<string>();
         nextPlayer.armies.forEach((army: Army) => {
@@ -298,7 +300,6 @@ export function handleEndTurn(state: GameState): GameState {
         if (!hasProductiveCard) {
             state = applyAutomaticCollection(state, nextPlayer);
         } else {
-            // Player has Productive card, set state for dialog
             const productiveOptions = nextPlayer.positions.map(pos => {
                 const tile = state.map[pos.y * state.settings.gridSize.cols + pos.x];
                 const resource = tile.resources.find(r => r.type === pos.resource);
@@ -335,7 +336,7 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
             
             const isHost = playerIndex === 0;
 
-            if (isHost || currentState.players.length <= 1) {
+            if (isHost && currentState.players.length <= 1) {
                 transaction.delete(gameDocRef);
                 return;
             }
@@ -344,15 +345,17 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
 
             currentState.log.push(`${currentState.players[playerIndex].name} has left the game.`);
             
-            // Remove all remnants of the player
             currentState.map.forEach(tile => {
                 tile.occupants = tile.occupants.filter(o => o.playerId !== playerIndex);
                 tile.positionedBy = (tile.positionedBy || []).filter(p => p.playerId !== playerIndex);
             });
 
             currentState.players.splice(playerIndex, 1);
+            
+            if (isHost) {
+                currentState.log.push(`${currentState.players[0].name} is the new host.`);
+            }
 
-            // Re-assign player IDs (seat indices) and update references
             currentState.players.forEach((p, i) => p.id = i);
             
             currentState.map.forEach(tile => {
@@ -365,10 +368,11 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
             });
             
             if (currentState.combatState) {
-                if (currentState.combatState.attackerId > playerIndex) currentState.combatState.attackerId--;
-                if (currentState.combatState.defenderId > playerIndex) currentState.combatState.defenderId--;
                 if(currentState.combatState.attackerId === playerIndex || currentState.combatState.defenderId === playerIndex) {
                     currentState.combatState = null;
+                } else {
+                    if (currentState.combatState.attackerId > playerIndex) currentState.combatState.attackerId--;
+                    if (currentState.combatState.defenderId > playerIndex) currentState.combatState.defenderId--;
                 }
             }
 

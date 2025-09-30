@@ -20,7 +20,6 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     try {
         const gameDocRef = doc(db, 'games', gameId);
         
-        // The update function now operates on the state passed to it, not a freshly fetched one.
         const result = updateFn(stateToUpdate);
         
         if (!result) {
@@ -153,7 +152,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     if (isHost && gameState && gameState.status === 'playing' && gameState.players[gameState.currentPlayerIndex]?.isBot) {
         const botTurnTimeout = setTimeout(() => {
             takeBotTurn(gameState);
-        }, 1000); // 1 second delay for bot to "think"
+        }, 1000);
         
         return () => clearTimeout(botTurnTimeout);
     }

@@ -52,7 +52,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
       state.monsterCombatState = {
         attackerId: attacker.id,
         attackerPosition: selectedArmy.position,
-        monster: currentTile.monsters[0], // Default to first monster, selection can override
+        monster: currentTile.monsters.length === 1 ? currentTile.monsters[0] : null,
         attackerRolls: [],
         monsterRolls: [],
         winnerId: null,
@@ -293,8 +293,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
     
 
     state.monsterCombatState = {
-      attackerId: attacker.id,
-      attackerPosition: attackingArmy.position,
+      ...monsterCombatState,
       monster,
       attackerRolls,
       monsterRolls,
