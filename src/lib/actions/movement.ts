@@ -3,8 +3,6 @@ import type { GameState, Player, Army, ActionHandlerResult, CardName } from '@/l
 import { handleAttackAction } from './attack';
 import { checkAndEndTurnIfNoActions, canArmyPerformAnyAction } from './player';
 import { GameAction, IslandType, MAP_COLS, MAP_ROWS, HAND_LIMIT } from '../types';
-import { cloneDeep } from 'lodash';
-
 
 export function getPossibleMoves(state: GameState, army: Army): { x: number; y: number }[] {
     const { map, players, currentPlayerIndex } = state;
@@ -41,7 +39,7 @@ export function getPossibleMoves(state: GameState, army: Army): { x: number; y: 
 }
 
 export function revealIsland(state: GameState, x: number, y: number, isScout: boolean = false): { newState: GameState, cardDrawn: CardName | null } {
-    let newState = cloneDeep(state);
+    let newState = state;
     const player = newState.players[newState.currentPlayerIndex];
     const tile = newState.map[y * MAP_COLS + x];
     const tileId = tile.id;
@@ -82,7 +80,7 @@ export function revealIsland(state: GameState, x: number, y: number, isScout: bo
 }
 
 export function handleMoveAction(state: GameState, x: number, y: number, army: Army, isTeleport: boolean = false): ActionHandlerResult {
-    let newState = cloneDeep(state);
+    let newState = state;
     const { players, currentPlayerIndex, map, discardPile } = newState;
     const player = players[currentPlayerIndex];
 
@@ -124,7 +122,18 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
             newState.log.push(`${player.name} teleported an army!`);
         }
         armyInState.hasActed = true;
-        return { state: checkAndEndTurnIfNoActions(newState), ui: null };
+        return { state: newState, ui: null };
+    }
+    
+    // This is a normal move or an extra move.
+    // Handle "Extra Move" consumption logic
+    if (player.hasExtraMove && !armyInState.hasActed) {
+        player.hasExtraMove = false; // Consume the extra move
+        newState.log.push(`${player.name} used their Extra Move on an army.`);
+        // Per README, if used on an un-acted army, it does NOT get hasActed = true.
+        // The army was fresh, so it remains fresh. We do nothing to hasActed.
+    } else {
+        armyInState.hasActed = true;
     }
     
     const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);
@@ -142,13 +151,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
         return { state: newState, ui: null };
     }
     
-    if (player.hasExtraMove) {
-        player.hasExtraMove = false;
-        newState.log.push(`${player.name} used their Extra Move on an army.`);
-        // The army's hasActed status is NOT changed, preserving its freshness.
-    } else {
-        armyInState.hasActed = true;
-    }
-
-    return { state: checkAndEndTurnIfNoActions(newState), ui: null };
+    return { state: newState, ui: null };
 }
+
+    

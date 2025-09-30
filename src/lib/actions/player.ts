@@ -3,10 +3,9 @@ import type { GameState, Player, Army, CardName, ActionHandlerResult, IslandReso
 import { db, doc, deleteDoc, writeBatch, getDoc, arrayUnion, runTransaction } from '@/lib/firebase';
 import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum, GameStatus } from '../types';
 import { getPossibleMoves } from './movement';
-import { cloneDeep } from 'lodash';
 
 export function handleCancelAction(state: GameState): GameState {
-  const newState = cloneDeep(state);
+  const newState = state;
   const player = newState.players[newState.currentPlayerIndex];
   
   const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
@@ -69,7 +68,7 @@ export function canPlayerPerformAnyAction(state: GameState): boolean {
         return true;
     }
 
-    const deployCost = player.efficientActive ? Math.ceil(player.nextArmyCost / 2) : player.nextArmyCost;
+    const deployCost = player.efficientActive ? Math.ceil(player.nextArmyCost / 2) : settings.deployCost;
     if ((player.resources.wheat >= deployCost || player.reinforceActive) && player.armyCount < 5 && !player.actionsThisTurn.includes(GameAction.Deploy)) {
         return true;
     }
@@ -97,7 +96,7 @@ export function checkAndEndTurnIfNoActions(state: GameState): GameState {
 }
 
 export function handleDeployAction(state: GameState): GameState {
-    let newState = cloneDeep(state);
+    let newState = state;
     const { players, currentPlayerIndex, map, discardPile, settings, baseTiles } = newState;
     const player = players[currentPlayerIndex];
     
@@ -161,11 +160,11 @@ export function handleDeployAction(state: GameState): GameState {
     player.actionsThisTurn.push(GameAction.Deploy);
     newState.log.push(`${player.name} deployed a new army!`);
     
-    return checkAndEndTurnIfNoActions(newState);
+    return newState;
 }
 
 export function handleUpgradeAction(state: GameState): GameState {
-    let newState = cloneDeep(state);
+    let newState = state;
     const { players, currentPlayerIndex, discardPile, settings } = newState;
     const player = players[currentPlayerIndex];
 
@@ -197,18 +196,18 @@ export function handleUpgradeAction(state: GameState): GameState {
     player.actionsThisTurn.push(GameAction.Upgrade);
     newState.log.push(`${player.name} upgraded their army's attack power to ${player.attackPower + 1}.`);
     
-    return checkAndEndTurnIfNoActions(newState);
+    return newState;
 }
 
 function applyAutomaticCollection(state: GameState, player: Player): { newState: GameState, collectedResources: Record<string, number> } {
-    let newState = cloneDeep(state);
+    let newState = state;
     const collectedResources: Record<string, number> = {};
     
     player.positions.forEach(pos => {
         const tile = newState.map[pos.y * MAP_COLS + pos.x];
         const resourceSpot = tile.resources.find(r => r.type === pos.resource);
         if (resourceSpot) {
-            player.resources[resourceSpot.type] += resourceSpot.amount;
+            player.resources[resourceSpot.type as ResourceType] += resourceSpot.amount;
             collectedResources[resourceSpot.type] = (collectedResources[resourceSpot.type] || 0) + resourceSpot.amount;
         }
     });
@@ -225,7 +224,7 @@ function applyAutomaticCollection(state: GameState, player: Player): { newState:
 }
 
 export function handleEndTurn(state: GameState): GameState {
-    let newState = cloneDeep(state); 
+    let newState = state; 
     
     if (newState.currentPlayerIndex >= newState.players.length) {
         newState.currentPlayerIndex = 0;
@@ -396,3 +395,5 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
         console.error("Error leaving game:", error);
     }
 }
+
+    

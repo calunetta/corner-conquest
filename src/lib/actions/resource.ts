@@ -2,10 +2,9 @@
 import type { GameState, Army, ResourceType, ActionHandlerResult } from '@/lib/types';
 import { IslandType, MAP_COLS } from '../types';
 import { checkAndEndTurnIfNoActions } from './player';
-import { cloneDeep } from 'lodash';
 
 export function handleSelectResourceForPosition(state: GameState, resource: ResourceType, armyId: number): GameState {
-    let newState = cloneDeep(state);
+    let newState = state;
     const { players, currentPlayerIndex } = newState;
     const player = players[currentPlayerIndex];
 
@@ -25,7 +24,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     
     newState.log.push(`${player.name} positioned an army on ${resource}.`);
     
-    newState = checkAndEndTurnIfNoActions(newState);
-    
     return newState;
 };
+
+    

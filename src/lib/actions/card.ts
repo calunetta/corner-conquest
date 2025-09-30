@@ -5,13 +5,16 @@ import { GameAction, AbilityName, MAP_COLS, HAND_LIMIT } from '../types';
 import { cloneDeep } from 'lodash';
 
 export function handleBuyCardAction(state: GameState): GameState {
-    let newState = cloneDeep(state);
+    let newState = state;
     const { players, currentPlayerIndex, specialCardsDeck, discardPile, debugMode } = newState;
     const player = players[currentPlayerIndex];
 
     if (player.actionsThisTurn.includes(GameAction.BuyCard)) throw new Error("You can only buy one card per turn.");
     if (player.resources.gems < 10) throw new Error("Not enough gems to buy a card.");
-    if (specialCardsDeck.length === 0 && discardPile.length === 0) throw new Error("There are no special cards left in the game.");
+    if (specialCardsDeck.length === 0 && discardPile.length === 0) {
+        newState.log.push(`${player.name} tried to buy a card, but there are none left!`);
+        return newState;
+    }
     if (player.specialCards.length >= HAND_LIMIT && !debugMode) {
         newState.log.push(`${player.name} tried to buy a card, but their hand is full!`);
         return newState;
@@ -38,7 +41,7 @@ export function handleBuyCardAction(state: GameState): GameState {
 }
 
 export const handleUseCard = (state: GameState, payload: { cardName: CardName, isScout?: boolean }): GameState => {
-    let newState = cloneDeep(state);
+    let newState = state;
     const { players, currentPlayerIndex, discardPile } = newState;
     const player = players[currentPlayerIndex];
     const { cardName, isScout } = payload;
@@ -76,7 +79,7 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
 };
 
 export function handleUseProductiveCard(state: GameState, selectedResource: ResourceType | null): GameState {
-    let newState = cloneDeep(state);
+    let newState = state;
     const player = newState.players[newState.currentPlayerIndex];
     let collectedResources: Record<string, number> = {};
     let doubledResourceString = '';
@@ -125,7 +128,7 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
 }
 
 export function handleSabotagePlayer(state: GameState, targetPlayerId: number): GameState {
-    let newState = cloneDeep(state);
+    let newState = state;
     const player = newState.players[newState.currentPlayerIndex];
     const targetPlayer = newState.players.find(p => p.id === targetPlayerId);
 
@@ -143,7 +146,7 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
 }
 
 export function handleGainWealth(state: GameState, resource: ResourceType): GameState {
-    let newState = cloneDeep(state);
+    let newState = state;
     const player = newState.players[newState.currentPlayerIndex];
     
     player.resources[resource] += 5;
@@ -159,7 +162,7 @@ export function handleGainWealth(state: GameState, resource: ResourceType): Game
 }
 
 export const handleStealResource = (state: GameState, payload: { targetPlayerId: number; resource: ResourceType }): GameState => {
-    let newState = cloneDeep(state);
+    let newState = state;
     const { players, currentPlayerIndex } = newState;
     const currentPlayer = players[currentPlayerIndex];
     const targetPlayer = players.find(p => p.id === payload.targetPlayerId);
@@ -188,7 +191,7 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
 };
 
 export function handleBuyAbility(state: GameState, abilityName: AbilityName): GameState {
-    let newState = cloneDeep(state);
+    let newState = state;
     const player = newState.players[newState.currentPlayerIndex];
     const cost = newState.settings.abilityCost;
 
@@ -211,7 +214,7 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ga
 
 
 export function handleRollOnSpecialIsland(state: GameState): {state: GameState, cardDrawn: CardName | null, roll: number} {
-  let newState = cloneDeep(state);
+  let newState = state;
   const player = newState.players[newState.currentPlayerIndex];
 
   const roll = Math.floor(Math.random() * 6) + 1;
@@ -248,7 +251,7 @@ export function handleRollOnSpecialIsland(state: GameState): {state: GameState, 
 }
 
 export function handleCloseSpecialIslandDialog(state: GameState): GameState {
-  let newState = cloneDeep(state);
+  let newState = state;
   const player = newState.players[newState.currentPlayerIndex];
   if(player.dialogState?.specialIslandRoll) {
       player.dialogState.specialIslandRoll = null;
@@ -257,7 +260,7 @@ export function handleCloseSpecialIslandDialog(state: GameState): GameState {
 }
 
 export function handleScoutAction(state: GameState, x: number, y: number): GameState {
-    let newState = cloneDeep(state);
+    let newState = state;
     const player = newState.players[newState.currentPlayerIndex];
     const tileId = `${x}-${y}`;
 
@@ -267,3 +270,5 @@ export function handleScoutAction(state: GameState, x: number, y: number): GameS
     }
     return newState;
 }
+
+    

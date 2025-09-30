@@ -1,12 +1,10 @@
 
 import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult, ResourceType, IslandResource, Player } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
-import { canArmyPerformAnyAction } from './player';
 import { GameAction, IslandType, MAP_COLS, ResourceType as ResourceTypeEnum } from '../types';
-import { cloneDeep } from 'lodash';
 
 export function handleAttackAction(state: GameState, selectedArmy: Army | null): ActionHandlerResult {
-    let newState = cloneDeep(state);
+    let newState = state;
     const { players, currentPlayerIndex, map } = newState;
     const attacker = players[currentPlayerIndex];
 
@@ -68,7 +66,7 @@ export function handleAttackAction(state: GameState, selectedArmy: Army | null):
 }
 
 export function handleSelectDefender(state: GameState, defenderArmyId: number, attackingArmyId: number): GameState {
-    let newState = cloneDeep(state);
+    let newState = state;
     const { players, currentPlayerIndex } = newState;
     const attacker = players[currentPlayerIndex];
 
@@ -99,7 +97,7 @@ export function handleSelectDefender(state: GameState, defenderArmyId: number, a
 export function handleCombatRoll(state: GameState, useWarChief: boolean): GameState {
     if (!state.combatState) return state;
 
-    const newState = cloneDeep(state);
+    const newState = state;
     const { combatState, players, discardPile } = newState;
     const attacker = players[combatState.attackerId];
     const defender = players.find(p => p.id === combatState.defenderId);
@@ -139,7 +137,7 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean): GameSt
 };
 
 export function handleCloseCombat(state: GameState): GameState {
-    let newState = cloneDeep(state);
+    let newState = state;
     const { combatState, players, map, baseTiles } = newState;
     if (!combatState || combatState.phase !== 'results' || combatState.winnerId === null) {
         newState.combatState = null;
@@ -219,7 +217,7 @@ export function handleCloseCombat(state: GameState): GameState {
 }
 
 export function handleMonsterCombatRoll(state: GameState, payload: {monster: Monster; useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean}): GameState {
-    const newState = cloneDeep(state);
+    const newState = state;
     const { players, currentPlayerIndex, discardPile, monsterCombatState } = newState;
     if(!monsterCombatState) return newState;
 
@@ -312,7 +310,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: {monster: Mon
 };
 
 export function handleCloseMonsterCombat(state: GameState): GameState {
-    let newState = cloneDeep(state);
+    let newState = state;
     const { monsterCombatState, baseTiles, settings } = newState;
     if (!monsterCombatState || monsterCombatState.phase !== 'results') {
         newState.monsterCombatState = null;
@@ -389,3 +387,5 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
     newState.monsterCombatState = null;
     return newState;
 }
+
+    
