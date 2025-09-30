@@ -84,7 +84,6 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     if (!armyInState) throw new Error("Army not found for move action.");
     
     if (isTeleport) {
-        if (player.actionsThisTurn.includes(GameAction.UseCard)) throw new Error("You have already used a card this turn.");
         const cardIndex = player.specialCards.indexOf('Teleport');
         if (cardIndex > -1) {
             discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
@@ -124,6 +123,7 @@ export function handleMoveAction(state: GameState, x: number, y: number, army: A
     } else if (player.hasExtraMove) {
         player.hasExtraMove = false; 
         state.log.push(`${player.name} used their Extra Move on an army.`);
+        // Note: hasActed is NOT set to true, allowing another action if the army was fresh.
     } else {
         armyInState.hasActed = true;
     }

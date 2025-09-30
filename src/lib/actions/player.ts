@@ -7,15 +7,18 @@ export function handleCancelAction(state: GameState, payload?: { cardName?: Card
   const player = state.players[state.currentPlayerIndex];
   
   if (payload?.cardName) {
-      const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
-      if (cardUseIndex > -1) {
-          player.actionsThisTurn.splice(cardUseIndex, 1);
+      const cardIsPending = ['Teleport', 'Scout', 'Sabotage', 'Wealthy', 'Steal Resource'].includes(payload.cardName);
+
+      if (cardIsPending) {
+          const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
+          if (cardUseIndex > -1) {
+              player.actionsThisTurn.splice(cardUseIndex, 1);
+          }
       }
       
-      const cardIsConsumedOnActivation = [CardNameEnum.ExtraMove, CardNameEnum.Scout, CardNameEnum.Teleport].includes(payload.cardName);
+      const cardIsConsumedOnActivation = [CardNameEnum.ExtraMove, CardNameEnum.Scout, CardNameEnum.Teleport, 'Reinforce', 'Efficient', 'Master Builder'].includes(payload.cardName);
 
       if (cardIsConsumedOnActivation) {
-          // Find card in discard and return to hand
           const discardIndex = state.discardPile.indexOf(payload.cardName);
           if (discardIndex > -1) {
             const card = state.discardPile.splice(discardIndex, 1)[0];
@@ -23,7 +26,6 @@ export function handleCancelAction(state: GameState, payload?: { cardName?: Card
           }
       }
       
-      // Reset flags associated with cards that set them
       if (payload.cardName === CardNameEnum.ExtraMove) player.hasExtraMove = false;
       if (payload.cardName === CardNameEnum.Reinforce) player.reinforceActive = false;
       if (payload.cardName === CardNameEnum.Efficient) player.efficientActive = false;

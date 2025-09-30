@@ -38,7 +38,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     gameState: serverGameState, 
     setGameState, 
     isMyTurn, 
-    localPlayer, 
+    localPlayer: localPlayerFromServer, 
     isHost, 
     isLoading 
   } = useGameEngine(gameId, playerId);
@@ -71,12 +71,17 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const gameStateForDisplay = isMyTurn && localGameState ? localGameState : serverGameState;
+  
+  const localPlayer = useMemo(() => {
+    if (!gameStateForDisplay || !playerId) return null;
+    return gameStateForDisplay.players.find(p => p.playerId === playerId) || null;
+  }, [gameStateForDisplay, playerId]);
 
   useEffect(() => {
     if (isMyTurn && serverGameState && !localGameState) {
         let localCopy = cloneDeep(serverGameState);
         
-        if (localCopy.players[localCopy.currentPlayerIndex].dialogState?.productiveCard?.isOpen) {
+        if (localCopy.players[localCopy.currentPlayerIndex]?.dialogState?.productiveCard?.isOpen) {
              // Defer creating local state until productive dialog is handled
         } else {
             setLocalGameState(localCopy);
@@ -86,12 +91,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     }
   }, [isMyTurn, serverGameState, localGameState]);
 
-  const productiveCardDialog = gameStateForDisplay?.players[gameStateForDisplay.currentPlayerIndex]?.dialogState?.productiveCard;
-  const specialIslandRollDialog = gameStateForDisplay?.players[gameStateForDisplay.currentPlayerIndex]?.dialogState?.specialIslandRoll;
+  const productiveCardDialog = gameStateForDisplay?.players.find(p => p.id === gameStateForDisplay.currentPlayerIndex)?.dialogState?.productiveCard;
+  const specialIslandRollDialog = gameStateForDisplay?.players.find(p => p.id === gameStateForDisplay.currentPlayerIndex)?.dialogState?.specialIslandRoll;
 
   const selectedArmy = useMemo(() => {
-    if (!gameStateForDisplay || selectedArmyId === null) return null;
-    const player = gameStateForDisplay.players.find(p => p.id === localPlayer?.id);
+    if (!gameStateForDisplay || selectedArmyId === null || !localPlayer) return null;
+    const player = gameStateForDisplay.players.find(p => p.id === localPlayer.id);
     return player?.armies.find(a => a.id === selectedArmyId) || null;
   }, [gameStateForDisplay, selectedArmyId, localPlayer]);
   
@@ -132,72 +137,53 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
     if (isPerformingAction) return;
 
+    // These actions are always sent to the server to handle real-time interactions or turn endings.
     const serverActions = [
         GameAction.CombatRoll, GameAction.CloseCombat, GameAction.MonsterCombatRoll, 
         GameAction.CloseMonsterCombat, GameAction.EndTurn, GameAction.SelectDefender, GameAction.Attack,
         GameAction.HostLeave, GameAction.CloseSpecialIslandDialog, GameAction.RollOnSpecialIsland, GameAction.UseProductiveCard,
     ];
     
-    if (!isMyTurn && !serverActions.includes(action)) {
-        toast({ title: "Not your turn", description: "Please wait for your turn to perform an action.", variant: 'destructive' });
+    const isServerAction = serverActions.includes(action);
+    const stateToUpdate = isServerAction ? serverGameState : localGameState;
+
+    if (action === GameAction.EndTurn && localGameState) {
+        await setGameState(localGameState, action, payload);
+        setLocalGameState(null); // Clear local state after ending turn
+        return;
+    }
+
+    if (!stateToUpdate) {
+        console.warn(`Attempted to perform action ${action} with no state available. Aborting.`);
         return;
     }
     
-    try {
-        setIsPerformingAction(true);
-        
-        let isLocalUpdate = !serverActions.includes(action);
-        let stateToUpdate = isLocalUpdate ? localGameState : serverGameState;
-
-        if (action === GameAction.EndTurn) {
-            stateToUpdate = localGameState;
-        }
-
-        if (action === GameAction.CancelAction) {
-            stateToUpdate = localGameState;
-            isLocalUpdate = true;
-        }
-
-        if (!stateToUpdate) {
-             console.warn(`Attempted to perform action ${action} with no state available. Aborting.`);
-             setIsPerformingAction(false);
-             return;
-        }
-
+    if (isServerAction) {
+        await setGameState(stateToUpdate, action, payload);
+    } else {
         const result = handleGameAction({ action, gameState: stateToUpdate, payload });
-        const newState = result.state;
-        const uiResult = result.ui;
-
-        if (isLocalUpdate) {
-             if(newState) setLocalGameState(newState);
-        } else {
-            if(newState) {
-                await setGameState(newState);
-            }
-            if (uiResult?.newAttackSelectionDialogState) {
-                setAttackSelectionDialog(uiResult.newAttackSelectionDialogState);
-            }
-            if(action === GameAction.EndTurn) {
-                setLocalGameState(null);
+        if (result.state) {
+            setLocalGameState(result.state);
+        }
+        if (result.ui) {
+            if (result.ui.newAttackSelectionDialogState) {
+                setAttackSelectionDialog(result.ui.newAttackSelectionDialogState);
             }
         }
-    } catch (error: any) {
-        toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
-        console.error("Action Error:", error);
-    } finally {
-        setIsPerformingAction(false);
     }
   }, [isPerformingAction, isMyTurn, toast, setGameState, localGameState, serverGameState]);
 
 
   const handleLocalAction = useCallback((action: GameAction, payload?: any) => {
+      if (!localGameState || !isMyTurn) return;
+      
       switch(action) {
           case GameAction.local_DeselectArmy:
               setSelectedArmyId(null);
               if (pendingAction) {
                   onAction(GameAction.CancelAction, { cardName: pendingAction.cardName });
-                  setPendingAction(null);
               }
+              setPendingAction(null);
               break;
           case GameAction.local_CancelAction:
               setPendingAction(null);
@@ -227,37 +213,41 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
               }
               break;
           case GameAction.local_UseCard:
-              if (!localGameState) return;
+            try {
               const { cardName } = payload;
+              const player = localGameState.players[localGameState.currentPlayerIndex];
               
-              if (localPlayer && !localPlayer.specialCards.includes(cardName)) {
-                  toast({ title: "Card not found", description: `You do not have the ${cardName} card.`, variant: "destructive" });
-                  return;
+              if (!player.specialCards.includes(cardName)) {
+                  throw new Error(`You do not have the ${cardName} card.`);
               }
-              if (localPlayer && localPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
-                  toast({ title: "Action not allowed", description: "You can only use one card per turn.", variant: "destructive" });
-                  return;
+              if (player.actionsThisTurn.includes(GameAction.UseCard)) {
+                  throw new Error("You can only use one card per turn.");
               }
               
               const multiStepCards = [CardName.Teleport, CardName.Scout, CardName.Sabotage, CardName.Wealthy, CardName.StealResource];
               
-              if (multiStepCards.includes(cardName)) {
-                  setPendingAction({ type: cardName.toLowerCase().replace(' ', '-') as any, cardName });
-                  setSelectedArmyId(null);
-                  
-                  if (cardName === CardName.Sabotage) setSabotageDialog({ isOpen: true });
-                  else if (cardName === CardName.Wealthy) setWealthyDialog({ isOpen: true });
-                  else if (cardName === CardName.StealResource) setStealResourceDialog({ isOpen: true });
+              const result = handleGameAction({ action: GameAction.UseCard, gameState: localGameState, payload: { cardName } });
+              
+              if (result.state) {
+                  setLocalGameState(result.state);
 
-                  onAction(GameAction.UseCard, { cardName });
-              } else {
-                   onAction(GameAction.UseCard, { cardName });
+                  if (multiStepCards.includes(cardName)) {
+                      setPendingAction({ type: cardName.toLowerCase().replace(/ /g, '-') as any, cardName });
+                      setSelectedArmyId(null);
+                      
+                      if (cardName === CardName.Sabotage) setSabotageDialog({ isOpen: true });
+                      else if (cardName === CardName.Wealthy) setWealthyDialog({ isOpen: true });
+                      else if (cardName === CardName.StealResource) setStealResourceDialog({ isOpen: true });
+                  }
               }
-              break;
+            } catch (error: any) {
+                toast({ title: 'Action Error', description: error.message, variant: 'destructive' });
+            }
+            break;
           default:
               console.warn("Unhandled local action:", action);
       }
-  }, [gameStateForDisplay, localGameState, onAction, pendingAction, toast, localPlayer]);
+  }, [localGameState, onAction, pendingAction, toast, isMyTurn]);
   
   const handleTileClick = async (x: number, y: number) => {
     if (!gameStateForDisplay || !isMyTurn || gameStateForDisplay.status !== 'playing' || isPerformingAction || !localPlayer) return;
@@ -266,9 +256,11 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
       const tileId = `${x}-${y}`;
       if (!localPlayer.revealedTiles.includes(tileId)) {
         await onAction(GameAction.Scout, { x, y });
-        const newCount = pendingAction.count - 1;
+        const newCount = (pendingAction as any).count - 1;
         if (newCount <= 0) {
           setPendingAction(null);
+          // Now officially consume the card
+          await onAction(GameAction.UseCard, { cardName: CardName.Scout, isScout: true });
         } else {
           setPendingAction({ ...pendingAction, count: newCount });
         }
@@ -279,13 +271,11 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (pendingAction?.type === 'teleport') {
         if(selectedArmyId === null) {
             const armiesOnClickedTile = localPlayer.armies.filter(a => a.position.x === x && a.position.y === y);
-            const unactedArmies = armiesOnClickedTile.filter(a => !a.hasActed);
+            const unactedArmies = armiesOnClickedTile; // Teleport can move any army
             if (unactedArmies.length === 1) {
               setSelectedArmyId(unactedArmies[0].id);
             } else if (unactedArmies.length > 1) {
               setArmySelectionDialog({ armies: unactedArmies, x, y });
-            } else if (armiesOnClickedTile.length > 0) {
-               toast({ title: 'Army Exhausted', description: 'This army has already acted and cannot be teleported.', variant: 'destructive'});
             }
         } else if (selectedArmy) {
             await onAction(GameAction.Move, { army: selectedArmy, x, y, isTeleport: true });
@@ -360,7 +350,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (serverGameState?.status === 'playing') {
         const winner = serverGameState.players.find(p => p.victoryPoints >= serverGameState.settings.victoryPointGoal);
         if (winner && !serverGameState.winner) {
-            setGameState({ ...serverGameState, winner: cloneDeep(winner), status: 'finished' });
+            const finalState = { ...serverGameState, winner: cloneDeep(winner), status: 'finished' as const };
+            setGameState(finalState, GameAction.EndTurn, {});
         }
     }
    }, [serverGameState, setGameState]);
@@ -368,11 +359,12 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const handleStartGame = async () => {
     if (!serverGameState || !isHost) return;
     toast({ title: "Game Started!", description: "Let the conquest begin!" });
-    setGameState(startGame(serverGameState, localPlayer?.name || 'The host'));
+    const startedGame = startGame(serverGameState, localPlayer?.name || 'The host');
+    setGameState(startedGame, GameAction.EndTurn, {}); // Using EndTurn as a generic update action
   };
 
   const handleExitClick = async () => {
-    if (!serverGameState || !localPlayer) return;
+    if (!serverGameState || !localPlayerFromServer) return;
 
     if (isHost) {
         setShowHostLeaveDialog(true);
@@ -388,25 +380,25 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
   const handleConfirmExit = async () => {
     setShowConfirmExitDialog(false);
-    if (!localPlayer) return;
+    if (!localPlayerFromServer) return;
     setIsExiting(true);
-    await handlePlayerExit(gameId, localPlayer.playerId);
+    await handlePlayerExit(gameId, localPlayerFromServer.playerId);
     onExit();
     setIsExiting(false);
   };
   
   const handleConfirmHostLeave = async () => {
     setShowHostLeaveDialog(false);
-    if (!localPlayer) return;
-    await handlePlayerExit(gameId, localPlayer.playerId);
+    if (!localPlayerFromServer) return;
+    await handlePlayerExit(gameId, localPlayerFromServer.playerId);
     onExit();
   };
 
-  if (isLoading || !serverGameState || !localPlayer || !gameStateForDisplay) {
+  if (isLoading || !serverGameState || !localPlayerFromServer || !gameStateForDisplay || !localPlayer) {
     return (
       <div className="flex h-screen w-screen items-center justify-center p-4 text-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        <p className="ml-4 text-lg">{!localPlayer && !isLoading ? 'You are not in this game. Returning to lobby...' : 'Joining game session...'}</p>
+        <p className="ml-4 text-lg">{!localPlayerFromServer && !isLoading ? 'You are not in this game. Returning to lobby...' : 'Joining game session...'}</p>
       </div>
     );
   }
@@ -415,8 +407,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   
   const { players, currentPlayerIndex, turn, settings, map, debugMode, log } = gameStateForDisplay;
   const currentPlayer = players[currentPlayerIndex];
-  const localPlayerForPanel = players.find(p => p.id === localPlayer.id)!;
-
 
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
   const isTeleporting = pendingAction?.type === 'teleport';
@@ -521,7 +511,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                 <ActionsPanel 
                     onAction={onAction}
                     onLocalAction={handleLocalAction}
-                    localPlayer={localPlayerForPanel}
+                    localPlayer={localPlayer}
                     gameState={gameStateForDisplay} 
                     isMyTurn={isMyTurn && status === 'playing'}
                     timeLeft={timeLeft}
@@ -584,6 +574,10 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         onSelectArmyFromDialog={(armyId) => {
             setSelectedArmyId(armyId);
             setArmySelectionDialog(null);
+            if (pendingAction?.type === 'teleport') {
+                // If we were waiting to select an army for teleport, now we are waiting for a destination.
+                // handleTileClick will handle the rest.
+            }
         }}
         attackSelectionDialog={attackSelectionDialog}
         onCloseAttackSelectionDialog={() => setAttackSelectionDialog(null)}

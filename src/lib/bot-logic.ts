@@ -3,7 +3,7 @@ import type { GameState, Army, ResourceType } from './types';
 import { GameAction, AbilityName, CardName, IslandType, MAP_COLS, ResourceType as ResourceEnum } from './types';
 import { handleGameAction } from './actions';
 import { getPossibleMoves } from './actions/movement';
-import { db, doc, updateDoc } from './firebase';
+import { db, doc, updateDoc, setDoc } from './firebase';
 
 function selectRandom<T>(array: T[]): T | null {
     if (array.length === 0) return null;
@@ -29,7 +29,7 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     const botPlayer = state.players[state.currentPlayerIndex];
     console.log(`--- Bot Turn Start: ${botPlayer.name} (Turn ${state.turn}) ---`);
     
-    let localStateForEval = state;
+    let localStateForEval: GameState = state;
     
     // --- Pre-computation and activation of cards ---
     if (botPlayer.specialCards.includes(CardName.Reinforce) && !botPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
@@ -49,8 +49,8 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     const possibleActions: BotAction[] = [];
 
     // --- Strategic (non-army) Actions ---
-    const abilityCost = state.settings.abilityCost;
-    const unownedAbilities = state.settings.availableAbilities.filter(a => !activeBotPlayer.passiveAbilities[a as AbilityName]);
+    const abilityCost = localStateForEval.settings.abilityCost;
+    const unownedAbilities = localStateForEval.settings.availableAbilities.filter(a => !activeBotPlayer.passiveAbilities[a as AbilityName]);
     if (canAfford(activeBotPlayer, abilityCost, ResourceEnum.Gems) && unownedAbilities.length > 0) {
         possibleActions.push({
             name: 'buy-ability',
@@ -60,7 +60,7 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
         });
     }
     
-    const upgradeCost = activeBotPlayer.masterBuilderActive ? Math.ceil(state.settings.upgradeCost / 2) : state.settings.upgradeCost;
+    const upgradeCost = activeBotPlayer.masterBuilderActive ? Math.ceil(localStateForEval.settings.upgradeCost / 2) : localStateForEval.settings.upgradeCost;
     if (canAfford(activeBotPlayer, upgradeCost, ResourceEnum.Iron) && activeBotPlayer.attackPower < 4 && !activeBotPlayer.actionsThisTurn.includes(GameAction.Upgrade)) {
         possibleActions.push({
             name: 'upgrade-attack',
@@ -86,20 +86,20 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
         if (neededResource) {
             possibleActions.push({
                 name: `use-wealthy-for-${neededResource}`,
-                priority: 8.7, // High priority to unblock other actions
-                action: GameAction.UseCard,
-                payload: { cardName: CardName.Wealthy, resource: neededResource } // This is wrong, payload should be for GainWealth
+                priority: 8.7,
+                action: GameAction.GainWealth, // Correctly use the final action
+                payload: { resource: neededResource }
             });
         }
     }
      if (activeBotPlayer.specialCards.includes(CardName.Sabotage) && !activeBotPlayer.actionsThisTurn.includes(GameAction.UseCard)) {
-        const opponentToSabotage = state.players.find(p => !p.isBot && p.id !== activeBotPlayer.id);
+        const opponentToSabotage = localStateForEval.players.find(p => !p.isBot && p.id !== activeBotPlayer.id);
         if (opponentToSabotage) {
              possibleActions.push({
                 name: `use-sabotage-on-${opponentToSabotage.name}`,
                 priority: 8.8,
-                action: GameAction.UseCard,
-                payload: { cardName: CardName.Sabotage, targetPlayerId: opponentToSabotage.id }
+                action: GameAction.SabotagePlayer, // Correctly use the final action
+                payload: { targetPlayerId: opponentToSabotage.id }
             });
         }
     }
@@ -115,13 +115,13 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     // --- Army-Specific Actions (Evaluate all possibilities) ---
     const unactedArmies = activeBotPlayer.armies.filter((a: Army) => !a.hasActed);
     for (const army of unactedArmies) {
-        const currentTile = state.map[army.position.y * MAP_COLS + army.position.x];
+        const currentTile = localStateForEval.map[army.position.y * MAP_COLS + army.position.x];
         
         const enemyOnTile = currentTile.occupants.find(o => o.playerId !== activeBotPlayer.id);
         const monsterOnTile = currentTile.monsters && currentTile.monsters.length > 0;
         
         if(enemyOnTile) {
-             const enemyPlayer = state.players.find(p => p.id === enemyOnTile.playerId);
+             const enemyPlayer = localStateForEval.players.find(p => p.id === enemyOnTile.playerId);
              if (enemyPlayer) {
                  possibleActions.push({
                      name: `attack-player-${army.id}`,
@@ -154,12 +154,12 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
             }
         }
 
-        const validMoves = getPossibleMoves(state, army);
+        const validMoves = getPossibleMoves(localStateForEval, army);
         for (const move of validMoves) {
-            const targetTile = state.map[move.y * MAP_COLS + move.x];
+            const targetTile = localStateForEval.map[move.y * MAP_COLS + move.x];
             let priority = 2; // Base priority for any move
             
-            if (state.settings.fogOfWar && !activeBotPlayer.revealedTiles.includes(targetTile.id)) {
+            if (localStateForEval.settings.fogOfWar && !activeBotPlayer.revealedTiles.includes(targetTile.id)) {
                 priority = 6;
             } 
             else if ((targetTile.type === IslandType.Resource || targetTile.type === IslandType.Base) && targetTile.resources.length > 0 && targetTile.occupants.length === 0 && !targetTile.monsters) {
@@ -184,40 +184,32 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
         console.log(`Bot: Choosing action '${bestAction.name}' with priority ${bestAction.priority}`);
         
         try {
-            // Special handling for multi-step card usages
             let nextState = localStateForEval;
-            if (bestAction.name.startsWith('use-wealthy-for-')) {
-                 const useCardResult = handleGameAction({ action: GameAction.UseCard, gameState: nextState, payload: { cardName: CardName.Wealthy }});
-                 if (useCardResult.state) {
-                     const gainWealthResult = handleGameAction({ action: GameAction.GainWealth, gameState: useCardResult.state, payload: { resource: bestAction.payload.resource }});
-                     if (gainWealthResult.state) nextState = gainWealthResult.state;
-                 }
-            } else if (bestAction.name.startsWith('use-sabotage-on-')) {
-                 const useCardResult = handleGameAction({ action: GameAction.UseCard, gameState: nextState, payload: { cardName: CardName.Sabotage }});
-                 if (useCardResult.state) {
-                     const sabotageResult = handleGameAction({ action: GameAction.SabotagePlayer, gameState: useCardResult.state, payload: { targetPlayerId: bestAction.payload.targetPlayerId }});
-                     if (sabotageResult.state) nextState = sabotageResult.state;
-                 }
+
+            // Simplified action handling for bot
+            const result = handleGameAction({ action: bestAction.action, gameState: nextState, payload: bestAction.payload });
+            
+            if(result.state) {
+                nextState = result.state;
             } else {
-                 const result = handleGameAction({ action: bestAction.action, gameState: nextState, payload: bestAction.payload });
-                 if(result.state) nextState = result.state;
+                throw new Error("Action did not produce a new state.");
             }
 
-            if (nextState) {
-                if(nextState.monsterCombatState && nextState.monsterCombatState.monster) {
-                    const monster = nextState.monsterCombatState.monster!;
-                    const combatRollPayload = { monster, useDecideCard: false, decidedValue: 0, useOvercomeCard: false, useWarChief: false };
-                    const combatResult = handleGameAction({ action: GameAction.MonsterCombatRoll, gameState: nextState, payload: combatRollPayload});
-                    if (combatResult.state) {
-                        const finalState = handleGameAction({ action: GameAction.CloseMonsterCombat, gameState: combatResult.state });
-                        if (finalState.state) {
-                             await updateDoc(doc(db, 'games', gameId), { ...finalState.state });
-                             return;
-                        }
+            // If the action resulted in monster combat, resolve it immediately.
+            if (nextState.monsterCombatState && nextState.monsterCombatState.monster) {
+                const monster = nextState.monsterCombatState.monster!;
+                const combatRollPayload = { monster, useDecideCard: false, decidedValue: 0, useOvercomeCard: false, useWarChief: false };
+                const combatResult = handleGameAction({ action: GameAction.MonsterCombatRoll, gameState: nextState, payload: combatRollPayload});
+                if (combatResult.state) {
+                    const finalState = handleGameAction({ action: GameAction.CloseMonsterCombat, gameState: combatResult.state });
+                    if (finalState.state) {
+                         await setDoc(doc(db, 'games', gameId), finalState.state);
+                         return;
                     }
                 }
-
-                await updateDoc(doc(db, 'games', gameId), { ...nextState });
+            } else {
+                // If it wasn't monster combat, or no state change, just update.
+                await setDoc(doc(db, 'games', gameId), nextState);
                 return;
             }
 
@@ -230,6 +222,6 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     console.log(`Bot: No valid actions found or all failed. Ending turn.`);
     const endTurnState = handleGameAction({ action: GameAction.EndTurn, gameState: state });
     if (endTurnState.state) {
-        await updateDoc(doc(db, 'games', gameId), { ...endTurnState.state });
+        await setDoc(doc(db, 'games', gameId), endTurnState.state);
     }
 }

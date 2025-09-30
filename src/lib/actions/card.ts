@@ -47,19 +47,18 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
     if (player.actionsThisTurn.includes(GameAction.UseCard)) throw new Error("You can only use one card per turn.");
     
     // Defer consuming the card action for cards that have a follow-up step
-    const immediateEffectCards: CardName[] = ['Extra Move', 'Reinforce', 'Efficient', 'Master Builder'];
+    const immediateEffectCards: CardName[] = ['Reinforce', 'Efficient', 'Master Builder'];
     if (immediateEffectCards.includes(cardName)) {
-        player.actionsThisTurn.push(GameAction.UseCard);
-        player.hasExtraMove = cardName === 'Extra Move';
         player.reinforceActive = cardName === 'Reinforce';
         player.efficientActive = cardName === 'Efficient';
         player.masterBuilderActive = cardName === 'Master Builder';
         state.log.push(`${player.name} activated '${cardName}'.`);
-        
-        if (cardName === 'Extra Move') {
-            const usedCard = player.specialCards.splice(cardIndex, 1)[0];
-            discardPile.push(usedCard);
-        }
+    } else if (cardName === 'Extra Move') {
+        player.hasExtraMove = true;
+        player.actionsThisTurn.push(GameAction.UseCard);
+        const usedCard = player.specialCards.splice(cardIndex, 1)[0];
+        discardPile.push(usedCard);
+        state.log.push(`${player.name} used 'Extra Move'.`);
     } else if (isScout) {
         player.actionsThisTurn.push(GameAction.UseCard);
         state.log.push(`${player.name} used the '${cardName}' card to scout ahead.`);

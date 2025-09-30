@@ -1,11 +1,12 @@
 
 'use client';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { db, doc, onSnapshot, getDoc, updateDoc } from '@/lib/firebase';
-import type { GameState, ActionHandlerResult } from '@/lib/types';
+import { db, doc, onSnapshot, getDoc, updateDoc, setDoc } from '@/lib/firebase';
+import type { GameState, ActionHandlerResult, GameAction } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
+import { handleGameAction } from '@/lib/actions';
 
 export function useGameEngine(gameId: string, playerId: string | null) {
   const [gameState, setInternalGameState] = useState<GameState | null>(null);
@@ -14,14 +15,19 @@ export function useGameEngine(gameId: string, playerId: string | null) {
   const router = useRouter();
 
   const setGameState = useCallback(async (
-    newState: GameState,
+    currentState: GameState,
+    action: GameAction,
+    payload: any,
   ): Promise<void> => {
     try {
-        const gameDocRef = doc(db, 'games', gameId);
-        await updateDoc(gameDocRef, { ...newState });
+        const result = handleGameAction({ action, gameState: currentState, payload });
+        if (result.state) {
+            const gameDocRef = doc(db, 'games', gameId);
+            await setDoc(gameDocRef, result.state);
+        }
     } catch (error) {
-        console.error("Error updating game state:", error);
-        toast({ title: "Sync Error", description: "Could not save game state.", variant: 'destructive' });
+        console.error("Error handling game action:", error);
+        toast({ title: "Action Error", description: "Could not process game action.", variant: 'destructive' });
     }
   }, [gameId, toast]);
 
