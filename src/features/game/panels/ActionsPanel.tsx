@@ -58,7 +58,7 @@ export function ActionsPanel({
   const deployCost = localPlayer.efficientActive ? Math.ceil(localPlayer.nextArmyCost / 2) : (localPlayer.reinforceActive ? 0 : localPlayer.nextArmyCost);
 
   const canDeploy = (localPlayer.resources.wheat >= deployCost || localPlayer.reinforceActive) && localPlayer.armyCount < 5 && !localPlayer.actionsThisTurn.includes(GameAction.Deploy);
-  const canBuyCard = localPlayer.resources.gems >= 10 && specialCardsDeck.length > 0 && !localPlayer.actionsThisTurn.includes(GameAction.BuyCard) && localPlayer.specialCards.length < HAND_LIMIT;
+  const canBuyCard = localPlayer.resources.gems >= settings.abilityCost && specialCardsDeck.length > 0 && !localPlayer.actionsThisTurn.includes(GameAction.BuyCard) && localPlayer.specialCards.length < HAND_LIMIT;
   const canUpgrade = localPlayer.resources.iron >= upgradeCost && !localPlayer.actionsThisTurn.includes(GameAction.Upgrade) && localPlayer.attackPower < 4;
   
   const isCancellableActionInProgress = pendingAction?.type === 'teleport' || pendingAction?.type === 'scout';
@@ -72,7 +72,7 @@ export function ActionsPanel({
     ? 'Deploy (Free)'
     : `Deploy (${localPlayer.resources.wheat}/${deployCost} Wheat)`;
 
-  const buyCardLabel = `Buy Card`;
+  const buyCardLabel = `Buy Card (${settings.abilityCost} Gems)`;
 
   const secondaryActions: ActionConfig[] = [
     { 
@@ -88,7 +88,7 @@ export function ActionsPanel({
       label: buyCardLabel, 
       icon: <ShoppingCart />, 
       disabled: !canBuyCard || isCardActionInProgress, 
-      tooltip: "Spend 10 gems to draw a random special card from the deck. Can only be done once per turn.",
+      tooltip: `Spend ${settings.abilityCost} gems to draw a random special card from the deck. Can only be done once per turn.`,
       onClick: () => onAction(GameAction.BuyCard)
     },
     { 
@@ -103,7 +103,7 @@ export function ActionsPanel({
       id: GameAction.local_OpenAbilitiesShop, 
       label: 'Abilities Shop', 
       icon: <University />, 
-      disabled: isCardActionInProgress, 
+      disabled: !isMyTurn || isCardActionInProgress, 
       tooltip: "Purchase permanent passive abilities for your empire.",
       onClick: () => onLocalAction(GameAction.local_OpenAbilitiesShop)
     },
@@ -123,6 +123,7 @@ export function ActionsPanel({
   const timerPercentage = (timeLeft / turnDuration) * 100;
 
   const getDisabledReason = (action: ActionConfig): string => {
+    if (!isMyTurn && action.id !== GameAction.local_ShowCards) return "It's not your turn.";
     if (isCardActionInProgress) return "Complete or cancel your current card action.";
     if (hasArmyActed && [GameAction.Attack, GameAction.local_Position].includes(action.id)) return "This army has already acted.";
 
@@ -133,7 +134,7 @@ export function ActionsPanel({
             if (localPlayer.actionsThisTurn.includes(GameAction.Upgrade)) return "You've already upgraded this turn.";
             return "This action is not available.";
         case GameAction.BuyCard:
-            if (localPlayer.resources.gems < 10) return "Not enough gems.";
+            if (localPlayer.resources.gems < settings.abilityCost) return `Not enough gems. Cost: ${settings.abilityCost}`;
             if (localPlayer.specialCards.length >= HAND_LIMIT) return "Your hand is full.";
             if (specialCardsDeck.length === 0) return "No cards left in the deck.";
             if (localPlayer.actionsThisTurn.includes(GameAction.BuyCard)) return "You've already bought a card this turn.";
@@ -156,38 +157,40 @@ export function ActionsPanel({
         case GameAction.local_ShowCards:
             if (localPlayer.specialCards.length === 0) return "You have no special cards.";
             return "This action is not available.";
+        case GameAction.local_OpenAbilitiesShop:
+             return "This action is not available.";
         default:
             return "This action is not available.";
     }
   };
 
   const renderButton = (action: ActionConfig, isMain: boolean) => {
-    const isDisabled = action.id.startsWith('local:') ? action.disabled : (!isMyTurn || action.disabled);
+    const isDisabled = action.id === GameAction.local_OpenAbilitiesShop 
+      ? action.disabled 
+      : (!isMyTurn && action.id !== GameAction.local_ShowCards) || action.disabled;
 
     return (
-        <TooltipProvider key={action.id}>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div className={isMain ? "w-full" : ""}>
-                        <Button
-                            variant={pendingAction?.cardName.toLowerCase().includes(action.label.toLowerCase()) ? 'default' : 'outline'}
-                            onClick={action.onClick}
-                            disabled={isDisabled}
-                            className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}
-                        >
-                            {action.icon}
-                            <span className="whitespace-normal">{action.label}</span>
-                        </Button>
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>{action.tooltip}</p>
-                    {isDisabled && <p className="mt-1 text-xs text-destructive">
-                        {!isMyTurn && !action.id.startsWith('local:') ? "It's not your turn." : getDisabledReason(action)}
-                    </p>}
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
+        <Tooltip key={action.id}>
+            <TooltipTrigger asChild>
+                <div className={isMain ? "w-full" : ""}>
+                    <Button
+                        variant={pendingAction?.cardName.toLowerCase().includes(action.label.toLowerCase()) ? 'default' : 'outline'}
+                        onClick={action.onClick}
+                        disabled={isDisabled}
+                        className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}
+                    >
+                        {action.icon}
+                        <span className="whitespace-normal">{action.label}</span>
+                    </Button>
+                </div>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>{action.tooltip}</p>
+                {isDisabled && <p className="mt-1 text-xs text-destructive">
+                    {getDisabledReason(action)}
+                </p>}
+            </TooltipContent>
+        </Tooltip>
     )
   };
 
@@ -220,14 +223,16 @@ export function ActionsPanel({
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-0">
-        <div className="grid grid-cols-3 grid-rows-1 gap-2">
-            {mainActions.map((action) => renderButton(action, true))}
-            {alwaysAvailableActions.map((action) => renderButton(action, true))}
-        </div>
-        <Separator className="my-2" />
-        <div className="grid grid-cols-2 flex-wrap gap-2">
-            {secondaryActions.map((action) => renderButton(action, false))}
-        </div>
+        <TooltipProvider>
+          <div className="grid grid-cols-3 grid-rows-1 gap-2">
+              {mainActions.map((action) => renderButton(action, true))}
+              {alwaysAvailableActions.map((action) => renderButton(action, true))}
+          </div>
+          <Separator className="my-2" />
+          <div className="grid grid-cols-2 flex-wrap gap-2">
+              {secondaryActions.map((action) => renderButton(action, false))}
+          </div>
+        </TooltipProvider>
         <div className='text-center mt-2 text-sm text-muted-foreground'>
             Cards in deck: {specialCardsDeck.length}
         </div>

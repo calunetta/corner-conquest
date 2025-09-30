@@ -145,13 +145,16 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     ];
     
     const isServerAction = serverActions.includes(action);
-    const stateToUpdate = isServerAction ? serverGameState : localGameState;
 
-    if (action === GameAction.EndTurn && localGameState) {
-        await setGameState(localGameState, action, payload);
-        setLocalGameState(null); // Clear local state after ending turn
+    if (action === GameAction.EndTurn) {
+        if (localGameState) {
+            await setGameState(localGameState, action, payload);
+            setLocalGameState(null); // Clear local state after ending turn
+        }
         return;
     }
+    
+    const stateToUpdate = isMyTurn ? localGameState : serverGameState;
 
     if (!stateToUpdate) {
         console.warn(`Attempted to perform action ${action} with no state available. Aborting.`);
@@ -165,10 +168,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         if (result.state) {
             setLocalGameState(result.state);
         }
-        if (result.ui) {
-            if (result.ui.newAttackSelectionDialogState) {
-                setAttackSelectionDialog(result.ui.newAttackSelectionDialogState);
-            }
+        if (result.ui?.newAttackSelectionDialogState) {
+            setAttackSelectionDialog(result.ui.newAttackSelectionDialogState);
         }
     }
   }, [isPerformingAction, isMyTurn, toast, setGameState, localGameState, serverGameState]);
@@ -247,7 +248,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
           default:
               console.warn("Unhandled local action:", action);
       }
-  }, [localGameState, onAction, pendingAction, toast, isMyTurn]);
+  }, [localGameState, onAction, pendingAction, toast, isMyTurn, gameStateForDisplay]);
   
   const handleTileClick = async (x: number, y: number) => {
     if (!gameStateForDisplay || !isMyTurn || gameStateForDisplay.status !== 'playing' || isPerformingAction || !localPlayer) return;
@@ -595,3 +596,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
