@@ -1,5 +1,5 @@
 
-import type { Player, Army, CardName, IslandResource, ResourceType } from '@/lib/types';
+import type { Player, Army, CardName, IslandResource, ResourceType, Monster } from '@/lib/types';
 
 // This file contains types that are EXCLUSIVELY for local client-side UI state
 // within the GameBoard component. They are NOT part of the shared GameState
@@ -13,6 +13,9 @@ export type ArmySelectionDialogState = { armies: Army[], x: number, y: number } 
 
 /** State for the dialog to select a specific enemy army to attack. */
 export type AttackSelectionDialogState = { armies: Army[], defendingPlayer: Player, attackingArmyId: number } | null;
+
+/** State for the dialog to select a specific monster to attack. */
+export type MonsterSelectionDialogState = { monsters: Monster[], attackingArmyId: number } | null;
 
 /** State for the dialog to choose a resource to position an army on. */
 export type PositionDialogState = { x: number; y: number; resources: IslandResource[]; armyId: number; } | null;
@@ -41,3 +44,5 @@ export type SpecialIslandRollDialogState = {
   roll: number | null;
   cardDrawn: CardName | null;
 } | null;
+
+    

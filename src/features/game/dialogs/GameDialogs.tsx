@@ -1,8 +1,8 @@
 
 
 'use client';
-import type { GameState, Player, CardName, Army } from '@/lib/types';
-import type { ArmySelectionDialogState, AttackSelectionDialogState, SabotageDialogState, PositionDialogState, WealthyDialogState, StealResourceDialogState, ProductiveCardDialogState, SpecialIslandRollDialogState } from '../types';
+import type { GameState, Player, CardName, Army, Monster } from '@/lib/types';
+import type { ArmySelectionDialogState, AttackSelectionDialogState, SabotageDialogState, PositionDialogState, WealthyDialogState, StealResourceDialogState, ProductiveCardDialogState, SpecialIslandRollDialogState, MonsterSelectionDialogState } from '../types';
 import { GameAction } from '@/lib/types';
 import { CombatDialog } from './CombatDialog';
 import { MonsterCombatDialog } from './MonsterCombatDialog';
@@ -14,6 +14,7 @@ import { SabotageDialog } from './SabotageDialog';
 import { WealthyDialog } from './WealthyDialog';
 import { ArmySelectionDialog } from './ArmySelectionDialog';
 import { AttackSelectionDialog } from './AttackSelectionDialog';
+import { MonsterSelectionDialog } from './MonsterSelectionDialog';
 import { ProductiveCardDialog } from './ProductiveCardDialog';
 import { SpecialIslandRollDialog } from './SpecialIslandRollDialog';
 
@@ -35,6 +36,9 @@ type GameDialogsProps = {
   attackSelectionDialog: AttackSelectionDialogState | null;
   onCloseAttackSelectionDialog: () => void;
   onSelectDefender: (defenderArmyId: number) => void;
+  monsterSelectionDialog: MonsterSelectionDialogState | null;
+  onCloseMonsterSelectionDialog: () => void;
+  onSelectMonster: (monsterName: string) => void;
   positionDialog: PositionDialogState;
   onClosePositionDialog: () => void;
   sabotageDialog: SabotageDialogState;
@@ -63,6 +67,9 @@ export function GameDialogs({
     attackSelectionDialog,
     onCloseAttackSelectionDialog,
     onSelectDefender,
+    monsterSelectionDialog,
+    onCloseMonsterSelectionDialog,
+    onSelectMonster,
     positionDialog,
     onClosePositionDialog,
     sabotageDialog,
@@ -159,6 +166,15 @@ export function GameDialogs({
                 />
             )}
 
+            {monsterSelectionDialog && (
+                <MonsterSelectionDialog
+                    state={monsterSelectionDialog}
+                    onSelectTarget={onSelectMonster}
+                    onClose={onCloseMonsterSelectionDialog}
+                    isMyTurn={isMyTurn}
+                />
+            )}
+
             {abilitiesShopOpen && (
                 <AbilitiesDialog
                     player={gameState.players[gameState.currentPlayerIndex]}
@@ -217,3 +233,5 @@ export function GameDialogs({
     </>
   );
 }
+
+    

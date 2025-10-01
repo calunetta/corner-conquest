@@ -3,7 +3,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { GameState, Army, Monster } from '@/lib/types';
-import type { PendingAction, ArmySelectionDialogState, AttackSelectionDialogState, PositionDialogState, SabotageDialogState, WealthyDialogState, StealResourceDialogState } from '../types';
+import type { PendingAction, ArmySelectionDialogState, AttackSelectionDialogState, PositionDialogState, SabotageDialogState, WealthyDialogState, StealResourceDialogState, MonsterSelectionDialogState } from '../types';
 import { GameAction, CardName, IslandType, MAP_COLS } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from '@/features/game/panels/PlayerInfo';
@@ -60,6 +60,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const [abilitiesShopOpen, setAbilitiesShopOpen] = useState(false);
   const [armySelectionDialog, setArmySelectionDialog] = useState<ArmySelectionDialogState>(null);
   const [attackSelectionDialog, setAttackSelectionDialog] = useState<AttackSelectionDialogState | null>(null);
+  const [monsterSelectionDialog, setMonsterSelectionDialog] = useState<MonsterSelectionDialogState | null>(null);
   const [positionDialog, setPositionDialog] = useState<PositionDialogState>(null);
   const [sabotageDialog, setSabotageDialog] = useState<SabotageDialogState>(null);
   const [wealthyDialog, setWealthyDialog] = useState<WealthyDialogState>(null);
@@ -119,6 +120,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         setAbilitiesShopOpen(false);
         setArmySelectionDialog(null);
         setAttackSelectionDialog(null);
+        setMonsterSelectionDialog(null);
         setPositionDialog(null);
         setSabotageDialog(null);
         setWealthyDialog(null);
@@ -201,28 +203,27 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
               break;
           case GameAction.local_Attack:
               const { army } = payload;
-              if (!army) return;
+              if (!army || !localPlayer) return;
               
               const currentTile = localGameState.map[army.position.y * MAP_COLS + army.position.x];
-              const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== localPlayer?.id);
+              const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== localPlayer.id);
               const monsters = currentTile.monsters || [];
 
               if (otherPlayersOccupants.length > 0) {
                   const defenderPlayer = localGameState.players.find(p => p.id === otherPlayersOccupants[0].playerId);
-                  const defendingArmies = otherPlayersOccupants.map(o => defenderPlayer?.armies.find(a => a.id === o.armyId)).filter((a): a is Army => !!a);
+                  if (!defenderPlayer) return;
+                  const defendingArmies = otherPlayersOccupants.map(o => defenderPlayer.armies.find(a => a.id === o.armyId)).filter((a): a is Army => !!a);
 
                   if (defendingArmies.length === 1) {
-                      onAction(GameAction.InitiateCombat, { attackingArmyId: army.id, target: { type: 'player', defenderId: defenderPlayer!.id, defendingArmyId: defendingArmies[0].id } });
+                      onAction(GameAction.InitiateCombat, { attackingArmyId: army.id, target: { type: 'player', defenderId: defenderPlayer.id, defendingArmyId: defendingArmies[0].id } });
                   } else {
-                      setAttackSelectionDialog({ attackingArmyId: army.id, defendingPlayer: defenderPlayer!, armies: defendingArmies });
+                      setAttackSelectionDialog({ attackingArmyId: army.id, defendingPlayer: defenderPlayer, armies: defendingArmies });
                   }
               } else if (monsters.length > 0) {
                   if (monsters.length === 1) {
                       onAction(GameAction.InitiateCombat, { attackingArmyId: army.id, target: { type: 'monster', monsterName: monsters[0].name } });
                   } else {
-                      // Here you would open a dialog to select a monster, similar to player selection
-                      // For now, let's just attack the first one.
-                      onAction(GameAction.InitiateCombat, { attackingArmyId: army.id, target: { type: 'monster', monsterName: monsters[0].name } });
+                      setMonsterSelectionDialog({ attackingArmyId: army.id, monsters: monsters });
                   }
               }
               break;
@@ -619,6 +620,17 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
              }
              setAttackSelectionDialog(null);
         }}
+        monsterSelectionDialog={monsterSelectionDialog}
+        onCloseMonsterSelectionDialog={() => setMonsterSelectionDialog(null)}
+        onSelectMonster={(monsterName) => {
+            if (monsterSelectionDialog) {
+                onAction(GameAction.InitiateCombat, {
+                    attackingArmyId: monsterSelectionDialog.attackingArmyId,
+                    target: { type: 'monster', monsterName }
+                });
+            }
+            setMonsterSelectionDialog(null);
+        }}
         positionDialog={positionDialog}
         onClosePositionDialog={() => setPositionDialog(null)}
         sabotageDialog={sabotageDialog}
@@ -633,3 +645,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
