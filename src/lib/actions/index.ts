@@ -20,7 +20,6 @@ export { handlePlayerExit };
 
 export function handleGameAction({ action, gameState, payload }: HandleActionParams): ActionHandlerResult {
     let state: GameState = cloneDeep(gameState);
-    let ui: ActionHandlerResult['ui'] = null;
 
     try {
         switch(action) {
@@ -89,12 +88,12 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
                 break;
             default:
                 console.warn(`Action ${action} is not a shared game state action or is unhandled.`);
-                return { state: gameState, ui: null };
+                return { state: gameState };
         }
     } catch (error: any) {
         console.error(`Error handling action ${action}:`, error);
         // Do not re-throw, instead return original state to prevent client crash
-        return { state: gameState, ui: null };
+        return { state: gameState };
     }
-    return { state, ui };
+    return { state };
 }

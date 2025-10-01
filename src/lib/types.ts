@@ -261,14 +261,7 @@ export type GameState = {
   monsterCombatState: MonsterCombatState | null;
 };
 
-// Result of a reducer. Can include state changes and/or UI events.
+// Result of a reducer. Can only include state changes.
 export type ActionHandlerResult = {
     state: GameState | null;
-    ui?: {
-        newAttackSelectionDialogState?: {
-            attackingArmyId: number;
-            defendingPlayer: Player;
-            armies: Army[];
-        }
-    } | null
 }

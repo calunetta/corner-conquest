@@ -140,32 +140,32 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
     if (isPerformingAction) return;
 
-    const serverActions = [
-        GameAction.CombatRoll, GameAction.CloseCombat, GameAction.MonsterCombatRoll, 
-        GameAction.CloseMonsterCombat, GameAction.EndTurn, GameAction.InitiateCombat,
-        GameAction.HostLeave, GameAction.CloseSpecialIslandDialog, GameAction.RollOnSpecialIsland, GameAction.UseProductiveCard,
-    ];
-    
-    const isServerAction = serverActions.includes(action);
-
-    if (action === GameAction.EndTurn) {
-        if (localGameState) {
-            await setGameState(localGameState, action, payload);
-            setLocalGameState(null); // Clear local state after ending turn
-        }
-        return;
-    }
-    
-    const stateToUpdate = isMyTurn ? localGameState : serverGameState;
+    const stateToUpdate = isMyTurn && localGameState ? localGameState : serverGameState;
 
     if (!stateToUpdate) {
         console.warn(`Attempted to perform action ${action} with no state available. Aborting.`);
         return;
     }
     
-    if (isServerAction) {
+    // Server actions are batched at the end of the turn
+    if (action === GameAction.EndTurn) {
+        if (localGameState) {
+            await setGameState(localGameState, action, payload);
+            setLocalGameState(null);
+        }
+        return;
+    }
+
+    // Real-time server actions
+    const realTimeActions = [
+        GameAction.CombatRoll, GameAction.CloseCombat, GameAction.MonsterCombatRoll,
+        GameAction.CloseMonsterCombat, GameAction.InitiateCombat, GameAction.HostLeave,
+        GameAction.CloseSpecialIslandDialog, GameAction.RollOnSpecialIsland, GameAction.UseProductiveCard,
+    ];
+
+    if (realTimeActions.includes(action)) {
         await setGameState(stateToUpdate, action, payload);
-    } else {
+    } else { // Local actions
         const result = handleGameAction({ action, gameState: stateToUpdate, payload });
         if (result.state) {
             setLocalGameState(result.state);
@@ -285,7 +285,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         const newCount = (pendingAction as any).count - 1;
         if (newCount <= 0) {
           setPendingAction(null);
-          // Now officially consume the card
           await onAction(GameAction.UseCard, { cardName: CardName.Scout, isScout: true });
         } else {
           setPendingAction({ ...pendingAction, count: newCount });
@@ -386,7 +385,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     if (!serverGameState || !isHost) return;
     toast({ title: "Game Started!", description: "Let the conquest begin!" });
     const startedGame = startGame(serverGameState, localPlayer?.name || 'The host');
-    setGameState(startedGame, GameAction.EndTurn, {}); // Using EndTurn as a generic update action
+    setGameState(startedGame, GameAction.EndTurn, {});
   };
 
   const handleExitClick = async () => {
@@ -590,7 +589,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         localPlayer={localPlayer}
         isMyTurn={isMyTurn}
         onAction={onAction}
-        onLocalAction={handleLocalAction}
+        onLocalAction={onLocalAction}
         cardsDialogPlayerId={cardsDialogPlayerId}
         onCloseCardsDialog={() => setCardsDialogPlayerId(null)}
         abilitiesShopOpen={abilitiesShopOpen}
@@ -645,5 +644,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    
