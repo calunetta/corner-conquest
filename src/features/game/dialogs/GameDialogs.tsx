@@ -23,7 +23,7 @@ type GameDialogsProps = {
   localPlayer: Player;
   isMyTurn: boolean;
   onAction: (action: GameAction, payload?: any) => Promise<void>;
-  onLocalAction: (action: GameAction, payload?: any) => void;
+  handleLocalAction: (action: GameAction, payload?: any) => void;
   
   // Local dialog states managed by GameBoard
   cardsDialogPlayerId: number | null;
@@ -56,7 +56,7 @@ export function GameDialogs({
     localPlayer, 
     isMyTurn, 
     onAction,
-    onLocalAction,
+    handleLocalAction,
     cardsDialogPlayerId,
     onCloseCardsDialog,
     abilitiesShopOpen,
@@ -108,7 +108,7 @@ export function GameDialogs({
               gameState={gameState}
               onRoll={(payload) => onAction(GameAction.MonsterCombatRoll, payload)}
               onClose={() => onAction(GameAction.CloseMonsterCombat)}
-              onCancel={() => onLocalAction(GameAction.local_CancelAction)}
+              onCancel={() => handleLocalAction(GameAction.local_CancelAction)}
           />
       )}
 
@@ -225,7 +225,7 @@ export function GameDialogs({
           onClose={onCloseCardsDialog}
           onUseCard={(cardName: CardName) => {
             onCloseCardsDialog();
-            onLocalAction(GameAction.local_UseCard, { cardName });
+            handleLocalAction(GameAction.local_UseCard, { cardName });
           }}
           canUseCards={isMyTurn && isViewingOwnCards}
         />
@@ -233,5 +233,3 @@ export function GameDialogs({
     </>
   );
 }
-
-    

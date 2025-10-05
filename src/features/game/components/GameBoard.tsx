@@ -588,7 +588,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         localPlayer={localPlayer}
         isMyTurn={isMyTurn}
         onAction={onAction}
-        onLocalAction={handleLocalAction}
+        handleLocalAction={handleLocalAction}
         cardsDialogPlayerId={cardsDialogPlayerId}
         onCloseCardsDialog={() => setCardsDialogPlayerId(null)}
         abilitiesShopOpen={abilitiesShopOpen}
@@ -643,5 +643,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    
