@@ -539,7 +539,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                     gameState={gameStateForDisplay} 
                     isMyTurn={isMyTurn && status === 'playing'}
                     timeLeft={timeLeft}
-                    turnDuration={turnDuration}
+                    turnDuration={TURN_DURATION}
                     selectedArmy={selectedArmy}
                     pendingAction={pendingAction}
                 />
@@ -643,5 +643,3 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
-
-    
