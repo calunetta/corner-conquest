@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { GameState, Army, Monster } from '@/lib/types';
@@ -540,7 +539,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                     gameState={gameStateForDisplay} 
                     isMyTurn={isMyTurn && status === 'playing'}
                     timeLeft={timeLeft}
-                    turnDuration={TURN_DURATION}
+                    turnDuration={turnDuration}
                     selectedArmy={selectedArmy}
                     pendingAction={pendingAction}
                 />
@@ -589,7 +588,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         localPlayer={localPlayer}
         isMyTurn={isMyTurn}
         onAction={onAction}
-        onLocalAction={onLocalAction}
+        onLocalAction={handleLocalAction}
         cardsDialogPlayerId={cardsDialogPlayerId}
         onCloseCardsDialog={() => setCardsDialogPlayerId(null)}
         abilitiesShopOpen={abilitiesShopOpen}
@@ -644,3 +643,5 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     </div>
   );
 }
+
+    
