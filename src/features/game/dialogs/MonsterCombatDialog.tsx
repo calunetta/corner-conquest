@@ -34,7 +34,7 @@ export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: Mo
 
   const monsters = map[monsterCombatState.attackerPosition.y * gameState.settings.gridSize.cols + monsterCombatState.attackerPosition.x].monsters || [];
 
-  const [selectedMonster, setSelectedMonster] = useState<Monster | null>(monsterCombatState.monster || monsters.length === 1 ? monsters[0] : null);
+  const [selectedMonster] = useState<Monster | null>(monsterCombatState.monster || monsters.length === 1 ? monsters[0] : null);
   const [useDecideCard, setUseDecideCard] = useState(false);
   const [decidedValue, setDecidedValue] = useState(6);
   const [useOvercomeCard, setUseOvercomeCard] = useState(false);
@@ -144,36 +144,6 @@ export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: Mo
     );
 };
 
-
-  const renderSelectionScreen = () => (
-    <>
-      <AlertDialogHeader>
-        <AlertDialogTitle>Choose a Monster to Attack</AlertDialogTitle>
-        <AlertDialogDescription>Select which monster you want to fight on this island.</AlertDialogDescription>
-      </AlertDialogHeader>
-      <div className="grid grid-cols-2 gap-4 py-4">
-        {monsters.map((monster, i) => (
-          <Card 
-            key={i} 
-            className={`flex cursor-pointer flex-col items-center gap-2 p-4 transition-all hover:bg-muted`}
-            onClick={() => setSelectedMonster(monster)}
-          >
-            <div className='relative h-24 w-24'>
-                <Image src={monster.sprite.idle} alt={monster.name} width={96} height={96} unoptimized />
-            </div>
-            <div className="text-center">
-                <p className="font-bold capitalize">{getMonsterName(monster)}</p>
-                <p className="text-sm text-muted-foreground">Power: {monster.level}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
-       <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row">
-            <AlertDialogCancel onClick={onCancel} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
-      </AlertDialogFooter>
-    </>
-  );
-
   const renderResultsScreen = () => {
     const isPlayerWinner = winnerId === attackerId;
     const attackerSprite = isPlayerWinner ? PLAYER_DATA[attacker.color].sprite.attack : PLAYER_DATA[attacker.color].sprite.death;
@@ -225,9 +195,6 @@ export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: Mo
   const renderContent = () => {
     if (phase === 'results') {
       return renderResultsScreen();
-    }
-    if (isSelectionPhase) {
-      return renderSelectionScreen();
     }
     return renderAttackScreen();
   }

@@ -233,7 +233,7 @@ These actions are available once per turn each and do not set the `hasActed` fla
 
 -   **Reinforce, Efficient, Master Builder:** Using these cards sets a temporary flag (`reinforceActive`, etc.) on the player in `localGameState`. The next corresponding action (`Deploy` or `Upgrade`) within the same turn will consume the flag and the card, applying the cost reduction.
 
--   **Overcome, War Chief, Decide Dice Roll:** These cards are used contextually during combat. They appear as options in the `CombatDialog` or `MonsterCombatDialog` and are consumed as part of the shared `handleCombatRoll` actions.
+-   **Overcome, War Chief, Decide Dice Roll:** These cards are used contextually during combat. They appear as options in the `CombatDialog` or `MonsterCombatDialog` and are consumed as part of the shared `handleCombatRoll` actions. The "Decide Dice Roll" card is only available in monster combat.
 
 -   **Productive:** At the start of a turn, if the player has positioned armies, a local `ProductiveCardDialog` opens. Selecting a resource dispatches `GameAction.UseProductiveCard`, which doubles the yield and consumes the card.
 
@@ -274,7 +274,7 @@ Right now, player interaction is mostly direct combat. We can add layers of nego
 **Bounties:** When a player gets a significant lead (e.g., 10 VP more than the next player), the game could automatically place a bounty on them. The next player to defeat one of their armies in battle steals some of their resources or earns bonus Victory Points.
 
 *   **Why it's fun:** It’s a natural comeback mechanic that creates a "king of the hill" scenario. It makes being in the lead more exciting and dangerous, and it gives trailing players a clear objective.
-*   **Architectural Impact (Low):** This is relatively simple to add. The `GameState` could have a `bountyOnPlayerId: number | null` field. The logic would be checked in the `handleEndTurn` function.
+*   **Architectural Impact (Low):** This is relatively simple to add. The `GameState` could have a `bountyOnPlayerId: string | null` field. The logic would be checked at the end of each turn.
 
 ### 7.2. Create a Dynamic & Living World 🌍
 A static board can become predictable. Introducing elements that change the state of the map keeps players on their toes.
@@ -292,7 +292,7 @@ Giving players more ways to develop their faction makes each game feel different
 
 *   **Examples:** A "Seafarer" faction that can move armies one extra tile, a "Merchant" faction that gets a discount when buying cards, a "Warlord" faction whose armies start with slightly more power, an "Engineer" faction that can deploy armies for less Wheat.
 *   **Why it's fun:** This dramatically increases replayability. A strategy that works for one faction won't work for another, encouraging players to experiment.
-*   **Architectural Impact (Medium):** A `faction` property would be added to the `Player` object. Your core logic functions in `lib/actions` would then simply check for the player's faction before applying costs or calculating moves. It's more work, but requires no major architectural changes.
+*   **Architectural Impact (Medium):** A `faction` property would be added to the `Player` object. Your core logic functions in `lib/actions` would then simply check for the player's faction before applying costs or calculating moves.
 
 ### 7.4. Improve Game Pacing & Tension ⚖️
 Ensure the game has a clear beginning, middle, and end, without a mid-game "drag" or a runaway leader problem.
@@ -300,4 +300,4 @@ Ensure the game has a clear beginning, middle, and end, without a mid-game "drag
 **Secret Objectives:** At the start of the game, give each player two private, secret objectives (e.g., "Occupy 3 Gem islands," "Win a battle against every opponent," "Discover 5 islands"). Completing one could grant a big chunk of VP (e.g., 7 VP).
 
 *   **Why it's fun:** It keeps everyone guessing who is really in the lead. A player who seems behind on the public VP track might suddenly surge to victory, creating suspense until the very end. It also gives players direction if they are unsure what to do.
-*   **Architectural Impact (High):** This is the most architecturally challenging idea. Player objectives would need to be stored in a way that is hidden from other players, which would require a private sub-collection in Firestore for each player in the game (e.g., `games/{gameId}/privateData/{playerId}`).
+*   **Architectural Impact (High):** This is the most architecturally challenging idea. Player objectives would need to be stored in a way that is hidden from other players, which might require a private sub-collection in Firestore for each player in the game (`games/{gameId}/privateData/{playerId}`).

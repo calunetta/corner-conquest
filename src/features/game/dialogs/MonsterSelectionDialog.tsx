@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialogCancel } from '@radix-ui/react-alert-dialog';
 import Image from 'next/image';
@@ -38,7 +39,7 @@ export function MonsterSelectionDialog({ state, onSelectTarget, onClose, isMyTur
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        <div className="grid grid-cols-2 gap-4 py-4 sm:grid-cols-3">
+        <div className="grid grid-cols-2 justify-center gap-4 py-4">
           {monsters.map((monster, index) => {
             return (
               <Card
@@ -57,11 +58,9 @@ export function MonsterSelectionDialog({ state, onSelectTarget, onClose, isMyTur
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <Button variant="outline" onClick={onClose} className="w-full">Cancel</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
-
-    
