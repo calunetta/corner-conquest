@@ -1,6 +1,7 @@
 
 
-import type { GameState, Army, Monster, DeathAnimation, CardName, ActionHandlerResult, ResourceType, IslandResource, Player } from '@/lib/types';
+import type { GameState, Army, Monster, DeathAnimation, ActionHandlerResult, ResourceType, IslandResource, Player } from '@/lib/types';
+import { CardName } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { GameAction, IslandType, MAP_COLS, ResourceType as ResourceTypeEnum } from '../types';
 
