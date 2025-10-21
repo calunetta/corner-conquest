@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { GameState, Army, Monster } from '@/lib/types';
@@ -155,8 +156,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         return;
     }
     
-    // For monster combat, we update local state to show the dialog
-    if (action === GameAction.InitiateCombat && payload.target.type === 'monster') {
+    // For combat, we update local state to show the dialog
+    if (action === GameAction.InitiateCombat) {
       const result = handleGameAction({ action, gameState: stateToUpdate, payload });
       if(result.state) setLocalGameState(result.state);
       return;
@@ -168,12 +169,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         GameAction.CloseMonsterCombat, GameAction.HostLeave,
         GameAction.CloseSpecialIslandDialog, GameAction.RollOnSpecialIsland, GameAction.UseProductiveCard,
     ];
-    
-    // InitiateCombat for players must be real-time
-    if (action === GameAction.InitiateCombat && payload.target.type === 'player') {
-         await setGameState(stateToUpdate, action, payload);
-         return;
-    }
     
     if (realTimeActions.includes(action)) {
         await setGameState(stateToUpdate, action, payload);
@@ -199,7 +194,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
               break;
           case GameAction.local_CancelAction:
               setPendingAction(null);
-              onAction(GameAction.CancelAction, { cardName: payload.cardName });
+              onAction(GameAction.CancelAction, { cardName: payload?.cardName });
               break;
           case GameAction.local_ShowCards:
               setCardsDialogPlayerId(prev => prev === payload.playerId ? null : payload.playerId);

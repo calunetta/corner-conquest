@@ -108,7 +108,7 @@ export function GameDialogs({
               gameState={gameState}
               onRoll={(payload) => onAction(GameAction.MonsterCombatRoll, payload)}
               onClose={() => onAction(GameAction.CloseMonsterCombat)}
-              onCancel={() => handleLocalAction(GameAction.local_CancelAction)}
+              onCancel={(payload) => handleLocalAction(GameAction.local_CancelAction, payload)}
           />
       )}
 
