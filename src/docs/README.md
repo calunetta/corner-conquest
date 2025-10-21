@@ -88,6 +88,22 @@ This new flow is the key to the app's stability.
 
 This architecture ensures responsiveness, reduces database costs, and eliminates state-synchronization bugs by design.
 
+### 3.5 The Exception: Real-Time Dialogs (Combat)
+
+Combat is a special case. While most of a player's turn is local, a combat sequence needs to be seen by the defender in real-time. This requires a careful, hybrid approach.
+
+1.  **Local Trigger:** The player clicks the "Attack" button. This fires a **local action** (`local:attack`).
+2.  **Local Evaluation:** The `GameBoard` component receives this action. It checks if there are multiple targets.
+    *   If yes, it sets a **local UI state variable** (e.g., `setAttackSelectionDialog(...)`). This is a purely local update that causes the selection dialog to appear instantly. **No shared state has been modified.**
+3.  **Local Confirmation:** The player selects a target from the dialog.
+4.  **Shared Action Dispatch:** Now, with the target confirmed, the dialog's confirm button dispatches the **shared action** (`GameAction.InitiateCombat`).
+5.  **Shared State Update:** The action handler now modifies the game state (either `localGameState` for a monster or `serverGameState` for a player-vs-player fight) to include the `combatState` or `monsterCombatState`.
+6.  **UI Synchronization:**
+    *   For monster combat, the updated `localGameState` causes the `MonsterCombatDialog` to appear for the attacker.
+    *   For player combat, the updated `serverGameState` is pushed to all clients, causing the `CombatDialog` to appear for both the attacker and the defender.
+
+This two-step process (local UI trigger -> shared state update) is the required pattern for any action that needs immediate feedback (like opening a dialog) before modifying the state for all players.
+
 ## 4. Root Cause Analysis & Debugging Philosophy
 A guiding principle for this project is to **fix the root cause of a bug, not just its symptoms**. A recurring bug often indicates a flaw in the underlying architecture or state management logic.
 -   **Symptom:** An observable, incorrect behavior (e.g., "The 'Deselect Army' button doesn't work.").
@@ -144,7 +160,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
 
 #### **Position**
 1.  **Trigger:** Player clicks the "Position" button in the `ActionsPanel` while a valid, un-acted army is selected on a resource island with no monsters.
-2.  **UI Flow:** A local `PositionDialog` opens, showing the available resource spots on the current island.
+2.  **UI Flow (Local):** A local `PositionDialog` opens, showing the available resource spots on the current island.
 3.  **Input:** Player clicks on a resource button in the dialog.
 4.  **Resolution (Local):** A `GameAction.SelectResourcePosition` action is dispatched on the `localGameState`.
     -   The `localGameState` is updated to mark the army as positioned on that resource.
@@ -152,15 +168,19 @@ A player's turn consists of a series of actions. The game automatically ends a p
     -   This action ends the army's turn. The army will collect that resource at the start of the player's next turn.
 
 #### **Attack**
-1.  **Trigger:** Player clicks the "Attack" button in the `ActionsPanel` while a valid, un-acted army is selected on an island with a valid target (enemy army or monster).
-2.  **UI Flow (vs. Player):**
-    -   If there is one target army, a `GameAction.Attack` is dispatched. This is a **real-time action**. It writes to Firestore to set the shared `combatState`, and the `CombatDialog` opens for both attacker and defender.
-    -   If there are multiple target armies, a local `AttackSelectionDialog` opens for the attacker. Upon selection, a `GameAction.SelectDefender` action sets the shared `combatState`, and the `CombatDialog` opens.
-3.  **UI Flow (vs. Monster):**
-    -   If there is one monster, a `GameAction.Attack` is dispatched, setting the shared `monsterCombatState` in Firestore and opening the `MonsterCombatDialog` for the attacker.
-    -   If there are multiple monsters, a local `MonsterSelectionDialog` opens. Upon selection, the chosen monster is set, and the `MonsterCombatDialog` opens.
-4.  **Resolution (Shared):** When the attacker clicks "Roll Dice" in the dialog, the `handleCombatRoll` or `handleMonsterCombatRoll` action is dispatched.
-    -   **The attacking army's `hasActed` flag is immediately set to `true` upon the dice roll.** This is the moment the action is committed.
+1.  **Trigger:** Player clicks the "Attack" button in the `ActionsPanel`. This dispatches a **local** action (`local:attack`).
+2.  **Local Evaluation & UI Flow:**
+    -   The `GameBoard`'s `handleLocalAction` function checks for valid targets (enemy armies or monsters).
+    -   If there is one target (one army or one monster), it directly dispatches `GameAction.InitiateCombat`.
+    -   If there are multiple targets, it sets a **local UI state** (`setAttackSelectionDialog` or `setMonsterSelectionDialog`) which opens the appropriate selection dialog.
+3.  **Shared Action from Dialog:**
+    -   For a single target, `GameAction.InitiateCombat` is dispatched immediately.
+    -   For multiple targets, after the player selects a target in the dialog, `GameAction.InitiateCombat` is dispatched.
+4.  **State Update & Dialog Sync:** The `InitiateCombat` action sets the `combatState` or `monsterCombatState`.
+    -   For monster combat, this is done on the `localGameState` to open the dialog just for the attacker.
+    -   For player-vs-player combat, this is done on the `serverGameState` to open the dialog for both participants.
+5.  **Resolution (Shared):** When the attacker clicks "Roll Dice" in the dialog, the `handleCombatRoll` or `handleMonsterCombatRoll` action is dispatched.
+    -   **The attacking army's `hasActed` flag is immediately set to `true` upon the dice roll.**
     -   Combat is resolved, updating the `GameState` with the result. This action ends the army's turn.
 
 #### **Move**
@@ -241,7 +261,7 @@ These actions are available once per turn each and do not set the `hasActed` fla
 
 #### **UI Dialogs and Player Scope**
 - **Local Dialogs:** Most dialogs for actions (`Sabotage`, `Wealthy`, `Position`, `My Cards`, `Abilities Shop`) are rendered **only for the current player** and manage their own local UI state.
-- **Global Dialogs:** The `CombatDialog` and `MonsterCombatDialog` are exceptions. Their state (`combatState`, `monsterCombatState`) is stored in the shared `serverGameState` because all players need to see the outcome.
+- **Global Dialogs:** The `CombatDialog` and `MonsterCombatDialog` are exceptions. Their state (`combatState`, `monsterCombatState`) is stored in the shared `serverGameState` or `localGameState` (for monsters) because they represent a real-time event that must be processed.
 
 #### **Army and Tile Selection**
 - **Selection/Deselection:** Clicking armies or tiles are local UI actions that update local UI state like `selectedArmyId`. Deselecting an army also cancels any pending card action.
