@@ -154,6 +154,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         }
         return;
     }
+    
+    // For monster combat, we update local state to show the dialog
+    if (action === GameAction.InitiateCombat && payload.target.type === 'monster') {
+      const result = handleGameAction({ action, gameState: stateToUpdate, payload });
+      if(result.state) setLocalGameState(result.state);
+      return;
+    }
 
     // Real-time server actions
     const realTimeActions = [
@@ -162,19 +169,13 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         GameAction.CloseSpecialIslandDialog, GameAction.RollOnSpecialIsland, GameAction.UseProductiveCard,
     ];
     
-    // InitiateCombat can be local (for monsters) or shared (for players)
-    if (action === GameAction.InitiateCombat) {
-        const result = handleGameAction({ action, gameState: stateToUpdate, payload });
-        if (result.state) {
-            if (payload.target.type === 'monster') {
-                // For monster combat, we update local state to show the dialog
-                setLocalGameState(result.state);
-            } else {
-                // For player combat, we update the shared state immediately
-                await setGameState(result.state, action, payload);
-            }
-        }
-    } else if (realTimeActions.includes(action)) {
+    // InitiateCombat for players must be real-time
+    if (action === GameAction.InitiateCombat && payload.target.type === 'player') {
+         await setGameState(stateToUpdate, action, payload);
+         return;
+    }
+    
+    if (realTimeActions.includes(action)) {
         await setGameState(stateToUpdate, action, payload);
     } else { // Local actions
         const result = handleGameAction({ action, gameState: stateToUpdate, payload });
@@ -198,7 +199,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
               break;
           case GameAction.local_CancelAction:
               setPendingAction(null);
-              onAction(GameAction.CancelAction, { cardName: pendingAction?.cardName });
+              onAction(GameAction.CancelAction, { cardName: payload.cardName });
               break;
           case GameAction.local_ShowCards:
               setCardsDialogPlayerId(prev => prev === payload.playerId ? null : payload.playerId);

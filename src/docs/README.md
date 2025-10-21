@@ -56,12 +56,12 @@ This distinction is the most important part of the architecture.
 -   **Synchronization:** All players subscribe to this document via the `useGameEngine` hook. When a turn ends, the `serverGameState` is updated once, and this single update is pushed to all clients.
 -   **When It's Modified:**
     1.  At the end of a player's turn, when their final `localGameState` is written to Firestore.
-    2.  During real-time combat sequences (`combatState`, `monsterCombatState`), which require immediate synchronization between participants.
+    2.  During real-time player-vs-player combat sequences (`combatState`), which require immediate synchronization between participants.
 
 #### **Local Turn State (`localGameState`)**
 -   **What It Is:** A complete, deep-cloned copy of the `serverGameState`, created in the browser's memory at the exact moment a player's turn begins.
--   **Synchronization:** **It is never directly synchronized with Firebase.** It exists *only* on the current player's client.
--   **When It's Modified:** Every action the current player takes (moving an army, using a card, spending resources) instantly modifies this `localGameState` object. This is why the UI feels instantaneous.
+-   **Synchronization:** **It is never directly synchronized with Firebase during a turn.** It exists *only* on the current player's client.
+-   **When It's Modified:** Every action the current player takes (moving an army, using a card, spending resources, even initiating combat against a monster) instantly modifies this `localGameState` object. This is why the UI feels instantaneous.
 
 ### 3.3. Purely Local UI State (`GameBoard.tsx`)
 
@@ -73,13 +73,13 @@ This is the third tier of state, representing a single player's temporary UI sta
     -   `pendingAction: PendingAction | null`: The state for a multi-step local action (e.g., waiting for the player to select a teleport destination).
     -   **All Dialog States:** The open/closed status of any dialog (`armySelectionDialog`, `cardsDialogPlayerId`, etc.) is purely a local concern.
 
-### 3.4. The Action Flow: From Click to Update (The New Model)
+### 3.4. The Action Flow: From Click to Update (The Local-First Model)
 
 This new flow is the key to the app's stability.
 
 1.  **Turn Start:** It's your turn. `GameBoard.tsx` creates `localGameState = cloneDeep(serverGameState)`. The UI now renders based on `localGameState`.
 2.  **Local Action:** You click a valid tile to move an army.
-3.  **Local State Mutation:** `handleTileClick` calls `handleMoveAction`. This pure function takes your *current* `localGameState`, calculates the new army position, sets `hasActed: true`, and returns a *brand new* `localGameState` object. `GameBoard.tsx` updates its state with this new object.
+3.  **Local State Mutation:** `handleTileClick` calls a pure action handler (`handleMoveAction`). This function takes your *current* `localGameState`, calculates the new army position, sets `hasActed: true`, and returns a *brand new* `localGameState` object. `GameBoard.tsx` updates its state with this new object.
 4.  **Instant UI Update:** The UI re-renders instantly to show the army in its new position. **No Firebase write has occurred.**
 5.  **More Local Actions:** You use a card, upgrade your attack power, and deploy a new army. Each action synchronously repeats Step 3 and 4 on the `localGameState`.
 6.  **End of Turn:** You click the "End Turn" button.
@@ -90,19 +90,19 @@ This architecture ensures responsiveness, reduces database costs, and eliminates
 
 ### 3.5 The Exception: Real-Time Dialogs (Combat)
 
-Combat is a special case. While most of a player's turn is local, a combat sequence needs to be seen by the defender in real-time. This requires a careful, hybrid approach.
+Combat is a special case. While most of a player's turn is local, a combat sequence needs to be seen by the defender in real-time (for PvP) or must present an interactive dialog (for monsters). This requires a careful, hybrid approach that still respects the local-first principle.
 
 1.  **Local Trigger:** The player clicks the "Attack" button. This fires a **local action** (`local:attack`).
-2.  **Local Evaluation:** The `GameBoard` component receives this action. It checks if there are multiple targets.
-    *   If yes, it sets a **local UI state variable** (e.g., `setAttackSelectionDialog(...)`). This is a purely local update that causes the selection dialog to appear instantly. **No shared state has been modified.**
-3.  **Local Confirmation:** The player selects a target from the dialog.
-4.  **Shared Action Dispatch:** Now, with the target confirmed, the dialog's confirm button dispatches the **shared action** (`GameAction.InitiateCombat`).
-5.  **Shared State Update:** The action handler now modifies the game state (either `localGameState` for a monster or `serverGameState` for a player-vs-player fight) to include the `combatState` or `monsterCombatState`.
-6.  **UI Synchronization:**
-    *   For monster combat, the updated `localGameState` causes the `MonsterCombatDialog` to appear for the attacker.
-    *   For player combat, the updated `serverGameState` is pushed to all clients, causing the `CombatDialog` to appear for both the attacker and the defender.
+2.  **Local Evaluation:** The `GameBoard` component's `handleLocalAction` receives this action. It checks if there are multiple targets.
+    *   If yes, it sets a **local UI state variable** (e.g., `setAttackSelectionDialog(...)` or `setMonsterSelectionDialog(...)`). This is a purely local update that causes the selection dialog to appear instantly. **No shared state has been modified.**
+3.  **Local/Shared Dispatch:**
+    *   If there was only one target, or after the player selects a target from the dialog, a `GameAction.InitiateCombat` is dispatched.
+4.  **State Update & Dialog Sync:** The `handleInitiateCombatAction` handler is called.
+    *   **For monster combat:** The handler sets the `monsterCombatState` on the **`localGameState`**. `GameBoard` receives this updated local state and instantly displays the `MonsterCombatDialog` for the attacker. This is a purely local experience.
+    *   **For player-vs-player combat:** The handler sets the `combatState` on the **`serverGameState`** (this is the key exception). This is necessary because the defending player, who is not the active player, needs to see the dialog in real-time. The Firestore update triggers the dialog to appear for both participants.
+5.  **Resolution (Shared):** When the attacker clicks "Roll Dice" in either dialog, the appropriate shared action (`handleCombatRoll` or `handleMonsterCombatRoll`) is dispatched. This action resolves the combat and writes the final outcome to Firestore for all players to see.
 
-This two-step process (local UI trigger -> shared state update) is the required pattern for any action that needs immediate feedback (like opening a dialog) before modifying the state for all players.
+This two-step process (local UI trigger -> local or shared state update) is the required pattern for any action that needs immediate feedback before modifying the state for all players.
 
 ## 4. Root Cause Analysis & Debugging Philosophy
 A guiding principle for this project is to **fix the root cause of a bug, not just its symptoms**. A recurring bug often indicates a flaw in the underlying architecture or state management logic.
@@ -159,8 +159,8 @@ A player's turn consists of a series of actions. The game automatically ends a p
 ### 6.2. Army Actions
 
 #### **Position**
-1.  **Trigger:** Player clicks the "Position" button in the `ActionsPanel` while a valid, un-acted army is selected on a resource island with no monsters.
-2.  **UI Flow (Local):** A local `PositionDialog` opens, showing the available resource spots on the current island.
+1.  **Trigger:** Player clicks the "Position" button in the `ActionsPanel` while a valid, un-acted army is selected on a resource island with no monsters. This dispatches a **local** action (`local:position`).
+2.  **UI Flow (Local):** The `GameBoard` receives the action and sets a local UI state (`setPositionDialog`) which opens the `PositionDialog`, showing the available resource spots.
 3.  **Input:** Player clicks on a resource button in the dialog.
 4.  **Resolution (Local):** A `GameAction.SelectResourcePosition` action is dispatched on the `localGameState`.
     -   The `localGameState` is updated to mark the army as positioned on that resource.

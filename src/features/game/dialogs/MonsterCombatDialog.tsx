@@ -23,7 +23,7 @@ type MonsterCombatDialogProps = {
   gameState: GameState;
   onRoll: (payload: { monster: Monster; useDecideCard: boolean; decidedValue: number; useOvercomeCard: boolean; useWarChief: boolean }) => void;
   onClose: () => void;
-  onCancel: () => void;
+  onCancel: (payload?: { cardName?: CardName }) => void;
 };
 
 export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: MonsterCombatDialogProps) {
@@ -55,24 +55,22 @@ export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: Mo
       setUseWarChief(checked);
       if (checked) {
         setUseOvercomeCard(false);
-        setUseDecideCard(false);
       }
     } else if (card === 'decide') {
       setUseDecideCard(checked);
       if (checked) {
         setUseOvercomeCard(false);
-        setUseWarChief(false);
       }
     }
   };
 
   const handleCancel = () => {
-    let usedCard: CardName | null = null;
-    if (useOvercomeCard) usedCard = CardName.Overcome;
-    else if (useWarChief) usedCard = CardName.WarChief;
-    else if (useDecideCard) usedCard = CardName.DecideDiceRoll;
+    let cardToCancel: CardName | undefined = undefined;
+    if (useOvercomeCard) cardToCancel = CardName.Overcome;
+    else if (useWarChief) cardToCancel = CardName.WarChief;
+    else if (useDecideCard) cardToCancel = CardName.DecideDiceRoll;
 
-    onCancel();
+    onCancel({ cardName: cardToCancel });
   };
 
   const handleAttack = () => {
@@ -129,14 +127,14 @@ export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: Mo
                 )}
                 {hasWarChiefCard && canUseCard && (
                     <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
-                        <Checkbox id="use-warchief-card" checked={useWarChief} onCheckedChange={(checked) => handleCheckboxChange('warchief', !!checked)} />
+                        <Checkbox id="use-warchief-card" checked={useWarChief} onCheckedChange={(checked) => handleCheckboxChange('warchief', !!checked)} disabled={useOvercomeCard} />
                         <Label htmlFor="use-warchief-card" className='font-bold'>Use '{CardName.WarChief}' card for +2 attack power?</Label>
                     </div>
                 )}
                 {hasDecideCard && canUseCard && (
                 <div className="space-y-4 rounded-md border bg-muted/50 p-4">
                     <div className="flex items-center space-x-2">
-                        <Checkbox id="use-decide-card" checked={useDecideCard} onCheckedChange={(checked) => handleCheckboxChange('decide', !!checked)} />
+                        <Checkbox id="use-decide-card" checked={useDecideCard} onCheckedChange={(checked) => handleCheckboxChange('decide', !!checked)} disabled={useOvercomeCard} />
                         <Label htmlFor="use-decide-card" className='font-bold'>Use '{CardName.DecideDiceRoll}' card?</Label>
                     </div>
                     {useDecideCard && (
@@ -159,7 +157,7 @@ export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: Mo
             </div>
             <AlertDialogFooter className="mt-4 flex-col-reverse gap-2 sm:flex-row">
                 <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">Cancel</Button>
-                <Button onClick={handleAttack} disabled={!monsterForDisplay} className="w-full sm:w-auto">
+                <Button onClick={() => handleAttack()} disabled={!monsterForDisplay} className="w-full sm:w-auto">
                     Attack {monsterForDisplay ? getMonsterName(monsterForDisplay) : 'Monster'}!
                 </Button>
             </AlertDialogFooter>
