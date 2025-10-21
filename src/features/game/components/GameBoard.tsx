@@ -158,11 +158,23 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     // Real-time server actions
     const realTimeActions = [
         GameAction.CombatRoll, GameAction.CloseCombat, GameAction.MonsterCombatRoll,
-        GameAction.CloseMonsterCombat, GameAction.InitiateCombat, GameAction.HostLeave,
+        GameAction.CloseMonsterCombat, GameAction.HostLeave,
         GameAction.CloseSpecialIslandDialog, GameAction.RollOnSpecialIsland, GameAction.UseProductiveCard,
     ];
-
-    if (realTimeActions.includes(action)) {
+    
+    // InitiateCombat can be local (for monsters) or shared (for players)
+    if (action === GameAction.InitiateCombat) {
+        const result = handleGameAction({ action, gameState: stateToUpdate, payload });
+        if (result.state) {
+            if (payload.target.type === 'monster') {
+                // For monster combat, we update local state to show the dialog
+                setLocalGameState(result.state);
+            } else {
+                // For player combat, we update the shared state immediately
+                await setGameState(result.state, action, payload);
+            }
+        }
+    } else if (realTimeActions.includes(action)) {
         await setGameState(stateToUpdate, action, payload);
     } else { // Local actions
         const result = handleGameAction({ action, gameState: stateToUpdate, payload });
@@ -201,8 +213,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
               setAbilitiesShopOpen(false);
               break;
           case GameAction.local_Attack:
+              if (!localGameState || !localPlayer) return;
               const { army } = payload;
-              if (!army || !localPlayer) return;
+              if (!army) return;
               
               const currentTile = localGameState.map[army.position.y * MAP_COLS + army.position.x];
               const otherPlayersOccupants = currentTile.occupants.filter(o => o.playerId !== localPlayer.id);
