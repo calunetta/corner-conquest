@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState } from 'react';
 import { GameBoard } from '@/features/game/components/GameBoard';
