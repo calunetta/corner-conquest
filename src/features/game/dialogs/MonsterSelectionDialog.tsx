@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertDialogCancel } from '@radix-ui/react-alert-dialog';
 import Image from 'next/image';
 
 type MonsterSelectionDialogProps = {
@@ -58,7 +57,7 @@ export function MonsterSelectionDialog({ state, onSelectTarget, onClose, isMyTur
         </div>
 
         <AlertDialogFooter>
-          <Button variant="outline" onClick={onClose} className="w-full">Cancel</Button>
+          <Button variant="secondary" onClick={onClose} className="w-full">Cancel</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

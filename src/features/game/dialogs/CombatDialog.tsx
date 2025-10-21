@@ -163,18 +163,20 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
           </div>
         )}
 
-        <AlertDialogFooter>
-          {phase === 'rolling' && canPerformAction && (
-            <Button onClick={() => onRoll(useWarChief)} className="w-full">
-              Roll Dice!
-            </Button>
-          )}
-          {phase === 'results' && canPerformAction && (
-            <AlertDialogAction onClick={onClose} className="w-full">
-              Continue
-            </AlertDialogAction>
-          )}
-        </AlertDialogFooter>
+        {canPerformAction && (
+          <AlertDialogFooter>
+            {phase === 'rolling' && (
+              <Button onClick={() => onRoll(useWarChief)} className="w-full">
+                Roll Dice!
+              </Button>
+            )}
+            {phase === 'results' && (
+              <AlertDialogAction onClick={onClose} className="w-full">
+                Continue
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        )}
       </AlertDialogContent>
     </AlertDialog>
   );
