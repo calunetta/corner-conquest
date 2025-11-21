@@ -140,7 +140,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const onAction = useCallback(async (action: GameAction, payload?: any) => {
     if (isPerformingAction) return;
 
-    const stateToUpdate = isMyTurn && localGameState ? localGameState : serverGameState;
+    let stateToUpdate = isMyTurn && localGameState ? localGameState : serverGameState;
 
     if (!stateToUpdate) {
         console.warn(`Attempted to perform action ${action} with no state available. Aborting.`);
@@ -156,7 +156,6 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         return;
     }
     
-    // For combat, we update local state to show the dialog
     if (action === GameAction.InitiateCombat) {
       const result = handleGameAction({ action, gameState: stateToUpdate, payload });
       if(result.state) setLocalGameState(result.state);
@@ -178,7 +177,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             setLocalGameState(result.state);
         }
     }
-  }, [isPerformingAction, isMyTurn, toast, setGameState, localGameState, serverGameState]);
+  }, [isPerformingAction, isMyTurn, localGameState, serverGameState, setGameState]);
 
 
   const handleLocalAction = useCallback((action: GameAction, payload?: any) => {
