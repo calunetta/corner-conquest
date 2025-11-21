@@ -4,7 +4,6 @@
 import { ResourceType, CardName } from '@/lib/types';
 import {
   AlertDialog,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -47,11 +46,9 @@ export function WealthyDialog({ onSelectResource, onClose }: WealthyDialogProps)
         </div>
 
         <AlertDialogFooter>
-            <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
-
-    

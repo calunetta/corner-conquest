@@ -6,7 +6,6 @@ import { CardName } from '@/lib/types';
 import { useState } from 'react';
 import {
   AlertDialog,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -57,7 +56,7 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
         ))}
       </div>
       <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button disabled={!selectedPlayer} onClick={() => { /* No-op, just moves to next screen */ }}>
               Select Resources
           </Button>
@@ -91,7 +90,7 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
         ))}
       </div>
       <AlertDialogFooter>
-        <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
            <>
             <Button variant="outline" onClick={() => setSelectedPlayer(null)}>Back</Button>
             <Button disabled={!selectedResource} onClick={() => onSteal(selectedPlayer!.id, selectedResource!)}>

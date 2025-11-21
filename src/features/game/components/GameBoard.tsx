@@ -2,9 +2,9 @@
 
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { GameState, Army, Monster } from '@/lib/types';
-import type { PendingAction, ArmySelectionDialogState, AttackSelectionDialogState, PositionDialogState, SabotageDialogState, WealthyDialogState, StealResourceDialogState, MonsterSelectionDialogState } from '../types';
-import { GameAction, CardName, IslandType, MAP_COLS } from '@/lib/types';
+import type { GameState, Army, Monster, CardName } from '@/lib/types';
+import type { PendingAction, ArmySelectionDialogState, AttackSelectionDialogState, PositionDialogState, SabotageDialogState, WealthyDialogState, StealResourceDialogState, MonsterSelectionDialogState, ProductiveCardDialogState, SpecialIslandRollDialogState } from '../types';
+import { GameAction, IslandType, MAP_COLS } from '@/lib/types';
 import { MapGrid } from './MapGrid';
 import { PlayerInfo } from '@/features/game/panels/PlayerInfo';
 import { ActionsPanel } from '@/features/game/panels/ActionsPanel';
@@ -12,7 +12,6 @@ import { GameLog } from '@/features/game/panels/GameLog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronDown, ChevronUp, Loader2, ArrowLeft, Play, Trophy } from 'lucide-react';
-import { GameDialogs } from '@/features/game/dialogs/GameDialogs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { usePlayer } from '@/hooks/use-player';
 import { useGameEngine } from '@/hooks/use-game-engine';
@@ -24,6 +23,19 @@ import { ConfirmExitDialog } from '@/features/game/dialogs/ConfirmExitDialog';
 import { HostLeaveDialog } from '@/features/game/dialogs/HostLeaveDialog';
 import { getPossibleMoves } from '@/lib/actions/movement';
 import { cloneDeep } from 'lodash';
+import { CombatDialog } from '../dialogs/CombatDialog';
+import { MonsterCombatDialog } from '../dialogs/MonsterCombatDialog';
+import { PositionDialog } from '../dialogs/PositionDialog';
+import { CardsDialog } from '../dialogs/CardsDialog';
+import { StealResourceDialog } from '../dialogs/StealResourceDialog';
+import { AbilitiesDialog } from '../dialogs/AbilitiesDialog';
+import { SabotageDialog } from '../dialogs/SabotageDialog';
+import { WealthyDialog } from '../dialogs/WealthyDialog';
+import { ArmySelectionDialog } from '../dialogs/ArmySelectionDialog';
+import { AttackSelectionDialog } from '../dialogs/AttackSelectionDialog';
+import { MonsterSelectionDialog } from '../dialogs/MonsterSelectionDialog';
+import { ProductiveCardDialog } from '../dialogs/ProductiveCardDialog';
+import { SpecialIslandRollDialog } from '../dialogs/SpecialIslandRollDialog';
 
 const TURN_DURATION = 120; // 2 minutes in seconds
 
@@ -156,7 +168,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         return;
     }
     
-    if (action === GameAction.InitiateCombat) {
+    // For monster combat, we need to update local state first to show the dialog
+    if (action === GameAction.InitiateCombat && payload?.target?.type === 'monster') {
       const result = handleGameAction({ action, gameState: stateToUpdate, payload });
       if(result.state) setLocalGameState(result.state);
       return;
@@ -164,6 +177,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
     // Real-time server actions
     const realTimeActions = [
+        GameAction.InitiateCombat, // Only for PvP
         GameAction.CombatRoll, GameAction.CloseCombat, GameAction.MonsterCombatRoll,
         GameAction.CloseMonsterCombat, GameAction.HostLeave,
         GameAction.CloseSpecialIslandDialog, GameAction.RollOnSpecialIsland, GameAction.UseProductiveCard,
@@ -257,7 +271,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                   throw new Error("You can only use one card per turn.");
               }
               
-              const multiStepCards = [CardName.Teleport, CardName.Scout, CardName.Sabotage, CardName.Wealthy, CardName.StealResource];
+              const multiStepCards: CardName[] = ['Teleport', 'Scout', 'Sabotage', 'Wealthy', 'Steal Resource'];
               
               const result = handleGameAction({ action: GameAction.UseCard, gameState: localGameState, payload: { cardName } });
               
@@ -268,9 +282,9 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
                       setPendingAction({ type: cardName.toLowerCase().replace(/ /g, '-') as any, cardName });
                       setSelectedArmyId(null);
                       
-                      if (cardName === CardName.Sabotage) setSabotageDialog({ isOpen: true });
-                      else if (cardName === CardName.Wealthy) setWealthyDialog({ isOpen: true });
-                      else if (cardName === CardName.StealResource) setStealResourceDialog({ isOpen: true });
+                      if (cardName === 'Sabotage') setSabotageDialog({ isOpen: true });
+                      else if (cardName === 'Wealthy') setWealthyDialog({ isOpen: true });
+                      else if (cardName === 'Steal Resource') setStealResourceDialog({ isOpen: true });
                   }
               }
             } catch (error: any) {
@@ -292,7 +306,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         const newCount = (pendingAction as any).count - 1;
         if (newCount <= 0) {
           setPendingAction(null);
-          await onAction(GameAction.UseCard, { cardName: CardName.Scout, isScout: true });
+          await onAction(GameAction.UseCard, { cardName: 'Scout', isScout: true });
         } else {
           setPendingAction({ ...pendingAction, count: newCount });
         }
@@ -443,6 +457,8 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   const canStartGame = status === 'waiting' && isHost && players.length > 1;
   const isTeleporting = pendingAction?.type === 'teleport';
   const isScouting = pendingAction?.type === 'scout';
+  const playerForCardsDialog = cardsDialogPlayerId !== null ? gameStateForDisplay.players.find(p => p.id === cardsDialogPlayerId) : null;
+  const isViewingOwnCards = playerForCardsDialog?.id === localPlayer.id;
 
   return (
     <div className="relative flex h-screen w-full flex-col gap-2 overflow-auto p-2 sm:gap-4 sm:p-4">
@@ -591,63 +607,183 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
         gameStatus={status}
       />
 
-      <GameDialogs 
-        gameState={gameStateForDisplay}
-        localPlayer={localPlayer}
-        isMyTurn={isMyTurn}
-        onAction={onAction}
-        handleLocalAction={handleLocalAction}
-        cardsDialogPlayerId={cardsDialogPlayerId}
-        onCloseCardsDialog={() => setCardsDialogPlayerId(null)}
-        abilitiesShopOpen={abilitiesShopOpen}
-        onCloseAbilitiesShop={() => setAbilitiesShopOpen(false)}
-        armySelectionDialog={armySelectionDialog}
-        onCloseArmySelectionDialog={() => setArmySelectionDialog(null)}
-        onSelectArmyFromDialog={(armyId) => {
-            setSelectedArmyId(armyId);
-            setArmySelectionDialog(null);
-            if (pendingAction?.type === 'teleport') {
-                // If we were waiting to select an army for teleport, now we are waiting for a destination.
-                // handleTileClick will handle the rest.
-            }
-        }}
-        attackSelectionDialog={attackSelectionDialog}
-        onCloseAttackSelectionDialog={() => setAttackSelectionDialog(null)}
-        onSelectDefender={(defenderArmyId) => {
-             if (attackSelectionDialog) {
-                onAction(GameAction.InitiateCombat, {
-                    attackingArmyId: attackSelectionDialog.attackingArmyId,
-                    target: { 
-                        type: 'player', 
-                        defenderId: attackSelectionDialog.defendingPlayer.id, 
-                        defendingArmyId: defenderArmyId 
-                    }
-                });
-             }
-             setAttackSelectionDialog(null);
-        }}
-        monsterSelectionDialog={monsterSelectionDialog}
-        onCloseMonsterSelectionDialog={() => setMonsterSelectionDialog(null)}
-        onSelectMonster={(monsterName) => {
-            if (monsterSelectionDialog) {
-                onAction(GameAction.InitiateCombat, {
-                    attackingArmyId: monsterSelectionDialog.attackingArmyId,
-                    target: { type: 'monster', monsterName }
-                });
-            }
-            setMonsterSelectionDialog(null);
-        }}
-        positionDialog={positionDialog}
-        onClosePositionDialog={() => setPositionDialog(null)}
-        sabotageDialog={sabotageDialog}
-        onCloseSabotageDialog={() => { setSabotageDialog(null); setPendingAction(null); }}
-        wealthyDialog={wealthyDialog}
-        onCloseWealthyDialog={() => { setWealthyDialog(null); setPendingAction(null); }}
-        stealResourceDialog={stealResourceDialog}
-        onCloseStealResourceDialog={() => { setStealResourceDialog(null); setPendingAction(null); }}
-        productiveCardDialog={productiveCardDialog}
-        specialIslandRollDialog={specialIslandRollDialog}
-      />
+       {/* SHARED DIALOGS (visible to multiple players) */}
+      {gameStateForDisplay.combatState && (
+        <CombatDialog
+          gameState={gameStateForDisplay}
+          onRoll={(useWarChief) => onAction(GameAction.CombatRoll, { useWarChief })}
+          onClose={() => onAction(GameAction.CloseCombat)}
+          isMyTurn={isMyTurn}
+          localPlayerId={localPlayer.id}
+        />
+      )}
+
+      {gameStateForDisplay.monsterCombatState && (
+          <MonsterCombatDialog 
+              gameState={gameStateForDisplay}
+              onRoll={(payload) => onAction(GameAction.MonsterCombatRoll, payload)}
+              onClose={() => onAction(GameAction.CloseMonsterCombat)}
+              onCancel={(payload) => handleLocalAction(GameAction.local_CancelAction, payload)}
+          />
+      )}
+
+      {isMyTurn && productiveCardDialog?.isOpen && (
+          <ProductiveCardDialog
+              state={productiveCardDialog}
+              onConfirm={(selectedResource) => {
+                onAction(GameAction.UseProductiveCard, { selectedResource });
+              }}
+          />
+      )}
+
+      {isMyTurn && specialIslandRollDialog?.isOpen && (
+        <SpecialIslandRollDialog
+          state={specialIslandRollDialog}
+          onRoll={() => {
+            onAction(GameAction.RollOnSpecialIsland);
+          }}
+          onClose={() => {
+            onAction(GameAction.CloseSpecialIslandDialog);
+          }}
+        />
+      )}
+
+      {/* LOCAL DIALOGS (visible only to the current player) */}
+      {isMyTurn && (
+        <>
+            {positionDialog && (
+                <PositionDialog 
+                    resources={positionDialog.resources}
+                    onSelect={(resource) => {
+                      onAction(GameAction.SelectResourcePosition, { resource, armyId: positionDialog.armyId });
+                      setPositionDialog(null);
+                    }}
+                    onClose={() => setPositionDialog(null)}
+                />
+            )}
+
+            {armySelectionDialog && (
+                <ArmySelectionDialog
+                    state={armySelectionDialog}
+                    player={localPlayer}
+                    onSelectArmy={(armyId) => {
+                        setSelectedArmyId(armyId);
+                        setArmySelectionDialog(null);
+                        if (pendingAction?.type === 'teleport') {
+                            // If we were waiting to select an army for teleport, now we are waiting for a destination.
+                            // handleTileClick will handle the rest.
+                        }
+                    }}
+                    onClose={() => setArmySelectionDialog(null)}
+                    isMyTurn={isMyTurn}
+                />
+            )}
+
+            {attackSelectionDialog && (
+                <AttackSelectionDialog
+                    state={attackSelectionDialog}
+                    onSelectTarget={(defenderArmyId) => {
+                         if (attackSelectionDialog) {
+                            onAction(GameAction.InitiateCombat, {
+                                attackingArmyId: attackSelectionDialog.attackingArmyId,
+                                target: { 
+                                    type: 'player', 
+                                    defenderId: attackSelectionDialog.defendingPlayer.id, 
+                                    defendingArmyId: defenderArmyId 
+                                }
+                            });
+                         }
+                         setAttackSelectionDialog(null);
+                    }}
+                    onClose={() => setAttackSelectionDialog(null)}
+                    isMyTurn={isMyTurn}
+                />
+            )}
+
+            {monsterSelectionDialog && (
+                <MonsterSelectionDialog
+                    state={monsterSelectionDialog}
+                    onSelectTarget={(monsterName) => {
+                        if (monsterSelectionDialog) {
+                            onAction(GameAction.InitiateCombat, {
+                                attackingArmyId: monsterSelectionDialog.attackingArmyId,
+                                target: { type: 'monster', monsterName }
+                            });
+                        }
+                        setMonsterSelectionDialog(null);
+                    }}
+                    onClose={() => setMonsterSelectionDialog(null)}
+                    isMyTurn={isMyTurn}
+                />
+            )}
+
+            {abilitiesShopOpen && (
+                <AbilitiesDialog
+                    player={localPlayer}
+                    onClose={() => setAbilitiesShopOpen(false)}
+                    onBuyAbility={(abilityName) => onAction(GameAction.BuyAbility, { abilityName })}
+                    gameState={gameStateForDisplay}
+                    isMyTurn={isMyTurn}
+                />
+            )}
+
+            {stealResourceDialog?.isOpen && (
+                <StealResourceDialog
+                    players={gameStateForDisplay.players.filter(p => p.id !== localPlayer.id)}
+                    onSteal={(target, resource) => {
+                        onAction(GameAction.StealResource, {targetPlayerId: target, resource: resource});
+                        setStealResourceDialog(null);
+                        setPendingAction(null);
+                    }}
+                    onClose={() => {
+                        setStealResourceDialog(null);
+                        setPendingAction(null);
+                    }}
+                />
+            )}
+
+            {sabotageDialog?.isOpen && (
+                <SabotageDialog
+                    players={gameStateForDisplay.players.filter(p => p.id !== localPlayer.id)}
+                    onSabotage={(targetPlayerId) => {
+                        onAction(GameAction.SabotagePlayer, { targetPlayerId });
+                        setSabotageDialog(null);
+                        setPendingAction(null);
+                    }}
+                    onClose={() => {
+                        setSabotageDialog(null);
+                        setPendingAction(null);
+                    }}
+                />
+            )}
+
+            {wealthyDialog?.isOpen && (
+                <WealthyDialog
+                    onSelectResource={(resource) => {
+                        onAction(GameAction.GainWealth, { resource });
+                        setWealthyDialog(null);
+                        setPendingAction(null);
+                    }}
+                    onClose={() => {
+                        setWealthyDialog(null);
+                        setPendingAction(null);
+                    }}
+                />
+            )}
+        </>
+      )}
+      
+      {playerForCardsDialog && (
+        <CardsDialog 
+          player={playerForCardsDialog}
+          onClose={() => setCardsDialogPlayerId(null)}
+          onUseCard={(cardName: CardName) => {
+            setCardsDialogPlayerId(null);
+            handleLocalAction(GameAction.local_UseCard, { cardName });
+          }}
+          canUseCards={isMyTurn && isViewingOwnCards}
+        />
+      )}
     </div>
   );
 }

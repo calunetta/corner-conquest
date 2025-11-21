@@ -5,7 +5,6 @@ import type { Player } from '@/lib/types';
 import { CardName } from '@/lib/types';
 import {
   AlertDialog,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -51,11 +50,9 @@ export function SabotageDialog({ players, onSabotage, onClose }: SabotageDialogP
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
-
-    
