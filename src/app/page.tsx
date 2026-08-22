@@ -21,13 +21,17 @@ function Login() {
     if (!name) return;
     setIsLoading(true);
 
-    const success = await setUsername(name);
-    
-    if (!success) {
+    try {
+      const success = await setUsername(name);
+      if (!success) {
+        setShowErrorDialog(true);
+      }
+    } catch (error) {
+      console.error("Error logging in:", error);
       setShowErrorDialog(true);
+    } finally {
+      setIsLoading(false);
     }
-    // On success, the parent component will automatically render the lobby.
-    setIsLoading(false);
   };
 
   return (

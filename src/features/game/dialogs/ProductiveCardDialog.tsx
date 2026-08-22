@@ -1,4 +1,3 @@
-
 'use client';
 import type { ProductiveCardDialogState, ResourceType } from '@/lib/types';
 import { useState } from 'react';
@@ -22,9 +21,11 @@ type ProductiveCardDialogProps = {
 export function ProductiveCardDialog({ state, onConfirm }: ProductiveCardDialogProps) {
   const [selectedResource, setSelectedResource] = useState<ResourceType | null>(null);
 
+  if (!state) return null;
+
   const handleSelect = (resource: ResourceType) => {
-    setSelectedResource(prev => prev === resource ? null : resource);
-  }
+    setSelectedResource((prev) => (prev === resource ? null : resource));
+  };
 
   return (
     <AlertDialog open={true}>
@@ -35,12 +36,12 @@ export function ProductiveCardDialog({ state, onConfirm }: ProductiveCardDialogP
             Select one resource to double its collection amount. If no resource is selected, the card will not be used.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        
+
         <div className="flex flex-wrap justify-center gap-4 py-4">
           {state.options.map((option) => (
             <Button
               key={option.resource}
-              variant={selectedResource === option.resource ? "default" : "outline"}
+              variant={selectedResource === option.resource ? 'default' : 'outline'}
               className="flex h-24 w-24 flex-col items-center justify-center gap-2"
               onClick={() => handleSelect(option.resource)}
             >
@@ -54,7 +55,9 @@ export function ProductiveCardDialog({ state, onConfirm }: ProductiveCardDialogP
         </div>
 
         <AlertDialogFooter>
-          <Button onClick={() => onConfirm(selectedResource)} className='w-full'>Collect</Button>
+          <Button onClick={() => onConfirm(selectedResource)} className="w-full">
+            Collect
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -39,13 +39,13 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
                 state = handleSelectResourceForPosition(state, payload.resource, payload.armyId);
                 break;
             case GameAction.Move:
-                ({ state } = handleMoveAction(state, payload.x, payload.y, payload.army, payload.isTeleport));
+                state = handleMoveAction(state, payload.x, payload.y, payload.army, payload.isTeleport);
                 break;
             case GameAction.InitiateCombat:
                 state = handleInitiateCombatAction(state, payload);
                 break;
             case GameAction.CombatRoll:
-                state = handleCombatRoll(state, payload.useWarChief);
+                state = handleCombatRoll(state, payload);
                 break;
             case GameAction.CloseCombat:
                 state = handleCloseCombat(state);
@@ -75,7 +75,7 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
                 state = handleStealResource(state, payload);
                 break;
             case GameAction.RollOnSpecialIsland:
-                state = handleRollOnSpecialIsland(state);
+                state = handleRollOnSpecialIsland(state, payload);
                 break;
             case GameAction.CloseSpecialIslandDialog:
                 state = handleCloseSpecialIslandDialog(state);

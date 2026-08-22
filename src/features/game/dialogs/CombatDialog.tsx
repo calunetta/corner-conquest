@@ -14,35 +14,27 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
+import { Loader2 } from 'lucide-react';
 
 type CombatDialogProps = {
   gameState: GameState;
-  onRoll: (useWarChief: boolean) => void;
+  onRoll: (payload: { useWarChief: boolean; useOvercome: boolean }) => void;
   onClose: () => void;
   isMyTurn: boolean;
   localPlayerId: number;
 };
 
 export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayerId }: CombatDialogProps) {
-  const [useWarChief, setUseWarChief] = useState(false);
+  const [selectedCard, setSelectedCombatCard] = useState<'none' | 'overcome' | 'warchief'>('none');
+  const [isRolling, setIsRolling] = useState(false);
   const { combatState, players } = gameState;
 
   if (!combatState) return null;
   
   const isAttacker = localPlayerId === combatState?.attackerId;
-
-  useEffect(() => {
-    if (combatState?.phase === 'results' && !isAttacker) {
-        const timer = setTimeout(() => {
-            onClose();
-        }, 5000);
-        return () => clearTimeout(timer);
-    }
-  }, [combatState?.phase, isAttacker, onClose]);
-
 
   const { attackerId, defenderId, attackerRolls, defenderRolls, winnerId, phase } = combatState;
   const attacker = players[attackerId];
@@ -51,6 +43,7 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
   if (!defender) return null;
   
   const hasWarChiefCard = attacker.specialCards.includes(CardName.WarChief);
+  const hasOvercomeCard = attacker.specialCards.includes(CardName.Overcome);
   const isCombatOver = phase === 'results';
   const loserId = isCombatOver && winnerId !== null ? (winnerId === attackerId ? defenderId : attackerId) : null;
   
@@ -71,6 +64,13 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
   const isViewer = !isAttacker;
   const canUseCard = !attacker.actionsThisTurn.includes(GameAction.UseCard);
 
+  const handleRollClick = () => {
+    setIsRolling(true);
+    onRoll({ 
+      useWarChief: selectedCard === 'warchief', 
+      useOvercome: selectedCard === 'overcome' 
+    });
+  };
 
   // Viewer-only results screen
   if (phase === 'results' && isViewer) {
@@ -121,11 +121,32 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        {phase === 'rolling' && hasWarChiefCard && canPerformAction && canUseCard && (
-            <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
-                <Checkbox id="use-warchief-card" checked={useWarChief} onCheckedChange={(checked) => setUseWarChief(!!checked)} />
-                <Label htmlFor="use-warchief-card" className='font-bold'>Use '{CardName.WarChief}' card for +2 attack power?</Label>
-            </div>
+        {phase === 'rolling' && canPerformAction && canUseCard && (hasOvercomeCard || hasWarChiefCard) && (
+          <div className="rounded-md border bg-muted/50 p-4 space-y-3">
+            <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Select Combat Card</Label>
+            <RadioGroup value={selectedCard} onValueChange={(val) => setSelectedCombatCard(val as any)}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="none" id="combat-card-none" />
+                <Label htmlFor="combat-card-none" className="cursor-pointer font-medium">None (Standard Roll)</Label>
+              </div>
+              {hasOvercomeCard && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="overcome" id="combat-card-overcome" />
+                  <Label htmlFor="combat-card-overcome" className="cursor-pointer font-medium">
+                    Use '{CardName.Overcome}' (Auto-win combat)
+                  </Label>
+                </div>
+              )}
+              {hasWarChiefCard && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="warchief" id="combat-card-warchief" />
+                  <Label htmlFor="combat-card-warchief" className="cursor-pointer font-medium">
+                    Use '{CardName.WarChief}' (+2 Attack Power / +2 Dice)
+                  </Label>
+                </div>
+              )}
+            </RadioGroup>
+          </div>
         )}
 
         <div className="flex flex-col justify-around gap-4 sm:flex-row">
@@ -166,7 +187,8 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
         {canPerformAction && (
           <AlertDialogFooter>
             {phase === 'rolling' && (
-              <Button onClick={() => onRoll(useWarChief)} className="w-full">
+              <Button onClick={handleRollClick} disabled={isRolling} className="w-full">
+                {isRolling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Roll Dice!
               </Button>
             )}

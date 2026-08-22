@@ -3,10 +3,10 @@
 import type { GameState, Army, Monster, DeathAnimation, ActionHandlerResult, ResourceType, IslandResource, Player } from '@/lib/types';
 import { CardName } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
-import { GameAction, IslandType, MAP_COLS, ResourceType as ResourceTypeEnum } from '../types';
+import { GameAction, IslandType, GameStatus, ResourceType as ResourceTypeEnum } from '../types';
 
 export function handleInitiateCombatAction(state: GameState, payload: { attackingArmyId: number, target: { type: 'player', defenderId: number, defendingArmyId: number } | { type: 'monster', monsterName: string } }): GameState {
-    const { players, currentPlayerIndex, map } = state;
+    const { players, currentPlayerIndex, map, settings } = state;
     const attacker = players[currentPlayerIndex];
     const attackingArmy = attacker.armies.find(a => a.id === payload.attackingArmyId);
 
@@ -26,7 +26,7 @@ export function handleInitiateCombatAction(state: GameState, payload: { attackin
         };
     } else {
         const { monsterName } = payload.target;
-        const currentTile = map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
+        const currentTile = map[attackingArmy.position.y * settings.gridSize.cols + attackingArmy.position.x];
         const monster = currentTile.monsters?.find(m => m.name === monsterName);
         if (!monster) throw new Error("Target monster not found on tile.");
 
@@ -44,22 +44,40 @@ export function handleInitiateCombatAction(state: GameState, payload: { attackin
     return state;
 }
 
-export function handleCombatRoll(state: GameState, useWarChief: boolean): GameState {
+export function handleCombatRoll(state: GameState, payload: { useWarChief?: boolean; useOvercome?: boolean } | boolean): GameState {
     if (!state.combatState) return state;
+
+    const useWarChief = typeof payload === 'object' ? !!payload.useWarChief : !!payload;
+    const useOvercome = typeof payload === 'object' ? !!payload.useOvercome : false;
 
     const { combatState, players, discardPile } = state;
     const attacker = players[combatState.attackerId];
     const defender = players.find(p => p.id === combatState.defenderId);
-    if(!defender) return state;
+    if (!defender) return state;
 
     const attackingArmy = attacker.armies.find(a => a.id === combatState.attackingArmyId);
     if (!attackingArmy) return state;
     
     attackingArmy.hasActed = true;
 
-    let attackerBonusPower = 0;
     const canUseCard = !attacker.actionsThisTurn.includes(GameAction.UseCard);
 
+    if (useOvercome && canUseCard) {
+        const cardIndex = attacker.specialCards.indexOf(CardName.Overcome);
+        if (cardIndex > -1) {
+            attacker.actionsThisTurn.push(GameAction.UseCard);
+            const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
+            discardPile.push(usedCard);
+            state.log.push(`${attacker.name} used 'Overcome' to win the battle automatically!`);
+            combatState.attackerRolls = [6, 6];
+            combatState.defenderRolls = [1];
+            combatState.winnerId = combatState.attackerId;
+            combatState.phase = 'results';
+            return state;
+        }
+    }
+
+    let attackerBonusPower = 0;
     if (useWarChief && canUseCard) {
         const cardIndex = attacker.specialCards.indexOf(CardName.WarChief);
         if (cardIndex > -1) {
@@ -71,7 +89,7 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean): GameSt
         }
     }
 
-    const rollDice = (count: number) => Array.from({ length: Math.max(1, Math.min(count, 6)) }, () => Math.floor(Math.random() * 6) + 1);
+    const rollDice = (count: number) => Array.from({ length: Math.max(1, count) }, () => Math.floor(Math.random() * 6) + 1);
 
     combatState.attackerRolls = rollDice(attacker.attackPower + 1 + attackerBonusPower);
     combatState.defenderRolls = rollDice(defender.attackPower + 1);
@@ -83,10 +101,10 @@ export function handleCombatRoll(state: GameState, useWarChief: boolean): GameSt
     combatState.phase = 'results';
     
     return state;
-};
+}
 
 export function handleCloseCombat(state: GameState): GameState {
-    const { combatState, players, map, baseTiles } = state;
+    const { combatState, players, map, baseTiles, settings } = state;
     if (!combatState || combatState.phase !== 'results' || combatState.winnerId === null) {
         state.combatState = null;
         return state;
@@ -97,14 +115,14 @@ export function handleCloseCombat(state: GameState): GameState {
     const winner = players.find(p => p.id === winnerId)!;
     const loser = players.find(p => p.id === loserId)!;
     
-    const attackingArmy = players.find(p=>p.id === attackerId)?.armies.find(a => a.id === attackingArmyId);
+    const attackingArmy = players.find(p => p.id === attackerId)?.armies.find(a => a.id === attackingArmyId);
 
     if (!attackingArmy) {
         state.combatState = null;
         return state;
     }
     
-    const combatTile = map[attackingArmy.position.y * MAP_COLS + attackingArmy.position.x];
+    const combatTile = map[attackingArmy.position.y * settings.gridSize.cols + attackingArmy.position.x];
 
     if (loserId === defenderId) {
         winner.victoryPoints += 5;
@@ -118,21 +136,22 @@ export function handleCloseCombat(state: GameState): GameState {
                 id: `army-${loser.id}-${losingArmy.id}`,
                 x: losingArmy.position.x,
                 y: losingArmy.position.y,
-                sprite: PLAYER_DATA[loser.color].sprite.death
+                sprite: PLAYER_DATA[loser.color].sprite.death,
+                createdAt: Date.now()
             };
             state.deathAnimations.push(deathAnim);
 
             const oldPos = losingArmy.position;
             combatTile.occupants = combatTile.occupants.filter(o => !(o.armyId === losingArmy.id && o.playerId === loserId));
-            losingArmy.position = {x: baseTile.x, y: baseTile.y};
+            losingArmy.position = { x: baseTile.x, y: baseTile.y };
             losingArmy.hasActed = false; // Reset status on respawn
-            map[baseTile.y * MAP_COLS + baseTile.x].occupants.push({playerId: loserId, armyId: losingArmy.id});
+            map[baseTile.y * settings.gridSize.cols + baseTile.x].occupants.push({ playerId: loserId, armyId: losingArmy.id });
             
             const positionIndex = loser.positions.findIndex(p => p.armyId === losingArmy.id);
             if (positionIndex > -1) {
                 const removedPosition = loser.positions.splice(positionIndex, 1)[0];
-                if (map[oldPos.y * MAP_COLS + oldPos.x].positionedBy) {
-                    map[oldPos.y * MAP_COLS + oldPos.x]!.positionedBy = (map[oldPos.y * MAP_COLS + oldPos.x]!.positionedBy || []).filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
+                if (map[oldPos.y * settings.gridSize.cols + oldPos.x]?.positionedBy) {
+                    map[oldPos.y * settings.gridSize.cols + oldPos.x]!.positionedBy = (map[oldPos.y * settings.gridSize.cols + oldPos.x]!.positionedBy || []).filter(p => !(p.playerId === loserId && p.resource === removedPosition.resource));
                 }
             }
         }
@@ -142,20 +161,27 @@ export function handleCloseCombat(state: GameState): GameState {
         
         const loserArmy = loser.armies.find(a => a.id === attackingArmyId);
         const baseTile = baseTiles.find(b => b.owner === loserId);
-         if (loserArmy && baseTile) {
+        if (loserArmy && baseTile) {
             const deathAnim: DeathAnimation = {
                 id: `army-${loser.id}-${loserArmy.id}`,
                 x: loserArmy.position.x,
                 y: loserArmy.position.y,
-                sprite: PLAYER_DATA[loser.color].sprite.death
+                sprite: PLAYER_DATA[loser.color].sprite.death,
+                createdAt: Date.now()
             };
             state.deathAnimations.push(deathAnim);
 
             combatTile.occupants = combatTile.occupants.filter(o => !(o.armyId === loserArmy.id && o.playerId === loserId));
-            loserArmy.position = {x: baseTile.x, y: baseTile.y};
+            loserArmy.position = { x: baseTile.x, y: baseTile.y };
             loserArmy.hasActed = false; // Reset status on respawn
-            map[baseTile.y * MAP_COLS + baseTile.x].occupants.push({playerId: loserId, armyId: loserArmy.id});
-         }
+            map[baseTile.y * settings.gridSize.cols + baseTile.x].occupants.push({ playerId: loserId, armyId: loserArmy.id });
+        }
+    }
+
+    if (winner.victoryPoints >= settings.victoryPointGoal && !state.winner) {
+        state.winner = winner;
+        state.status = GameStatus.Finished;
+        state.log.push(`🎉 ${winner.name} has reached ${winner.victoryPoints} Victory Points and won the game!`);
     }
 
     state.log.push(`${winner.name} defeated ${loser.name} in battle!`);
@@ -166,7 +192,7 @@ export function handleCloseCombat(state: GameState): GameState {
 
 export function handleMonsterCombatRoll(state: GameState, payload: { monster: Monster; useDecideCard: boolean, decidedValue: number, useOvercomeCard: boolean, useWarChief: boolean }): GameState {
     const { players, currentPlayerIndex, discardPile, monsterCombatState } = state;
-    if(!monsterCombatState) return state;
+    if (!monsterCombatState) return state;
 
     const attacker = players[currentPlayerIndex];
     const attackingArmy = attacker.armies.find(a => a.position.x === monsterCombatState.attackerPosition.x && a.position.y === monsterCombatState.attackerPosition.y);
@@ -222,12 +248,16 @@ export function handleMonsterCombatRoll(state: GameState, payload: { monster: Mo
             canUseDecideCard = false;
         }
         
-        const rollDice = (count: number) => Array.from({ length: Math.max(1, Math.min(count, 6)) }, () => Math.floor(Math.random() * 6) + 1);
+        const rollDice = (count: number) => Array.from({ length: Math.max(1, count) }, () => Math.floor(Math.random() * 6) + 1);
 
         attackerRolls = rollDice(attacker.attackPower + 1 + attackerBonusPower);
-        if(canUseDecideCard) attackerRolls[0] = decidedValue; 
+        if (canUseDecideCard) {
+            const safeDecidedValue = Math.max(1, Math.min(6, decidedValue || 6));
+            attackerRolls[0] = safeDecidedValue;
+        }
 
-        monsterRolls = rollDice(monster.level);
+        const monsterDiceCount = Math.max(1, monster.level);
+        monsterRolls = rollDice(monsterDiceCount);
         const attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
         const monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
         winnerId = attackerScore > monsterScore ? attacker.id : null;
@@ -236,7 +266,6 @@ export function handleMonsterCombatRoll(state: GameState, payload: { monster: Mo
     if (cardUsedThisAction) {
         attacker.actionsThisTurn.push(GameAction.UseCard);
     }
-    
 
     state.monsterCombatState = {
       ...monsterCombatState,
@@ -247,7 +276,7 @@ export function handleMonsterCombatRoll(state: GameState, payload: { monster: Mo
       phase: 'results',
     };
     return state;
-};
+}
 
 export function handleCloseMonsterCombat(state: GameState): GameState {
     const { monsterCombatState, baseTiles, settings } = state;
@@ -256,10 +285,10 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
         return state;
     }
     
-    const { winnerId, monster, attackerId, attackerPosition } = state.monsterCombatState;
+    const { winnerId, monster, attackerId, attackerPosition } = monsterCombatState;
     const attacker = state.players[attackerId];
     
-    const currentTile = state.map[attackerPosition.y * MAP_COLS + attackerPosition.x];
+    const currentTile = state.map[attackerPosition.y * settings.gridSize.cols + attackerPosition.x];
 
     if (winnerId === attacker.id) {
         const monsterVP = [0, 2, 5, 7, 10][monster.level] || 0;
@@ -269,7 +298,8 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
             id: `monster-${currentTile.x}-${currentTile.y}-${monster.name}`,
             x: currentTile.x,
             y: currentTile.y,
-            sprite: monster.sprite.death
+            sprite: monster.sprite.death,
+            createdAt: Date.now()
         };
         state.deathAnimations.push(deathAnim);
 
@@ -312,15 +342,22 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
                 id: `army-${attacker.id}-${losingArmy.id}`,
                 x: losingArmy.position.x,
                 y: losingArmy.position.y,
-                sprite: PLAYER_DATA[attacker.color].sprite.death
+                sprite: PLAYER_DATA[attacker.color].sprite.death,
+                createdAt: Date.now()
             };
             state.deathAnimations.push(deathAnim);
             
-            state.map[losingArmy.position.y * MAP_COLS + losingArmy.position.x].occupants = state.map[losingArmy.position.y * MAP_COLS + losingArmy.position.x].occupants.filter(o => o.armyId !== losingArmy.id);
-            losingArmy.position = {x: baseTile.x, y: baseTile.y};
+            state.map[losingArmy.position.y * settings.gridSize.cols + losingArmy.position.x].occupants = state.map[losingArmy.position.y * settings.gridSize.cols + losingArmy.position.x].occupants.filter(o => o.armyId !== losingArmy.id);
+            losingArmy.position = { x: baseTile.x, y: baseTile.y };
             losingArmy.hasActed = false; // Reset status on respawn
-            state.map[baseTile.y * MAP_COLS + baseTile.x].occupants.push({playerId: attacker.id, armyId: losingArmy.id});
+            state.map[baseTile.y * settings.gridSize.cols + baseTile.x].occupants.push({ playerId: attacker.id, armyId: losingArmy.id });
         }
+    }
+
+    if (attacker.victoryPoints >= settings.victoryPointGoal && !state.winner) {
+        state.winner = attacker;
+        state.status = GameStatus.Finished;
+        state.log.push(`🎉 ${attacker.name} has reached ${attacker.victoryPoints} Victory Points and won the game!`);
     }
 
     state.monsterCombatState = null;

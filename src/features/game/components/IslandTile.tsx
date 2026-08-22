@@ -113,7 +113,8 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
   
   const baseOwner = island.type === IslandType.Base ? players.find(p => p.id === island.owner) : null;
   
-  const deathAnimationOnTile = deathAnimations.find(anim => anim.x === island.x && anim.y === island.y);
+  const now = Date.now();
+  const deathAnimationOnTile = deathAnimations.find(anim => anim.x === island.x && anim.y === island.y && (!anim.createdAt || (now - anim.createdAt) < 2000));
   
   const isPersonallyRevealed = localPlayer.revealedTiles.includes(island.id);
 
@@ -161,7 +162,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     const isBase = island.type === IslandType.Base;
     return resources.map((resource, index) => {
         const positionInfo = positionedBy.find(p => p.resource === resource.type);
-        const positionedPlayer = positionInfo ? players[positionInfo.playerId] : null;
+        const positionedPlayer = positionInfo ? players.find(p => p.id === positionInfo.playerId) : null;
 
         return (
             <div key={`resource-group-${index}`} className="flex flex-col items-center gap-1">
@@ -276,7 +277,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
             {occupants.map(({ player, army }, index) => {
                 if (!player || !army) return null;
 
-                if (deathAnimations.some(anim => anim.id === `army-${player.id}-${army.id}`)) {
+                if (deathAnimations.some(anim => anim.id === `army-${player.id}-${army.id}` && (!anim.createdAt || (now - anim.createdAt) < 2000))) {
                     return null;
                 }
                 
@@ -284,10 +285,8 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                 if (debugMode) {
                     isArmyVisible = true;
                 } else if (fogOfWar) {
-                    // With fog, own armies are visible. Opponent armies are visible on bases or personally revealed tiles.
                     isArmyVisible = player.id === localPlayer.id || island.type === IslandType.Base || isPersonallyRevealed;
                 } else {
-                    // Without fog, all armies are always visible.
                     isArmyVisible = true;
                 }
 
@@ -309,7 +308,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                 return (
                     <div 
                         key={`army-sprite-${player.id}-${army.id}`}
-                        className={cn('absolute w-1/2 h-1/2', pos.origin)}
+                        className={cn('absolute w-1/2 h-1/2', pos.origin, index >= 4 ? 'scale-90 opacity-90' : '')}
                         style={{ top: pos.top, left: pos.left, right: pos.right, bottom: pos.bottom }}
                     >
                         <Image
@@ -339,8 +338,8 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
               <Image
                   src={src}
                   alt=""
-                  layout="fill"
-                  objectFit="contain"
+                  fill
+                  className="object-contain"
                   unoptimized
               />
             </div>

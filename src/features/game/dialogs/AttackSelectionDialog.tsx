@@ -1,6 +1,5 @@
-
 'use client';
-import type { Player, Army, AttackSelectionDialogState } from '@/lib/types';
+import type { Player, Army, AttackSelectionDialogState, PlayerPosition } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -9,10 +8,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Swords, Anchor, CheckCircle } from 'lucide-react';
-import { AlertDialogCancel } from '@radix-ui/react-alert-dialog';
+import { Button } from '@/components/ui/button';
+import type { ReactNode } from 'react';
 
 type AttackSelectionDialogProps = {
   state: AttackSelectionDialogState;
@@ -22,18 +21,19 @@ type AttackSelectionDialogProps = {
 };
 
 export function AttackSelectionDialog({ state, onSelectTarget, onClose, isMyTurn }: AttackSelectionDialogProps) {
-    const { armies, defendingPlayer } = state;
+  if (!state) return null;
+  const { armies, defendingPlayer } = state;
 
-    const getArmyStatus = (army: Army): { text: string; icon: React.ReactNode } => {
-        if (army.hasActed) {
-            return { text: "Acted", icon: <CheckCircle className="h-4 w-4 text-green-500" /> };
-        }
-        const position = defendingPlayer.positions.find(p => p.armyId === army.id);
-        if (position) {
-            return { text: `Positioned`, icon: <Anchor className="h-4 w-4 text-blue-400" /> };
-        }
-        return { text: "Ready", icon: <CheckCircle className="h-4 w-4 text-gray-400" /> };
+  const getArmyStatus = (army: Army): { text: string; icon: ReactNode } => {
+    if (army.hasActed) {
+      return { text: 'Acted', icon: <CheckCircle className="h-4 w-4 text-green-500" /> };
     }
+    const position = defendingPlayer.positions.find((p: PlayerPosition) => p.armyId === army.id);
+    if (position) {
+      return { text: `Positioned`, icon: <Anchor className="h-4 w-4 text-blue-400" /> };
+    }
+    return { text: 'Ready', icon: <CheckCircle className="h-4 w-4 text-gray-400" /> };
+  };
 
   return (
     <AlertDialog open={true} onOpenChange={onClose}>
@@ -44,9 +44,9 @@ export function AttackSelectionDialog({ state, onSelectTarget, onClose, isMyTurn
             Choose which of {defendingPlayer.name}'s armies you want to attack.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        
+
         <div className="grid grid-cols-2 gap-4 py-4 sm:grid-cols-3">
-          {armies.map((army) => {
+          {armies.map((army: Army) => {
             const status = getArmyStatus(army);
             return (
               <Card
@@ -63,12 +63,12 @@ export function AttackSelectionDialog({ state, onSelectTarget, onClose, isMyTurn
                   </div>
                 </CardContent>
               </Card>
-            )
+            );
           })}
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

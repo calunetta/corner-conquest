@@ -1,9 +1,9 @@
 
 import type { GameState, Player, ResourceType, ActionHandlerResult, CardName, Army } from '@/lib/types';
-import { GameAction, AbilityName, MAP_COLS, HAND_LIMIT } from '../types';
+import { GameAction, AbilityName, HAND_LIMIT, ResourceType as ResourceTypeEnum } from '../types';
 
 export function handleBuyCardAction(state: GameState): GameState {
-    const { players, currentPlayerIndex, specialCardsDeck, discardPile, debugMode } = state;
+    const { players, currentPlayerIndex, debugMode } = state;
     const player = players[currentPlayerIndex];
 
     if (player.actionsThisTurn.includes(GameAction.BuyCard)) throw new Error("You can only buy one card per turn.");
@@ -12,24 +12,30 @@ export function handleBuyCardAction(state: GameState): GameState {
         state.log.push(`${player.name} tried to buy a card, but their hand is full!`);
         return state;
     }
-    if (specialCardsDeck.length === 0 && discardPile.length === 0) {
+    if (state.specialCardsDeck.length === 0 && state.discardPile.length === 0) {
         state.log.push(`${player.name} tried to buy a card, but there are none left!`);
         return state;
     }
 
-    if (specialCardsDeck.length === 0) {
+    if (state.specialCardsDeck.length === 0 && state.discardPile.length > 0) {
         state.log.push("The deck is empty. Reshuffling the discard pile...");
-        for (let i = discardPile.length - 1; i > 0; i--) {
+        const newDeck = [...state.discardPile];
+        for (let i = newDeck.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [discardPile[i], discardPile[j]] = [discardPile[j], discardPile[i]];
+            [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
         }
-        state.specialCardsDeck = [...discardPile];
+        state.specialCardsDeck = newDeck;
         state.discardPile = [];
     }
 
+    if (state.specialCardsDeck.length === 0) {
+        state.log.push(`${player.name} tried to buy a card, but no cards could be drawn.`);
+        return state;
+    }
+
     player.resources.gems -= 10;
-    const cardIndex = Math.floor(Math.random() * specialCardsDeck.length);
-    const drawnCard = specialCardsDeck.splice(cardIndex, 1)[0];
+    const cardIndex = Math.floor(Math.random() * state.specialCardsDeck.length);
+    const drawnCard = state.specialCardsDeck.splice(cardIndex, 1)[0];
     player.specialCards.push(drawnCard);
     player.actionsThisTurn.push(GameAction.BuyCard);
     state.log.push(`${player.name} bought a special card: "${drawnCard}"!`);
@@ -49,9 +55,9 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
     // Defer consuming the card action for cards that have a follow-up step
     const immediateEffectCards: CardName[] = ['Reinforce', 'Efficient', 'Master Builder'];
     if (immediateEffectCards.includes(cardName)) {
-        player.reinforceActive = cardName === 'Reinforce';
-        player.efficientActive = cardName === 'Efficient';
-        player.masterBuilderActive = cardName === 'Master Builder';
+        if (cardName === 'Reinforce') player.reinforceActive = true;
+        if (cardName === 'Efficient') player.efficientActive = true;
+        if (cardName === 'Master Builder') player.masterBuilderActive = true;
         state.log.push(`${player.name} activated '${cardName}'.`);
     } else if (cardName === 'Extra Move') {
         player.hasExtraMove = true;
@@ -83,8 +89,8 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
     }
 
     player.positions.forEach(pos => {
-        const tile = state.map[pos.y * MAP_COLS + pos.x];
-        const resourceSpot = tile.resources.find(r => r.type === pos.resource);
+        const tile = state.map[pos.y * state.settings.gridSize.cols + pos.x];
+        const resourceSpot = tile?.resources.find(r => r.type === pos.resource);
         if (resourceSpot) {
             let amount = resourceSpot.amount;
             if (pos.resource === selectedResource) {
@@ -102,17 +108,14 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
     }
 
     player.positions.forEach(pos => {
-        const tile = state.map[pos.y * MAP_COLS + pos.x];
+        const tile = state.map[pos.y * state.settings.gridSize.cols + pos.x];
         if (tile && tile.positionedBy) {
             tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === pos.resource));
         }
     });
     player.positions = [];
-
-    if (player.dialogState?.productiveCard) {
-        player.dialogState.productiveCard = null;
-    }
     
+    state.productiveDialogState = null;
     return state;
 }
 
@@ -136,7 +139,12 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
 export function handleGainWealth(state: GameState, resource: ResourceType): GameState {
     const player = state.players[state.currentPlayerIndex];
     
-    player.resources[resource] += 5;
+    const validResources = [ResourceTypeEnum.Gems, ResourceTypeEnum.Iron, ResourceTypeEnum.Wheat];
+    if (!validResources.includes(resource)) {
+        throw new Error(`Invalid resource type: ${resource}`);
+    }
+
+    player.resources[resource] = (player.resources[resource] || 0) + 5;
     state.log.push(`${player.name} used 'Wealthy' to gain 5 ${resource}.`);
     
     player.actionsThisTurn.push(GameAction.UseCard);
@@ -157,11 +165,12 @@ export const handleStealResource = (state: GameState, payload: { targetPlayerId:
         return state;
     }
     
-    const stolenAmount = Math.min(targetPlayer.resources[payload.resource], 2);
+    const availableAmount = targetPlayer.resources[payload.resource] || 0;
+    const stolenAmount = Math.min(availableAmount, 2);
 
     if (stolenAmount > 0) {
         targetPlayer.resources[payload.resource] -= stolenAmount;
-        currentPlayer.resources[payload.resource] += stolenAmount;
+        currentPlayer.resources[payload.resource] = (currentPlayer.resources[payload.resource] || 0) + stolenAmount;
         state.log.push(`${currentPlayer.name} stole ${stolenAmount} ${payload.resource} from ${targetPlayer.name}!`);
     } else {
         state.log.push(`${currentPlayer.name} tried to steal ${payload.resource} from ${targetPlayer.name}, but they had none.`);
@@ -197,11 +206,10 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ga
     return state;
 }
 
-
-export function handleRollOnSpecialIsland(state: GameState): GameState {
+export function handleRollOnSpecialIsland(state: GameState, payload?: { roll?: number }): GameState {
   const player = state.players[state.currentPlayerIndex];
 
-  const roll = Math.floor(Math.random() * 6) + 1;
+  const roll = payload?.roll ?? (Math.floor(Math.random() * 6) + 1);
   let cardDrawn: CardName | null = null;
 
   if (roll === 3 || roll === 6) {
@@ -210,7 +218,12 @@ export function handleRollOnSpecialIsland(state: GameState): GameState {
     } else if (state.specialCardsDeck.length > 0 || state.discardPile.length > 0) {
       if (state.specialCardsDeck.length === 0) {
         state.log.push("The deck is empty. Reshuffling the discard pile...");
-        state.specialCardsDeck = [...state.discardPile];
+        const newDeck = [...state.discardPile];
+        for (let i = newDeck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+        }
+        state.specialCardsDeck = newDeck;
         state.discardPile = [];
       }
       if (state.specialCardsDeck.length > 0) {
@@ -226,21 +239,11 @@ export function handleRollOnSpecialIsland(state: GameState): GameState {
   } else {
     state.log.push(`${player.name} rolled a ${roll} and found nothing.`);
   }
-  
-  if(player.dialogState) {
-      player.dialogState.specialIslandRoll = { isOpen: true, roll, cardDrawn };
-  } else {
-      player.dialogState = { specialIslandRoll: { isOpen: true, roll, cardDrawn } };
-  }
 
   return state;
 }
 
 export function handleCloseSpecialIslandDialog(state: GameState): GameState {
-  const player = state.players[state.currentPlayerIndex];
-  if(player.dialogState?.specialIslandRoll) {
-      player.dialogState.specialIslandRoll = null;
-  }
   return state;
 }
 

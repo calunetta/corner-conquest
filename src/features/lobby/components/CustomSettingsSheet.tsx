@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import type { GameSettings, CardName, AbilityName } from '@/lib/types';
+import { AbilityName as AbilityNameEnum } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,7 +30,7 @@ type CustomSettingsSheetProps = {
   initialSettings: GameSettings;
 };
 
-const ALL_ABILITIES: AbilityName[] = ['explorer', 'collector'];
+const ALL_ABILITIES: AbilityName[] = [AbilityNameEnum.Explorer, AbilityNameEnum.Collector];
 
 export function CustomSettingsSheet({
   open,

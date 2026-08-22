@@ -57,9 +57,6 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
       </div>
       <AlertDialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button disabled={!selectedPlayer} onClick={() => { /* No-op, just moves to next screen */ }}>
-              Select Resources
-          </Button>
       </AlertDialogFooter>
     </>
   );

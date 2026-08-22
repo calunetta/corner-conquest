@@ -6,7 +6,7 @@ import type { Player, Army, CardName, IslandResource, ResourceType, Monster } fr
 // and are never synchronized with Firebase.
 
 /** A pending action that requires further user input on the client, like Teleport or Scout. */
-export type PendingAction = { type: 'teleport', cardName: CardName } | { type: 'scout', cardName: CardName, count: number } | null;
+export type PendingAction = { type: 'teleport', cardName: CardName } | { type: 'scout', cardName: CardName, count: number, scoutedTiles: string[] } | null;
 
 /** State for the dialog that appears when a player clicks a tile with multiple friendly armies. */
 export type ArmySelectionDialogState = { armies: Army[], x: number, y: number } | null;
@@ -29,14 +29,7 @@ export type StealResourceDialogState = { isOpen: boolean } | null;
 /** State for the dialog to choose a resource to gain from the 'Wealthy' card. */
 export type WealthyDialogState = { isOpen: boolean } | null;
 
-/** State for the dialog when a player has the 'Productive' card and collects resources. */
-export type ProductiveCardDialogState = {
-    isOpen: boolean;
-    options: {
-        resource: ResourceType;
-        amount: number;
-    }[];
-} | null;
+
 
 /** State for the dialog when landing on an already-discovered special island. */
 export type SpecialIslandRollDialogState = {

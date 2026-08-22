@@ -84,14 +84,14 @@ The player's session (their identity) is managed through a combination of browse
     -   `selectedArmyId: number | null`: The ID of the army the local player has clicked on.
     -   `possibleMoves: {x, y}[]`: The array of valid move locations for the selected army, used for highlighting tiles.
     -   `pendingAction: PendingAction | null`: The state for a multi-step local action (e.g., after clicking the "Teleport" card, the `pendingAction` is set to `{ type: 'teleport' }`, waiting for the player to select an army and then a destination).
-    -   **All Dialog States:** `armySelectionDialog`, `attackSelectionDialog`, `positionDialog`, `sabotageDialog`, `wealthyDialog`, `stealResourceDialog`, `cardsDialogPlayerId`, `abilitiesShopOpen`, `productiveCardDialog`, `specialIslandRollDialog`. The open/closed status of these dialogs is purely a local concern.
+    -   **All Dialog States:** `armySelectionDialog`, `attackSelectionDialog`, `positionDialog`, `sabotageDialog`, `wealthyDialog`, `stealResourceDialog`, `cardsDialogPlayerId`, `abilitiesShopOpen`, `productiveCardDialog`, `specialIslandRollDialog`. The open/closed status of these dialogs is purely a local concern and is completely decoupled from the shared `Player` object in Firestore.
 
 ### 3.4. The Action Flow: From Click to Update
 
 1.  **Local Intent:** A player clicks on an army. `handleTileClick` in `GameBoard.tsx` updates the local `selectedArmyId` state. The UI re-renders instantly to show the selection. **No Firebase write occurs.**
-2.  **Local Validation:** The player clicks a valid destination tile. `handleTileClick` verifies this is a possible move.
+2.  **Local Validation:** The player clicks a valid destination tile. `handleTileClick` verifies this is a possible move against `settings.gridSize.cols` and `settings.gridSize.rows`.
 3.  **Shared Action Dispatch:** Now that the action is confirmed, `handleTileClick` calls `onAction(GameAction.Move, ...)`. This is the crossover from local to shared.
-4.  **Shared State Update:** The `onAction` handler calls the `setGameState` function, which executes the `handleMoveAction` reducer from `lib/actions`. This pure function calculates the new army position and returns a brand new `GameState` object.
+4.  **Shared State Update:** The `onAction` handler calls the `setGameState` function, which executes the `handleMoveAction` reducer from `lib/actions`. This pure function calculates the new army position dynamically and returns a brand new `GameState` object.
 5.  **Synchronization:** `setGameState` writes the new `GameState` object to Firestore. Firestore then pushes this update to all connected players, who see the army move on their screens.
 
 This architecture ensures the UI is fast and responsive for local interactions, while maintaining a single, consistent source of truth for the game itself.
@@ -109,10 +109,10 @@ The first player to reach the `victoryPointGoal` (default: 30 VP) wins the game.
 - **Winning Battles:** +5 VP for defeating another player's army.
 - **Defeating Monsters:** Variable VP based on monster level (2 for Lvl 1, 5 for Lvl 2, etc.).
 - **Island Discovery:** +`vpPerIslandDiscovery` VP for being the first player in the game to reveal a new island. This is only awarded for army movement, not for the 'Scout' card.
-- **Passive Abilities:** The `Explorer` ability grants VP each turn for every island you occupy.
+- **Passive Abilities:** The `Explorer` ability grants VP each turn for non-base islands you occupy.
 
 ### 5.2. The Map & Islands
-The game is played on a grid of islands. Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to a tile, revealing it. The procedural generation of the map is governed by the `game-initializer.ts` file and can be tweaked via the "Customize Match" settings in the lobby.
+The game is played on a grid of islands with configurable dimensions (`settings.gridSize.cols` by `settings.gridSize.rows`). Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to a tile, revealing it. The procedural generation of the map is governed by the `game-initializer.ts` file and can be tweaked via the "Customize Match" settings in the lobby.
 - **Base:** Your starting point. Where you deploy new armies and where defeated armies respawn. Bases also generate all three resource types. The Base's appearance is a castle sprite specific to the player's color, defined in `src/lib/player-data.ts`.
 - **Resource Islands:** Contain **Wheat**, **Iron**, or **Gems**. The generation logic is as follows:
     - An island can have one or two types of resources, determined by its distance from the map's center.
@@ -123,7 +123,7 @@ The game is played on a grid of islands. Each player starts at their **Base** in
 - **Island Distribution:** The balance between Resource, Monster, and Special islands is controlled by the `resourceDensity` setting (default 60%). This value corresponds to the probability that a tile will be a resource island. The remaining percentage is split between Monster and Special islands, with Special islands being rarer. The distribution also changes based on distance from the map's center, with more valuable and dangerous islands appearing closer to the middle.
 
 ### 5.3. Resources & Progression
-- **Wheat:** Used to **Deploy** new armies. The cost increases with each new new army.
+- **Wheat:** Used to **Deploy** new armies. The cost increases with each new army.
 - **Iron:** Used to **Upgrade** the Attack Power of all your armies permanently.
 - **Gems:** Used to **Buy Special Cards** or purchase permanent **Passive Abilities**.
 
@@ -139,6 +139,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
     - When a player's turn begins, the `handleEndTurn` function is called.
     - This function resets `hasActed` to `false` for all of the **new current player's** armies.
     - The player's `actionsThisTurn` array is reset to empty.
+    - Resource yields are collected and passive abilities (such as `Collector` and `Explorer`) are calculated.
 
 2.  **Performing an Army Action:**
     - When an army successfully completes a `Move`, `Attack`, or `Position` action, its `hasActed` flag is immediately set to `true`.
@@ -146,16 +147,24 @@ A player's turn consists of a series of actions. The game automatically ends a p
     - The `getPossibleMoves` function will return an empty array `[]` for an army where `hasActed` is `true`.
 
 3.  **End of Turn:**
-    - The `hasActed` flags are **not** reset when a player ends their turn. They persist until the start of that player's next turn.
+- The `hasActed` flags are **not** reset when a player ends their turn. They persist until the start of that player's next turn.
 
-### 6.2. Army Actions
+### 6.2. Army Selection and Deselection
+- **Single-Army Tile Click:** Clicking an army tile selects the army and highlights all valid move tiles. Clicking that same selected army again immediately **toggles and deselects** the army.
+- **Multi-Army Tile Click:** Clicking a tile with multiple friendly armies opens the `ArmySelectionDialog`, which displays all armies on that tile, marks the currently selected army with an `Active` badge and primary highlight ring, and allows selecting or toggling deselection.
+- **Deselection Triggers:**
+  - Clicking any unoccupied or invalid map tile deselects the active army and clears non-modal pending actions.
+  - Clicking the **"Deselect Army"** button in the `ActionsPanel` header.
+  - Pressing the **Escape** key deselects the active army and cancels any pending card actions.
+
+### 6.3. Army Actions
 
 #### **Position**
 1.  **Trigger:** Player clicks the "Position" button in the `ActionsPanel` while a valid, un-acted army is selected on a resource island with no monsters.
-2.  **UI Flow:** A local `PositionDialog` opens, showing the available resource spots on the current island.
+2.  **UI Flow:** A local `PositionDialog` opens, showing the available unoccupied resource spots on the current island.
 3.  **Input:** Player clicks on a resource button in the dialog.
 4.  **Resolution (Shared):** A `GameAction.SelectResourcePosition` action is dispatched.
-    -   The `GameState` is updated to mark the army as positioned on that resource.
+    -   The `GameState` is updated to mark the army as positioned on that resource spot.
     -   **The army's `hasActed` flag is set to `true`.**
     -   This action ends the army's turn. The army will collect that resource at the start of the player's next turn.
 
@@ -186,7 +195,7 @@ These actions are available once per turn each and do not set the `hasActed` fla
 1.  **Trigger:** Player clicks the "Deploy" button in the `ActionsPanel`. This is enabled only if the player has enough Wheat (or the `Reinforce` card is active), has fewer than 5 armies, and has not already used this action this turn.
 2.  **UI Flow:** No dialog.
 3.  **Resolution (Shared):** A `GameAction.Deploy` action is dispatched. The `GameState` is updated:
-    -   Wheat is subtracted.
+    -   Wheat is subtracted (or reduced to 0/50% if `Reinforce` or `Efficient` was active).
     -   A new army is added to the player's Base tile with `hasActed: true` (since it cannot act on the turn it is deployed).
     -   The `deploy` action is marked as used for the turn by adding it to `player.actionsThisTurn`.
     -   If `Reinforce` or `Efficient` was used, that card is consumed.
@@ -201,11 +210,11 @@ These actions are available once per turn each and do not set the `hasActed` fla
     -   If `Master Builder` was used, that card is consumed.
 
 #### **Buy Card**
-1.  **Trigger:** Player clicks the "Buy Card" button in the `ActionsPanel`. Enabled if the player has >= 10 Gems, their hand is not full, and they haven't used this action this turn.
+1.  **Trigger:** Player clicks the "Buy Card" button in the `ActionsPanel`. Enabled if the player has >= 10 Gems, their hand is not full (< 7), either the deck or discard pile has cards, and they haven't used this action this turn.
 2.  **UI Flow:** No dialog. A message appears in the game log.
 3.  **Resolution (Shared):** A `GameAction.BuyCard` action is dispatched. `GameState` is updated:
     -   Gems are subtracted.
-    -   A random card is moved from the `specialCardsDeck` to the player's hand.
+    -   A random card is drawn from the `specialCardsDeck` (reshuffling the discard pile if the deck is empty) to the player's hand.
     -   The `buy-card` action is marked as used for the turn.
 
 #### **Use Card**
@@ -213,27 +222,30 @@ These actions are available once per turn each and do not set the `hasActed` fla
 2.  **UI Flow & Resolution:** Varies by card. See "Special Card Interactions" below.
 
 ### 6.4. Combat Flow
-- Combat is resolved through dice rolls. Each player rolls a number of dice equal to their **Attack Power + 1**.
+- Combat is resolved through dice rolls. Each player rolls a number of dice equal to their **Attack Power + 1** without an arbitrary ceiling.
+- **Monsters roll dice equal to their Level:** Level 1 (Lancer) rolls 1 die, Level 2 (Bear) rolls 2 dice, Level 3 (Ogre) rolls 3 dice, and Level 4 (Minotaur) rolls 4 dice.
+- **Card Selection in Combat:** In both Player and Monster combat preparation dialogs, available combat cards are rendered as a mutually exclusive `RadioGroup` (`None`, `Overcome`, `War Chief`, `Decide Dice Roll`). When a card is selected and the combat roll is executed, the card is immediately consumed from `player.specialCards`, added to `discardPile`, and recorded in `player.actionsThisTurn`.
 - **Player vs. Player:** The player with the higher total roll wins the battle. In case of a tie, the **defender** wins.
 - **Player vs. Monster:** The player with the higher total roll wins the battle. In case of a tie, the **monster** wins.
 - **Defeated armies are not destroyed.** They are sent back to their owner's Base tile to regroup, and their `hasActed` status is **reset to `false`**, making them ready for action on their next turn.
+- **Death Animations:** Upon defeat, an animated death sprite is placed on the tile with a `createdAt` timestamp. The host engine automatically removes the animation from Firestore after 1.5s using persistent timer tracking, tiles prune expired animations locally after 2s, and `handleEndTurn` prunes stale animations on turn changes.
 - **Combat Dialog Animations:** During the `rolling` phase of combat, both combatants show their `attack` sprite. In the `results` phase, the winner's sprite remains in the `attack` pose, while the loser's sprite changes to the `death` animation. All army and monster sprites are animated GIFs. To ensure combatants face each other, the sprite for the combatant on the right side of the dialog (the defender/monster) is horizontally flipped.
 
 ### 6.5. Special Card Interactions
 -   **Starting a Match:** In a standard Player-vs-Player match, all players start with **zero** Special Cards. In a Player-vs-Bot match, if `Debug Mode` is enabled, the human player starts with one of every available Special Card.
 -   **Hand Limit & Card Acquisition:** A player can hold a maximum of **7** Special Cards. If a player discovers a Special Island or buys a card while their hand is full, they do not receive a new card. If the main deck runs out of cards, the discard pile is shuffled to create a new deck.
--   **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` for combat) will appear as an option within that action's dialog.
--   **Canceling a Card:** If a player activates a card like "Extra Move" or "Teleport" but cannot or chooses not to use it, they can use the "Cancel" button. This is a local action that resets the UI. It then dispatches a `GameAction.CancelAction`, which **refunds the 'Use Card' action**, allowing them to use a different card during the same turn.
+-   **Using a Card:** When a player uses a card, it is removed from their hand and placed in the `discardPile`. The `Use Card` action is consumed for the turn. Cards relevant to a specific action (e.g., `War Chief` or `Overcome` for combat) appear as mutually exclusive options within that action's dialog.
+-   **Canceling a Card:** If a player activates a card like "Extra Move", "Teleport", "Reinforce", "Efficient", or "Master Builder" but chooses not to proceed, they can click "Cancel". This restores the card to their hand, clears active modifiers, and refunds the 'Use Card' action for the turn.
 
 -   **Extra Move:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.
     2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The card is consumed and the player's `hasExtraMove` flag is set to `true` in `GameState`.
-    3.  **Effect:** This flag allows any one army to perform one `Move` action. The flag is consumed (`false`) after the move is completed. If used on an army that has **not yet acted**, that army remains "fresh" (`hasActed: false`) after the move and can perform a subsequent action (Attack/Position). If used on an army that **has already acted**, it gets to move, and that's its final action.
+    3.  **Effect:** This flag allows any one army to perform one `Move` action. The flag is consumed (`false`) after the move is completed. If used on an army that has **not yet acted**, that army remains "fresh" (`hasActed: false`) after the move and can perform a subsequent action (Attack/Position). If used on an army that **has already acted**, it gets to move, and that's its final action. Can be cancelled before moving.
 
 -   **Teleport:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.
-    2.  **UI Flow (Local):** A `pendingAction` of `{ type: 'teleport' }` is set in local state. The `GameBoard` UI indicates that the player must first select an army, and then a destination. Any selected army is deselected.
-    3.  **Input:** Player clicks one of their armies, then clicks *any* tile on the map.
+    2.  **UI Flow (Local):** A `pendingAction` of `{ type: 'teleport' }` is set in local state. The `GameBoard` UI indicates that the player must first select an army, and then a destination. Any selected army is deselected. Teleporting directly onto enemy base tiles is prohibited.
+    3.  **Input:** Player clicks one of their armies, then clicks *any* non-enemy-base tile on the map.
     4.  **Resolution (Shared):** A `GameAction.Move` action with an `isTeleport: true` flag is dispatched. The `Teleport` card is consumed, the army is moved, and its `hasActed` flag is set to `true`. This action does not award discovery VP.
 
 -   **Scout:**
@@ -251,43 +263,43 @@ These actions are available once per turn each and do not set the `hasActed` fla
 -   **Reinforce:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.
     2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The player's `reinforceActive` flag is set to `true`.
-    3.  **Effect:** The next "Deploy" action this turn has its cost reduced to 0. The `Reinforce` card is **consumed upon successful deployment**.
+    3.  **Effect:** The next "Deploy" action this turn has its cost reduced to 0. The `Reinforce` card is **consumed upon successful deployment**. If cancelled before deploying, the card is returned and the flag cleared.
 
 -   **Efficient:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.
     2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The player's `efficientActive` flag is set to `true`.
-    3.  **Effect:** The next "Deploy" action this turn costs 50% less Wheat. The `Efficient` card is **consumed upon successful deployment**.
+    3.  **Effect:** The next "Deploy" action this turn costs 50% less Wheat. The `Efficient` card is **consumed upon successful deployment**. If cancelled before deploying, the card is returned and the flag cleared.
 
 -   **Master Builder:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.
     2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The player's `masterBuilderActive` flag is set to `true`.
-    3.  **Effect:** The next "Upgrade" action this turn costs 50% less Iron. The `Master Builder` card is **consumed upon successful upgrade**.
+    3.  **Effect:** The next "Upgrade" action this turn costs 50% less Iron. The `Master Builder` card is **consumed upon successful upgrade**. If cancelled before upgrading, the card is returned and the flag cleared.
 
 -   **Steal Resource:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.
     2.  **UI Flow (Local):** A local `StealResourceDialog` opens. First, it lists opponents to choose from. After selecting a player, it shows which resources can be stolen.
     3.  **Input:** Player selects a target player, then a resource type.
-    4.  **Resolution (Shared):** A `GameAction.StealResource` action is dispatched. The `Steal Resource` card is consumed, and resources are transferred between players in `GameState`.
+    4.  **Resolution (Shared):** A `GameAction.StealResource` action is dispatched. The `Steal Resource` card is consumed, and resources (guarded against NaN) are transferred between players in `GameState`.
 
 -   **Wealthy:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.
     2.  **UI Flow (Local):** A local `WealthyDialog` opens, showing the three resource types.
     3.  **Input:** Player clicks a resource icon.
-    4.  **Resolution (Shared):** A `GameAction.GainWealth` action is dispatched. The `Wealthy` card is consumed, and the player gains 5 of the selected resource.
+    4.  **Resolution (Shared):** A `GameAction.GainWealth` action is dispatched. The `Wealthy` card is consumed, and the player gains 5 of the selected valid resource.
 
 -   **Overcome:**
-    1.  **Trigger:** This card is used contextually during combat. It appears as a checkbox in the `CombatDialog` or `MonsterCombatDialog`.
+    1.  **Trigger:** This card is used contextually during combat. It appears as a mutually exclusive checkbox in the `CombatDialog` or `MonsterCombatDialog`.
     2.  **Input:** Player checks the "Use Overcome" box before initiating the roll.
     3.  **Resolution (Shared):** The combat is automatically won by the player. The `Overcome` card is consumed during the combat resolution action.
 
 -   **War Chief:**
-    1.  **Trigger:** Appears as a checkbox in the combat dialogs.
+    1.  **Trigger:** Appears as a mutually exclusive checkbox in the combat dialogs.
     2.  **Input:** Player checks the "Use War Chief" box before rolling.
     3.  **Resolution (Shared):** The player gains +2 attack power for that single combat. The `War Chief` card is consumed during combat resolution.
 
 -   **Decide Dice Roll:**
-    1.  **Trigger:** Appears as a checkbox and slider in the *monster* combat dialog.
-    2.  **Input:** Player checks the box and uses the slider to pick a dice value.
+    1.  **Trigger:** Appears as a mutually exclusive checkbox and slider in the *monster* combat dialog.
+    2.  **Input:** Player checks the box and uses the slider to pick a dice value (1–6).
     3.  **Resolution (Shared):** One of the player's dice rolls is forced to the chosen value. The `Decide Dice Roll` card is consumed during combat resolution.
 
 -   **Productive:**
@@ -299,7 +311,7 @@ These actions are available once per turn each and do not set the `hasActed` fla
 ### 6.6. UI/UX and Other Interactions
 
 #### **UI Dialogs and Player Scope**
-- **Local Dialogs:** Most dialogs for actions (`Sabotage`, `Wealthy`, `Position`, `My Cards`, `Abilities Shop`) are rendered **only for the current player**. Their open/closed state is managed locally in the `GameBoard` component and is not part of the shared `GameState`.
+- **Local Dialogs:** Most dialogs for actions (`Sabotage`, `Wealthy`, `Position`, `My Cards`, `Abilities Shop`, `ProductiveCardDialog`, `SpecialIslandRollDialog`) are rendered **only for the current player**. Their open/closed state is managed locally in the `GameBoard` component and is not part of the shared `GameState`.
 - **Global Dialogs:** The `CombatDialog` and `MonsterCombatDialog` are exceptions. Their state (`combatState`, `monsterCombatState`) is stored in `GameState` because all players need to see the outcome or have the potential to be involved.
 
 #### **Army and Tile Selection**
@@ -322,13 +334,31 @@ These actions are available once per turn each and do not set the `hasActed` fla
     -   **All Special Cards:** The player begins the game with one of every available Special Card, allowing for immediate testing of card mechanics.
 
 ### 6.8. Bot Logic
-The AI behavior is defined in `src/lib/bot-logic.ts`. It uses a dynamic, priority-based system to make decisions.
-1.  At the start of its turn, the bot evaluates all possible strategic and army actions.
-2.  Each action is assigned a numeric `priority` based on the current game state.
-    - **Positioning on a resource:** Very high priority (9). This is the bot's primary way to build its economy.
-    - **Attacking:** High priority, especially if the bot has a power advantage or if it needs to clear a monster from a valuable island.
-    - **Using Strategic Cards:** The bot will intelligently use cards like `Wealthy` if it is low on a resource needed for a high-priority action (like deploying an army). It will also use `Reinforce`, `Efficient`, and `MasterBuilder` to save resources.
-    - **Upgrading Attack Power:** Medium priority, which decreases as its power level increases to avoid over-investing.
-    - **Deploying a new Army:** Medium priority, which decreases as its army count increases to maintain a balanced force.
-    - **Exploring:** The bot now has a higher priority to explore new tiles, preventing it from getting stuck and encouraging expansion.
-3.  The bot executes the single action with the highest priority score. If no action is possible or an error occurs, it will safely end its turn as a fallback.
+The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete, atomic turn loop to eliminate timeout debouncing, state deadlocks, or dangling combat states:
+1.  **Strategic Pre-computation:** The bot pre-activates relevant strategic cards (`Reinforce`, `Efficient`, `MasterBuilder`), intelligently uses `Wealthy` or `Sabotage` when beneficial, and purchases affordable passive abilities, attack upgrades (up to cap 4), new armies (up to cap 5), or special cards.
+2.  **Army Action Evaluation & Execution:** Across all unacted armies on the board:
+    - **Positioning on a resource:** Very high priority (9). The bot's primary way to build its economy.
+    - **Attacking:** High priority (7–8). Attacks enemy players or monsters on the same tile, automatically rolling dice and closing combat within the turn cycle.
+    - **Movement:** Evaluates valid moves (prioritizing unexplored Fog of War islands and unoccupied resource/special islands) and executes the highest-scoring move.
+3.  **Guaranteed Turn Transition:** Upon completing all valid army actions, the bot calls `handleEndTurn` and writes the resulting state to Firestore in a single atomic update, cleanly advancing the turn to the next player.
+
+### 6.9. UI Components and Mobile Responsiveness
+- **Map Rendering:** The `MapGrid` dynamically derives column and row layouts from map tiles and match settings (`settings.gridSize`), sizing tiles adaptively for mobile (75px) vs desktop (120px) screens with scatter decorations.
+- **Player Stats Display:** The `PlayerInfo` panel renders `armies.length` accurately and displays the base `attackPower` stat with an informative tooltip detailing the `Attack Power + 1` combat dice formula, while prioritizing sprite image loading.
+- **Combat & Monster Dialog Flow:**
+  - Real-time combat actions (`MonsterCombatRoll`, `CloseMonsterCombat`, `CombatRoll`, `CloseCombat`) update both local client state and Firestore synchronously, ensuring instantaneous UI transitions between preparation, rolling, and results screens.
+  - `MonsterCombatDialog` includes a dedicated spectator view during `phase === 'rolling'` that displays a waiting status without interactive buttons, preventing spectator interference or accidental cancellation.
+- **Standardized Dialogs:** All game dialogs (`CombatDialog`, `MonsterCombatDialog`, `ArmySelectionDialog`, `AttackSelectionDialog`, `StealResourceDialog`, `SabotageDialog`, `WealthyDialog`, `AbilitiesDialog`, `SpecialIslandRollDialog`, `PositionDialog`) follow standardized ShadCN styling with outline action cancellations and synchronized dice/card payloads.
+- **Turn Progression Safety:** `handleEndTurn` utilizes bounded iterative turn advancement to process multiple simultaneous sabotaged players safely without recursion stack risks, and safely validates tile data before passive ability execution.
+- **Hook Architecture & Firestore Economics:**
+  - Custom hooks in `src/hooks/` (`useIsMobile`, `useGameEngine`, `usePlayer`) provide consolidated viewport detection, resilient session validation, and real-time Firestore synchronization.
+  - **In-Memory Turn Buffering:** All human player actions within a turn (`Move`, `Deploy`, `Upgrade`, `BuyCard`, `UseCard`, `SelectResourcePosition`, `CancelAction`) execute entirely in local client memory (`localGameState`), generating **zero Firestore writes** until turn completion.
+  - **Atomic Turn Writes:** A single `setDoc` write is dispatched when ending a turn (`handleEndTurn`), keeping total writes per player to ~1 write per round.
+  - **Atomic Bot Loops:** AI bot turns execute completely in memory and commit only once per round via a single atomic `setDoc`.
+  - **Zero Redundant Reads:** Host cleanup routines for animations and events use in-memory state references (`gameStateRef`) instead of performing `getDoc` calls before updating documents.
+  - **Firestore Free Tier Sustainability:** A standard 20-turn match requires only ~20–30 document writes and ~40–60 document reads across all connected clients combined, allowing hundreds of complete multiplayer games per day on Firebase's free quota.
+
+### 6.10. Tutorial System
+- **Overview**: An optional, skippable tutorial system (`TutorialOverlay.tsx`) automatically displays to new players to explain core mechanics (Goals, Deploying, Moving & Positioning, Resources & Shop, Combat, Special Cards).
+- **State Management**: The tutorial uses `localStorage` (`'corner-conquest-tutorial'`) to remember if a player has seen it, preventing annoyance in subsequent sessions. It can also be manually re-triggered via the 'Help' button in the game board header.
+- **Maintenance Rule**: Whenever core mechanics, UI layouts, or game rules are added or modified, the steps inside `TutorialOverlay.tsx` MUST be updated to reflect the new changes to keep the new player experience accurate.

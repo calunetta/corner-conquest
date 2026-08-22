@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { db, doc, onSnapshot, getDoc, updateDoc, setDoc } from '@/lib/firebase';
+import { db, doc, onSnapshot, updateDoc, setDoc } from '@/lib/firebase';
 import type { GameState, ActionHandlerResult, GameAction } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
@@ -103,34 +103,46 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     }
   }, [isLoading, localPlayer, router, toast]);
   
-  // Host is responsible for clearing death animations
+  const gameStateRef = useRef<GameState | null>(gameState);
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  const scheduledDeathAnimations = useRef<Set<string>>(new Set());
+
+  // Host is responsible for clearing death animations from database
   useEffect(() => {
     if (!isHost || !gameState || !gameState.deathAnimations || gameState.deathAnimations.length === 0) {
         return;
     }
     
-    const animations = gameState.deathAnimations;
-    const animationTimers = animations.map(anim => 
-        setTimeout(() => {
-            const gameDocRef = doc(db, 'games', gameId);
-            getDoc(gameDocRef).then(doc => {
-                if (doc.exists()) {
-                    const currentAnims = doc.data().deathAnimations || [];
-                    const newAnims = currentAnims.filter((a: any) => a.id !== anim.id);
-                    updateDoc(gameDocRef, { deathAnimations: newAnims });
+    gameState.deathAnimations.forEach(anim => {
+        if (!scheduledDeathAnimations.current.has(anim.id)) {
+            scheduledDeathAnimations.current.add(anim.id);
+            const remainingTime = Math.max(100, (anim.createdAt ? (anim.createdAt + 1500 - Date.now()) : 1500));
+            
+            setTimeout(() => {
+                scheduledDeathAnimations.current.delete(anim.id);
+                const gameDocRef = doc(db, 'games', gameId);
+                const currentAnims = gameStateRef.current?.deathAnimations || [];
+                const newAnims = currentAnims.filter((a: any) => a.id !== anim.id);
+                if (newAnims.length !== currentAnims.length) {
+                  updateDoc(gameDocRef, { deathAnimations: newAnims }).catch((err) => {
+                    console.error('Error updating death animations:', err);
+                  });
                 }
-            });
-        }, 1500)
-    );
-
-    return () => animationTimers.forEach(clearTimeout);
+            }, remainingTime);
+        }
+    });
   }, [gameState?.deathAnimations, isHost, gameId]);
   
   // Host is responsible for triggering bot turns
   useEffect(() => {
     if (isHost && gameState && gameState.status === 'playing' && gameState.players[gameState.currentPlayerIndex]?.isBot) {
         const botTurnTimeout = setTimeout(() => {
-            takeBotTurn(gameState);
+            takeBotTurn(gameState).catch((err) => {
+                console.error('Error during bot turn execution:', err);
+            });
         }, 1000);
         
         return () => clearTimeout(botTurnTimeout);

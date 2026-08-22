@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Sword, ShoppingCart, Anchor, Zap, Album, University, XCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { TutorialBeacon } from '../components/TutorialBeacon';
 import { HAND_LIMIT } from '@/lib/types';
 
 type ActionsPanelProps = {
@@ -55,25 +56,30 @@ export function ActionsPanel({
   const canPosition = selectedArmy && currentTile && (currentTile.type === 'resource' || currentTile.type === 'base') && currentTile.resources.length > 0 && !localPlayer.positions.some(p => p.armyId === selectedArmy.id) && (!currentTile.monsters || currentTile.monsters.length === 0);
   const canAttack = selectedArmy && currentTile && (currentTile.occupants.some(o => o.playerId !== localPlayer.id) || (currentTile.type === 'monster' && !!currentTile.monsters && currentTile.monsters.length > 0));
   
-  const upgradeCost = localPlayer.masterBuilderActive ? Math.ceil(settings.upgradeCost / 2) : settings.upgradeCost;
-  const deployCost = localPlayer.efficientActive ? Math.ceil(localPlayer.nextArmyCost / 2) : (localPlayer.reinforceActive ? 0 : localPlayer.nextArmyCost);
+  const canUseCardForAbility = !localPlayer.actionsThisTurn.includes(GameAction.UseCard);
 
-  const canDeploy = (localPlayer.resources.wheat >= deployCost || localPlayer.reinforceActive) && localPlayer.armyCount < 5 && !localPlayer.actionsThisTurn.includes(GameAction.Deploy);
-  const canBuyCard = localPlayer.resources.gems >= settings.abilityCost && specialCardsDeck.length > 0 && !localPlayer.actionsThisTurn.includes(GameAction.BuyCard) && localPlayer.specialCards.length < HAND_LIMIT;
+  const upgradeCost = localPlayer.masterBuilderActive && canUseCardForAbility ? Math.ceil(settings.upgradeCost / 2) : settings.upgradeCost;
+  const deployCost = localPlayer.efficientActive && canUseCardForAbility ? Math.ceil(localPlayer.nextArmyCost / 2) : (localPlayer.reinforceActive && canUseCardForAbility ? 0 : localPlayer.nextArmyCost);
+
+  const cardCost = 10;
+  const hasCardsAvailable = specialCardsDeck.length > 0 || (gameState.discardPile && gameState.discardPile.length > 0);
+
+  const canDeploy = (localPlayer.resources.wheat >= deployCost || (localPlayer.reinforceActive && canUseCardForAbility)) && localPlayer.armies.length < 5 && !localPlayer.actionsThisTurn.includes(GameAction.Deploy);
+  const canBuyCard = localPlayer.resources.gems >= cardCost && hasCardsAvailable && !localPlayer.actionsThisTurn.includes(GameAction.BuyCard) && localPlayer.specialCards.length < HAND_LIMIT;
   const canUpgrade = localPlayer.resources.iron >= upgradeCost && !localPlayer.actionsThisTurn.includes(GameAction.Upgrade) && localPlayer.attackPower < 4;
   
-  const isCancellableActionInProgress = pendingAction?.type === 'teleport' || pendingAction?.type === 'scout';
+  const isCancellableActionInProgress = !!pendingAction || localPlayer.reinforceActive || localPlayer.efficientActive || localPlayer.masterBuilderActive || localPlayer.hasExtraMove;
 
   const mainActions: ActionConfig[] = [
-    { id: GameAction.local_Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed || isCardActionInProgress, tooltip: "Attack another player's army or a monster on the same island. Can only be done once per turn, before moving.", onClick: () => onLocalAction(GameAction.local_Attack, { army: selectedArmy }) },
-    { id: GameAction.local_Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress || localPlayer.positions.some(p => p.armyId === selectedArmy?.id), tooltip: "Position your army on a resource to position on. Can only be done once per turn, before moving.", onClick: () => onLocalAction(GameAction.local_Position, { army: selectedArmy }) },
+    { id: GameAction.local_Attack, label: 'Attack', icon: <Shield />, disabled: !canAttack || hasArmyActed || isCardActionInProgress, tooltip: "Attack an enemy army or monster on the same island. Consumes this army's action for the turn.", onClick: () => onLocalAction(GameAction.local_Attack, { army: selectedArmy }) },
+    { id: GameAction.local_Position, label: 'Position', icon: <Anchor />, disabled: !canPosition || hasArmyActed || isCardActionInProgress || localPlayer.positions.some(p => p.armyId === selectedArmy?.id), tooltip: "Position this army on an unoccupied resource node to collect resources at the start of your next turn.", onClick: () => onLocalAction(GameAction.local_Position, { army: selectedArmy }) },
   ];
   
-  const deployLabel = localPlayer.reinforceActive
+  const deployLabel = localPlayer.reinforceActive && canUseCardForAbility
     ? 'Deploy (Free)'
     : `Deploy (${localPlayer.resources.wheat}/${deployCost} Wheat)`;
 
-  const buyCardLabel = `Buy Card (${settings.abilityCost} Gems)`;
+  const buyCardLabel = `Buy Card (${localPlayer.resources.gems}/${cardCost} Gems)`;
 
   const secondaryActions: ActionConfig[] = [
     { 
@@ -81,7 +87,7 @@ export function ActionsPanel({
       label: `Upgrade (${localPlayer.resources.iron}/${upgradeCost} Iron)`, 
       icon: <Zap />, 
       disabled: !canUpgrade || isCardActionInProgress, 
-      tooltip: "Spend iron to permanently increase your army's attack power by 1. Can only be done once per turn.",
+      tooltip: `Spend ${upgradeCost} iron to permanently increase your army's attack power by 1. Can only be done once per turn.`,
       onClick: () => onAction(GameAction.Upgrade)
     },
     { 
@@ -89,7 +95,7 @@ export function ActionsPanel({
       label: buyCardLabel, 
       icon: <ShoppingCart />, 
       disabled: !canBuyCard || isCardActionInProgress, 
-      tooltip: `Spend ${settings.abilityCost} gems to draw a random special card from the deck. Can only be done once per turn.`,
+      tooltip: `Spend ${cardCost} gems to draw a random special card from the deck. Can only be done once per turn.`,
       onClick: () => onAction(GameAction.BuyCard)
     },
     { 
@@ -121,28 +127,28 @@ export function ActionsPanel({
       },
   ]
   
-  const timerPercentage = (timeLeft / turnDuration) * 100;
+  const timerPercentage = Math.max(0, Math.min(100, (timeLeft / turnDuration) * 100));
 
   const getDisabledReason = (action: ActionConfig): string => {
     if (!isMyTurn && action.id !== GameAction.local_ShowCards) return "It's not your turn.";
     if (isCardActionInProgress) return "Complete or cancel your current card action.";
-    if (hasArmyActed && [GameAction.local_Attack, GameAction.local_Position].includes(action.id)) return "This army has already acted.";
+    if (hasArmyActed && (action.id === GameAction.local_Attack || action.id === GameAction.local_Position)) return "This army has already acted.";
 
     switch (action.id) {
         case GameAction.Upgrade:
             if (localPlayer.attackPower >= 4) return "Maximum attack power reached.";
-            if (localPlayer.resources.iron < upgradeCost) return "Not enough iron.";
+            if (localPlayer.resources.iron < upgradeCost) return `Not enough iron. Cost: ${upgradeCost}`;
             if (localPlayer.actionsThisTurn.includes(GameAction.Upgrade)) return "You've already upgraded this turn.";
             return "This action is not available.";
         case GameAction.BuyCard:
-            if (localPlayer.resources.gems < settings.abilityCost) return `Not enough gems. Cost: ${settings.abilityCost}`;
+            if (localPlayer.resources.gems < cardCost) return `Not enough gems. Cost: ${cardCost}`;
             if (localPlayer.specialCards.length >= HAND_LIMIT) return "Your hand is full.";
-            if (specialCardsDeck.length === 0) return "No cards left in the deck.";
+            if (!hasCardsAvailable) return "No cards left in the deck or discard pile.";
             if (localPlayer.actionsThisTurn.includes(GameAction.BuyCard)) return "You've already bought a card this turn.";
             return "This action is not available.";
         case GameAction.Deploy:
-            if (!localPlayer.reinforceActive && localPlayer.resources.wheat < deployCost) return "Not enough wheat.";
-            if (localPlayer.armyCount >= 5) return "Maximum army size reached.";
+            if (!(localPlayer.reinforceActive && canUseCardForAbility) && localPlayer.resources.wheat < deployCost) return `Not enough wheat. Cost: ${deployCost}`;
+            if (localPlayer.armies.length >= 5) return "Maximum army size reached (5 armies).";
             if (localPlayer.actionsThisTurn.includes(GameAction.Deploy)) return "You've already deployed this turn.";
             return "This action is not available.";
         case GameAction.local_Attack:
@@ -167,18 +173,16 @@ export function ActionsPanel({
   };
 
   const renderButton = (action: ActionConfig, isMain: boolean) => {
-    const isDisabled = action.id === GameAction.local_OpenAbilitiesShop 
-      ? action.disabled 
-      : (!isMyTurn && action.id !== GameAction.local_ShowCards) || action.disabled;
+    const isPendingMatch = !!(pendingAction && 'cardName' in pendingAction && pendingAction.cardName && pendingAction.cardName.toLowerCase().includes(action.label.toLowerCase()));
 
     return (
       <Tooltip key={action.id}>
           <TooltipTrigger asChild>
               <div className={isMain ? "w-full" : ""}>
                   <Button
-                      variant={pendingAction?.cardName.toLowerCase().includes(action.label.toLowerCase()) ? 'default' : 'outline'}
+                      variant={isPendingMatch ? 'default' : 'outline'}
                       onClick={action.onClick}
-                      disabled={isDisabled}
+                      disabled={action.disabled}
                       className={`flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center ${isMain ? 'h-16 text-xs' : 'text-xs sm:flex-row sm:text-sm'}`}
                   >
                       {action.icon}
@@ -188,7 +192,7 @@ export function ActionsPanel({
           </TooltipTrigger>
           <TooltipContent>
               <p>{action.tooltip}</p>
-              {isDisabled && <p className="mt-1 text-xs text-destructive">
+              {action.disabled && <p className="mt-1 text-xs text-destructive">
                   {getDisabledReason(action)}
               </p>}
           </TooltipContent>
@@ -199,7 +203,15 @@ export function ActionsPanel({
   return (
     <Card>
       <CardHeader className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <CardTitle className="text-lg">Actions</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">
+          Actions
+          <TutorialBeacon
+            id="actions-info"
+            title="The Actions Panel"
+            description="Use this panel to command your armies, deploy new ones, buy special cards, and upgrade your attack power. Hover over any button to see what it does!"
+            side="top"
+          />
+        </CardTitle>
         <div className="flex flex-wrap items-center justify-end gap-2">
             {isMyTurn && isCancellableActionInProgress && (
                  <Button variant="destructive" size="sm" onClick={() => onLocalAction(GameAction.local_CancelAction)}>
@@ -214,7 +226,7 @@ export function ActionsPanel({
                 </Button>
             )}
             {isMyTurn && (
-                <Button size="sm" onClick={() => onAction(GameAction.EndTurn)} className="relative overflow-hidden">
+                <Button size="sm" disabled={isCardActionInProgress} onClick={() => onAction(GameAction.EndTurn)} className="relative overflow-hidden">
                     <span 
                         className="absolute left-0 top-0 h-full bg-primary/50 transition-all duration-1000 ease-linear"
                         style={{ width: `${timerPercentage}%` }}
@@ -225,7 +237,6 @@ export function ActionsPanel({
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-0">
-        <TooltipProvider>
           <div className="grid grid-cols-3 grid-rows-1 gap-2">
               {mainActions.map((action) => renderButton(action, true))}
               {alwaysAvailableActions.map((action) => renderButton(action, true))}
@@ -234,8 +245,7 @@ export function ActionsPanel({
           <div className="grid grid-cols-2 flex-wrap gap-2">
               {secondaryActions.map((action) => renderButton(action, false))}
           </div>
-        </TooltipProvider>
-        <div className='text-center mt-2 text-sm text-muted-foreground'>
+          <div className='text-center mt-2 text-sm text-muted-foreground'>
             Cards in deck: {specialCardsDeck.length}
         </div>
       </CardContent>

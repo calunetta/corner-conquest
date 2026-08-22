@@ -1,6 +1,5 @@
-
 'use client';
-import type { SpecialIslandRollDialogState } from '../types';
+import type { CardName, SpecialIslandRollDialogState } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -20,6 +19,7 @@ type SpecialIslandRollDialogProps = {
 };
 
 export function SpecialIslandRollDialog({ state, onRoll, onClose }: SpecialIslandRollDialogProps) {
+  if (!state) return null;
   const { roll, cardDrawn } = state;
   const isRolled = roll !== null;
 
@@ -29,7 +29,7 @@ export function SpecialIslandRollDialog({ state, onRoll, onClose }: SpecialIslan
         <AlertDialogHeader>
           <AlertDialogTitle>Special Island</AlertDialogTitle>
           <AlertDialogDescription>
-            You've landed on a special island! Roll the dice for a chance to find a treasure.
+            You've landed on a special island! Roll the dice (rolling a 3 or 6 finds a special card).
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -55,13 +55,13 @@ export function SpecialIslandRollDialog({ state, onRoll, onClose }: SpecialIslan
                   <p className="mt-2 text-muted-foreground">
                     You found a special card: <span className="font-bold text-foreground">{cardDrawn}</span>
                   </p>
-                   <p className="mt-1 text-xs text-muted-foreground/80">
-                    "{SPECIAL_CARD_DESCRIPTIONS[cardDrawn]}"
+                  <p className="mt-1 text-xs text-muted-foreground/80">
+                    "{SPECIAL_CARD_DESCRIPTIONS[cardDrawn as CardName]}"
                   </p>
                 </>
               ) : (
                 <>
-                   <p className="flex items-center justify-center gap-2 text-lg font-semibold text-destructive">
+                  <p className="flex items-center justify-center gap-2 text-lg font-semibold text-destructive">
                     <XCircle className="h-5 w-5" /> Bad Luck!
                   </p>
                   <p className="mt-2 text-muted-foreground">You found nothing this time. Better luck next time!</p>
@@ -78,7 +78,9 @@ export function SpecialIslandRollDialog({ state, onRoll, onClose }: SpecialIslan
               Roll for Treasure (3 or 6 to win)
             </Button>
           ) : (
-            <Button onClick={onClose} className="w-full">Close</Button>
+            <Button onClick={onClose} className="w-full">
+              Close
+            </Button>
           )}
         </AlertDialogFooter>
       </AlertDialogContent>

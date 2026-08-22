@@ -1,6 +1,5 @@
 
 import type { GameState, Army, ResourceType, ActionHandlerResult } from '@/lib/types';
-import { IslandType, MAP_COLS } from '../types';
 
 export function handleSelectResourceForPosition(state: GameState, resource: ResourceType, armyId: number): GameState {
     const { players, currentPlayerIndex } = state;
@@ -10,17 +9,33 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     if (!selectedArmy) {
         throw new Error("Army not found for positioning.");
     }
+    if (selectedArmy.hasActed) {
+        throw new Error("This army has already acted this turn.");
+    }
     
     const { x, y } = selectedArmy.position;
-    player.positions.push({ x, y, resource, armyId: selectedArmy.id });
-    
-    const tile = state.map[y * MAP_COLS + x];
+    const tile = state.map[y * state.settings.gridSize.cols + x];
+    if (!tile) {
+        throw new Error("Target tile not found.");
+    }
+
+    const resourceSpot = tile.resources.find(r => r.type === resource);
+    if (!resourceSpot) {
+        throw new Error(`Resource ${resource} is not available on this island.`);
+    }
+
     if (!tile.positionedBy) tile.positionedBy = [];
-    tile.positionedBy.push({playerId: player.id, resource});
+    const alreadyPositioned = tile.positionedBy.some(p => p.resource === resource);
+    if (alreadyPositioned) {
+        throw new Error(`The ${resource} spot on this island is already occupied.`);
+    }
+
+    player.positions.push({ x, y, resource, armyId: selectedArmy.id });
+    tile.positionedBy.push({ playerId: player.id, resource });
 
     selectedArmy.hasActed = true;
     
     state.log.push(`${player.name} positioned an army on ${resource}.`);
     
     return state;
-};
+}

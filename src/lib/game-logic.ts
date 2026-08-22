@@ -32,11 +32,14 @@ export function addPlayerToGame(
     const newPlayerColor = availableColors[0];
     const newPlayerSeatIndex = newGameState.players.length;
     
+    const cols = newGameState.settings?.gridSize?.cols || MAP_COLS;
+    const rows = newGameState.settings?.gridSize?.rows || MAP_ROWS;
+
     const basePositions = [
         { x: 0, y: 0 },
-        { x: MAP_COLS - 1, y: MAP_ROWS - 1 },
-        { x: 0, y: MAP_ROWS - 1 },
-        { x: MAP_COLS - 1, y: 0 },
+        { x: cols - 1, y: rows - 1 },
+        { x: 0, y: rows - 1 },
+        { x: cols - 1, y: 0 },
     ];
     const newPlayerPos = basePositions[newPlayerSeatIndex];
 
@@ -53,7 +56,7 @@ export function addPlayerToGame(
     
     newGameState.players.push(newPlayer);
     
-    const baseTile = newGameState.map[newPlayerPos.y * MAP_COLS + newPlayerPos.x];
+    const baseTile = newGameState.map[newPlayerPos.y * cols + newPlayerPos.x];
     baseTile.type = IslandType.Base;
     baseTile.owner = newPlayerSeatIndex;
     baseTile.occupants.push({ playerId: newPlayerSeatIndex, armyId: newPlayer.armies[0].id });
@@ -63,8 +66,7 @@ export function addPlayerToGame(
         { type: 'wheat', amount: newGameState.settings.baseResourceAmount }
     ];
     
-    // Add the new base to the revealed tiles for the new player if fog of war is on
-    if (newGameState.settings.fogOfWar) {
+    if (newGameState.settings.fogOfWar && !newPlayer.revealedTiles.includes(baseTile.id)) {
         newPlayer.revealedTiles.push(baseTile.id);
     }
     

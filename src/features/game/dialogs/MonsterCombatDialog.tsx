@@ -14,68 +14,51 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Slider } from '@/components/ui/slider';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
+import { Dices, Loader2 } from 'lucide-react';
 
 type MonsterCombatDialogProps = {
   gameState: GameState;
   onRoll: (payload: { monster: Monster; useDecideCard: boolean; decidedValue: number; useOvercomeCard: boolean; useWarChief: boolean }) => void;
   onClose: () => void;
   onCancel: (payload?: { cardName?: CardName }) => void;
+  isMyTurn?: boolean;
+  localPlayerId?: number;
 };
 
-export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: MonsterCombatDialogProps) {
+export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel, isMyTurn = false, localPlayerId }: MonsterCombatDialogProps) {
   const { monsterCombatState, players, map } = gameState;
   if (!monsterCombatState) return null;
 
   const { attackerId, attackerRolls, monsterRolls, winnerId, phase } = monsterCombatState;
   const attacker = players[attackerId];
   const monsterForDisplay = monsterCombatState.monster;
+  const isAttacker = localPlayerId !== undefined ? localPlayerId === attackerId : isMyTurn;
 
-  const [useDecideCard, setUseDecideCard] = useState(false);
+  const [selectedCard, setSelectedCombatCard] = useState<'none' | 'overcome' | 'warchief' | 'decide'>('none');
   const [decidedValue, setDecidedValue] = useState(6);
-  const [useOvercomeCard, setUseOvercomeCard] = useState(false);
-  const [useWarChief, setUseWarChief] = useState(false);
 
   const hasDecideCard = attacker.specialCards.includes(CardName.DecideDiceRoll);
   const hasOvercomeCard = attacker.specialCards.includes(CardName.Overcome);
   const hasWarChiefCard = attacker.specialCards.includes(CardName.WarChief);
   const canUseCard = !attacker.actionsThisTurn.includes(GameAction.UseCard);
 
-  const handleCheckboxChange = (card: 'overcome' | 'warchief' | 'decide', checked: boolean) => {
-    if (card === 'overcome') {
-      setUseOvercomeCard(checked);
-      if (checked) {
-        setUseWarChief(false);
-        setUseDecideCard(false);
-      }
-    } else if (card === 'warchief') {
-      setUseWarChief(checked);
-      if (checked) {
-        setUseOvercomeCard(false);
-      }
-    } else if (card === 'decide') {
-      setUseDecideCard(checked);
-      if (checked) {
-        setUseOvercomeCard(false);
-      }
-    }
-  };
-
   const handleCancel = () => {
-    let cardToCancel: CardName | undefined = undefined;
-    if (useOvercomeCard) cardToCancel = CardName.Overcome;
-    else if (useWarChief) cardToCancel = CardName.WarChief;
-    else if (useDecideCard) cardToCancel = CardName.DecideDiceRoll;
-
-    onCancel({ cardName: cardToCancel });
+    onClose();
   };
 
   const handleAttack = () => {
     if (monsterForDisplay) {
-      onRoll({ monster: monsterForDisplay, useDecideCard, decidedValue, useOvercomeCard, useWarChief });
+      onRoll({
+        monster: monsterForDisplay,
+        useDecideCard: selectedCard === 'decide',
+        decidedValue,
+        useOvercomeCard: selectedCard === 'overcome',
+        useWarChief: selectedCard === 'warchief',
+      });
     }
   };
 
@@ -103,58 +86,76 @@ export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: Mo
                 <AlertDialogDescription>Prepare to fight the monster.</AlertDialogDescription>
             </AlertDialogHeader>
             <div className="flex flex-col justify-around gap-4 py-4 sm:flex-row">
-                 <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-col items-center gap-2">
                     <h3 className="font-bold" style={{ color: attacker.color }}>{attacker.name}</h3>
                     <Image src={attackerSprite} alt={`${attacker.name} attacking`} width={64} height={64} unoptimized />
-                    <p className="text-sm font-bold">Attack Power: {attacker.attackPower + 1}</p>
+                    <p className="text-sm font-bold">Attack Power: {attacker.attackPower + 1} ({attacker.attackPower + 1 === 1 ? '1 Die' : `${attacker.attackPower + 1} Dice`})</p>
                  </div>
 
                 {monsterForDisplay && (
                     <div className="flex flex-col items-center gap-2">
                         <h3 className="font-bold capitalize text-destructive">{getMonsterName(monsterForDisplay)}</h3>
                         <Image src={monsterForDisplay.sprite.attack} alt={monsterForDisplay.name} width={64} height={64} className='-scale-x-100' unoptimized />
-                        <p className="text-sm font-bold">Power: {monsterForDisplay.level}</p>
+                        <p className="text-sm font-bold">Power: {monsterForDisplay.level} ({monsterForDisplay.level === 1 ? '1 Die' : `${monsterForDisplay.level} Dice`})</p>
                     </div>
                 )}
             </div>
             
-            <div className='space-y-4'>
-                {hasOvercomeCard && canUseCard && (
-                <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
-                    <Checkbox id="use-overcome-card" checked={useOvercomeCard} onCheckedChange={(checked) => handleCheckboxChange('overcome', !!checked)} />
-                    <Label htmlFor="use-overcome-card" className='font-bold'>Use '{CardName.Overcome}' card to win automatically?</Label>
-                </div>
-                )}
-                {hasWarChiefCard && canUseCard && (
-                    <div className="flex items-center space-x-2 rounded-md border bg-muted/50 p-4">
-                        <Checkbox id="use-warchief-card" checked={useWarChief} onCheckedChange={(checked) => handleCheckboxChange('warchief', !!checked)} disabled={useOvercomeCard} />
-                        <Label htmlFor="use-warchief-card" className='font-bold'>Use '{CardName.WarChief}' card for +2 attack power?</Label>
-                    </div>
-                )}
-                {hasDecideCard && canUseCard && (
-                <div className="space-y-4 rounded-md border bg-muted/50 p-4">
+            {canUseCard && (hasOvercomeCard || hasWarChiefCard || hasDecideCard) && (
+              <div className="rounded-md border bg-muted/50 p-4 space-y-3">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Select Combat Card</Label>
+                <RadioGroup value={selectedCard} onValueChange={(val) => setSelectedCombatCard(val as any)}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="none" id="monster-card-none" />
+                    <Label htmlFor="monster-card-none" className="cursor-pointer font-medium">None (Standard Roll)</Label>
+                  </div>
+                  {hasOvercomeCard && (
                     <div className="flex items-center space-x-2">
-                        <Checkbox id="use-decide-card" checked={useDecideCard} onCheckedChange={(checked) => handleCheckboxChange('decide', !!checked)} disabled={useOvercomeCard} />
-                        <Label htmlFor="use-decide-card" className='font-bold'>Use '{CardName.DecideDiceRoll}' card?</Label>
+                      <RadioGroupItem value="overcome" id="monster-card-overcome" />
+                      <Label htmlFor="monster-card-overcome" className="cursor-pointer font-medium">
+                        Use '{CardName.Overcome}' (Auto-win combat)
+                      </Label>
                     </div>
-                    {useDecideCard && (
-                        <div className='space-y-2 pt-2'>
-                            <div className='flex justify-between'>
-                                <Label>Choose Dice Value</Label>
-                                <span className='font-bold text-primary'>{decidedValue}</span>
+                  )}
+                  {hasWarChiefCard && (
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="warchief" id="monster-card-warchief" />
+                      <Label htmlFor="monster-card-warchief" className="cursor-pointer font-medium">
+                        Use '{CardName.WarChief}' (+2 Attack Power / +2 Dice)
+                      </Label>
+                    </div>
+                  )}
+                  {hasDecideCard && (
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="decide" id="monster-card-decide" />
+                        <Label htmlFor="monster-card-decide" className="cursor-pointer font-medium">
+                          Use '{CardName.DecideDiceRoll}' (Choose Die Value)
+                        </Label>
+                      </div>
+                      {selectedCard === 'decide' && (
+                        <div className="ml-6 space-y-2 rounded-md bg-background/60 p-3 border">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1.5">
+                              <Dices className="h-4 w-4 text-primary" />
+                              <Label className="text-sm">Choose First Die Value</Label>
                             </div>
-                            <Slider
-                                min={1}
-                                max={6}
-                                step={1}
-                                value={[decidedValue]}
-                                onValueChange={(value) => setDecidedValue(value[0])}
-                            />
+                            <span className="font-bold text-primary text-base">{decidedValue}</span>
+                          </div>
+                          <Slider
+                            min={1}
+                            max={6}
+                            step={1}
+                            value={[decidedValue]}
+                            onValueChange={(value) => setDecidedValue(value[0])}
+                          />
                         </div>
-                    )}
-                </div>
-                )}
-            </div>
+                      )}
+                    </div>
+                  )}
+                </RadioGroup>
+              </div>
+            )}
             <AlertDialogFooter className="mt-4 flex-col-reverse gap-2 sm:flex-row">
                 <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">Cancel</Button>
                 <Button onClick={() => handleAttack()} disabled={!monsterForDisplay} className="w-full sm:w-auto">
@@ -213,15 +214,35 @@ export function MonsterCombatDialog({ gameState, onRoll, onClose, onCancel }: Mo
     );
   }
 
+  const renderSpectatorRollingScreen = () => {
+    return (
+      <>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Monster Combat</AlertDialogTitle>
+          <AlertDialogDescription>
+            {attacker.name} is preparing to fight {monsterForDisplay ? getMonsterName(monsterForDisplay) : 'the monster'}...
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="flex flex-col items-center justify-center gap-3 py-6">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Waiting for combat resolution...</p>
+        </div>
+      </>
+    );
+  };
+
   const renderContent = () => {
     if (phase === 'results') {
       return renderResultsScreen();
     }
+    if (!isAttacker) {
+      return renderSpectatorRollingScreen();
+    }
     return renderAttackScreen();
-  }
+  };
 
   return (
-    <AlertDialog open={true} onOpenChange={handleCancel}>
+    <AlertDialog open={true} onOpenChange={isAttacker ? handleCancel : undefined}>
       <AlertDialogContent>
         {renderContent()}
       </AlertDialogContent>

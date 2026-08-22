@@ -3,7 +3,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { PlayerProvider } from '@/hooks/use-player';
-
+import { TooltipProvider } from '@/components/ui/tooltip';
 export const metadata: Metadata = {
   title: 'Corner Conquest',
   description: 'A game of strategy and conquest.',
@@ -23,7 +23,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <PlayerProvider>
-          {children}
+          <TooltipProvider delayDuration={300}>
+            {children}
+          </TooltipProvider>
         </PlayerProvider>
         <Toaster />
       </body>

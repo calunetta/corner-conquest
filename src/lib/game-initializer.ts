@@ -275,6 +275,11 @@ export function initializeGame(
   }
 
   const finalCardDeck = BASE_CARDS.filter(card => settings.availableCards.includes(card));
+  const initialDeck = [...finalCardDeck, ...finalCardDeck];
+  for (let i = initialDeck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [initialDeck[i], initialDeck[j]] = [initialDeck[j], initialDeck[i]];
+  }
 
   const map = map2D.flat();
 
@@ -292,11 +297,12 @@ export function initializeGame(
     turn: 0,
     log: [`Game '${gameName}' created by ${creator.name}! Waiting for players...`],
     winner: null,
-    specialCardsDeck: [...finalCardDeck, ...finalCardDeck],
+    specialCardsDeck: initialDeck,
     discardPile: [],
     deathAnimations: [],
     combatState: null,
     monsterCombatState: null,
+    productiveDialogState: null,
   };
 
   return gameState;

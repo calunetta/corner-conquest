@@ -184,12 +184,9 @@ export function Lobby({ onJoinGame }: LobbyProps) {
       }
   };
   
-    const handleLogout = async () => {
-        if (username) {
-            await deleteDoc(doc(db, 'usernames', username));
-        }
-        logout();
-    };
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <div className="container mx-auto flex h-full flex-col items-center justify-center p-2 sm:p-4">

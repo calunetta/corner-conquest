@@ -15,12 +15,12 @@ const ROCK_SPRITES = [
     '/sprites/big_rock.gif',
 ];
 
-const generateDecorations = (isMobile: boolean, tileSize: number, gap: number) => {
+const generateDecorations = (isMobile: boolean, tileSize: number, gap: number, cols: number, rows: number) => {
     if (isMobile) return [];
 
     const decorations: { src: string; style: React.CSSProperties }[] = [];
-    const totalGridWidth = (MAP_COLS * tileSize) + ((MAP_COLS - 1) * gap);
-    const totalGridHeight = (MAP_ROWS * tileSize) + ((MAP_ROWS - 1) * gap);
+    const totalGridWidth = (cols * tileSize) + ((cols - 1) * gap);
+    const totalGridHeight = (rows * tileSize) + ((rows - 1) * gap);
     const numRocks = isMobile ? 0 : 50;
 
     let attempts = 0;
@@ -33,12 +33,12 @@ const generateDecorations = (isMobile: boolean, tileSize: number, gap: number) =
         let x, y;
 
         if (isHorizontalGap) {
-            const col = Math.floor(Math.random() * (MAP_COLS - 1));
+            const col = Math.floor(Math.random() * Math.max(1, cols - 1));
             const gapXStart = (col + 1) * tileSize + col * gap;
             x = gapXStart + Math.random() * gap;
             y = Math.random() * totalGridHeight;
         } else {
-            const row = Math.floor(Math.random() * (MAP_ROWS - 1));
+            const row = Math.floor(Math.random() * Math.max(1, rows - 1));
             const gapYStart = (row + 1) * tileSize + row * gap;
             x = Math.random() * totalGridWidth;
             y = gapYStart + Math.random() * gap;
@@ -80,12 +80,22 @@ type MapGridProps = {
   debugMode: boolean;
 };
 
-export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, isTeleporting, isScouting, deathAnimations, fogOfWar, localPlayer, globallyRevealedTiles, debugMode }: MapGridProps) {
-  
+export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile, isTeleporting, isScoutTarget: isScouting, deathAnimations, fogOfWar, localPlayer, globallyRevealedTiles, debugMode }: MapGridProps) {
   const isMobile = useIsMobile();
   const tileSize = isMobile ? 75 : 120;
   const gap = isMobile ? 16 : 32;
-  const decorations = useMemo(() => generateDecorations(isMobile, tileSize, gap), [isMobile, tileSize, gap]);
+
+  const cols = useMemo(() => {
+    if (!map || map.length === 0) return MAP_COLS;
+    return Math.max(...map.map(i => i.x), 0) + 1;
+  }, [map]);
+
+  const rows = useMemo(() => {
+    if (!map || map.length === 0) return MAP_ROWS;
+    return Math.max(...map.map(i => i.y), 0) + 1;
+  }, [map]);
+
+  const decorations = useMemo(() => generateDecorations(isMobile, tileSize, gap, cols, rows), [isMobile, tileSize, gap, cols, rows]);
 
   if (!map || map.length === 0) return null;
 
@@ -107,7 +117,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
       <div 
         className="grid z-10 relative"
         style={{
-          gridTemplateColumns: `repeat(${MAP_COLS}, ${tileSize}px)`,
+          gridTemplateColumns: `repeat(${cols}, ${tileSize}px)`,
           gap: `${gap}px`,
         }}
       >
@@ -115,7 +125,7 @@ export function MapGrid({ map, players, onTileClick, possibleMoves, selectedTile
           const isPossible = possibleMoves.some(p => p.x === island.x && p.y === island.y);
           const isSelected = !!selectedTile && selectedTile.x === island.x && selectedTile.y === island.y;
           const isScoutTarget = isScouting && (debugMode ? false : fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id));
-          const isTeleportTarget = isTeleporting && (!selectedTile || island.id !== selectedTile.id);
+          const isTeleportTarget = isTeleporting && (!selectedTile || !(selectedTile.x === island.x && selectedTile.y === island.y));
           
           return (
             <IslandTile

@@ -1,4 +1,3 @@
-
 'use client';
 import type { Monster, MonsterSelectionDialogState } from '@/lib/types';
 import {
@@ -21,12 +20,12 @@ type MonsterSelectionDialogProps = {
 };
 
 export function MonsterSelectionDialog({ state, onSelectTarget, onClose, isMyTurn }: MonsterSelectionDialogProps) {
-    if (!state) return null;
-    const { monsters } = state;
+  if (!state) return null;
+  const { monsters } = state;
 
-    const getMonsterName = (monster: Monster) => {
-        return `${monster.name} (Lvl ${monster.level})`;
-    }
+  const getMonsterName = (monster: Monster) => {
+    return `${monster.name} (Lvl ${monster.level})`;
+  };
 
   return (
     <AlertDialog open={true} onOpenChange={onClose}>
@@ -37,9 +36,9 @@ export function MonsterSelectionDialog({ state, onSelectTarget, onClose, isMyTur
             Select which monster you want to fight on this island.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        
+
         <div className="grid grid-cols-2 justify-center gap-4 py-4">
-          {monsters.map((monster, index) => {
+          {monsters.map((monster: Monster, index: number) => {
             return (
               <Card
                 key={index}
@@ -47,17 +46,19 @@ export function MonsterSelectionDialog({ state, onSelectTarget, onClose, isMyTur
                 onClick={() => isMyTurn && onSelectTarget(monster.name)}
               >
                 <CardContent className="flex flex-col items-center gap-2 p-1 pt-2">
-                    <Image src={monster.sprite.idle} alt={monster.name} width={64} height={64} unoptimized />
-                    <p className="text-sm font-bold text-center">{getMonsterName(monster)}</p>
-                    <p className="text-xs text-muted-foreground">Power: {monster.level}</p>
+                  <Image src={monster.sprite.idle} alt={monster.name} width={64} height={64} unoptimized />
+                  <p className="text-sm font-bold text-center">{getMonsterName(monster)}</p>
+                  <p className="text-xs text-muted-foreground">Power: {monster.level}</p>
                 </CardContent>
               </Card>
-            )
+            );
           })}
         </div>
 
         <AlertDialogFooter>
-          <Button variant="secondary" onClick={onClose} className="w-full">Cancel</Button>
+          <Button variant="outline" onClick={onClose} className="w-full">
+            Cancel
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -1,37 +1,34 @@
 
 import type { GameState, Player, Army, CardName, ActionHandlerResult, IslandResource, ResourceType } from '@/lib/types';
-import { db, doc, deleteDoc, writeBatch, getDoc, arrayUnion, runTransaction } from '@/lib/firebase';
-import { GameAction, AbilityName, IslandType, MAP_COLS, CardName as CardNameEnum, GameStatus } from '../types';
+import { db, doc, runTransaction } from '@/lib/firebase';
+import { GameAction, AbilityName, IslandType, CardName as CardNameEnum, GameStatus } from '../types';
 
-export function handleCancelAction(state: GameState, payload?: { cardName?: CardName }): GameState {
+export function handleCancelAction(state: GameState, payload?: any): GameState {
   const player = state.players[state.currentPlayerIndex];
   
   if (payload?.cardName) {
-      const cardIsPending = ['Teleport', 'Scout', 'Sabotage', 'Wealthy', 'Steal Resource'].includes(payload.cardName);
-
-      if (cardIsPending) {
-          const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
-          if (cardUseIndex > -1) {
-              player.actionsThisTurn.splice(cardUseIndex, 1);
-          }
+      const cardName = payload.cardName;
+      const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
+      if (cardUseIndex > -1) {
+          player.actionsThisTurn.splice(cardUseIndex, 1);
       }
       
-      const cardIsConsumedOnActivation = [CardNameEnum.ExtraMove, CardNameEnum.Scout, CardNameEnum.Teleport, 'Reinforce', 'Efficient', 'Master Builder'].includes(payload.cardName);
-
-      if (cardIsConsumedOnActivation) {
-          const discardIndex = state.discardPile.indexOf(payload.cardName);
-          if (discardIndex > -1) {
-            const card = state.discardPile.splice(discardIndex, 1)[0];
-            player.specialCards.push(card);
-          }
+      const discardIndex = state.discardPile.indexOf(cardName);
+      if (discardIndex > -1) {
+          const card = state.discardPile.splice(discardIndex, 1)[0];
+          player.specialCards.push(card);
       }
       
-      if (payload.cardName === CardNameEnum.ExtraMove) player.hasExtraMove = false;
-      if (payload.cardName === CardNameEnum.Reinforce) player.reinforceActive = false;
-      if (payload.cardName === CardNameEnum.Efficient) player.efficientActive = false;
-      if (payload.cardName === CardNameEnum.MasterBuilder) player.masterBuilderActive = false;
+      if (cardName === CardNameEnum.ExtraMove) player.hasExtraMove = false;
+      if (cardName === CardNameEnum.Reinforce) player.reinforceActive = false;
+      if (cardName === CardNameEnum.Efficient) player.efficientActive = false;
+      if (cardName === CardNameEnum.MasterBuilder) player.masterBuilderActive = false;
 
-      state.log.push(`${player.name} cancelled their action with ${payload.cardName}.`);
+      if (payload.scoutedTiles && Array.isArray(payload.scoutedTiles)) {
+          player.revealedTiles = player.revealedTiles.filter(t => !payload.scoutedTiles.includes(t));
+      }
+
+      state.log.push(`${player.name} cancelled their action with ${cardName}.`);
   }
   
   return state;
@@ -58,19 +55,19 @@ export function handleDeployAction(state: GameState): GameState {
     }
 
     if (player.resources.wheat < cost) throw new Error(`Not enough wheat. Cost: ${cost}`);
-    if (player.armyCount >= 5) throw new Error("You have reached the maximum army size.");
+    if (player.armies.length >= 5) throw new Error("You have reached the maximum army size.");
 
     player.resources.wheat -= cost;
-    player.armyCount += 1;
+    player.armyCount = player.armies.length + 1;
     const newArmyId = player.armies.length > 0 ? Math.max(...player.armies.map(a => a.id)) + 1 : 0;
-    const newArmy: Army = { id: newArmyId, position: {x: 0, y: 0}, hasActed: true }; 
+    const newArmy: Army = { id: newArmyId, position: { x: 0, y: 0 }, hasActed: true }; 
     
     const baseTileInfo = baseTiles.find(b => b.owner === player.id);
     if (!baseTileInfo) throw new Error("Base not found!");
-    newArmy.position = {x: baseTileInfo.x, y: baseTileInfo.y};
+    newArmy.position = { x: baseTileInfo.x, y: baseTileInfo.y };
 
     player.armies.push(newArmy);
-    map[baseTileInfo.y * MAP_COLS + baseTileInfo.x].occupants.push({ playerId: player.id, armyId: newArmy.id });
+    map[baseTileInfo.y * settings.gridSize.cols + baseTileInfo.x].occupants.push({ playerId: player.id, armyId: newArmy.id });
     
     if (isEfficientUsed) {
       state.log.push(`${player.name} used 'Efficient' to deploy!`);
@@ -134,7 +131,7 @@ export function handleUpgradeAction(state: GameState): GameState {
     }
 
     player.actionsThisTurn.push(GameAction.Upgrade);
-    state.log.push(`${player.name} upgraded their army's attack power to ${player.attackPower + 1}.`);
+    state.log.push(`${player.name} upgraded their army's attack power to ${player.attackPower}.`);
     
     return state;
 }
@@ -143,8 +140,8 @@ function applyAutomaticCollection(state: GameState, player: Player): GameState {
     const collectedResources: Record<string, number> = {};
     
     player.positions.forEach(pos => {
-        const tile = state.map[pos.y * MAP_COLS + pos.x];
-        const resourceSpot = tile.resources.find(r => r.type === pos.resource);
+        const tile = state.map[pos.y * state.settings.gridSize.cols + pos.x];
+        const resourceSpot = tile?.resources.find(r => r.type === pos.resource);
         if (resourceSpot) {
             player.resources[resourceSpot.type as ResourceType] += resourceSpot.amount;
             collectedResources[resourceSpot.type] = (collectedResources[resourceSpot.type] || 0) + resourceSpot.amount;
@@ -157,7 +154,7 @@ function applyAutomaticCollection(state: GameState, player: Player): GameState {
     }
 
     player.positions.forEach(pos => {
-        const tile = state.map[pos.y * MAP_COLS + pos.x];
+        const tile = state.map[pos.y * state.settings.gridSize.cols + pos.x];
         if (tile && tile.positionedBy) {
             tile.positionedBy = tile.positionedBy.filter(p => !(p.playerId === player.id && p.resource === pos.resource));
         }
@@ -168,14 +165,28 @@ function applyAutomaticCollection(state: GameState, player: Player): GameState {
 }
 
 export function handleEndTurn(state: GameState): GameState {
-    
+    if (state.players.length === 0) return state;
+
     if (state.currentPlayerIndex >= state.players.length) {
         state.currentPlayerIndex = 0;
     }
     
+    let attempts = 0;
     let nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
     state.currentPlayerIndex = nextPlayerIndex;
     let nextPlayer = state.players[nextPlayerIndex];
+
+    while (nextPlayer.isSabotaged && attempts < state.players.length) {
+        nextPlayer.isSabotaged = false;
+        state.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
+        nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
+        state.currentPlayerIndex = nextPlayerIndex;
+        nextPlayer = state.players[nextPlayerIndex];
+        attempts++;
+        if (state.currentPlayerIndex === 0) {
+            state.turn += 1;
+        }
+    }
 
     nextPlayer.armies.forEach((army: Army) => army.hasActed = false);
     nextPlayer.actionsThisTurn = [];
@@ -184,21 +195,17 @@ export function handleEndTurn(state: GameState): GameState {
     nextPlayer.masterBuilderActive = false;
     nextPlayer.reinforceActive = false;
     
-    if (nextPlayer.isSabotaged) {
-        nextPlayer.isSabotaged = false; 
-        state.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
-        return handleEndTurn(state);
-    }
-    
-    if (state.currentPlayerIndex === 0) {
+    if (state.currentPlayerIndex === 0 && attempts === 0) {
       state.turn += 1;
     }
     
     if (nextPlayer.passiveAbilities.explorer) {
         const occupiedIslands = new Set<string>();
         nextPlayer.armies.forEach((army: Army) => {
-            const tile = state.map[army.position.y * MAP_COLS + army.position.x];
-            occupiedIslands.add(tile.id);
+            const tile = state.map[army.position.y * state.settings.gridSize.cols + army.position.x];
+            if (tile && tile.type !== IslandType.Base) {
+                occupiedIslands.add(tile.id);
+            }
         });
         const vpGained = occupiedIslands.size;
         if (vpGained > 0) {
@@ -212,10 +219,10 @@ export function handleEndTurn(state: GameState): GameState {
         const occupiedIslands = new Set<string>();
         
         nextPlayer.armies.forEach((army: Army) => {
-            const tile = state.map[army.position.y * MAP_COLS + army.position.x];
-            if (occupiedIslands.has(tile.id)) return;
+            const tile = state.map[army.position.y * state.settings.gridSize.cols + army.position.x];
+            if (!tile || occupiedIslands.has(tile.id)) return;
             
-            if ((tile.type === 'resource' || tile.type === 'base') && tile.resources.length > 0) {
+            if (tile.type === 'resource' && Array.isArray(tile.resources) && tile.resources.length > 0) {
                 occupiedIslands.add(tile.id);
                 tile.resources.forEach((resource: { type: string; }) => {
                     nextPlayer.resources[resource.type as ResourceType] += 1;
@@ -230,28 +237,30 @@ export function handleEndTurn(state: GameState): GameState {
         }
     }
     
-    const hasProductiveCard = nextPlayer.specialCards.includes(CardNameEnum.Productive);
     const positionedArmies = nextPlayer.positions;
 
     if (positionedArmies.length > 0) {
-        if (!hasProductiveCard) {
-            state = applyAutomaticCollection(state, nextPlayer);
+        if (nextPlayer.specialCards.includes(CardNameEnum.Productive)) {
+            state.productiveDialogState = { playerId: nextPlayer.id };
         } else {
-            const productiveOptions = nextPlayer.positions.map(pos => {
-                const tile = state.map[pos.y * state.settings.gridSize.cols + pos.x];
-                const resource = tile.resources.find(r => r.type === pos.resource);
-                return { resource: pos.resource, amount: resource?.amount || 0 };
-            }).filter(opt => opt.amount > 0);
-            
-            if (!nextPlayer.dialogState) nextPlayer.dialogState = {};
-            nextPlayer.dialogState.productiveCard = { isOpen: true, options: productiveOptions };
+            state = applyAutomaticCollection(state, nextPlayer);
         }
+    }
+
+    if (nextPlayer.victoryPoints >= state.settings.victoryPointGoal && !state.winner) {
+        state.winner = nextPlayer;
+        state.status = GameStatus.Finished;
+        state.log.push(`🎉 ${nextPlayer.name} has reached ${nextPlayer.victoryPoints} Victory Points and won the game!`);
     }
     
     state.log.push(`It's now ${nextPlayer.name}'s turn.`);
     
     state.combatState = null;
     state.monsterCombatState = null;
+    if (state.deathAnimations && state.deathAnimations.length > 0) {
+        const now = Date.now();
+        state.deathAnimations = state.deathAnimations.filter(anim => anim.createdAt && (now - anim.createdAt) < 2000);
+    }
 
     return state;
 }
@@ -292,6 +301,14 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
             // Re-assign player IDs to be contiguous (0, 1, 2...)
             currentState.players.forEach((p, i) => p.id = i);
             
+            // Update baseTiles ownership
+            currentState.baseTiles = currentState.baseTiles
+                .filter(b => b.owner !== playerIndex)
+                .map(b => ({
+                    ...b,
+                    owner: b.owner > playerIndex ? b.owner - 1 : b.owner,
+                }));
+
             // Update references in map occupants and positionedBy
             currentState.map.forEach(tile => {
                 tile.occupants.forEach(o => {
@@ -304,7 +321,7 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
             
             // Update references in combat state
             if (currentState.combatState) {
-                if(currentState.combatState.attackerId === playerIndex || currentState.combatState.defenderId === playerIndex) {
+                if (currentState.combatState.attackerId === playerIndex || currentState.combatState.defenderId === playerIndex) {
                     currentState.combatState = null;
                 } else {
                     if (currentState.combatState.attackerId > playerIndex) currentState.combatState.attackerId--;
@@ -314,15 +331,13 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
 
             // Adjust currentPlayerIndex
             if (isCurrentPlayerExiting) {
-                 // The turn needs to end for the player who is now at the exited player's index.
-                 // The index doesn't need to change, but the turn effectively passes.
                  currentState.currentPlayerIndex = playerIndex % currentState.players.length;
                  currentState = handleEndTurn(currentState);
             } else if (currentState.currentPlayerIndex > playerIndex) {
                  currentState.currentPlayerIndex--;
             }
             
-            if(currentState.currentPlayerIndex >= currentState.players.length) {
+            if (currentState.currentPlayerIndex >= currentState.players.length) {
                 currentState.currentPlayerIndex = 0;
             }
 

@@ -48,6 +48,7 @@ export function AbilitiesDialog({ player, onClose, onBuyAbility, gameState, isMy
         onBuyAbility(ability.name);
         toast({ title: 'Purchase Successful!', description: `You have acquired the ${ability.title} ability.`});
     } catch(e: any) {
+        console.error('Purchase Failed:', e);
         toast({ title: 'Purchase Failed', description: e.message, variant: 'destructive'});
     }
   }

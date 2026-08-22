@@ -27,6 +27,7 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
                 height={48}
                 className="h-12 w-12 object-contain"
                 unoptimized
+                priority
             />
             <CardTitle className="text-sm font-medium">{player.name}</CardTitle>
           </div>
@@ -72,22 +73,22 @@ export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1">
                       <Swords className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm font-bold">{player.armyCount}</span>
+                      <span className="text-sm font-bold">{player.armies ? player.armies.length : player.armyCount}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Army Count</p>
+                  <p>Army Count ({player.armies ? player.armies.length : player.armyCount}/5)</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1">
                       <Zap className="h-4 w-4 text-yellow-500" />
-                      <span className="text-sm font-bold">{player.attackPower + 1}</span>
+                      <span className="text-sm font-bold">{player.attackPower}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Attack Power</p>
+                  <p>Attack Power (Rolls {player.attackPower + 1} dice in combat)</p>
                 </TooltipContent>
               </Tooltip>
           </div>
