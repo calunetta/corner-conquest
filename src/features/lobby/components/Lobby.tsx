@@ -190,7 +190,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
 
   return (
     <div className="container mx-auto flex h-full flex-col items-center justify-center p-2 sm:p-4">
-      <Card className="w-full max-w-3xl">
+      <Card className="w-full max-w-3xl bg-background/40 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
         <CardHeader>
           <div className="flex w-full items-center justify-end gap-2 mb-4">
             <span className="text-sm">Welcome, {username}!</span>
@@ -205,7 +205,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 Join a game or create one to begin your conquest.
               </CardDescription>
             </div>
-            <Button onClick={() => setIsCreateDialogOpen(true)} disabled={isJoiningGame !== null} className="w-full sm:w-auto">
+            <Button onClick={() => setIsCreateDialogOpen(true)} disabled={isJoiningGame !== null} className="w-full sm:w-auto hover:scale-105 transition-all duration-300 shadow-[0_0_15px_rgba(var(--primary),0.5)]">
               {isJoiningGame && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create New Game
             </Button>
@@ -225,7 +225,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
             ) : (
               <TooltipProvider>
                 {games.map((game) => (
-                  <div key={game.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border bg-card p-3 transition-all hover:bg-muted/50 sm:p-4">
+                  <div key={game.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-white/5 bg-black/20 p-3 transition-all duration-300 hover:bg-black/40 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:border-white/20 sm:p-4">
                     <div className="flex flex-1 items-center gap-4 min-w-[200px]">
                       <div className="flex -space-x-2">
                         {game.players.map(p => (

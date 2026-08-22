@@ -17,7 +17,7 @@ type PlayerInfoProps = {
 export function PlayerInfo({ player, isCurrentPlayer }: PlayerInfoProps) {
   return (
     <TooltipProvider>
-      <Card className={`transition-all duration-300 ${isCurrentPlayer ? `border-accent shadow-lg shadow-accent/20` : ''}`}>
+      <Card className={`transition-all duration-300 bg-background/40 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:scale-[1.02] ${isCurrentPlayer ? `border-accent shadow-[0_0_20px_rgba(var(--accent),0.3)] scale-[1.02]` : ''}`}>
         <CardHeader className="flex-row items-center justify-between space-y-0 p-2">
           <div className="flex items-center gap-2">
             <Image 

@@ -201,7 +201,7 @@ export function ActionsPanel({
   };
 
   return (
-    <Card>
+    <Card className="bg-background/40 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
       <CardHeader className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-lg flex items-center gap-2">
           Actions

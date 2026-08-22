@@ -36,8 +36,12 @@ function Login() {
 
   return (
     <>
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
-        <Card className="w-full max-w-sm">
+      <div className="relative flex h-screen w-screen items-center justify-center bg-gradient-to-br from-background via-indigo-950/40 to-background bg-[length:200%_200%] animate-gradient-shift overflow-hidden">
+        {/* Floating Orbs */}
+        <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-primary/20 blur-[120px] animate-float" />
+        <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-accent/10 blur-[120px] animate-float" style={{ animationDelay: '2s' }} />
+
+        <Card className="z-10 w-full max-w-sm bg-background/40 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
           <CardHeader>
             <CardTitle>Welcome to Corner Conquest</CardTitle>
             <CardDescription>Enter a username to begin.</CardDescription>
@@ -96,12 +100,16 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-background text-foreground">
+    <div className="relative flex h-screen w-screen flex-col bg-gradient-to-br from-background via-indigo-950/20 to-background bg-[length:200%_200%] animate-gradient-shift text-foreground overflow-hidden">
+      <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-primary/10 blur-[120px] animate-float pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-accent/5 blur-[120px] animate-float pointer-events-none" style={{ animationDelay: '2s' }} />
+      <div className="z-10 flex h-full w-full flex-col">
       {activeGameId ? (
         <GameBoard gameId={activeGameId} onExit={handleExitGame} />
       ) : (
         <Lobby onJoinGame={setActiveGameId} />
       )}
+      </div>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { Home, HelpCircle, Star, Loader2, Anchor } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { usePlayer } from '@/hooks/use-player';
 import { IslandType, PlayerColor } from '@/lib/types';
 
@@ -50,7 +50,7 @@ const AnimatedMonster = ({ monster }: { monster: Monster }) => {
     const [isAttacking, setIsAttacking] = useState(false);
     const [isFlipped, setIsFlipped] = useState(false);
     const [horizontalOffset, setHorizontalOffset] = useState(0);
-    const [previousHorizontalOffset, setPreviousHorizontalOffset] = useState(0);
+    const offsetRef = useRef(0);
 
     useEffect(() => {
         const animationInterval = setInterval(() => {
@@ -59,21 +59,14 @@ const AnimatedMonster = ({ monster }: { monster: Monster }) => {
             
             if (!currentlyAttacking) {
                 const newOffset = (Math.random() - 0.5) * 40;
-
-                if (newOffset > previousHorizontalOffset) {
-                    setIsFlipped(false); // Moving right
-                } else if (newOffset < previousHorizontalOffset) {
-                    setIsFlipped(true); // Moving left
-                }
-                
-                setPreviousHorizontalOffset(horizontalOffset);
+                setIsFlipped(newOffset < offsetRef.current);
+                offsetRef.current = newOffset;
                 setHorizontalOffset(newOffset);
             }
 
-        }, Math.random() * 1500 + 1000); // Random interval between 1-2.5 seconds
+        }, Math.random() * 1500 + 1000);
 
         return () => clearInterval(animationInterval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const spriteSrc = isAttacking ? monster.sprite.attack : monster.sprite.idle;
@@ -88,7 +81,7 @@ const AnimatedMonster = ({ monster }: { monster: Monster }) => {
                         alt={monster.name}
                         width={64}
                         height={64}
-                        className="drop-shadow-lg transition-transform duration-1000 ease-in-out"
+                        className="drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] transition-transform duration-1000 ease-in-out"
                         style={{ transform: isAttacking ? (isFlipped ? 'scaleX(-1)' : '') : transform }}
                         unoptimized
                     />
@@ -240,18 +233,21 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
     }
   };
 
+  const isClickable = isPossibleMove || isScoutTarget || (island.occupants && island.occupants.some(o => o.playerId === localPlayer.id));
+
   return (
     <TooltipProvider>
       <button
         onClick={() => onClick(island.x, island.y)}
         className={cn(
-          'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-200 border-2',
-          isSelected ? 'border-primary shadow-2xl shadow-primary/80' : 'border-transparent',
-          isPossibleMove && 'border-accent/50 shadow-lg shadow-accent/40',
+          'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-300 border-2 shadow-[0_10px_20px_rgba(0,0,0,0.6)]',
+          isClickable ? 'cursor-pointer hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(0,0,0,0.8)]' : 'cursor-default',
+          isSelected ? 'border-primary shadow-[0_0_30px_rgba(var(--primary),0.8)]' : 'border-transparent',
+          isPossibleMove && 'border-accent/80 shadow-[0_0_20px_rgba(var(--accent),0.6)]',
           isTeleporting && 'border-purple-500/50 shadow-lg shadow-purple-500/40',
-          isScoutTarget && 'cursor-pointer border-blue-500/50 shadow-lg shadow-blue-500/40',
+          isScoutTarget && 'border-blue-500/50 shadow-lg shadow-blue-500/40',
           tilePlayerColor && !isSelected && `shadow-lg ${playerTileIndicatorClasses[tilePlayerColor]}`,
-           'hover:border-foreground/50'
+          isClickable && !isSelected && !isPossibleMove && 'hover:border-foreground/50'
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
       >
@@ -317,7 +313,7 @@ export function IslandTile({ island, players, onClick, isPossibleMove, isSelecte
                             width={64}
                             height={64}
                             className={cn(
-                                "absolute h-auto w-full max-w-[86px] drop-shadow-lg",
+                                "absolute h-auto w-full max-w-[86px] drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]",
                                 'bottom-0 right-0', 
                                 pos.origin.includes('top') && 'top-0',
                                 pos.origin.includes('bottom') && 'bottom-0',

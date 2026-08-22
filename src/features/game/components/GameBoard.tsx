@@ -543,7 +543,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
 
           <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen} className="w-full">
-            <div className="flex items-center justify-between rounded-md bg-muted/50 p-2">
+            <div className="flex items-center justify-between rounded-md bg-black/20 backdrop-blur-md border border-white/10 p-2 shadow-sm">
               <div className='flex items-center gap-4'>
                 {status === 'playing' && <Button variant="outline" size="icon" onClick={handleExitClick} disabled={isExiting}>
                   {isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft />}
@@ -584,7 +584,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
 
           <div className="grid flex-1 grid-cols-1 justify-center gap-4 lg:grid-cols-[auto_320px]">
             <main
-              className="relative flex items-center justify-center overflow-auto rounded-xl"
+              className="relative flex items-center justify-center overflow-auto rounded-xl bg-background/20 backdrop-blur-sm border border-white/5 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]"
             >
               <MapGrid
                 map={map}

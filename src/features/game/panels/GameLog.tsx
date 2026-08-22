@@ -8,7 +8,7 @@ type GameLogProps = {
 
 export function GameLog({ logs }: GameLogProps) {
   return (
-    <Card>
+    <Card className="bg-background/40 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
       <CardHeader>
         <CardTitle>Game Log</CardTitle>
       </CardHeader>
