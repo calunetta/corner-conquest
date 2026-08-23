@@ -32,25 +32,35 @@ Understanding the project's structure is key to making changes efficiently and c
       - `GameBoardContext.tsx`: Centralized React Context and pure `gameBoardReducer` managing local UI state (`selectedArmyId`, `possibleMoves`, `pendingAction`, and 12+ dialog states). Exposes `useGameBoard()`.
     - `components/`:
       - `GameBoard.tsx`: High-level layout orchestrator (<150 lines) wrapped by `<GameBoardProvider>`.
-      - `GameBoardHeader.tsx`: Navigation, match status, VP goal, and start game controls.
+      - `GameBoardHeader.tsx`: Navigation, match status, VP goal, and start game controls with **0 props**.
       - `GameDialogManager.tsx`: Dedicated container for mounting all 15+ modal dialogs with **zero prop-drilling**.
+      - `MapGrid.tsx`: Lightweight terrain board orchestrator (<70 lines, **0 props**).
+      - `MapDecorations.tsx`: Procedural rock placement, ocean animations, and memoized terrain styling.
       - `IslandTile.tsx`: Island tile rendering, selection borders, and 3D hover effects.
       - `AnimatedMonster.tsx`: Monster sprite animation and interval tracking.
       - `TileOccupants.tsx`: Fog-of-war aware army sprites and death animations.
       - `TileResources.tsx`: Resource icons and player position indicators.
-      - `MapGrid.tsx`: Grid coordinate mapper and terrain decoration generator.
     - `hooks/`:
       - `useTurnTimer.ts`: Turn countdown timer, interval tracking, and auto-timeout dispatch.
-    - `types.ts`: **(Local State)** Type definitions for client-side UI state (dialogs, pending actions).
-  - `lobby/`: Components for creating and joining games (`Lobby.tsx`, `LobbyGameRow.tsx`, `CreateGameDialog.tsx`).
+    - `types.ts`: Re-exports domain dialog types from `@/lib/types/dialogs`.
+  - `lobby/`: Components for creating and joining games (`Lobby.tsx`, `LobbyGameRow.tsx`, `CreateGameDialog.tsx`, `CustomSettingsSheet.tsx`).
 - `src/hooks/`: Custom React hooks (`useGameEngine`, `usePlayer`, `useIsMobile`, `useToast`).
 - `src/lib/`: Core application logic, type definitions, and Firebase configuration.
   - `__tests__/`: Comprehensive Jest test suites covering all game mechanics (movement, combat, cards, turn progression, player actions, bot AI).
   - `actions/`: **The "brain" of the game.** Pure reducer functions that calculate next `GameState` given an action.
+  - `types/`: **Domain-specific Modular Types** with central barrel export (`index.ts`):
+    - `actions.ts`: `GameAction`, `MAP_ROWS`, `MAP_COLS`, `HAND_LIMIT`
+    - `cards.ts`: `CardName`, `AbilityName`, `ResourceType`, `PassiveAbilities`
+    - `monsters.ts`: `MonsterName`, `Monster`
+    - `map.ts`: `IslandType`, `IslandResource`, `PlayerPosition`, `Island`, `BaseTileInfo`
+    - `player.ts`: `PlayerColor`, `Army`, `Player`
+    - `combat.ts`: `CombatPhase`, `CombatState`, `MonsterCombatState`, `DeathAnimation`
+    - `game.ts`: `GameStatus`, `GameSettings`, `GameState`, `ActionHandlerResult`
+    - `dialogs.ts`: `PendingAction`, `ProductiveCardDialogState`, `SpecialIslandRollDialogState`, `ArmySelectionDialogState`, etc.
+    - `index.ts`: Barrel export aggregating all domain types.
   - `game-initializer.ts`: Map generation and initial match setup.
   - `game-logic.ts`: Higher-level room management and player joins.
   - `bot-logic.ts`: AI bot decision engine.
-  - `types.ts`: **(Shared State)** Central repository for synchronized `GameState` types.
 
 ## 3. State Management & Session Logic
 

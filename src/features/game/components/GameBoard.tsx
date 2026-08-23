@@ -23,7 +23,7 @@ type GameBoardProps = {
 };
 
 function GameBoardContent() {
-  const { gameState, localPlayer, isMyTurn, uiState, selectedArmy, handleTileClick, onAction } = useGameBoard();
+  const { gameState, isMyTurn, onAction } = useGameBoard();
   const isMobile = useIsMobile();
   const [isPlayerInfoOpen, setIsPlayerInfoOpen] = useState(!isMobile);
 
@@ -42,9 +42,7 @@ function GameBoardContent() {
     return [...gameState.players].sort((a, b) => a.id - b.id);
   }, [gameState?.players]);
 
-  const { status, maxPlayers, deathAnimations, players, currentPlayerIndex, settings, map, debugMode, log } = gameState;
-  const isTeleporting = uiState.pendingAction?.type === 'teleport';
-  const isScouting = uiState.pendingAction?.type === 'scout';
+  const { status, maxPlayers, players, currentPlayerIndex, settings, log } = gameState;
 
   return (
     <div className="relative flex h-screen w-full flex-col gap-2 overflow-auto p-2 sm:gap-4 sm:p-4">
@@ -95,27 +93,7 @@ function GameBoardContent() {
 
           <div className="grid flex-1 grid-cols-1 justify-center gap-4 lg:grid-cols-[auto_320px]">
             <main className="relative flex items-center justify-center overflow-auto rounded-xl bg-background/20 backdrop-blur-sm border border-white/5 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
-              <MapGrid
-                map={map}
-                players={players}
-                onTileClick={handleTileClick}
-                possibleMoves={
-                  isTeleporting && uiState.selectedArmyId !== null
-                    ? map.map(t => ({ x: t.x, y: t.y }))
-                    : uiState.possibleMoves
-                }
-                selectedTile={selectedArmy?.position || null}
-                isTeleporting={isTeleporting}
-                isScoutTarget={isScouting}
-                deathAnimations={deathAnimations}
-                fogOfWar={settings.fogOfWar}
-                localPlayer={localPlayer}
-                globallyRevealedTiles={players.reduce((acc, p) => {
-                  p.revealedTiles.forEach(t => acc.add(t));
-                  return acc;
-                }, new Set<string>())}
-                debugMode={debugMode}
-              />
+              <MapGrid />
               <div className="absolute top-4 left-4 z-20">
                 <TutorialBeacon
                   id="map-info"
