@@ -15,24 +15,15 @@ import { TutorialBeacon } from './TutorialBeacon';
 import { GameBoardHeader } from './GameBoardHeader';
 import { GameDialogManager } from './GameDialogManager';
 import { useTurnTimer } from '../hooks/useTurnTimer';
-import { useGameBoardInteractions } from '../hooks/useGameBoardInteractions';
+import { GameBoardProvider, useGameBoard } from '../context/GameBoardContext';
 
 type GameBoardProps = {
   gameId: string;
   onExit: () => void;
 };
 
-export function GameBoard({ gameId, onExit }: GameBoardProps) {
-  const { playerId } = usePlayer();
-  const {
-    gameState: serverGameState,
-    setGameState,
-    isMyTurn,
-    localPlayer: localPlayerFromServer,
-    isHost,
-    isLoading,
-  } = useGameEngine(gameId, playerId);
-
+function GameBoardContent() {
+  const { gameState, localPlayer, isMyTurn, uiState, selectedArmy, handleTileClick, onAction } = useGameBoard();
   const isMobile = useIsMobile();
   const [isPlayerInfoOpen, setIsPlayerInfoOpen] = useState(!isMobile);
 
@@ -40,59 +31,26 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
     setIsPlayerInfoOpen(!isMobile);
   }, [isMobile]);
 
-  const interactions = useGameBoardInteractions({
-    gameId,
-    playerId,
-    serverGameState,
-    localPlayerFromServer,
-    isMyTurn,
-    isHost,
-    setGameState,
-    onExit,
-  });
-
-  const { gameStateForDisplay, localPlayer, onAction } = interactions;
-
   const { timeLeft, turnDuration } = useTurnTimer({
     isMyTurn,
-    gameStatus: serverGameState?.status || '',
+    gameStatus: gameState?.status || '',
     onAction,
   });
 
   const sortedPlayers = useMemo(() => {
-    if (!gameStateForDisplay?.players) return [];
-    return [...gameStateForDisplay.players].sort((a, b) => a.id - b.id);
-  }, [gameStateForDisplay?.players]);
+    if (!gameState?.players) return [];
+    return [...gameState.players].sort((a, b) => a.id - b.id);
+  }, [gameState?.players]);
 
-  if (isLoading || !serverGameState || !localPlayerFromServer || !gameStateForDisplay || !localPlayer) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center p-4 text-center">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        <p className="ml-4 text-lg">
-          {!localPlayerFromServer && !isLoading
-            ? 'You are not in this game. Returning to lobby...'
-            : 'Joining game session...'}
-        </p>
-      </div>
-    );
-  }
-
-  const { status, maxPlayers, deathAnimations } = serverGameState;
-  const { players, currentPlayerIndex, settings, map, debugMode, log } = gameStateForDisplay;
-  const isTeleporting = interactions.pendingAction?.type === 'teleport';
-  const isScouting = interactions.pendingAction?.type === 'scout';
+  const { status, maxPlayers, deathAnimations, players, currentPlayerIndex, settings, map, debugMode, log } = gameState;
+  const isTeleporting = uiState.pendingAction?.type === 'teleport';
+  const isScouting = uiState.pendingAction?.type === 'scout';
 
   return (
     <div className="relative flex h-screen w-full flex-col gap-2 overflow-auto p-2 sm:gap-4 sm:p-4">
       {status !== 'finished' && (
         <>
-          <GameBoardHeader
-            gameState={gameStateForDisplay}
-            isHost={isHost}
-            isExiting={interactions.isExiting}
-            onExitClick={interactions.handleExitClick}
-            onStartGame={interactions.handleStartGame}
-          />
+          <GameBoardHeader />
 
           <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen} className="w-full">
             <div className="flex items-center justify-between rounded-md bg-black/20 backdrop-blur-md border border-white/10 p-2 shadow-sm">
@@ -140,19 +98,19 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
               <MapGrid
                 map={map}
                 players={players}
-                onTileClick={interactions.handleTileClick}
+                onTileClick={handleTileClick}
                 possibleMoves={
-                  isTeleporting && interactions.selectedArmyId !== null
+                  isTeleporting && uiState.selectedArmyId !== null
                     ? map.map(t => ({ x: t.x, y: t.y }))
-                    : interactions.possibleMoves
+                    : uiState.possibleMoves
                 }
-                selectedTile={interactions.selectedArmy?.position || null}
+                selectedTile={selectedArmy?.position || null}
                 isTeleporting={isTeleporting}
                 isScoutTarget={isScouting}
                 deathAnimations={deathAnimations}
                 fogOfWar={settings.fogOfWar}
                 localPlayer={localPlayer}
-                globallyRevealedTiles={serverGameState.players.reduce((acc, p) => {
+                globallyRevealedTiles={players.reduce((acc, p) => {
                   p.revealedTiles.forEach(t => acc.add(t));
                   return acc;
                 }, new Set<string>())}
@@ -186,60 +144,54 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
             </main>
 
             <aside className="flex flex-col gap-4">
-              <ActionsPanel
-                onAction={interactions.onAction}
-                onLocalAction={interactions.handleLocalAction}
-                localPlayer={localPlayer}
-                gameState={gameStateForDisplay}
-                isMyTurn={isMyTurn}
-                timeLeft={timeLeft}
-                turnDuration={turnDuration}
-                selectedArmy={interactions.selectedArmy}
-                pendingAction={interactions.pendingAction}
-              />
+              <ActionsPanel timeLeft={timeLeft} turnDuration={turnDuration} />
               <GameLog logs={log} />
             </aside>
           </div>
         </>
       )}
 
-      <GameDialogManager
-        gameState={gameStateForDisplay}
-        localPlayer={localPlayer}
-        isMyTurn={isMyTurn}
-        selectedArmyId={interactions.selectedArmyId}
-        pendingAction={interactions.pendingAction}
-        onAction={interactions.onAction}
-        onLocalAction={interactions.handleLocalAction}
-        setSelectedArmyId={interactions.setSelectedArmyId}
-        setPendingAction={interactions.setPendingAction}
-        cardsDialogPlayerId={interactions.cardsDialogPlayerId}
-        setCardsDialogPlayerId={interactions.setCardsDialogPlayerId}
-        abilitiesShopOpen={interactions.abilitiesShopOpen}
-        setAbilitiesShopOpen={interactions.setAbilitiesShopOpen}
-        armySelectionDialog={interactions.armySelectionDialog}
-        setArmySelectionDialog={interactions.setArmySelectionDialog}
-        attackSelectionDialog={interactions.attackSelectionDialog}
-        setAttackSelectionDialog={interactions.setAttackSelectionDialog}
-        monsterSelectionDialog={interactions.monsterSelectionDialog}
-        setMonsterSelectionDialog={interactions.setMonsterSelectionDialog}
-        positionDialog={interactions.positionDialog}
-        setPositionDialog={interactions.setPositionDialog}
-        sabotageDialog={interactions.sabotageDialog}
-        setSabotageDialog={interactions.setSabotageDialog}
-        wealthyDialog={interactions.wealthyDialog}
-        setWealthyDialog={interactions.setWealthyDialog}
-        stealResourceDialog={interactions.stealResourceDialog}
-        setStealResourceDialog={interactions.setStealResourceDialog}
-        specialIslandRollDialog={interactions.specialIslandRollDialog}
-        setSpecialIslandRollDialog={interactions.setSpecialIslandRollDialog}
-        showConfirmExitDialog={interactions.showConfirmExitDialog}
-        setShowConfirmExitDialog={interactions.setShowConfirmExitDialog}
-        showHostLeaveDialog={interactions.showHostLeaveDialog}
-        setShowHostLeaveDialog={interactions.setShowHostLeaveDialog}
-        onConfirmExit={interactions.handleConfirmExit}
-        onConfirmHostLeave={interactions.handleConfirmHostLeave}
-      />
+      <GameDialogManager />
     </div>
+  );
+}
+
+export function GameBoard({ gameId, onExit }: GameBoardProps) {
+  const { playerId } = usePlayer();
+  const {
+    gameState: serverGameState,
+    setGameState,
+    isMyTurn,
+    localPlayer: localPlayerFromServer,
+    isHost,
+    isLoading,
+  } = useGameEngine(gameId, playerId);
+
+  if (isLoading || !serverGameState || !localPlayerFromServer) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center p-4 text-center">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <p className="ml-4 text-lg">
+          {!localPlayerFromServer && !isLoading
+            ? 'You are not in this game. Returning to lobby...'
+            : 'Joining game session...'}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <GameBoardProvider
+      gameId={gameId}
+      playerId={playerId}
+      serverGameState={serverGameState}
+      localPlayerFromServer={localPlayerFromServer}
+      isMyTurn={isMyTurn}
+      isHost={isHost}
+      setGameState={setGameState}
+      onExit={onExit}
+    >
+      <GameBoardContent />
+    </GameBoardProvider>
   );
 }

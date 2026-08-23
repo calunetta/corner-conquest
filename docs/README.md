@@ -7,28 +7,33 @@ This document outlines the architecture and key logic flows of the "Corner Conqu
 **Development Directives for the AI Assistant:**
 1.  **Synchronized Documentation:** For every code change I make, I **must** also update this `docs/README.md` file in the same transaction to reflect those changes. The code and the documentation will always be kept in sync.
 2.  **Blueprint-First Validation:** Before I implement any change, I **must** first analyze the request against the established architecture and logic documented here. If the request conflicts with our blueprint, I will notify you of the discrepancy and await your confirmation before proceeding.
+3.  **Comprehensive Automated & E2E Testing:** Every new feature, UI mechanic, or bug fix **must** be tested and tracked with both unit tests (`npm test`) and Playwright E2E browser tests (`npm run test:e2e`).
 
 ## 1. Core Technologies
 
 - **Framework:** Next.js with App Router
 - **Language:** TypeScript
 - **UI:** React, ShadCN UI Components, Tailwind CSS
-- **State Management (Client):** React Hooks (`useState`, `useMemo`, `useCallback` within `GameBoard.tsx`)
-- **State Management (Game):** Firestore real-time listeners (`useGameEngine`)
+- **State Management (Local/UI):** React Context + Reducer (`src/features/game/context/GameBoardContext.tsx` consuming `useGameBoard()`)
+- **State Management (Shared Game):** Firestore real-time listeners (`useGameEngine`)
+- **Testing:** Jest (`npm test`) for unit/reducer tests & Playwright (`npm run test:e2e`) for browser E2E tests
 - **Backend/Database:** Firebase (Firestore)
 
 ## 2. Project Structure & Development Guide
 
 Understanding the project's structure is key to making changes efficiently and correctly.
 
+- `e2e/`: Playwright End-to-End browser test suites (`auth-and-lobby.spec.ts`, `gameplay.spec.ts`, `tutorial-beacons.spec.ts`).
 - `src/app/`: Core application, pages, and layout.
 - `src/components/`: Reusable, generic UI components (mostly from ShadCN).
 - `src/features/`: Contains domain-specific components and logic structured according to the **SOLID paradigm** (Single Responsibility Principle):
-  - `game/`: All components, dialogs, hooks, and panels related to the active game board.
+  - `game/`: All components, dialogs, hooks, context, and panels related to the active game board.
+    - `context/`:
+      - `GameBoardContext.tsx`: Centralized React Context and pure `gameBoardReducer` managing local UI state (`selectedArmyId`, `possibleMoves`, `pendingAction`, and 12+ dialog states). Exposes `useGameBoard()`.
     - `components/`:
-      - `GameBoard.tsx`: High-level layout orchestrator (<150 lines).
+      - `GameBoard.tsx`: High-level layout orchestrator (<150 lines) wrapped by `<GameBoardProvider>`.
       - `GameBoardHeader.tsx`: Navigation, match status, VP goal, and start game controls.
-      - `GameDialogManager.tsx`: Dedicated container for mounting all 15+ modal dialogs.
+      - `GameDialogManager.tsx`: Dedicated container for mounting all 15+ modal dialogs with **zero prop-drilling**.
       - `IslandTile.tsx`: Island tile rendering, selection borders, and 3D hover effects.
       - `AnimatedMonster.tsx`: Monster sprite animation and interval tracking.
       - `TileOccupants.tsx`: Fog-of-war aware army sprites and death animations.
@@ -36,7 +41,6 @@ Understanding the project's structure is key to making changes efficiently and c
       - `MapGrid.tsx`: Grid coordinate mapper and terrain decoration generator.
     - `hooks/`:
       - `useTurnTimer.ts`: Turn countdown timer, interval tracking, and auto-timeout dispatch.
-      - `useGameBoardInteractions.ts`: Local action routing, army selection, multi-step actions (teleport/scout), and keyboard shortcuts.
     - `types.ts`: **(Local State)** Type definitions for client-side UI state (dialogs, pending actions).
   - `lobby/`: Components for creating and joining games (`Lobby.tsx`, `LobbyGameRow.tsx`, `CreateGameDialog.tsx`).
 - `src/hooks/`: Custom React hooks (`useGameEngine`, `usePlayer`, `useIsMobile`, `useToast`).
@@ -88,20 +92,21 @@ The player's session (their identity) is managed through a combination of browse
     -   `combatState`, `monsterCombatState`: Shared state for combat encounters, so all players can see the results.
 -   **When to Modify:** Only when an action occurs that irrevocably changes the game for **all** players (e.g., an army moves, a resource is spent, a turn ends).
 
-### 3.3. Local UI State: The `GameBoard.tsx` Component
+### 3.3. Local UI State: The `GameBoardContext` & Reducer Pattern
 
--   **Definition File:** `src/features/game/types.ts`
--   **What It Is:** Local state refers to any variable that represents the temporary UI status for a single player. It is irrelevant to other players and is never sent to the server.
--   **Synchronization:** It is managed entirely within the `GameBoard.tsx` component using React hooks like `useState` and `useMemo`. It is never written to Firestore.
--   **Key Local State Variables (`GameBoard.tsx`):**
+-   **Definition File:** `src/features/game/context/GameBoardContext.tsx`
+-   **What It Is:** Local UI state refers to temporary interaction data for a single player (selected armies, valid movement indicators, pending multi-step card effects like teleport/scout, and modal dialog open/closed states).
+-   **Architecture:** Managed via a pure `gameBoardReducer` and exposed through `GameBoardProvider` and the `useGameBoard()` hook.
+-   **Zero Prop-Drilling:** Components such as `GameDialogManager`, `GameBoardHeader`, and `ActionsPanel` consume `useGameBoard()` directly, eliminating massive prop interfaces and state fragmentation.
+-   **Key Local State Variables (`GameBoardUIState`):**
     -   `selectedArmyId: number | null`: The ID of the army the local player has clicked on.
     -   `possibleMoves: {x, y}[]`: The array of valid move locations for the selected army, used for highlighting tiles.
-    -   `pendingAction: PendingAction | null`: The state for a multi-step local action (e.g., after clicking the "Teleport" card, the `pendingAction` is set to `{ type: 'teleport' }`, waiting for the player to select an army and then a destination).
-    -   **All Dialog States:** `armySelectionDialog`, `attackSelectionDialog`, `positionDialog`, `sabotageDialog`, `wealthyDialog`, `stealResourceDialog`, `cardsDialogPlayerId`, `abilitiesShopOpen`, `productiveCardDialog`, `specialIslandRollDialog`. The open/closed status of these dialogs is purely a local concern and is completely decoupled from the shared `Player` object in Firestore.
+    -   `pendingAction: PendingAction | null`: State for multi-step local actions (e.g., scout, teleport).
+    -   `dialogs`: Sub-state grouping all 12+ dialog states (`abilitiesShopOpen`, `cardsPlayerId`, `position`, `sabotage`, `wealthy`, `stealResource`, `confirmExit`, etc.).
 
 ### 3.4. The Action Flow: From Click to Update
 
-1.  **Local Intent:** A player clicks on an army. `handleTileClick` in `GameBoard.tsx` updates the local `selectedArmyId` state. The UI re-renders instantly to show the selection. **No Firebase write occurs.**
+1.  **Local Intent:** A player clicks on an army. `handleTileClick` dispatches `SET_SELECTED_ARMY` in `GameBoardContext`. The UI re-renders instantly to show the selection. **No Firebase write occurs.**
 2.  **Local Validation:** The player clicks a valid destination tile. `handleTileClick` verifies this is a possible move against `settings.gridSize.cols` and `settings.gridSize.rows`.
 3.  **Shared Action Dispatch:** Now that the action is confirmed, `handleTileClick` calls `onAction(GameAction.Move, ...)`. This is the crossover from local to shared.
 4.  **Shared State Update:** The `onAction` handler calls the `setGameState` function, which executes the `handleMoveAction` reducer from `lib/actions`. This pure function calculates the new army position dynamically and returns a brand new `GameState` object.

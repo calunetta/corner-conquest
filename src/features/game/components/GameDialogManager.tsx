@@ -1,19 +1,9 @@
 'use client';
 
 import React from 'react';
-import type { GameState, Player, CardName, ResourceType } from '@/lib/types';
+import type { CardName, ResourceType } from '@/lib/types';
 import { GameAction } from '@/lib/types';
-import type {
-  PendingAction,
-  ArmySelectionDialogState,
-  AttackSelectionDialogState,
-  PositionDialogState,
-  SabotageDialogState,
-  WealthyDialogState,
-  StealResourceDialogState,
-  MonsterSelectionDialogState,
-  SpecialIslandRollDialogState,
-} from '../types';
+import { useGameBoard } from '../context/GameBoardContext';
 
 import { CombatDialog } from '../dialogs/CombatDialog';
 import { MonsterCombatDialog } from '../dialogs/MonsterCombatDialog';
@@ -31,88 +21,24 @@ import { MonsterSelectionDialog } from '../dialogs/MonsterSelectionDialog';
 import { ConfirmExitDialog } from '../dialogs/ConfirmExitDialog';
 import { HostLeaveDialog } from '../dialogs/HostLeaveDialog';
 
-interface GameDialogManagerProps {
-  gameState: GameState;
-  localPlayer: Player;
-  isMyTurn: boolean;
-  selectedArmyId: number | null;
-  pendingAction: PendingAction;
-  onAction: (action: GameAction, payload?: any) => void;
-  onLocalAction: (action: GameAction, payload?: any) => void;
-  setSelectedArmyId: (id: number | null) => void;
-  setPendingAction: (action: PendingAction) => void;
+export function GameDialogManager() {
+  const {
+    uiState,
+    dispatch,
+    gameState,
+    localPlayer,
+    isMyTurn,
+    onAction,
+    onLocalAction,
+    handleConfirmExit,
+    handleConfirmHostLeave,
+  } = useGameBoard();
 
-  // Dialog States & Setters
-  cardsDialogPlayerId: number | null;
-  setCardsDialogPlayerId: (id: number | null) => void;
-  abilitiesShopOpen: boolean;
-  setAbilitiesShopOpen: (open: boolean) => void;
-  armySelectionDialog: ArmySelectionDialogState;
-  setArmySelectionDialog: (state: ArmySelectionDialogState) => void;
-  attackSelectionDialog: AttackSelectionDialogState | null;
-  setAttackSelectionDialog: (state: AttackSelectionDialogState | null) => void;
-  monsterSelectionDialog: MonsterSelectionDialogState | null;
-  setMonsterSelectionDialog: (state: MonsterSelectionDialogState | null) => void;
-  positionDialog: PositionDialogState;
-  setPositionDialog: (state: PositionDialogState) => void;
-  sabotageDialog: SabotageDialogState;
-  setSabotageDialog: (state: SabotageDialogState) => void;
-  wealthyDialog: WealthyDialogState;
-  setWealthyDialog: (state: WealthyDialogState) => void;
-  stealResourceDialog: StealResourceDialogState;
-  setStealResourceDialog: (state: StealResourceDialogState) => void;
-  specialIslandRollDialog: SpecialIslandRollDialogState;
-  setSpecialIslandRollDialog: React.Dispatch<React.SetStateAction<SpecialIslandRollDialogState>>;
-
-  // Exit dialogs
-  showConfirmExitDialog: boolean;
-  setShowConfirmExitDialog: (show: boolean) => void;
-  showHostLeaveDialog: boolean;
-  setShowHostLeaveDialog: (show: boolean) => void;
-  onConfirmExit: () => void | Promise<void>;
-  onConfirmHostLeave: () => Promise<void>;
-}
-
-export function GameDialogManager({
-  gameState,
-  localPlayer,
-  isMyTurn,
-  selectedArmyId,
-  pendingAction,
-  onAction,
-  onLocalAction,
-  setSelectedArmyId,
-  setPendingAction,
-  cardsDialogPlayerId,
-  setCardsDialogPlayerId,
-  abilitiesShopOpen,
-  setAbilitiesShopOpen,
-  armySelectionDialog,
-  setArmySelectionDialog,
-  attackSelectionDialog,
-  setAttackSelectionDialog,
-  monsterSelectionDialog,
-  setMonsterSelectionDialog,
-  positionDialog,
-  setPositionDialog,
-  sabotageDialog,
-  setSabotageDialog,
-  wealthyDialog,
-  setWealthyDialog,
-  stealResourceDialog,
-  setStealResourceDialog,
-  specialIslandRollDialog,
-  setSpecialIslandRollDialog,
-  showConfirmExitDialog,
-  setShowConfirmExitDialog,
-  showHostLeaveDialog,
-  setShowHostLeaveDialog,
-  onConfirmExit,
-  onConfirmHostLeave,
-}: GameDialogManagerProps) {
+  const { dialogs, selectedArmyId } = uiState;
   const isProductiveDialogActive = gameState.productiveDialogState?.playerId === localPlayer.id;
+
   const playerForCardsDialog =
-    cardsDialogPlayerId !== null ? gameState.players.find(p => p.id === cardsDialogPlayerId) : null;
+    dialogs.cardsPlayerId !== null ? gameState.players.find(p => p.id === dialogs.cardsPlayerId) : null;
   const isViewingOwnCards = playerForCardsDialog?.id === localPlayer.id;
 
   const productiveDialogOptions = React.useMemo(() => {
@@ -135,14 +61,17 @@ export function GameDialogManager({
 
   return (
     <>
-      {showConfirmExitDialog && (
-        <ConfirmExitDialog onConfirm={onConfirmExit} onClose={() => setShowConfirmExitDialog(false)} />
+      {dialogs.confirmExit && (
+        <ConfirmExitDialog
+          onConfirm={handleConfirmExit}
+          onClose={() => dispatch({ type: 'SET_CONFIRM_EXIT_DIALOG', open: false })}
+        />
       )}
 
       <HostLeaveDialog
-        open={showHostLeaveDialog}
-        onClose={() => setShowHostLeaveDialog(false)}
-        onConfirm={onConfirmHostLeave}
+        open={dialogs.hostLeave}
+        onClose={() => dispatch({ type: 'SET_HOST_LEAVE_DIALOG', open: false })}
+        onConfirm={handleConfirmHostLeave}
         isLastPlayer={gameState.players.length <= 1}
         gameStatus={gameState.status}
       />
@@ -178,9 +107,9 @@ export function GameDialogManager({
         />
       )}
 
-      {isMyTurn && specialIslandRollDialog?.isOpen && (
+      {isMyTurn && dialogs.specialIslandRoll?.isOpen && (
         <SpecialIslandRollDialog
-          state={specialIslandRollDialog}
+          state={dialogs.specialIslandRoll}
           onRoll={async () => {
             const roll = Math.floor(Math.random() * 6) + 1;
             let cardDrawn: CardName | null = null;
@@ -194,132 +123,135 @@ export function GameDialogManager({
               }
               await onAction(GameAction.RollOnSpecialIsland, { roll });
             }
-            setSpecialIslandRollDialog(prev => (prev ? { ...prev, roll, cardDrawn } : null));
+            dispatch({
+              type: 'SET_SPECIAL_ISLAND_ROLL_DIALOG',
+              state: { ...dialogs.specialIslandRoll!, roll, cardDrawn },
+            });
           }}
-          onClose={() => setSpecialIslandRollDialog(null)}
+          onClose={() => dispatch({ type: 'SET_SPECIAL_ISLAND_ROLL_DIALOG', state: null })}
         />
       )}
 
       {/* LOCAL DIALOGS */}
       {isMyTurn && (
         <>
-          {positionDialog && (
+          {dialogs.position && (
             <PositionDialog
-              resources={positionDialog.resources}
+              resources={dialogs.position.resources}
               onSelect={resource => {
-                onAction(GameAction.SelectResourcePosition, { resource, armyId: positionDialog.armyId });
-                setPositionDialog(null);
+                onAction(GameAction.SelectResourcePosition, { resource, armyId: dialogs.position!.armyId });
+                dispatch({ type: 'SET_POSITION_DIALOG', state: null });
               }}
-              onClose={() => setPositionDialog(null)}
+              onClose={() => dispatch({ type: 'SET_POSITION_DIALOG', state: null })}
             />
           )}
 
-          {armySelectionDialog && (
+          {dialogs.armySelection && (
             <ArmySelectionDialog
-              state={armySelectionDialog}
+              state={dialogs.armySelection}
               player={localPlayer}
               selectedArmyId={selectedArmyId}
               onSelectArmy={armyId => {
                 if (selectedArmyId === armyId) {
-                  setSelectedArmyId(null);
+                  dispatch({ type: 'SET_SELECTED_ARMY', armyId: null });
                 } else {
-                  setSelectedArmyId(armyId);
+                  dispatch({ type: 'SET_SELECTED_ARMY', armyId });
                 }
-                setArmySelectionDialog(null);
+                dispatch({ type: 'SET_ARMY_SELECTION_DIALOG', state: null });
               }}
-              onClose={() => setArmySelectionDialog(null)}
+              onClose={() => dispatch({ type: 'SET_ARMY_SELECTION_DIALOG', state: null })}
               isMyTurn={isMyTurn}
             />
           )}
 
-          {attackSelectionDialog && (
+          {dialogs.attackSelection && (
             <AttackSelectionDialog
-              state={attackSelectionDialog}
+              state={dialogs.attackSelection}
               onSelectTarget={defenderArmyId => {
-                if (attackSelectionDialog) {
+                if (dialogs.attackSelection) {
                   onAction(GameAction.InitiateCombat, {
-                    attackingArmyId: attackSelectionDialog.attackingArmyId,
+                    attackingArmyId: dialogs.attackSelection.attackingArmyId,
                     target: {
                       type: 'player',
-                      defenderId: attackSelectionDialog.defendingPlayer.id,
+                      defenderId: dialogs.attackSelection.defendingPlayer.id,
                       defendingArmyId: defenderArmyId,
                     },
                   });
                 }
-                setAttackSelectionDialog(null);
+                dispatch({ type: 'SET_ATTACK_SELECTION_DIALOG', state: null });
               }}
-              onClose={() => setAttackSelectionDialog(null)}
+              onClose={() => dispatch({ type: 'SET_ATTACK_SELECTION_DIALOG', state: null })}
               isMyTurn={isMyTurn}
             />
           )}
 
-          {monsterSelectionDialog && (
+          {dialogs.monsterSelection && (
             <MonsterSelectionDialog
-              state={monsterSelectionDialog}
+              state={dialogs.monsterSelection}
               onSelectTarget={monsterName => {
-                if (monsterSelectionDialog) {
+                if (dialogs.monsterSelection) {
                   onAction(GameAction.InitiateCombat, {
-                    attackingArmyId: monsterSelectionDialog.attackingArmyId,
+                    attackingArmyId: dialogs.monsterSelection.attackingArmyId,
                     target: { type: 'monster', monsterName },
                   });
                 }
-                setMonsterSelectionDialog(null);
+                dispatch({ type: 'SET_MONSTER_SELECTION_DIALOG', state: null });
               }}
-              onClose={() => setMonsterSelectionDialog(null)}
+              onClose={() => dispatch({ type: 'SET_MONSTER_SELECTION_DIALOG', state: null })}
               isMyTurn={isMyTurn}
             />
           )}
 
-          {abilitiesShopOpen && (
+          {dialogs.abilitiesShopOpen && (
             <AbilitiesDialog
               player={localPlayer}
-              onClose={() => setAbilitiesShopOpen(false)}
+              onClose={() => dispatch({ type: 'SET_ABILITIES_SHOP_OPEN', open: false })}
               onBuyAbility={abilityName => onAction(GameAction.BuyAbility, { abilityName })}
               gameState={gameState}
               isMyTurn={isMyTurn}
             />
           )}
 
-          {stealResourceDialog?.isOpen && (
+          {dialogs.stealResource?.isOpen && (
             <StealResourceDialog
               players={gameState.players.filter(p => p.id !== localPlayer.id)}
               onSteal={(target, resource) => {
                 onAction(GameAction.StealResource, { targetPlayerId: target, resource });
-                setStealResourceDialog(null);
-                setPendingAction(null);
+                dispatch({ type: 'SET_STEAL_RESOURCE_DIALOG', state: null });
+                dispatch({ type: 'SET_PENDING_ACTION', pendingAction: null });
               }}
               onClose={() => {
-                setStealResourceDialog(null);
-                setPendingAction(null);
+                dispatch({ type: 'SET_STEAL_RESOURCE_DIALOG', state: null });
+                dispatch({ type: 'SET_PENDING_ACTION', pendingAction: null });
               }}
             />
           )}
 
-          {sabotageDialog?.isOpen && (
+          {dialogs.sabotage?.isOpen && (
             <SabotageDialog
               players={gameState.players.filter(p => p.id !== localPlayer.id)}
               onSabotage={targetPlayerId => {
                 onAction(GameAction.SabotagePlayer, { targetPlayerId });
-                setSabotageDialog(null);
-                setPendingAction(null);
+                dispatch({ type: 'SET_SABOTAGE_DIALOG', state: null });
+                dispatch({ type: 'SET_PENDING_ACTION', pendingAction: null });
               }}
               onClose={() => {
-                setSabotageDialog(null);
-                setPendingAction(null);
+                dispatch({ type: 'SET_SABOTAGE_DIALOG', state: null });
+                dispatch({ type: 'SET_PENDING_ACTION', pendingAction: null });
               }}
             />
           )}
 
-          {wealthyDialog?.isOpen && (
+          {dialogs.wealthy?.isOpen && (
             <WealthyDialog
               onSelectResource={resource => {
                 onAction(GameAction.GainWealth, { resource });
-                setWealthyDialog(null);
-                setPendingAction(null);
+                dispatch({ type: 'SET_WEALTHY_DIALOG', state: null });
+                dispatch({ type: 'SET_PENDING_ACTION', pendingAction: null });
               }}
               onClose={() => {
-                setWealthyDialog(null);
-                setPendingAction(null);
+                dispatch({ type: 'SET_WEALTHY_DIALOG', state: null });
+                dispatch({ type: 'SET_PENDING_ACTION', pendingAction: null });
               }}
             />
           )}
@@ -329,9 +261,9 @@ export function GameDialogManager({
       {playerForCardsDialog && (
         <CardsDialog
           player={playerForCardsDialog}
-          onClose={() => setCardsDialogPlayerId(null)}
+          onClose={() => dispatch({ type: 'TOGGLE_CARDS_DIALOG', playerId: null })}
           onUseCard={(cardName: CardName) => {
-            setCardsDialogPlayerId(null);
+            dispatch({ type: 'TOGGLE_CARDS_DIALOG', playerId: null });
             onLocalAction(GameAction.local_UseCard, { cardName });
           }}
           canUseCards={isMyTurn && isViewingOwnCards}

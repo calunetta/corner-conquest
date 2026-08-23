@@ -40,6 +40,7 @@ export function TutorialBeacon({ id, title, description, className, side = 'top'
     <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button 
+          data-testid={`tutorial-beacon-${id}`}
           variant="outline" 
           size="icon" 
           className={cn(
