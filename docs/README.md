@@ -23,17 +23,30 @@ Understanding the project's structure is key to making changes efficiently and c
 
 - `src/app/`: Core application, pages, and layout.
 - `src/components/`: Reusable, generic UI components (mostly from ShadCN).
-- `src/features/`: Contains domain-specific components and logic.
-  - `game/`: All components, dialogs, and panels related to the active game board.
+- `src/features/`: Contains domain-specific components and logic structured according to the **SOLID paradigm** (Single Responsibility Principle):
+  - `game/`: All components, dialogs, hooks, and panels related to the active game board.
+    - `components/`:
+      - `GameBoard.tsx`: High-level layout orchestrator (<150 lines).
+      - `GameBoardHeader.tsx`: Navigation, match status, VP goal, and start game controls.
+      - `GameDialogManager.tsx`: Dedicated container for mounting all 15+ modal dialogs.
+      - `IslandTile.tsx`: Island tile rendering, selection borders, and 3D hover effects.
+      - `AnimatedMonster.tsx`: Monster sprite animation and interval tracking.
+      - `TileOccupants.tsx`: Fog-of-war aware army sprites and death animations.
+      - `TileResources.tsx`: Resource icons and player position indicators.
+      - `MapGrid.tsx`: Grid coordinate mapper and terrain decoration generator.
+    - `hooks/`:
+      - `useTurnTimer.ts`: Turn countdown timer, interval tracking, and auto-timeout dispatch.
+      - `useGameBoardInteractions.ts`: Local action routing, army selection, multi-step actions (teleport/scout), and keyboard shortcuts.
     - `types.ts`: **(Local State)** Type definitions for client-side UI state (dialogs, pending actions).
-  - `lobby/`: Components for creating and joining games.
-- `src/hooks/`: Custom React hooks for managing client-side state and browser events. The most important are `useGameEngine` (Firestore sync) and `usePlayer` (session management).
+  - `lobby/`: Components for creating and joining games (`Lobby.tsx`, `LobbyGameRow.tsx`, `CreateGameDialog.tsx`).
+- `src/hooks/`: Custom React hooks (`useGameEngine`, `usePlayer`, `useIsMobile`, `useToast`).
 - `src/lib/`: Core application logic, type definitions, and Firebase configuration.
-  - `actions/`: **The "brain" of the game.** Contains pure functions that take the current `GameState` and an action, and return the new `GameState`.
-  - `game-initializer.ts`: Logic for creating the initial game state, including map generation.
-  - `game-logic.ts`: Higher-level logic, such as adding a player to a game.
-  - `bot-logic.ts`: The AI logic for bot players.
-  - `types.ts`: **(Shared State)** Central repository for the `GameState` object and its constituent types, which are synchronized with Firestore.
+  - `__tests__/`: Comprehensive Jest test suites covering all game mechanics (movement, combat, cards, turn progression, player actions, bot AI).
+  - `actions/`: **The "brain" of the game.** Pure reducer functions that calculate next `GameState` given an action.
+  - `game-initializer.ts`: Map generation and initial match setup.
+  - `game-logic.ts`: Higher-level room management and player joins.
+  - `bot-logic.ts`: AI bot decision engine.
+  - `types.ts`: **(Shared State)** Central repository for synchronized `GameState` types.
 
 ## 3. State Management & Session Logic
 
