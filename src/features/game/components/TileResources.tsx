@@ -1,17 +1,15 @@
 'use client';
 
 import React from 'react';
-import type { IslandResource, Player, ResourceType } from '@/lib/types';
+import type { Island } from '@/lib/types';
 import { IslandType, PlayerColor } from '@/lib/types';
 import { ResourceIcon } from '@/components/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useGameBoard } from '../context/GameBoardContext';
 
 interface TileResourcesProps {
-  resources: IslandResource[];
-  positionedBy: { playerId: number; resource: ResourceType }[];
-  players: Player[];
-  islandType: IslandType;
+  island: Island;
 }
 
 const playerColorMap: Record<PlayerColor, { bg: string; border: string }> = {
@@ -21,7 +19,10 @@ const playerColorMap: Record<PlayerColor, { bg: string; border: string }> = {
   [PlayerColor.Yellow]: { bg: 'bg-yellow-400', border: 'border-yellow-200' },
 };
 
-export function TileResources({ resources, positionedBy, players, islandType }: TileResourcesProps) {
+export function TileResources({ island }: TileResourcesProps) {
+  const { gameState } = useGameBoard();
+  const { players } = gameState;
+  const { resources, positionedBy = [], type: islandType } = island;
   const isBase = islandType === IslandType.Base;
 
   return (

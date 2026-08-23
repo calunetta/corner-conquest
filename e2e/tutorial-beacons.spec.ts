@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Tutorial Beacons & Hints Flow', () => {
-  test('renders tutorial beacons and opens popover guidance on click', async ({ page }) => {
+  test('renders tutorial beacons, opens popover guidance on click, and cleans up match', async ({ page }) => {
     const testUsername = `Learner_${Math.floor(Math.random() * 10000)}`;
     const matchName = `BeaconMatch_${Date.now()}`;
 
@@ -37,5 +37,17 @@ test.describe('Tutorial Beacons & Hints Flow', () => {
     // Close popover
     await page.keyboard.press('Escape');
     await expect(page.getByText('The Actions Panel')).not.toBeVisible({ timeout: 5000 });
+
+    // Clean up: Exit and delete the match
+    const exitBtn = page.getByTestId('gameboard-exit-btn');
+    await expect(exitBtn).toBeVisible();
+    await exitBtn.click();
+
+    const confirmLeaveBtn = page.getByRole('button', { name: /confirm & leave|leave match/i });
+    await expect(confirmLeaveBtn).toBeVisible({ timeout: 5000 });
+    await confirmLeaveBtn.click();
+
+    // Verify returned to lobby
+    await expect(page.getByText('Game Lobby')).toBeVisible({ timeout: 10000 });
   });
 });

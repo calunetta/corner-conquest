@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { Home, HelpCircle, Star } from 'lucide-react';
-import type { Island, Player, DeathAnimation } from '@/lib/types';
+import type { Island } from '@/lib/types';
 import { IslandType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -11,20 +11,10 @@ import { PLAYER_DATA } from '@/lib/player-data';
 import { AnimatedMonster } from './AnimatedMonster';
 import { TileResources } from './TileResources';
 import { TileOccupants } from './TileOccupants';
+import { useGameBoard } from '../context/GameBoardContext';
 
 type IslandTileProps = {
   island: Island;
-  players: Player[];
-  onClick: (x: number, y: number) => void;
-  isPossibleMove: boolean;
-  isSelected: boolean;
-  isTeleporting?: boolean;
-  isScoutTarget?: boolean;
-  deathAnimations: DeathAnimation[];
-  fogOfWar: boolean;
-  localPlayer: Player;
-  globallyRevealedTiles: Set<string>;
-  debugMode: boolean;
 };
 
 const BORDER_IMAGES = [
@@ -40,45 +30,40 @@ const playerTileIndicatorClasses: Record<string, string> = {
   yellow: 'shadow-yellow-400/50',
 };
 
-export function IslandTile({
-  island,
-  players,
-  onClick,
-  isPossibleMove,
-  isSelected,
-  isTeleporting,
-  isScoutTarget,
-  deathAnimations,
-  fogOfWar,
-  localPlayer,
-  globallyRevealedTiles,
-  debugMode,
-}: IslandTileProps) {
-  const occupants = island.occupants
-    .map(o => {
-      const player = players.find(p => p.id === o.playerId);
-      const army = player?.armies.find(a => a.id === o.armyId);
-      return { player, armyId: o.armyId, army };
-    })
-    .filter((o): o is { player: Player; armyId: number; army: NonNullable<typeof o.army> } => !!o.player && !!o.army);
+export function IslandTile({ island }: IslandTileProps) {
+  const { gameState, localPlayer, uiState, selectedArmy, handleTileClick } = useGameBoard();
+  const { players, deathAnimations, debugMode, settings } = gameState;
+  const { possibleMoves, pendingAction, selectedArmyId } = uiState;
+  const fogOfWar = settings.fogOfWar;
 
-  const positionedBy = island.positionedBy || [];
+  const isTeleporting = pendingAction?.type === 'teleport';
+  const isScouting = pendingAction?.type === 'scout';
+
+  const isPossibleMove = isTeleporting
+    ? selectedArmyId !== null
+    : possibleMoves.some(p => p.x === island.x && p.y === island.y);
+
+  const isSelected = !!selectedArmy && selectedArmy.position.x === island.x && selectedArmy.position.y === island.y;
+
+  const isScoutTarget = isScouting && (debugMode ? false : fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id));
+  const isTeleportTarget = isTeleporting && (!selectedArmy || !(selectedArmy.position.x === island.x && selectedArmy.position.y === island.y));
+
   const baseOwner = island.type === IslandType.Base ? players.find(p => p.id === island.owner) : null;
   const now = Date.now();
   const deathAnimationOnTile = deathAnimations.find(
     anim => anim.x === island.x && anim.y === island.y && (!anim.createdAt || now - anim.createdAt < 2000)
   );
-  const isPersonallyRevealed = localPlayer.revealedTiles.includes(island.id);
+  const isPersonallyRevealed = localPlayer ? localPlayer.revealedTiles.includes(island.id) : false;
 
   const isTileVisible = useMemo(() => {
     if (debugMode) return true;
     if (island.type === IslandType.Base) return true;
     if (fogOfWar) return isPersonallyRevealed;
-    return globallyRevealedTiles.has(island.id);
-  }, [island.type, island.id, fogOfWar, isPersonallyRevealed, globallyRevealedTiles, debugMode]);
+    return players.some(p => p.revealedTiles.includes(island.id));
+  }, [island.type, island.id, fogOfWar, isPersonallyRevealed, players, debugMode]);
 
   const tilePlayerColor = useMemo(() => {
-    if (!isTileVisible) return null;
+    if (!isTileVisible || !localPlayer) return null;
     const occupantIds = new Set(island.occupants.map(o => o.playerId));
     if (occupantIds.size === 1) {
       const singlePlayerId = occupantIds.values().next().value;
@@ -88,7 +73,7 @@ export function IslandTile({
       }
     }
     return null;
-  }, [island.occupants, players, isTileVisible, localPlayer.id]);
+  }, [island.occupants, players, isTileVisible, localPlayer]);
 
   const borderImageSequence = useMemo(() => {
     const middleImage = BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)];
@@ -135,24 +120,14 @@ export function IslandTile({
               <Home className="h-full w-full p-2" />
             )}
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-end justify-center gap-4">
-              <TileResources
-                resources={island.resources}
-                positionedBy={positionedBy}
-                players={players}
-                islandType={island.type}
-              />
+              <TileResources island={island} />
             </div>
           </div>
         );
       case IslandType.Resource:
         return (
           <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1">
-            <TileResources
-              resources={island.resources}
-              positionedBy={positionedBy}
-              players={players}
-              islandType={island.type}
-            />
+            <TileResources island={island} />
           </div>
         );
       case IslandType.Monster:
@@ -167,18 +142,18 @@ export function IslandTile({
   const isClickable =
     isPossibleMove ||
     isScoutTarget ||
-    (island.occupants && island.occupants.some(o => o.playerId === localPlayer.id));
+    (localPlayer && island.occupants && island.occupants.some(o => o.playerId === localPlayer.id));
 
   return (
     <TooltipProvider>
       <button
-        onClick={() => onClick(island.x, island.y)}
+        onClick={() => handleTileClick(island.x, island.y)}
         className={cn(
           'aspect-square w-full rounded-lg flex items-center justify-center relative transition-all duration-300 border-2 shadow-[0_10px_20px_rgba(0,0,0,0.6)]',
           isClickable ? 'cursor-pointer hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(0,0,0,0.8)]' : 'cursor-default',
           isSelected ? 'border-primary shadow-[0_0_30px_rgba(var(--primary),0.8)]' : 'border-transparent',
           isPossibleMove && 'border-accent/80 shadow-[0_0_20px_rgba(var(--accent),0.6)]',
-          isTeleporting && 'border-purple-500/50 shadow-lg shadow-purple-500/40',
+          isTeleportTarget && 'border-purple-500/50 shadow-lg shadow-purple-500/40',
           isScoutTarget && 'border-blue-500/50 shadow-lg shadow-blue-500/40',
           tilePlayerColor && !isSelected && `shadow-lg ${playerTileIndicatorClasses[tilePlayerColor]}`,
           isClickable && !isSelected && !isPossibleMove && 'hover:border-foreground/50'
@@ -203,15 +178,7 @@ export function IslandTile({
           {getIcon()}
         </div>
 
-        <TileOccupants
-          occupants={occupants}
-          deathAnimations={deathAnimations}
-          debugMode={debugMode}
-          fogOfWar={fogOfWar}
-          localPlayer={localPlayer}
-          island={island}
-          isPersonallyRevealed={isPersonallyRevealed}
-        />
+        <TileOccupants island={island} />
 
         <div className="pointer-events-none absolute -bottom-[11px] left-1/2 -translate-x-1/2 z-0 flex w-full justify-center">
           {borderImageSequence.map((src, index) => (

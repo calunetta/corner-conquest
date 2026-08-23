@@ -31,19 +31,25 @@ Understanding the project's structure is key to making changes efficiently and c
     - `context/`:
       - `GameBoardContext.tsx`: Centralized React Context and pure `gameBoardReducer` managing local UI state (`selectedArmyId`, `possibleMoves`, `pendingAction`, and 12+ dialog states). Exposes `useGameBoard()`.
     - `components/`:
-      - `GameBoard.tsx`: High-level layout orchestrator (<150 lines) wrapped by `<GameBoardProvider>`.
+      - `GameBoard.tsx`: High-level layout orchestrator (<80 lines) composing atomic subcomponents with `<GameBoardProvider>`.
       - `GameBoardHeader.tsx`: Navigation, match status, VP goal, and start game controls with **0 props**.
+      - `PlayerInfoBar.tsx`: Collapsible player cards list, goal badge, and tutorial beacon with **0 props**.
+      - `GameStatusBadge.tsx`: Turn indicator and player queue badge with **0 props**.
       - `GameDialogManager.tsx`: Dedicated container for mounting all 15+ modal dialogs with **zero prop-drilling**.
-      - `MapGrid.tsx`: Lightweight terrain board orchestrator (<70 lines, **0 props**).
+      - `MapGrid.tsx`: Lightweight terrain board orchestrator (<60 lines, **0 props**).
       - `MapDecorations.tsx`: Procedural rock placement, ocean animations, and memoized terrain styling.
-      - `IslandTile.tsx`: Island tile rendering, selection borders, and 3D hover effects.
+      - `IslandTile.tsx`: Island tile rendering, selection borders, and 3D hover effects with **1 prop (`{ island }`)**.
       - `AnimatedMonster.tsx`: Monster sprite animation and interval tracking.
-      - `TileOccupants.tsx`: Fog-of-war aware army sprites and death animations.
-      - `TileResources.tsx`: Resource icons and player position indicators.
+      - `TileOccupants.tsx`: Fog-of-war aware army sprites and death animations with **1 prop (`{ island }`)**.
+      - `TileResources.tsx`: Resource icons and player position indicators with **1 prop (`{ island }`)**.
+    - `panels/`:
+      - `ActionsPanel.tsx`: Action buttons, shop triggers, and turn countdown timer with **0 props**.
+      - `GameLog.tsx`: Reverse-chronological match action log with **0 props**.
+      - `PlayerInfo.tsx`: Individual player HUD card.
     - `hooks/`:
       - `useTurnTimer.ts`: Turn countdown timer, interval tracking, and auto-timeout dispatch.
     - `types.ts`: Re-exports domain dialog types from `@/lib/types/dialogs`.
-  - `lobby/`: Components for creating and joining games (`Lobby.tsx`, `LobbyGameRow.tsx`, `CreateGameDialog.tsx`, `CustomSettingsSheet.tsx`).
+  - `lobby/`: Components for creating and joining games (`Lobby.tsx` with scrollable match list, `LobbyGameRow.tsx`, `CreateGameDialog.tsx`, `CustomSettingsSheet.tsx`).
 - `src/hooks/`: Custom React hooks (`useGameEngine`, `usePlayer`, `useIsMobile`, `useToast`).
 - `src/lib/`: Core application logic, type definitions, and Firebase configuration.
   - `__tests__/`: Comprehensive Jest test suites covering all game mechanics (movement, combat, cards, turn progression, player actions, bot AI).

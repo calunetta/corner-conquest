@@ -13,7 +13,7 @@ export function GameBoardHeader() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex items-center gap-2 sm:gap-4">
-        <Button variant="outline" size="icon" onClick={handleExitClick} disabled={uiState.isExiting}>
+        <Button variant="outline" size="icon" onClick={handleExitClick} disabled={uiState.isExiting} data-testid="gameboard-exit-btn">
           {uiState.isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft />}
         </Button>
         <h1 className="text-xl font-bold sm:text-2xl">{name}</h1>

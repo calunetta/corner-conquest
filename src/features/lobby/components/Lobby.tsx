@@ -168,7 +168,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="max-h-[50vh] overflow-y-auto pr-1 space-y-3">
             {isGamesLoading ? (
               <div className="flex justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />

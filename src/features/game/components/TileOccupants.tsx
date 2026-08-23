@@ -2,44 +2,41 @@
 
 import React from 'react';
 import Image from 'next/image';
-import type { Player, Army, DeathAnimation, Island } from '@/lib/types';
+import type { Island } from '@/lib/types';
 import { IslandType } from '@/lib/types';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { cn } from '@/lib/utils';
+import { useGameBoard } from '../context/GameBoardContext';
 
 interface TileOccupantsProps {
-  occupants: { player: Player; armyId: number; army: Army }[];
-  deathAnimations: DeathAnimation[];
-  debugMode: boolean;
-  fogOfWar: boolean;
-  localPlayer: Player;
   island: Island;
-  isPersonallyRevealed: boolean;
 }
 
 const positions = [
   { bottom: '0', left: '0', origin: 'origin-bottom-left' },
   { bottom: '0', right: '0', origin: 'origin-bottom-right' },
   { top: '0', left: '0', origin: 'origin-top-left' },
-  { top: '0', right: '0', origin: 'origin-top-right' }
+  { top: '0', right: '0', origin: 'origin-top-right' },
 ];
 
-export function TileOccupants({
-  occupants,
-  deathAnimations,
-  debugMode,
-  fogOfWar,
-  localPlayer,
-  island,
-  isPersonallyRevealed,
-}: TileOccupantsProps) {
+export function TileOccupants({ island }: TileOccupantsProps) {
+  const { gameState, localPlayer } = useGameBoard();
+  const { players, deathAnimations, debugMode, settings } = gameState;
+  const fogOfWar = settings.fogOfWar;
+  const isPersonallyRevealed = localPlayer ? localPlayer.revealedTiles.includes(island.id) : false;
   const now = Date.now();
+
+  const occupants = island.occupants
+    .map(o => {
+      const player = players.find(p => p.id === o.playerId);
+      const army = player?.armies.find(a => a.id === o.armyId);
+      return { player, army, armyId: o.armyId };
+    })
+    .filter((item): item is { player: NonNullable<typeof item.player>; army: NonNullable<typeof item.army>; armyId: number } => !!item.player && !!item.army);
 
   return (
     <div className="absolute inset-0 z-30 pointer-events-none">
       {occupants.map(({ player, army }, index) => {
-        if (!player || !army) return null;
-
         if (
           deathAnimations.some(
             anim =>
@@ -55,7 +52,7 @@ export function TileOccupants({
           isArmyVisible = true;
         } else if (fogOfWar) {
           isArmyVisible =
-            player.id === localPlayer.id ||
+            (localPlayer && player.id === localPlayer.id) ||
             island.type === IslandType.Base ||
             isPersonallyRevealed;
         } else {

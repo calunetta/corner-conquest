@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Gameplay & Board Interactions Flow', () => {
-  test('creates a game, loads the board, interacts with actions panel, and ends turn', async ({ page }) => {
+  test('creates a game, loads the board, interacts with actions panel, ends turn, and cleans up', async ({ page }) => {
     const testUsername = `Player_${Math.floor(Math.random() * 10000)}`;
     const matchName = `Match_${Date.now()}`;
 
@@ -49,5 +49,17 @@ test.describe('Gameplay & Board Interactions Flow', () => {
     // 7. Verify End Turn button exists
     const endTurnBtn = page.getByRole('button', { name: /end turn/i });
     await expect(endTurnBtn).toBeVisible();
+
+    // 8. Clean up: Exit and delete the match
+    const exitBtn = page.getByTestId('gameboard-exit-btn');
+    await expect(exitBtn).toBeVisible();
+    await exitBtn.click();
+
+    const confirmLeaveBtn = page.getByRole('button', { name: /confirm & leave|leave match/i });
+    await expect(confirmLeaveBtn).toBeVisible({ timeout: 5000 });
+    await confirmLeaveBtn.click();
+
+    // Verify returned to lobby
+    await expect(page.getByText('Game Lobby')).toBeVisible({ timeout: 10000 });
   });
 });

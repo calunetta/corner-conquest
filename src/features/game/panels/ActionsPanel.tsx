@@ -12,10 +12,7 @@ import { TutorialBeacon } from '../components/TutorialBeacon';
 import { HAND_LIMIT } from '@/lib/types';
 import { useGameBoard } from '../context/GameBoardContext';
 
-interface ActionsPanelProps {
-  timeLeft: number;
-  turnDuration: number;
-}
+import { useTurnTimer } from '../hooks/useTurnTimer';
 
 type ActionConfig = {
   id: GameAction;
@@ -26,7 +23,7 @@ type ActionConfig = {
   onClick: () => void;
 };
 
-export function ActionsPanel({ timeLeft, turnDuration }: ActionsPanelProps) {
+export function ActionsPanel() {
   const {
     onAction,
     onLocalAction,
@@ -36,6 +33,12 @@ export function ActionsPanel({ timeLeft, turnDuration }: ActionsPanelProps) {
     selectedArmy,
     uiState,
   } = useGameBoard();
+
+  const { timeLeft, turnDuration } = useTurnTimer({
+    isMyTurn,
+    gameStatus: gameState?.status || '',
+    onAction,
+  });
 
   const { pendingAction } = uiState;
   const { map, specialCardsDeck, settings } = gameState;

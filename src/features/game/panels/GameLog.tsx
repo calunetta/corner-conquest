@@ -1,12 +1,14 @@
+'use client';
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useGameBoard } from '../context/GameBoardContext';
 
-type GameLogProps = {
-  logs: string[];
-};
+export function GameLog() {
+  const { gameState } = useGameBoard();
+  const logs = gameState?.log || [];
 
-export function GameLog({ logs }: GameLogProps) {
   return (
     <Card className="bg-background/40 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
       <CardHeader>
