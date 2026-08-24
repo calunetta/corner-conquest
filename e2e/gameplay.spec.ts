@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { safeCleanupGame } from './e2e-cleanup';
 
 test.describe('Gameplay & Board Interactions Flow', () => {
+  test.afterEach(async ({ page }) => {
+    await safeCleanupGame(page);
+  });
   test('creates a game, loads the board, interacts with actions panel, ends turn, and cleans up', async ({ page }) => {
     const testUsername = `Player_${Math.floor(Math.random() * 10000)}`;
     const matchName = `Match_${Date.now()}`;

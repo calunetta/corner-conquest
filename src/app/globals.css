@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 body {
-  font-family: var(--font-body), sans-serif;
+  font-family: var(--font-outfit), 'Outfit', sans-serif;
 }
 
 @layer base {
@@ -83,7 +83,20 @@ body {
   * {
     @apply border-border;
   }
+  html,
   body {
     @apply bg-background text-foreground font-body;
   }
+  button:not(:disabled),
+  a,
+  [role="button"]:not([aria-disabled="true"]),
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  :disabled,
+  [disabled],
+  .cursor-not-allowed {
+    cursor: not-allowed !important;
+  }
 }
+

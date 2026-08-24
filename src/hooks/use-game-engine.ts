@@ -119,7 +119,7 @@ export function useGameEngine(gameId: string, playerId: string | null) {
     gameState.deathAnimations.forEach(anim => {
         if (!scheduledDeathAnimations.current.has(anim.id)) {
             scheduledDeathAnimations.current.add(anim.id);
-            const remainingTime = Math.max(100, (anim.createdAt ? (anim.createdAt + 1500 - Date.now()) : 1500));
+            const remainingTime = Math.max(100, (anim.createdAt ? (anim.createdAt + 1250 - Date.now()) : 1250));
             
             setTimeout(() => {
                 scheduledDeathAnimations.current.delete(anim.id);

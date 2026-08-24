@@ -133,7 +133,7 @@ export function handleCloseCombat(state: GameState): GameState {
 
         if (losingArmy && baseTile) {
             const deathAnim: DeathAnimation = {
-                id: `army-${loser.id}-${losingArmy.id}`,
+                id: `army-${loser.id}-${losingArmy.id}-${Date.now()}`,
                 x: losingArmy.position.x,
                 y: losingArmy.position.y,
                 sprite: PLAYER_DATA[loser.color].sprite.death,
@@ -163,7 +163,7 @@ export function handleCloseCombat(state: GameState): GameState {
         const baseTile = baseTiles.find(b => b.owner === loserId);
         if (loserArmy && baseTile) {
             const deathAnim: DeathAnimation = {
-                id: `army-${loser.id}-${loserArmy.id}`,
+                id: `army-${loser.id}-${loserArmy.id}-${Date.now()}`,
                 x: loserArmy.position.x,
                 y: loserArmy.position.y,
                 sprite: PLAYER_DATA[loser.color].sprite.death,
@@ -295,7 +295,7 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
         attacker.victoryPoints += monsterVP;
         
         const deathAnim: DeathAnimation = {
-            id: `monster-${currentTile.x}-${currentTile.y}-${monster.name}`,
+            id: `monster-${currentTile.x}-${currentTile.y}-${monster.name}-${Date.now()}`,
             x: currentTile.x,
             y: currentTile.y,
             sprite: monster.sprite.death,
@@ -339,7 +339,7 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
         const losingArmy = attacker.armies.find(a => a.position.x === attackerPosition.x && a.position.y === attackerPosition.y);
         if (losingArmy && baseTile) {
             const deathAnim: DeathAnimation = {
-                id: `army-${attacker.id}-${losingArmy.id}`,
+                id: `army-${attacker.id}-${losingArmy.id}-${Date.now()}`,
                 x: losingArmy.position.x,
                 y: losingArmy.position.y,
                 sprite: PLAYER_DATA[attacker.color].sprite.death,

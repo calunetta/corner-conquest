@@ -15,8 +15,8 @@ export default {
         'terrain': "url('/sprites/terrain.png')",
       },
       fontFamily: {
-        body: ['"Lilita One"', 'sans-serif'],
-        headline: ['"Lilita One"', 'sans-serif'],
+        body: ['var(--font-outfit)', 'Outfit', 'sans-serif'],
+        headline: ['var(--font-outfit)', 'Outfit', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {

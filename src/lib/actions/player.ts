@@ -281,8 +281,9 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
             }
             
             const isHost = playerIndex === 0;
+            const remainingRealPlayers = currentState.players.filter(p => !p.isBot && p.playerId !== playerId);
 
-            if (isHost && currentState.players.length <= 1) {
+            if ((isHost && currentState.status === 'playing') || remainingRealPlayers.length === 0 || (isHost && currentState.players.length <= 1)) {
                 transaction.delete(gameDocRef);
                 return;
             }

@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 interface MapZoomControlsProps {
   zoom: number;
+  defaultZoom?: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onResetZoom: () => void;
@@ -14,11 +15,13 @@ interface MapZoomControlsProps {
 
 export function MapZoomControls({
   zoom,
+  defaultZoom = 0.85,
   onZoomIn,
   onZoomOut,
   onResetZoom,
 }: MapZoomControlsProps) {
   const percentage = Math.round(zoom * 100);
+  const defaultPercentage = Math.round(defaultZoom * 100);
 
   return (
     <TooltipProvider>
@@ -54,7 +57,7 @@ export function MapZoomControls({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
-            <p>Reset Zoom (100%)</p>
+            <p>Reset Zoom ({defaultPercentage}%)</p>
           </TooltipContent>
         </Tooltip>
 

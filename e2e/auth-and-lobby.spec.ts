@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { safeCleanupGame } from './e2e-cleanup';
 
 test.describe('Authentication & Lobby Flow', () => {
+  test.afterEach(async ({ page }) => {
+    await safeCleanupGame(page);
+  });
   test('allows a user to log in and access the lobby', async ({ page }) => {
     const testUsername = `User_${Math.floor(Math.random() * 10000)}`;
 

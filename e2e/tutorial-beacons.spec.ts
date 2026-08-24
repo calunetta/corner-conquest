@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { safeCleanupGame } from './e2e-cleanup';
 
 test.describe('Tutorial Beacons & Hints Flow', () => {
+  test.afterEach(async ({ page }) => {
+    await safeCleanupGame(page);
+  });
   test('renders tutorial beacons, opens popover guidance on click, and cleans up match', async ({ page }) => {
     const testUsername = `Learner_${Math.floor(Math.random() * 10000)}`;
     const matchName = `BeaconMatch_${Date.now()}`;
@@ -22,7 +26,7 @@ test.describe('Tutorial Beacons & Hints Flow', () => {
     await dialog.getByRole('button', { name: /create game/i }).click();
 
     // Wait for game board
-    await expect(page.getByText(matchName)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: matchName })).toBeVisible({ timeout: 15000 });
 
     // Look for tutorial beacon button
     const beacon = page.getByTestId('tutorial-beacon-actions-info');

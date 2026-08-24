@@ -7,12 +7,14 @@ import { MapDecorations } from './MapDecorations';
 import { MapZoomControls } from './MapZoomControls';
 import { useIsMobile } from '@/hooks/use-is-mobile';
 import { useGameBoard } from '../context/GameBoardContext';
-import { useMapPanZoom } from '../hooks/useMapPanZoom';
+import { useMapPanZoom, DEFAULT_DESKTOP_ZOOM } from '../hooks/useMapPanZoom';
 
 export function MapGrid() {
   const { gameState } = useGameBoard();
   const isMobile = useIsMobile();
-  const { zoom, pan, isDragging, zoomIn, zoomOut, resetZoom, handlers } = useMapPanZoom();
+  const { zoom, pan, defaultZoom, isDragging, zoomIn, zoomOut, resetZoom, handlers } = useMapPanZoom({
+    initialZoom: DEFAULT_DESKTOP_ZOOM,
+  });
 
   const { map } = gameState;
 
@@ -30,13 +32,14 @@ export function MapGrid() {
 
   return (
     <div
-      className="relative w-full h-full min-h-[380px] sm:min-h-[460px] flex items-center justify-center overflow-hidden select-none cursor-grab active:cursor-grabbing touch-none"
+      className="relative w-full h-full min-h-[340px] sm:min-h-[460px] flex items-center justify-center overflow-hidden select-none cursor-grab active:cursor-grabbing touch-none"
       {...handlers}
       data-testid="map-canvas-container"
     >
       {/* Zoom Controls Overlay */}
       <MapZoomControls
         zoom={zoom}
+        defaultZoom={defaultZoom}
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
         onResetZoom={resetZoom}
@@ -44,23 +47,23 @@ export function MapGrid() {
 
       {/* Pan & Zoom Transform Wrapper */}
       <div
-        className="transition-transform duration-75 ease-out flex items-center justify-center p-6 sm:p-10"
+        className="transition-transform duration-75 ease-out flex items-center justify-center p-2 sm:p-6 md:p-10"
         style={{
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           transformOrigin: 'center center',
         }}
       >
         {/* Ocean Background Canvas Frame */}
-        <div className="relative bg-water-pattern bg-repeat p-6 sm:p-9 rounded-3xl border border-white/20 shadow-[0_24px_72px_rgba(0,0,0,0.8)] flex items-center justify-center">
+        <div className="relative bg-water-pattern bg-repeat p-3 sm:p-5 md:p-8 rounded-3xl border border-white/20 shadow-[0_24px_72px_rgba(0,0,0,0.8)] flex items-center justify-center">
           <MapDecorations isMobile={isMobile} />
 
           <div
             className="grid z-10 relative"
             style={{
               gridTemplateColumns: `repeat(${cols}, ${
-                isMobile ? 'clamp(72px, 18vw, 92px)' : 'clamp(94px, 12.5vh, 136px)'
+                isMobile ? 'clamp(46px, 13.5vw, 68px)' : 'clamp(94px, 12.5vh, 136px)'
               })`,
-              gap: isMobile ? 'clamp(8px, 2.2vw, 14px)' : 'clamp(12px, 1.8vh, 22px)',
+              gap: isMobile ? 'clamp(4px, 1.2vw, 8px)' : 'clamp(12px, 1.8vh, 22px)',
             }}
           >
             {map.map(island => (

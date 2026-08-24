@@ -11,6 +11,7 @@ import { PLAYER_DATA } from '@/lib/player-data';
 import { AnimatedMonster } from './AnimatedMonster';
 import { TileResources } from './TileResources';
 import { TileOccupants } from './TileOccupants';
+import { DeathEffect, DEATH_ANIMATION_DURATION } from './DeathEffect';
 import { useGameBoard } from '../context/GameBoardContext';
 
 type IslandTileProps = {
@@ -51,7 +52,7 @@ export function IslandTile({ island }: IslandTileProps) {
   const baseOwner = island.type === IslandType.Base ? players.find(p => p.id === island.owner) : null;
   const now = Date.now();
   const deathAnimationOnTile = deathAnimations.find(
-    anim => anim.x === island.x && anim.y === island.y && (!anim.createdAt || now - anim.createdAt < 2000)
+    anim => anim.x === island.x && anim.y === island.y && (!anim.createdAt || now - anim.createdAt < DEATH_ANIMATION_DURATION)
   );
   const isPersonallyRevealed = localPlayer ? localPlayer.revealedTiles.includes(island.id) : false;
 
@@ -164,15 +165,11 @@ export function IslandTile({ island }: IslandTileProps) {
         <div className="absolute inset-0 z-10 bg-terrain bg-cover bg-center bg-no-repeat" />
 
         {deathAnimationOnTile && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center">
-            <Image
-              src={deathAnimationOnTile.sprite}
-              alt="Death animation"
-              width={64}
-              height={64}
-              unoptimized
-            />
-          </div>
+          <DeathEffect
+            sprite={deathAnimationOnTile.sprite}
+            id={deathAnimationOnTile.id}
+            createdAt={deathAnimationOnTile.createdAt}
+          />
         )}
 
         <div className={cn("h-full w-full p-1 z-20", !isTileVisible ? 'bg-transparent' : 'bg-transparent')}>

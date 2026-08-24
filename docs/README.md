@@ -381,7 +381,11 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete,
 3.  **Guaranteed Turn Transition:** Upon completing all valid army actions, the bot calls `handleEndTurn` and writes the resulting state to Firestore in a single atomic update, cleanly advancing the turn to the next player.
 
 ### 6.9. UI Components and Mobile Responsiveness
-- **Map Rendering:** The `MapGrid` dynamically derives column and row layouts from map tiles and match settings (`settings.gridSize`), sizing tiles adaptively for mobile (75px) vs desktop (120px) screens with scatter decorations.
+- **Map Rendering & Colonist.io Mobile Strategy:**
+  - **Desktop Starting Zoom:** Initial zoom on desktop defaults to **85% (`0.85`)**, giving players an optimal tactical overview of the archipelago, centered with margin for the sidebars and HUD.
+  - **Zoom Controls:** Zoom in/out operates in 15% intervals with a quick-reset button that returns to the 85% default zoom.
+  - **Mobile Auto-Fitting Layout (Colonist.io Paradigm):** On mobile devices, the entire 5x5 archipelago grid is scaled to fit within the viewport width (`clamp(46px, 13.5vw, 68px)` tile size with `clamp(4px, 1.2vw, 8px)` gaps and reduced frame padding). This ensures all 4 corner bases (Blue, Red, Yellow, Purple) are visible at a glance on initial load without clipping or requiring panning.
+  - **Touch Interactions:** Supports smooth single-finger panning and two-finger pinch-to-zoom (up to `2.0x`) for close inspection of individual islands and armies.
 - **Player Stats Display:** The `PlayerInfo` panel renders `armies.length` accurately and displays the base `attackPower` stat with an informative tooltip detailing the `Attack Power + 1` combat dice formula, while prioritizing sprite image loading.
 - **Combat & Monster Dialog Flow:**
   - Real-time combat actions (`MonsterCombatRoll`, `CloseMonsterCombat`, `CombatRoll`, `CloseCombat`) update both local client state and Firestore synchronously, ensuring instantaneous UI transitions between preparation, rolling, and results screens.
@@ -400,3 +404,14 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete,
 - **Overview**: An optional, skippable tutorial system (`TutorialOverlay.tsx`) automatically displays to new players to explain core mechanics (Goals, Deploying, Moving & Positioning, Resources & Shop, Combat, Special Cards).
 - **State Management**: The tutorial uses `localStorage` (`'corner-conquest-tutorial'`) to remember if a player has seen it, preventing annoyance in subsequent sessions. It can also be manually re-triggered via the 'Help' button in the game board header.
 - **Maintenance Rule**: Whenever core mechanics, UI layouts, or game rules are added or modified, the steps inside `TutorialOverlay.tsx` MUST be updated to reflect the new changes to keep the new player experience accurate.
+
+### 6.11. End-to-End (E2E) Testing & Match Cleanup Lifecycle
+- **Mandatory Teardown Hook (`safeCleanupGame`)**:
+  - Every Playwright test suite (`e2e/*.spec.ts`) **MUST** register `safeCleanupGame` inside `test.afterEach(async ({ page }) => { await safeCleanupGame(page); });`.
+  - **Guaranteed Cleanup Regardless of Test Outcome:** Even if an assertion throws an error or times out midway through test execution, `test.afterEach` is guaranteed to execute, dismissing any open modals and clicking the GameBoard exit button to dismantle the match.
+- **Match Dismantling Rules (`handlePlayerExit` in `src/lib/actions/player.ts`)**:
+  - **Host Departure During Active Match:** When a host leaves a game in progress (`status === 'playing'`), the Firestore room document is deleted (`transaction.delete(gameDocRef)`), preventing orphaned games.
+  - **No Human Players Remaining:** If the last human player exits a match (leaving only AI bots), the game room is deleted immediately.
+  - **Single/Solo Player Departure:** If total remaining players are `<= 1` when the host leaves, the game document is dismantled from Firestore.
+- **Lobby Hygiene:** Adhering to these rules prevents test runs and player abandonments from cluttering Firestore and ensures the game lobby only ever lists active, joinable rooms.
+

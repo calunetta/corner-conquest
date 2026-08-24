@@ -1,13 +1,19 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 const MIN_ZOOM = 0.55;
 const MAX_ZOOM = 2.0;
 const ZOOM_STEP = 0.15;
+export const DEFAULT_DESKTOP_ZOOM = 0.85;
 
-export function useMapPanZoom() {
-  const [zoom, setZoom] = useState(1.0);
+interface UseMapPanZoomOptions {
+  initialZoom?: number;
+}
+
+export function useMapPanZoom(options?: UseMapPanZoomOptions) {
+  const defaultZoom = options?.initialZoom ?? DEFAULT_DESKTOP_ZOOM;
+  const [zoom, setZoom] = useState(defaultZoom);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
@@ -16,7 +22,7 @@ export function useMapPanZoom() {
   const isMouseDownRef = useRef(false);
   const hasDraggedRef = useRef(false);
   const initialPinchDistanceRef = useRef<number | null>(null);
-  const initialPinchZoomRef = useRef<number>(1.0);
+  const initialPinchZoomRef = useRef<number>(defaultZoom);
 
   const zoomIn = useCallback(() => {
     setZoom(prev => Math.min(MAX_ZOOM, Math.round((prev + ZOOM_STEP) * 100) / 100));
@@ -27,15 +33,13 @@ export function useMapPanZoom() {
   }, []);
 
   const resetZoom = useCallback(() => {
-    setZoom(1.0);
+    setZoom(defaultZoom);
     setPan({ x: 0, y: 0 });
-  }, []);
+  }, [defaultZoom]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Check if clicking directly on a button or dialog control inside the canvas
     const isInteractive = !!(e.target as HTMLElement)?.closest('button, a, input, select, [role="button"]');
     
-    // Middle click, right click, or clicking canvas background / non-interactive area
     if (e.button === 0 || e.button === 1) {
       isMouseDownRef.current = true;
       hasDraggedRef.current = false;
@@ -54,7 +58,6 @@ export function useMapPanZoom() {
     const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
 
-    // Start dragging after 4px of movement
     if (!hasDraggedRef.current && Math.hypot(dx, dy) > 4) {
       hasDraggedRef.current = true;
       setIsDragging(true);
@@ -74,7 +77,6 @@ export function useMapPanZoom() {
   }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    // Zoom on wheel (natural wheel zoom or ctrl-wheel zoom)
     if (e.ctrlKey || e.metaKey || e.altKey || Math.abs(e.deltaY) > 20) {
       e.preventDefault();
       if (e.deltaY < 0) {
@@ -85,7 +87,7 @@ export function useMapPanZoom() {
     }
   }, [zoomIn, zoomOut]);
 
-  // Touch handlers for mobile & tablet
+  // Touch handlers for mobile & tablet (Colonist.io responsive touch interaction)
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const isInteractive = !!(e.target as HTMLElement)?.closest('button, a, input, select, [role="button"]');
 
@@ -114,7 +116,7 @@ export function useMapPanZoom() {
       const dx = e.touches[0].clientX - dragStartRef.current.x;
       const dy = e.touches[0].clientY - dragStartRef.current.y;
 
-      if (!hasDraggedRef.current && Math.hypot(dx, dy) > 6) {
+      if (!hasDraggedRef.current && Math.hypot(dx, dy) > 4) {
         hasDraggedRef.current = true;
         setIsDragging(true);
       }
@@ -144,6 +146,7 @@ export function useMapPanZoom() {
   return {
     zoom,
     pan,
+    defaultZoom,
     isDragging,
     zoomIn,
     zoomOut,

@@ -40,8 +40,8 @@ export function TileOccupants({ island }: TileOccupantsProps) {
         if (
           deathAnimations.some(
             anim =>
-              anim.id === `army-${player.id}-${army.id}` &&
-              (!anim.createdAt || now - anim.createdAt < 2000)
+              anim.id.startsWith(`army-${player.id}-${army.id}`) &&
+              (!anim.createdAt || now - anim.createdAt < 1200)
           )
         ) {
           return null;
