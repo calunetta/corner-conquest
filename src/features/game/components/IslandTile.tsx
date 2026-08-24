@@ -38,15 +38,15 @@ export function IslandTile({ island }: IslandTileProps) {
 
   const isTeleporting = pendingAction?.type === 'teleport';
   const isScouting = pendingAction?.type === 'scout';
-
+  const isOpponentBase = island.type === IslandType.Base && island.owner !== localPlayer?.id;
   const isPossibleMove = isTeleporting
-    ? selectedArmyId !== null
+    ? selectedArmyId !== null && !isOpponentBase
     : possibleMoves.some(p => p.x === island.x && p.y === island.y);
 
   const isSelected = !!selectedArmy && selectedArmy.position.x === island.x && selectedArmy.position.y === island.y;
 
   const isScoutTarget = isScouting && (debugMode ? false : fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id));
-  const isTeleportTarget = isTeleporting && (!selectedArmy || !(selectedArmy.position.x === island.x && selectedArmy.position.y === island.y));
+  const isTeleportTarget = isTeleporting && !isOpponentBase && (!selectedArmy || !(selectedArmy.position.x === island.x && selectedArmy.position.y === island.y));
 
   const baseOwner = island.type === IslandType.Base ? players.find(p => p.id === island.owner) : null;
   const now = Date.now();
@@ -142,6 +142,7 @@ export function IslandTile({ island }: IslandTileProps) {
   const isClickable =
     isPossibleMove ||
     isScoutTarget ||
+    isTeleportTarget ||
     (localPlayer && island.occupants && island.occupants.some(o => o.playerId === localPlayer.id));
 
   return (

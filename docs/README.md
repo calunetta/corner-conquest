@@ -23,7 +23,7 @@ This document outlines the architecture and key logic flows of the "Corner Conqu
 
 Understanding the project's structure is key to making changes efficiently and correctly.
 
-- `e2e/`: Playwright End-to-End browser test suites (`auth-and-lobby.spec.ts`, `gameplay.spec.ts`, `tutorial-beacons.spec.ts`).
+- `e2e/`: Playwright End-to-End browser test suites (`auth-and-lobby.spec.ts`, `gameplay.spec.ts`, `map-viewport.spec.ts`, `tutorial-beacons.spec.ts`).
 - `src/app/`: Core application, pages, and layout.
 - `src/components/`: Reusable, generic UI components (mostly from ShadCN).
 - `src/features/`: Contains domain-specific components and logic structured according to the **SOLID paradigm** (Single Responsibility Principle):
@@ -36,8 +36,9 @@ Understanding the project's structure is key to making changes efficiently and c
       - `PlayerInfoBar.tsx`: Collapsible player cards list, goal badge, and tutorial beacon with **0 props**.
       - `GameStatusBadge.tsx`: Turn indicator and player queue badge with **0 props**.
       - `GameDialogManager.tsx`: Dedicated container for mounting all 15+ modal dialogs with **zero prop-drilling**.
-      - `MapGrid.tsx`: Lightweight terrain board orchestrator (<60 lines, **0 props**).
-      - `MapDecorations.tsx`: Procedural rock placement, ocean animations, and memoized terrain styling.
+      - `MapGrid.tsx`: Lightweight terrain board orchestrator (<70 lines, **0 props**) with pan and pinch-to-zoom support.
+      - `MapZoomControls.tsx`: Glassmorphic zoom controls HUD (+ / - / Reset 100%) with **0 props or callback props**.
+      - `MapDecorations.tsx`: Deterministic fixed rock placement in perimeter water margins with mobile responsive filtering.
       - `IslandTile.tsx`: Island tile rendering, selection borders, and 3D hover effects with **1 prop (`{ island }`)**.
       - `AnimatedMonster.tsx`: Monster sprite animation and interval tracking.
       - `TileOccupants.tsx`: Fog-of-war aware army sprites and death animations with **1 prop (`{ island }`)**.
@@ -47,9 +48,12 @@ Understanding the project's structure is key to making changes efficiently and c
       - `GameLog.tsx`: Reverse-chronological match action log with **0 props**.
       - `PlayerInfo.tsx`: Individual player HUD card.
     - `hooks/`:
+      - `useMapPanZoom.ts`: Pure pan, pinch-to-zoom, mouse wheel zoom, and drag handler hook.
       - `useTurnTimer.ts`: Turn countdown timer, interval tracking, and auto-timeout dispatch.
     - `types.ts`: Re-exports domain dialog types from `@/lib/types/dialogs`.
-  - `lobby/`: Components for creating and joining games (`Lobby.tsx` with scrollable match list, `LobbyGameRow.tsx`, `CreateGameDialog.tsx`, `CustomSettingsSheet.tsx`).
+  - `lobby/`: Components for creating and joining games (`Lobby.tsx` with 2-column command center and scrollable match list, `LobbyBackground.tsx` with animated battle diorama and 4 faction bases, `LobbyGameRow.tsx`, `CreateGameDialog.tsx`, `CustomSettingsSheet.tsx`).
+    > [!IMPORTANT]
+    > **Visual Parity Rule:** The Login page (`src/app/page.tsx`) must always share the exact same aesthetic theme, background (`<LobbyBackground />`), glassmorphism, and color palette as the Game Lobby. Any updates to the Lobby's visual presentation must be mirrored in the Login view.
 - `src/hooks/`: Custom React hooks (`useGameEngine`, `usePlayer`, `useIsMobile`, `useToast`).
 - `src/lib/`: Core application logic, type definitions, and Firebase configuration.
   - `__tests__/`: Comprehensive Jest test suites covering all game mechanics (movement, combat, cards, turn progression, player actions, bot AI).

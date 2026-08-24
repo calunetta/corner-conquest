@@ -5,6 +5,7 @@ import {
   handleStealResource, 
   handleUseProductiveCard 
 } from '../actions/card';
+import { handleMoveAction } from '../actions/movement';
 import { handleCancelAction } from '../actions/player';
 import { initializeGame, startGame, defaultGameSettings } from '../game-initializer';
 import { addPlayerToGame } from '../game-logic';
@@ -78,5 +79,21 @@ describe('Special Cards Logic', () => {
 
     const cancelledState = handleCancelAction(game, { cardName: 'Reinforce' });
     expect(cancelledState.players[0].reinforceActive).toBe(false);
+  });
+
+  it('moves army to non-adjacent tile and consumes Teleport card', () => {
+    const player = game.players[0];
+    player.specialCards = ['Teleport'];
+    const army = player.armies[0];
+    expect(army.position).toEqual({ x: 0, y: 0 });
+
+    // Teleport to (4, 4) - far away non-adjacent tile
+    const nextState = handleMoveAction(game, 4, 4, army, true);
+    const updatedPlayer = nextState.players[0];
+
+    expect(updatedPlayer.armies[0].position).toEqual({ x: 4, y: 4 });
+    expect(updatedPlayer.specialCards).not.toContain('Teleport');
+    expect(nextState.discardPile).toContain('Teleport');
+    expect(updatedPlayer.actionsThisTurn).toContain(GameAction.UseCard);
   });
 });

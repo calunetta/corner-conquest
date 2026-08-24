@@ -1,6 +1,5 @@
-
-
 'use client';
+
 import type { Player, ResourceType } from '@/lib/types';
 import { CardName } from '@/lib/types';
 import { useState } from 'react';
@@ -13,8 +12,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { ResourceIcon } from '@/components/icons';
+import { HandMetal, ArrowLeft, Check, ShieldAlert } from 'lucide-react';
+import { PLAYER_DATA } from '@/lib/player-data';
+import Image from 'next/image';
 
 type StealResourceDialogProps = {
   players: Player[];
@@ -28,80 +29,135 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
 
   const handleSelectPlayer = (player: Player) => {
     setSelectedPlayer(player);
-    setSelectedResource(null); // Reset resource selection when player changes
+    setSelectedResource(null);
   };
 
   const renderPlayerSelection = () => (
     <>
-      <AlertDialogHeader>
-        <AlertDialogTitle>Use '{CardName.StealResource}'</AlertDialogTitle>
-        <AlertDialogDescription>
-          Select a player to steal 2 resources from.
-        </AlertDialogDescription>
+      <AlertDialogHeader className="pb-2 border-b border-white/10">
+        <div className="flex items-center gap-2">
+          <div className="h-9 w-9 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+            <HandMetal className="h-5 w-5" />
+          </div>
+          <div>
+            <AlertDialogTitle className="text-xl font-bold">Infiltrate & Steal</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              Select an opponent to pillage 2 resource units from their stockpile.
+            </AlertDialogDescription>
+          </div>
+        </div>
       </AlertDialogHeader>
-      <div className="grid grid-cols-2 gap-2 py-4 sm:grid-cols-3">
-        {players.map((player) => (
-          <Card
-            key={player.id}
-            className={`p-2 transition-all cursor-pointer hover:bg-muted ${selectedPlayer?.id === player.id ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => handleSelectPlayer(player)}
-          >
-            <CardContent className="flex flex-col items-center gap-2 p-1">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ backgroundColor: player.color, color: 'white' }}>
-                {player.name.charAt(0)}
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 py-4">
+        {players.map((player) => {
+          const isSelected = selectedPlayer?.id === player.id;
+          const totalResources = Object.values(player.resources).reduce((a, b) => a + b, 0);
+
+          return (
+            <button
+              key={player.id}
+              type="button"
+              onClick={() => handleSelectPlayer(player)}
+              className={`flex flex-col items-center p-3 rounded-xl border transition-all duration-200 ${
+                isSelected
+                  ? 'border-purple-400 bg-purple-500/20 shadow-[0_0_16px_rgba(168,85,247,0.4)] scale-105'
+                  : 'border-white/10 bg-black/40 hover:border-white/20 hover:bg-black/60'
+              }`}
+            >
+              <div className="relative h-10 w-10 mb-1 flex items-center justify-center">
+                <Image
+                  src={PLAYER_DATA[player.color]?.sprite.idle || '/sprites/blue_idle.gif'}
+                  alt={player.name}
+                  width={36}
+                  height={36}
+                  className="object-contain drop-shadow"
+                  unoptimized
+                />
               </div>
-              <p className="text-sm font-bold">{player.name}</p>
-            </CardContent>
-          </Card>
-        ))}
+              <p className="text-xs font-bold truncate max-w-full text-foreground">{player.name}</p>
+              <span className="text-[10px] text-muted-foreground mt-0.5">{totalResources} total resources</span>
+            </button>
+          );
+        })}
       </div>
-      <AlertDialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+
+      <AlertDialogFooter className="pt-2 border-t border-white/10">
+        <Button variant="outline" size="sm" onClick={onClose} className="border-white/10 text-xs">
+          Cancel
+        </Button>
       </AlertDialogFooter>
     </>
   );
 
   const renderResourceSelection = () => (
     <>
-      <AlertDialogHeader>
-        <AlertDialogTitle>Steal from {selectedPlayer?.name}</AlertDialogTitle>
-        <AlertDialogDescription>
-          Select which resource to steal. You will take 2 units.
-        </AlertDialogDescription>
+      <AlertDialogHeader className="pb-2 border-b border-white/10">
+        <div className="flex items-center gap-2">
+          <div className="h-9 w-9 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+            <HandMetal className="h-5 w-5" />
+          </div>
+          <div>
+            <AlertDialogTitle className="text-xl font-bold">Steal from {selectedPlayer?.name}</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              Select which stockpile resource to seize (2 units).
+            </AlertDialogDescription>
+          </div>
+        </div>
       </AlertDialogHeader>
-      <div className="flex flex-wrap justify-around gap-2 py-4 sm:gap-4">
-        {(Object.keys(selectedPlayer!.resources) as ResourceType[]).map((resource) => (
-          <Button
-            key={resource}
-            variant={selectedResource === resource ? 'default' : 'outline'}
-            className="flex h-24 w-24 flex-col items-center justify-center gap-2"
-            onClick={() => setSelectedResource(resource)}
-            disabled={selectedPlayer!.resources[resource] === 0}
-          >
-            <ResourceIcon type={resource} className="h-8 w-8" />
-            <span className="capitalize">{resource}</span>
-            <span className="text-xs font-bold text-muted-foreground">
-              (Available: {selectedPlayer!.resources[resource]})
-            </span>
-          </Button>
-        ))}
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 py-4">
+        {(Object.keys(selectedPlayer!.resources) as ResourceType[]).map((resource) => {
+          const available = selectedPlayer!.resources[resource];
+          const isSelected = selectedResource === resource;
+          const isAvailable = available > 0;
+
+          return (
+            <button
+              key={resource}
+              type="button"
+              disabled={!isAvailable}
+              onClick={() => setSelectedResource(resource)}
+              className={`relative flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200 ${
+                !isAvailable
+                  ? 'opacity-40 border-white/5 bg-black/20 cursor-not-allowed'
+                  : isSelected
+                  ? 'border-purple-400 bg-purple-500/20 shadow-[0_0_16px_rgba(168,85,247,0.4)] scale-105'
+                  : 'border-white/10 bg-black/40 hover:border-white/20 hover:bg-black/60'
+              }`}
+            >
+              {isSelected && (
+                <div className="absolute top-1.5 right-1.5 h-4 w-4 rounded-full bg-purple-500 text-white flex items-center justify-center">
+                  <Check className="h-3 w-3 stroke-[3]" />
+                </div>
+              )}
+              <ResourceIcon type={resource} className="h-8 w-8 mb-1 drop-shadow" />
+              <span className="text-xs font-bold capitalize text-foreground">{resource}</span>
+              <span className="text-[10px] text-muted-foreground font-mono mt-0.5">Avail: {available}</span>
+            </button>
+          );
+        })}
       </div>
-      <AlertDialogFooter>
-        <Button variant="outline" onClick={onClose}>Cancel</Button>
-           <>
-            <Button variant="outline" onClick={() => setSelectedPlayer(null)}>Back</Button>
-            <Button disabled={!selectedResource} onClick={() => onSteal(selectedPlayer!.id, selectedResource!)}>
-              Steal {selectedResource}
-            </Button>
-           </>
+
+      <AlertDialogFooter className="pt-2 border-t border-white/10 gap-2">
+        <Button variant="outline" size="sm" onClick={() => setSelectedPlayer(null)} className="border-white/10 text-xs">
+          <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back
+        </Button>
+        <Button
+          size="sm"
+          disabled={!selectedResource}
+          onClick={() => onSteal(selectedPlayer!.id, selectedResource!)}
+          className="font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-[0_0_16px_rgba(168,85,247,0.4)] text-xs px-4"
+        >
+          Steal 2 {selectedResource || 'Resources'}
+        </Button>
       </AlertDialogFooter>
     </>
   );
 
   return (
     <AlertDialog open={true} onOpenChange={onClose}>
-      <AlertDialogContent>
-        {selectedPlayer ? renderResourceSelection() : renderPlayerSelection()}
+      <AlertDialogContent className="bg-background/90 backdrop-blur-2xl border border-white/15 shadow-[0_24px_72px_rgba(0,0,0,0.85)] max-w-md overflow-hidden">
+        {!selectedPlayer ? renderPlayerSelection() : renderResourceSelection()}
       </AlertDialogContent>
     </AlertDialog>
   );

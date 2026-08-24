@@ -11,14 +11,16 @@ export function GameLog() {
 
   return (
     <Card className="bg-background/40 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-      <CardHeader>
-        <CardTitle>Game Log</CardTitle>
+      <CardHeader className="p-3 pb-1">
+        <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          Event Log
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-48 w-full">
-          <div className="space-y-2 pr-4">
+      <CardContent className="p-3 pt-0">
+        <ScrollArea className="h-32 sm:h-36 w-full">
+          <div className="space-y-1.5 pr-2">
             {logs.map((log, index) => (
-              <p key={index} className="text-sm text-muted-foreground">
+              <p key={index} className="text-xs text-muted-foreground leading-relaxed">
                 {log}
               </p>
             )).reverse()}

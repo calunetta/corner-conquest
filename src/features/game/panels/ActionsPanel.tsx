@@ -32,13 +32,8 @@ export function ActionsPanel() {
     isMyTurn,
     selectedArmy,
     uiState,
+    turnTimer,
   } = useGameBoard();
-
-  const { timeLeft, turnDuration } = useTurnTimer({
-    isMyTurn,
-    gameStatus: gameState?.status || '',
-    onAction,
-  });
 
   const { pendingAction } = uiState;
   const { map, specialCardsDeck, settings } = gameState;
@@ -159,8 +154,6 @@ export function ActionsPanel() {
     },
   ];
 
-  const timerPercentage = (timeLeft / turnDuration) * 100;
-
   const getDisabledReason = (action: ActionConfig) => {
     if (!isMyTurn) return "It's not your turn.";
     if (isCardActionInProgress && action.id !== GameAction.local_ShowCards) return 'Complete or cancel the current card action first.';
@@ -242,27 +235,32 @@ export function ActionsPanel() {
 
   return (
     <Card className="bg-background/40 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-      <CardHeader className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <CardTitle className="text-lg flex items-center gap-2">
-          Actions
-          <TutorialBeacon
-            id="actions-info"
-            title="The Actions Panel"
-            description="Use this panel to command your armies, deploy new ones, buy special cards, and upgrade your attack power. Hover over any button to see what it does!"
-            side="top"
-          />
-        </CardTitle>
-        <div className="flex flex-wrap items-center justify-end gap-2">
+      <CardHeader className="flex flex-col gap-2 p-3 sm:p-3.5 pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-bold flex items-center gap-2">
+            Actions
+            <TutorialBeacon
+              id="actions-info"
+              title="The Actions Panel"
+              description="Use this panel to command your armies, deploy new ones, buy special cards, and upgrade your attack power. Hover over any button to see what it does!"
+              side="top"
+            />
+          </CardTitle>
+          <div className="text-xs text-muted-foreground font-semibold">
+            Deck: {specialCardsDeck.length}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1">
           {isMyTurn && isCancellableActionInProgress && (
-            <Button variant="destructive" size="sm" onClick={() => onLocalAction(GameAction.local_CancelAction)}>
-              <XCircle className="mr-2 h-4 w-4" />
+            <Button variant="destructive" size="sm" className="h-7 text-xs px-2" onClick={() => onLocalAction(GameAction.local_CancelAction)}>
+              <XCircle className="mr-1 h-3.5 w-3.5" />
               Cancel
             </Button>
           )}
           {isMyTurn && selectedArmy && (
-            <Button variant="secondary" size="sm" onClick={() => onLocalAction(GameAction.local_DeselectArmy)}>
-              <XCircle className="mr-2 h-4 w-4" />
-              Deselect Army
+            <Button variant="secondary" size="sm" className="h-7 text-xs px-2" onClick={() => onLocalAction(GameAction.local_DeselectArmy)}>
+              <XCircle className="mr-1 h-3.5 w-3.5" />
+              Deselect
             </Button>
           )}
           {isMyTurn && (
@@ -270,28 +268,32 @@ export function ActionsPanel() {
               size="sm"
               disabled={isCardActionInProgress}
               onClick={() => onAction(GameAction.EndTurn)}
-              className="relative overflow-hidden"
+              className={`relative overflow-hidden h-7 text-xs px-2.5 font-bold ml-auto transition-colors ${
+                turnTimer.isExpiring ? 'border border-destructive ring-1 ring-destructive' : ''
+              }`}
             >
               <span
-                className="absolute left-0 top-0 h-full bg-primary/50 transition-all duration-1000 ease-linear"
-                style={{ width: `${timerPercentage}%` }}
+                className={`absolute left-0 top-0 h-full transition-all duration-1000 ease-linear ${
+                  turnTimer.isExpiring ? 'bg-destructive/40' : 'bg-primary/50'
+                }`}
+                style={{ width: `${turnTimer.percentage}%` }}
               ></span>
-              <span className="relative z-10">End Turn</span>
+              <span className="relative z-10 flex items-center gap-1">
+                <span>End Turn</span>
+                <span className="font-mono text-[10px] opacity-90">({turnTimer.formattedTime})</span>
+              </span>
             </Button>
           )}
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="grid grid-cols-3 grid-rows-1 gap-2">
+      <CardContent className="p-3 pt-0">
+        <div className="grid grid-cols-3 gap-1.5">
           {mainActions.map(action => renderButton(action, true))}
           {alwaysAvailableActions.map(action => renderButton(action, true))}
         </div>
-        <Separator className="my-2" />
-        <div className="grid grid-cols-2 flex-wrap gap-2">
+        <Separator className="my-2 bg-white/10" />
+        <div className="grid grid-cols-2 gap-1.5">
           {secondaryActions.map(action => renderButton(action, false))}
-        </div>
-        <div className="text-center mt-2 text-sm text-muted-foreground">
-          Cards in deck: {specialCardsDeck.length}
         </div>
       </CardContent>
     </Card>

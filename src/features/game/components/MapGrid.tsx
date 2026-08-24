@@ -4,14 +4,15 @@ import React, { useMemo } from 'react';
 import { MAP_COLS, MAP_ROWS } from '@/lib/types';
 import { IslandTile } from './IslandTile';
 import { MapDecorations } from './MapDecorations';
+import { MapZoomControls } from './MapZoomControls';
 import { useIsMobile } from '@/hooks/use-is-mobile';
 import { useGameBoard } from '../context/GameBoardContext';
+import { useMapPanZoom } from '../hooks/useMapPanZoom';
 
 export function MapGrid() {
   const { gameState } = useGameBoard();
   const isMobile = useIsMobile();
-  const tileSize = isMobile ? 75 : 120;
-  const gap = isMobile ? 16 : 32;
+  const { zoom, pan, isDragging, zoomIn, zoomOut, resetZoom, handlers } = useMapPanZoom();
 
   const { map } = gameState;
 
@@ -28,19 +29,45 @@ export function MapGrid() {
   if (!map || map.length === 0) return null;
 
   return (
-    <div className="relative bg-water-pattern bg-repeat p-8 rounded-xl shadow-lg">
-      <MapDecorations cols={cols} rows={rows} tileSize={tileSize} gap={gap} isMobile={isMobile} />
+    <div
+      className="relative w-full h-full min-h-[380px] sm:min-h-[460px] flex items-center justify-center overflow-hidden select-none cursor-grab active:cursor-grabbing touch-none"
+      {...handlers}
+      data-testid="map-canvas-container"
+    >
+      {/* Zoom Controls Overlay */}
+      <MapZoomControls
+        zoom={zoom}
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onResetZoom={resetZoom}
+      />
 
+      {/* Pan & Zoom Transform Wrapper */}
       <div
-        className="grid z-10 relative"
+        className="transition-transform duration-75 ease-out flex items-center justify-center p-6 sm:p-10"
         style={{
-          gridTemplateColumns: `repeat(${cols}, ${tileSize}px)`,
-          gap: `${gap}px`,
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: 'center center',
         }}
       >
-        {map.map(island => (
-          <IslandTile key={island.id} island={island} />
-        ))}
+        {/* Ocean Background Canvas Frame */}
+        <div className="relative bg-water-pattern bg-repeat p-6 sm:p-9 rounded-3xl border border-white/20 shadow-[0_24px_72px_rgba(0,0,0,0.8)] flex items-center justify-center">
+          <MapDecorations isMobile={isMobile} />
+
+          <div
+            className="grid z-10 relative"
+            style={{
+              gridTemplateColumns: `repeat(${cols}, ${
+                isMobile ? 'clamp(72px, 18vw, 92px)' : 'clamp(94px, 12.5vh, 136px)'
+              })`,
+              gap: isMobile ? 'clamp(8px, 2.2vw, 14px)' : 'clamp(12px, 1.8vh, 22px)',
+            }}
+          >
+            {map.map(island => (
+              <IslandTile key={island.id} island={island} />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

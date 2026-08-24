@@ -23,16 +23,20 @@ function GameBoardContent() {
   const { gameState } = useGameBoard();
 
   return (
-    <div className="relative flex h-screen w-full flex-col gap-2 overflow-auto p-2 sm:gap-4 sm:p-4">
+    <div className="relative flex min-h-screen lg:h-screen lg:max-h-screen w-full flex-col gap-2 overflow-y-auto lg:overflow-hidden p-2 sm:p-3 bg-gradient-to-b from-background via-background/95 to-black/90">
       {gameState.status !== 'finished' && (
         <>
           <GameBoardHeader />
-          <PlayerInfoBar />
 
-          <div className="grid flex-1 grid-cols-1 justify-center gap-4 lg:grid-cols-[auto_320px]">
-            <main className="relative flex items-center justify-center overflow-auto rounded-xl bg-background/20 backdrop-blur-sm border border-white/5 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
+          {/* 3-Column Viewport Constrained Board Layout */}
+          <div className="flex flex-col lg:flex-row gap-2.5 sm:gap-3 flex-1 min-h-0 items-stretch">
+            {/* Left: Colonist-style Players HUD */}
+            <PlayerInfoBar />
+
+            {/* Center: Scaled Arena Map Canvas with dedicated mobile height */}
+            <main className="relative flex-1 min-h-[420px] sm:min-h-[500px] lg:min-h-0 flex items-center justify-center overflow-hidden rounded-2xl bg-background/20 backdrop-blur-sm border border-white/10 shadow-[inset_0_0_30px_rgba(0,0,0,0.6)] p-2">
               <MapGrid />
-              <div className="absolute top-4 left-4 z-20">
+              <div className="absolute top-3 left-3 z-20">
                 <TutorialBeacon
                   id="map-info"
                   title="The Map & Movement"
@@ -49,7 +53,8 @@ function GameBoardContent() {
               <GameStatusBadge />
             </main>
 
-            <aside className="flex flex-col gap-4">
+            {/* Right: Actions & Match Event Log */}
+            <aside className="w-full lg:w-[280px] lg:shrink-0 flex flex-col gap-2.5 min-h-0 overflow-y-auto custom-scrollbar">
               <ActionsPanel />
               <GameLog />
             </aside>

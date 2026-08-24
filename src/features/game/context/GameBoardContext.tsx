@@ -18,6 +18,7 @@ import type {
 import { getPossibleMoves } from '@/lib/actions/movement';
 import { handleGameAction, handlePlayerExit } from '@/lib/actions';
 import { startGame } from '@/lib/game-initializer';
+import { useTurnTimer } from '../hooks/useTurnTimer';
 import { useToast } from '@/hooks/use-toast';
 
 // --- State Types ---
@@ -229,6 +230,13 @@ export interface GameBoardContextType {
   isMyTurn: boolean;
   isHost: boolean;
   selectedArmy: Army | null;
+  turnTimer: {
+    timeLeft: number;
+    formattedTime: string;
+    turnDuration: number;
+    isExpiring: boolean;
+    percentage: number;
+  };
   onAction: (action: GameAction, payload?: any) => Promise<void>;
   onLocalAction: (action: GameAction, payload?: any) => void;
   handleTileClick: (x: number, y: number) => Promise<void>;
@@ -472,6 +480,21 @@ export function GameBoardProvider({
               throw new Error('You can only use one card per turn.');
             }
 
+            if (cardName === 'Teleport') {
+              dispatch({
+                type: 'SET_PENDING_ACTION',
+                pendingAction: {
+                  type: 'teleport',
+                  cardName: 'Teleport',
+                },
+              });
+              toast({
+                title: 'Teleport Activated',
+                description: 'Select an army (or keep selected), then choose any destination island to teleport!',
+              });
+              break;
+            }
+
             const multiStepCards: CardName[] = ['Scout', 'Sabotage', 'Wealthy', 'Steal Resource'];
             const result = handleGameAction({ action: GameAction.UseCard, gameState: localGameState, payload: { cardName } });
 
@@ -550,15 +573,19 @@ export function GameBoardProvider({
     }
 
     if (uiState.pendingAction?.type === 'teleport') {
-      if (uiState.selectedArmyId === null) {
-        const armiesOnClickedTile = localPlayer.armies.filter(a => a.position.x === x && a.position.y === y);
-        const unactedArmies = armiesOnClickedTile;
-        if (unactedArmies.length === 1) {
-          dispatch({ type: 'SET_SELECTED_ARMY', armyId: unactedArmies[0].id });
-        } else if (unactedArmies.length > 1) {
-          dispatch({ type: 'SET_ARMY_SELECTION_DIALOG', state: { armies: unactedArmies, x, y } });
+      const myArmiesOnTile = localPlayer.armies.filter(a => a.position.x === x && a.position.y === y);
+      if (myArmiesOnTile.length > 0 && (!selectedArmy || (selectedArmy.position.x === x && selectedArmy.position.y === y))) {
+        if (myArmiesOnTile.length === 1) {
+          dispatch({ type: 'SET_SELECTED_ARMY', armyId: myArmiesOnTile[0].id });
+        } else {
+          dispatch({ type: 'SET_ARMY_SELECTION_DIALOG', state: { armies: myArmiesOnTile, x, y } });
         }
       } else if (selectedArmy) {
+        const targetTile = gameStateForDisplay.map[y * gameStateForDisplay.settings.gridSize.cols + x];
+        if (targetTile.type === IslandType.Base && targetTile.owner !== localPlayer.id) {
+          toast({ title: 'Invalid Teleport', description: "Cannot teleport onto an opponent's base island.", variant: 'destructive' });
+          return;
+        }
         await onAction(GameAction.Move, { army: selectedArmy, x, y, isTeleport: true });
         dispatch({ type: 'SET_PENDING_ACTION', pendingAction: null });
         dispatch({ type: 'SET_SELECTED_ARMY', armyId: null });
@@ -644,6 +671,12 @@ export function GameBoardProvider({
     }
   };
 
+  const turnTimer = useTurnTimer({
+    isMyTurn,
+    gameStatus: serverGameState?.status || '',
+    onAction,
+  });
+
   const contextValue: GameBoardContextType = {
     uiState,
     dispatch,
@@ -652,6 +685,7 @@ export function GameBoardProvider({
     isMyTurn,
     isHost,
     selectedArmy,
+    turnTimer,
     onAction,
     onLocalAction: handleLocalAction,
     handleTileClick,
