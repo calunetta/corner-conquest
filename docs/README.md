@@ -100,7 +100,7 @@ The player's session (their identity) is managed through a combination of browse
 
 ### 3.2. Shared Game State: The `GameState` Object
 
--   **Definition File:** `src/lib/types.ts`
+-   **Definition File:** `src/lib/types/game.ts` (import it from the `@/lib/types` barrel)
 -   **What It Is:** The `GameState` object is the single, authoritative state of the match. It contains only the data that **must** be synchronized across all players.
 -   **Synchronization:** It is stored as a single document in Firestore. The `useGameEngine` hook subscribes to this document, and any change to it is automatically pushed to all connected clients, causing a UI re-render.
 -   **Key `GameState` Variables:**
@@ -401,9 +401,9 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete,
   - **Firestore Free Tier Sustainability:** A standard 20-turn match requires only ~20–30 document writes and ~40–60 document reads across all connected clients combined, allowing hundreds of complete multiplayer games per day on Firebase's free quota.
 
 ### 6.10. Tutorial System
-- **Overview**: An optional, skippable tutorial system (`TutorialOverlay.tsx`) automatically displays to new players to explain core mechanics (Goals, Deploying, Moving & Positioning, Resources & Shop, Combat, Special Cards).
-- **State Management**: The tutorial uses `localStorage` (`'corner-conquest-tutorial'`) to remember if a player has seen it, preventing annoyance in subsequent sessions. It can also be manually re-triggered via the 'Help' button in the game board header.
-- **Maintenance Rule**: Whenever core mechanics, UI layouts, or game rules are added or modified, the steps inside `TutorialOverlay.tsx` MUST be updated to reflect the new changes to keep the new player experience accurate.
+- **Overview**: Contextual help is provided by `TutorialBeacon` (`src/features/game/components/TutorialBeacon.tsx`): a small help button that opens a popover explaining the UI area it sits next to. Current beacons: `map-info` ("The Map & Movement", `GameBoard.tsx`), `player-info` ("Player Information & Goal", `PlayerInfoBar.tsx`, desktop and mobile layouts), and `actions-info` ("The Actions Panel", `ActionsPanel.tsx`).
+- **State Management**: Each beacon pulses until its first opening, then stores `beacon-seen-<id>` in `localStorage` so it stays calm in later sessions. Beacons can always be reopened by clicking them.
+- **Maintenance Rule**: Whenever core mechanics, UI layouts, or game rules are added or modified, update the matching beacon `description` (or add a new beacon) so the new-player guidance stays accurate.
 
 ### 6.11. End-to-End (E2E) Testing & Match Cleanup Lifecycle
 - **Mandatory Teardown Hook (`safeCleanupGame`)**:
