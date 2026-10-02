@@ -8,13 +8,17 @@ service cloud.firestore {
       allow read;
 
       // Allow creating new username reservations (src/hooks/use-player.tsx line 79)
-      allow create: if !resource.exists();
+      // A username reservation is just {playerId: "some_player_id"}
+      allow create: if request.resource.data.playerId is string;
 
       // Allow updating only if playerId doesn't change.
       // This prevents a different playerId from overwriting an existing reservation.
       // The app checks client-side that it's the same player (line 73-76) and updates
       // or creates the username (line 79).
-      allow update: if resource.data.playerId == request.resource.data.playerId;
+      allow update: if
+        resource.data.playerId is string &&
+        request.resource.data.playerId is string &&
+        resource.data.playerId == request.resource.data.playerId;
 
       // Allow deletes for logout (src/hooks/use-player.tsx line 54)
       allow delete;
