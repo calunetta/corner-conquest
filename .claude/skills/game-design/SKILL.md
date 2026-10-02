@@ -1,0 +1,58 @@
+---
+name: game-design
+description: Game design reference for Corner Conquest - core loop, verified rule numbers with source files, design pillars, fun lenses, balance math, constraints - and how the game designers propose and stress-test changes in game-design.md. Use when proposing or reviewing rules, balance, cards, monsters, economy, pacing, bot behavior, or ideas to make the game more fun.
+---
+
+# Game design
+
+## The game
+2–4 players (humans or bots) start in the corners of a 5 × 6 archipelago hidden by fog of war. Each turn they move armies to discover islands, position armies on resources, fight players and monsters, and spend wheat, iron and gems on armies, attack upgrades, cards and passive abilities. The first player to the victory point goal wins.
+
+## Rule numbers
+Verified at bootstrap. The code wins over this table: re-check the source before relying on a number.
+
+| Rule | Value | Source |
+|---|---|---|
+| Victory point goal | 30 (lobby slider 10–100) | `src/lib/game-initializer.ts` (`defaultGameSettings`) |
+| VP for first discovery of an island | 1 | same |
+| Deploy an army | 6 wheat, +2 per army deployed | same (`initialDeployCost`, `deployCostIncrement`) |
+| Upgrade attack power | 6 iron | same (`upgradeCost`), `src/lib/actions/player.ts` |
+| Passive ability | 15 gems | same (`abilityCost`), `src/lib/actions/card.ts` |
+| Buy a card / hand limit | 10 gems / 7 cards | `src/lib/actions/card.ts`, `src/lib/types/actions.ts` |
+| Max armies / max attack power | 5 / 4 | `src/lib/actions/player.ts` |
+| Player dice | attack power + 1 (+2 with War Chief), at least 1 | `src/lib/actions/attack.ts` |
+| Monster dice | its level: Lancer 1, Bear 2, Ogre 3, Minotaur 4 | `src/lib/actions/attack.ts`, `src/lib/game-initializer.ts` |
+| Ties | player vs player: the defender wins; player vs monster: the monster wins | `src/lib/actions/attack.ts` |
+| Rewards | +5 VP for beating a player; 2 / 5 / 7 / 10 VP for monster levels 1–4 | `src/lib/actions/attack.ts` |
+| Turn timer | 120 s | `src/features/game/hooks/useTurnTimer.ts` |
+| Cards | 13 kinds in a weighted deck | `src/lib/card-data.ts` |
+
+Full flows: `docs/README.md` §5–6. Bot strategy: `src/lib/bot-logic.ts`.
+
+## Design pillars
+1. Every turn offers a meaningful choice: expand, exploit, fight or invest.
+2. Matches stay short (about 20 turns) and readable at a glance.
+3. Players interact: contested islands, combat, sabotage.
+4. Trailing players keep a path back without arbitrary punishment of the leader.
+5. Luck adds tension; skill decides most matches.
+
+## Fun lenses
+Name the one a proposal serves: agency, risk and reward, tension and pacing, discovery and surprise, mastery (depth without complexity), social interaction, feedback and juice (the game visibly reacts).
+
+## Balance math
+- One d6 averages 3.5 (variance 35/12); the sum of N dice averages 3.5 N.
+- Compute probabilities instead of estimating them: enumerate or simulate dice outcomes with `node -e "…"` and paste the command and its result into `game-design.md`.
+- Check every change for: a dominant strategy, a runaway leader, stalling, early-combat snowballing, card combos (Overcome, War Chief, Decide Dice Roll), the hand limit, fog of war, and bots.
+
+## Constraints
+- Complexity budget: a new rule replaces or simplifies something, or clearly earns its place. It must fit in one tooltip-sized sentence.
+- Firestore cost: no extra writes per action (`docs/README.md` §6.9).
+- Bots: every new rule states what `src/lib/bot-logic.ts` does with it.
+- Tutorial: update the matching `TutorialBeacon` text (`docs/README.md` §6.10).
+- Docs: rule changes update `docs/README.md` §5–6 in the same phase.
+
+## Process
+- **game-designer-a**: diagnose with evidence, propose 2–3 options (one of them minimal) with exact numbers and math, recommend one. Template: `docs/ai/templates/game-design.md`.
+- **game-designer-b**: stress-test independently: redo the math, hunt exploits, check pillars and constraints. Write `VERDICT: APPROVED` or `VERDICT: CHANGES REQUESTED`; when approved, write the Final spec.
+- **"Make the game more fun" with no specific feature**: produce a ranked backlog (impact, effort, risk) instead of one spec; the user picks what to build.
+- The user approves the Final spec before the architects plan it.
