@@ -22,9 +22,9 @@ export const AbilityName = {
 export type AbilityName = (typeof AbilityName)[keyof typeof AbilityName];
 
 export const ResourceType = {
-  Gems: 'gems',
-  Iron: 'iron',
-  Wheat: 'wheat',
+  Food: 'food',
+  Wood: 'wood',
+  Gold: 'gold',
 } as const;
 export type ResourceType = (typeof ResourceType)[keyof typeof ResourceType];
 

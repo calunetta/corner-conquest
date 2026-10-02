@@ -54,9 +54,9 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
         const deployCost = activeBot.efficientActive ? Math.ceil(activeBot.nextArmyCost / 2) : (activeBot.reinforceActive ? 0 : activeBot.nextArmyCost);
         const upgradeCost = activeBot.masterBuilderActive ? Math.ceil(state.settings.upgradeCost / 2) : state.settings.upgradeCost;
         let neededResource: ResourceType | null = null;
-        if (!canAfford(activeBot, deployCost, ResourceEnum.Wheat) && activeBot.armies.length < 5) neededResource = ResourceEnum.Wheat;
-        else if (!canAfford(activeBot, upgradeCost, ResourceEnum.Iron) && activeBot.attackPower < 4) neededResource = ResourceEnum.Iron;
-        else neededResource = ResourceEnum.Gems;
+        if (!canAfford(activeBot, deployCost, ResourceEnum.Food) && activeBot.armies.length < 5) neededResource = ResourceEnum.Food;
+        else if (!canAfford(activeBot, upgradeCost, ResourceEnum.Wood) && activeBot.attackPower < 4) neededResource = ResourceEnum.Wood;
+        else neededResource = ResourceEnum.Gold;
         
         if (neededResource) {
             const temp = handleGameAction({ action: GameAction.GainWealth, gameState: state, payload: { resource: neededResource } });
@@ -80,27 +80,27 @@ export async function takeBotTurn(initialState: GameState): Promise<void> {
     // 2. Strategic Purchases (Ability, Upgrade, Deploy, Buy Card)
     const abilityCost = state.settings.abilityCost;
     const unownedAbilities = state.settings.availableAbilities.filter(a => !activeBot.passiveAbilities[a as AbilityName]);
-    if (canAfford(activeBot, abilityCost, ResourceEnum.Gems) && unownedAbilities.length > 0) {
+    if (canAfford(activeBot, abilityCost, ResourceEnum.Gold) && unownedAbilities.length > 0) {
         const temp = handleGameAction({ action: GameAction.BuyAbility, gameState: state, payload: { abilityName: unownedAbilities[0] } });
         if (temp.state) state = temp.state;
     }
     activeBot = state.players[state.currentPlayerIndex];
     
     const upgradeCost = activeBot.masterBuilderActive ? Math.ceil(state.settings.upgradeCost / 2) : state.settings.upgradeCost;
-    if (canAfford(activeBot, upgradeCost, ResourceEnum.Iron) && activeBot.attackPower < 4 && !activeBot.actionsThisTurn.includes(GameAction.Upgrade)) {
+    if (canAfford(activeBot, upgradeCost, ResourceEnum.Wood) && activeBot.attackPower < 4 && !activeBot.actionsThisTurn.includes(GameAction.Upgrade)) {
         const temp = handleGameAction({ action: GameAction.Upgrade, gameState: state });
         if (temp.state) state = temp.state;
     }
     activeBot = state.players[state.currentPlayerIndex];
     
     const deployCost = activeBot.efficientActive ? Math.ceil(activeBot.nextArmyCost / 2) : (activeBot.reinforceActive ? 0 : activeBot.nextArmyCost);
-    if (canAfford(activeBot, deployCost, ResourceEnum.Wheat) && activeBot.armies.length < 5 && !activeBot.actionsThisTurn.includes(GameAction.Deploy)) {
+    if (canAfford(activeBot, deployCost, ResourceEnum.Food) && activeBot.armies.length < 5 && !activeBot.actionsThisTurn.includes(GameAction.Deploy)) {
         const temp = handleGameAction({ action: GameAction.Deploy, gameState: state });
         if (temp.state) state = temp.state;
     }
     activeBot = state.players[state.currentPlayerIndex];
     
-    if (canAfford(activeBot, 10, ResourceEnum.Gems) && activeBot.specialCards.length < 7 && (state.specialCardsDeck.length > 0 || state.discardPile.length > 0) && !activeBot.actionsThisTurn.includes(GameAction.BuyCard)) {
+    if (canAfford(activeBot, 10, ResourceEnum.Gold) && activeBot.specialCards.length < 7 && (state.specialCardsDeck.length > 0 || state.discardPile.length > 0) && !activeBot.actionsThisTurn.includes(GameAction.BuyCard)) {
         const temp = handleGameAction({ action: GameAction.BuyCard, gameState: state });
         if (temp.state) state = temp.state;
     }

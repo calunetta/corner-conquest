@@ -1,6 +1,7 @@
 'use client';
 
 import type { Player, GameState, AbilityName } from '@/lib/types';
+import { ResourceType } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -12,7 +13,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Gem, CheckCircle, Award } from 'lucide-react';
+import { ResourceIcon } from '@/components/icons';
+import { CheckCircle, Award } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AbilityName as AbilityNameEnum } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -64,7 +66,7 @@ export function AbilitiesDialog({ player, onClose, onBuyAbility, gameState, isMy
             <div>
               <AlertDialogTitle className="text-xl font-bold">Empire Abilities Shop</AlertDialogTitle>
               <AlertDialogDescription className="text-xs text-muted-foreground">
-                Purchase permanent passive abilities using gems to empower your conquest.
+                Purchase permanent passive abilities using gold to empower your conquest.
               </AlertDialogDescription>
             </div>
           </div>
@@ -74,7 +76,7 @@ export function AbilitiesDialog({ player, onClose, onBuyAbility, gameState, isMy
           <div className="grid gap-3">
             {availableAbilities.map((ability) => {
               const hasAbility = player.passiveAbilities[ability.name];
-              const canAfford = player.resources.gems >= cost;
+              const canAfford = player.resources.gold >= cost;
 
               return (
                 <Card key={ability.name} className="bg-black/40 border-white/10 hover:border-emerald-500/30 hover:bg-black/60 transition-all duration-200">
@@ -94,8 +96,8 @@ export function AbilitiesDialog({ player, onClose, onBuyAbility, gameState, isMy
                             disabled={!canAfford}
                             className="h-7 text-xs px-3 font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black shadow-[0_0_12px_rgba(16,185,129,0.3)]"
                           >
-                            <Gem className="mr-1 h-3 w-3" />
-                            Buy ({cost} Gems)
+                            <ResourceIcon type={ResourceType.Gold} className="mr-1 h-3.5 w-3.5" />
+                            Buy ({cost} Gold)
                           </Button>
                         )}
                       </>

@@ -2,17 +2,26 @@
 
 import { useState, useRef, useCallback } from 'react';
 
-const MIN_ZOOM = 0.55;
-const MAX_ZOOM = 2.0;
-const ZOOM_STEP = 0.15;
 export const DEFAULT_DESKTOP_ZOOM = 0.85;
+const MIN_ZOOM_DESKTOP = 0.85;
+const MAX_ZOOM_DESKTOP = 1.15;
+const MIN_ZOOM_MOBILE = 0.75;
+const MAX_ZOOM_MOBILE = 1.35;
+const ZOOM_STEP = 0.15;
 
 interface UseMapPanZoomOptions {
   initialZoom?: number;
+  isMobile?: boolean;
+  maxPanX?: number;
+  maxPanY?: number;
 }
 
 export function useMapPanZoom(options?: UseMapPanZoomOptions) {
   const defaultZoom = options?.initialZoom ?? DEFAULT_DESKTOP_ZOOM;
+  const isMobile = options?.isMobile ?? false;
+  const minZoom = isMobile ? MIN_ZOOM_MOBILE : MIN_ZOOM_DESKTOP;
+  const maxZoom = isMobile ? MAX_ZOOM_MOBILE : MAX_ZOOM_DESKTOP;
+
   const [zoom, setZoom] = useState(defaultZoom);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -23,14 +32,53 @@ export function useMapPanZoom(options?: UseMapPanZoomOptions) {
   const hasDraggedRef = useRef(false);
   const initialPinchDistanceRef = useRef<number | null>(null);
   const initialPinchZoomRef = useRef<number>(defaultZoom);
+  const rafIdRef = useRef<number | null>(null);
+  const pendingPanRef = useRef<{ x: number; y: number } | null>(null);
+
+  const clampPan = useCallback((x: number, y: number, currentZoom: number) => {
+    // Increased pan blocking so the board stays tightly centered and cannot scroll too far up, down, or sideways
+    const baseLimitX = options?.maxPanX ?? (isMobile ? 70 : 100);
+    const baseLimitY = options?.maxPanY ?? (isMobile ? 50 : 75);
+    const scaleFactor = Math.max(0.8, currentZoom / DEFAULT_DESKTOP_ZOOM);
+    const limitX = Math.round(baseLimitX * scaleFactor);
+    const limitY = Math.round(baseLimitY * scaleFactor);
+
+    return {
+      x: Math.max(-limitX, Math.min(limitX, x)),
+      y: Math.max(-limitY, Math.min(limitY, y)),
+    };
+  }, [isMobile, options?.maxPanX, options?.maxPanY]);
+
+  const schedulePanUpdate = useCallback((targetX: number, targetY: number, currentZoom: number) => {
+    const clamped = clampPan(targetX, targetY, currentZoom);
+    pendingPanRef.current = clamped;
+
+    if (rafIdRef.current === null) {
+      rafIdRef.current = requestAnimationFrame(() => {
+        if (pendingPanRef.current) {
+          setPan(pendingPanRef.current);
+          pendingPanRef.current = null;
+        }
+        rafIdRef.current = null;
+      });
+    }
+  }, [clampPan]);
 
   const zoomIn = useCallback(() => {
-    setZoom(prev => Math.min(MAX_ZOOM, Math.round((prev + ZOOM_STEP) * 100) / 100));
-  }, []);
+    setZoom(prev => {
+      const nextZoom = Math.min(maxZoom, Math.round((prev + ZOOM_STEP) * 100) / 100);
+      setPan(currentPan => clampPan(currentPan.x, currentPan.y, nextZoom));
+      return nextZoom;
+    });
+  }, [clampPan, maxZoom]);
 
   const zoomOut = useCallback(() => {
-    setZoom(prev => Math.max(MIN_ZOOM, Math.round((prev - ZOOM_STEP) * 100) / 100));
-  }, []);
+    setZoom(prev => {
+      const nextZoom = Math.max(minZoom, Math.round((prev - ZOOM_STEP) * 100) / 100);
+      setPan(currentPan => clampPan(currentPan.x, currentPan.y, nextZoom));
+      return nextZoom;
+    });
+  }, [clampPan, minZoom]);
 
   const resetZoom = useCallback(() => {
     setZoom(defaultZoom);
@@ -64,16 +112,25 @@ export function useMapPanZoom(options?: UseMapPanZoomOptions) {
     }
 
     if (hasDraggedRef.current) {
-      setPan({
-        x: initialPanRef.current.x + dx,
-        y: initialPanRef.current.y + dy,
-      });
+      schedulePanUpdate(
+        initialPanRef.current.x + dx,
+        initialPanRef.current.y + dy,
+        zoom
+      );
     }
-  }, []);
+  }, [schedulePanUpdate, zoom]);
 
   const handleMouseUp = useCallback(() => {
     isMouseDownRef.current = false;
     setIsDragging(false);
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    if (pendingPanRef.current) {
+      setPan(pendingPanRef.current);
+      pendingPanRef.current = null;
+    }
   }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -87,7 +144,7 @@ export function useMapPanZoom(options?: UseMapPanZoomOptions) {
     }
   }, [zoomIn, zoomOut]);
 
-  // Touch handlers for mobile & tablet (Colonist.io responsive touch interaction)
+  // Touch handlers for mobile & tablet
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const isInteractive = !!(e.target as HTMLElement)?.closest('button, a, input, select, [role="button"]');
 
@@ -122,25 +179,36 @@ export function useMapPanZoom(options?: UseMapPanZoomOptions) {
       }
 
       if (hasDraggedRef.current) {
-        setPan({
-          x: initialPanRef.current.x + dx,
-          y: initialPanRef.current.y + dy,
-        });
+        schedulePanUpdate(
+          initialPanRef.current.x + dx,
+          initialPanRef.current.y + dy,
+          zoom
+        );
       }
     } else if (e.touches.length === 2 && initialPinchDistanceRef.current !== null) {
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       const distance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
       const scale = distance / initialPinchDistanceRef.current;
-      const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, initialPinchZoomRef.current * scale));
-      setZoom(Math.round(newZoom * 100) / 100);
+      const newZoom = Math.min(maxZoom, Math.max(minZoom, initialPinchZoomRef.current * scale));
+      const roundedZoom = Math.round(newZoom * 100) / 100;
+      setZoom(roundedZoom);
+      setPan(prev => clampPan(prev.x, prev.y, roundedZoom));
     }
-  }, []);
+  }, [schedulePanUpdate, zoom, clampPan, minZoom, maxZoom]);
 
   const handleTouchEnd = useCallback(() => {
     isMouseDownRef.current = false;
     setIsDragging(false);
     initialPinchDistanceRef.current = null;
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    if (pendingPanRef.current) {
+      setPan(pendingPanRef.current);
+      pendingPanRef.current = null;
+    }
   }, []);
 
   return {

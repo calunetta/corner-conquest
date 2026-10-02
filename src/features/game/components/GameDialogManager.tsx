@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import type { CardName, ResourceType } from '@/lib/types';
-import { GameAction } from '@/lib/types';
+import type { CardName } from '@/lib/types';
+import { GameAction, ResourceType } from '@/lib/types';
 import { useGameBoard } from '../context/GameBoardContext';
 
 import { CombatDialog } from '../dialogs/CombatDialog';
@@ -44,16 +44,15 @@ export function GameDialogManager() {
   const productiveDialogOptions = React.useMemo(() => {
     if (!isProductiveDialogActive || !localPlayer || !gameState) return [];
     const resourceCounts: { resource: ResourceType; amount: number }[] = [];
-    const baseAmount = gameState.settings.baseResourceAmount;
-    resourceCounts.push({ resource: 'gems' as ResourceType, amount: baseAmount });
-    resourceCounts.push({ resource: 'iron' as ResourceType, amount: baseAmount });
-    resourceCounts.push({ resource: 'wheat' as ResourceType, amount: baseAmount });
     for (const pos of localPlayer.positions) {
+      const tile = gameState.map[pos.y * gameState.settings.gridSize.cols + pos.x];
+      const resourceSpot = tile?.resources.find(r => r.type === pos.resource);
+      const amount = resourceSpot?.amount || 1;
       const existing = resourceCounts.find(r => r.resource === pos.resource);
       if (existing) {
-        existing.amount += 1;
+        existing.amount += amount;
       } else {
-        resourceCounts.push({ resource: pos.resource, amount: 1 });
+        resourceCounts.push({ resource: pos.resource, amount });
       }
     }
     return resourceCounts;

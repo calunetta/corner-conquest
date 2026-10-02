@@ -26,7 +26,7 @@ export function PlayerInfoBar() {
   }, [players]);
 
   return (
-    <div className="w-full lg:w-[240px] lg:shrink-0">
+    <div className="w-full lg:w-[300px] xl:w-[330px] lg:shrink-0">
       {/* Mobile Collapsible Header */}
       <div className="lg:hidden">
         <Collapsible open={isPlayerInfoOpen} onOpenChange={setIsPlayerInfoOpen} className="w-full">

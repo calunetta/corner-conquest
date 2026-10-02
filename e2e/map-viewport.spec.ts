@@ -11,7 +11,9 @@ test.describe('Map Viewport & Pan/Zoom Flow', () => {
 
     // 1. Login
     await page.goto('/');
-    await page.getByPlaceholder('Your Name').fill(testUsername);
+    const input = page.locator('input#username[data-hydrated="true"]');
+    await expect(input).toBeVisible({ timeout: 10000 });
+    await input.fill(testUsername);
     const enterBtn = page.getByRole('button', { name: /enter lobby/i });
     await expect(enterBtn).toBeEnabled();
     await enterBtn.click();
@@ -48,15 +50,19 @@ test.describe('Map Viewport & Pan/Zoom Flow', () => {
     // Starting default zoom is 85%
     await expect(zoomResetBtn).toContainText('85%');
 
-    // Click Zoom In
+    // Click Zoom In to 100% and 115% (max desktop zoom)
     await zoomInBtn.click();
     await expect(zoomResetBtn).toContainText('100%');
+    await zoomInBtn.click();
+    await expect(zoomResetBtn).toContainText('115%');
 
-    // Click Zoom Out twice
+    // Click Zoom Out to 100% and 85% (min desktop zoom)
+    await zoomOutBtn.click();
+    await expect(zoomResetBtn).toContainText('100%');
     await zoomOutBtn.click();
     await expect(zoomResetBtn).toContainText('85%');
     await zoomOutBtn.click();
-    await expect(zoomResetBtn).toContainText('70%');
+    await expect(zoomResetBtn).toContainText('85%');
 
     // Reset Zoom (restores to 85%)
     await zoomResetBtn.click();
@@ -84,8 +90,12 @@ test.describe('Map Viewport & Pan/Zoom Flow', () => {
 
     // Login & Enter
     await page.goto('/');
-    await page.getByPlaceholder('Your Name').fill(testUsername);
-    await page.getByRole('button', { name: /enter lobby/i }).click();
+    const input = page.locator('input#username[data-hydrated="true"]');
+    await expect(input).toBeVisible({ timeout: 10000 });
+    await input.fill(testUsername);
+    const enterBtn = page.getByRole('button', { name: /enter lobby/i });
+    await expect(enterBtn).toBeEnabled();
+    await enterBtn.click();
 
     // Create game room
     const createNewGameBtn = page.getByRole('button', { name: /create new game/i });
@@ -119,5 +129,8 @@ test.describe('Map Viewport & Pan/Zoom Flow', () => {
     const confirmLeaveBtn = page.getByRole('button', { name: /confirm & leave|leave match/i });
     await expect(confirmLeaveBtn).toBeVisible({ timeout: 5000 });
     await confirmLeaveBtn.click();
+
+    // Verify returned to lobby
+    await expect(page.getByText('Game Lobby')).toBeVisible({ timeout: 10000 });
   });
 });

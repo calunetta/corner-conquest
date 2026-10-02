@@ -9,7 +9,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Swords, Anchor, CheckCircle, Clock } from 'lucide-react';
+import { Anchor, CheckCircle, Clock } from 'lucide-react';
+import { FightIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import type { ReactNode } from 'react';
 import { PLAYER_DATA } from '@/lib/player-data';
@@ -46,7 +47,7 @@ export function ArmySelectionDialog({ state, player, onSelectArmy, onClose, isMy
         <AlertDialogHeader className="pb-2 border-b border-white/10">
           <div className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary">
-              <Swords className="h-5 w-5" />
+              <FightIcon className="h-5 w-5" />
             </div>
             <div>
               <AlertDialogTitle className="text-xl font-bold">Select Army Squad ({x}, {y})</AlertDialogTitle>

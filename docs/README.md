@@ -8,6 +8,7 @@ This document outlines the architecture and key logic flows of the "Corner Conqu
 1.  **Synchronized Documentation:** For every code change I make, I **must** also update this `docs/README.md` file in the same transaction to reflect those changes. The code and the documentation will always be kept in sync.
 2.  **Blueprint-First Validation:** Before I implement any change, I **must** first analyze the request against the established architecture and logic documented here. If the request conflicts with our blueprint, I will notify you of the discrepancy and await your confirmation before proceeding.
 3.  **Comprehensive Automated & E2E Testing:** Every new feature, UI mechanic, or bug fix **must** be tested and tracked with both unit tests (`npm test`) and Playwright E2E browser tests (`npm run test:e2e`).
+4.  **Mandatory Verification Pipeline:** After every fix or enhancement, always execute: (1) TypeScript check (`npx tsc --noEmit`), (2) Production Build (`npm run build`), (3) Playwright E2E tests (`npx playwright test`), and (4) Jest unit tests (`npm test`).
 
 ## 1. Core Technologies
 
@@ -38,11 +39,13 @@ Understanding the project's structure is key to making changes efficiently and c
       - `GameDialogManager.tsx`: Dedicated container for mounting all 15+ modal dialogs with **zero prop-drilling**.
       - `MapGrid.tsx`: Lightweight terrain board orchestrator (<70 lines, **0 props**) with pan and pinch-to-zoom support.
       - `MapZoomControls.tsx`: Glassmorphic zoom controls HUD (+ / - / Reset 100%) with **0 props or callback props**.
-      - `MapDecorations.tsx`: Deterministic fixed rock placement in perimeter water margins with mobile responsive filtering.
-      - `IslandTile.tsx`: Island tile rendering, selection borders, and 3D hover effects with **1 prop (`{ island }`)**.
+      - `MapDecorations.tsx`: Strategic fixed rocks and outer perimeter cloud formations framing uncharted ocean margins.
+      - `IslandTile.tsx`: Island tile orchestrator composing terrain, forest, resources, boats, castle, and occupants with **1 prop (`{ island }`)**.
+      - `TileForest.tsx`: Small deterministic forest cluster (2–3 trees of identical type) with **2 props (`{ island, isBase }`)**.
+      - `TileResources.tsx`: Animated resource nodes (sheep, trees, mines) with double-sprite rendering, farming animations, and monster suppression with **2 props (`{ island, isBase }`)**.
+      - `TileBoats.tsx`: 4-corner non-overlapping boat docking and idle collectors with **1 prop (`{ island }`)**.
       - `AnimatedMonster.tsx`: Monster sprite animation and interval tracking.
       - `TileOccupants.tsx`: Fog-of-war aware army sprites and death animations with **1 prop (`{ island }`)**.
-      - `TileResources.tsx`: Resource icons and player position indicators with **1 prop (`{ island }`)**.
     - `panels/`:
       - `ActionsPanel.tsx`: Action buttons, shop triggers, and turn countdown timer with **0 props**.
       - `GameLog.tsx`: Reverse-chronological match action log with **0 props**.
@@ -152,7 +155,7 @@ The first player to reach the `victoryPointGoal` (default: 30 VP) wins the game.
 ### 5.2. The Map & Islands
 The game is played on a grid of islands with configurable dimensions (`settings.gridSize.cols` by `settings.gridSize.rows`). Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to a tile, revealing it. The procedural generation of the map is governed by the `game-initializer.ts` file and can be tweaked via the "Customize Match" settings in the lobby.
 - **Base:** Your starting point. Where you deploy new armies and where defeated armies respawn. Bases also generate all three resource types. The Base's appearance is a castle sprite specific to the player's color, defined in `src/lib/player-data.ts`.
-- **Resource Islands:** Contain **Wheat**, **Iron**, or **Gems**. The generation logic is as follows:
+- **Resource Islands:** Contain **Food**, **Wood**, or **Gold**. The generation logic is as follows:
     - An island can have one or two types of resources, determined by its distance from the map's center.
     - If an island has **one** resource type, it will always have **two** collection spots for that resource.
     - If an island has **two** resource types, each type will have a random number of collection spots (either one or two).
@@ -161,9 +164,9 @@ The game is played on a grid of islands with configurable dimensions (`settings.
 - **Island Distribution:** The balance between Resource, Monster, and Special islands is controlled by the `resourceDensity` setting (default 60%). This value corresponds to the probability that a tile will be a resource island. The remaining percentage is split between Monster and Special islands, with Special islands being rarer. The distribution also changes based on distance from the map's center, with more valuable and dangerous islands appearing closer to the middle.
 
 ### 5.3. Resources & Progression
-- **Wheat:** Used to **Deploy** new armies. The cost increases with each new army.
-- **Iron:** Used to **Upgrade** the Attack Power of all your armies permanently.
-- **Gems:** Used to **Buy Special Cards** or purchase permanent **Passive Abilities**.
+- **Food (`ResourceType.Food`):** Represented on tiles by grazing livestock pasture (`/sprites/sheep.gif`) and in HUD/dialogs by meat icons (`/sprites/icon_meat.png`). Used to **Deploy** new armies. The cost increases with each new army.
+- **Wood (`ResourceType.Wood`):** Represented on tiles by timber trees (`/sprites/tree.gif`) and in HUD/dialogs by wood icons (`/sprites/icon_wood.png`). Used to **Upgrade** the Attack Power of all your armies permanently.
+- **Gold (`ResourceType.Gold`):** Represented on tiles by gold mines (`/sprites/mine.png` / `/sprites/mine_active.png`) and in HUD/dialogs by gold icons (`/sprites/icon_gold.png` / `/sprites/gold.gif`). Used to **Buy Special Cards** or purchase permanent **Passive Abilities**.
 
 ## 6. Detailed Interaction Flows: The Turn and Action Lifecycle
 
@@ -277,8 +280,8 @@ These actions are available once per turn each and do not set the `hasActed` fla
 
 -   **Extra Move:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.
-    2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The card is consumed and the player's `hasExtraMove` flag is set to `true` in `GameState`.
-    3.  **Effect:** This flag allows any one army to perform one `Move` action. The flag is consumed (`false`) after the move is completed. If used on an army that has **not yet acted**, that army remains "fresh" (`hasActed: false`) after the move and can perform a subsequent action (Attack/Position). If used on an army that **has already acted**, it gets to move, and that's its final action. Can be cancelled before moving.
+    2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The card is consumed, the player's `hasExtraMove` flag is set to `true` in `GameState`, and **all friendly armies are reactivated (`hasActed: false`)**.
+    3.  **Effect & UI Flow:** All actions in the UI remain fully enabled. A prominent glowing banner informs the player that Extra Move is active and prompts them to select a soldier on the map to continue. Can be cancelled before moving.
 
 -   **Teleport:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.
@@ -342,9 +345,9 @@ These actions are available once per turn each and do not set the `hasActed` fla
 
 -   **Productive:**
     1.  **Trigger:** Passive card. At the start of a player's turn, if they are positioned to collect resources, a local `ProductiveCardDialog` opens.
-    2.  **UI Flow:** The dialog shows which resources will be collected and allows the player to select one to double.
-    3.  **Input:** Player can select one resource type and click "Collect".
-    4.  **Resolution (Shared):** A `GameAction.UseProductiveCard` is dispatched. If a resource was selected, the `Productive` card is consumed, and the yield for that resource is doubled. Resources are added to the player's total.
+    2.  **UI Flow:** The dialog strictly displays resource options where the player currently has positioned collectors (`player.positions`), preventing doubling of un-positioned resources.
+    3.  **Input:** Player can select one positioned resource type and click "Collect" (or skip).
+    4.  **Resolution (Shared):** A `GameAction.UseProductiveCard` is dispatched. If a valid positioned resource was selected, the `Productive` card is consumed, and the yield for that resource is doubled. Resources are added to the player's total.
 
 ### 6.6. UI/UX and Other Interactions
 
@@ -369,7 +372,7 @@ These actions are available once per turn each and do not set the `hasActed` fla
     -   Map visibility is shared. When any player reveals a tile, it becomes visible to *all* players for the rest of the game.
 -   **Debug Mode:** This is a special mode intended for testing, which is automatically enabled for "Player vs. Bot" games started from the lobby.
     -   **Complete Map Visibility:** It overrides any Fog of War setting, making the entire map and all armies visible from the start of the match.
-    -   **All Special Cards:** The player begins the game with one of every available Special Card, allowing for immediate testing of card mechanics.
+    -   **All Special Cards & 20 Starting Resources:** The human player begins the game with one of every available Special Card and **20 Food, 20 Wood, and 20 Gold**, allowing for immediate testing of all strategic and army mechanics.
 
 ### 6.8. Bot Logic
 The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete, atomic turn loop to eliminate timeout debouncing, state deadlocks, or dangling combat states:
@@ -392,6 +395,7 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete,
   - `MonsterCombatDialog` includes a dedicated spectator view during `phase === 'rolling'` that displays a waiting status without interactive buttons, preventing spectator interference or accidental cancellation.
 - **Standardized Dialogs:** All game dialogs (`CombatDialog`, `MonsterCombatDialog`, `ArmySelectionDialog`, `AttackSelectionDialog`, `StealResourceDialog`, `SabotageDialog`, `WealthyDialog`, `AbilitiesDialog`, `SpecialIslandRollDialog`, `PositionDialog`) follow standardized ShadCN styling with outline action cancellations and synchronized dice/card payloads.
 - **Turn Progression Safety:** `handleEndTurn` utilizes bounded iterative turn advancement to process multiple simultaneous sabotaged players safely without recursion stack risks, and safely validates tile data before passive ability execution.
+- **Automatic Turn Completion:** When the active player has exhausted all possible army moves, attacks, positions, and cannot afford any remaining strategic actions (`Deploy`, `Upgrade`, `BuyCard`, `UseCard`, `BuyAbility`), the game automatically completes and transitions the turn.
 - **Hook Architecture & Firestore Economics:**
   - Custom hooks in `src/hooks/` (`useIsMobile`, `useGameEngine`, `usePlayer`) provide consolidated viewport detection, resilient session validation, and real-time Firestore synchronization.
   - **In-Memory Turn Buffering:** All human player actions within a turn (`Move`, `Deploy`, `Upgrade`, `BuyCard`, `UseCard`, `SelectResourcePosition`, `CancelAction`) execute entirely in local client memory (`localGameState`), generating **zero Firestore writes** until turn completion.
@@ -402,6 +406,7 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete,
 
 ### 6.10. Tutorial System
 - **Overview**: An optional, skippable tutorial system (`TutorialOverlay.tsx`) automatically displays to new players to explain core mechanics (Goals, Deploying, Moving & Positioning, Resources & Shop, Combat, Special Cards).
+- **Interactive Info Beacons**: Contextual helper beacons throughout the HUD render high-contrast pixel icons (`/sprites/icon_info.png`) and open informative popovers on click.
 - **State Management**: The tutorial uses `localStorage` (`'corner-conquest-tutorial'`) to remember if a player has seen it, preventing annoyance in subsequent sessions. It can also be manually re-triggered via the 'Help' button in the game board header.
 - **Maintenance Rule**: Whenever core mechanics, UI layouts, or game rules are added or modified, the steps inside `TutorialOverlay.tsx` MUST be updated to reflect the new changes to keep the new player experience accurate.
 
@@ -414,4 +419,45 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete,
   - **No Human Players Remaining:** If the last human player exits a match (leaving only AI bots), the game room is deleted immediately.
   - **Single/Solo Player Departure:** If total remaining players are `<= 1` when the host leaves, the game document is dismantled from Firestore.
 - **Lobby Hygiene:** Adhering to these rules prevents test runs and player abandonments from cluttering Firestore and ensures the game lobby only ever lists active, joinable rooms.
+
+### 6.12. Island Tile Visual Layout & Animated Sprite Architecture
+- **Deterministic Tree Forests (`TileForest.tsx`)**:
+  - Small forests of 2–3 trees of **strictly identical type** (`pine_tree.gif`, `spring_tree.gif`, `autmn_tree.gif`, `tree.gif`) are rendered on Base islands (top-right cluster) and empty islands (dedicated natural clearing).
+  - The tree type is deterministically hashed from island coordinates (`island.x * 7 + island.y * 13 + (isBase ? 3 : 0)`), ensuring 100% visual consistency across clients.
+  - **Resource Island Forest Suppression Rule:** On `IslandType.Resource` islands, decorative trees are completely suppressed so commanders only see genuine resource nodes and never confuse background trees with wood nodes.
+- **Animated Resource Representations (`TileResources.tsx`)**:
+  - Replaces vector icons with rich animated pixel art sprites positioned at elevated layer `z-35`:
+    - **Wheat / Food:** Grazing livestock pasture (`/sprites/sheep.gif`, dialog/HUD icons: `/sprites/icon_meat.png` / `/sprites/meat.png`).
+    - **Iron / Wood:** Timber forest (`/sprites/tree.gif`, dialog/HUD icons: `/sprites/icon_wood.png` / `/sprites/wood.png`).
+    - **Gems / Gold:** Gold mine (`/sprites/mine.png` idle, `/sprites/mine_active.png` when farmed, dialog/HUD icons: `/sprites/icon_gold.png` / `/sprites/gold.gif`).
+  - **Organic Island Clearings:** Resources are distributed organically across island clearings (non-linear 2D scatter) for a natural, rich RPG aesthetic.
+  - **Individual Multi-Sprite Rendering (No x2 Badges):** Islands with multiple resources of the same type render distinct individual animated sprites side-by-side (e.g. 2 sheep, 2 trees, 2 mines) instead of number badges.
+  - **Active Collector Farming:** Stationed collectors (`/sprites/farm_${player.color}.gif`) harvest directly on top of the specific resource node they are assigned to.
+- **Persistent Soldier / Knight Visibility & Collector Farming (`TileOccupants.tsx`)**:
+  - Army soldiers / knights remain **persistently visible** on island tiles at all times, ensuring commanders and opponents always have complete situational awareness of garrisoned forces.
+  - When an army is positioned to harvest a resource, the active farming collector (`/sprites/farm_${player.color}.gif`) harvests directly at that specific resource node while the soldier remains stationed on the island.
+  - When an army is occupying an island without being positioned on a resource, an idle faction collector (`/sprites/collector_${player.color}_idle.gif`) waits docked at the shoreline boat.
+  - Player Base tiles start with the owner's boat anchored in the water canal and idle collector.
+- **Extra Move Card Mechanics & Balance (Nerfed to 1 Bonus Action)**:
+  - Using the `Extra Move` card activates `hasExtraMove = true` on the player, allowing any 1 selected army on the board to perform a bonus action (`Move`, `Position`, or `Attack`).
+  - As soon as that army completes its action, `hasExtraMove` is consumed (`false`) and all other armies that had previously acted remain disabled (`hasActed = true`), preventing whole-fleet multi-move exploits.
+- **Automatic Turn Completion (`hasPlayerRemainingActions` & `GameBoardContext.tsx`)**:
+  - Automatically transitions the turn when a player has exhausted all valid moves/attacks/positions and cannot afford any strategic actions (`Deploy`, `Upgrade`, `Buy Card`, `Use Card`, `Buy Ability`). Works from Turn 1 throughout the entire game.
+- **Unified Sprite Dialogs & UI Presentation**:
+  - All interactive dialogs (`ProductiveCardDialog`, `WealthyDialog`, `StealResourceDialog`, `PositionDialog`, `AbilitiesDialog`) feature rich animated preview sprites (`sheep.gif`, `tree.gif`, `gold.gif`), custom icons (`FightIcon`, `ResourceIcon`), and consistent presentation of resources as **Food**, **Wood**, and **Gold**.
+- **Shoreline Boat Docking System (`TileBoats.tsx`)**:
+  - Each island features 4 discrete shore corner anchors:
+    - Corner 0: Bottom-Left
+    - Corner 1: Bottom-Right
+    - Corner 2: Top-Left
+    - Corner 3: Top-Right
+  - Every player's expedition boat (`/sprites/boat.gif`) begins anchored to their home Base shoreline.
+  - When an army is landed on an island, their boat docks at the first available corner on that tile. Multiple players or armies occupying the same island receive separate corners without visual collision.
+- **Perimeter Map Clouds & Atmosphere (`MapDecorations.tsx`)**:
+  - Outer ocean margins surrounding the playable board are decorated with fixed atmospheric cloud formations (`/sprites/cloud_small.png`, `/sprites/cloud_medium.png`, `/sprites/cloud_big.png`) along margins and outer corners, framing uncharted waters.
+- **Rebalanced Base Tile Layout (`IslandTile.tsx`)**:
+  - Base castles (`/sprites/castle_{color}.png`) are sized to ~48–56px, creating a balanced landscape that cleanly accommodates the castle, tree forest, base resource nodes, idle collectors, and anchored shoreline boat.
+
+
+
 

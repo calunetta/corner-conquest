@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { HelpCircle, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { InfoIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
 interface TutorialBeaconProps {
@@ -44,12 +45,12 @@ export function TutorialBeacon({ id, title, description, className, side = 'top'
           variant="outline" 
           size="icon" 
           className={cn(
-            "h-6 w-6 rounded-full border-blue-500/50 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 hover:text-blue-400 relative z-40 flex-shrink-0",
+            "h-6 w-6 rounded-full border-blue-500/50 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 hover:text-blue-400 relative z-40 flex-shrink-0 p-0.5",
             !hasSeen && "animate-pulse ring-2 ring-blue-500 ring-offset-2 ring-offset-background",
             className
           )}
         >
-          <HelpCircle className="h-4 w-4" />
+          <InfoIcon className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent side={side} className="w-80 relative z-50">

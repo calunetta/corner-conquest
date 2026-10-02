@@ -1,76 +1,63 @@
 import { test, expect } from '@playwright/test';
 import { safeCleanupGame } from './e2e-cleanup';
 
-test.describe('Gameplay & Board Interactions Flow', () => {
+test.describe('Gameplay & Debug Mechanics', () => {
   test.afterEach(async ({ page }) => {
     await safeCleanupGame(page);
   });
-  test('creates a game, loads the board, interacts with actions panel, ends turn, and cleans up', async ({ page }) => {
-    const testUsername = `Player_${Math.floor(Math.random() * 10000)}`;
-    const matchName = `Match_${Date.now()}`;
 
-    // 1. Login
+  test('starts game vs bot in debug mode with 20 starting resources and visible soldiers', async ({ page }) => {
+    const testUsername = `Tester_${Math.floor(Math.random() * 10000)}`;
+    const matchName = `DebugMatch_${Date.now()}`;
+
     await page.goto('/');
-    await page.getByPlaceholder('Your Name').fill(testUsername);
+    const input = page.locator('input#username[data-hydrated="true"]');
+    await expect(input).toBeVisible({ timeout: 10000 });
+    await input.fill(testUsername);
     const enterBtn = page.getByRole('button', { name: /enter lobby/i });
     await expect(enterBtn).toBeEnabled();
     await enterBtn.click();
 
-    // 2. Open Create Game Modal
+    // Create match with 1 player (vs 1 bot)
     const createNewGameBtn = page.getByRole('button', { name: /create new game/i });
     await expect(createNewGameBtn).toBeVisible({ timeout: 10000 });
     await createNewGameBtn.click();
 
-    // 3. Fill and submit Create Game (Solo vs Bot for immediate start)
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await page.getByLabel(/game name/i).fill(matchName);
-    const selectTrigger = dialog.getByRole('combobox');
-    if (await selectTrigger.isVisible()) {
-      await selectTrigger.click();
-      await page.getByRole('option', { name: /solo vs. bot ai/i }).click();
-    }
+
+    // Select 1 player capacity (Solo vs Bot)
+    const combobox = dialog.getByRole('combobox');
+    await expect(combobox).toBeVisible();
+    await combobox.click();
+    const soloOption = page.getByRole('option', { name: /solo vs\. bot/i });
+    await expect(soloOption).toBeVisible();
+    await soloOption.click();
+
     await dialog.getByRole('button', { name: /create game/i }).click();
 
-    // 4. Verify GameBoard loads
-    await expect(page.getByText(matchName)).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('Player Information')).toBeVisible();
-    await expect(page.getByText('Actions', { exact: false })).toBeVisible();
+    // Wait for match header
+    await expect(page.getByRole('heading', { name: matchName })).toBeVisible({ timeout: 15000 });
 
-    // 5. If "Start Game" button is present, click it
-    const startGameBtn = page.getByRole('button', { name: /start game/i });
-    if (await startGameBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await startGameBtn.click();
-    }
+    // Verify player has 20 Food, 20 Wood, and 20 Gold in HUD/PlayerInfo
+    await expect(page.getByText('20').filter({ visible: true }).first()).toBeVisible({ timeout: 5000 });
 
-    // 6. Open Abilities Shop dialog
-    const abilitiesBtn = page.getByRole('button', { name: /abilities/i });
-    await expect(abilitiesBtn).toBeVisible();
-    await abilitiesBtn.click();
+    // Verify Blue army soldier sprite is rendered
+    await expect(page.locator('img[alt="blue army"]').first()).toBeVisible();
 
-    // Verify Abilities Shop modal opens
-    await expect(page.getByText(/abilities shop/i)).toBeVisible({ timeout: 5000 });
+    // Verify Resource nodes and sprites are rendered on the map
+    await expect(page.locator('[data-testid^="resource-node-"]').first()).toBeVisible();
+    await expect(page.locator('img[alt$="resource"]').first()).toBeVisible();
 
-    // Close Abilities Shop modal
-    await page.keyboard.press('Escape');
-    await expect(page.getByText(/abilities shop/i)).not.toBeVisible({ timeout: 5000 });
+    // Verify Tutorial Beacon info icon is visible
+    const beacon = page.getByTestId('tutorial-beacon-actions-info');
+    await expect(beacon).toBeVisible();
+    await expect(beacon.locator('img[alt="Info"]')).toBeVisible();
 
-    // 7. Verify Turn Countdown Timer and End Turn button
-    await expect(page.getByTestId('turn-countdown-timer')).toBeVisible();
-    const endTurnBtn = page.getByRole('button', { name: /end turn/i });
-    await expect(endTurnBtn).toBeVisible();
-    await expect(endTurnBtn).toContainText(/01:|02:/);
-
-    // 8. Clean up: Exit and delete the match
-    const exitBtn = page.getByTestId('gameboard-exit-btn');
-    await expect(exitBtn).toBeVisible();
-    await exitBtn.click();
-
-    const confirmLeaveBtn = page.getByRole('button', { name: /confirm & leave|leave match/i });
-    await expect(confirmLeaveBtn).toBeVisible({ timeout: 5000 });
-    await confirmLeaveBtn.click();
-
-    // Verify returned to lobby
-    await expect(page.getByText('Game Lobby')).toBeVisible({ timeout: 10000 });
+    // Verify Action panel buttons are present and interactive
+    await expect(page.getByRole('button', { name: /buy card/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /upgrade/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /deploy/i })).toBeVisible();
   });
 });

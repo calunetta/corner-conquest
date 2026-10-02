@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GameBoard } from '@/features/game/components/GameBoard';
 import { Lobby } from '@/features/lobby/components/Lobby';
 import { LobbyBackground } from '@/features/lobby/components/LobbyBackground';
@@ -14,17 +14,22 @@ import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescript
 import Image from 'next/image';
 
 function Login() {
+  const [mounted, setMounted] = useState(false);
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { setUsername, playerId } = usePlayer();
   const [showErrorDialog, setShowErrorDialog] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handleLogin = async () => {
-    if (!name) return;
+    if (!name.trim()) return;
     setIsLoading(true);
 
     try {
-      const success = await setUsername(name);
+      const success = await setUsername(name.trim());
       if (!success) {
         setShowErrorDialog(true);
       }
@@ -65,6 +70,7 @@ function Login() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                data-hydrated={mounted ? "true" : undefined}
                 className="bg-black/40 border-white/10 focus-visible:ring-amber-400 text-foreground"
               />
             </div>

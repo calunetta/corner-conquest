@@ -18,7 +18,7 @@ describe('Game Initializer', () => {
     const creatorBase = game.map.find(i => i.type === IslandType.Base && i.owner === 0);
     expect(creatorBase).toBeDefined();
     expect(creatorBase?.occupants.length).toBe(1);
-    expect(creatorBase?.resources.length).toBe(3); // Gems, Iron, Wheat
+    expect(creatorBase?.resources.length).toBe(3); // Food, Wood, Gold
 
     // Special card deck
     expect(game.specialCardsDeck.length).toBeGreaterThan(0);

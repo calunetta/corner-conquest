@@ -12,7 +12,17 @@ type PlayerContextType = {
 const PlayerContext = createContext<PlayerContextType | null>(null);
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
-  const [playerId, setPlayerId] = useState<string | null>(null);
+  const [playerId, setPlayerId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      let stored = localStorage.getItem('playerId');
+      if (!stored) {
+        stored = `player_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        localStorage.setItem('playerId', stored);
+      }
+      return stored;
+    }
+    return null;
+  });
   const [username, setUsernameState] = useState<string | null>(null);
 
   const validateSession = useCallback(async (pid: string, uname: string) => {
@@ -61,7 +71,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [username]);
 
   const setUsernameCallback = useCallback(async (name: string): Promise<boolean> => {
-    if (!playerId) {
+    let currentPid = playerId;
+    if (!currentPid && typeof window !== 'undefined') {
+      currentPid = localStorage.getItem('playerId');
+      if (!currentPid) {
+        currentPid = `player_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        localStorage.setItem('playerId', currentPid);
+      }
+      setPlayerId(currentPid);
+    }
+
+    if (!currentPid) {
       console.error('Player ID not initialized yet.');
       return false;
     }
@@ -70,13 +90,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     try {
       const docSnap = await getDoc(usernameDocRef);
-      if (docSnap.exists() && docSnap.data().playerId !== playerId) {
+      if (docSnap.exists() && docSnap.data().playerId !== currentPid) {
         // Username is taken by someone else
         return false;
       }
 
       // Reserve the new username
-      await setDoc(usernameDocRef, { playerId });
+      await setDoc(usernameDocRef, { playerId: currentPid });
 
       // Clean up old username if it's different
       if (username && username !== name) {

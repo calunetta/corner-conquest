@@ -236,7 +236,7 @@ export function Lobby({ onJoinGame }: LobbyProps) {
                 <div className="flex items-start gap-2">
                   <Shield className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
                   <p>
-                    <strong className="text-foreground">Positioning:</strong> Position armies on resource islands to gather wheat, iron, and gems every turn.
+                    <strong className="text-foreground">Positioning:</strong> Position armies on resource islands to gather food, wood, and gold every turn.
                   </p>
                 </div>
                 <div className="flex items-start gap-2">

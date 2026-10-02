@@ -1,8 +1,8 @@
 'use client';
 
+import React, { useState } from 'react';
+import Image from 'next/image';
 import type { Player, ResourceType } from '@/lib/types';
-import { CardName } from '@/lib/types';
-import { useState } from 'react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -12,10 +12,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { ResourceIcon } from '@/components/icons';
-import { HandMetal, ArrowLeft, Check, ShieldAlert } from 'lucide-react';
+import { ResourceIcon, RESOURCE_SPRITES, getResourceDisplayName } from '@/components/icons';
+import { HandMetal, ArrowLeft, Check } from 'lucide-react';
 import { PLAYER_DATA } from '@/lib/player-data';
-import Image from 'next/image';
 
 type StealResourceDialogProps = {
   players: Player[];
@@ -57,6 +56,7 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
             <button
               key={player.id}
               type="button"
+              data-testid={`steal-target-player-${player.id}`}
               onClick={() => handleSelectPlayer(player)}
               className={`flex flex-col items-center p-3 rounded-xl border transition-all duration-200 ${
                 isSelected
@@ -105,17 +105,20 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
         </div>
       </AlertDialogHeader>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 py-4">
+      <div className="grid grid-cols-3 gap-3 py-4">
         {(Object.keys(selectedPlayer!.resources) as ResourceType[]).map((resource) => {
           const available = selectedPlayer!.resources[resource];
           const isSelected = selectedResource === resource;
           const isAvailable = available > 0;
+          const sprite = RESOURCE_SPRITES[resource] || '/sprites/mine.png';
+          const displayName = getResourceDisplayName(resource);
 
           return (
             <button
               key={resource}
               type="button"
               disabled={!isAvailable}
+              data-testid={`steal-resource-${resource}`}
               onClick={() => setSelectedResource(resource)}
               className={`relative flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200 ${
                 !isAvailable
@@ -130,8 +133,24 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
                   <Check className="h-3 w-3 stroke-[3]" />
                 </div>
               )}
-              <ResourceIcon type={resource} className="h-8 w-8 mb-1 drop-shadow" />
-              <span className="text-xs font-bold capitalize text-foreground">{resource}</span>
+
+              {/* Animated Resource Preview Sprite */}
+              <div className="relative w-11 h-11 mb-1 flex items-center justify-center drop-shadow">
+                <Image
+                  src={sprite}
+                  alt={displayName}
+                  width={44}
+                  height={44}
+                  className="h-full w-full object-contain"
+                  unoptimized
+                />
+              </div>
+
+              <div className="flex items-center gap-1">
+                <ResourceIcon type={resource} className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold capitalize text-foreground">{displayName}</span>
+              </div>
+
               <span className="text-[10px] text-muted-foreground font-mono mt-0.5">Avail: {available}</span>
             </button>
           );
@@ -148,7 +167,7 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
           onClick={() => onSteal(selectedPlayer!.id, selectedResource!)}
           className="font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-[0_0_16px_rgba(168,85,247,0.4)] text-xs px-4"
         >
-          Steal 2 {selectedResource || 'Resources'}
+          Steal 2 {selectedResource ? getResourceDisplayName(selectedResource) : 'Resources'}
         </Button>
       </AlertDialogFooter>
     </>
@@ -156,7 +175,7 @@ export function StealResourceDialog({ players, onSteal, onClose }: StealResource
 
   return (
     <AlertDialog open={true} onOpenChange={onClose}>
-      <AlertDialogContent className="bg-background/90 backdrop-blur-2xl border border-white/15 shadow-[0_24px_72px_rgba(0,0,0,0.85)] max-w-md overflow-hidden">
+      <AlertDialogContent className="bg-background/95 backdrop-blur-2xl border border-white/15 shadow-[0_24px_72px_rgba(0,0,0,0.85)] max-w-md overflow-hidden">
         {!selectedPlayer ? renderPlayerSelection() : renderResourceSelection()}
       </AlertDialogContent>
     </AlertDialog>

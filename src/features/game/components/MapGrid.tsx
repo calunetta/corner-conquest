@@ -14,6 +14,7 @@ export function MapGrid() {
   const isMobile = useIsMobile();
   const { zoom, pan, defaultZoom, isDragging, zoomIn, zoomOut, resetZoom, handlers } = useMapPanZoom({
     initialZoom: DEFAULT_DESKTOP_ZOOM,
+    isMobile,
   });
 
   const { map } = gameState;
@@ -47,9 +48,9 @@ export function MapGrid() {
 
       {/* Pan & Zoom Transform Wrapper */}
       <div
-        className="transition-transform duration-75 ease-out flex items-center justify-center p-2 sm:p-6 md:p-10"
+        className="transition-transform duration-75 ease-out flex items-center justify-center p-2 sm:p-6 md:p-10 will-change-transform"
         style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
           transformOrigin: 'center center',
         }}
       >

@@ -12,8 +12,8 @@ test.describe('Authentication & Lobby Flow', () => {
 
     // Verify Login card is present
     await expect(page.getByText('Welcome to Corner Conquest')).toBeVisible();
-    const input = page.getByPlaceholder('Your Name');
-    await expect(input).toBeVisible();
+    const input = page.locator('input#username[data-hydrated="true"]');
+    await expect(input).toBeVisible({ timeout: 10000 });
 
     // Fill in username
     await input.fill(testUsername);
@@ -33,7 +33,9 @@ test.describe('Authentication & Lobby Flow', () => {
     const testUsername = `Host_${Math.floor(Math.random() * 10000)}`;
 
     await page.goto('/');
-    await page.getByPlaceholder('Your Name').fill(testUsername);
+    const input = page.locator('input#username[data-hydrated="true"]');
+    await expect(input).toBeVisible({ timeout: 10000 });
+    await input.fill(testUsername);
     const enterLobbyBtn = page.getByRole('button', { name: /enter lobby/i });
     await expect(enterLobbyBtn).toBeEnabled();
     await enterLobbyBtn.click();

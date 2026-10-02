@@ -11,6 +11,9 @@ export function handleInitiateCombatAction(state: GameState, payload: { attackin
     const attackingArmy = attacker.armies.find(a => a.id === payload.attackingArmyId);
 
     if (!attackingArmy) throw new Error("Attacking army not found.");
+    if (attackingArmy.hasActed && !attacker.hasExtraMove) {
+        throw new Error("This army has already acted this turn.");
+    }
 
     if (payload.target.type === 'player') {
         const { defenderId, defendingArmyId } = payload.target;
@@ -59,6 +62,10 @@ export function handleCombatRoll(state: GameState, payload: { useWarChief?: bool
     if (!attackingArmy) return state;
     
     attackingArmy.hasActed = true;
+    if (attacker.hasExtraMove) {
+        attacker.hasExtraMove = false;
+        state.log.push(`${attacker.name} used their Extra Move in battle.`);
+    }
 
     const canUseCard = !attacker.actionsThisTurn.includes(GameAction.UseCard);
 
@@ -199,6 +206,10 @@ export function handleMonsterCombatRoll(state: GameState, payload: { monster: Mo
     if (!attackingArmy) return state;
 
     attackingArmy.hasActed = true;
+    if (attacker.hasExtraMove) {
+        attacker.hasExtraMove = false;
+        state.log.push(`${attacker.name} used their Extra Move in monster battle.`);
+    }
 
     const { monster, useDecideCard, decidedValue, useOvercomeCard, useWarChief } = payload;
 
@@ -309,7 +320,7 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
         if (currentTile.monsters?.length === 0) {
           currentTile.type = IslandType.Resource;
             
-          const resourceTypes: ResourceType[] = [ResourceTypeEnum.Gems, ResourceTypeEnum.Iron, ResourceTypeEnum.Wheat];
+          const resourceTypes: ResourceType[] = [ResourceTypeEnum.Food, ResourceTypeEnum.Wood, ResourceTypeEnum.Gold];
           const availableResources = [...resourceTypes];
           const islandResources: IslandResource[] = [];
           

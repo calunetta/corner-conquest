@@ -54,10 +54,10 @@ export function handleDeployAction(state: GameState): GameState {
         isEfficientUsed = true;
     }
 
-    if (player.resources.wheat < cost) throw new Error(`Not enough wheat. Cost: ${cost}`);
+    if (player.resources.food < cost) throw new Error(`Not enough food. Cost: ${cost}`);
     if (player.armies.length >= 5) throw new Error("You have reached the maximum army size.");
 
-    player.resources.wheat -= cost;
+    player.resources.food -= cost;
     player.armyCount = player.armies.length + 1;
     const newArmyId = player.armies.length > 0 ? Math.max(...player.armies.map(a => a.id)) + 1 : 0;
     const newArmy: Army = { id: newArmyId, position: { x: 0, y: 0 }, hasActed: true }; 
@@ -114,9 +114,9 @@ export function handleUpgradeAction(state: GameState): GameState {
     if (player.masterBuilderActive && canUseCard) {
         cost = Math.ceil(cost / 2);
     }
-    if (player.resources.iron < cost) throw new Error(`Not enough iron. Cost: ${cost}`);
+    if (player.resources.wood < cost) throw new Error(`Not enough wood. Cost: ${cost}`);
     
-    player.resources.iron -= cost;
+    player.resources.wood -= cost;
     player.attackPower += 1;
 
     if (player.masterBuilderActive && canUseCard) {

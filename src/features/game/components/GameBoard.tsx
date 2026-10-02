@@ -54,7 +54,7 @@ function GameBoardContent() {
             </main>
 
             {/* Right: Actions & Match Event Log */}
-            <aside className="w-full lg:w-[280px] lg:shrink-0 flex flex-col gap-2.5 min-h-0 overflow-y-auto custom-scrollbar">
+            <aside className="w-full lg:w-[310px] xl:w-[340px] lg:shrink-0 flex flex-col gap-2.5 min-h-0 overflow-y-auto custom-scrollbar">
               <ActionsPanel />
               <GameLog />
             </aside>

@@ -7,7 +7,7 @@ export function handleBuyCardAction(state: GameState): GameState {
     const player = players[currentPlayerIndex];
 
     if (player.actionsThisTurn.includes(GameAction.BuyCard)) throw new Error("You can only buy one card per turn.");
-    if (player.resources.gems < 10) throw new Error("Not enough gems to buy a card.");
+    if (player.resources.gold < 10) throw new Error("Not enough gold to buy a card.");
     if (player.specialCards.length >= HAND_LIMIT && !debugMode) {
         state.log.push(`${player.name} tried to buy a card, but their hand is full!`);
         return state;
@@ -33,7 +33,7 @@ export function handleBuyCardAction(state: GameState): GameState {
         return state;
     }
 
-    player.resources.gems -= 10;
+    player.resources.gold -= 10;
     const cardIndex = Math.floor(Math.random() * state.specialCardsDeck.length);
     const drawnCard = state.specialCardsDeck.splice(cardIndex, 1)[0];
     player.specialCards.push(drawnCard);
@@ -64,7 +64,7 @@ export const handleUseCard = (state: GameState, payload: { cardName: CardName, i
         player.actionsThisTurn.push(GameAction.UseCard);
         const usedCard = player.specialCards.splice(cardIndex, 1)[0];
         discardPile.push(usedCard);
-        state.log.push(`${player.name} used 'Extra Move'.`);
+        state.log.push(`${player.name} activated 'Extra Move' - select any soldier on the map for 1 bonus action.`);
     } else if (isScout) {
         player.actionsThisTurn.push(GameAction.UseCard);
         state.log.push(`${player.name} used the '${cardName}' card to scout ahead.`);
@@ -80,7 +80,13 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
     let collectedResources: Record<string, number> = {};
     let doubledResourceString = '';
 
-    if (selectedResource) {
+    // Only allow doubling a resource type where the player is actually positioned
+    const validPositionedResources = player.positions.map(p => p.resource);
+    const validSelectedResource = selectedResource && validPositionedResources.includes(selectedResource)
+        ? selectedResource
+        : null;
+
+    if (validSelectedResource) {
         player.actionsThisTurn.push(GameAction.UseCard);
         const cardIndex = player.specialCards.indexOf('Productive');
         if (cardIndex > -1) {
@@ -93,7 +99,7 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
         const resourceSpot = tile?.resources.find(r => r.type === pos.resource);
         if (resourceSpot) {
             let amount = resourceSpot.amount;
-            if (pos.resource === selectedResource) {
+            if (pos.resource === validSelectedResource) {
                 amount *= 2;
                 doubledResourceString = ` (doubled ${pos.resource})`;
             }
@@ -139,7 +145,7 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
 export function handleGainWealth(state: GameState, resource: ResourceType): GameState {
     const player = state.players[state.currentPlayerIndex];
     
-    const validResources = [ResourceTypeEnum.Gems, ResourceTypeEnum.Iron, ResourceTypeEnum.Wheat];
+    const validResources = [ResourceTypeEnum.Food, ResourceTypeEnum.Wood, ResourceTypeEnum.Gold];
     if (!validResources.includes(resource)) {
         throw new Error(`Invalid resource type: ${resource}`);
     }
@@ -189,8 +195,8 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ga
     const player = state.players[state.currentPlayerIndex];
     const cost = state.settings.abilityCost;
 
-    if (player.resources.gems < cost) {
-        throw new Error("Not enough gems to buy this ability.");
+    if (player.resources.gold < cost) {
+        throw new Error("Not enough gold to buy this ability.");
     }
     if (player.passiveAbilities[abilityName]) {
         throw new Error("You already have this ability.");
@@ -199,7 +205,7 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ga
         throw new Error("This ability is not available in this match.");
     }
 
-    player.resources.gems -= cost;
+    player.resources.gold -= cost;
     player.passiveAbilities[abilityName] = true;
     state.log.push(`${player.name} has acquired the '${abilityName.charAt(0).toUpperCase() + abilityName.slice(1)}' passive ability!`);
 

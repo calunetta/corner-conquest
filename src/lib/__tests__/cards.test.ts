@@ -36,12 +36,12 @@ describe('Special Cards Logic', () => {
   it('activates Wealthy card to grant 5 resources of choice', () => {
     const player = game.players[0];
     player.specialCards = ['Wealthy'];
-    const initialGems = player.resources.gems;
+    const initialGold = player.resources.gold;
 
-    const nextState = handleGainWealth(game, ResourceType.Gems);
+    const nextState = handleGainWealth(game, ResourceType.Gold);
     const updatedPlayer = nextState.players[0];
 
-    expect(updatedPlayer.resources.gems).toBe(initialGems + 5);
+    expect(updatedPlayer.resources.gold).toBe(initialGold + 5);
     expect(updatedPlayer.specialCards).not.toContain('Wealthy');
     expect(nextState.discardPile).toContain('Wealthy');
   });
@@ -62,13 +62,13 @@ describe('Special Cards Logic', () => {
     const player = game.players[0];
     const opponent = game.players[1];
     player.specialCards = ['Steal Resource'];
-    opponent.resources.iron = 10;
-    const initialIron = player.resources.iron;
+    opponent.resources.wood = 10;
+    const initialWood = player.resources.wood;
 
-    const nextState = handleStealResource(game, { targetPlayerId: opponent.id, resource: ResourceType.Iron });
+    const nextState = handleStealResource(game, { targetPlayerId: opponent.id, resource: ResourceType.Wood });
 
-    expect(nextState.players[0].resources.iron).toBe(initialIron + 2);
-    expect(nextState.players[1].resources.iron).toBe(8);
+    expect(nextState.players[0].resources.wood).toBe(initialWood + 2);
+    expect(nextState.players[1].resources.wood).toBe(8);
   });
 
   it('cancels active card restoring state and card back to hand', () => {
@@ -95,5 +95,61 @@ describe('Special Cards Logic', () => {
     expect(updatedPlayer.specialCards).not.toContain('Teleport');
     expect(nextState.discardPile).toContain('Teleport');
     expect(updatedPlayer.actionsThisTurn).toContain(GameAction.UseCard);
+  });
+
+  it('activates Extra Move to grant exactly 1 bonus action across any army and re-disables already-acted armies after use', () => {
+    const player = game.players[0];
+    player.armies = [
+      { id: 0, position: { x: 0, y: 0 }, hasActed: true },
+      { id: 1, position: { x: 0, y: 0 }, hasActed: true },
+    ];
+    player.specialCards = ['Extra Move'];
+
+    // 1. Activate Extra Move card
+    let state = handleUseCard(game, { cardName: 'Extra Move' });
+    expect(state.players[0].hasExtraMove).toBe(true);
+    // Other armies retain hasActed: true
+    expect(state.players[0].armies[0].hasActed).toBe(true);
+    expect(state.players[0].armies[1].hasActed).toBe(true);
+
+    // 2. Army 0 uses the bonus action to move to (1, 0)
+    state = handleMoveAction(state, 1, 0, state.players[0].armies[0]);
+    expect(state.players[0].hasExtraMove).toBe(false);
+    expect(state.players[0].armies[0].hasActed).toBe(true);
+    expect(state.players[0].armies[1].hasActed).toBe(true);
+
+    // 3. Attempting to move Army 1 should fail because Extra Move was consumed
+    expect(() => {
+      handleMoveAction(state, 0, 1, state.players[0].armies[1]);
+    }).toThrow(/already acted/i);
+  });
+
+  it('only doubles harvest on resource where player is positioned when using Productive card', () => {
+    const player = game.players[0];
+    player.specialCards = ['Productive'];
+    player.resources = { food: 0, wood: 0, gold: 0 };
+    // Position only on Food at base (0,0)
+    player.positions = [{ x: 0, y: 0, resource: ResourceType.Food, armyId: 0 }];
+
+    // Base (0,0) has 1 Food, 1 Wood, 1 Gold
+    // Request doubling Food (valid positioned resource)
+    const nextState = handleUseProductiveCard(game, ResourceType.Food);
+    expect(nextState.players[0].resources.food).toBe(2); // 1 * 2 = 2
+    expect(nextState.players[0].specialCards).not.toContain('Productive');
+    expect(nextState.discardPile).toContain('Productive');
+  });
+
+  it('does not double un-positioned resource when using Productive card', () => {
+    const player = game.players[0];
+    player.specialCards = ['Productive'];
+    player.resources = { food: 0, wood: 0, gold: 0 };
+    // Position only on Food at base (0,0)
+    player.positions = [{ x: 0, y: 0, resource: ResourceType.Food, armyId: 0 }];
+
+    // Request doubling Gold (which player is NOT positioned on)
+    const nextState = handleUseProductiveCard(game, ResourceType.Gold);
+    // Gold is not doubled because player is not positioned on Gold; Food collected normally
+    expect(nextState.players[0].resources.food).toBe(1);
+    expect(nextState.players[0].resources.gold).toBe(0);
   });
 });

@@ -16,7 +16,8 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/lib/player-data';
-import { Loader2, Swords, Trophy, Skull, Sparkles, Dices } from 'lucide-react';
+import { Loader2, Trophy, Skull, Sparkles, Dices } from 'lucide-react';
+import { FightIcon } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 
 type CombatDialogProps = {
@@ -88,7 +89,7 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
         <AlertDialogHeader className="pb-2 border-b border-white/10">
           <div className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400">
-              <Swords className="h-5 w-5" />
+              <FightIcon className="h-5 w-5" />
             </div>
             <div>
               <AlertDialogTitle className="text-xl font-bold">
@@ -163,7 +164,7 @@ export function CombatDialog({ gameState, onRoll, onClose, isMyTurn, localPlayer
           {/* VS Divider */}
           <div className="flex flex-col items-center shrink-0">
             <div className="h-8 w-8 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center">
-              <Swords className="h-4 w-4 text-red-400" />
+              <FightIcon className="h-4 w-4" />
             </div>
             <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mt-0.5">VS</span>
           </div>

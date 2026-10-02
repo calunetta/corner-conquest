@@ -1,7 +1,8 @@
 'use client';
 
+import React, { useState } from 'react';
+import Image from 'next/image';
 import type { ProductiveCardDialogState, ResourceType } from '@/lib/types';
-import { useState } from 'react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -11,8 +12,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { ResourceIcon } from '@/components/icons';
-import { CardName } from '@/lib/types';
+import { ResourceIcon, RESOURCE_SPRITES, getResourceDisplayName } from '@/components/icons';
 import { TrendingUp, Check } from 'lucide-react';
 
 type ProductiveCardDialogProps = {
@@ -31,7 +31,7 @@ export function ProductiveCardDialog({ state, onConfirm }: ProductiveCardDialogP
 
   return (
     <AlertDialog open={true}>
-      <AlertDialogContent className="bg-background/90 backdrop-blur-2xl border border-white/15 shadow-[0_24px_72px_rgba(0,0,0,0.85)] max-w-md overflow-hidden">
+      <AlertDialogContent className="bg-background/95 backdrop-blur-2xl border border-white/15 shadow-[0_24px_72px_rgba(0,0,0,0.85)] max-w-md overflow-hidden">
         <AlertDialogHeader className="pb-2 border-b border-white/10">
           <div className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
@@ -46,14 +46,17 @@ export function ProductiveCardDialog({ state, onConfirm }: ProductiveCardDialogP
           </div>
         </AlertDialogHeader>
 
-        <div className="grid grid-cols-3 gap-2.5 py-4">
+        <div className="grid grid-cols-3 gap-3 py-4">
           {state.options.map((option) => {
             const isSelected = selectedResource === option.resource;
+            const sprite = RESOURCE_SPRITES[option.resource] || '/sprites/mine.png';
+            const displayName = getResourceDisplayName(option.resource);
 
             return (
               <button
                 key={option.resource}
                 type="button"
+                data-testid={`productive-option-${option.resource}`}
                 onClick={() => handleSelect(option.resource)}
                 className={`relative flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200 ${
                   isSelected
@@ -66,9 +69,27 @@ export function ProductiveCardDialog({ state, onConfirm }: ProductiveCardDialogP
                     <Check className="h-3 w-3 stroke-[3]" />
                   </div>
                 )}
-                <ResourceIcon type={option.resource} className="h-8 w-8 mb-1 drop-shadow" />
-                <span className="text-sm font-black font-mono text-emerald-400">2x ({option.amount * 2})</span>
-                <span className="text-[11px] font-semibold capitalize text-muted-foreground mt-0.5">{option.resource}</span>
+
+                {/* Animated Preview Sprite */}
+                <div className="relative w-11 h-11 mb-1 flex items-center justify-center drop-shadow">
+                  <Image
+                    src={sprite}
+                    alt={displayName}
+                    width={44}
+                    height={44}
+                    className="h-full w-full object-contain"
+                    unoptimized
+                  />
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <ResourceIcon type={option.resource} className="w-3.5 h-3.5" />
+                  <span className="text-xs font-bold text-foreground capitalize">{displayName}</span>
+                </div>
+
+                <span className="text-xs font-black font-mono text-emerald-400 mt-0.5">
+                  2x ({option.amount * 2})
+                </span>
               </button>
             );
           })}
@@ -79,7 +100,9 @@ export function ProductiveCardDialog({ state, onConfirm }: ProductiveCardDialogP
             onClick={() => onConfirm(selectedResource)}
             className="w-full font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black shadow-[0_0_16px_rgba(16,185,129,0.3)]"
           >
-            {selectedResource ? `Double ${selectedResource} Harvest` : 'Harvest Normally (Skip 2x)'}
+            {selectedResource
+              ? `Double ${getResourceDisplayName(selectedResource)} Harvest`
+              : 'Harvest Normally (Skip 2x)'}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

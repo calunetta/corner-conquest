@@ -9,7 +9,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     if (!selectedArmy) {
         throw new Error("Army not found for positioning.");
     }
-    if (selectedArmy.hasActed) {
+    if (selectedArmy.hasActed && !player.hasExtraMove) {
         throw new Error("This army has already acted this turn.");
     }
     
@@ -34,8 +34,12 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
     tile.positionedBy.push({ playerId: player.id, resource });
 
     selectedArmy.hasActed = true;
-    
-    state.log.push(`${player.name} positioned an army on ${resource}.`);
+    if (player.hasExtraMove) {
+        player.hasExtraMove = false;
+        state.log.push(`${player.name} used their Extra Move to position Army #${selectedArmy.id + 1} on ${resource}.`);
+    } else {
+        state.log.push(`${player.name} positioned an army on ${resource}.`);
+    }
     
     return state;
 }

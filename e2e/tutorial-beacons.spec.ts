@@ -10,7 +10,9 @@ test.describe('Tutorial Beacons & Hints Flow', () => {
     const matchName = `BeaconMatch_${Date.now()}`;
 
     await page.goto('/');
-    await page.getByPlaceholder('Your Name').fill(testUsername);
+    const input = page.locator('input#username[data-hydrated="true"]');
+    await expect(input).toBeVisible({ timeout: 10000 });
+    await input.fill(testUsername);
     const enterBtn = page.getByRole('button', { name: /enter lobby/i });
     await expect(enterBtn).toBeEnabled();
     await enterBtn.click();

@@ -1,5 +1,5 @@
-'use client';
-
+import React from 'react';
+import Image from 'next/image';
 import type { CardName, SpecialIslandRollDialogState } from '@/lib/types';
 import {
   AlertDialog,
@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Dices, Sparkles, XCircle, Gem } from 'lucide-react';
+import { Dices, Sparkles, XCircle } from 'lucide-react';
 import { SPECIAL_CARD_DESCRIPTIONS } from '@/lib/card-data';
 
 type SpecialIslandRollDialogProps = {
@@ -29,8 +29,15 @@ export function SpecialIslandRollDialog({ state, onRoll, onClose }: SpecialIslan
       <AlertDialogContent className="bg-background/90 backdrop-blur-2xl border border-white/15 shadow-[0_24px_72px_rgba(0,0,0,0.85)] max-w-md overflow-hidden">
         <AlertDialogHeader className="pb-2 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
-              <Gem className="h-5 w-5" />
+            <div className="h-9 w-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 overflow-hidden">
+              <Image
+                src="/sprites/icon_gold.png"
+                alt="Treasure"
+                width={24}
+                height={24}
+                className="object-contain"
+                unoptimized
+              />
             </div>
             <div>
               <AlertDialogTitle className="text-xl font-bold">Special Island Treasure</AlertDialogTitle>

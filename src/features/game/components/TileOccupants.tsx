@@ -19,7 +19,7 @@ const positions = [
   { top: '0', right: '0', origin: 'origin-top-right' },
 ];
 
-export function TileOccupants({ island }: TileOccupantsProps) {
+export const TileOccupants = React.memo(function TileOccupants({ island }: TileOccupantsProps) {
   const { gameState, localPlayer } = useGameBoard();
   const { players, deathAnimations, debugMode, settings } = gameState;
   const fogOfWar = settings.fogOfWar;
@@ -47,7 +47,7 @@ export function TileOccupants({ island }: TileOccupantsProps) {
           return null;
         }
 
-        let isArmyVisible;
+        let isArmyVisible: boolean;
         if (debugMode) {
           isArmyVisible = true;
         } else if (fogOfWar) {
@@ -95,4 +95,4 @@ export function TileOccupants({ island }: TileOccupantsProps) {
       })}
     </div>
   );
-}
+});

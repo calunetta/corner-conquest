@@ -2,7 +2,7 @@
 import type { GameState, Player, PlayerColor, BaseTileInfo } from './types';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './game-initializer';
-import { GameStatus, IslandType, MAP_COLS, MAP_ROWS } from './types';
+import { GameStatus, IslandType, ResourceType, MAP_COLS, MAP_ROWS } from './types';
 
 export const BASE_TILE_SIZE = 150;
 
@@ -61,9 +61,9 @@ export function addPlayerToGame(
     baseTile.owner = newPlayerSeatIndex;
     baseTile.occupants.push({ playerId: newPlayerSeatIndex, armyId: newPlayer.armies[0].id });
     baseTile.resources = [
-        { type: 'gems', amount: newGameState.settings.baseResourceAmount }, 
-        { type: 'iron', amount: newGameState.settings.baseResourceAmount }, 
-        { type: 'wheat', amount: newGameState.settings.baseResourceAmount }
+        { type: ResourceType.Food, amount: newGameState.settings.baseResourceAmount }, 
+        { type: ResourceType.Wood, amount: newGameState.settings.baseResourceAmount }, 
+        { type: ResourceType.Gold, amount: newGameState.settings.baseResourceAmount }
     ];
     
     if (newGameState.settings.fogOfWar && !newPlayer.revealedTiles.includes(baseTile.id)) {

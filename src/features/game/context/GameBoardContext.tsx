@@ -18,6 +18,7 @@ import type {
 import { getPossibleMoves } from '@/lib/actions/movement';
 import { handleGameAction, handlePlayerExit } from '@/lib/actions';
 import { startGame } from '@/lib/game-initializer';
+import { hasPlayerRemainingActions } from '@/lib/turn-progression';
 import { useTurnTimer } from '../hooks/useTurnTimer';
 import { useToast } from '@/hooks/use-toast';
 
@@ -550,7 +551,42 @@ export function GameBoardProvider({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [uiState.selectedArmyId, uiState.pendingAction, handleLocalAction, localPlayer]);
 
-  const handleTileClick = async (x: number, y: number) => {
+  // Determine if any interactive dialog or multi-step action is active
+  const hasActiveDialogOrPendingAction = useMemo(() => {
+    if (uiState.pendingAction) return true;
+    if (uiState.dialogs.armySelection) return true;
+    if (uiState.dialogs.attackSelection) return true;
+    if (uiState.dialogs.monsterSelection) return true;
+    if (uiState.dialogs.position) return true;
+    if (uiState.dialogs.specialIslandRoll?.isOpen) return true;
+    if (uiState.dialogs.stealResource?.isOpen) return true;
+    if (uiState.dialogs.sabotage?.isOpen) return true;
+    if (uiState.dialogs.wealthy?.isOpen) return true;
+    if (uiState.dialogs.abilitiesShopOpen) return true;
+    if (uiState.dialogs.cardsPlayerId !== null) return true;
+    return false;
+  }, [uiState]);
+
+  // Automatically end turn when player has no valid moves or affordable strategic actions left
+  useEffect(() => {
+    if (!isMyTurn || !gameStateForDisplay || gameStateForDisplay.status !== 'playing' || !localPlayer) {
+      return;
+    }
+
+    const hasRemaining = hasPlayerRemainingActions(gameStateForDisplay, localPlayer, hasActiveDialogOrPendingAction);
+    if (!hasRemaining) {
+      const autoEndTimer = setTimeout(() => {
+        onAction(GameAction.EndTurn);
+        toast({
+          title: 'Turn Completed',
+          description: 'No further actions available this turn.',
+        });
+      }, 700);
+      return () => clearTimeout(autoEndTimer);
+    }
+  }, [isMyTurn, gameStateForDisplay, localPlayer, hasActiveDialogOrPendingAction, onAction, toast]);
+
+  const handleTileClick = useCallback(async (x: number, y: number) => {
     if (!gameStateForDisplay || !isMyTurn || gameStateForDisplay.status !== 'playing' || uiState.isPerformingAction || !localPlayer) return;
 
     if (uiState.pendingAction?.type === 'scout') {
@@ -621,16 +657,16 @@ export function GameBoardProvider({
         dispatch({ type: 'SET_PENDING_ACTION', pendingAction: null });
       }
     }
-  };
+  }, [gameStateForDisplay, isMyTurn, uiState.isPerformingAction, uiState.pendingAction, uiState.possibleMoves, uiState.selectedArmyId, localPlayer, selectedArmy, onAction, toast]);
 
-  const handleStartGame = async () => {
+  const handleStartGame = useCallback(async () => {
     if (!serverGameState || !isHost) return;
     toast({ title: 'Game Started!', description: 'Let the conquest begin!' });
     const startedGame = startGame(serverGameState, localPlayer?.name || 'The host');
     setGameState(startedGame, GameAction.EndTurn, {});
-  };
+  }, [serverGameState, isHost, localPlayer?.name, setGameState, toast]);
 
-  const handleConfirmExit = async () => {
+  const handleConfirmExit = useCallback(async () => {
     dispatch({ type: 'SET_CONFIRM_EXIT_DIALOG', open: false });
     if (!localPlayerFromServer) return;
     dispatch({ type: 'SET_EXITING', isExiting: true });
@@ -642,9 +678,9 @@ export function GameBoardProvider({
       onExit();
       dispatch({ type: 'SET_EXITING', isExiting: false });
     }
-  };
+  }, [gameId, localPlayerFromServer, onExit]);
 
-  const handleConfirmHostLeave = async () => {
+  const handleConfirmHostLeave = useCallback(async () => {
     dispatch({ type: 'SET_HOST_LEAVE_DIALOG', open: false });
     if (!localPlayerFromServer) return;
     try {
@@ -654,9 +690,9 @@ export function GameBoardProvider({
     } finally {
       onExit();
     }
-  };
+  }, [gameId, localPlayerFromServer, onExit]);
 
-  const handleExitClick = async () => {
+  const handleExitClick = useCallback(async () => {
     if (!serverGameState || !localPlayerFromServer) return;
 
     if (isHost) {
@@ -669,7 +705,7 @@ export function GameBoardProvider({
     } else {
       await handleConfirmExit();
     }
-  };
+  }, [serverGameState, localPlayerFromServer, isHost, handleConfirmExit]);
 
   const turnTimer = useTurnTimer({
     isMyTurn,
@@ -677,7 +713,7 @@ export function GameBoardProvider({
     onAction,
   });
 
-  const contextValue: GameBoardContextType = {
+  const contextValue = useMemo<GameBoardContextType>(() => ({
     uiState,
     dispatch,
     gameState: gameStateForDisplay,
@@ -693,7 +729,22 @@ export function GameBoardProvider({
     handleExitClick,
     handleConfirmExit,
     handleConfirmHostLeave,
-  };
+  }), [
+    uiState,
+    gameStateForDisplay,
+    localPlayer,
+    isMyTurn,
+    isHost,
+    selectedArmy,
+    turnTimer,
+    onAction,
+    handleLocalAction,
+    handleTileClick,
+    handleStartGame,
+    handleExitClick,
+    handleConfirmExit,
+    handleConfirmHostLeave,
+  ]);
 
   return <GameBoardContext.Provider value={contextValue}>{children}</GameBoardContext.Provider>;
 }

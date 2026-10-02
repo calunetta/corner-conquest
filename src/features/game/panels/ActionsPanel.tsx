@@ -5,7 +5,8 @@ import type { Army, CardName } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Sword, ShoppingCart, Anchor, Zap, Album, University, XCircle } from 'lucide-react';
+import { Shield, ShoppingCart, Anchor, Zap, Album, University, XCircle } from 'lucide-react';
+import { FightIcon } from '@/components/icons';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { TutorialBeacon } from '../components/TutorialBeacon';
@@ -43,7 +44,7 @@ export function ActionsPanel() {
       ? map[selectedArmy.position.y * settings.gridSize.cols + selectedArmy.position.x]
       : null;
 
-  const hasArmyActed = !!selectedArmy?.hasActed;
+  const hasArmyActed = localPlayer.hasExtraMove ? false : !!selectedArmy?.hasActed;
   const isCardActionInProgress = !!pendingAction;
 
   const canPosition =
@@ -85,7 +86,7 @@ export function ActionsPanel() {
     {
       id: GameAction.local_Attack,
       label: 'Attack',
-      icon: <Sword className="h-4 w-4" />,
+      icon: <FightIcon className="h-4 w-4" />,
       disabled: !isMyTurn || isCardActionInProgress || hasArmyActed || !canAttack,
       tooltip: 'Attack enemy armies or monsters on the same tile.',
       onClick: () => onLocalAction(GameAction.local_Attack, { army: selectedArmy }),
@@ -95,15 +96,15 @@ export function ActionsPanel() {
   const alwaysAvailableActions: ActionConfig[] = [
     {
       id: GameAction.Deploy,
-      label: `Deploy (${deployCost}W)`,
+      label: `Deploy (${deployCost} Food)`,
       icon: <Shield className="h-4 w-4" />,
       disabled:
         !isMyTurn ||
         isCardActionInProgress ||
         localPlayer.armies.length >= 5 ||
         localPlayer.actionsThisTurn.includes(GameAction.Deploy) ||
-        localPlayer.resources.wheat < deployCost,
-      tooltip: `Deploy a new army at your base. Costs ${deployCost} wheat.`,
+        localPlayer.resources.food < deployCost,
+      tooltip: `Deploy a new army at your base. Costs ${deployCost} food.`,
       onClick: () => onAction(GameAction.Deploy),
     },
   ];
@@ -111,29 +112,29 @@ export function ActionsPanel() {
   const secondaryActions: ActionConfig[] = [
     {
       id: GameAction.Upgrade,
-      label: `Upgrade (${settings.upgradeCost}I)`,
+      label: `Upgrade (${settings.upgradeCost} Wood)`,
       icon: <Zap className="h-4 w-4" />,
       disabled:
         !isMyTurn ||
         isCardActionInProgress ||
         localPlayer.attackPower >= 4 ||
         localPlayer.actionsThisTurn.includes(GameAction.Upgrade) ||
-        localPlayer.resources.iron < settings.upgradeCost,
-      tooltip: `Increase your attack power. Max: 4. Costs ${settings.upgradeCost} iron.`,
+        localPlayer.resources.wood < settings.upgradeCost,
+      tooltip: `Increase your attack power. Max: 4. Costs ${settings.upgradeCost} wood.`,
       onClick: () => onAction(GameAction.Upgrade),
     },
     {
       id: GameAction.BuyCard,
-      label: 'Buy Card (10G)',
+      label: 'Buy Card (10 Gold)',
       icon: <ShoppingCart className="h-4 w-4" />,
       disabled:
         !isMyTurn ||
         isCardActionInProgress ||
         localPlayer.specialCards.length >= HAND_LIMIT ||
         localPlayer.actionsThisTurn.includes(GameAction.BuyCard) ||
-        localPlayer.resources.gems < 10 ||
+        localPlayer.resources.gold < 10 ||
         (specialCardsDeck.length === 0 && gameState.discardPile.length === 0),
-      tooltip: 'Buy a special card from the deck. Costs 10 gems.',
+      tooltip: 'Buy a special card from the deck. Costs 10 gold.',
       onClick: () => onAction(GameAction.BuyCard),
     },
     {
@@ -164,18 +165,18 @@ export function ActionsPanel() {
 
     switch (action.id) {
       case GameAction.BuyCard:
-        if (localPlayer.resources.gems < 10) return 'Not enough gems. Cost: 10';
+        if (localPlayer.resources.gold < 10) return 'Not enough gold. Cost: 10';
         if (localPlayer.specialCards.length >= HAND_LIMIT) return `Maximum hand limit reached (${HAND_LIMIT} cards).`;
         if (localPlayer.actionsThisTurn.includes(GameAction.BuyCard)) return "You've already bought a card this turn.";
         if (specialCardsDeck.length === 0 && gameState.discardPile.length === 0) return 'No cards remaining in the deck or discard pile.';
         return 'This action is not available.';
       case GameAction.Upgrade:
-        if (localPlayer.resources.iron < settings.upgradeCost) return `Not enough iron. Cost: ${settings.upgradeCost}`;
+        if (localPlayer.resources.wood < settings.upgradeCost) return `Not enough wood. Cost: ${settings.upgradeCost}`;
         if (localPlayer.attackPower >= 4) return 'Maximum attack power reached (4).';
         if (localPlayer.actionsThisTurn.includes(GameAction.Upgrade)) return "You've already upgraded this turn.";
         return 'This action is not available.';
       case GameAction.Deploy:
-        if (!(localPlayer.reinforceActive && canUseCardForAbility) && localPlayer.resources.wheat < deployCost) return `Not enough wheat. Cost: ${deployCost}`;
+        if (!(localPlayer.reinforceActive && canUseCardForAbility) && localPlayer.resources.food < deployCost) return `Not enough food. Cost: ${deployCost}`;
         if (localPlayer.armies.length >= 5) return 'Maximum army size reached (5 armies).';
         if (localPlayer.actionsThisTurn.includes(GameAction.Deploy)) return "You've already deployed this turn.";
         return 'This action is not available.';
@@ -285,6 +286,12 @@ export function ActionsPanel() {
             </Button>
           )}
         </div>
+        {isMyTurn && localPlayer.hasExtraMove && (
+          <div className="bg-amber-500/20 border border-amber-500/40 rounded-lg p-2 text-xs font-semibold text-amber-200 flex items-center gap-2 animate-pulse mt-1" data-testid="extra-move-banner">
+            <Zap className="h-4 w-4 text-amber-400 shrink-0" />
+            <span>Extra Move active! Select a soldier on the map to continue.</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="p-3 pt-0">
         <div className="grid grid-cols-3 gap-1.5">

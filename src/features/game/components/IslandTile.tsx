@@ -9,7 +9,9 @@ import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PLAYER_DATA } from '@/lib/player-data';
 import { AnimatedMonster } from './AnimatedMonster';
+import { TileForest } from './TileForest';
 import { TileResources } from './TileResources';
+import { TileBoats } from './TileBoats';
 import { TileOccupants } from './TileOccupants';
 import { DeathEffect, DEATH_ANIMATION_DURATION } from './DeathEffect';
 import { useGameBoard } from '../context/GameBoardContext';
@@ -31,7 +33,7 @@ const playerTileIndicatorClasses: Record<string, string> = {
   yellow: 'shadow-yellow-400/50',
 };
 
-export function IslandTile({ island }: IslandTileProps) {
+export const IslandTile = React.memo(function IslandTile({ island }: IslandTileProps) {
   const { gameState, localPlayer, uiState, selectedArmy, handleTileClick } = useGameBoard();
   const { players, deathAnimations, debugMode, settings } = gameState;
   const { possibleMoves, pendingAction, selectedArmyId } = uiState;
@@ -49,7 +51,8 @@ export function IslandTile({ island }: IslandTileProps) {
   const isScoutTarget = isScouting && (debugMode ? false : fogOfWar && localPlayer && !localPlayer.revealedTiles.includes(island.id));
   const isTeleportTarget = isTeleporting && !isOpponentBase && (!selectedArmy || !(selectedArmy.position.x === island.x && selectedArmy.position.y === island.y));
 
-  const baseOwner = island.type === IslandType.Base ? players.find(p => p.id === island.owner) : null;
+  const isBase = island.type === IslandType.Base;
+  const baseOwner = isBase && island.owner !== undefined ? players.find(p => p.id === island.owner) : null;
   const now = Date.now();
   const deathAnimationOnTile = deathAnimations.find(
     anim => anim.x === island.x && anim.y === island.y && (!anim.createdAt || now - anim.createdAt < DEATH_ANIMATION_DURATION)
@@ -102,39 +105,37 @@ export function IslandTile({ island }: IslandTileProps) {
     );
   };
 
-  const getIcon = () => {
+  const getTileCenterContent = () => {
     if (!isTileVisible) return <HelpCircle className="h-full w-full text-muted-foreground/50" />;
 
     switch (island.type) {
       case IslandType.Base:
         return (
-          <div className="relative h-full w-full">
+          <div className="relative h-full w-full flex items-center justify-center">
             {baseOwner?.color ? (
-              <Image
-                src={PLAYER_DATA[baseOwner.color].base}
-                alt={`${baseOwner.color} base`}
-                fill
-                className="p-1 h-full w-full object-contain"
-                unoptimized
-              />
+              <div className="relative w-12 h-12 sm:w-14 sm:h-14 drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)]">
+                <Image
+                  src={PLAYER_DATA[baseOwner.color].base}
+                  alt={`${baseOwner.color} base`}
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
             ) : (
-              <Home className="h-full w-full p-2" />
+              <Home className="h-full w-full p-2 text-muted-foreground" />
             )}
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-end justify-center gap-4">
-              <TileResources island={island} />
-            </div>
-          </div>
-        );
-      case IslandType.Resource:
-        return (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1">
-            <TileResources island={island} />
+            {/* Top Base Resources Capsule */}
+            <TileResources island={island} isBase={true} />
           </div>
         );
       case IslandType.Monster:
         return renderMonsterIcons();
       case IslandType.Special:
-        return <Star className="h-full w-full text-yellow-400 p-2" />;
+        return <Star className="h-full w-full text-yellow-400 p-2 drop-shadow-[0_0_12px_rgba(250,204,21,0.8)]" />;
+      case IslandType.Resource:
+        return <TileResources island={island} isBase={false} />;
+      case IslandType.Empty:
       default:
         return null;
     }
@@ -161,9 +162,12 @@ export function IslandTile({ island }: IslandTileProps) {
           isClickable && !isSelected && !isPossibleMove && 'hover:border-foreground/50'
         )}
         aria-label={`Island at ${island.x}, ${island.y}`}
+        data-testid={`island-tile-${island.x}-${island.y}`}
       >
-        <div className="absolute inset-0 z-10 bg-terrain bg-cover bg-center bg-no-repeat" />
+        {/* Terrain Background Canvas */}
+        <div className="absolute inset-0 z-10 bg-terrain bg-cover bg-center bg-no-repeat rounded-lg" />
 
+        {/* Death Animation */}
         {deathAnimationOnTile && (
           <DeathEffect
             sprite={deathAnimationOnTile.sprite}
@@ -172,12 +176,21 @@ export function IslandTile({ island }: IslandTileProps) {
           />
         )}
 
-        <div className={cn("h-full w-full p-1 z-20", !isTileVisible ? 'bg-transparent' : 'bg-transparent')}>
-          {getIcon()}
+        {/* Deterministic Tree Cluster / Small Forest */}
+        {isTileVisible && <TileForest island={island} isBase={isBase} />}
+
+        {/* Corner Boats & Idle Collectors */}
+        <TileBoats island={island} />
+
+        {/* Center Tile Feature / Monster / Castle / Resource Showcase */}
+        <div className={cn('h-full w-full p-1 z-20', !isTileVisible ? 'bg-transparent' : 'bg-transparent')}>
+          {getTileCenterContent()}
         </div>
 
+        {/* Landed Army Occupants */}
         <TileOccupants island={island} />
 
+        {/* Bottom Coastline Water Edges */}
         <div className="pointer-events-none absolute -bottom-[11px] left-1/2 -translate-x-1/2 z-0 flex w-full justify-center">
           {borderImageSequence.map((src, index) => (
             <div key={index} style={borderImageStyle}>
@@ -188,4 +201,4 @@ export function IslandTile({ island }: IslandTileProps) {
       </button>
     </TooltipProvider>
   );
-}
+});
