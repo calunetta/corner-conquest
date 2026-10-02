@@ -413,6 +413,7 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete,
 - **Maintenance Rule**: Whenever core mechanics, UI layouts, or game rules are added or modified, update the matching beacon `description` (or add a new beacon) so the new-player guidance stays accurate.
 
 ### 6.11. End-to-End (E2E) Testing & Match Cleanup Lifecycle
+- **Firestore Emulator**: E2E runs never touch the real project. `playwright.config.ts` starts the Firestore emulator (`firebase.json`, project `demo-corner-conquest`) and builds the app with `NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST`, which makes `src/lib/firebase.ts` call `connectFirestoreEmulator`. Each run starts with an empty database.
 - **Mandatory Teardown Hook (`safeCleanupGame`)**:
   - Every Playwright test suite (`e2e/*.spec.ts`) **MUST** register `safeCleanupGame` inside `test.afterEach(async ({ page }) => { await safeCleanupGame(page); });`.
   - **Guaranteed Cleanup Regardless of Test Outcome:** Even if an assertion throws an error or times out midway through test execution, `test.afterEach` is guaranteed to execute, dismissing any open modals and clicking the GameBoard exit button to dismantle the match.
