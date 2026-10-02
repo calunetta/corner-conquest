@@ -5,10 +5,11 @@
 This document outlines the architecture and key logic flows of the "Corner Conquest" application. It serves as a shared context for AI-assisted development to ensure consistency and accuracy.
 
 **Development Directives for the AI Assistant:**
-1.  **Synchronized Documentation:** For every code change I make, I **must** also update this `docs/README.md` file in the same transaction to reflect those changes. The code and the documentation will always be kept in sync.
-2.  **Blueprint-First Validation:** Before I implement any change, I **must** first analyze the request against the established architecture and logic documented here. If the request conflicts with our blueprint, I will notify you of the discrepancy and await your confirmation before proceeding.
-3.  **Comprehensive Automated & E2E Testing:** Every new feature, UI mechanic, or bug fix **must** be tested and tracked with both unit tests (`npm test`) and Playwright E2E browser tests (`npm run test:e2e`).
-4.  **Mandatory Verification Pipeline:** After every fix or enhancement, always execute: (1) TypeScript check (`npx tsc --noEmit`), (2) Production Build (`npm run build`), (3) Playwright E2E tests (`npx playwright test`), and (4) Jest unit tests (`npm test`).
+The working rules for AI agents (workflow, code layout, testing, verification) live in `CLAUDE.md` and `.claude/`; see `docs/ai/README.md`. This document stays the source of truth for architecture and game rules:
+1.  **Synchronized Documentation:** Every change to game rules or architecture updates this `docs/README.md` in the same phase, so code and documentation stay in sync. For code changes, I also update this file in the same transaction.
+2.  **Blueprint-First Validation:** Before implementing a change, analyze it against the architecture and rules documented here. If the request conflicts with them, report the discrepancy and wait for confirmation before proceeding.
+3.  **Automated Testing:** Every feature, UI mechanic, or bug fix ships with unit tests (`npm test`). User flows also get Playwright E2E specs (`npm run test:e2e`); see the `testing` skill for when and how they run.
+4.  **Mandatory Verification Pipeline:** After every fix or enhancement, run the project checks in order: TypeScript (`npm run typecheck`), lint (`npm run lint`), unit tests (`npm test`), and E2E where relevant (`npm run test:e2e`).
 
 ## 1. Core Technologies
 
@@ -24,7 +25,13 @@ This document outlines the architecture and key logic flows of the "Corner Conqu
 
 Understanding the project's structure is key to making changes efficiently and correctly.
 
+> [!IMPORTANT]
+> **New code vs. legacy code:** all new components and features go in `src/modules/<domain>/`, one folder per component with separate view (`.tsx`), hook (`.hook.ts`), styles (`.styles.ts`), mappers (`.map.ts`), types, tests and testbed preview (see `.claude/skills/component-architecture/SKILL.md`). The folders described below (`src/features/`, `src/lib/`, `src/hooks/`) are legacy: kept working, changed only for bug fixes, wiring, or explicit migrations.
+
+- `docs/ai/`: AI workflow guide, task record templates, and one folder per task under `docs/ai/tasks/` (see `docs/ai/README.md`).
 - `e2e/`: Playwright End-to-End browser test suites (`auth-and-lobby.spec.ts`, `gameplay.spec.ts`, `map-viewport.spec.ts`, `tutorial-beacons.spec.ts`).
+- `src/modules/`: New code, organised by domain (created with the first module).
+- `src/testbed/` and `src/app/testbed/`: Dev-only component testbed at `/testbed`. `registry.ts` lists every preview (`*.preview.tsx`); previews of legacy components live in `src/testbed/legacy/`. Hidden in production builds unless `NEXT_PUBLIC_ENABLE_TESTBED=true` at build time.
 - `src/app/`: Core application, pages, and layout.
 - `src/components/`: Reusable, generic UI components (mostly from ShadCN).
 - `src/features/`: Contains domain-specific components and logic structured according to the **SOLID paradigm** (Single Responsibility Principle):
@@ -103,7 +110,7 @@ The player's session (their identity) is managed through a combination of browse
 
 ### 3.2. Shared Game State: The `GameState` Object
 
--   **Definition File:** `src/lib/types.ts`
+-   **Definition File:** `src/lib/types/game.ts` (import it from the `@/lib/types` barrel)
 -   **What It Is:** The `GameState` object is the single, authoritative state of the match. It contains only the data that **must** be synchronized across all players.
 -   **Synchronization:** It is stored as a single document in Firestore. The `useGameEngine` hook subscribes to this document, and any change to it is automatically pushed to all connected clients, causing a UI re-render.
 -   **Key `GameState` Variables:**
@@ -387,7 +394,7 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete,
 - **Map Rendering & Colonist.io Mobile Strategy:**
   - **Desktop Starting Zoom:** Initial zoom on desktop defaults to **85% (`0.85`)**, giving players an optimal tactical overview of the archipelago, centered with margin for the sidebars and HUD.
   - **Zoom Controls:** Zoom in/out operates in 15% intervals with a quick-reset button that returns to the 85% default zoom.
-  - **Mobile Auto-Fitting Layout (Colonist.io Paradigm):** On mobile devices, the entire 5x5 archipelago grid is scaled to fit within the viewport width (`clamp(46px, 13.5vw, 68px)` tile size with `clamp(4px, 1.2vw, 8px)` gaps and reduced frame padding). This ensures all 4 corner bases (Blue, Red, Yellow, Purple) are visible at a glance on initial load without clipping or requiring panning.
+  - **Mobile Auto-Fitting Layout (Colonist.io Paradigm):** On mobile devices, the entire archipelago grid (`MAP_COLS` × `MAP_ROWS`, 5 × 6, from `src/lib/types/actions.ts`) is scaled to fit within the viewport width (`clamp(46px, 13.5vw, 68px)` tile size with `clamp(4px, 1.2vw, 8px)` gaps and reduced frame padding). This ensures all 4 corner bases (Blue, Red, Yellow, Purple) are visible at a glance on initial load without clipping or requiring panning.
   - **Touch Interactions:** Supports smooth single-finger panning and two-finger pinch-to-zoom (up to `2.0x`) for close inspection of individual islands and armies.
 - **Player Stats Display:** The `PlayerInfo` panel renders `armies.length` accurately and displays the base `attackPower` stat with an informative tooltip detailing the `Attack Power + 1` combat dice formula, while prioritizing sprite image loading.
 - **Combat & Monster Dialog Flow:**
@@ -405,10 +412,10 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete,
   - **Firestore Free Tier Sustainability:** A standard 20-turn match requires only ~20–30 document writes and ~40–60 document reads across all connected clients combined, allowing hundreds of complete multiplayer games per day on Firebase's free quota.
 
 ### 6.10. Tutorial System
-- **Overview**: An optional, skippable tutorial system (`TutorialOverlay.tsx`) automatically displays to new players to explain core mechanics (Goals, Deploying, Moving & Positioning, Resources & Shop, Combat, Special Cards).
-- **Interactive Info Beacons**: Contextual helper beacons throughout the HUD render high-contrast pixel icons (`/sprites/icon_info.png`) and open informative popovers on click.
-- **State Management**: The tutorial uses `localStorage` (`'corner-conquest-tutorial'`) to remember if a player has seen it, preventing annoyance in subsequent sessions. It can also be manually re-triggered via the 'Help' button in the game board header.
-- **Maintenance Rule**: Whenever core mechanics, UI layouts, or game rules are added or modified, the steps inside `TutorialOverlay.tsx` MUST be updated to reflect the new changes to keep the new player experience accurate.
+- **Overview**: The game includes both a skippable tutorial overlay (`TutorialOverlay.tsx`) and contextual help beacons (`TutorialBeacon` / `TutorialBeacon.tsx`) that explain the UI area they sit next to. Together they cover the core loop: Goals, Deploying, Moving & Positioning, Resources & Shop, Combat, and Special Cards.
+- **Interactive Info Beacons**: Contextual helper beacons throughout the HUD render high-contrast pixel icons (`/sprites/icon_info.png`) and open informative popovers on click. Current beacons include `map-info`, `player-info`, and `actions-info`.
+- **State Management**: The tutorial overlay remembers whether a player has seen it via `localStorage` (`'corner-conquest-tutorial'`), while each beacon stores a separate `beacon-seen-<id>` flag so input stays calm after first open. Players can reopen either flow from the 'Help' button or by clicking a beacon.
+- **Maintenance Rule**: Whenever core mechanics, UI layouts, or game rules are added or modified, update the matching tutorial copy or beacon description (or add a new beacon) so the new-player guidance stays accurate.
 
 ### 6.11. End-to-End (E2E) Testing & Match Cleanup Lifecycle
 - **Mandatory Teardown Hook (`safeCleanupGame`)**:

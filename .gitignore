@@ -43,3 +43,10 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# playwright output
+/test-results/
+/playwright-report/
+
+# swarm runner: CLI stderr per stage (reports in logs/*.md are kept)
+docs/ai/tasks/*/logs/*.stderr.log
