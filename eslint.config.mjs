@@ -106,6 +106,12 @@ const config = [
   },
 
   {
+    // Command-line scripts report through stdout.
+    files: ['scripts/**/*.{js,mjs}', '.claude/**/*.{js,mjs}'],
+    rules: { 'no-console': 'off' },
+  },
+
+  {
     files: ['**/*.test.{ts,tsx}', 'e2e/**/*.ts'],
     rules: {
       'no-restricted-imports': 'off',

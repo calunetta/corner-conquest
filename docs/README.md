@@ -24,7 +24,13 @@ The working rules for AI agents (workflow, code layout, testing, verification) l
 
 Understanding the project's structure is key to making changes efficiently and correctly.
 
+> [!IMPORTANT]
+> **New code vs. legacy code:** all new components and features go in `src/modules/<domain>/`, one folder per component with separate view (`.tsx`), hook (`.hook.ts`), styles (`.styles.ts`), mappers (`.map.ts`), types, tests and testbed preview (see `.claude/skills/component-architecture/SKILL.md`). The folders described below (`src/features/`, `src/lib/`, `src/hooks/`) are legacy: kept working, changed only for bug fixes, wiring, or explicit migrations.
+
+- `docs/ai/`: AI workflow guide, task record templates, and one folder per task under `docs/ai/tasks/` (see `docs/ai/README.md`).
 - `e2e/`: Playwright End-to-End browser test suites (`auth-and-lobby.spec.ts`, `gameplay.spec.ts`, `map-viewport.spec.ts`, `tutorial-beacons.spec.ts`).
+- `src/modules/`: New code, organised by domain (created with the first module).
+- `src/testbed/` and `src/app/testbed/`: Dev-only component testbed at `/testbed`. `registry.ts` lists every preview (`*.preview.tsx`); previews of legacy components live in `src/testbed/legacy/`. Hidden in production builds unless `NEXT_PUBLIC_ENABLE_TESTBED=true` at build time.
 - `src/app/`: Core application, pages, and layout.
 - `src/components/`: Reusable, generic UI components (mostly from ShadCN).
 - `src/features/`: Contains domain-specific components and logic structured according to the **SOLID paradigm** (Single Responsibility Principle):
