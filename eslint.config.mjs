@@ -17,6 +17,9 @@ const LEGACY_PATHS = [
   'src/components/icons.tsx',
   'src/app/page.tsx',
   'src/app/layout.tsx',
+  'jest.config.js',
+  'jest.setup.js',
+  'tailwind.config.ts',
   'e2e/auth-and-lobby.spec.ts',
   'e2e/gameplay.spec.ts',
   'e2e/map-viewport.spec.ts',
@@ -34,8 +37,6 @@ const IGNORED_PATHS = [
   'playwright-report/**',
   'next-env.d.ts',
   'src/components/ui/**',
-  '*.config.{js,mjs,ts}',
-  'jest.setup.js',
 ];
 
 const MODULE_FILES = 'src/modules/**/*.{ts,tsx}';
