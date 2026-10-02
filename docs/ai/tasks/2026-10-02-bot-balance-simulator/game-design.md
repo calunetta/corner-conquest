@@ -145,8 +145,139 @@ Productive-trap exposure: P(at least one Productive in the first k draws of the 
 - **Designer signal:** the first report's "Read this first" block flags Base-camping and the Productive trap. That's the expected verdict on today's bots.
 
 ## Review (game-designer-b)
-VERDICT: <APPROVED | CHANGES REQUESTED>
-- <findings, each with evidence>
+VERDICT: APPROVED
+
+Option B is the right scope: it changes no rule, writes nothing to Firestore, needs no tutorial or bot change, and it measures bot health next to balance. I re-checked the code it cites and ran my own probe. Every finding below is a fix to the measurement spec, not to the design, so I folded them into the Final spec myself.
+
+**Independent probe.** Scratchpad only, no project file. esbuild bundled `src/lib/bot-logic.ts` with `firebase` aliased to a stub whose `setDoc` captures the state. `Math.random` was replaced by mulberry32 seeded `1000·players + 500·fog + i`, seat 0 was named "Bot 0" with `isBot = true`, and the cap was 100 rounds:
+
+| Config | Finished | Median rounds (finished) | Seat wins | Seats never off Base by match end | Median first round off Base | Mined gems / iron / wheat |
+|---|---|---|---|---|---|---|
+| 2 bots, fog on, n=100 | 31 | 77 | 11, 20 | 70/200 | 43 | 13 398 / 4 457 / 1 267 |
+| 3 bots, fog on, n=100 | 49 | 79 | 15, 18, 16 | 124/300 | 43 | 20 293 / 5 902 / 1 915 |
+| 4 bots, fog on, n=100 | 53 | 70 | 14, 16, 14, 9 | 162/400 | 43 | 25 783 / 7 908 / 2 603 |
+| 2 bots, fog off, n=50 | 0 | n/a | 0, 0 | 36/100 | 51 | 7 180 / 2 447 / 753 |
+
+Runtime was 21.9 s for 100 two-bot matches (0.22 s per match bundled; designer-a measured 0.52 s under jest). The defaults stay affordable either way. The combat table matches mine to three decimals, and so do the equal-AP PvP values 0.417 / 0.444 / 0.454 / 0.460 / 0.464 (same `dist`/`pw` command). The Productive exposure formula C(24,k)/C(26,k) is also correct.
+
+### Findings
+
+1. **M6 and M7 thresholds fire on bot artifacts in every run (major, folded in).**
+   - Base resources are listed Gems, Iron, Wheat (`game-initializer.ts:180-182`). The bot positions on the first free one (`bot-logic.ts:161`), and positioning sets `hasActed = true` (`resource.ts:36`). So a lone army on its Base mines only gems; the 2nd army takes iron, the 3rd wheat.
+   - My probe: wheat is 6.6–7.2 % of positioned collection in every config. The M6 "< 20 % → sink starved" threshold would blame the wheat economy for a bot ordering quirk.
+   - M7: the bot always buys `unownedAbilities[0]`, and `availableAbilities` is `[Explorer, Collector]` (`bot-logic.ts:82-84`, `game-initializer.ts:18`). Explorer will always be > 80 % and Collector < 20 %, so the "ability imbalance" flag is guaranteed.
+   - Fix: when any M10 threshold is breached, M5–M7 thresholds print as "suppressed (bot health)" and are not listed as balance breaches. Add M10 "share of positions on own Base". Add the bot's fixed ability order to the guide.
+2. **M3 per-seat CIs produce false seat-imbalance flags (major, folded in).**
+   - Six configs give 2+3+4 seats × 2 fog settings = 18 per-seat 95 % tests. If seats are fair, P(at least one flag) ≈ 1 − 0.95¹⁸ = 0.60 (independence approximation).
+   - Designer-a's seat evidence doesn't reproduce. Their 3-bot split 8/25/15 gives χ² = 9.13 (df 2, p ≈ 0.01). Mine, 15/18/16, gives χ² = 0.29. Their 4-bot split gives 6.15; mine (14/16/14/9) gives 2.02.
+   - Fix: flag one χ² goodness-of-fit test per config (critical 3.84 / 5.99 / 7.81 for df 1 / 2 / 3) and only when decided matches ≥ 5 × players. Wilson CIs stay as display. Distance to centre stays as context, not as a conclusion.
+   - Command: `node -e "const chi=o=>{const n=o.reduce((a,b)=>a+b),e=n/o.length;return o.reduce((s,x)=>s+(x-e)**2/e,0)};console.log(chi([8,25,15]),chi([15,18,16]),chi([7,19,15,11]),chi([14,16,14,9]),1-0.95**18)"` → `9.125 0.286 6.15 2.02 0.603`.
+3. **M9 relies on state the simulator never sees (major, folded in).**
+   - `takeBotTurn` initiates, rolls and closes combat internally (`bot-logic.ts:199-224`). It hands out only the final post-EndTurn state (`:241`), so "`monsterCombatState` before/after" is unobservable.
+   - The attacker's AP can't change during the army loop: Upgrade happens only in the purchase phase (`bot-logic.ts:90`), before the loop at `:113`. So the post-turn `attackPower` is the combat AP.
+   - Fix: derive monster fights from the log (`attack.ts:307` win, `:337` loss; monster name → level) and PvP fights from `attack.ts:187`. The attacker is the seat whose turn it was.
+   - With about 20 (AP, level) cells, per-cell CI tests repeat the multiple-comparison problem. Use one aggregate test: z = (O − Σp)/√Σp(1−p) over all fights, flag |z| > 3. Show cells with ≥ 30 attempts; 97 attempts are needed for ±10 pp at p = 0.5.
+4. **"Same seed → same maps" doesn't hold after a bot or rule change (medium, folded in).**
+   - One `Math.random` stream feeds the map, the deck and then the play. Any change in a decision shifts every later draw. A change in `initializeGame` (density, deck) also shifts the map.
+   - Fix: two streams per match. `mapSeed` is installed before `initializeGame`; `playSeed` is installed after `startGame`. A bot change then keeps maps and decks identical.
+   - The guide must say the runs are still not paired. Judge differences with a two-proportion z-test or by non-overlapping CIs.
+5. **The "reproduces the probe" acceptance band is not reproducible (medium, folded in).**
+   - At cap 100, my 2-bot fog-on run finished 31/100 (69 % capped) against designer-a's 45/100 (z = 2.04). That falls outside their 40–60 % capped band.
+   - Fix: replace the band with deterministic faithfulness checks. The consume count is 0 for every card kind today's bots can't use (Productive, Sabotage, Overcome, War Chief, Decide Dice Roll, Extra Move, Steal Resource, Scout, Teleport). Sabotage skip logs (`player.ts:181`) are 0.
+6. **VP keeps changing after the win (minor, folded in).**
+   - The bot keeps acting after the winning action. EndTurn then still adds Explorer VP to the next seat (`player.ts:202-214`); the win guard is `!state.winner`.
+   - My probe: winner final VP = goal + 1.2 (2 bots) to 1.9 (4 bots) on average.
+   - Fix: M4 uses final VP (it matches the M5 integrity sum) and also prints "winner overshoot". The winner always comes from `state.winner.id`.
+7. **Hand-limit losses aren't counted (minor, folded in).** A Special-island discovery with 7 cards loses the draw and logs it (`movement.ts:65-66`). M8 adds "draws lost to a full hand" per seat. That is the real hand-clog cost; the 7-card count alone doesn't show it.
+8. **Seat identity and log parsing (minor, folded in).**
+   - Bots are named `Bot ${i+1}` (`game-initializer.ts:197`), and colours are the first unused in `PLAYER_COLORS` = Blue, Red, Purple, Yellow (`player-data.ts:4`).
+   - Fix: create seat 0 as name "Bot 0" with colour Blue, so seat i ↔ "Bot i" ↔ colours Blue/Red/Purple/Yellow. Parsers anchor on `^<name>( |'s )`.
+9. **`deathAnimations` depend on wall-clock time (minor, folded in).** `handleEndTurn` filters them by `Date.now()` (`player.ts:260-263`). They don't affect outcomes, but a fast loop accumulates them and they are deep-cloned on every action. Fix: reset `deathAnimations = []` alongside `log = []` after each turn, and keep them out of the JSON.
+
+Checked with no issue found:
+- Faithfulness of the trigger: the host calls `takeBotTurn` whenever the current seat is a bot and the status is `playing` (`use-game-engine.ts:140-148`). The live game also never resolves `productiveDialogState` for bots, so the simulator measures what players see.
+- No other VP sources exist beyond the four in M5 (grep `victoryPoints +=` in `src/lib`: `attack.ts:128,159,295`, `player.ts:212`, `movement.ts:54`).
+- Nothing in `src/lib` reads `state.log` (grep).
+- Pillars: none is affected (tooling only). Complexity budget: 0 rules. Firestore: 0 writes. Tutorial: none. Bots: unchanged.
+
+Input for the follow-up bot task (not this one): the Base has 3 resource slots, and positioning consumes the army's action. So without Productive, an army only leaves the Base once the bot owns a 4th army. A "position on Base only until 2 armies" fix still camps 2 armies. Rank exploration above Base positioning outright, and fix the Gems-first slot order.
 
 ## Final spec
-<the agreed rules; later stages rely only on this section>
+
+Tooling only. No game rule, bot heuristic, UI, tutorial or Firestore write changes. Fun lens: mastery (designers tune from data).
+
+### Run matrix and CLI (names may be adjusted by the architects; semantics may not)
+- Configs: players ∈ {2, 3, 4} × fog ∈ {on, off}. Flags `--players 2,3,4` and `--fog on,off` narrow the matrix.
+- `--games N` per config (default 200), `--seed S` (default 1), `--max-rounds R` (default 150), `--out <dir>`.
+- Settings: `defaultGameSettings` (`src/lib/game-initializer.ts:8-21`) with only `fogOfWar` varied. `debugMode = false`.
+
+### Match setup
+1. Seeds per match i of a config: `mapSeed = hash(S, players, fog, i, "map")` and `playSeed = hash(S, players, fog, i, "play")`. The simulator replaces `Math.random` with a seeded PRNG.
+   - Install the `mapSeed` stream, then call `initializeGame(id, name, 1, { playerId: "bot_0", name: "Bot 0", color: Blue }, players − 1, false, settings)`.
+   - Set `players[0].isBot = true`, call `startGame`, then install the `playSeed` stream.
+2. Seat i is "Bot i", with colours Blue, Red, Purple, Yellow for seats 0–3. Base corners are seat 0 (0,0), 1 (4,5), 2 (0,5), 3 (4,0); distance to centre (2,3) is 5 / 4 / 4 / 5.
+3. Firestore is replaced by a stub (jest-style module mock or a bundler alias; architect decision) whose `setDoc` captures the state. Whatever stub is used must cover every specifier that resolves to `src/lib/firebase.ts`, including `./firebase` and `@/lib/firebase`. No network access and no production module edits.
+
+### Loop
+- While `status === 'playing'` and `turn ≤ R`: `await takeBotTurn(state)` and take the captured state. Parse its new `log` lines and record the post-turn observations below. Then set `log = []` and `deathAnimations = []`. Silence `console.*` during the run.
+- Finished: `status === 'finished'`; the winner is `state.winner.id` (never the highest VP). Capped: the loop ended with `status === 'playing'`.
+- Match length is the final `state.turn` (rounds). Also count total bot turns.
+
+### Observations per turn
+- Post-turn state of the seat that just played:
+  - Its armies' positions (off-Base check).
+  - Its `positions` (on own Base or not). These are exactly what it collects at its next turn start.
+  - Its `attackPower`, which is the AP used in every combat of that turn.
+- Log lines, each matched with an anchored pattern and a unit test against the exact source string:
+  - Discovery VP: `movement.ts:55`.
+  - Monster win: `attack.ts:307`. Monster loss: `:337`. Monster name maps to level: Lancer 1, Bear 2, Ogre 3, Minotaur 4.
+  - PvP VP: `attack.ts:129` and `:160`. PvP result: `:187`; the attacker is the acting seat.
+  - Explorer VP: `player.ts:213`.
+  - Collection: `player.ts:153`. Collector: `:236`. Productive: `card.ts:107`.
+  - Granted resources: Wealthy `card.ts:148`, Steal `:174`.
+  - Purchases: deploy `player.ts:99`, upgrade `:134`, ability `card.ts:204`, card bought `:41`.
+  - Card from a Special island: `movement.ts:82`. Draw lost to a full hand: `movement.ts:66`.
+  - Card consumed: `player.ts:73`, `:84`, `:123`; `card.ts:67`, `:70`, `:128`, `:148`, `:174`; `attack.ts:71`, `:86`, `:217`, `:232`, `:242`; `movement.ts:109`.
+  - Sabotage skip: `player.ts:181`.
+  - Never count "activated" (`card.ts:61`) as use.
+
+### Metrics (per config; fog on and fog off are never pooled)
+| # | Metric | Flag |
+|---|---|---|
+| M1 | Finished %, capped %, decided matches | Capped > 5 %: stalling |
+| M2 | Rounds of finished matches: mean, p10, median, p90; % finished by round 20 and by round 40; total bot turns | Median > 30 |
+| M3 | Wins per seat with 95 % Wilson CI next to the fair share 1/players, plus the decided-match count; one χ² goodness-of-fit per config | χ² above 3.84 / 5.99 / 7.81 (df 1/2/3), only when decided ≥ 5 × players |
+| M4 | Mean final VP per seat; mean winner margin (winner − runner-up, final values); mean winner overshoot (winner VP − goal) | Margin > 15 |
+| M5 | VP by source per seat: discovery, monster by level, PvP, Explorer. Integrity: sources sum to final VP for every player in every match; print the mismatch count | One source > 50 % of all VP |
+| M6 | Resources per seat by type: positioned collection, Collector, Productive; Wealthy and Steal separately as "granted" | One type < 20 % of mined |
+| M7 | Armies deployed, upgrades, abilities bought (by name), cards bought; final armies and AP | Ability bought by > 80 % of seats while the other < 20 % |
+| M8 | Per card kind: acquired (bought + Special island), consumed, held at the end. Draws lost to a full hand per seat; % of seats ending at 7 cards. Integrity: acquired = consumed + held | consumed / acquired < 10 %: dead for bots. Seats at 7 > 25 %: hand clog |
+| M9 | Monster fights by (attacker AP, level): attempts, observed win %, expected win % from the table in Balance math; cells shown when ≥ 30 attempts. One aggregate z = (wins − Σp)/√Σp(1−p). PvP: attempts, attacker win % | \|z\| > 3: simulator or dice bug |
+| M10 | Bot health: per seat, the first round with an army off its own Base (median, % never); % of collected positions that were on the own Base; % of seats ending with Productive in hand and non-empty positions (trapped); % of seats ending with ≥ 1 card bots never use | Never leaves > 10 %, Base positions > 50 %, or trapped > 10 % |
+
+Gating: if any M10 flag fires, the M5–M7 flags print as "suppressed (bot health)" and are not listed as balance breaches. The values are still shown.
+
+### Report
+- Write `report.md` and `report.json` (same numbers) to `--out`, and print the Markdown tables to stdout.
+- Header: seed, games per config, max rounds, git commit, settings snapshot. Only the timestamp and commit may differ between identical runs.
+- The Markdown opens with **"Read this first"**: every M1, M10, M8 and integrity flag. Balance tables follow, with the M3/M5–M7 flags marked "(suppressed)" when gated.
+- A guide in `docs/` (location chosen by the architects; `docs/README.md` §6.8 links to it) explains each metric, its flag and the gating. It covers these known bot facts:
+  - Gems-first Base positioning.
+  - Explorer always bought first.
+  - Productive trap.
+  - Sabotage targets humans only.
+  - Combat cards are never played.
+  - Fog off removes the exploration priority.
+
+  It also states the rules for comparing runs: same seed and games count; maps are paired, play is not; judge differences by CIs or a two-proportion z-test.
+- Docs drift to record in the guide or README, not code: the deck is 2 copies of each of the 13 `BASE_CARDS` (`game-initializer.ts:277-278`); `SPECIAL_CARDS` is unused.
+
+### Acceptance
+1. **Determinism:** two runs with identical flags produce identical JSON apart from the timestamp and commit.
+2. **Integrity:** M5 mismatch count 0; M8 acquired = consumed + held for every kind.
+3. **Faithfulness:**
+   - Consumed = 0 for Productive, Sabotage, Overcome, War Chief, Decide Dice Roll, Extra Move, Steal Resource, Scout and Teleport.
+   - Sabotage skips = 0.
+   - M9 |z| ≤ 3.
+4. **Unit tests:** every log parser runs against its exact source string. A tiny run (2 bots, 3 games, fixed seed, small cap) completes and writes both files.
+5. **Zero Firestore writes, zero network, no change to `src/lib` game or bot logic.**
