@@ -35,14 +35,25 @@ way unit tests might not catch. What shipped instead is the safe subset of the o
 - [x] `npm run typecheck`, `npm run lint`: clean.
 
 ## Phase 2 (recalibrated): extract types and the pure reducer
-- [ ] `src/modules/game-board/game-board.types.ts`: `GameBoardUIState`, `GameBoardUIAction`,
-  `initialUIState`, `GameBoardContextType`, `GameBoardProviderProps`.
-- [ ] `src/modules/game-board/game-board.reducer.ts`: `gameBoardReducer`, moved verbatim.
-- [ ] `GameBoardContext.tsx` imports both and re-exports them under their original names.
-- [ ] All 10 characterization + reducer tests still pass, unmodified.
-- [ ] `npm run typecheck`, `npm run lint`, `npm test`, `npm run build` all pass.
+- [x] `src/modules/game-board/game-board.types.ts`: `GameBoardUIState`, `GameBoardUIAction`,
+  `initialUIState`, `GameBoardContextType`, `GameBoardProviderProps` — moved verbatim; the dialog
+  state types (`PendingAction`, `ArmySelectionDialogState`, etc.) import from `@/lib/types/dialogs`
+  directly rather than through the legacy `src/features/game/types.ts` re-export, since that's
+  where they're actually defined and it avoids a `src/modules` → `@/features` boundary violation.
+  The two `any` payload parameters stayed `any` (verbatim from the legacy interface) with a scoped
+  `eslint-disable` and a comment pointing at this file — tightening them is separate, future work.
+- [x] `src/modules/game-board/game-board.reducer.ts`: `gameBoardReducer`, moved verbatim (139
+  lines, same switch statement, same cases, same logic — only the imports changed).
+- [x] `src/modules/game-board/index.ts`: the module's public API.
+- [x] `GameBoardContext.tsx` imports both and re-exports them under their original names. The file
+  dropped from 699 to 473 lines; its ~10 consumers and `GameBoardContext.test.ts` needed zero
+  changes.
+- [x] All 10 characterization + reducer tests pass, unmodified (verified before and after).
+- [x] `npm run typecheck`, `npm run lint`, `npm test` (33/33 suites, 173/173 tests), `npm run
+  build` all pass after the extraction.
+- [x] `docs/README.md` §2 and §3.3 updated to describe the new split.
 
-## Phase 3: not attempted this session
+## Phase 3: not attempted this session (unchanged from the plan)
 Extracting the provider's effects/handlers into a `.hook.ts`. Left for a future session with the
 swarm's usual architect-a/architect-b planning and review available. See "Next steps".
 
