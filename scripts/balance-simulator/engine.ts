@@ -41,6 +41,7 @@ export interface MatchResult {
   outcome: 'finished' | 'capped';
   rounds: number;
   botTurns: number;
+  /** Set whenever (and only whenever) `outcome === 'finished'`; `null` for a capped match. */
   winnerSeat: number | null;
   turns: TurnSnapshot[];
   finalState: SeatFinalState[];

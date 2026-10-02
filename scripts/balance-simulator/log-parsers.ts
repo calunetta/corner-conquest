@@ -25,17 +25,24 @@ export type LogEvent =
   | { kind: 'deployed' }
   | { kind: 'upgraded' }
   | { kind: 'abilityBought' }
-  | { kind: 'cardBought' }
-  | { kind: 'specialIslandCardFound' }
+  | { kind: 'cardBought'; cardName: CardName }
+  | { kind: 'specialIslandCardFound'; cardName: CardName }
   | { kind: 'drawLostToFullHand' }
   | { kind: 'cardActivated' } // not a "consumed" event — see card.ts:61
   | { kind: 'cardConsumed'; cardName: CardName }
   | { kind: 'sabotageSkip' };
 
 const MONSTER_NAMES = Object.values(MonsterName) as string[];
+const CARD_NAMES = Object.values(CardName) as string[];
 
 function findMonsterName(line: string): MonsterName | undefined {
   return MONSTER_NAMES.find((name) => line.includes(name)) as MonsterName | undefined;
+}
+
+/** Extracts the quoted card name from `bought a special card: "X"!` or `found a card: "X"!`. */
+function findQuotedCardName(line: string): CardName | undefined {
+  const quoted = line.match(/"([^"]+)"/)?.[1];
+  return CARD_NAMES.find((name) => name === quoted) as CardName | undefined;
 }
 
 /** One (pattern, builder) pair. A line can match more than one matcher (e.g. a successful steal is
@@ -68,10 +75,13 @@ const MATCHERS: ReadonlyArray<{ test: (line: string) => boolean; build: (line: s
   { test: (l) => l.includes('deployed a new army!'), build: () => ({ kind: 'deployed' }) },
   { test: (l) => l.includes("upgraded their army's attack power"), build: () => ({ kind: 'upgraded' }) },
   { test: (l) => l.includes('passive ability!'), build: () => ({ kind: 'abilityBought' }) },
-  { test: (l) => l.includes('bought a special card:'), build: () => ({ kind: 'cardBought' }) },
+  {
+    test: (l) => l.includes('bought a special card:'),
+    build: (l) => ({ kind: 'cardBought', cardName: findQuotedCardName(l)! }),
+  },
   {
     test: (l) => l.includes('discovered a special island and found a card:'),
-    build: () => ({ kind: 'specialIslandCardFound' }),
+    build: (l) => ({ kind: 'specialIslandCardFound', cardName: findQuotedCardName(l)! }),
   },
   {
     test: (l) => l.includes('discovered a special island, but their hand is full!'),

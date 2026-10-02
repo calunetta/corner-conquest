@@ -73,13 +73,15 @@ describe('parseLogLine', () => {
     expect(parseLogLine("Bot 0 has acquired the 'Explorer' passive ability!")).toEqual([{ kind: 'abilityBought' }]);
   });
 
-  it('parses a card purchase (card.ts:41)', () => {
-    expect(parseLogLine('Bot 0 bought a special card: "Scout"!')).toEqual([{ kind: 'cardBought' }]);
+  it('parses a card purchase, including which card (card.ts:41)', () => {
+    expect(parseLogLine('Bot 0 bought a special card: "Scout"!')).toEqual([
+      { kind: 'cardBought', cardName: CardName.Scout },
+    ]);
   });
 
-  it('parses a card found on a Special island (movement.ts:82)', () => {
+  it('parses a card found on a Special island, including which card (movement.ts:82)', () => {
     expect(parseLogLine('Bot 0 discovered a special island and found a card: "Teleport"!')).toEqual([
-      { kind: 'specialIslandCardFound' },
+      { kind: 'specialIslandCardFound', cardName: CardName.Teleport },
     ]);
   });
 
