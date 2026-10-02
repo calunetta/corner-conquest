@@ -1,12 +1,46 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read/write access to game documents and all subcollections
-    match /games/{gameId}/{document=**} {
-      allow read, write;
-    }
+    // Usernames collection: reserve usernames by playerId
+    // Prevents one player from stealing another player's username reservation
     match /usernames/{username} {
-      allow read, write;
+      // Allow reading to check availability (src/hooks/use-player.tsx line 20-21)
+      allow read;
+
+      // Allow creating new username reservations (src/hooks/use-player.tsx line 79)
+      allow create: if !resource.exists();
+
+      // Allow updating only if playerId doesn't change.
+      // This prevents a different playerId from overwriting an existing reservation.
+      // The app checks client-side that it's the same player (line 73-76) and updates
+      // or creates the username (line 79).
+      allow update: if resource.data.playerId == request.resource.data.playerId;
+
+      // Allow deletes for logout (src/hooks/use-player.tsx line 54)
+      allow delete;
+    }
+
+    // Games collection: games created by players
+    // Allow all players to read game state (src/hooks/use-game-engine.ts line 41-54)
+    // Allow writes to new games (anyone can start) and existing games (host updates game logic)
+    match /games/{gameId} {
+      allow read;
+
+      // Allow creating new games (someone must start the game)
+      allow create;
+
+      // Allow updating existing games. Since the app has no Firebase Auth and identity
+      // is client-side only (playerId in localStorage), we cannot enforce per-player
+      // write restrictions at the Firestore level without including playerId in the write.
+      // The app's game logic (src/lib/actions) validates moves are legal per player.
+      // We do require that writes maintain a non-empty players array to prevent
+      // structural corruption. See src/hooks/use-game-engine.ts line 26 (setDoc with
+      // GameState) and line 130 (updateDoc for deathAnimations).
+      allow write: if !resource.exists() || (
+        resource.exists() &&
+        request.resource.data.players is list &&
+        request.resource.data.players.size() > 0
+      );
     }
   }
 }
