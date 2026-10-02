@@ -39,11 +39,7 @@ readonly MAX_REVISION_ROUNDS=2
 readonly SENTINEL_PATTERN='^[[:space:]]*\*?\*?(DONE|BLOCKER)\*?\*?[[:space:]]*$'
 readonly CHANGES_REQUESTED_PATTERN='VERDICT:?\**[[:space:]]*\**[[:space:]]*CHANGES REQUESTED'
 # Credentials and endpoints the child CLI processes must inherit so they never stop at a login prompt.
-readonly AUTH_ENV_VARS=(
-  ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_BASE_URL
-  CLAUDE_CONFIG_DIR CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY
-  HTTPS_PROXY HTTP_PROXY NO_PROXY NODE_EXTRA_CA_CERTS
-)
+readonly AUTH_ENV_VARS=(CLAUDE_CODE_OAUTH_TOKEN)
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AGENTS_DIR="$REPO_ROOT/.claude/agents"
@@ -79,7 +75,7 @@ check_claude_cli() {
     die "Claude Code $version is too old; $MIN_CLAUDE_VERSION or later is required (claude update)."
 
   claude auth status >/dev/null 2>&1 ||
-    die "the Claude CLI is not authenticated. Run 'claude auth login' or export ANTHROPIC_API_KEY / CLAUDE_CODE_OAUTH_TOKEN."
+    die "the Claude CLI is not authenticated. Run 'claude auth login' or export CLAUDE_CODE_OAUTH_TOKEN."
 }
 
 forward_auth_env() {
