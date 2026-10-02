@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:rules": "firebase emulators:exec --only firestore --project demo-corner-conquest \"jest --config jest.rules.config.js\"",
+    "balance:simulate": "jest scripts/balance-simulator/cli.test.ts",
     "test:e2e": "playwright test",
     "test:all": "npm test && npm run test:rules && npm run test:e2e"
   },
