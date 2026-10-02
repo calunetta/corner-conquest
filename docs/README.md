@@ -385,7 +385,7 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete,
 - **Map Rendering & Colonist.io Mobile Strategy:**
   - **Desktop Starting Zoom:** Initial zoom on desktop defaults to **85% (`0.85`)**, giving players an optimal tactical overview of the archipelago, centered with margin for the sidebars and HUD.
   - **Zoom Controls:** Zoom in/out operates in 15% intervals with a quick-reset button that returns to the 85% default zoom.
-  - **Mobile Auto-Fitting Layout (Colonist.io Paradigm):** On mobile devices, the entire 5x5 archipelago grid is scaled to fit within the viewport width (`clamp(46px, 13.5vw, 68px)` tile size with `clamp(4px, 1.2vw, 8px)` gaps and reduced frame padding). This ensures all 4 corner bases (Blue, Red, Yellow, Purple) are visible at a glance on initial load without clipping or requiring panning.
+  - **Mobile Auto-Fitting Layout (Colonist.io Paradigm):** On mobile devices, the entire archipelago grid (`MAP_COLS` × `MAP_ROWS`, 5 × 6, from `src/lib/types/actions.ts`) is scaled to fit within the viewport width (`clamp(46px, 13.5vw, 68px)` tile size with `clamp(4px, 1.2vw, 8px)` gaps and reduced frame padding). This ensures all 4 corner bases (Blue, Red, Yellow, Purple) are visible at a glance on initial load without clipping or requiring panning.
   - **Touch Interactions:** Supports smooth single-finger panning and two-finger pinch-to-zoom (up to `2.0x`) for close inspection of individual islands and armies.
 - **Player Stats Display:** The `PlayerInfo` panel renders `armies.length` accurately and displays the base `attackPower` stat with an informative tooltip detailing the `Attack Power + 1` combat dice formula, while prioritizing sprite image loading.
 - **Combat & Monster Dialog Flow:**

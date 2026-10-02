@@ -7,7 +7,7 @@ As a <player role>, I want <goal> so that <benefit>.
 
 ### Placement and layout
 - Desktop (1280×720): <where it lives, size, layering>
-- Mobile (390×844): <how it adapts; the 5×5 map must stay fully visible>
+- Mobile (390×844): <how it adapts; the whole map grid (`MAP_COLS` × `MAP_ROWS`, default 5 × 6) must stay visible>
 
 ### States
 | State | What the player sees | Trigger |
