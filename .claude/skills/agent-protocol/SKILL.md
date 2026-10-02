@@ -14,7 +14,7 @@ You are one stage of a pipeline. The coordinator's prompt gives you the task fol
 
 ## Scope
 - Touch only the files your stage owns: the File plan's Owner column, or your hand-off file. If another file must change, say so in your report.
-- Don't edit `progress.md`; the coordinator owns it (architect-a creates it).
+- Don't edit `progress.md`: architect-a creates it, architect-b ticks the boxes it verified, the coordinator does the rest.
 - Follow your preloaded skills. Where they are silent, choose the simplest option that matches the surrounding code.
 
 ## Modes

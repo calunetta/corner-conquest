@@ -37,4 +37,4 @@ For interactive changes, script the interaction with Playwright (`chromium` from
 With Firebase config in `.env.local`: `npm run test:e2e -- e2e/<spec>.spec.ts`. Without it, report "e2e not run: no Firebase config", never "passed". Details in skill `testing`.
 
 ## Report
-The URLs checked, the screenshot paths, any errors or warnings, and what you compared the screenshots against.
+The URLs checked, the screenshot paths, any errors or warnings, and what you compared the screenshots against. Cite only screenshots that your own run printed: older files in `test-results/ui-verify/` prove nothing. If you couldn't run the script, say so and report BLOCKER.
