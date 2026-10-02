@@ -54,4 +54,32 @@ describe('withSeededRandom', () => {
       }
     });
   });
+
+  it('keeps the seeded generator installed across every await inside an async run, and restores it after', async () => {
+    // Regression test: an earlier version restored Math.random as soon as the async callback
+    // returned its pending Promise, not once it settled, so a later `await` inside it ran with
+    // the real Math.random instead of the seeded one.
+    const originalRandom = Math.random;
+    const seenDuringRun: number[] = [];
+
+    const draw = (seed: number) =>
+      withSeededRandom(seed, async () => {
+        seenDuringRun.push(Math.random());
+        await Promise.resolve(); // yields, so a broken implementation would restore Math.random here
+        seenDuringRun.push(Math.random());
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        seenDuringRun.push(Math.random());
+        return seenDuringRun.length;
+      });
+
+    const first = await draw(99);
+    const valuesFromFirstRun = [...seenDuringRun];
+    seenDuringRun.length = 0;
+    const second = await draw(99);
+
+    expect(first).toBe(3);
+    expect(second).toBe(3);
+    expect(seenDuringRun).toEqual(valuesFromFirstRun); // same seed, same sequence, across every await
+    expect(Math.random).toBe(originalRandom); // restored once the async run actually finished
+  });
 });

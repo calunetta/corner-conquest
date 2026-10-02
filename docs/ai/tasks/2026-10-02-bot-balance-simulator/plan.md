@@ -23,7 +23,7 @@ to `src/lib`.
 ## Verified context
 | Symbol or file | Location | Why it matters |
 |---|---|---|
-| `takeBotTurn` | `src/lib/bot-logic.ts:26` | `Promise<void>`; mutates its `initialState` argument in place, then calls `setDoc` on line 241 — the simulator reads the mutated object and never needs the Firestore call to succeed. |
+| `takeBotTurn` | `src/lib/bot-logic.ts:26` | `Promise<void>`; deep-clones its argument (`JSON.parse(JSON.stringify(initialState))`, line 28) and works on the clone — it does **not** mutate `initialState`. The only early return is `!botPlayer \|\| !botPlayer.isBot \|\| state.status !== 'playing'` (line 32), which an all-bot, status-`'playing'` simulation never hits. Every other path reaches the unconditional `await setDoc(doc(db, 'games', gameId), state)` on line 241 — **the mocked `setDoc`'s second argument is the only way to get the next state out.** (Corrected from an earlier, wrong assumption in the Final spec and this plan's first draft — verified by reading the function in full, not just its call sites.) |
 | `db, doc, setDoc` import | `src/lib/bot-logic.ts:6`, from `./firebase` | Must be mocked so `takeBotTurn` never touches real Firestore or network. |
 | `initializeGame`, `startGame`, `defaultGameSettings` | `src/lib/game-initializer.ts:8-21` (settings), exported functions | Same functions the existing unit tests (`src/lib/__tests__/*.test.ts`) already use to build a real `GameState`. |
 | `MAP_ROWS`, `MAP_COLS` | `src/lib/types/actions.ts:1-2` | 6 rows × 5 cols; base corners at (0,0)/(4,5)/(0,5)/(4,0) per the spec's seat layout. |

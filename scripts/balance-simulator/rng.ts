@@ -34,13 +34,43 @@ function createMulberry32(seed: number): () => number {
   };
 }
 
-/** Runs `run` with `Math.random` replaced by a seeded generator, then always restores it. */
+/**
+ * Runs `run` with `Math.random` replaced by a seeded generator, then always restores it.
+ *
+ * Works for an async `run` too: a naive `try { return run() } finally { restore() }` would restore
+ * `Math.random` as soon as `run()` returns its pending Promise, not once it settles — any `await`
+ * inside `run` would then continue with the real `Math.random`. Awaiting the result here keeps the
+ * seeded generator installed for the whole async operation.
+ */
 export function withSeededRandom<T>(seed: number, run: () => T): T {
   const originalRandom = Math.random;
   Math.random = createMulberry32(seed);
-  try {
-    return run();
-  } finally {
+
+  const restore = () => {
     Math.random = originalRandom;
+  };
+
+  let result: T;
+  try {
+    result = run();
+  } catch (error) {
+    restore();
+    throw error;
   }
+
+  if (result instanceof Promise) {
+    return result.then(
+      (value) => {
+        restore();
+        return value;
+      },
+      (error) => {
+        restore();
+        throw error;
+      },
+    ) as T;
+  }
+
+  restore();
+  return result;
 }
