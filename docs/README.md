@@ -37,7 +37,7 @@ Understanding the project's structure is key to making changes efficiently and c
 - `src/features/`: Contains domain-specific components and logic structured according to the **SOLID paradigm** (Single Responsibility Principle):
   - `game/`: All components, dialogs, hooks, context, and panels related to the active game board.
     - `context/`:
-      - `GameBoardContext.tsx`: Centralized React Context and pure `gameBoardReducer` managing local UI state (`selectedArmyId`, `possibleMoves`, `pendingAction`, and 12+ dialog states). Exposes `useGameBoard()`.
+      - `GameBoardContext.tsx`: React Context, `useGameBoard()`, and the `GameBoardProvider` (effects, action handlers). Its UI-state types and the pure `gameBoardReducer` live in `src/modules/game-board/` and are re-exported here under their original names for backward compatibility — see `docs/ai/tasks/2026-10-02-gameboardcontext-migration/`.
     - `components/`:
       - `GameBoard.tsx`: High-level layout orchestrator (<80 lines) composing atomic subcomponents with `<GameBoardProvider>`.
       - `GameBoardHeader.tsx`: Navigation, match status, VP goal, and start game controls with **0 props**.
@@ -124,7 +124,7 @@ The player's session (their identity) is managed through a combination of browse
 
 ### 3.3. Local UI State: The `GameBoardContext` & Reducer Pattern
 
--   **Definition File:** `src/features/game/context/GameBoardContext.tsx`
+-   **Definition Files:** `src/features/game/context/GameBoardContext.tsx` (the provider, context and hook) and `src/modules/game-board/` (`game-board.types.ts` for the state and action types, `game-board.reducer.ts` for the pure `gameBoardReducer`), re-exported from the original path for backward compatibility.
 -   **What It Is:** Local UI state refers to temporary interaction data for a single player (selected armies, valid movement indicators, pending multi-step card effects like teleport/scout, and modal dialog open/closed states).
 -   **Architecture:** Managed via a pure `gameBoardReducer` and exposed through `GameBoardProvider` and the `useGameBoard()` hook.
 -   **Zero Prop-Drilling:** Components such as `GameDialogManager`, `GameBoardHeader`, and `ActionsPanel` consume `useGameBoard()` directly, eliminating massive prop interfaces and state fragmentation.
@@ -383,6 +383,10 @@ These actions are available once per turn each and do not set the `hasActed` fla
 
 ### 6.8. Bot Logic
 The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete, atomic turn loop to eliminate timeout debouncing, state deadlocks, or dangling combat states:
+
+> [!IMPORTANT]
+> **Balance Simulator:** `scripts/balance-simulator/` plays many complete bot-vs-bot matches through this real logic (Firestore stubbed, zero writes) and reports win rates, match length, resource and card economy, combat accuracy, and bot-health signals (does a seat ever leave its own Base, get stuck on Productive, etc.). See `docs/balance-simulator-guide.md` for how to run it and read its report, including its known limitations and the bot quirks it already confirmed.
+
 1.  **Strategic Pre-computation:** The bot pre-activates relevant strategic cards (`Reinforce`, `Efficient`, `MasterBuilder`), intelligently uses `Wealthy` or `Sabotage` when beneficial, and purchases affordable passive abilities, attack upgrades (up to cap 4), new armies (up to cap 5), or special cards.
 2.  **Army Action Evaluation & Execution:** Across all unacted armies on the board:
     - **Positioning on a resource:** Very high priority (9). The bot's primary way to build its economy.
@@ -418,6 +422,7 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete,
 - **Maintenance Rule**: Whenever core mechanics, UI layouts, or game rules are added or modified, update the matching tutorial copy or beacon description (or add a new beacon) so the new-player guidance stays accurate.
 
 ### 6.11. End-to-End (E2E) Testing & Match Cleanup Lifecycle
+- **Firestore Emulator**: E2E runs never touch the real project. `playwright.config.ts` starts the Firestore emulator (`firebase.json`, project `demo-corner-conquest`) and builds the app with `NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST`, which makes `src/lib/firebase.ts` call `connectFirestoreEmulator`. Each run starts with an empty database.
 - **Mandatory Teardown Hook (`safeCleanupGame`)**:
   - Every Playwright test suite (`e2e/*.spec.ts`) **MUST** register `safeCleanupGame` inside `test.afterEach(async ({ page }) => { await safeCleanupGame(page); });`.
   - **Guaranteed Cleanup Regardless of Test Outcome:** Even if an assertion throws an error or times out midway through test execution, `test.afterEach` is guaranteed to execute, dismissing any open modals and clicking the GameBoard exit button to dismantle the match.

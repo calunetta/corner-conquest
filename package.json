@@ -11,8 +11,10 @@
     "lint": "eslint . --max-warnings 0 --no-error-on-unmatched-pattern",
     "typecheck": "tsc --noEmit",
     "test": "jest",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-corner-conquest \"jest --config jest.rules.config.js\"",
+    "balance:simulate": "jest scripts/balance-simulator/cli.test.ts",
     "test:e2e": "playwright test",
-    "test:all": "npm test && npm run test:e2e"
+    "test:all": "npm test && npm run test:rules && npm run test:e2e"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",
@@ -61,6 +63,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
+    "@firebase/rules-unit-testing": "^4.0.1",
     "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
@@ -71,6 +74,7 @@
     "@types/react-dom": "^18",
     "eslint": "^9.39.5",
     "eslint-config-next": "15.3.8",
+    "firebase-tools": "^15.32.1",
     "genkit-cli": "^1.14.1",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",

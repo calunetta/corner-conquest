@@ -2,19 +2,17 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useMemo } from 'react';
 import { cloneDeep } from 'lodash';
-import type { GameState, Army, CardName, ResourceType, Player } from '@/lib/types';
+import type { GameState, Army, CardName, Player } from '@/lib/types';
 import { GameAction, IslandType, CardName as CardNameEnum } from '@/lib/types';
-import type {
-  PendingAction,
-  ArmySelectionDialogState,
-  AttackSelectionDialogState,
-  PositionDialogState,
-  SabotageDialogState,
-  WealthyDialogState,
-  StealResourceDialogState,
-  MonsterSelectionDialogState,
-  SpecialIslandRollDialogState,
-} from '../types';
+import type { PendingAction } from '@/lib/types/dialogs';
+import {
+  gameBoardReducer,
+  initialUIState,
+  type GameBoardContextType,
+  type GameBoardProviderProps,
+  type GameBoardUIAction,
+  type GameBoardUIState,
+} from '@/modules/game-board';
 import { getPossibleMoves } from '@/lib/actions/movement';
 import { handleGameAction, handlePlayerExit } from '@/lib/actions';
 import { startGame } from '@/lib/game-initializer';
@@ -22,230 +20,16 @@ import { hasPlayerRemainingActions } from '@/lib/turn-progression';
 import { useTurnTimer } from '../hooks/useTurnTimer';
 import { useToast } from '@/hooks/use-toast';
 
-// --- State Types ---
-export interface GameBoardUIState {
-  selectedArmyId: number | null;
-  possibleMoves: { x: number; y: number }[];
-  pendingAction: PendingAction;
-  isPerformingAction: boolean;
-  isExiting: boolean;
-  dialogs: {
-    cardsPlayerId: number | null;
-    abilitiesShopOpen: boolean;
-    armySelection: ArmySelectionDialogState;
-    attackSelection: AttackSelectionDialogState | null;
-    monsterSelection: MonsterSelectionDialogState | null;
-    position: PositionDialogState;
-    sabotage: SabotageDialogState;
-    wealthy: WealthyDialogState;
-    stealResource: StealResourceDialogState;
-    specialIslandRoll: SpecialIslandRollDialogState;
-    confirmExit: boolean;
-    hostLeave: boolean;
-  };
-}
-
-const initialUIState: GameBoardUIState = {
-  selectedArmyId: null,
-  possibleMoves: [],
-  pendingAction: null,
-  isPerformingAction: false,
-  isExiting: false,
-  dialogs: {
-    cardsPlayerId: null,
-    abilitiesShopOpen: false,
-    armySelection: null,
-    attackSelection: null,
-    monsterSelection: null,
-    position: null,
-    sabotage: null,
-    wealthy: null,
-    stealResource: null,
-    specialIslandRoll: null,
-    confirmExit: false,
-    hostLeave: false,
-  },
-};
-
-// --- Action Types ---
-export type GameBoardUIAction =
-  | { type: 'SET_SELECTED_ARMY'; armyId: number | null; possibleMoves?: { x: number; y: number }[] }
-  | { type: 'SET_POSSIBLE_MOVES'; possibleMoves: { x: number; y: number }[] }
-  | { type: 'SET_PENDING_ACTION'; pendingAction: PendingAction }
-  | { type: 'SET_PERFORMING_ACTION'; isPerforming: boolean }
-  | { type: 'SET_EXITING'; isExiting: boolean }
-  | { type: 'TOGGLE_CARDS_DIALOG'; playerId: number | null }
-  | { type: 'SET_ABILITIES_SHOP_OPEN'; open: boolean }
-  | { type: 'SET_ARMY_SELECTION_DIALOG'; state: ArmySelectionDialogState }
-  | { type: 'SET_ATTACK_SELECTION_DIALOG'; state: AttackSelectionDialogState | null }
-  | { type: 'SET_MONSTER_SELECTION_DIALOG'; state: MonsterSelectionDialogState | null }
-  | { type: 'SET_POSITION_DIALOG'; state: PositionDialogState }
-  | { type: 'SET_SABOTAGE_DIALOG'; state: SabotageDialogState }
-  | { type: 'SET_WEALTHY_DIALOG'; state: WealthyDialogState }
-  | { type: 'SET_STEAL_RESOURCE_DIALOG'; state: StealResourceDialogState }
-  | { type: 'SET_SPECIAL_ISLAND_ROLL_DIALOG'; state: SpecialIslandRollDialogState }
-  | { type: 'SET_CONFIRM_EXIT_DIALOG'; open: boolean }
-  | { type: 'SET_HOST_LEAVE_DIALOG'; open: boolean }
-  | { type: 'RESET_TURN_UI' };
-
-// --- Reducer ---
-export function gameBoardReducer(state: GameBoardUIState, action: GameBoardUIAction): GameBoardUIState {
-  switch (action.type) {
-    case 'SET_SELECTED_ARMY':
-      return {
-        ...state,
-        selectedArmyId: action.armyId,
-        possibleMoves: action.possibleMoves !== undefined ? action.possibleMoves : state.possibleMoves,
-      };
-    case 'SET_POSSIBLE_MOVES':
-      return {
-        ...state,
-        possibleMoves: action.possibleMoves,
-      };
-    case 'SET_PENDING_ACTION':
-      return {
-        ...state,
-        pendingAction: action.pendingAction,
-      };
-    case 'SET_PERFORMING_ACTION':
-      return {
-        ...state,
-        isPerformingAction: action.isPerforming,
-      };
-    case 'SET_EXITING':
-      return {
-        ...state,
-        isExiting: action.isExiting,
-      };
-    case 'TOGGLE_CARDS_DIALOG':
-      return {
-        ...state,
-        dialogs: {
-          ...state.dialogs,
-          cardsPlayerId: state.dialogs.cardsPlayerId === action.playerId ? null : action.playerId,
-        },
-      };
-    case 'SET_ABILITIES_SHOP_OPEN':
-      return {
-        ...state,
-        dialogs: {
-          ...state.dialogs,
-          abilitiesShopOpen: action.open,
-        },
-      };
-    case 'SET_ARMY_SELECTION_DIALOG':
-      return {
-        ...state,
-        dialogs: {
-          ...state.dialogs,
-          armySelection: action.state,
-        },
-      };
-    case 'SET_ATTACK_SELECTION_DIALOG':
-      return {
-        ...state,
-        dialogs: {
-          ...state.dialogs,
-          attackSelection: action.state,
-        },
-      };
-    case 'SET_MONSTER_SELECTION_DIALOG':
-      return {
-        ...state,
-        dialogs: {
-          ...state.dialogs,
-          monsterSelection: action.state,
-        },
-      };
-    case 'SET_POSITION_DIALOG':
-      return {
-        ...state,
-        dialogs: {
-          ...state.dialogs,
-          position: action.state,
-        },
-      };
-    case 'SET_SABOTAGE_DIALOG':
-      return {
-        ...state,
-        dialogs: {
-          ...state.dialogs,
-          sabotage: action.state,
-        },
-      };
-    case 'SET_WEALTHY_DIALOG':
-      return {
-        ...state,
-        dialogs: {
-          ...state.dialogs,
-          wealthy: action.state,
-        },
-      };
-    case 'SET_STEAL_RESOURCE_DIALOG':
-      return {
-        ...state,
-        dialogs: {
-          ...state.dialogs,
-          stealResource: action.state,
-        },
-      };
-    case 'SET_SPECIAL_ISLAND_ROLL_DIALOG':
-      return {
-        ...state,
-        dialogs: {
-          ...state.dialogs,
-          specialIslandRoll: action.state,
-        },
-      };
-    case 'SET_CONFIRM_EXIT_DIALOG':
-      return {
-        ...state,
-        dialogs: {
-          ...state.dialogs,
-          confirmExit: action.open,
-        },
-      };
-    case 'SET_HOST_LEAVE_DIALOG':
-      return {
-        ...state,
-        dialogs: {
-          ...state.dialogs,
-          hostLeave: action.open,
-        },
-      };
-    case 'RESET_TURN_UI':
-      return {
-        ...initialUIState,
-      };
-    default:
-      return state;
-  }
-}
+// --- State, actions and the pure reducer ---
+// Extracted to src/modules/game-board/ (types + reducer, zero behavior change). Re-exported here
+// under their original names so every consumer of this file, and this file's own test suite
+// (GameBoardContext.test.ts), keeps working unmodified. See
+// docs/ai/tasks/2026-10-02-gameboardcontext-migration/ for the migration record.
+export { gameBoardReducer };
+export type { GameBoardUIState, GameBoardUIAction };
 
 // --- Context Definition ---
-export interface GameBoardContextType {
-  uiState: GameBoardUIState;
-  dispatch: React.Dispatch<GameBoardUIAction>;
-  gameState: GameState;
-  localPlayer: Player;
-  isMyTurn: boolean;
-  isHost: boolean;
-  selectedArmy: Army | null;
-  turnTimer: {
-    timeLeft: number;
-    formattedTime: string;
-    turnDuration: number;
-    isExpiring: boolean;
-    percentage: number;
-  };
-  onAction: (action: GameAction, payload?: any) => Promise<void>;
-  onLocalAction: (action: GameAction, payload?: any) => void;
-  handleTileClick: (x: number, y: number) => Promise<void>;
-  handleStartGame: () => Promise<void>;
-  handleExitClick: () => Promise<void>;
-  handleConfirmExit: () => Promise<void>;
-  handleConfirmHostLeave: () => Promise<void>;
-}
+export type { GameBoardContextType };
 
 const GameBoardContext = createContext<GameBoardContextType | null>(null);
 
@@ -258,17 +42,7 @@ export function useGameBoard(): GameBoardContextType {
 }
 
 // --- Provider Component ---
-interface GameBoardProviderProps {
-  children: React.ReactNode;
-  gameId: string;
-  playerId: string | null;
-  serverGameState: GameState;
-  localPlayerFromServer: Player;
-  isMyTurn: boolean;
-  isHost: boolean;
-  setGameState: (state: GameState, action: GameAction, payload?: any) => Promise<void>;
-  onExit: () => void;
-}
+export type { GameBoardProviderProps };
 
 export function GameBoardProvider({
   children,

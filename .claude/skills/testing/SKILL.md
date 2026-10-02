@@ -45,8 +45,8 @@ tester-a must prioritize unit-testing the isolated logic files (the `.map.ts` da
 Write the test that reproduces the bug first, run it, and confirm it fails for the reason given in the root-cause analysis. Then fix. The test stays as the regression guard.
 
 ## E2E (Playwright)
-- Needs `NEXT_PUBLIC_FIREBASE_*` in `.env.local`, and writes to the real Firebase project (no emulator is configured). Without that config don't run e2e: report "e2e not run: no Firebase config" and verify through the testbed (skill `ui-verify`).
-- `playwright.config.ts` starts `npm run start` on port 3000 (run `npm run build` first) and reuses a server already listening there.
+- Runs against the local Firestore emulator (project `demo-corner-conquest`, `firebase.json`), never the real project. No `.env.local` is needed; Java 21 is. If the emulator can't start, report "e2e not run: <error>" and verify through the testbed (skill `ui-verify`).
+- `playwright.config.ts` starts the emulator on 127.0.0.1:8080, then `npm run build && npm run start` on port 3000 with `NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST` set, and stops both at the end. Port 3000 must be free: Playwright never reuses a server it didn't start there.
 - Every spec registers `test.afterEach(async ({ page }) => { await safeCleanupGame(page); });` from `e2e/e2e-cleanup.ts`.
 - Locate by role, label or `data-testid`; wait with `expect(…).toBeVisible({ timeout })`, never fixed sleeps.
 - E2E covers flows across components (create a match → play → leave). Single components are covered by view tests and the testbed.

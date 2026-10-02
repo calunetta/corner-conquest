@@ -34,7 +34,7 @@ The round button in the bottom-left corner is the Next.js dev indicator, not par
 For interactive changes, script the interaction with Playwright (`chromium` from `@playwright/test`): click by role or `data-testid`, then assert the visible result. Run the script from inside the repo so `@playwright/test` resolves. The `Interactive` state of `/testbed/map-zoom-controls` is a working target.
 
 ## 5. Flows (e2e)
-With Firebase config in `.env.local`: `npm run test:e2e -- e2e/<spec>.spec.ts`. Without it, report "e2e not run: no Firebase config", never "passed". Details in skill `testing`.
+E2E: `npm run test:e2e -- e2e/<spec>.spec.ts` (runs against the local Firestore emulator; no Firebase config needed). If it can't run, report "e2e not run: <reason>", never "passed". Details in skill `testing`.
 
 ## Report
 The URLs checked, the screenshot paths, any errors or warnings, and what you compared the screenshots against. Cite only screenshots that your own run printed: older files in `test-results/ui-verify/` prove nothing. If you couldn't run the script, say so and report BLOCKER.

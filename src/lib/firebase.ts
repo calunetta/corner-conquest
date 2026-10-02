@@ -1,7 +1,7 @@
 
 'use client';
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { 
+import {
     getFirestore,
     doc,
     getDoc,
@@ -15,6 +15,7 @@ import {
     runTransaction,
     updateDoc,
     arrayUnion,
+    connectFirestoreEmulator,
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -29,6 +30,13 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
+
+// Set by playwright.config.ts so e2e runs use the local emulator, never the real project.
+const firestoreEmulatorHost = process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST; // "host:port"
+if (firestoreEmulatorHost) {
+  const [host, port] = firestoreEmulatorHost.split(':');
+  connectFirestoreEmulator(db, host, Number(port));
+}
 
 export { 
     app, 

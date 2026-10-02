@@ -32,6 +32,9 @@ Do your stage as your instructions define it and end with DONE or BLOCKER.
 ```
 In revise mode add: `Address the review in <file>, section "Review (<agent>-b)"`, or paste the failing check output. Pass paths, not file contents: agents read the files themselves.
 
+## Never run two `npm install`s at once
+All agents share one `node_modules` and `package-lock.json`. Two agents adding a devDependency at the same time (even for different, unrelated tasks) can corrupt the lockfile — an unrelated package silently disappears from it, breaking every test suite on the next clean install, and the failure looks nothing like its cause. Before spawning an agent whose job includes `npm install`, confirm no other running agent is also installing; if several tasks need new dependencies, install them yourself up front (or run those stages one at a time) rather than letting parallel agents race on `package.json`. If `npm test` ever fails identically across every suite with a "Cannot find module" for a package nobody touched, suspect this before anything else: `git diff package-lock.json`, then a clean `npm install` (fixing any peer-dependency conflict first) usually repairs it.
+
 ## The sentinel
 - Every agent ends with a final line that is only `DONE` or `BLOCKER` (bold and surrounding spaces are tolerated).
 - Wait for it before starting the next stage. Never run two dependent stages at once.

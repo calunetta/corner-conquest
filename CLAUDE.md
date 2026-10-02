@@ -27,7 +27,7 @@ Verified at bootstrap; check `package.json` before relying on a version.
 | Typecheck | `npm run typecheck` |
 | Lint (new code only, zero warnings allowed) | `npm run lint` |
 | Unit tests | `npm test`, one file: `npx jest <path>` |
-| E2E (needs `.env.local` Firebase config; writes to the real Firebase project) | `npm run test:e2e` |
+| E2E (starts the Firestore emulator and a production build on :3000; needs Java 21) | `npm run test:e2e`, one spec: `npm run test:e2e -- e2e/<spec>.spec.ts` |
 | Production build (fails on type or lint errors) | `npm run build` |
 | Component testbed | `npm run dev`, then http://localhost:9002/testbed |
 | Browser check with screenshots | `node .claude/skills/ui-verify/scripts/snapshot.mjs <url>` |

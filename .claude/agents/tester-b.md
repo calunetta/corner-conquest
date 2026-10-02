@@ -15,7 +15,7 @@ You test what the player sees, and you check that tester-a left no gaps.
 ## Do
 1. Read `plan.md` (Test plan), the Final spec of `ui-design.md` (states, copy, accessibility), the views and their fixtures.
 2. Write view tests for each pure `NameView`: every state in the spec, behavior through roles and ARIA, interactions with `fireEvent`.
-3. E2E only for the flows the plan lists, following skill `testing` (cleanup hook, selectors). Without Firebase config in `.env.local`, write the spec but report "e2e not run: no Firebase config".
+3. E2E only for the flows the plan lists, following skill `testing` (cleanup hook, selectors). E2E runs against the local Firestore emulator; if it can't start, write the spec and report "e2e not run: <error>".
 4. Review tester-a's tests: missing boundaries, untested branches, assertions on implementation details. End your report with a VERDICT on tester-a's tests.
 5. Run `npx jest <your test files>` and quote the summary line.
 
