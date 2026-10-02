@@ -380,6 +380,10 @@ These actions are available once per turn each and do not set the `hasActed` fla
 
 ### 6.8. Bot Logic
 The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete, atomic turn loop to eliminate timeout debouncing, state deadlocks, or dangling combat states:
+
+> [!IMPORTANT]
+> **Balance Simulator:** `scripts/balance-simulator/` plays many complete bot-vs-bot matches through this real logic (Firestore stubbed, zero writes) and reports win rates, match length, resource and card economy, combat accuracy, and bot-health signals (does a seat ever leave its own Base, get stuck on Productive, etc.). See `docs/balance-simulator-guide.md` for how to run it and read its report, including its known limitations and the bot quirks it already confirmed.
+
 1.  **Strategic Pre-computation:** The bot pre-activates relevant strategic cards (`Reinforce`, `Efficient`, `MasterBuilder`), intelligently uses `Wealthy` or `Sabotage` when beneficial, and purchases affordable passive abilities, attack upgrades (up to cap 4), new armies (up to cap 5), or special cards.
 2.  **Army Action Evaluation & Execution:** Across all unacted armies on the board:
     - **Positioning on a resource:** Very high priority (9). The bot's primary way to build its economy.

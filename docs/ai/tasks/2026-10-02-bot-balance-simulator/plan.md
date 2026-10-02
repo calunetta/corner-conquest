@@ -81,11 +81,11 @@ export function computeConfigMetrics(results: MatchResult[]): ConfigMetrics; // 
 Single phase (tier M, one sitting), continued across this session without stopping per the user's
 standing instruction. Steps already done are marked.
 1. `rng.ts`, `log-parsers.ts`, `stats.ts` with full unit tests. **Done.**
-2. `engine.ts`: seeded match setup and the `takeBotTurn` loop with Firestore mocked, plus its own tests (a 2-bot, 3-game, small-cap run — Acceptance #4's "tiny run").
-3. `metrics.ts`: M1-M10 aggregation and the gating rule (M10 suppresses M5-M7), with tests proving the integrity checks (M5 sums, M8 acquired = consumed + held).
-4. `report.ts` + `cli.ts` + the two Jest config changes + the two npm scripts.
-5. `docs/balance-simulator-guide.md` + `docs/README.md` §6.8 link.
-6. Full checks (`npm run typecheck`, `npm run lint`, `npm test`), a real tiny simulator run proving Acceptance #1/#2/#4, commit.
+2. `engine.ts`: seeded match setup and the `takeBotTurn` loop with Firestore mocked, plus its own tests (a 2-bot, 3-game, small-cap run — Acceptance #4's "tiny run"). **Done** — also found and fixed a real async-seeding bug (see progress.md).
+3. `metrics/`: M1-M10 aggregation and the gating rule (M10 suppresses M3/M4/M8), with tests proving the integrity checks (M5 sums, M8 acquired = consumed + held). **Done** — split into one file per M-group after a single-file draft broke this repo's own 150-line rule.
+4. `report/` + `cli.ts` + one npm script (`balance:simulate`). **Done** — no separate Jest config was needed in the end; see progress.md for why.
+5. `docs/balance-simulator-guide.md` + `docs/README.md` §6.8 link. **Done.**
+6. Full checks (`npm run typecheck`, `npm run lint`, `npm test`), a real-matches acceptance test (Acceptance #3), a genuine CLI run proving Acceptance #1/#2/#4, commit. **Done** — found a real concurrency hazard (`runMatch` + `Promise.all`) and a real `bot-logic.ts` bug along the way; both documented.
 
 Model escalation: none — this entire task is tooling with no gameplay-UI surface, built directly without sub-agents because the Agent tool is unavailable this session.
 

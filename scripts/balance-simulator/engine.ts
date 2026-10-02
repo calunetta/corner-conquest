@@ -103,6 +103,12 @@ function toFinalState(player: Player): SeatFinalState {
 /**
  * Plays one complete bot-vs-bot match through the real reducers and `takeBotTurn`, with
  * `src/lib/firebase.ts` stubbed so no write ever reaches a real or local Firestore project.
+ *
+ * **Not safe to call concurrently** (e.g. via `Promise.all`) within one test file: `jest.doMock`
+ * and `jest.resetModules` act on the whole file's shared module registry, so two in-flight calls
+ * race each other's mock and can make one match read another's captured state. Always `await` one
+ * `runMatch` before starting the next — `cli.ts`'s `runAll` already does this with a sequential
+ * `for` loop, not `Promise.all`.
  */
 export async function runMatch(config: MatchConfig): Promise<MatchResult> {
   const { stub, readCapturedState } = createFirestoreCapture();
@@ -114,7 +120,14 @@ export async function runMatch(config: MatchConfig): Promise<MatchResult> {
     '../../src/lib/bot-logic'
   );
 
-  const silencedConsole = jest.spyOn(console, 'log').mockImplementation(() => {});
+  // Per the Final spec, silence every console.* during the run — bot-logic.ts logs its own
+  // progress (console.log), and the reducers log a caught error instead of throwing
+  // (src/lib/actions/index.ts:94), which happens on real, confirmed bot-logic bugs (see
+  // docs/ai/tasks/2026-10-02-bot-balance-simulator/progress.md) and would otherwise spam a run's
+  // output without being a simulator problem.
+  const silencedMethods = (['log', 'warn', 'error'] as const).map((method) =>
+    jest.spyOn(console, method).mockImplementation(() => {}),
+  );
 
   try {
     let state: GameState = withSeededRandom(config.mapSeed, () => {
@@ -160,7 +173,7 @@ export async function runMatch(config: MatchConfig): Promise<MatchResult> {
       finalState: state.players.map(toFinalState),
     };
   } finally {
-    silencedConsole.mockRestore();
+    silencedMethods.forEach((spy) => spy.mockRestore());
     jest.dontMock('../../src/lib/firebase');
     jest.dontMock('@/lib/firebase');
   }
