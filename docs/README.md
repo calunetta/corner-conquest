@@ -5,9 +5,10 @@
 This document outlines the architecture and key logic flows of the "Corner Conquest" application. It serves as a shared context for AI-assisted development to ensure consistency and accuracy.
 
 **Development Directives for the AI Assistant:**
-1.  **Synchronized Documentation:** For every code change I make, I **must** also update this `docs/README.md` file in the same transaction to reflect those changes. The code and the documentation will always be kept in sync.
-2.  **Blueprint-First Validation:** Before I implement any change, I **must** first analyze the request against the established architecture and logic documented here. If the request conflicts with our blueprint, I will notify you of the discrepancy and await your confirmation before proceeding.
-3.  **Comprehensive Automated & E2E Testing:** Every new feature, UI mechanic, or bug fix **must** be tested and tracked with both unit tests (`npm test`) and Playwright E2E browser tests (`npm run test:e2e`).
+The working rules for AI agents (workflow, code layout, testing, verification) live in `CLAUDE.md` and `.claude/`; see `docs/ai/README.md`. This document stays the source of truth for architecture and game rules:
+1.  **Synchronized Documentation:** Every change to game rules or architecture updates this `docs/README.md` in the same phase, so code and documentation stay in sync.
+2.  **Blueprint-First Validation:** Before implementing a change, analyze it against the architecture and rules documented here. If the request conflicts with them, report the discrepancy and wait for confirmation before proceeding.
+3.  **Automated Testing:** Every feature, UI mechanic, or bug fix ships with unit tests (`npm test`). User flows also get Playwright E2E specs (`npm run test:e2e`); see the `testing` skill for when and how they run.
 
 ## 1. Core Technologies
 
