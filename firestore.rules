@@ -36,11 +36,11 @@ service cloud.firestore {
       // We do require that writes maintain a non-empty players array to prevent
       // structural corruption. See src/hooks/use-game-engine.ts line 26 (setDoc with
       // GameState) and line 130 (updateDoc for deathAnimations).
-      allow write: if !resource.exists() || (
-        resource.exists() &&
+      allow update: if
         request.resource.data.players is list &&
-        request.resource.data.players.size() > 0
-      );
+        request.resource.data.players.size() > 0;
+
+      allow delete;
     }
   }
 }

@@ -2,6 +2,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
+import * as fs from 'fs';
 
 interface UsernameDoc {
   playerId: string;
@@ -18,11 +19,15 @@ interface GameStateDoc {
 let testEnv: RulesTestEnvironment;
 
 beforeAll(async () => {
+  // Load the firestore.rules file and pass it to the test environment
+  const rules = fs.readFileSync('firestore.rules', 'utf8');
+
   testEnv = await initializeTestEnvironment({
     projectId: 'test-project',
     firestore: {
       host: '127.0.0.1',
       port: 8080,
+      rules,
     },
   });
 });
@@ -277,7 +282,7 @@ describe('Firestore Rules: games collection', () => {
       // 2. Read game state (players view the game)
       const gameSnap = await db.doc(`games/${gameId}`).get();
       expect(gameSnap.data()).toBeDefined();
-      expect((gameSnap.data() as any)?.players).toEqual(initialPlayers);
+      expect((gameSnap.data() as GameStateDoc)?.players).toEqual(initialPlayers);
 
       // 3. Update game (host processes a turn)
       await expect(
@@ -310,7 +315,7 @@ describe('Firestore Rules: games collection', () => {
 
       // 3. Read to verify reservation
       const reservedSnap = await db.doc(`usernames/${username}`).get();
-      expect((reservedSnap.data() as any)?.playerId).toBe(playerId);
+      expect((reservedSnap.data() as UsernameDoc)?.playerId).toBe(playerId);
 
       // 4. Update with same playerId (changing other fields would work if they existed)
       await expect(
