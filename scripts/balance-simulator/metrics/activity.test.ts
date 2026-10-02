@@ -1,3 +1,4 @@
+import { AbilityName } from '../../../src/lib/types/cards';
 import { computeActivity } from './activity';
 import { events, match, seatFinal, turn } from './test-fixtures';
 
@@ -21,6 +22,22 @@ describe('computeActivity', () => {
     expect(seat0.upgraded).toBe(1);
     expect(seat0.finalArmies).toBe(4); // (3+5)/2
     expect(seat0.finalAttackPower).toBe(3); // (2+4)/2
+  });
+
+  it('tallies abilities bought by name', () => {
+    const results = [
+      match({
+        turns: [
+          turn({ seat: 0, events: events({ kind: 'abilityBought', abilityName: AbilityName.Explorer }) }),
+          turn({ seat: 0, events: events({ kind: 'abilityBought', abilityName: AbilityName.Explorer }) }),
+        ],
+        finalState: [seatFinal()],
+      }),
+    ];
+
+    const [seat0] = computeActivity(results, 1).bySeat;
+    expect(seat0.abilitiesBoughtByName[AbilityName.Explorer]).toBe(2);
+    expect(seat0.abilitiesBoughtByName[AbilityName.Collector]).toBe(0);
   });
 
   it('returns a zeroed row per seat when there are no matches', () => {

@@ -1,4 +1,4 @@
-import { CardName } from '../../src/lib/types/cards';
+import { AbilityName, CardName } from '../../src/lib/types/cards';
 import { MonsterName } from '../../src/lib/types/monsters';
 
 /**
@@ -24,7 +24,7 @@ export type LogEvent =
   | { kind: 'stealGranted' }
   | { kind: 'deployed' }
   | { kind: 'upgraded' }
-  | { kind: 'abilityBought' }
+  | { kind: 'abilityBought'; abilityName: AbilityName }
   | { kind: 'cardBought'; cardName: CardName }
   | { kind: 'specialIslandCardFound'; cardName: CardName }
   | { kind: 'drawLostToFullHand' }
@@ -43,6 +43,13 @@ function findMonsterName(line: string): MonsterName | undefined {
 function findQuotedCardName(line: string): CardName | undefined {
   const quoted = line.match(/"([^"]+)"/)?.[1];
   return CARD_NAMES.find((name) => name === quoted) as CardName | undefined;
+}
+
+/** `has acquired the 'Explorer' passive ability!` — the ability names stored in GameState
+ *  (AbilityName.Explorer = 'explorer') are lowercase, but the log line title-cases them. */
+function findAbilityName(line: string): AbilityName | undefined {
+  const quoted = line.match(/'([^']+)' passive ability/)?.[1]?.toLowerCase();
+  return Object.values(AbilityName).find((name) => name === quoted);
 }
 
 /** One (pattern, builder) pair. A line can match more than one matcher (e.g. a successful steal is
@@ -74,7 +81,10 @@ const MATCHERS: ReadonlyArray<{ test: (line: string) => boolean; build: (line: s
   { test: (l) => l.includes('stole') && l.includes('from'), build: () => ({ kind: 'stealGranted' }) },
   { test: (l) => l.includes('deployed a new army!'), build: () => ({ kind: 'deployed' }) },
   { test: (l) => l.includes("upgraded their army's attack power"), build: () => ({ kind: 'upgraded' }) },
-  { test: (l) => l.includes('passive ability!'), build: () => ({ kind: 'abilityBought' }) },
+  {
+    test: (l) => l.includes('passive ability!'),
+    build: (l) => ({ kind: 'abilityBought', abilityName: findAbilityName(l)! }),
+  },
   {
     test: (l) => l.includes('bought a special card:'),
     build: (l) => ({ kind: 'cardBought', cardName: findQuotedCardName(l)! }),

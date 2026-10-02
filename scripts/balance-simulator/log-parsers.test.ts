@@ -1,4 +1,4 @@
-import { CardName } from '../../src/lib/types/cards';
+import { AbilityName, CardName } from '../../src/lib/types/cards';
 import { MonsterName } from '../../src/lib/types/monsters';
 import { parseLogLine } from './log-parsers';
 
@@ -69,8 +69,13 @@ describe('parseLogLine', () => {
     expect(parseLogLine("Bot 0 upgraded their army's attack power to 2.")).toEqual([{ kind: 'upgraded' }]);
   });
 
-  it('parses an ability purchase (card.ts:204)', () => {
-    expect(parseLogLine("Bot 0 has acquired the 'Explorer' passive ability!")).toEqual([{ kind: 'abilityBought' }]);
+  it('parses an ability purchase, including which ability (card.ts:204)', () => {
+    expect(parseLogLine("Bot 0 has acquired the 'Explorer' passive ability!")).toEqual([
+      { kind: 'abilityBought', abilityName: AbilityName.Explorer },
+    ]);
+    expect(parseLogLine("Bot 0 has acquired the 'Collector' passive ability!")).toEqual([
+      { kind: 'abilityBought', abilityName: AbilityName.Collector },
+    ]);
   });
 
   it('parses a card purchase, including which card (card.ts:41)', () => {
