@@ -1,5 +1,5 @@
-import { PreviewCatalog } from '@/testbed/components/PreviewCatalog';
+import { TestbedEmptyState } from '@/testbed/components/TestbedEmptyState';
 
 export default function TestbedPage() {
-  return <PreviewCatalog />;
+  return <TestbedEmptyState />;
 }

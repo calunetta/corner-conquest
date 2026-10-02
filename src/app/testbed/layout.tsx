@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { isTestbedEnabled } from '@/testbed/testbed.config';
+import { TestbedShell } from '@/testbed/components/TestbedShell';
 
 export const metadata: Metadata = {
   title: 'Testbed · Corner Conquest',
@@ -11,5 +12,5 @@ export const metadata: Metadata = {
 export default function TestbedLayout({ children }: { children: ReactNode }) {
   if (!isTestbedEnabled()) notFound();
 
-  return children;
+  return <TestbedShell>{children}</TestbedShell>;
 }
