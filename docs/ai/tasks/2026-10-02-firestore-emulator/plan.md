@@ -1,6 +1,6 @@
 # Plan: Firestore emulator for e2e tests
 
-Status: DRAFT
+Status: APPROVED
 Inputs: triage.md
 
 ## Goal and acceptance criteria
@@ -8,7 +8,7 @@ Inputs: triage.md
 - [ ] `npm run test:e2e -- e2e/<spec>.spec.ts` and `npx playwright test e2e/<spec>.spec.ts` keep working (one spec, same emulator setup). Both forms are used today: `.claude/skills/ui-verify/SKILL.md:37`, `.claude/settings.json:11,15`.
 - [ ] The Firestore client connects to the emulator only when `NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST` is set. `npm run dev`, `npm run build` and production keep using the real project as before.
 - [ ] Playwright can no longer reach the real project: it never reuses a server it did not start on :3000, and the `PLAYWRIGHT_TEST_BASE_URL` override is removed.
-- [ ] `CLAUDE.md`, `docs/README.md` §6.11 and the `testing` and `ui-verify` skills no longer say that e2e needs `.env.local` or writes to the real project.
+- [ ] `CLAUDE.md`, `docs/README.md` §6.11, the `testing` and `ui-verify` skills and `.claude/agents/tester-b.md` no longer say that e2e needs `.env.local` or writes to the real project.
 - [ ] `npm run typecheck`, `npm run lint` and `npm test` pass. The full e2e suite passes against the emulator, or tester-b reports each failing spec with its error.
 
 ## Verified context
@@ -58,6 +58,7 @@ Inputs: triage.md
 | `.claude/skills/testing/SKILL.md` | edit (lines 48-49) | E2E section: emulator instead of the real project | implementer-b |
 | `.claude/skills/ui-verify/SKILL.md` | edit (line 37) | E2E sentence: no Firebase config needed | implementer-b |
 | `docs/README.md` | edit (§6.11, after line 414) | Bullet that documents the emulator | implementer-b |
+| `.claude/agents/tester-b.md` | edit (line 18) | E2E step: emulator instead of `.env.local` | implementer-b |
 | `src/lib/__tests__/firebase.test.ts` | new | Unit tests for the emulator switch | tester-a |
 | (no file) | run | Full e2e suite against the emulator | tester-b |
 
@@ -97,7 +98,7 @@ webServer: [
   {
     command: `npx firebase emulators:start --only firestore --project ${EMULATOR_PROJECT_ID}`,
     url: `http://${FIRESTORE_EMULATOR_HOST}`,
-    reuseExistingServer: true, // anything on 8080 is a local emulator, never the real project
+    reuseExistingServer: true, // a server already on 8080 is local, so the real project stays out of reach
     timeout: 120000, // the first run downloads the emulator jar
     gracefulShutdown: { signal: 'SIGTERM', timeout: 10000 },
   },
@@ -134,6 +135,7 @@ webServer: [
    `E2E: `npm run test:e2e -- e2e/<spec>.spec.ts` (runs against the local Firestore emulator; no Firebase config needed). If it can't run, report "e2e not run: <reason>", never "passed". Details in skill `testing`.` (implementer-b)
 10. `docs/README.md` §6.11: insert as the first bullet, directly under the heading on line 415:
    `- **Firestore Emulator**: E2E runs never touch the real project. `playwright.config.ts` starts the Firestore emulator (`firebase.json`, project `demo-corner-conquest`) and builds the app with `NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST`, which makes `src/lib/firebase.ts` call `connectFirestoreEmulator`. Each run starts with an empty database.` (implementer-b)
+10b. `.claude/agents/tester-b.md:18`: replace the sentence `Without Firebase config in `.env.local`, write the spec but report "e2e not run: no Firebase config".` with `E2E runs against the local Firestore emulator; if it can't start, write the spec and report "e2e not run: <error>".` (implementer-b)
 11. Write `src/lib/__tests__/firebase.test.ts` (cases in Test plan). Run `npx jest src/lib/__tests__/firebase.test.ts`, then `npm test`, and quote the summary lines. (tester-a)
 12. Make sure port 3000 is free, run `npm run test:e2e`, and quote the summary line. While the suite runs or right after, confirm that the emulator received writes, e.g. the `[WebServer]` log or `firestore-debug.log` exists. Report each failing spec with its error; don't edit the specs. (tester-b)
 
@@ -158,5 +160,10 @@ Model escalation: step 12 (tester-b) on sonnet, because e2e failures across two 
 - `next start` with `output: 'standalone'` (`next.config.ts:5`) prints a warning today. The behavior is unchanged and out of scope.
 
 ## Review (architect-b)
-VERDICT: <APPROVED | CHANGES REQUESTED>
-- <findings, each with evidence>
+VERDICT: APPROVED
+- Verified: every path and symbol in Verified context (`src/lib/firebase.ts:1-31`, `playwright.config.ts:10,23-28`, `package.json:14-15`, `.firebaserc:3`, `firestore.rules`, `.gitignore:43-45`, `eslint.config.mjs:12-28`, `connectFirestoreEmulator` at `node_modules/@firebase/firestore/dist/index.d.ts:338` with firebase `11.9.1`, `webServer?:` at `node_modules/playwright/types/test.d.ts:1044`, `env`/`gracefulShutdown`/`reuseExistingServer` in the same file, env merge in `node_modules/playwright/lib/runner/index.js` ~856-861, Node v22.22.0, Java 21, no `firebase.json`, no `firebase` binary, `PLAYWRIGHT_TEST_BASE_URL` only in `playwright.config.ts:10`).
+- Folded in: `.claude/agents/tester-b.md:18` also says e2e needs `.env.local` Firebase config and was missing from the File plan. Added a File plan row, step 10b (implementer-b) and the file to the docs acceptance criterion.
+- Folded in: the emulator `reuseExistingServer` comment claimed "anything on 8080 is a local emulator"; reworded to what is actually guaranteed (it is local, so the real project stays out of reach).
+- Design check: running the emulator as a Playwright `webServer` instead of `emulators:exec` is the simpler option and keeps `npm run test:e2e -- <spec>` and `npx playwright test <spec>` working. `reuseExistingServer: false` on :3000 closes the real-project path. Contracts are exact enough for implementer-a and implementer-b to work in parallel (disjoint files).
+- Note for tester-a: other `firebase/firestore` imports become `undefined` under the factory mock; that is fine because `src/lib/firebase.ts` only re-exports them.
+- Unverified (left to step 5 and step 12): emulator jar download through the proxy, and SIGTERM shutdown of `firebase emulators:start` (Playwright signals the whole process group, so the Java child stops either way).

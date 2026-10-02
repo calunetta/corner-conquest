@@ -7,7 +7,7 @@ Tier: M · Phases: 1
      lists every unticked box, so a new session knows where to resume. -->
 
 ## Phase 1: Firestore emulator for e2e
-- [ ] plan approved (architect-b)
+- [x] plan approved (architect-b)
 - [ ] implementation (implementer-a, implementer-b)
 - [ ] tests (tester-a, tester-b)
 - [ ] checks: typecheck, lint, unit tests
