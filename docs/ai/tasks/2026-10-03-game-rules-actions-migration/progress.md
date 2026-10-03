@@ -36,3 +36,4 @@ Tier: L · Phases: 2
 - 2026-10-03 tester-b (phase 2): CHANGES REQUESTED (weak assertions, handlePlayerExit and dispatcher gaps) → tester-a revise → APPROVED. Found a pre-existing turn-skip bug in handlePlayerExit (legacy behavior, pinned by KNOWN BUG tests, queued as a separate task).
 - 2026-10-03 architect-b (phase 2 final review): APPROVED, review.md written. Coordinator fixed the stale `src/lib/actions` references in 5 skills and game-designer-a.md; CLAUDE.md:19 left for the user.
 - 2026-10-03 coordinator (phase 2): npm test 60 suites / 573 tests pass; typecheck errors only in the concurrent task's CombatDialog.test.tsx; game-rules and game-board lint clean. e2e skipped, no Java 21 locally.
+- 2026-10-03 architect-b (phase 1, retroactive final review of 614458b): APPROVED, appended to review.md. Non-blocking: long combat functions with a repeated death/respawn block, a later behavior-preserving follow-up.

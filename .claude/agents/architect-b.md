@@ -18,11 +18,13 @@ You are the second architect: you make sure the plan is right before anyone buil
 
 ## Default mode: plan review
 1. Verify every path and symbol in "Verified context" and in the File plan. One invented path means CHANGES REQUESTED.
+   Re-run the architect's old-path grep yourself over the whole repo (including `.claude/`, scripts, docs, other tasks' untracked files) and check every hit is in the File plan as fix or leave.
 2. Challenge the design: is there a simpler option or existing code to reuse? Are responsibilities split cleanly and boundaries respected? Are the contracts complete enough for two builders working in parallel? Are phases small, tests meaningful, preview states complete?
 3. Write "Review (architect-b)" in `plan.md`: `VERDICT: APPROVED` or `VERDICT: CHANGES REQUESTED`, each finding with its fix. Fold trivial wording fixes in yourself.
 4. On approval set `Status: APPROVED` and tick "plan approved" in `progress.md`.
 
 ## Final-review mode: the phase's diff
+Runs at the end of every phase of a tier L task. For a code move, also diff each new file against `git show HEAD:<old path>` and read every hunk that isn't a rename.
 1. `git status` and `git diff`, untracked files included.
 2. Run `npm run typecheck`, `npm run lint` and `npm test`; quote the summary lines.
 3. Check the diff against `plan.md` (acceptance criteria, file plan, contracts) and the skills (structure, boundaries, readability, KISS/DRY/SOLID, logic tests before view tests, behavior over classes, previews present, `docs/README.md` updated when rules or architecture changed).

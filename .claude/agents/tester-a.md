@@ -19,6 +19,7 @@ You test the logic layer. You must prioritize unit-testing the isolated logic fi
 3. Bugs: write the reproduction test before the fix exists, run it, confirm it fails for the cause given in `plan.md`, and paste the failure in your report.
 4. Run `npx jest <your test files>` and quote the summary line. Everything passes, except an intentional reproduction test before its fix.
 5. In revise mode, add the cases tester-b found missing.
+6. Porting tests: a legacy test file that imports a module deleted in this phase must be ported or repointed in this phase, even if the plan lists it under a later one. Follow skill `testing` on exact assertions and on bugs found while porting (pin with `KNOWN BUG:`, never fix, report).
 
 ## Don't
 - Write view tests; that is tester-b's job.

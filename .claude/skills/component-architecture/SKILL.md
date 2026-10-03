@@ -68,6 +68,14 @@ Create only the files a component needs. A static badge may be `.tsx`, `.styles.
 - Import the module's public component in the legacy parent and render it. Keep the edit minimal and list it in `plan.md`'s File plan.
 - Never copy legacy logic into a module. Import it (types, `@/modules/game-rules` reducers) or migrate it.
 
+## Logic-only modules (no view), e.g. `game-rules`
+- Flat layout, no `components/<Name>/` wrapper: files sit directly in `src/modules/<domain>/`, as in `game-board`.
+- A pure `(state, ...) => state` function is `<topic>.reducer.ts`, not `.map.ts`: game rules legitimately use `Math.random()` and `Date.now()`, which `.map.ts` forbids. A stateless helper with no state in or out is a plain `name.ts`. One root dispatcher is `<domain>.reducer.ts`.
+- Firestore I/O is never in a reducer: it goes to `services/<name>.service.ts`, even when the legacy file mixed both.
+- `src/lib/**` is a `LEGACY_PATHS` exemption. Moving code out loses it: files over 150 lines must be split by responsibility (group by mechanic, not by line count), and `any` must become `unknown` with a cast at each use.
+- A move keeps the function bodies as they were. Allowed: dropping dead imports, naming magic numbers, enum members for string literals with the same value. Verify with `git show HEAD:<old path>` against the new file; logs and error messages stay byte-for-byte.
+- Delete the old file and repoint every importer in the same phase: production code, tests, `jest.mock` paths, docs and skills. A test that still imports a deleted file breaks `npm test` in that phase, not a later one.
+
 ## Migrating a legacy component
 1. Characterization tests: capture today's behavior of the legacy component.
 2. Build the new version in `src/modules/` with all its files, preview included.

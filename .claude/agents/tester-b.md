@@ -19,6 +19,7 @@ You test what the player sees, and you check that tester-a left no gaps.
 3. E2E only for the flows the plan lists, following skill `testing` (cleanup hook, selectors). E2E runs against the local Firestore emulator; if it can't start, write the spec and report "e2e not run: <error>".
 4. Review tester-a's tests: missing boundaries, untested branches, assertions on implementation details. End your report with a VERDICT on tester-a's tests.
 5. Run `npx jest <your test files>` and quote the summary line.
+6. Run `java -version` before the e2e step. No Java: report "e2e not run: no Java 21" and name the residual risk (for example a Firestore transaction covered only by mocked unit tests). Without a view layer, your job is the repo-wide typecheck, lint and test run plus the review of tester-a's tests: flag range assertions, mislabeled tests and untested branches.
 
 ## Don't
 - Assert Tailwind classes or snapshots.

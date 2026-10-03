@@ -11,6 +11,10 @@ Match the effort to the task: a typo never needs twelve agents, and risky game l
 ## 1. Understand the request
 - Restate it in one line. If the goal or the expected behavior is unclear, ask the user now (all questions in one message) and stop.
 - Find the code it touches with Glob and Grep; verify every path you will cite (skill `anti-hallucination`).
+- Treat the request's description of the code ("pure functions", "no React", "just a move") as a claim to check, not a fact: open the files, grep their imports for `firebase`, `react`, `Date.now`, `Math.random`. One impure function changes the file plan (a `.service.ts`, not a reducer).
+- For a move, rename or delete, grep the old path across the whole repo (src, e2e, docs, scripts, `.claude/`, `CLAUDE.md`), not only imports, and count the hits in `triage.md`. Tests, `jest.mock` paths and agent-facing docs count as call sites.
+- Check `eslint.config.mjs` for rules that force structure (`max-lines` 150, `no-explicit-any`, restricted imports, `LEGACY_PATHS`): code moving out of a legacy path loses its exemptions and may have to be split or retyped.
+- If `docs/ai/refactor.md` has a row for the request, its Files column is the scope. Say so when the user's wording is narrower, and ask which one they want.
 
 ## 2. Read the signals
 | Signal | Question |

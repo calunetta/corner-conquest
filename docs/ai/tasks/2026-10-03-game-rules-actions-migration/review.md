@@ -41,3 +41,45 @@ Approval carve-out (stated by the coordinator, verified by me): typecheck and li
 
 ## Docs
 - `docs/README.md`: updated, verified above. Stale agent-facing references are listed in findings 1-4 and should be fixed before the commit (findings 1-3 are one-line edits each; 4 except `CLAUDE.md`).
+
+
+---
+
+# Phase 1 (retroactive)
+
+Final review of commit `614458b` (attack + movement to `src/modules/game-rules`), done after Phase 2 was committed.
+
+VERDICT: APPROVED
+
+Approval carve-out: e2e not run (no Java 21). The two `CombatDialog.test.tsx` errors the coordinator mentioned no longer reproduce at the current working tree (see Checks); they belonged to the concurrent `migrate-dialog-components` task either way.
+
+## Checks run (current working tree, which includes Phase 2)
+- `npm run typecheck`: exit clean, `npx tsc --noEmit | grep -c "error TS"` returns `0`.
+- `npx eslint src`: no output, zero findings. Plain `npm run lint` reports `153 problems (146 errors, 7 warnings)`, but every file listed is under `.claude/worktrees/angry-burnell-93c06f/` (a stale worktree copy the lint glob picks up), none in `src/`.
+- `npm test -- --testPathIgnorePatterns=worktrees,e2e/,firestore.rules,test-utils`: `Test Suites: 60 passed, 60 total` / `Tests: 573 passed, 573 total`. Plain `npm test` also scans `.claude/worktrees/` and reports `11 failed` suites, all worktree duplicates (same cause). At 614458b itself `progress.md` recorded 466/466.
+- e2e: not run (no Java 21).
+
+## Plan adherence (Phase 1)
+- File plan: met. New in `src/modules/game-rules/`: `dice.ts`, `combat-{initiate,player-roll,player-resolve,monster-roll,monster-resolve}.reducer.ts`, `movement.reducer.ts`, `island-discovery.reducer.ts`, `index.ts` (6 exports) plus a test per file. `attack.ts`, `movement.ts`, `combat.test.ts`, `movement.test.ts` deleted. Largest file 114 lines (limit 150); no `any`.
+- Call sites: met. `bot-logic.ts`, `turn-progression.ts`, `game-board.state.hook.ts`, the `src/lib/actions/index.ts` imports, the three characterization-test mock paths and `cards.test.ts` now point at `@/modules/game-rules`. `grep` for `lib/actions/(attack|movement)` outside task records and the stale worktree finds nothing. `CombatDialog.characterization.test.tsx` (untracked, not in this commit) has no `@/lib/actions` import left.
+- `.reducer.ts` row in `component-architecture/SKILL.md`: met (line in the commit's diff).
+- Behavior unchanged: met. I diffed every function against `git show 614458b^:src/lib/actions/{attack,movement}.ts` by reading each hunk. Deltas, all behavior-neutral:
+  - Magic numbers named with identical values: `5` VP (`COMBAT_WIN_VICTORY_POINTS`), `+2` (`WAR_CHIEF_BONUS_POWER`), decide-dice `1`/`6`, monster VP table, `0.4`/`0.5` chances, `MOVE_RADIUS = 2`.
+  - `'Teleport'` literal to `CardName.Teleport` (value `'Teleport'`, `src/lib/types/cards.ts:14`).
+  - Two inline `rollDice` copies replaced by one `dice.ts` export; same formula (`Math.max(1, count)`, `floor(random*6)+1`). Order of `Math.random()` calls is unchanged, so seeded tests stay valid.
+  - `handleCloseCombat`: `oldTile` extracted from the repeated `map[...]` expression; the `!` and `|| []` fallbacks are dropped but are equivalent under the `?.positionedBy` guard.
+  - `handleCloseMonsterCombat`: `losingArmyTile` extracted from the repeated expression.
+  - `let moves` to `const moves` with an explicit type; `revealIsland` moved verbatim to `island-discovery.reducer.ts`; relative `'../types'` to `'@/lib/types'`.
+  - Log text and `Error` messages are byte-identical (the `+2 power` strings remain literal).
+- Tests: met. All 4 legacy `combat.test.ts` cases and all 4 `movement.test.ts` cases have a new home (`combat-initiate`, `combat-player-roll`, `combat-monster-*`, `movement.reducer.test.ts`, `island-discovery.reducer.test.ts`), plus the Teleport case from `cards.test.ts` (`movement.reducer.test.ts:95`) and new coverage for `handleCloseCombat`, `handleCloseMonsterCombat`, `dice.ts` boundaries and movement throw paths. No `.skip`/`.only` in the module.
+- `docs/README.md`: no Phase 1 change required; Phase 2 updated it.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | `docs/ai/tasks/2026-10-03-game-rules-actions-migration/progress.md:14` | `committed: <hash>` still unticked for Phase 1; the commit is `614458b`. Tick it and record the hash. Also tick the Phase 1 final-review line if the coordinator adds one. | coordinator | No |
+| 2 | `combat-player-resolve.reducer.ts`, `combat-monster-resolve.reducer.ts`, `combat-monster-roll.reducer.ts` | Functions run about 60 to 90 lines, over the ~40-line guideline, and the death-animation plus respawn block is repeated four times (twice in each resolve file). Both are verbatim legacy bodies, so this is correct for a move; extracting `respawnArmyAtBase` is a behavior-preserving follow-up, same category as Phase 2 finding 8. | implementer-a, later | No |
+| 3 | `614458b` scope | The commit adds `src/modules/game-rules/index.ts` with 6 exports while `src/lib/actions/index.ts` still re-imports from the module. This is the planned intermediate state and builds cleanly; noting it only so nobody reads it as a cycle. | none | No |
+
+## Lessons learned
+None new. The call-site-inventory lesson from the Phase 2 section already covers this commit's one miss (`CombatDialog.characterization.test.tsx`, which the plan caught in review).

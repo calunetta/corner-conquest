@@ -41,6 +41,15 @@ tester-a must prioritize unit-testing the isolated logic files (the `.map.ts` da
 - jest-dom matchers (`toBeInTheDocument`, `toHaveAttribute`, …) are available in TypeScript.
 - `next/image`: mock it like `src/features/game/components/__tests__/MapDecorations.test.tsx`.
 
+## Assertions
+- Assert the exact observable outcome (who is the current player, the exact gold gained), never a range or `toBeGreaterThanOrEqual` on a value you can compute. A range passes for any rotation and hides bugs.
+- Compare against a copy taken before the call (`[...state.log]`), not `state.log` to itself: reducers mutate a clone, and a same-reference comparison is always true.
+- A test title must match its assertion. A test named "no-op" that asserts a change is a bug in the test.
+- Mock `console.error`/`console.warn` where the code under test logs them on purpose, and assert the call.
+
+## Bugs found while porting or moving code
+A refactor keeps behavior, bugs included. When a new test exposes a real bug in legacy behavior: do not fix it in the refactor, assert today's exact outcome, add a `KNOWN BUG:` comment naming the cause and saying the assertion changes on purpose when it is fixed, and report it so the coordinator opens a separate task.
+
 ## Bugs
 Write the test that reproduces the bug first, run it, and confirm it fails for the reason given in the root-cause analysis. Then fix. The test stays as the regression guard.
 

@@ -45,6 +45,9 @@ All agents share one `node_modules` and `package-lock.json`. Two agents adding a
 - After every `-b` agent, read its `VERDICT:` line. APPROVED: next stage. CHANGES REQUESTED: resume the `-a` agent with Mode: revise, then the `-b` agent again. After two rounds without approval, stop and show the user both positions.
 - **Resume, don't respawn, within the same coordinator session.** If the `-a` agent is still addressable (you hold its id from this session's `Agent` call), send the revise-mode prompt to it with `SendMessage` instead of a fresh `Agent` call. It already has its skills, the code it read, and the task folder in context — a fresh spawn re-derives and re-pays for all of that from zero. Only fall back to a fresh `Agent` call when the agent id isn't addressable (e.g. you're resuming a task folder in a new coordinator session and the prior run's agents no longer exist).
 - `implementer-a` and `implementer-b` own disjoint files: spawn them in parallel. Each report ends with a VERDICT on the other's files; route requested changes to the owner.
+- The cross-review needs both sets of files to exist. If one implementer finishes first and reports "nothing to review yet", wait for the other, then resume the first with SendMessage ("their files now exist, finish your cross-review"). Don't accept a VERDICT-less report as done.
+- Final review is per phase for tier L, even if `progress.md` lists it only once. If architect-a drops a phase's final-review box, put it back; skipping it leaves that phase checked only by tests and cross-reviews.
+- An agent that dies on an API or rate-limit error (no sentinel, no report) is not a BLOCKER of the task: re-run it once from scratch and say in the prompt that no partial report exists. A second failure goes to the user.
 - `tester-a` before `tester-b` (logic first); `preview-a` before `preview-b`.
 
 ## Phase loop
@@ -55,6 +58,9 @@ For each phase of `plan.md`:
 4. Final review by `architect-b`. CHANGES REQUESTED: route each finding to its owner, then review again (two rounds at most).
 5. Tick `progress.md`, add the log lines, update `docs/README.md` if rules or architecture changed, and confirm the reviewing agent appended to `docs/ai/lessons-learned.md` (skill `lessons-learned`) if this phase's review caught a non-obvious bug.
 6. Commit code and task folder together: `<type>(<module>): <phase title> [phase n/N]`.
+   - Other sessions and tasks may be editing the same working tree. Run `git status`, then `git add` the task's files by path (never `-A` or `.`), and leave every other task's files, untracked ones included, for its own session. `git status` again before committing.
+   - The hash only exists after the commit. Tick `committed: <hash>` in a small follow-up `docs(<module>): record phase n commit hash` commit, and set the task's row in `docs/ai/refactor.md` if it has one.
+   - A check that cannot run here (e2e without Java 21) is written into `progress.md` as "not run: <error>", not ticked silently and not treated as a blocker. Say it in the report to the user.
 7. If phases remain, stop: "Phase n/N committed (<hash>). Type `continue` for phase n+1." Don't start it before the user does.
 
 ## Escalation

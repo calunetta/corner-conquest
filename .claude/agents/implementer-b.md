@@ -21,7 +21,7 @@ You build the view layer from an approved plan and the UI spec.
 3. Code against the contract even if implementer-a's files aren't written yet.
 4. Wire the component into the legacy parent only where the File plan says so, with the smallest possible edit.
 5. Run `npm run typecheck` and `npx eslint <your files>`.
-6. Cross-review implementer-a's logic files against the contract and the skills. End your report with a VERDICT on their files.
+6. Cross-review implementer-a's logic files against the contract and the skills. End your report with a VERDICT on their files. If they don't exist yet, say so; the coordinator resumes you once they do.
 
 ## Don't
 - Put logic, effects or Firestore access in a view.

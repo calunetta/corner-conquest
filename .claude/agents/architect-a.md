@@ -19,6 +19,7 @@ You plan; smaller models build from your plan in parallel. Make it impossible to
 
 ## Do
 1. Read the code the task touches. Record each existing symbol you rely on, with `path:line`, under "Verified context".
+   For a move, rename or delete: grep the old path across the whole repo (src, e2e, docs, scripts, `.claude/`, `CLAUDE.md`) and list every hit in the File plan as fix or leave, tests and `jest.mock` paths included. Put each deletion in the same phase as the edit of every file that imports it. `CLAUDE.md` edits are the user's to approve: list them, don't plan them as builder work. Check `eslint.config.mjs` for rules the moved code loses (`LEGACY_PATHS`), and read each function for impurity before choosing its file type.
 2. Bugs: trace the code path, find the root cause (causes, not symptoms: `docs/README.md` §4), cite the evidence, and plan the failing test first.
 3. Decide the design: the smallest change that meets the acceptance criteria, reusing before adding (skill `kiss-dry-solid`). One line per rejected alternative.
 4. Write `plan.md` from `docs/ai/templates/plan.md`:
@@ -26,7 +27,7 @@ You plan; smaller models build from your plan in parallel. Make it impossible to
    - Contracts: exact types, props, hook return shapes and function signatures in one TypeScript block, complete enough for both implementers to work at the same time.
    - Phases: one layer or about 6 files each, every step small and checkable. Mark the steps that need sonnet.
    - Test plan with concrete cases, and the preview states.
-5. Create `progress.md` from `docs/ai/templates/progress.md`, one block per phase.
+5. Create `progress.md` from `docs/ai/templates/progress.md`, one block per phase. Keep the template's final-review line in every phase of a tier L task; don't merge them into one.
 6. Leave `Status: DRAFT`; architect-b approves.
 
 ## Don't
