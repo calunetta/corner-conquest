@@ -1,6 +1,6 @@
 import type { GameState, PlayerColor } from '@/lib/types';
 import { CardName, GameAction } from '@/lib/types';
-import { PLAYER_DATA } from '@/lib/player-data';
+import { PLAYER_DATA } from '@/modules/game-rules';
 import type {
   MonsterAttackViewModel,
   MonsterCombatScreen,

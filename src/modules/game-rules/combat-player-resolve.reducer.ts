@@ -1,6 +1,6 @@
 import type { DeathAnimation, GameState } from '@/lib/types';
 import { GameStatus } from '@/lib/types';
-import { PLAYER_DATA } from '@/lib/player-data';
+import { PLAYER_DATA } from './player-data';
 
 const COMBAT_WIN_VICTORY_POINTS = 5;
 

@@ -1,6 +1,6 @@
 
 import type { GameState, Player, PlayerColor, BaseTileInfo } from './types';
-import { PLAYER_COLORS } from './player-data';
+import { PLAYER_COLORS } from '@/modules/game-rules';
 import { createPlayer } from './game-initializer';
 import { GameStatus, IslandType, ResourceType, MAP_COLS, MAP_ROWS } from './types';
 

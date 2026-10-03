@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import type { Island } from '@/lib/types';
 import { IslandType } from '@/lib/types';
-import { PLAYER_DATA } from '@/lib/player-data';
+import { PLAYER_DATA } from '@/modules/game-rules';
 import { cn } from '@/lib/utils';
 import { useGameBoard } from '../context/GameBoardContext';
 

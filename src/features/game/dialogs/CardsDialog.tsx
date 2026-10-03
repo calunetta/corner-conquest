@@ -1,7 +1,7 @@
 'use client';
 
 import type { Player, CardName } from '@/lib/types';
-import { SPECIAL_CARD_DESCRIPTIONS, USABLE_CARDS } from '@/lib/card-data';
+import { SPECIAL_CARD_DESCRIPTIONS, USABLE_CARDS } from '@/modules/game-rules';
 import {
   AlertDialog,
   AlertDialogContent,

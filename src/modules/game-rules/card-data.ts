@@ -1,5 +1,5 @@
 
-import type { CardName } from "./types";
+import type { CardName } from '@/lib/types';
 
 export const BASE_CARDS: CardName[] = [
   'Extra Move', 'Steal Resource', 'Sabotage', 'Reinforce',

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Dices, Sparkles, XCircle } from 'lucide-react';
-import { SPECIAL_CARD_DESCRIPTIONS } from '@/lib/card-data';
+import { SPECIAL_CARD_DESCRIPTIONS } from '@/modules/game-rules';
 
 type SpecialIslandRollDialogProps = {
   state: SpecialIslandRollDialogState;

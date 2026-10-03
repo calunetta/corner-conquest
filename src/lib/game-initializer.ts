@@ -1,8 +1,8 @@
 
 import type { GameState, Island, Player, IslandResource, Monster, GameSettings, BaseTileInfo } from './types';
 import { CardName, HAND_LIMIT } from './types';
-import { BASE_CARDS } from './card-data';
-import { PLAYER_COLORS } from './player-data';
+import { BASE_CARDS } from '@/modules/game-rules';
+import { PLAYER_COLORS } from '@/modules/game-rules';
 import { IslandType, ResourceType, PlayerColor, MonsterName, GameStatus, AbilityName, MAP_COLS, MAP_ROWS } from './types';
 
 export const defaultGameSettings: GameSettings = {

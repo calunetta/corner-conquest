@@ -1,3 +1,5 @@
+export { BASE_CARDS, SPECIAL_CARD_DESCRIPTIONS, USABLE_CARDS } from './card-data';
+export { PLAYER_COLORS, PLAYER_DATA } from './player-data';
 export { handleInitiateCombatAction } from './combat-initiate.reducer';
 export { handleCombatRoll } from './combat-player-roll.reducer';
 export { handleCloseCombat } from './combat-player-resolve.reducer';

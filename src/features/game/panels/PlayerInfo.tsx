@@ -9,7 +9,7 @@ import { ResourceIcon, FightIcon } from '@/components/icons';
 import { Award, Zap, Album, Forward, Ban, Bot, Compass, ShieldCheck, Sparkles, Anchor, Trophy, Hammer } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
-import { PLAYER_DATA } from '@/lib/player-data';
+import { PLAYER_DATA } from '@/modules/game-rules';
 import { cn } from '@/lib/utils';
 import { useGameBoard } from '../context/GameBoardContext';
 

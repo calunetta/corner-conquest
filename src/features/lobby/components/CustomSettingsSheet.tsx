@@ -18,7 +18,7 @@ import { AbilityName as AbilityNameEnum } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BASE_CARDS } from '@/lib/card-data';
+import { BASE_CARDS } from '@/modules/game-rules';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 

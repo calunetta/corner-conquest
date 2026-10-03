@@ -25,7 +25,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CustomSettingsSheet } from './CustomSettingsSheet';
 import { defaultGameSettings } from '@/lib/game-initializer';
-import { PLAYER_COLORS, PLAYER_DATA } from '@/lib/player-data';
+import { PLAYER_COLORS, PLAYER_DATA } from '@/modules/game-rules';
 import Image from 'next/image';
 
 type CreateGameDialogProps = {

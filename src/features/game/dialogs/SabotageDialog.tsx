@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Ban, ShieldAlert } from 'lucide-react';
-import { PLAYER_DATA } from '@/lib/player-data';
+import { PLAYER_DATA } from '@/modules/game-rules';
 import Image from 'next/image';
 
 type SabotageDialogProps = {

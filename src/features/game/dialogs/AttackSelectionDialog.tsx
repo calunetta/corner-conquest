@@ -12,7 +12,7 @@ import {
 import { Swords, Anchor, CheckCircle, Crosshair } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { ReactNode } from 'react';
-import { PLAYER_DATA } from '@/lib/player-data';
+import { PLAYER_DATA } from '@/modules/game-rules';
 import Image from 'next/image';
 
 type AttackSelectionDialogProps = {

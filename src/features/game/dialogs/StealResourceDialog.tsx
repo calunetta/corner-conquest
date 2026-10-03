@@ -14,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ResourceIcon, RESOURCE_SPRITES, getResourceDisplayName } from '@/components/icons';
 import { HandMetal, ArrowLeft, Check } from 'lucide-react';
-import { PLAYER_DATA } from '@/lib/player-data';
+import { PLAYER_DATA } from '@/modules/game-rules';
 
 type StealResourceDialogProps = {
   players: Player[];

@@ -1,6 +1,6 @@
 'use client';
 
-import { PLAYER_DATA } from '@/lib/player-data';
+import { PLAYER_DATA } from '@/modules/game-rules';
 import {
   AlertDialogFooter,
   AlertDialogHeader,

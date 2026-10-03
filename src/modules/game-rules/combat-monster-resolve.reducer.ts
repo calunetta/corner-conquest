@@ -1,6 +1,6 @@
 import type { DeathAnimation, GameState, IslandResource, ResourceType } from '@/lib/types';
 import { GameStatus, IslandType, ResourceType as ResourceTypeValue } from '@/lib/types';
-import { PLAYER_DATA } from '@/lib/player-data';
+import { PLAYER_DATA } from './player-data';
 
 const MONSTER_VICTORY_POINTS_BY_LEVEL = [0, 2, 5, 7, 10];
 const TWO_RESOURCE_TYPES_CHANCE = 0.4;

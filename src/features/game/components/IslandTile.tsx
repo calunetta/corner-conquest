@@ -7,7 +7,7 @@ import type { Island } from '@/lib/types';
 import { IslandType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { PLAYER_DATA } from '@/lib/player-data';
+import { PLAYER_DATA } from '@/modules/game-rules';
 import { AnimatedMonster } from './AnimatedMonster';
 import { TileForest } from './TileForest';
 import { TileResources } from './TileResources';
