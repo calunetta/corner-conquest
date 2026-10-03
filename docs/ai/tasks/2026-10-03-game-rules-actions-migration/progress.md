@@ -19,7 +19,7 @@ Tier: L · Phases: 2
 - [x] checks: typecheck, lint, unit tests pass (573/573; typecheck/lint errors only in the concurrent task's CombatDialog.test.tsx); e2e/gameplay.spec.ts not run, no Java 21 locally
 - [x] docs/README.md updated
 - [x] final review (architect-b) — the pipeline's one and only final-review stage (triage.md: `architect-b:final-review` appears once, at the end)
-- [ ] committed: <hash>
+- [x] committed: b05f3b4
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
