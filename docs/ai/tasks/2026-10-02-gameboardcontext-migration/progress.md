@@ -1,6 +1,6 @@
 # Progress: Migrate GameBoardContext.tsx into src/modules
 
-Tier: L · Phases: 3 (triage.md's original plan; see "Scope note" below for what actually shipped)
+Tier: L · Phases: 3 (Phases 1 and 2 shipped; Phase 3 is split into 3a, 3b, 3c below)
 
 ## Note on process
 architect-a, architect-b and the implementer/tester pairs never ran: Agent-spawning tools (Agent,
@@ -53,9 +53,42 @@ way unit tests might not catch. What shipped instead is the safe subset of the o
   build` all pass after the extraction.
 - [x] `docs/README.md` §2 and §3.3 updated to describe the new split.
 
-## Phase 3: not attempted this session (unchanged from the plan)
-Extracting the provider's effects/handlers into a `.hook.ts`. Left for a future session with the
-swarm's usual architect-a/architect-b planning and review available. See "Next steps".
+## Phase 3: extract the provider's effects and handlers (planned in plan.md, Status APPROVED)
+The swarm pipeline is available again, so Phase 3 runs with architect-b review. Stop after each
+sub-phase and wait for the user to type `continue`.
+
+### Phase 3a: characterization tests for the uncovered surface (tester-a)
+- [x] plan approved (architect-b)
+- [x] `__tests__/gameBoardTestKit.tsx` and `__tests__/GameBoardContext.handlers.characterization.test.tsx` written (local_Attack single/multi player and monster, local_Position, local_UseCard incl. Teleport and multi-step cards, local_CancelAction, simple local actions, Escape key, handleStartGame, handleExitClick, handleConfirmExit, handleConfirmHostLeave, onAction branches, auto end-turn, turn-timer wiring)
+- [x] context-identity rerender test included
+- [x] new tests pass against the UNMODIFIED `GameBoardContext.tsx`; existing two test files untouched (45 new tests + 10 existing characterization + 4 reducer tests = 59 passing)
+- [x] `npm run typecheck`, `npm run lint` (all pass)
+- [ ] architect-b confirms the tests cover every branch listed in plan.md Test plan
+- [ ] committed: <hash>
+
+### Phase 3b: extraction (implementer-a, implementer-b)
+- [ ] `game-board.hook.types.ts`, `game-board.map.ts` + `game-board.map.test.ts`
+- [ ] `game-board.state.hook.ts`, `game-board.actions.hook.ts`
+- [ ] `game-board.card-actions.hook.ts`, `game-board.local-actions.hook.ts` (incl. Escape effect)
+- [ ] `game-board.tile-click.hook.ts`, `game-board.session.hook.ts`
+- [ ] `game-board.hook.ts` (call order and 14-entry contextValue deps as in plan.md), `index.ts` exports
+- [ ] `game-board.provider.tsx`
+- [ ] architect-b line-by-line review of every hook against the original (dependency arrays, hook order, break to return) : APPROVED
+- [ ] `GameBoardContext.tsx` replaced by re-exports only
+- [ ] Phase 3a tests and both existing test files pass unmodified
+- [ ] every new module file under 150 lint lines, zero lint warnings
+- [ ] committed: <hash>
+
+### Phase 3c: verification and docs
+- [ ] `npm run typecheck`
+- [ ] `npm run lint` (zero warnings)
+- [ ] `npm test` (quote summary line)
+- [ ] `npm run build`
+- [ ] `git diff --stat -- src/features` shows only `GameBoardContext.tsx`; no consumer changed
+- [ ] browser or e2e smoke (ui-verify or `npm run test:e2e -- e2e/gameplay.spec.ts`), or recorded as not run
+- [ ] `docs/README.md` §2 and §3.3 updated
+- [ ] final review (architect-b)
+- [ ] committed: <hash>
 
 ## Next steps for a future session
 - Plan the `.hook.ts` extraction with architect-a/b: each closure's dependency array needs to be
@@ -72,3 +105,4 @@ swarm's usual architect-a/architect-b planning and review available. See "Next s
 ## Log
 - 2026-10-02 coordinator (as tester-a): wrote and verified characterization tests against the
   current, unmodified file.
+- 2026-10-03 architect-a: DONE, wrote plan.md (Phase 3 plan, DRAFT) and the Phase 3 checklist above.
