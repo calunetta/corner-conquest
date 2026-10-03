@@ -63,8 +63,8 @@ sub-phase and wait for the user to type `continue`.
 - [x] context-identity rerender test included
 - [x] new tests pass against the UNMODIFIED `GameBoardContext.tsx`; existing two test files untouched (45 new tests + 10 existing characterization + 4 reducer tests = 59 passing)
 - [x] `npm run typecheck`, `npm run lint` (all pass)
-- [ ] architect-b confirms the tests cover every branch listed in plan.md Test plan
-- [ ] committed: <hash>
+- [x] architect-b confirms the tests cover every branch listed in plan.md Test plan (used as the safety net throughout the Phase 3b gate review and re-review)
+- [x] committed: 3a242d8
 
 ### Phase 3b: extraction (implementer-a, implementer-b)
 - [x] `game-board.hook.types.ts`, `game-board.map.ts` + `game-board.map.test.ts`
@@ -77,7 +77,7 @@ sub-phase and wait for the user to type `continue`.
 - [x] `GameBoardContext.tsx` replaced by re-exports only
 - [x] Phase 3a tests and both existing test files pass unmodified
 - [x] every new module file under 150 lint lines, zero lint warnings
-- [ ] committed: <hash>
+- [x] committed: b32f333
 
 ### Phase 3c: verification and docs
 - [x] `npm run typecheck` — clean
@@ -89,7 +89,10 @@ sub-phase and wait for the user to type `continue`.
 - [x] `docs/README.md` §2 and §3.3 updated
 - [x] stale `gameBoardTestKit.tsx` path references in `plan.md` fixed to `test-utils/gameBoardTestKit.tsx`
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 82ace61
+
+## Task complete
+Phases 1–3 all shipped and committed (3a242d8, b32f333, 82ace61 plus the earlier Phase 1/2 commits). The legacy `GameBoardContext.tsx` is now a 13-line re-export; the real implementation lives in `src/modules/game-board/`. e2e smoke was not run (no Java 21 on this machine) — worth doing in a future session before relying further on this.
 
 ## Next steps for a future session
 - Plan the `.hook.ts` extraction with architect-a/b: each closure's dependency array needs to be
