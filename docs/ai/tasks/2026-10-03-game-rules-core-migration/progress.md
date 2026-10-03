@@ -24,7 +24,7 @@ Tier: L · Phases: 4
 - [x] checks: typecheck, lint, unit tests — pass (scoped: 39 suites/334 tests; repo-wide failures/errors trace only to untracked concurrent tasks' files)
 - [ ] UI verified (ui-verify) — not applicable, no UI change
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: e55c53c
 
 ## Phase 3: game-logic + turn-progression
 - [ ] plan approved (architect-b)
@@ -57,3 +57,4 @@ Tier: L · Phases: 4
 - 2026-10-03 architect-b: DONE, Phase 2 final review CHANGES REQUESTED (gratuitous casts in map-generation.ts/game-setup.reducer.ts; 3 unplanned/unused exports in index.ts)
 - 2026-10-03 implementer-a: DONE, both findings fixed
 - 2026-10-03 architect-b: DONE, Phase 2 final review APPROVED (fixes re-verified independently)
+- 2026-10-03 Phase 2 committed: e55c53c
