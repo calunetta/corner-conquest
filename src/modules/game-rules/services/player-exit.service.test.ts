@@ -198,18 +198,14 @@ describe('handlePlayerExit', () => {
     const [, writtenState] = transaction.set.mock.calls[0] as [unknown, GameState];
 
     expect(writtenState.players.map((p) => p.name)).toEqual(['Host', 'Player 3']);
-    // KNOWN BUG, preserved from the legacy src/lib/actions/player.ts on purpose (the migration must not
-    // change behavior): the service sets currentPlayerIndex = playerIndex % players.length, which already
-    // points at the NEXT player (Player 3), and then handleEndTurn advances AGAIN, so Player 3 is skipped
-    // and the turn lands on the Host. The intended result is 'Player 3' (index 1). When this is fixed,
-    // update these two assertions (and the turn counter) deliberately.
-    expect(writtenState.currentPlayerIndex).toBe(0);
-    expect(writtenState.players[writtenState.currentPlayerIndex].name).toBe('Host');
-    expect(writtenState.turn).toBe(turnBefore + 1); // handleEndTurn wrapped past the last seat
-    expect(writtenState.log).toContain("It's now Host's turn.");
+    // The turn passes to the player who was next in order (Player 3, now index 1); no seat is skipped.
+    expect(writtenState.currentPlayerIndex).toBe(1);
+    expect(writtenState.players[writtenState.currentPlayerIndex].name).toBe('Player 3');
+    expect(writtenState.turn).toBe(turnBefore); // no wrap past the last seat
+    expect(writtenState.log).toContain("It's now Player 3's turn.");
   });
 
-  it('when the exiting current player is the last seat, the turn lands on seat 1, skipping the host (same known bug)', async () => {
+  it('when the exiting current player is the last seat, the turn wraps to the host', async () => {
     let game = buildThreePlayerGame();
     game = startGame(game, 'Host');
     game.currentPlayerIndex = 2; // Player 3, the last seat, is current and leaves
@@ -221,11 +217,10 @@ describe('handlePlayerExit', () => {
     const [, writtenState] = transaction.set.mock.calls[0] as [unknown, GameState];
 
     expect(writtenState.players.map((p) => p.name)).toEqual(['Host', 'Player 2']);
-    // Wrap-around: 2 % 2 = 0 (the host, i.e. the intended next player), then handleEndTurn advances once more
-    // to Player 2. KNOWN BUG, preserved from legacy behavior: the host's turn is skipped.
-    expect(writtenState.currentPlayerIndex).toBe(1);
-    expect(writtenState.players[1].name).toBe('Player 2');
-    expect(writtenState.turn).toBe(turnBefore); // no wrap past the last seat this time
+    // Wrap-around: the next player in order after the last seat is the host.
+    expect(writtenState.currentPlayerIndex).toBe(0);
+    expect(writtenState.players[0].name).toBe('Host');
+    expect(writtenState.turn).toBe(turnBefore + 1); // handleEndTurn wrapped past the last seat
   });
 
   it('decrements currentPlayerIndex without ending the turn when a lower seat leaves during a later seat\'s turn', async () => {

@@ -83,7 +83,10 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
 
       // Adjust currentPlayerIndex
       if (isCurrentPlayerExiting) {
-        currentState.currentPlayerIndex = playerIndex % currentState.players.length;
+        // After the splice, the seat that was next now sits at `playerIndex`. handleEndTurn advances by one,
+        // so start from the seat before it (wrapping) to land on the player who was next in order.
+        currentState.currentPlayerIndex =
+          (playerIndex - 1 + currentState.players.length) % currentState.players.length;
         currentState = handleEndTurn(currentState);
       } else if (currentState.currentPlayerIndex > playerIndex) {
         currentState.currentPlayerIndex--;
