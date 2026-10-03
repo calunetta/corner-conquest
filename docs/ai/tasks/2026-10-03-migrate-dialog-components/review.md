@@ -68,3 +68,37 @@ VERDICT: APPROVED
 
 ## Progress
 - Ticked in `progress.md` for Phase 2: characterization test, implementation, tests, preview, checks, UI verified, legacy file+test deleted. This review itself is the final-review box.
+
+---
+
+# Final review: Phase 3 (Verification and docs), 3/3
+
+VERDICT: APPROVED
+
+## Checks run (all re-run in this session, not trusted from the coordinator's summary)
+- `npm run typecheck` → `tsc --noEmit`, no output, exit 0. Clean.
+- `npx eslint . --ignore-pattern '.claude/worktrees/**' --max-warnings 0` → no output, exit 0. Clean across the whole repo (the nested worktree `.claude/worktrees/angry-burnell-93c06f/` — confirmed via `git worktree list` to be a second checkout of branch `claude/angry-burnell-93c06f` — is excluded the same way Phase 1/2's reviews did; `eslint.config.mjs`'s `LEGACY_PATHS` ignores don't match that nested prefix, so it isn't this diff's concern).
+- `npm test` (plain `jest`, no scoping) initially showed `11 failed, 113 passed, 124 total` suites — every failing suite path was under `.claude/worktrees/angry-burnell-93c06f/` (confirmed: `grep -E "^(FAIL|PASS)"` on the full run, filtered to exclude that prefix, returns zero failing lines). Re-ran with the worktree excluded, matching `jest.config.js`'s own `testPathIgnorePatterns` plus the worktree: `Test Suites: 62 passed, 62 total`, `Tests: 644 passed, 644 total`. This matches the coordinator's claimed 644 passing. The remaining excluded suites (`e2e/*.spec.ts` — 4 files, need the Firestore emulator; `firestore.rules.test.ts` — 19 tests, needs the emulator, run separately via `npm run test:rules`; `gameBoardTestKit.tsx` — confirmed 0 `it`/`test`/`describe` calls, a test-utilities file, not a test suite) are pre-existing, environmental, and unrelated to this task, consistent with Phase 1/2's precedent for excluding the same nested worktree from lint.
+- `npm run build` → compiles and generates all 6 static pages successfully, no type or lint errors. Clean.
+- Grep sweep repo-wide (excluding `node_modules`, `.git`, `.claude/worktrees`, `.next`): `grep -rln "dialogs/CombatDialog\|dialogs/MonsterCombatDialog\|features/game/dialogs/CombatDialog\|features/game/dialogs/MonsterCombatDialog" .` returns only `docs/ai/refactor.md` and this task's own `triage.md`/`plan.md`/`review.md` — all historical/task-tracking prose, not code. No stale reference anywhere else, including `.claude/`, scripts, and other tasks' folders.
+- `grep -rn "@/modules/combat" src` → `src/features/game/components/GameDialogManager.tsx:8` (the one import line the plan specifies) plus `src/testbed/registry.ts:3-4` (the two preview registrations, which import a deep path under `@/modules/combat/...` and therefore also match the substring grep — already reviewed and accepted as non-blocking in the Phase 1 review's Finding #2, same precedent as `src/testbed/legacy/*.preview.tsx`). No other hits. Matches plan.md Phase 3 step 2 in substance; the plan's wording ("shows exactly `GameDialogManager.tsx`") was imprecise about the preview imports also matching the same grep, already flagged and accepted — not new drift.
+- Browser smoke: started the dev server fresh (the server the coordinator had left running returned HTTP 500 on `/testbed/combat-combat-dialog` after I ran `npm run build` concurrently, which corrupted its Turbopack `.next/` cache — restarting cleanly resolved it; not a code defect). Both `/testbed/combat-combat-dialog` and `/testbed/combat-monster-combat-dialog` return 200. Ran `node .claude/skills/ui-verify/scripts/snapshot.mjs` against both — `0 failing`, no console errors. Viewed the per-state screenshots the coordinator generated this session (`test-results/ui-verify/testbed-combat-*-state-*--desktop.png`, timestamped today 17:02–17:36, 10 files per component matching all 5 states × 2 viewports each): "Results — attacker wins" (`CombatDialog`) shows correct dice, amber winner highlight, trophy banner, gradient Confirm button; "Attack screen — all three tactical cards available" (`MonsterCombatDialog`) shows correct monster/player sprites (no broken images), power labels, and the four-option tactical-card radio group. Both match the legacy styling described in plan.md's Contracts. Confirms the coordinator's claim.
+
+## `.claude/launch.json` fix — in scope?
+- `git log --follow -p -- .claude/launch.json` shows it was added earlier today (commit `3e3ed65`, an unrelated task) with `"port": 3000`, while `CLAUDE.md`'s own Commands table documents the dev server as `http://localhost:9002`. The coordinator's one-line fix (`3000` → `9002`) corrects this drift. Not in plan.md's File plan, but it is a trivial, necessary, non-code tooling fix made to unblock the Phase 3 browser-smoke step the plan itself requires (step 3); it does not touch game code, rules, or anything plan.md's File plan owns. Accepted as in-scope collateral fix for a verification-only phase with no implementer/tester agents involved.
+
+## Plan adherence — acceptance criteria (plan.md, full re-check against today's code, not phase reviews alone)
+- `src/modules/combat/` exists with both components built per the types/map/hook/styles/view split (`find src/modules/combat -type f` — 27 files, matches the File plan plus the two previously-approved split files `CombatantCard.tsx` and `MonsterCombatCardSelector.tsx`). Met.
+- `GameDialogManager.tsx:8` imports `{ CombatDialog, MonsterCombatDialog }` from `@/modules/combat`; `git diff` confirms no other line of the file changed since the baseline. Met.
+- `src/features/game/dialogs/CombatDialog.tsx` and `MonsterCombatDialog.tsx` are gone (`ls src/features/game/dialogs/` — 12 legacy dialogs remain, neither of the two migrated ones present). Met.
+- Previews exist, registered, and screenshot-verified this session (above). Met.
+- `npm run typecheck`, `npm run lint` (zero warnings), `npm test`, `npm run build` all pass this session. `docs/README.md` diff (`git diff docs/README.md`) adds the `combat/components/` clause to the `src/modules/` bullet (`:33`) and the `GameDialogManager.tsx` bullet (`:46`) explaining the import split and why the manager itself stays legacy — both read accurately against the actual code (`GameDialogManager.tsx:1-10`, `src/modules/combat/index.ts`). Met.
+
+## Findings
+None blocking. One pre-existing drift corrected as part of this phase (`.claude/launch.json`, discussed above) — not a finding against this task, noted for completeness.
+
+## Docs
+- `docs/README.md` updated correctly for both the `src/modules/` bullet and the `GameDialogManager.tsx` bullet; text matches the actual import boundary constraint (component-architecture's "another module only through its index" / "`@/features/*` only in `*.hook.ts`" rules) and the real file structure. No further doc changes needed — no new game rule or architecture decision beyond what's already captured.
+
+## Progress
+- Ticked in `progress.md` for Phase 3: full checks, no remaining stale references, browser smoke, docs/README.md updated, final review. "committed" left unticked — commit happens after this review per the workflow.

@@ -30,7 +30,7 @@ Understanding the project's structure is key to making changes efficiently and c
 
 - `docs/ai/`: AI workflow guide, task record templates, and one folder per task under `docs/ai/tasks/` (see `docs/ai/README.md`).
 - `e2e/`: Playwright End-to-End browser test suites (`auth-and-lobby.spec.ts`, `gameplay.spec.ts`, `map-viewport.spec.ts`, `tutorial-beacons.spec.ts`).
-- `src/modules/`: New code, organised by domain (created with the first module). `game-board/` holds the `GameBoardContext`/provider implementation (§3.3); `game-rules/` holds the pure game-rule reducers that compute the next `GameState` for each `GameAction` (`*.reducer.ts`), the root dispatcher (`game-rules.reducer.ts`), and the one Firestore-touching exception, `services/player-exit.service.ts` (§6.11).
+- `src/modules/`: New code, organised by domain (created with the first module). `game-board/` holds the `GameBoardContext`/provider implementation (§3.3); `game-rules/` holds the pure game-rule reducers that compute the next `GameState` for each `GameAction` (`*.reducer.ts`), the root dispatcher (`game-rules.reducer.ts`), and the one Firestore-touching exception, `services/player-exit.service.ts` (§6.11); `combat/components/` holds `CombatDialog` and `MonsterCombatDialog`, each split into view/hook/map/styles/types/fixtures per `component-architecture`, migrated from `src/features/game/dialogs/` — see `docs/ai/tasks/2026-10-03-migrate-dialog-components/`.
 - `src/testbed/` and `src/app/testbed/`: Dev-only component testbed at `/testbed`. `registry.ts` lists every preview (`*.preview.tsx`); previews of legacy components live in `src/testbed/legacy/`. Hidden in production builds unless `NEXT_PUBLIC_ENABLE_TESTBED=true` at build time.
 - `src/app/`: Core application, pages, and layout.
 - `src/components/`: Reusable, generic UI components (mostly from ShadCN).
@@ -43,7 +43,7 @@ Understanding the project's structure is key to making changes efficiently and c
       - `GameBoardHeader.tsx`: Navigation, match status, VP goal, and start game controls with **0 props**.
       - `PlayerInfoBar.tsx`: Collapsible player cards list, goal badge, and tutorial beacon with **0 props**.
       - `GameStatusBadge.tsx`: Turn indicator and player queue badge with **0 props**.
-      - `GameDialogManager.tsx`: Dedicated container for mounting all 15+ modal dialogs with **zero prop-drilling**.
+      - `GameDialogManager.tsx`: Dedicated container for mounting all 15+ modal dialogs with **zero prop-drilling**. Imports `CombatDialog` and `MonsterCombatDialog` from `src/modules/combat`; the other 13 dialogs still live under `src/features/game/dialogs/`. It stays at this legacy path itself — it renders those legacy dialogs directly, which `src/modules/**` is not allowed to import (see `component-architecture`'s import boundaries).
       - `MapGrid.tsx`: Lightweight terrain board orchestrator (<70 lines, **0 props**) with pan and pinch-to-zoom support.
       - `MapZoomControls.tsx`: Glassmorphic zoom controls HUD (+ / - / Reset 100%) with **0 props or callback props**.
       - `MapDecorations.tsx`: Strategic fixed rocks and outer perimeter cloud formations framing uncharted ocean margins.
