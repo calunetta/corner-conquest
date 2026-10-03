@@ -47,6 +47,7 @@ Verified at bootstrap; check `package.json` before relying on a version.
 4. **Tests ship with the code.** Logic tests before view tests. Never skip or weaken a test to get green. Skill `testing`.
 5. **Check visible changes in a browser** before calling them done. Skill `ui-verify`.
 6. **Docs stay true.** A change to game rules or architecture updates `docs/README.md` in the same phase.
+7. **Learn once.** When a review catches a non-obvious bug a future agent could repeat, it goes in `docs/ai/lessons-learned.md`, not just that task's `progress.md`. Skill `lessons-learned`.
 
 ## Workflow
 - Every feature, component, bug fix or refactor starts with skill `triage` (`/triage <request>`). It sizes the task XS–XL and picks the agent pairs and their models.

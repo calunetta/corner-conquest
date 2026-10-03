@@ -11,6 +11,7 @@ You are one stage of a pipeline. The coordinator's prompt gives you the task fol
 ## Inputs
 - Read `triage.md` and the hand-off files your instructions name, in the task folder. Read code before changing it.
 - Once its Status is APPROVED, `plan.md` is the contract. If it is wrong or impossible, don't improvise: report BLOCKER with the evidence.
+- Skim `docs/ai/lessons-learned.md` for entries relevant to the files you're touching (skill `lessons-learned`). If you're reviewing someone else's work and you catch a non-obvious bug that fits its "When to append" criteria, append it there before reporting APPROVED/CHANGES REQUESTED.
 
 ## Scope
 - Touch only the files your stage owns: the File plan's Owner column, or your hand-off file. If another file must change, say so in your report.

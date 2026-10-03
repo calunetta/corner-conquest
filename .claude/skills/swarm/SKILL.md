@@ -52,7 +52,7 @@ For each phase of `plan.md`:
 2. Run `npm run typecheck`, `npm run lint`, then `npm test`. A failure goes back to the owning agent in revise mode with the output.
 3. Skill `ui-verify` on the previews and pages `plan.md` lists.
 4. Final review by `architect-b`. CHANGES REQUESTED: route each finding to its owner, then review again (two rounds at most).
-5. Tick `progress.md`, add the log lines, update `docs/README.md` if rules or architecture changed.
+5. Tick `progress.md`, add the log lines, update `docs/README.md` if rules or architecture changed, and confirm the reviewing agent appended to `docs/ai/lessons-learned.md` (skill `lessons-learned`) if this phase's review caught a non-obvious bug.
 6. Commit code and task folder together: `<type>(<module>): <phase title> [phase n/N]`.
 7. If phases remain, stop: "Phase n/N committed (<hash>). Type `continue` for phase n+1." Don't start it before the user does.
 
