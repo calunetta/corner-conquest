@@ -6,12 +6,9 @@ import { GameAction, ResourceType } from '@/lib/types';
 import { useGameBoard } from '../context/GameBoardContext';
 
 import { CombatDialog, MonsterCombatDialog } from '@/modules/combat';
-import { ProductiveCardDialog } from '../dialogs/ProductiveCardDialog';
-import { SpecialIslandRollDialog } from '../dialogs/SpecialIslandRollDialog';
+import { AbilitiesDialog, CardsDialog, ProductiveCardDialog, SpecialIslandRollDialog } from '@/modules/cards';
 import { PositionDialog } from '../dialogs/PositionDialog';
-import { CardsDialog } from '../dialogs/CardsDialog';
 import { StealResourceDialog } from '../dialogs/StealResourceDialog';
-import { AbilitiesDialog } from '../dialogs/AbilitiesDialog';
 import { SabotageDialog } from '../dialogs/SabotageDialog';
 import { WealthyDialog } from '../dialogs/WealthyDialog';
 import { ArmySelectionDialog } from '../dialogs/ArmySelectionDialog';
