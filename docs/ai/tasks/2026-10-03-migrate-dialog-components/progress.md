@@ -20,15 +20,15 @@ Tier: M · Phases: 3
 
 ## Phase 2: MonsterCombatDialog
 - [x] plan approved (architect-b)
-- [ ] characterization test written and passing against the legacy component (tester-a)
-- [ ] implementation (implementer-a: types/map/hook/fixtures/index; implementer-b: styles/screens/view/wiring)
-- [ ] tests (tester-a: map/hook; tester-b: view)
-- [ ] preview (preview-b) registered in src/testbed/registry.ts
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify) on the new preview
-- [ ] legacy MonsterCombatDialog.tsx and its characterization test deleted
-- [ ] final review (architect-b)
-- [ ] committed: <hash>
+- [x] characterization test written and passing against the legacy component (tester-a)
+- [x] implementation (implementer-a: types/map/hook/fixtures/index; implementer-b: styles/screens/view/wiring)
+- [x] tests (tester-a: map/hook; tester-b: view)
+- [x] preview (preview-b) registered in src/testbed/registry.ts
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify) on the new preview
+- [x] legacy MonsterCombatDialog.tsx and its characterization test deleted
+- [x] final review (architect-b)
+- [x] committed: 311ea59
 
 ## Phase 3: Verification and docs
 - [ ] full checks: typecheck, lint, unit tests, build
@@ -50,3 +50,10 @@ Tier: M · Phases: 3
 - 2026-10-03 coordinator: fixed 2 new typecheck errors and 5 lint errors in tester-b's CombatDialog.test.tsx (missing HTMLImageElement cast, unused imports/any, unused rerender) directly rather than another agent round-trip.
 - 2026-10-03 implementer-b: DONE, deleted legacy CombatDialog.tsx and its characterization test.
 - 2026-10-03 architect-b: DONE, final review APPROVED. Committed 6788cdb.
+- 2026-10-03 tester-a: DONE, characterization test (28 tests) against legacy MonsterCombatDialog.
+- 2026-10-03 implementer-a/implementer-b: DONE, Phase 2 build. implementer-b corrected implementer-a's MonsterAttackViewModel to match plan.md's contract directly (file-ownership slip, flagged and resolved by routing the verdict back through implementer-a); cross-review APPROVED both ways.
+- 2026-10-03 tester-a/tester-b: DONE, 91 tests passing (map/hook/view); two follow-up rounds to fix typecheck casts and lint (unused imports) in tester-a's files.
+- 2026-10-03 preview-a: DONE, MonsterCombatDialog.preview.tsx registered.
+- 2026-10-03 preview-b: DONE, flagged 404s from fabricated .png sprite paths in fixtures as "non-blocking" — coordinator verified directly, found real monster sprites are .gif with a shared /sprites/death.gif, routed fix to implementer-a (fixtures owner), re-verified all 5 states visually after the fix.
+- 2026-10-03 implementer-b: DONE, deleted legacy MonsterCombatDialog.tsx and its characterization test.
+- 2026-10-03 architect-b: DONE, final review APPROVED. Committed 311ea59.
