@@ -14,7 +14,7 @@ Tier: L · Phases: 4
 - [x] checks: typecheck, lint, unit tests — pass (701/703 repo-wide; 2 failures in unrelated concurrent game-header-migration task's files)
 - [x] UI verified (ui-verify) — not applicable, no UI change
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 15563b6
 
 ## Phase 2: game-initializer split (monster-catalog, player-factory, map-generation, game-setup)
 - [ ] plan approved (architect-b)
@@ -49,3 +49,7 @@ Tier: L · Phases: 4
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
 - 2026-10-03 architect-a: DONE, plan drafted (4 phases: data layer, game-initializer split, game-logic+turn-progression, bot-logic split+docs)
+- 2026-10-03 architect-b: DONE, plan APPROVED
+- 2026-10-03 implementer-a, implementer-b: DONE, Phase 1 built, cross-reviewed, both APPROVED
+- 2026-10-03 architect-b: DONE, Phase 1 final review APPROVED (2 non-blocking findings: cosmetic import-line merge, stale doc references to deleted src/lib/card-data.ts outside this plan's scope)
+- 2026-10-03 Phase 1 committed: 15563b6
