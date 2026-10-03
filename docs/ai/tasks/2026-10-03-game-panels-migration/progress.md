@@ -14,7 +14,8 @@ Tier: M · Phases: 1
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 97a3562
+- not run: e2e/gameplay.spec.ts (no Java 21 installed locally, required for the Firestore emulator) — unit and view tests cover the migrated panels instead.
 
 ## Found bugs fixed
 - **PlayerInfo.map.ts:14 — Division by zero with double-zero vpGoal**: Legacy formula `(victoryPoints / vpGoal) * 100` with both === 0 yields NaN, which propagates through Math.min/max and breaks progress-bar width styling. Guard `if (vpGoal <= 0) return FULL_PROGRESS` returns 100 instead (the sensible safe default). Test case added: PlayerInfo.map.test.ts "handles vpGoal === 0 AND victoryPoints === 0 by returning 100 (found-bug fix)".
