@@ -31,12 +31,12 @@ Tier: M · Phases: 3
 - [x] committed: 311ea59
 
 ## Phase 3: Verification and docs
-- [ ] full checks: typecheck, lint, unit tests, build
-- [ ] no remaining references to the deleted legacy dialog files
-- [ ] browser smoke: both previews' states; game combat/monster-combat flow if reachable without Firebase credentials, otherwise e2e gameplay spec if the emulator and Java 21 are available, otherwise reported as not run
-- [ ] docs/README.md updated (src/modules/combat/ layout, GameDialogManager bullet)
-- [ ] final review (architect-b)
-- [ ] committed: <hash>
+- [x] full checks: typecheck, lint, unit tests, build
+- [x] no remaining references to the deleted legacy dialog files
+- [x] browser smoke: both previews' states; game combat/monster-combat flow if reachable without Firebase credentials, otherwise e2e gameplay spec if the emulator and Java 21 are available, otherwise reported as not run
+- [x] docs/README.md updated (src/modules/combat/ layout, GameDialogManager bullet)
+- [x] final review (architect-b)
+- [x] committed: a6de61d
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
@@ -57,3 +57,5 @@ Tier: M · Phases: 3
 - 2026-10-03 preview-b: DONE, flagged 404s from fabricated .png sprite paths in fixtures as "non-blocking" — coordinator verified directly, found real monster sprites are .gif with a shared /sprites/death.gif, routed fix to implementer-a (fixtures owner), re-verified all 5 states visually after the fix.
 - 2026-10-03 implementer-b: DONE, deleted legacy MonsterCombatDialog.tsx and its characterization test.
 - 2026-10-03 architect-b: DONE, final review APPROVED. Committed 311ea59.
+- 2026-10-03 coordinator: DONE, full repo typecheck/lint/test/build clean, grep sweep for stale references clean, fixed stale .claude/launch.json port (3000 → 9002) blocking browser verification, browser-smoke-tested both previews, updated docs/README.md.
+- 2026-10-03 architect-b: DONE, final review APPROVED across all 3 phases. Committed a6de61d.
