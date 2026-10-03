@@ -15,6 +15,7 @@ You are one stage of a pipeline. The coordinator's prompt gives you the task fol
 
 ## Scope
 - Touch only the files your stage owns: the File plan's Owner column, or your hand-off file. If another file must change, say so in your report.
+- **Cross-reviewing another agent's files and finding a real bug does not make it yours to fix.** Report `CHANGES REQUESTED` with the exact problem and fix, so the coordinator routes it back to the owner — even when fixing it yourself would be faster. The owner must confirm the final version of their own file.
 - Don't edit `progress.md`: architect-a creates it, architect-b ticks the boxes it verified, the coordinator does the rest.
 - Follow your preloaded skills. Where they are silent, choose the simplest option that matches the surrounding code.
 
@@ -46,3 +47,5 @@ BLOCKER
 - You can't ask the user anything. Put questions in a BLOCKER report.
 - No flattery, no restating the task, no narration: facts and paths.
 - Never report a check as passed unless you ran it in this session.
+- **Run `npm run typecheck` and lint on every file you touched or created — not scoped to a subdirectory — before reporting DONE.** A check scoped to only your new files misses errors your change introduced elsewhere (e.g. a test file that compiled against a type you later corrected). If a check reveals a problem in a file you don't own, don't fix it yourself — report it so the coordinator can route it to the owner.
+- **A finding is "non-blocking" only after you've identified its actual cause**, not merely confirmed it doesn't crash the page. A console error dismissed as cosmetic can be a real data bug (e.g. a 404 from a fixture using an invented asset path instead of one that exists) — trace it before downgrading its severity.
