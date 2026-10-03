@@ -16,7 +16,7 @@ Tier: M · Phases: 3
 - [x] UI verified (ui-verify) on the new preview
 - [x] legacy CombatDialog.tsx and its characterization test deleted
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 6788cdb
 
 ## Phase 2: MonsterCombatDialog
 - [x] plan approved (architect-b)
@@ -41,3 +41,12 @@ Tier: M · Phases: 3
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
 - 2026-10-03 architect-a: DONE, wrote plan.md (Status: DRAFT) and this progress.md.
+- 2026-10-03 architect-b: DONE, APPROVED plan.md.
+- 2026-10-03 tester-a: DONE, characterization test (20 tests) against legacy CombatDialog.
+- 2026-10-03 implementer-a/implementer-b: DONE, Phase 1 build; cross-review APPROVED both ways.
+- 2026-10-03 tester-a/tester-b: DONE, 83 tests passing (map/hook/view).
+- 2026-10-03 preview-a: DONE, CombatDialog.preview.tsx registered.
+- 2026-10-03 preview-b: BLOCKER then DONE — blocked on parallel game-rules-actions-migration task leaving `@/modules/game-rules` unresolved; unblocked once that task committed, retried and passed ui-verify on all 5 states (desktop + mobile).
+- 2026-10-03 coordinator: fixed 2 new typecheck errors and 5 lint errors in tester-b's CombatDialog.test.tsx (missing HTMLImageElement cast, unused imports/any, unused rerender) directly rather than another agent round-trip.
+- 2026-10-03 implementer-b: DONE, deleted legacy CombatDialog.tsx and its characterization test.
+- 2026-10-03 architect-b: DONE, final review APPROVED. Committed 6788cdb.
