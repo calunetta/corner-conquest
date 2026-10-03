@@ -16,7 +16,7 @@ Multiplayer island-conquest strategy game: 2–4 players or bots, armies, resour
 Verified at bootstrap; check `package.json` before relying on a version.
 - Next.js 15 App Router (`src/app`), React 18, TypeScript strict, alias `@/*` → `src/*`.
 - Tailwind CSS 3 + shadcn/ui (Radix) in `src/components/ui`. Theme tokens are CSS variables in `src/app/globals.css`; merge classes with `cn()` from `@/lib/utils`. Dark theme only.
-- Firebase Firestore client SDK via `@/lib/firebase`, configured by `NEXT_PUBLIC_FIREBASE_*` env vars. One Firestore document per match; the game rules are pure reducers in `src/lib/actions`.
+- Firebase Firestore client SDK via `@/lib/firebase`, configured by `NEXT_PUBLIC_FIREBASE_*` env vars. One Firestore document per match; the game rules are pure reducers in `src/modules/game-rules`.
 - Jest 30 + React Testing Library (jsdom). Playwright e2e in `e2e/`.
 - Not used: SCSS, Contentful. Genkit is installed but nothing calls it.
 
