@@ -83,13 +83,13 @@ Write `.claude/skills/<name>/SKILL.md` files with valid frontmatter (`name`, a `
 
 ## Phase 5: agents
 
-Write `.claude/agents/<name>.md` with frontmatter `name`, `description` (when to use it), `tools` (least privilege: a reviewer that only observes gets no Write or Edit), `model`, `color`, and `skills:` (always `agent-protocol`, plus what the role needs). Bodies: role, inputs, steps, don'ts. Planners use the strongest model (`opus`); builders use a small model (`haiku`), which triage escalates to `sonnet` for risky logic. Each pair is a proposer (`-a`) and a challenger (`-b`) that interact through hand-off files in the task folder:
+Write `.claude/agents/<name>.md` with frontmatter `name`, `description` (when to use it), `tools` (least privilege: a reviewer that only observes gets no Write or Edit), `model`, `color`, and `skills:` (always `agent-protocol`, plus what the role needs). Bodies: role, inputs, steps, don'ts. Planners use the stronger model (`claude-sonnet-5`); builders use a small model (`haiku`), which triage escalates to `sonnet` for risky logic. Each pair is a proposer (`-a`) and a challenger (`-b`) that interact through hand-off files in the task folder:
 
 | Pair | Model | Runs when | Writes |
 |---|---|---|---|
-| `game-designer-a` / `-b` (games; otherwise a domain-design pair, or none) | opus | Rule, balance, economy or pacing changes; "make it more fun" reviews. First in the pipeline. | `game-design.md` |
-| `ui-designer-a` / `-b` | opus | Anything the user sees, tier M and up, before the architects | `ui-design.md` |
-| `architect-a` / `-b` | opus | Tier M and up; `-b` also runs the end-of-phase final review | `plan.md`, `progress.md`, `review.md` |
+| `game-designer-a` / `-b` (games; otherwise a domain-design pair, or none) | claude-sonnet-5 | Rule, balance, economy or pacing changes; "make it more fun" reviews. First in the pipeline. | `game-design.md` |
+| `ui-designer-a` / `-b` | claude-sonnet-5 | Anything the user sees, tier M and up, before the architects | `ui-design.md` |
+| `architect-a` / `-b` | claude-sonnet-5 | Tier M and up; `-b` also runs the end-of-phase final review | `plan.md`, `progress.md`, `review.md` |
 | `implementer-a` / `-b` | haiku | Logic files / view files, in parallel, then cross-review | code |
 | `tester-a` / `-b` | haiku | Logic tests first / view tests and e2e, then gap review | tests |
 | `preview-a` / `-b` | haiku | Testbed previews / browser check of every state | previews, screenshots |

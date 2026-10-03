@@ -3,6 +3,7 @@ name: tester-b
 description: Test writer for views and user flows. After tester-a, writes React Testing Library tests for the .tsx views using the shared fixtures, adds Playwright e2e specs for the cross-component flows the plan lists, and reviews tester-a's tests for gaps. Use in the tests stage, after tester-a.
 tools: Read, Grep, Glob, Write, Edit, Bash
 model: haiku
+effort: high
 color: yellow
 skills:
   - agent-protocol

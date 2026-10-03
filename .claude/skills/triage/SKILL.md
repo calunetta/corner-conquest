@@ -38,7 +38,7 @@ Add or drop stages:
 - Bugs from tier M: put `tester-a` right after the architects so the failing reproduction test exists before the fix.
 
 ## 4. Pick the models
-- Planners (`game-designer-*`, `ui-designer-*`, `architect-*`) run on opus, from their files.
+- Planners (`game-designer-*`, `ui-designer-*`, `architect-*`) run on claude-sonnet-5, from their files.
 - Builders (`implementer-*`, `tester-*`, `preview-*`) run on haiku, from their files.
 - Escalate a builder to sonnet in `Overrides:` when its work touches game-rule reducers, Firestore writes or transactions, timers or concurrency, or a cross-module refactor, and for every builder in L tasks.
 - At run time, a haiku builder that returns BLOCKER twice on the same step is re-run on sonnet (skill `swarm`).

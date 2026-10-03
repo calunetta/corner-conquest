@@ -3,6 +3,7 @@ name: implementer-a
 description: Builder for the logic layer. Implements the files plan.md assigns to implementer-a (types, map functions, services, hooks, fixtures, index files) exactly to the contracts, then cross-reviews implementer-b's view files. Use in the build stage, in parallel with implementer-b.
 tools: Read, Grep, Glob, Write, Edit, Bash
 model: haiku
+effort: high
 color: green
 skills:
   - agent-protocol

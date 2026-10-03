@@ -36,7 +36,6 @@ Verified at bootstrap; check `package.json` before relying on a version.
 ## Where code goes
 - **New code: `src/modules/<domain>/`**, one folder per component: `Name.tsx` (view), `Name.hook.ts`, `Name.styles.ts`, `Name.map.ts`, `Name.types.ts`, tests and `Name.preview.tsx`. Details in skill `component-architecture`; ESLint enforces the import boundaries.
 - **Testbed: `src/testbed/`** plus the dev-only route `src/app/testbed/`.
-- **Legacy, frozen:** `src/features/`, `src/lib/`, `src/hooks/`, `src/components/icons.tsx`, `src/app/page.tsx`, `src/app/layout.tsx`. Read them for context. Edit them only to fix a bug, to wire a new module in with a minimal change, or in an explicit migration task. No opportunistic refactors.
 - **Vendored:** `src/components/ui/` (shadcn). Reuse it; add primitives with the shadcn CLI; don't fork them.
 - Paths drift. Confirm a path with Glob before citing it.
 
@@ -51,7 +50,7 @@ Verified at bootstrap; check `package.json` before relying on a version.
 
 ## Workflow
 - Every feature, component, bug fix or refactor starts with skill `triage` (`/triage <request>`). It sizes the task XS–XL and picks the agent pairs and their models.
-- Skill `swarm` runs the pipeline. Agents live in `.claude/agents/`: planners (`game-designer-*`, `ui-designer-*`, `architect-*`) run on opus; builders (`implementer-*`, `tester-*`, `preview-*`) run on haiku and are escalated to sonnet by triage when needed.
+- Skill `swarm` runs the pipeline. Agents live in `.claude/agents/`: planners (`game-designer-*`, `ui-designer-*`, `architect-*`) run on claude-sonnet-5; builders (`implementer-*`, `tester-*`, `preview-*`) run on haiku and are escalated to sonnet by triage when needed.
 - Each task has a record folder `docs/ai/tasks/<YYYY-MM-DD>-<slug>/` built from `docs/ai/templates/`. It is the handoff between agents and the trail for tracing bugs later. Commit it with the code.
 - Every sub-agent ends its final message with a line that contains only `DONE` or `BLOCKER`. Wait for that line before starting the next stage. On `BLOCKER`, stop and report to the user.
 

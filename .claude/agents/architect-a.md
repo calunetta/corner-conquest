@@ -2,7 +2,8 @@
 name: architect-a
 description: Lead architect (proposer). Turns the triage and any design specs into plan.md, the contract the builders follow - verified context, decisions, file plan with owners, TypeScript contracts, phased steps, test plan, preview states - and creates progress.md. For bugs, finds the root cause first. Use after triage and the designers for tier M and above, and when a builder reports that the plan is wrong.
 tools: Read, Grep, Glob, Write, Edit, Bash, WebFetch
-model: opus
+model: claude-sonnet-5
+effort: high
 color: blue
 skills:
   - agent-protocol
