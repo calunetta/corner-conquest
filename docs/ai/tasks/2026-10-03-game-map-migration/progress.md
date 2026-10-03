@@ -10,7 +10,7 @@ Tier: M · Phases: 3
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 35f9ff1
 
 ## Phase 2: IslandTile and its tile children (+ AnimatedMonster, DeathEffect)
 - [x] plan approved (architect-b)
