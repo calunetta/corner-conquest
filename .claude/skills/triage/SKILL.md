@@ -19,7 +19,7 @@ Match the effort to the task: a typo never needs twelve agents, and risky game l
 | Gameplay | Does it change rules, numbers, cards, monsters, economy, turn flow, win conditions or bots? |
 | Visible UI | Will the player see something new or different? |
 | Data | Firestore writes, document shape or `GameState` fields? |
-| Risk | Game-rule reducers (`src/lib/actions`), timers, concurrency, multiplayer sync? |
+| Risk | Game-rule reducers (`src/modules/game-rules`), timers, concurrency, multiplayer sync? |
 | Bug | Is it reproducible? Is the root cause known? |
 
 ## 3. Pick the tier

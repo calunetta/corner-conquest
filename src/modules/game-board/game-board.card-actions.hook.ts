@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import type { CardName } from '@/lib/types';
 import { CardName as CardNameEnum, GameAction } from '@/lib/types';
 import type { PendingAction } from '@/lib/types/dialogs';
-import { handleGameAction } from '@/lib/actions';
+import { handleGameAction } from '@/modules/game-rules';
 import type { CardActions, CardActionsArgs, CancelPayload, UseCardPayload } from './game-board.hook.types';
 
 export function useCardActions({

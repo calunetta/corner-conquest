@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { handlePlayerExit } from '@/lib/actions';
+import { handlePlayerExit } from '@/modules/game-rules';
 import { startGame } from '@/lib/game-initializer';
 import type { SessionHandlers, SessionHandlersArgs } from './game-board.hook.types';
 

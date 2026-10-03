@@ -1,8 +1,7 @@
 
 import type { GameState, Army, ResourceType } from './types';
 import { GameAction, AbilityName, CardName, IslandType, MAP_COLS, ResourceType as ResourceEnum } from './types';
-import { handleGameAction } from './actions';
-import { getPossibleMoves } from '@/modules/game-rules';
+import { getPossibleMoves, handleGameAction } from '@/modules/game-rules';
 import { db, doc, updateDoc, setDoc } from './firebase';
 
 function selectRandom<T>(array: T[]): T | null {

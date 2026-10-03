@@ -15,16 +15,15 @@ import { mockToast, buildPlayer, buildGameState, withTile, renderProvider } from
 
 const mockToastObj = { toast: mockToast };
 jest.mock('@/hooks/use-toast', () => ({ useToast: () => mockToastObj }));
-jest.mock('@/lib/actions', () => ({
+jest.mock('@/lib/game-initializer', () => ({ startGame: jest.fn((state) => state) }));
+jest.mock('@/modules/game-rules', () => ({
+  getPossibleMoves: jest.fn(() => []),
   handleGameAction: jest.fn(({ gameState }) => ({ state: gameState })),
   handlePlayerExit: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/lib/game-initializer', () => ({ startGame: jest.fn((state) => state) }));
-jest.mock('@/modules/game-rules', () => ({ getPossibleMoves: jest.fn(() => []) }));
 jest.mock('@/lib/turn-progression', () => ({ hasPlayerRemainingActions: jest.fn(() => true) }));
 
-const { handleGameAction } = require('@/lib/actions');
-const { handlePlayerExit } = require('@/lib/actions');
+const { handleGameAction, handlePlayerExit } = require('@/modules/game-rules');
 const { startGame } = require('@/lib/game-initializer');
 const { hasPlayerRemainingActions } = require('@/lib/turn-progression');
 

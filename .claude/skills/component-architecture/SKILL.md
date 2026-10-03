@@ -66,7 +66,7 @@ Create only the files a component needs. A static badge may be `.tsx`, `.styles.
 
 ## Wiring into legacy code
 - Import the module's public component in the legacy parent and render it. Keep the edit minimal and list it in `plan.md`'s File plan.
-- Never copy legacy logic into a module. Import it (types, `src/lib/actions` reducers) or migrate it.
+- Never copy legacy logic into a module. Import it (types, `@/modules/game-rules` reducers) or migrate it.
 
 ## Migrating a legacy component
 1. Characterization tests: capture today's behavior of the legacy component.

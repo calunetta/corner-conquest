@@ -6,7 +6,7 @@ import type { GameState, ActionHandlerResult, GameAction } from '@/lib/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
 import { takeBotTurn } from '@/lib/bot-logic';
-import { handleGameAction } from '@/lib/actions';
+import { handleGameAction } from '@/modules/game-rules';
 
 export function useGameEngine(gameId: string, playerId: string | null) {
   const [gameState, setInternalGameState] = useState<GameState | null>(null);

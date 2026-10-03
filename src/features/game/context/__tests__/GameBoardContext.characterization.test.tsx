@@ -10,12 +10,12 @@ import { GameAction, IslandType, PlayerColor, type GameState, type Player } from
 import { GameBoardProvider, useGameBoard } from '../GameBoardContext';
 
 jest.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: jest.fn() }) }));
-jest.mock('@/lib/actions', () => ({
+jest.mock('@/lib/game-initializer', () => ({ startGame: jest.fn((state) => state) }));
+jest.mock('@/modules/game-rules', () => ({
+  getPossibleMoves: jest.fn(() => []),
   handleGameAction: jest.fn(({ gameState }) => ({ state: gameState })),
   handlePlayerExit: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/lib/game-initializer', () => ({ startGame: jest.fn((state) => state) }));
-jest.mock('@/modules/game-rules', () => ({ getPossibleMoves: jest.fn(() => []) }));
 
 const GRID_COLS = 5;
 

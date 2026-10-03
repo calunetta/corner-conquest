@@ -16,14 +16,14 @@ Verified at bootstrap. The code wins over this table: re-check the source before
 | Victory point goal | 30 (lobby slider 10–100) | `src/lib/game-initializer.ts` (`defaultGameSettings`) |
 | VP for first discovery of an island | 1 | same |
 | Deploy an army | 6 wheat, +2 per army deployed | same (`initialDeployCost`, `deployCostIncrement`) |
-| Upgrade attack power | 6 iron | same (`upgradeCost`), `src/lib/actions/player.ts` |
-| Passive ability | 15 gems | same (`abilityCost`), `src/lib/actions/card.ts` |
-| Buy a card / hand limit | 10 gems / 7 cards | `src/lib/actions/card.ts`, `src/lib/types/actions.ts` |
-| Max armies / max attack power | 5 / 4 | `src/lib/actions/player.ts` |
-| Player dice | attack power + 1 (+2 with War Chief), at least 1 | `src/lib/actions/attack.ts` |
-| Monster dice | its level: Lancer 1, Bear 2, Ogre 3, Minotaur 4 | `src/lib/actions/attack.ts`, `src/lib/game-initializer.ts` |
-| Ties | player vs player: the defender wins; player vs monster: the monster wins | `src/lib/actions/attack.ts` |
-| Rewards | +5 VP for beating a player; 2 / 5 / 7 / 10 VP for monster levels 1–4 | `src/lib/actions/attack.ts` |
+| Upgrade attack power | 6 iron | same (`upgradeCost`), `src/modules/game-rules/player-actions.reducer.ts` |
+| Passive ability | 15 gems | same (`abilityCost`), `src/modules/game-rules/card-acquisition.reducer.ts` |
+| Buy a card / hand limit | 10 gems / 7 cards | `src/modules/game-rules/card-acquisition.reducer.ts`, `src/lib/types/actions.ts` |
+| Max armies / max attack power | 5 / 4 | `src/modules/game-rules/player-actions.reducer.ts` |
+| Player dice | attack power + 1 (+2 with War Chief), at least 1 | `src/modules/game-rules/combat-player-roll.reducer.ts`, `src/modules/game-rules/dice.ts` |
+| Monster dice | its level: Lancer 1, Bear 2, Ogre 3, Minotaur 4 | `src/modules/game-rules/combat-monster-roll.reducer.ts`, `src/lib/game-initializer.ts` |
+| Ties | player vs player: the defender wins; player vs monster: the monster wins | `src/modules/game-rules/combat-player-roll.reducer.ts`, `src/modules/game-rules/combat-monster-roll.reducer.ts` |
+| Rewards | +5 VP for beating a player; 2 / 5 / 7 / 10 VP for monster levels 1–4 | `src/modules/game-rules/combat-player-resolve.reducer.ts`, `src/modules/game-rules/combat-monster-resolve.reducer.ts` |
 | Turn timer | 120 s | `src/features/game/hooks/useTurnTimer.ts` |
 | Cards | 13 kinds in a weighted deck | `src/lib/card-data.ts` |
 

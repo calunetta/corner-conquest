@@ -30,7 +30,7 @@ Understanding the project's structure is key to making changes efficiently and c
 
 - `docs/ai/`: AI workflow guide, task record templates, and one folder per task under `docs/ai/tasks/` (see `docs/ai/README.md`).
 - `e2e/`: Playwright End-to-End browser test suites (`auth-and-lobby.spec.ts`, `gameplay.spec.ts`, `map-viewport.spec.ts`, `tutorial-beacons.spec.ts`).
-- `src/modules/`: New code, organised by domain (created with the first module).
+- `src/modules/`: New code, organised by domain (created with the first module). `game-board/` holds the `GameBoardContext`/provider implementation (§3.3); `game-rules/` holds the pure game-rule reducers that compute the next `GameState` for each `GameAction` (`*.reducer.ts`), the root dispatcher (`game-rules.reducer.ts`), and the one Firestore-touching exception, `services/player-exit.service.ts` (§6.11).
 - `src/testbed/` and `src/app/testbed/`: Dev-only component testbed at `/testbed`. `registry.ts` lists every preview (`*.preview.tsx`); previews of legacy components live in `src/testbed/legacy/`. Hidden in production builds unless `NEXT_PUBLIC_ENABLE_TESTBED=true` at build time.
 - `src/app/`: Core application, pages, and layout.
 - `src/components/`: Reusable, generic UI components (mostly from ShadCN).
@@ -66,8 +66,7 @@ Understanding the project's structure is key to making changes efficiently and c
     > **Visual Parity Rule:** The Login page (`src/app/page.tsx`) must always share the exact same aesthetic theme, background (`<LobbyBackground />`), glassmorphism, and color palette as the Game Lobby. Any updates to the Lobby's visual presentation must be mirrored in the Login view.
 - `src/hooks/`: Custom React hooks (`useGameEngine`, `usePlayer`, `useIsMobile`, `useToast`).
 - `src/lib/`: Core application logic, type definitions, and Firebase configuration.
-  - `__tests__/`: Comprehensive Jest test suites covering all game mechanics (movement, combat, cards, turn progression, player actions, bot AI).
-  - `actions/`: **The "brain" of the game.** Pure reducer functions that calculate next `GameState` given an action.
+  - `__tests__/`: Jest test suites for what's left at this legacy path (`bot-logic.test.ts`, `firebase.test.ts`, `game-initializer.test.ts`, a trimmed `turn-progression.test.ts`). The game-rule reducers themselves — and their tests — moved to `src/modules/game-rules/` (see below).
   - `types/`: **Domain-specific Modular Types** with central barrel export (`index.ts`):
     - `actions.ts`: `GameAction`, `MAP_ROWS`, `MAP_COLS`, `HAND_LIMIT`
     - `cards.ts`: `CardName`, `AbilityName`, `ResourceType`, `PassiveAbilities`
@@ -139,7 +138,7 @@ The player's session (their identity) is managed through a combination of browse
 1.  **Local Intent:** A player clicks on an army. `handleTileClick` dispatches `SET_SELECTED_ARMY` in `GameBoardContext`. The UI re-renders instantly to show the selection. **No Firebase write occurs.**
 2.  **Local Validation:** The player clicks a valid destination tile. `handleTileClick` verifies this is a possible move against `settings.gridSize.cols` and `settings.gridSize.rows`.
 3.  **Shared Action Dispatch:** Now that the action is confirmed, `handleTileClick` calls `onAction(GameAction.Move, ...)`. This is the crossover from local to shared.
-4.  **Shared State Update:** The `onAction` handler calls the `setGameState` function, which executes the `handleMoveAction` reducer from `lib/actions`. This pure function calculates the new army position dynamically and returns a brand new `GameState` object.
+4.  **Shared State Update:** The `onAction` handler calls the `setGameState` function, which executes the `handleMoveAction` reducer from `@/modules/game-rules`. This pure function calculates the new army position dynamically and returns a brand new `GameState` object.
 5.  **Synchronization:** `setGameState` writes the new `GameState` object to Firestore. Firestore then pushes this update to all connected players, who see the army move on their screens.
 
 This architecture ensures the UI is fast and responsive for local interactions, while maintaining a single, consistent source of truth for the game itself.
@@ -426,7 +425,7 @@ The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete,
 - **Mandatory Teardown Hook (`safeCleanupGame`)**:
   - Every Playwright test suite (`e2e/*.spec.ts`) **MUST** register `safeCleanupGame` inside `test.afterEach(async ({ page }) => { await safeCleanupGame(page); });`.
   - **Guaranteed Cleanup Regardless of Test Outcome:** Even if an assertion throws an error or times out midway through test execution, `test.afterEach` is guaranteed to execute, dismissing any open modals and clicking the GameBoard exit button to dismantle the match.
-- **Match Dismantling Rules (`handlePlayerExit` in `src/lib/actions/player.ts`)**:
+- **Match Dismantling Rules (`handlePlayerExit` in `src/modules/game-rules/services/player-exit.service.ts`)**:
   - **Host Departure During Active Match:** When a host leaves a game in progress (`status === 'playing'`), the Firestore room document is deleted (`transaction.delete(gameDocRef)`), preventing orphaned games.
   - **No Human Players Remaining:** If the last human player exits a match (leaving only AI bots), the game room is deleted immediately.
   - **Single/Solo Player Departure:** If total remaining players are `<= 1` when the host leaves, the game document is dismantled from Firestore.

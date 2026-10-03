@@ -21,3 +21,11 @@ Entry format: `- **<what went wrong>** → <the rule that prevents it>. (source:
 ## State with two sources
 
 - **A field existed on both local derived state and server-synced state** (a player's `name`, on `localPlayer` vs `localPlayerFromServer`) **and an extraction risked silently reading the wrong one.** → When a plan splits a handler across files, state explicitly which source each duplicated field must read from, and put it on the gate-review checklist. (source: docs/ai/tasks/2026-10-02-gameboardcontext-migration, 2026-10-03)
+
+## Test assertions
+
+- **A new characterization test for "current player leaves the match" asserted only that `currentPlayerIndex` was in range and `turn` increased, which hid a real turn-order bug**: `handlePlayerExit` sets `currentPlayerIndex = playerIndex % players.length` (already the next player) and then calls `handleEndTurn`, which advances again, so the player who should go next is skipped (3 players, seat 1 leaves on their turn: turn goes to Host, P3 is skipped). The legacy code behaves identically, so the migration kept it. → In characterization or port tests, assert the exact observable outcome (who is current), not a range; a range assertion passes for any value and cannot catch wrong rotation. (source: docs/ai/tasks/2026-10-03-game-rules-actions-migration, 2026-10-03)
+
+## Refactors
+
+- **A directory-move plan inventoried imports and the main README but not skills, agent prompts, scripts or comments that cite the old path, which left agent-facing instructions pointing at a deleted folder** → Before approving a move or delete plan, run `grep -rn "<old/path>"` over the whole repo (excluding `node_modules` and task records) and list every hit in the File plan as fix or leave. (source: docs/ai/tasks/2026-10-03-game-rules-actions-migration, 2026-10-03)

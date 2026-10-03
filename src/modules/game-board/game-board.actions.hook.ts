@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { GameAction } from '@/lib/types';
-import { handleGameAction } from '@/lib/actions';
+import { handleGameAction } from '@/modules/game-rules';
 import type { GameBoardActionsArgs, OnAction } from './game-board.hook.types';
 
 export function useGameBoardActions({

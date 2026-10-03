@@ -3,12 +3,12 @@
  *
  * Jest mocks used by this kit (declare in each test file):
  *   jest.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: mockToast }) }));
- *   jest.mock('@/lib/actions', () => ({
+ *   jest.mock('@/lib/game-initializer', () => ({ startGame: jest.fn((state) => state) }));
+ *   jest.mock('@/modules/game-rules', () => ({
+ *     getPossibleMoves: jest.fn(() => []),
  *     handleGameAction: jest.fn(({ gameState }) => ({ state: gameState })),
  *     handlePlayerExit: jest.fn().mockResolvedValue(undefined),
  *   }));
- *   jest.mock('@/lib/game-initializer', () => ({ startGame: jest.fn((state) => state) }));
- *   jest.mock('@/modules/game-rules', () => ({ getPossibleMoves: jest.fn(() => []) }));
  *   jest.mock('@/lib/turn-progression', () => ({ hasPlayerRemainingActions: jest.fn(() => true) }));
  */
 import React, { useRef } from 'react';

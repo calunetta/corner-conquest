@@ -12,7 +12,7 @@ description: How KISS, DRY and SOLID apply to React and TypeScript in this repo,
 - If a solution needs a diagram to be understood, look for a simpler one first.
 
 ## DRY: one source of truth per piece of knowledge
-- Search before writing: Grep for the name, the constant, the logic. Check `src/components/ui/`, `@/lib/utils`, `@/lib/types`, `src/lib/actions/`, each `src/modules/*/index.ts` and `src/modules/shared/`.
+- Search before writing: Grep for the name, the constant, the logic. Check `src/components/ui/`, `@/lib/utils`, `@/lib/types`, `src/modules/game-rules/`, each `src/modules/*/index.ts` and `src/modules/shared/`.
 - Rules, numbers and types are never duplicated. Import the constant or the reducer; if it isn't exported, export it with a minimal legacy edit instead of copying it.
 - Similar-looking code is not always duplication. Extract when the copies must change together, or at the third copy.
 - Tests and previews share fixtures (`Name.fixtures.ts`).
