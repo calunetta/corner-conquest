@@ -14,16 +14,16 @@ Tier: L · Phases: 5
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 1cb8ac3
 
 ## Phase 2: cards domain, batch 2 — SabotageDialog, WealthyDialog, StealResourceDialog; shared/player-sprite
-- [ ] plan approved (architect-b)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-b)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
+- [x] plan approved (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-b)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify)
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 3: combat domain, batch 1 — ArmySelectionDialog, AttackSelectionDialog, MonsterSelectionDialog
@@ -72,3 +72,7 @@ Tier: L · Phases: 5
 2026-10-03 implementer-b: DONE, deleted 4 legacy .tsx files
 2026-10-03 tester-a: DONE, deleted 4 characterization test files
 2026-10-03 architect-b: APPROVED (final review, second pass)
+2026-10-03 architect-b: CHANGES REQUESTED (Phase 2 final review), legacy SabotageDialog/WealthyDialog/StealResourceDialog + characterization tests + ResourceDialogs.test.tsx not deleted
+2026-10-03 implementer-b: DONE, deleted 3 legacy .tsx files
+2026-10-03 tester-a: DONE, confirmed ported assertions, deleted 4 legacy test files (__tests__/ now empty)
+2026-10-03 architect-b: APPROVED (Phase 2 final review, second pass)

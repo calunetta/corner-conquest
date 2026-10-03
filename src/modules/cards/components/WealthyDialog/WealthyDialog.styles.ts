@@ -1,0 +1,20 @@
+export const styles = {
+  content: 'bg-background/95 backdrop-blur-2xl border border-white/15 shadow-[0_24px_72px_rgba(0,0,0,0.85)] max-w-md overflow-hidden',
+  header: 'pb-2 border-b border-white/10',
+  headerRow: 'flex items-center gap-2',
+  iconWrap: 'h-9 w-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 overflow-hidden',
+  iconImage: 'object-contain',
+  title: 'text-xl font-bold',
+  description: 'text-xs text-muted-foreground',
+  grid: 'grid grid-cols-3 gap-3 py-4',
+  optionButton:
+    'group flex flex-col items-center justify-center p-3.5 rounded-xl border border-white/10 bg-black/40 hover:border-amber-400 hover:bg-amber-500/15 hover:scale-105 transition-all duration-200',
+  spriteWrap: 'relative w-12 h-12 mb-1 flex items-center justify-center drop-shadow',
+  sprite: 'h-full w-full object-contain group-hover:scale-110 transition-transform',
+  resourceRow: 'flex items-center gap-1',
+  resourceIcon: 'w-3.5 h-3.5',
+  resourceName: 'text-xs font-bold capitalize text-foreground',
+  amount: 'text-xs font-black font-mono text-amber-400 mt-0.5',
+  footer: 'pt-2 border-t border-white/10',
+  closeButton: 'border-white/10 text-xs',
+} as const;

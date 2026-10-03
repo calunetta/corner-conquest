@@ -27,3 +27,60 @@ VERDICT: APPROVED
 
 ## progress.md
 - Phase 1's boxes (plan approved, implementation, tests, previews, checks, UI verified) are confirmed by this review's checks. "final review (architect-b)" can now be ticked by the coordinator; "committed" is the coordinator's to fill in once Phase 1 is committed.
+
+---
+
+# Final review: Migrate the remaining 13 game dialogs into src/modules, phase 2/5
+
+VERDICT: APPROVED (second pass, after implementer-b deleted the 3 legacy .tsx files and tester-a deleted all 4 legacy test files)
+
+## Checks run (second pass)
+- `ls src/features/game/dialogs/`: no longer lists `SabotageDialog.tsx`, `WealthyDialog.tsx`, `StealResourceDialog.tsx`; `ls src/features/game/dialogs/__tests__/` is empty. `git status --porcelain -uall -- src/features/game/dialogs/` shows `D` for all 4 files (3 `.tsx` + `ResourceDialogs.test.tsx`).
+- `grep -rn "dialogs/SabotageDialog\|dialogs/WealthyDialog\|dialogs/StealResourceDialog" src/`: no matches — nothing in the tree still references the deleted legacy paths.
+- `npm run typecheck`: errors confined to `src/modules/map/**` (`IslandTile.map.test.ts`, `TileBoats.hook.test.ts`, `TileBoats.map.test.ts`), sibling `game-map-migration` task; none in `src/modules/cards`, `src/modules/shared`, or `src/features/game/**`.
+- `npm run lint`: remaining error is in `src/modules/game-rules/player-join.reducer.test.ts`, sibling `game-rules-core-migration`-adjacent file, not in this phase's scope.
+- `npx jest src/modules/cards src/modules/shared src/features/game/dialogs/__tests__ src/features/game/components/GameDialogManager`: `Test Suites: 25 passed, 25 total` / `Tests: 142 passed, 142 total` (down from 29/154 in the first pass, matching removal of the 4 legacy test suites).
+- Confirmed the 2 ported `ResourceDialogs.test.tsx` cases are covered, with more rigor, in the new module tests: `WealthyDialog.test.tsx` ("renders all 3 resources... with their testids", "calls onSelectResource with the clicked resource") and `StealResourceDialog.test.tsx` ("starts on the player-selection step...", "calls onSteal with the selected player id and resource when confirmed") — same assertions (testids, resource names, callback args) as the deleted legacy cases, not weakened.
+
+## Findings (second pass)
+All three blocking findings from the first pass are resolved. No new findings.
+
+## Earlier findings (first pass, resolved)
+VERDICT at first pass: CHANGES REQUESTED
+
+## Checks run
+- `npm run typecheck`: errors present, all confined to `src/modules/map/**` (sibling `game-map-migration` task: `IslandTile.map.test.ts`, `TileBoats.hook.test.ts`, `TileBoats.map.test.ts`, `TileOccupants.hook.test.ts`, `TileResources.hook.test.ts`), none in `src/modules/cards/**`, `src/modules/shared/**`, or `GameDialogManager.tsx` — matches the coordinator's report for this phase's scope.
+- `npm run lint`: 10 errors, all in `src/modules/game-rules/player-join.reducer.ts` and `src/modules/map/components/**` (sibling tasks), none in this phase's files.
+- `npx jest src/modules/cards src/modules/shared src/features/game/dialogs/__tests__ src/features/game/components/GameDialogManager`: `Test Suites: 29 passed, 29 total` / `Tests: 154 passed, 154 total` — this phase's scope is green, including the still-present legacy characterization tests.
+- `npm test` (full repo, this session): `Test Suites: 1 failed, 121 passed, 122 total` / `Tests: 1201 passed, 1201 total` — one failing suite, `src/modules/map/components/IslandTile/IslandTile.map.test.ts` (`PlayerColor` used as a value where the fixture expects a type shape; a `TS2352`-class issue, same family as the typecheck errors above). This differs from the coordinator's reported "122/122 suites, 1224/1224 tests" — the sibling `game-map-migration` task's working tree has moved since that check and now has a real failing suite. **Out of this phase's scope** (file plan touches only `cards`, `shared`, `GameDialogManager.tsx`, `testbed`), but flagging it since it contradicts the checks quoted to me; it blocks `game-map-migration`'s own final review, not this one.
+
+## Plan adherence
+- `src/modules/shared/player-sprite.ts` (+ `.test.ts`, `index.ts`): matches the Contract exactly — `toPlayerIdleSprite(color)` mirrors `PLAYER_DATA[color]?.sprite.idle || '/sprites/blue_idle.gif'` (`src/modules/shared/player-sprite.ts:11-13`). Met.
+- `SabotageDialog`, `WealthyDialog`, `StealResourceDialog`: each has its full File-plan file set; spot-checked `SabotageDialog.tsx`/`.map.ts` against the legacy file (`src/features/game/dialogs/SabotageDialog.tsx`) — markup, classes (moved to `.styles.ts`), and sprite fallback are pixel-for-pixel equivalent, now using `toPlayerIdleSprite` from `@/modules/shared` per Decisions. Met.
+- `StealResourceDialog` split into shell + `PlayerSelectionStep.tsx` + `ResourceSelectionStep.tsx`, all under the 150-line cap (largest is 148 lines, `StealResourceDialog.preview.tsx`). Met.
+- `GameDialogManager.tsx` diff: only the import block changed, now pulling `SabotageDialog`, `WealthyDialog`, `StealResourceDialog` from `@/modules/cards` alongside the Phase-1 imports; no other line changed. Met.
+- `src/testbed/legacy/SabotageDialog.preview.tsx` / `.preview.test.tsx`: deleted, replaced by the module preview registered in `src/testbed/registry.ts`. Met.
+- **Legacy deletion: NOT met — same gap as Phase 1's first pass, explicitly called out to watch for.**
+  - `src/features/game/dialogs/{SabotageDialog,WealthyDialog,StealResourceDialog}.tsx` all still exist (`ls src/features/game/dialogs/` lists all three).
+  - `src/features/game/dialogs/__tests__/{SabotageDialog,WealthyDialog,StealResourceDialog}.characterization.test.tsx` still exist; plan.md's File plan marks each "new (deleted end of phase)" (plan.md:130,142,152).
+  - `src/features/game/dialogs/__tests__/ResourceDialogs.test.tsx` still exists and still imports the legacy `WealthyDialog`/`StealResourceDialog` directly (`../WealthyDialog`, `../StealResourceDialog`); plan.md's File plan calls for it to be `deleted` this phase, "All 3 of its subjects now migrated and ported" (plan.md:165).
+  - Net effect: `GameDialogManager.tsx` now renders the new module components, but the legacy files are dead code sitting unused in the tree, and a test file still directly exercises the legacy implementation instead of the module one — exactly the pattern Phase 1 was corrected for.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | `src/features/game/dialogs/SabotageDialog.tsx`, `WealthyDialog.tsx`, `StealResourceDialog.tsx` | Legacy files not deleted after their module replacements were verified working (per plan.md File plan, "deleted — End of phase"). | implementer-b | Yes |
+| 2 | `src/features/game/dialogs/__tests__/SabotageDialog.characterization.test.tsx`, `WealthyDialog.characterization.test.tsx`, `StealResourceDialog.characterization.test.tsx` | Characterization tests not deleted once their assertions were ported (plan.md marks each "deleted end of phase"). | tester-a | Yes |
+| 3 | `src/features/game/dialogs/__tests__/ResourceDialogs.test.tsx` | Not deleted; still imports and tests the legacy `WealthyDialog`/`StealResourceDialog` directly instead of the module components. plan.md File plan: "deleted — All 3 of its subjects now migrated and ported." | tester-a | Yes |
+| 4 | (repo-wide, sibling task) `src/modules/map/components/IslandTile/IslandTile.map.test.ts` | `npm test` now reports this suite failing (`PlayerColor` value/type mismatch), contradicting the coordinator's quoted "122/122 suites, 1224/1224 tests." Not in this phase's file plan — belongs to `game-map-migration`. | game-map-migration task | No (out of scope here; report to that task's coordinator) |
+
+## Docs
+- `docs/README.md`: not expected this phase (Phase 5 owns it per the File plan) — not reviewed here.
+
+## progress.md
+- Not ticking any Phase 2 boxes. "final review (architect-b)" stays unticked until the legacy files, characterization tests, and `ResourceDialogs.test.tsx` are deleted and re-verified (typecheck/lint/test scoped to this phase, plus a `grep` confirming no remaining references to the three legacy dialog paths).
+
+## Required fix before re-review
+1. implementer-b: delete `src/features/game/dialogs/{SabotageDialog,WealthyDialog,StealResourceDialog}.tsx`.
+2. tester-a: delete the 3 new characterization test files and `ResourceDialogs.test.tsx` (confirm its 2 remaining cases — `WealthyDialog`, `StealResourceDialog` — are already ported into `src/modules/cards/components/{WealthyDialog,StealResourceDialog}/*.test.tsx`, per plan.md's Decisions; both already have `.test.tsx` files in the diff, so this should just be a deletion, not new porting work).
+3. Re-run `npm run typecheck`, `npm run lint`, and `npx jest src/modules/cards src/modules/shared src/features/game/dialogs/__tests__ src/features/game/components/GameDialogManager` scoped to this phase, plus `grep -rn "dialogs/SabotageDialog\|dialogs/WealthyDialog\|dialogs/StealResourceDialog" src/` to confirm zero remaining references.
