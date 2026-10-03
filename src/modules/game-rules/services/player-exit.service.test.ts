@@ -1,5 +1,5 @@
 import { PlayerColor } from '@/lib/types';
-import type { GameState } from '@/lib/types';
+import type { GameState, Monster } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
 import { addPlayerToGame } from '@/lib/game-logic';
 
@@ -337,6 +337,58 @@ describe('handlePlayerExit', () => {
 
       const [, writtenState] = transaction.set.mock.calls[0] as [unknown, GameState];
       expect(writtenState.combatState).toMatchObject({ attackerId: 0, defenderId: 1 });
+    });
+  });
+
+  describe('monsterCombatState handling', () => {
+    const monsterCombat = (attackerId: number) => ({
+      attackerId,
+      attackerPosition: { x: 0, y: 0 },
+      monster: {
+        name: 'Goblin' as Monster['name'],
+        level: 1,
+        sprite: { idle: '', attack: '', death: '' },
+      },
+      attackerRolls: [],
+      monsterRolls: [],
+      winnerId: null,
+      phase: 'rolling' as const,
+    });
+
+    it('clears monsterCombatState when the exiting player (seat 1) is the attacker', async () => {
+      let game = buildThreePlayerGame();
+      game = startGame(game, 'Host');
+      game.monsterCombatState = monsterCombat(1);
+      const transaction = stubTransaction(game);
+
+      await handlePlayerExit('game_test', 'p2');
+
+      const [, writtenState] = transaction.set.mock.calls[0] as [unknown, GameState];
+      expect(writtenState.monsterCombatState).toBeNull();
+    });
+
+    it('decrements attackerId above the exiting seat when it is not the exiting player', async () => {
+      let game = buildThreePlayerGame();
+      game = startGame(game, 'Host');
+      game.monsterCombatState = monsterCombat(2); // Player 3 fights a monster; Player 2 (seat 1) leaves
+      const transaction = stubTransaction(game);
+
+      await handlePlayerExit('game_test', 'p2');
+
+      const [, writtenState] = transaction.set.mock.calls[0] as [unknown, GameState];
+      expect(writtenState.monsterCombatState).toMatchObject({ attackerId: 1 });
+    });
+
+    it('leaves attackerId at or below the exiting seat untouched (boundary: seat 0 stays)', async () => {
+      let game = buildThreePlayerGame();
+      game = startGame(game, 'Host');
+      game.monsterCombatState = monsterCombat(0); // Host fights a monster; Player 2 (seat 1) leaves
+      const transaction = stubTransaction(game);
+
+      await handlePlayerExit('game_test', 'p2');
+
+      const [, writtenState] = transaction.set.mock.calls[0] as [unknown, GameState];
+      expect(writtenState.monsterCombatState).toMatchObject({ attackerId: 0 });
     });
   });
 

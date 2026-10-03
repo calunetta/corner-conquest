@@ -81,6 +81,15 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
         }
       }
 
+      // Update references in monster combat state
+      if (currentState.monsterCombatState) {
+        if (currentState.monsterCombatState.attackerId === playerIndex) {
+          currentState.monsterCombatState = null;
+        } else if (currentState.monsterCombatState.attackerId > playerIndex) {
+          currentState.monsterCombatState.attackerId--;
+        }
+      }
+
       // Adjust currentPlayerIndex
       if (isCurrentPlayerExiting) {
         // After the splice, the seat that was next now sits at `playerIndex`. handleEndTurn advances by one,
