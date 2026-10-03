@@ -30,18 +30,18 @@ Understanding the project's structure is key to making changes efficiently and c
 
 - `docs/ai/`: AI workflow guide, task record templates, and one folder per task under `docs/ai/tasks/` (see `docs/ai/README.md`).
 - `e2e/`: Playwright End-to-End browser test suites (`auth-and-lobby.spec.ts`, `gameplay.spec.ts`, `map-viewport.spec.ts`, `tutorial-beacons.spec.ts`).
-- `src/modules/`: New code, organised by domain (created with the first module). `game-board/` holds the `GameBoardContext`/provider implementation (§3.3); `game-rules/` holds the pure game-rule reducers that compute the next `GameState` for each `GameAction` (`*.reducer.ts`), the root dispatcher (`game-rules.reducer.ts`), and the one Firestore-touching exception, `services/player-exit.service.ts` (§6.11); `combat/components/` holds `CombatDialog` and `MonsterCombatDialog`, each split into view/hook/map/styles/types/fixtures per `component-architecture`, migrated from `src/features/game/dialogs/` — see `docs/ai/tasks/2026-10-03-migrate-dialog-components/`.
+- `src/modules/`: New code, organised by domain (created with the first module). `game-board/` holds the `GameBoardContext`/provider implementation (§3.3); `game-rules/` holds the pure game-rule reducers that compute the next `GameState` for each `GameAction` (`*.reducer.ts`), the root dispatcher (`game-rules.reducer.ts`), and the one Firestore-touching exception, `services/player-exit.service.ts` (§6.11); `combat/components/` holds `CombatDialog` and `MonsterCombatDialog`, each split into view/hook/map/styles/types/fixtures per `component-architecture`, migrated from `src/features/game/dialogs/` — see `docs/ai/tasks/2026-10-03-migrate-dialog-components/`; `hud/components/` holds `GameLog`, `PlayerInfo`, and `ActionsPanel`, each migrated per `component-architecture` with sub-components extracted for line-count compliance (`PlayerInfoStats.tsx`, `BuffIcons.tsx`, `ActionButton.tsx`, `ActionsPanel.disabledReasons.ts`).
 - `src/testbed/` and `src/app/testbed/`: Dev-only component testbed at `/testbed`. `registry.ts` lists every preview (`*.preview.tsx`); previews of legacy components live in `src/testbed/legacy/`. Hidden in production builds unless `NEXT_PUBLIC_ENABLE_TESTBED=true` at build time.
 - `src/app/`: Core application, pages, and layout.
 - `src/components/`: Reusable, generic UI components (mostly from ShadCN).
 - `src/features/`: Contains domain-specific components and logic structured according to the **SOLID paradigm** (Single Responsibility Principle):
   - `game/`: All components, dialogs, hooks, context, and panels related to the active game board.
     - `context/`:
-      - `GameBoardContext.tsx`: a thin re-export of `src/modules/game-board/` under the original names, kept so the 13 legacy consumers (`GameBoard.tsx`, `GameDialogManager.tsx`, `ActionsPanel.tsx`, other panels and map components) need no changes. The actual UI-state types, pure `gameBoardReducer`, `GameBoardProvider`, and `useGameBoard()` all live in `src/modules/game-board/`, which composes the provider's effects and handlers out of focused hooks (`game-board.state.hook.ts`, `.actions.hook.ts`, `.card-actions.hook.ts`, `.local-actions.hook.ts`, `.tile-click.hook.ts`, `.session.hook.ts`) assembled by `game-board.hook.ts` — see `docs/ai/tasks/2026-10-02-gameboardcontext-migration/`.
+      - `GameBoardContext.tsx`: a thin re-export of `src/modules/game-board/` under the original names, kept so the legacy consumers (`GameBoard.tsx`, `GameDialogManager.tsx`, map components, and other panels) need no changes. The actual UI-state types, pure `gameBoardReducer`, `GameBoardProvider`, and `useGameBoard()` all live in `src/modules/game-board/`, which composes the provider's effects and handlers out of focused hooks (`game-board.state.hook.ts`, `.actions.hook.ts`, `.card-actions.hook.ts`, `.local-actions.hook.ts`, `.tile-click.hook.ts`, `.session.hook.ts`) assembled by `game-board.hook.ts` — see `docs/ai/tasks/2026-10-02-gameboardcontext-migration/`.
     - `components/`:
       - `GameBoard.tsx`: High-level layout orchestrator (<80 lines) composing atomic subcomponents with `<GameBoardProvider>`.
       - `GameBoardHeader.tsx`: Navigation, match status, VP goal, and start game controls with **0 props**.
-      - `PlayerInfoBar.tsx`: Collapsible player cards list, goal badge, and tutorial beacon with **0 props**.
+      - `PlayerInfoBar.tsx`: Collapsible player cards list, goal badge, and tutorial beacon with **0 props**; imports `PlayerInfo` from `@/modules/hud`.
       - `GameStatusBadge.tsx`: Turn indicator and player queue badge with **0 props**.
       - `GameDialogManager.tsx`: Dedicated container for mounting all 15+ modal dialogs with **zero prop-drilling**. Imports `CombatDialog` and `MonsterCombatDialog` from `src/modules/combat`; the other 13 dialogs still live under `src/features/game/dialogs/`. It stays at this legacy path itself — it renders those legacy dialogs directly, which `src/modules/**` is not allowed to import (see `component-architecture`'s import boundaries).
       - `MapGrid.tsx`: Lightweight terrain board orchestrator (<70 lines, **0 props**) with pan and pinch-to-zoom support.
@@ -53,10 +53,6 @@ Understanding the project's structure is key to making changes efficiently and c
       - `TileBoats.tsx`: 4-corner non-overlapping boat docking and idle collectors with **1 prop (`{ island }`)**.
       - `AnimatedMonster.tsx`: Monster sprite animation and interval tracking.
       - `TileOccupants.tsx`: Fog-of-war aware army sprites and death animations with **1 prop (`{ island }`)**.
-    - `panels/`:
-      - `ActionsPanel.tsx`: Action buttons, shop triggers, and turn countdown timer with **0 props**.
-      - `GameLog.tsx`: Reverse-chronological match action log with **0 props**.
-      - `PlayerInfo.tsx`: Individual player HUD card.
     - `hooks/`:
       - `useMapPanZoom.ts`: Pure pan, pinch-to-zoom, mouse wheel zoom, and drag handler hook.
       - `useTurnTimer.ts`: Turn countdown timer, interval tracking, and auto-timeout dispatch.
@@ -126,7 +122,7 @@ The player's session (their identity) is managed through a combination of browse
 -   **Definition Files:** `src/modules/game-board/` holds the real implementation — `game-board.types.ts` (state and action types), `game-board.reducer.ts` (the pure `gameBoardReducer`), `game-board.map.ts` (pure helpers like `hasActiveDialogOrPendingAction`), `game-board.provider.tsx` (the `GameBoardProvider`), and the hook files that make up the provider's behavior: `game-board.state.hook.ts`, `game-board.actions.hook.ts`, `game-board.card-actions.hook.ts`, `game-board.local-actions.hook.ts`, `game-board.tile-click.hook.ts`, `game-board.session.hook.ts`, composed by `game-board.hook.ts`. `src/features/game/context/GameBoardContext.tsx` is a thin re-export of all of it under the original names, for backward compatibility with legacy consumers.
 -   **What It Is:** Local UI state refers to temporary interaction data for a single player (selected armies, valid movement indicators, pending multi-step card effects like teleport/scout, and modal dialog open/closed states).
 -   **Architecture:** Managed via a pure `gameBoardReducer` and exposed through `GameBoardProvider` and the `useGameBoard()` hook. Each hook owns one responsibility (state, dispatching shared actions, card-specific multi-step flows, local-only UI actions, tile clicks, session/turn handling); `game-board.hook.ts` calls them in a fixed order and assembles the single `contextValue` the provider exposes.
--   **Zero Prop-Drilling:** Components such as `GameDialogManager`, `GameBoardHeader`, and `ActionsPanel` consume `useGameBoard()` directly, eliminating massive prop interfaces and state fragmentation.
+-   **Zero Prop-Drilling:** Components such as `GameDialogManager`, `GameBoardHeader`, and (mostly) `ActionsPanel` consume `useGameBoard()` directly, eliminating massive prop interfaces and state fragmentation. (`ActionsPanel` takes an optional `infoBeacon` prop for the tutorial beacon, passed by the parent `GameBoard` component.)
 -   **Key Local State Variables (`GameBoardUIState`):**
     -   `selectedArmyId: number | null`: The ID of the army the local player has clicked on.
     -   `possibleMoves: {x, y}[]`: The array of valid move locations for the selected army, used for highlighting tiles.

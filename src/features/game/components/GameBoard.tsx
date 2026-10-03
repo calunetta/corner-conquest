@@ -5,12 +5,10 @@ import { Loader2 } from 'lucide-react';
 import { usePlayer } from '@/hooks/use-player';
 import { useGameEngine } from '@/hooks/use-game-engine';
 import { MapGrid } from './MapGrid';
-import { ActionsPanel } from '@/features/game/panels/ActionsPanel';
-import { GameLog } from '@/features/game/panels/GameLog';
+import { ActionsPanel, GameLog } from '@/modules/hud';
 import { TutorialBeacon } from './TutorialBeacon';
-import { GameBoardHeader } from './GameBoardHeader';
+import { GameBoardHeader, GameStatusBadge } from '@/modules/hud';
 import { PlayerInfoBar } from './PlayerInfoBar';
-import { GameStatusBadge } from './GameStatusBadge';
 import { GameDialogManager } from './GameDialogManager';
 import { GameBoardProvider, useGameBoard } from '../context/GameBoardContext';
 
@@ -55,7 +53,16 @@ function GameBoardContent() {
 
             {/* Right: Actions & Match Event Log */}
             <aside className="w-full lg:w-[310px] xl:w-[340px] lg:shrink-0 flex flex-col gap-2.5 min-h-0 overflow-y-auto custom-scrollbar">
-              <ActionsPanel />
+              <ActionsPanel
+                infoBeacon={
+                  <TutorialBeacon
+                    id="actions-info"
+                    title="The Actions Panel"
+                    description="Use this panel to command your armies, deploy new ones, buy special cards, and upgrade your attack power. Hover over any button to see what it does!"
+                    side="top"
+                  />
+                }
+              />
               <GameLog />
             </aside>
           </div>
