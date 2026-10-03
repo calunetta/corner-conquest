@@ -34,7 +34,7 @@ Tier: L · Phases: 4
 - [x] checks: typecheck, lint, unit tests — pass (scoped: 25 suites/296 tests; repo-wide failures trace only to untracked concurrent game-map-migration task's files)
 - [ ] UI verified (ui-verify) — not applicable, no UI change
 - [x] final review (architect-b)
-- [ ] committed: <hash> — src/lib/game-logic.ts and src/lib/turn-progression.ts deletions already landed under commit 2a396f1 (concurrent sibling task); this phase's own new/edited files still need a commit — see review.md "Out-of-band event"
+- [x] committed: 1bebb20 (legacy-file deletions landed earlier under sibling commit 2a396f1, see review.md "Out-of-band event")
 
 ## Phase 4: bot-logic split + docs
 - [ ] plan approved (architect-b)
@@ -60,3 +60,4 @@ Tier: L · Phases: 4
 - 2026-10-03 Phase 2 committed: e55c53c
 - 2026-10-04 implementer-a, implementer-b, tester-a: DONE, Phase 3 built (player-join.reducer, turn-progression), call sites repointed, tests ported/added, cross-reviewed (1 non-blocking note on `boolean = false` vs. `?: boolean`)
 - 2026-10-04 architect-b: DONE, Phase 3 final review APPROVED. Noted out-of-band event: src/lib/game-logic.ts and src/lib/turn-progression.ts deletions were swept into concurrent sibling commit 2a396f1 before this phase could commit them; confirmed via git show, nothing lost, zero remaining imports of either legacy path repo-wide (git grep)
+- 2026-10-04 Phase 3 committed: 1bebb20
