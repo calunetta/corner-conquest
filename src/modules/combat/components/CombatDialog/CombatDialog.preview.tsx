@@ -1,7 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import type { ComponentPreview } from '@/testbed';
+import { Button } from '@/components/ui/button';
 import { CombatDialog } from './CombatDialog';
+import type { CombatDialogProps } from './CombatDialog.types';
 import {
   rollingPhaseAttackerNoCards,
   rollingPhaseAttackerBothCards,
@@ -9,6 +12,36 @@ import {
   resultsPhaseAttackerWins,
   resultsPhaseDrawn,
 } from './CombatDialog.fixtures';
+
+/**
+ * Wired to local state so the dialog can always be left: closing from inside
+ * (the rolling phase has no in-dialog close control) is backed by the same
+ * "Close preview" / "Reopen dialog" toggle the AlertDialog itself uses.
+ */
+function InteractiveCombatDialog(props: Omit<CombatDialogProps, 'onClose'>) {
+  const [isOpen, setIsOpen] = useState(true);
+  const close = () => setIsOpen(false);
+
+  if (!isOpen) {
+    return (
+      <Button onClick={() => setIsOpen(true)} variant="outline">
+        Reopen dialog
+      </Button>
+    );
+  }
+
+  return (
+    <>
+      <CombatDialog {...props} onClose={close} />
+      {/* Radix's AlertDialog sets pointer-events:none on the rest of the app while modal;
+          pointer-events-auto re-enables this button so it's always clickable, even in the
+          rolling phase which has no in-dialog close control of its own. */}
+      <Button onClick={close} variant="outline" className="fixed top-4 right-4 z-[60] pointer-events-auto">
+        Close preview
+      </Button>
+    </>
+  );
+}
 
 export const combatDialogPreview: ComponentPreview = {
   slug: 'combat-combat-dialog',
@@ -18,10 +51,9 @@ export const combatDialogPreview: ComponentPreview = {
     {
       name: 'Rolling — attacker, no cards',
       render: () => (
-        <CombatDialog
+        <InteractiveCombatDialog
           gameState={rollingPhaseAttackerNoCards}
           onRoll={(payload) => console.warn('onRoll', payload)}
-          onClose={() => console.warn('onClose')}
           isMyTurn={true}
           localPlayerId={0}
         />
@@ -30,10 +62,9 @@ export const combatDialogPreview: ComponentPreview = {
     {
       name: 'Rolling — attacker, both cards',
       render: () => (
-        <CombatDialog
+        <InteractiveCombatDialog
           gameState={rollingPhaseAttackerBothCards}
           onRoll={(payload) => console.warn('onRoll', payload)}
-          onClose={() => console.warn('onClose')}
           isMyTurn={true}
           localPlayerId={0}
         />
@@ -42,10 +73,9 @@ export const combatDialogPreview: ComponentPreview = {
     {
       name: 'Rolling — spectator waiting',
       render: () => (
-        <CombatDialog
+        <InteractiveCombatDialog
           gameState={rollingPhaseSpectator}
           onRoll={(payload) => console.warn('onRoll', payload)}
-          onClose={() => console.warn('onClose')}
           isMyTurn={false}
           localPlayerId={1}
         />
@@ -54,10 +84,9 @@ export const combatDialogPreview: ComponentPreview = {
     {
       name: 'Results — attacker wins',
       render: () => (
-        <CombatDialog
+        <InteractiveCombatDialog
           gameState={resultsPhaseAttackerWins}
           onRoll={(payload) => console.warn('onRoll', payload)}
-          onClose={() => console.warn('onClose')}
           isMyTurn={true}
           localPlayerId={0}
         />
@@ -66,10 +95,9 @@ export const combatDialogPreview: ComponentPreview = {
     {
       name: 'Results — draw',
       render: () => (
-        <CombatDialog
+        <InteractiveCombatDialog
           gameState={resultsPhaseDrawn}
           onRoll={(payload) => console.warn('onRoll', payload)}
-          onClose={() => console.warn('onClose')}
           isMyTurn={true}
           localPlayerId={0}
         />

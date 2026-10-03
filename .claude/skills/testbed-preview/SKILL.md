@@ -38,8 +38,10 @@ Legacy previews import the type from `../testbed.types` instead of `@/testbed`.
 - Interactive state: a small wrapper in the preview file that holds `useState`, or uses the real hook when the hook has no app-state dependency (see the `Interactive` state in `src/testbed/legacy/MapZoomControls.preview.tsx`).
 - Absolutely positioned components render inside the state's canvas, which is `relative`.
 - Previews are dev-only: never export them from a module's `index.ts`.
+- **Every state must leave a way back out of it.** If a state renders a dialog, modal, drawer, popover, or anything else that occludes the page (open by default so it's visible on load), the state's wrapper must give it a real `onClose`/`onOpenChange` handler — backed by `useState`, never a no-op — and show a visible "Reopen" (or equivalent) trigger once closed, so the viewer is never stuck unable to leave that state or reach another one. A static `open={true}` with no close wiring is a bug, not a simplification (see `docs/ai/tasks/2026-10-03-sabotage-dialog-preview-stuck-modal/`).
+- **If the component has a phase/screen with no internal close control at all** (e.g. a combat dialog's rolling phase, a spectator view), the wrapper needs its own always-present exit button outside the component. A Radix `AlertDialog`/`Dialog` sets `pointer-events: none` on the rest of the app while modal — a sibling button needs `pointer-events-auto` (plus a `z-[60]`+ above the overlay's `z-50`) or it renders but silently can't be clicked (see `src/modules/combat/components/CombatDialog/CombatDialog.preview.tsx`).
 
 ## Check
 1. `npx jest src/testbed/registry.test.ts`: slugs unique and kebab-case; every preview has uniquely named states.
 2. `npm run typecheck` and `npm run lint`.
-3. Skill `ui-verify` on `http://localhost:9002/testbed/<slug>`: look at every state at desktop and mobile size.
+3. Skill `ui-verify` on `http://localhost:9002/testbed/<slug>`: look at every state at desktop and mobile size. For any dialog/modal/overlay state, actually click its close/cancel control (or press Escape) and confirm it closes and a reopen trigger appears — don't just screenshot it open.
