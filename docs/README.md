@@ -37,7 +37,7 @@ Understanding the project's structure is key to making changes efficiently and c
 - `src/features/`: Contains domain-specific components and logic structured according to the **SOLID paradigm** (Single Responsibility Principle):
   - `game/`: All components, dialogs, hooks, context, and panels related to the active game board.
     - `context/`:
-      - `GameBoardContext.tsx`: React Context, `useGameBoard()`, and the `GameBoardProvider` (effects, action handlers). Its UI-state types and the pure `gameBoardReducer` live in `src/modules/game-board/` and are re-exported here under their original names for backward compatibility — see `docs/ai/tasks/2026-10-02-gameboardcontext-migration/`.
+      - `GameBoardContext.tsx`: a thin re-export of `src/modules/game-board/` under the original names, kept so the 13 legacy consumers (`GameBoard.tsx`, `GameDialogManager.tsx`, `ActionsPanel.tsx`, other panels and map components) need no changes. The actual UI-state types, pure `gameBoardReducer`, `GameBoardProvider`, and `useGameBoard()` all live in `src/modules/game-board/`, which composes the provider's effects and handlers out of focused hooks (`game-board.state.hook.ts`, `.actions.hook.ts`, `.card-actions.hook.ts`, `.local-actions.hook.ts`, `.tile-click.hook.ts`, `.session.hook.ts`) assembled by `game-board.hook.ts` — see `docs/ai/tasks/2026-10-02-gameboardcontext-migration/`.
     - `components/`:
       - `GameBoard.tsx`: High-level layout orchestrator (<80 lines) composing atomic subcomponents with `<GameBoardProvider>`.
       - `GameBoardHeader.tsx`: Navigation, match status, VP goal, and start game controls with **0 props**.
@@ -124,9 +124,9 @@ The player's session (their identity) is managed through a combination of browse
 
 ### 3.3. Local UI State: The `GameBoardContext` & Reducer Pattern
 
--   **Definition Files:** `src/features/game/context/GameBoardContext.tsx` (the provider, context and hook) and `src/modules/game-board/` (`game-board.types.ts` for the state and action types, `game-board.reducer.ts` for the pure `gameBoardReducer`), re-exported from the original path for backward compatibility.
+-   **Definition Files:** `src/modules/game-board/` holds the real implementation — `game-board.types.ts` (state and action types), `game-board.reducer.ts` (the pure `gameBoardReducer`), `game-board.map.ts` (pure helpers like `hasActiveDialogOrPendingAction`), `game-board.provider.tsx` (the `GameBoardProvider`), and the hook files that make up the provider's behavior: `game-board.state.hook.ts`, `game-board.actions.hook.ts`, `game-board.card-actions.hook.ts`, `game-board.local-actions.hook.ts`, `game-board.tile-click.hook.ts`, `game-board.session.hook.ts`, composed by `game-board.hook.ts`. `src/features/game/context/GameBoardContext.tsx` is a thin re-export of all of it under the original names, for backward compatibility with legacy consumers.
 -   **What It Is:** Local UI state refers to temporary interaction data for a single player (selected armies, valid movement indicators, pending multi-step card effects like teleport/scout, and modal dialog open/closed states).
--   **Architecture:** Managed via a pure `gameBoardReducer` and exposed through `GameBoardProvider` and the `useGameBoard()` hook.
+-   **Architecture:** Managed via a pure `gameBoardReducer` and exposed through `GameBoardProvider` and the `useGameBoard()` hook. Each hook owns one responsibility (state, dispatching shared actions, card-specific multi-step flows, local-only UI actions, tile clicks, session/turn handling); `game-board.hook.ts` calls them in a fixed order and assembles the single `contextValue` the provider exposes.
 -   **Zero Prop-Drilling:** Components such as `GameDialogManager`, `GameBoardHeader`, and `ActionsPanel` consume `useGameBoard()` directly, eliminating massive prop interfaces and state fragmentation.
 -   **Key Local State Variables (`GameBoardUIState`):**
     -   `selectedArmyId: number | null`: The ID of the army the local player has clicked on.

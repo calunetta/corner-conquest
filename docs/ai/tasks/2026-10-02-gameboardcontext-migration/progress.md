@@ -80,14 +80,15 @@ sub-phase and wait for the user to type `continue`.
 - [ ] committed: <hash>
 
 ### Phase 3c: verification and docs
-- [ ] `npm run typecheck`
-- [ ] `npm run lint` (zero warnings)
-- [ ] `npm test` (quote summary line)
-- [ ] `npm run build`
-- [ ] `git diff --stat -- src/features` shows only `GameBoardContext.tsx`; no consumer changed
-- [ ] browser or e2e smoke (ui-verify or `npm run test:e2e -- e2e/gameplay.spec.ts`), or recorded as not run
-- [ ] `docs/README.md` §2 and §3.3 updated
-- [ ] final review (architect-b)
+- [x] `npm run typecheck` — clean
+- [x] `npm run lint` (zero warnings) — clean
+- [x] `npm test` — `Test Suites: 44 passed, 44 total`, `Tests: 299 passed, 299 total`
+- [x] `npm run build` — succeeded (`✓ Compiled successfully`, 6/6 static pages generated)
+- [x] `git diff --stat -- src/features` shows only `GameBoardContext.tsx` (plus the test-kit relocation and its one import-path update); no consumer changed
+- [x] browser or e2e smoke: recorded as **not run** — `e2e/gameplay.spec.ts` needs Java 21 for the Firestore emulator (`npm run test:e2e`), which isn't installed on this machine. No visible UI change was in scope for this refactor (triage.md), so this is a lower-risk gap than it would be for a UI change, but a future session with Java available should run it before trusting this further.
+- [x] `docs/README.md` §2 and §3.3 updated
+- [x] stale `gameBoardTestKit.tsx` path references in `plan.md` fixed to `test-utils/gameBoardTestKit.tsx`
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Next steps for a future session
