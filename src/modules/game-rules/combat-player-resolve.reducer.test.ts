@@ -1,7 +1,7 @@
 import { PlayerColor, ResourceType, GameStatus } from '@/lib/types';
 import type { GameState, CombatState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
-import { addPlayerToGame } from '@/lib/game-logic';
+import { addPlayerToGame } from '@/modules/game-rules';
 import { handleCloseCombat } from './combat-player-resolve.reducer';
 
 const COMBAT_TILE = { x: 2, y: 2 };

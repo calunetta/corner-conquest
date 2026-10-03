@@ -1,7 +1,7 @@
 import { PlayerColor, IslandType, CardName, GameAction, ResourceType } from '@/lib/types';
 import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
-import { addPlayerToGame } from '@/lib/game-logic';
+import { addPlayerToGame } from '@/modules/game-rules';
 import { getPossibleMoves, handleMoveAction } from './movement.reducer';
 
 function buildGame(): GameState {

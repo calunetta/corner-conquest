@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { hasPlayerRemainingActions } from '@/lib/turn-progression';
+import { hasPlayerRemainingActions } from '@/modules/game-rules';
 import { useTurnTimer } from '@/features/game/hooks/useTurnTimer';
 import { useGameBoardState } from './game-board.state.hook';
 import { useGameBoardActions } from './game-board.actions.hook';

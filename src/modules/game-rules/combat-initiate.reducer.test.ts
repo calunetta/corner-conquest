@@ -1,7 +1,7 @@
 import { PlayerColor, IslandType, MonsterName } from '@/lib/types';
 import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
-import { addPlayerToGame } from '@/lib/game-logic';
+import { addPlayerToGame } from '@/modules/game-rules';
 import { handleInitiateCombatAction } from './combat-initiate.reducer';
 
 describe('handleInitiateCombatAction', () => {

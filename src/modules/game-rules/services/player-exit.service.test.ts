@@ -1,7 +1,7 @@
 import { PlayerColor } from '@/lib/types';
 import type { GameState, Monster } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
-import { addPlayerToGame } from '@/lib/game-logic';
+import { addPlayerToGame } from '@/modules/game-rules';
 
 jest.mock('@/lib/firebase', () => ({
   db: {},

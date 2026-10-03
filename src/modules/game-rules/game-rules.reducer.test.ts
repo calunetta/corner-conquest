@@ -2,7 +2,7 @@ import { cloneDeep } from 'lodash';
 import { PlayerColor, GameAction, AbilityName, ResourceType, CardName, IslandType, MonsterName } from '@/lib/types';
 import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
-import { addPlayerToGame } from '@/lib/game-logic';
+import { addPlayerToGame } from '@/modules/game-rules';
 import { handleGameAction } from './game-rules.reducer';
 import { handleCancelAction, handleDeployAction, handleUpgradeAction } from './player-actions.reducer';
 import { handleEndTurn } from './player-turn.reducer';

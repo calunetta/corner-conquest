@@ -8,8 +8,8 @@
  *     getPossibleMoves: jest.fn(() => []),
  *     handleGameAction: jest.fn(({ gameState }) => ({ state: gameState })),
  *     handlePlayerExit: jest.fn().mockResolvedValue(undefined),
+ *     hasPlayerRemainingActions: jest.fn(() => true),
  *   }));
- *   jest.mock('@/lib/turn-progression', () => ({ hasPlayerRemainingActions: jest.fn(() => true) }));
  */
 import React, { useRef } from 'react';
 import { render, type RenderResult } from '@testing-library/react';

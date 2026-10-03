@@ -1,7 +1,7 @@
 import { PlayerColor, CardName, ResourceType, GameAction } from '@/lib/types';
 import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
-import { addPlayerToGame } from '@/lib/game-logic';
+import { addPlayerToGame } from '@/modules/game-rules';
 import { handleGainWealth, handleSabotagePlayer, handleStealResource } from './card-targeted-effects.reducer';
 
 function buildGame(): GameState {

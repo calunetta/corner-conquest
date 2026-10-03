@@ -20,11 +20,10 @@ jest.mock('@/modules/game-rules', () => ({
   getPossibleMoves: jest.fn(() => []),
   handleGameAction: jest.fn(({ gameState }) => ({ state: gameState })),
   handlePlayerExit: jest.fn().mockResolvedValue(undefined),
+  hasPlayerRemainingActions: jest.fn(() => true),
 }));
-jest.mock('@/lib/turn-progression', () => ({ hasPlayerRemainingActions: jest.fn(() => true) }));
 
-const { handleGameAction, handlePlayerExit, startGame } = require('@/modules/game-rules');
-const { hasPlayerRemainingActions } = require('@/lib/turn-progression');
+const { handleGameAction, handlePlayerExit, startGame, hasPlayerRemainingActions } = require('@/modules/game-rules');
 
 describe('GameBoardContext: Handler Characterization Tests', () => {
   beforeEach(() => {

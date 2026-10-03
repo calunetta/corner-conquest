@@ -1,22 +1,32 @@
-import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
-import { addPlayerToGame } from '../game-logic';
-import { PlayerColor, GameAction } from '../types';
+import { GameAction, PlayerColor } from '@/lib/types';
+import type { GameState } from '@/lib/types';
+import {
+  initializeGame,
+  startGame,
+  defaultGameSettings,
+  addPlayerToGame,
+  hasPlayerRemainingActions,
+} from './index';
 
-// handleEndTurn's own coverage (rotation, sabotage skip, winner detection) migrated to
-// src/modules/game-rules/player-turn.reducer.test.ts (game-rules-actions-migration, phase 2).
-// hasPlayerRemainingActions is out of scope for that migration (refactor.md row #2) and stays here.
-describe('Turn Progression & Win Conditions', () => {
-  let game = initializeGame('game_test', 'Turn Test', 2, { playerId: 'p1', name: 'Player 1', color: PlayerColor.Blue }, 0, false, defaultGameSettings);
+describe('Turn Progression: hasPlayerRemainingActions', () => {
+  let game: GameState;
 
   beforeEach(() => {
-    game = initializeGame('game_test', 'Turn Test', 2, { playerId: 'p1', name: 'Player 1', color: PlayerColor.Blue }, 0, false, defaultGameSettings);
+    game = initializeGame(
+      'game_test',
+      'Turn Test',
+      2,
+      { playerId: 'p1', name: 'Player 1', color: PlayerColor.Blue },
+      0,
+      false,
+      defaultGameSettings
+    );
     const added = addPlayerToGame(game, { playerId: 'p2', name: 'Player 2' });
     game = added.newGameState!;
     game = startGame(game, 'Player 1');
   });
 
   it('correctly evaluates hasPlayerRemainingActions when actions are available and when exhausted', () => {
-    const { hasPlayerRemainingActions } = require('../turn-progression');
     const player = game.players[0];
 
     // Initial state: army 0 hasActed: false, can move -> should have actions

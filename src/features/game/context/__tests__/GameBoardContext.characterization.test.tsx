@@ -15,6 +15,7 @@ jest.mock('@/modules/game-rules', () => ({
   getPossibleMoves: jest.fn(() => []),
   handleGameAction: jest.fn(({ gameState }) => ({ state: gameState })),
   handlePlayerExit: jest.fn().mockResolvedValue(undefined),
+  hasPlayerRemainingActions: jest.fn(() => true),
 }));
 
 const GRID_COLS = 5;
