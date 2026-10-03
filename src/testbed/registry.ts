@@ -1,4 +1,4 @@
-import { mapZoomControlsPreview } from './legacy/MapZoomControls.preview';
+import { mapZoomControlsPreview } from '@/modules/map/components/MapZoomControls/MapZoomControls.preview';
 import { sabotageDialogPreview } from './legacy/SabotageDialog.preview';
 import { combatDialogPreview } from '@/modules/combat/components/CombatDialog/CombatDialog.preview';
 import { monsterCombatDialogPreview } from '@/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.preview';

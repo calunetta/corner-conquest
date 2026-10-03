@@ -1,6 +1,8 @@
-import { MapZoomControls } from '@/features/game/components/MapZoomControls';
-import { DEFAULT_DESKTOP_ZOOM, useMapPanZoom } from '@/features/game/hooks/useMapPanZoom';
-import type { ComponentPreview } from '../testbed.types';
+'use client';
+
+import { MapZoomControls } from './MapZoomControls';
+import { DEFAULT_DESKTOP_ZOOM, useMapPanZoom } from '../MapGrid';
+import type { ComponentPreview } from '@/testbed/testbed.types';
 
 const ZOOMED_IN = 1.6;
 
@@ -38,7 +40,7 @@ function StaticMapZoomControls({ zoom }: { zoom: number }) {
 export const mapZoomControlsPreview: ComponentPreview = {
   slug: 'map-zoom-controls',
   title: 'Map zoom controls',
-  group: 'Legacy / Game map',
+  group: 'Game map',
   states: [
     { name: 'Default zoom', render: () => <StaticMapZoomControls zoom={DEFAULT_DESKTOP_ZOOM} /> },
     { name: 'Zoomed in', render: () => <StaticMapZoomControls zoom={ZOOMED_IN} /> },
