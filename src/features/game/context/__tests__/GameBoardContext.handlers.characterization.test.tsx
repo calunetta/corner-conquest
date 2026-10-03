@@ -11,7 +11,7 @@
 import { act, fireEvent, render as rtlRender } from '@testing-library/react';
 import { GameAction, IslandType, CardName, PlayerColor, type GameState, type Player, type Army, MonsterName } from '@/lib/types';
 import { GameBoardProvider, useGameBoard } from '../GameBoardContext';
-import { mockToast, buildPlayer, buildGameState, withTile, renderProvider } from './gameBoardTestKit';
+import { mockToast, buildPlayer, buildGameState, withTile, renderProvider } from './test-utils/gameBoardTestKit';
 
 const mockToastObj = { toast: mockToast };
 jest.mock('@/hooks/use-toast', () => ({ useToast: () => mockToastObj }));

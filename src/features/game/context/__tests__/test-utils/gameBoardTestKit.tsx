@@ -14,7 +14,7 @@
 import React, { useRef } from 'react';
 import { render, type RenderResult } from '@testing-library/react';
 import { GameAction, IslandType, PlayerColor, type GameState, type Player, type Island } from '@/lib/types';
-import { GameBoardProvider, useGameBoard, type GameBoardContextType } from '../GameBoardContext';
+import { GameBoardProvider, useGameBoard, type GameBoardContextType } from '../../GameBoardContext';
 
 const GRID_COLS = 5;
 

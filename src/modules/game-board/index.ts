@@ -6,3 +6,4 @@ export type {
   GameBoardUIAction,
   GameBoardUIState,
 } from './game-board.types';
+export { GameBoardProvider, useGameBoard } from './game-board.provider';

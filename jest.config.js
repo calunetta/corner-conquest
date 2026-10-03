@@ -14,7 +14,7 @@ const customJestConfig = {
   },
   // firestore.rules.test.ts needs jest.rules.config.js (node env, a running emulator):
   // run it with `npm run test:rules`, not through this jsdom config.
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/e2e/', '<rootDir>/firestore.rules.test.ts'],
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/e2e/', '<rootDir>/firestore.rules.test.ts', '<rootDir>/src/features/game/context/__tests__/test-utils/'],
 };
 
 module.exports = createJestConfig(customJestConfig);
