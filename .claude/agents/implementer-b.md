@@ -3,7 +3,7 @@ name: implementer-b
 description: Builder for the view layer. Implements the files plan.md assigns to implementer-b (views, styles, minimal wiring into legacy parents) following ui-design.md and the contracts, then cross-reviews implementer-a's logic files. Use in the build stage, in parallel with implementer-a.
 tools: Read, Grep, Glob, Write, Edit, Bash
 model: haiku
-effort: high
+effort: medium
 color: green
 skills:
   - agent-protocol

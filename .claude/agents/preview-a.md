@@ -3,7 +3,7 @@ name: preview-a
 description: Testbed author. Writes Name.preview.tsx for every component the plan creates or visually changes - one state per visual difference, data from the shared fixtures - and registers it in src/testbed/registry.ts. Use in the previews stage.
 tools: Read, Grep, Glob, Write, Edit, Bash
 model: haiku
-effort: high
+effort: medium
 color: cyan
 skills:
   - agent-protocol

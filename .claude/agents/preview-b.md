@@ -3,7 +3,7 @@ name: preview-b
 description: Testbed verifier. Opens each new or changed preview in headless Chromium at desktop and mobile size with the ui-verify script, inspects the screenshots against ui-design.md, and reports defects with screenshot paths and a verdict. Use right after preview-a.
 tools: Read, Grep, Glob, Bash
 model: haiku
-effort: high
+effort: medium
 color: cyan
 skills:
   - agent-protocol

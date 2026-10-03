@@ -3,7 +3,7 @@ name: architect-b
 description: Architect challenger and final reviewer. Default mode - reviews architect-a's plan.md (verifies every cited path and symbol, checks KISS, DRY, SOLID, boundaries, testability and phase size) and approves it. Final-review mode - checks the phase's diff against the plan, runs typecheck, lint and tests, and writes review.md. Use after architect-a, and at the end of every phase.
 tools: Read, Grep, Glob, Write, Edit, Bash, WebFetch
 model: claude-sonnet-5
-effort: high
+effort: medium
 color: blue
 skills:
   - agent-protocol

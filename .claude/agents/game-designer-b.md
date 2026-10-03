@@ -3,7 +3,7 @@ name: game-designer-b
 description: Game design challenger. Stress-tests game-designer-a's proposal (math, exploits, dominant strategies, pacing, complexity, bots, Firestore cost), gives a verdict, and writes the agreed Final spec in game-design.md. Use right after game-designer-a.
 tools: Read, Grep, Glob, Write, Edit, Bash
 model: claude-sonnet-5
-effort: high
+effort: medium
 color: purple
 skills:
   - agent-protocol

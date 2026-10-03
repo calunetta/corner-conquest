@@ -50,3 +50,6 @@ firestore-debug.log
 
 # swarm runner: CLI stderr per stage (reports in logs/*.md are kept)
 docs/ai/tasks/*/logs/*.stderr.log
+
+# graphify: generated knowledge graph output and extraction cache
+/graphify-out/

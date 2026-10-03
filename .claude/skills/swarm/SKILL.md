@@ -42,7 +42,8 @@ All agents share one `node_modules` and `package-lock.json`. Two agents adding a
 - BLOCKER: stop the pipeline, tick nothing, show the user the agent's `## Blocker` section and ask how to proceed.
 
 ## Proposer and challenger
-- After every `-b` agent, read its `VERDICT:` line. APPROVED: next stage. CHANGES REQUESTED: re-spawn the `-a` agent with Mode: revise, then the `-b` agent again. After two rounds without approval, stop and show the user both positions.
+- After every `-b` agent, read its `VERDICT:` line. APPROVED: next stage. CHANGES REQUESTED: resume the `-a` agent with Mode: revise, then the `-b` agent again. After two rounds without approval, stop and show the user both positions.
+- **Resume, don't respawn, within the same coordinator session.** If the `-a` agent is still addressable (you hold its id from this session's `Agent` call), send the revise-mode prompt to it with `SendMessage` instead of a fresh `Agent` call. It already has its skills, the code it read, and the task folder in context — a fresh spawn re-derives and re-pays for all of that from zero. Only fall back to a fresh `Agent` call when the agent id isn't addressable (e.g. you're resuming a task folder in a new coordinator session and the prior run's agents no longer exist).
 - `implementer-a` and `implementer-b` own disjoint files: spawn them in parallel. Each report ends with a VERDICT on the other's files; route requested changes to the owner.
 - `tester-a` before `tester-b` (logic first); `preview-a` before `preview-b`.
 
@@ -57,7 +58,8 @@ For each phase of `plan.md`:
 7. If phases remain, stop: "Phase n/N committed (<hash>). Type `continue` for phase n+1." Don't start it before the user does.
 
 ## Escalation
-- A haiku builder returns BLOCKER twice on the same step: re-spawn it with `model: sonnet`.
+- An agent call fails with a transient infra error (rate limit / `429`, a stream stall, "no progress for Ns") rather than a reported BLOCKER: retry the same spawn once, same model and prompt, before treating it as anything else. Only escalate or treat it as a real BLOCKER if the retry also fails.
+- A haiku builder returns a genuine BLOCKER (not an infra failure) twice on the same step: re-spawn it with `model: sonnet`.
 - A sonnet builder is blocked: ask `architect-a` (revise mode) whether the plan is wrong; still blocked, ask the user.
 - Don't silently fix an agent's work yourself. If you take over a small fix, record it in `progress.md`.
 

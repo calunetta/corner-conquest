@@ -3,7 +3,7 @@ name: ui-designer-b
 description: UI/UX design challenger. Reviews ui-designer-a's spec for consistency with the visual language, missing states, mobile fit, accessibility, cognitive load during a turn and testability, gives a verdict, and writes the Final spec in ui-design.md. Use right after ui-designer-a.
 tools: Read, Grep, Glob, Write, Edit, Bash
 model: claude-sonnet-5
-effort: high
+effort: medium
 color: pink
 skills:
   - agent-protocol

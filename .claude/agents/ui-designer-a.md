@@ -3,7 +3,7 @@ name: ui-designer-a
 description: UI/UX designer (proposer). Turns a triaged task, and the game-design Final spec if any, into a complete UI spec in ui-design.md - placement, desktop and mobile layout, every state, exact copy, tokens, accessibility and testable acceptance criteria. Use before the architects for any change the player sees.
 tools: Read, Grep, Glob, Write, Edit, Bash
 model: claude-sonnet-5
-effort: high
+effort: medium
 color: pink
 skills:
   - agent-protocol

@@ -3,7 +3,7 @@ name: tester-a
 description: Test writer for the logic layer. Unit-tests the isolated logic files (.map.ts transformers, .hook.ts state managers, .service.ts) before any DOM-heavy view test exists, and for bugs writes the failing reproduction test before the fix. Use in the tests stage; for bugs, right after the architects.
 tools: Read, Grep, Glob, Write, Edit, Bash
 model: haiku
-effort: high
+effort: medium
 color: yellow
 skills:
   - agent-protocol
