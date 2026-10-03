@@ -5,7 +5,7 @@ import type { CardName } from '@/lib/types';
 import { GameAction, ResourceType } from '@/lib/types';
 import { useGameBoard } from '../context/GameBoardContext';
 
-import { CombatDialog } from '../dialogs/CombatDialog';
+import { CombatDialog } from '@/modules/combat';
 import { MonsterCombatDialog } from '../dialogs/MonsterCombatDialog';
 import { ProductiveCardDialog } from '../dialogs/ProductiveCardDialog';
 import { SpecialIslandRollDialog } from '../dialogs/SpecialIslandRollDialog';
