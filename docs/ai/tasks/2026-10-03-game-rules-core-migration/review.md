@@ -1,32 +1,36 @@
-# Final review: Migrate game rules core logic into src/modules/game-rules, phase 1/4
+# Final review: Migrate game rules core logic into src/modules/game-rules, phase 2/4
 
 VERDICT: APPROVED
 
 ## Checks run
-- `npm run typecheck`: 4 errors, all in `src/modules/hud/` (untracked files belonging to the concurrent, unrelated `2026-10-03-game-header-migration` task — confirmed by filtering the output for lines outside `modules/hud`, which returned none). Zero errors in any file this phase touches (`src/modules/game-rules/*`, `src/lib/game-initializer.ts`, `src/lib/game-logic.ts`, the 17 repointed call sites).
-- `npm run lint`: `✖ 2 problems (2 errors, 0 warnings)`, both in `src/modules/hud/components/GameStatusBadge/GameStatusBadge.test.tsx` (same unrelated concurrent task, unused `container` var). Zero lint errors in any Phase 1 file.
-- `npx jest src/modules/game-rules --silent`: `Test Suites: 16 passed, 16 total` / `Tests: 201 passed, 201 total`.
-- `npm test` (full suite): `Test Suites: 1 failed, 69 passed, 70 total` / `Tests: 2 failed, 701 passed, 703 total`. The 1 failing suite is `src/modules/hud/components/GameBoardHeader/GameBoardHeader.test.tsx` — same concurrent unrelated task, not this plan's scope. No failure in any card-data/player-data consumer.
-- ui-verify: not applicable — plan's acceptance criteria state "No UI changed, so no preview/ui-verify step" (`plan.md:12`), and this phase is a pure data-constant relocation with no new/changed component.
+- `npm run typecheck`: clean, no output, exit 0. (An earlier run during review hit 1 error in untracked `src/modules/map/components/TileForest/TileForest.map.test.ts`, belonging to the concurrent `game-map-migration` task — gone on this run, and was never in this phase's scope regardless.)
+- `npm run lint`: 55 errors, all in untracked `src/modules/cards/components/StealResourceDialog/*.preview.tsx` and `src/modules/map/components/{IslandTile,TileBoats,TileOccupants,TileResources}/*.test.ts` — confirmed via `git status --porcelain` (`??`) and `grep -i "game-rules"` on the lint output (zero hits). Zero lint errors in any file this phase owns.
+- `npx eslint src/modules/game-rules/game-setup.reducer.ts src/modules/game-rules/map-generation.ts src/modules/game-rules/index.ts`: no output — confirms the `max-lines` rule (`eslint.config.mjs:73`, `skipBlankLines`/`skipComments` true) genuinely passes on `game-setup.reducer.ts` despite `wc -l` reporting 153 raw lines, and no `no-explicit-any` regression from the cast removal.
+- `npx jest src/modules/game-rules src/lib/__tests__ scripts/balance-simulator`: `Test Suites: 39 passed, 39 total` / `Tests: 334 passed, 334 total` — every test this phase owns or touches passes, matching implementer-a's reported count.
+- `npm test` (full repo, informational): 3 failing suites remain in untracked `src/modules/cards/components/{SabotageDialog,StealResourceDialog,WealthyDialog}/*.preview.test.tsx` — concurrent `game-dialogs-remaining-migration` task, not this plan's scope.
+- ui-verify: not applicable — plan states no UI change (`plan.md:12`), confirmed: this phase touches no `.tsx` view file in a way that changes rendered output (only import repoints).
 
-The working tree currently mixes in-flight changes from four other sibling tasks (`game-dialogs-remaining-migration`, `game-header-migration`, `game-map-migration`, `game-panels-migration` — all visible as untracked folders/files in `git status`). All typecheck/lint/test failures found above trace to `src/modules/hud/` (that sibling task), not to anything owned by this phase. Isolating the check to this phase's files (git diff below) shows a clean result.
+## Fix verification (re-review after implementer-a's revision)
+- **Finding 1 (gratuitous casts)**: re-read `map-generation.ts` and `game-setup.reducer.ts` directly. All six casts are gone: `map-generation.ts:18,23,40,63` now assign `map2D[y][x].monsters = ...` / `map2D[y][x].type = islandType;` directly; `game-setup.reducer.ts:68,94` now assign `creatorTile.type = IslandType.Base;` / `botTile.type = IslandType.Base;` directly. `tsc --noEmit` confirms no type error results. Resolved.
+- **Finding 2 (unplanned exports)**: re-read `index.ts`. Lines 3-4 now export exactly `createPlayer` and `{ defaultGameSettings, initializeGame, startGame }`, matching `plan.md:88` verbatim. `MONSTER_DATA`, `generateMonsters`, `generateIslandTerrain` are no longer exported from the module's public API. Resolved.
 
 ## Plan adherence
-- `src/modules/game-rules/card-data.ts`, `player-data.ts` created — bodies verified byte-identical to `git show HEAD:src/lib/card-data.ts` / `player-data.ts` except the necessary import-path change (`./types` → `@/lib/types`, same barrel), matching the "unchanged body" contract (`plan.md:168-180`). Met.
-- `src/modules/game-rules/index.ts` — both export lines added exactly as specified (`plan.md:56`). Met.
-- All 17 Phase 1 call-site repoints (`combat-monster-resolve.reducer.ts`, `combat-player-resolve.reducer.ts` → relative `./player-data`; `MonsterAttackScreen.tsx`, `MonsterCombatDialog.map.ts`, `CombatDialog.map.ts`, `CustomSettingsSheet.tsx`, `CreateGameDialog.tsx`, `CardsDialog.tsx`, `SpecialIslandRollDialog.tsx`, `PlayerInfo.tsx`, `IslandTile.tsx`, `TileOccupants.tsx`, `AttackSelectionDialog.tsx`, `SabotageDialog.tsx`, `ArmySelectionDialog.tsx`, `StealResourceDialog.tsx`, `game-initializer.ts`, `game-logic.ts` → `@/modules/game-rules`) verified present and correct via `git diff`. Met.
-- `src/lib/card-data.ts`, `src/lib/player-data.ts` deleted (`git status`: `D`). Met.
-- No remaining import of either deleted path anywhere in `src`, `e2e`, `scripts`: `grep -rn "lib/card-data\|lib/player-data"` across those trees returns zero source-code hits (only prose references in `docs/`, `.claude/`, and other tasks' plan files — none are code imports, and none are in this phase's File plan to edit). Met for the acceptance criterion's "call site" sense.
-- `npm run typecheck && npm run lint && npm test` pass for every file this phase owns. Met (see Checks).
+- `monster-catalog.ts`, `player-factory.ts`, `map-generation.ts`, `game-setup.reducer.ts` created; line counts 68/52/69/153 (eslint `max-lines` passes on all four — see Checks). Met.
+- Base-placement-before-terrain ordering risk (plan.md Risks): confirmed `game-setup.reducer.ts:107` calls `generateIslandTerrain(map2D, settings)` only after the creator's base tile (`:67-76`) and every bot's base tile (`:93-103`) are already written — same order as the original `game-initializer.ts:177-278`. Met, mitigation correctly implemented.
+- `game-setup.reducer.test.ts` ports all 3 original cases from `git show HEAD:src/lib/__tests__/game-initializer.test.ts`, assertions byte-identical. Met.
+- `monster-catalog.test.ts`, `player-factory.test.ts` — new direct-unit coverage matching the Test plan's specified cases (outer-ring level-1/2 only, center can reach level-3/4, no duplicate monster names, debug/non-debug/bot resource and card branches, `fogOfWar` true/false `revealedTiles` seeding). Met.
+- `src/lib/game-initializer.ts`, `src/lib/__tests__/game-initializer.test.ts` deleted. Met.
+- All 17 call-site repoints in Phase 2's File plan verified present and correct via `git diff`: `Lobby.tsx`, `CreateGameDialog.tsx`, `game-logic.ts`, `game-board.session.hook.ts`, both `GameBoardContext*.characterization.test.tsx` + `gameBoardTestKit.tsx` doc comment, `bot-logic.test.ts`, `turn-progression.test.ts`, all 14 `game-rules/*.reducer.test.ts` + `player-exit.service.test.ts` fixture imports, `scripts/balance-simulator/{cli,engine,rng}.ts`. Met.
+- Repo-wide grep for the old path (`grep -rln "game-initializer" src e2e scripts docs .claude .agents`) returns only documentation/history files (`docs/ai/lessons-learned.md`, `docs/ai/refactor.md`, `docs/balance-simulator-guide.md`, `docs/README.md`, skill files, other tasks' records) — none are code imports, and `docs/README.md`'s update is explicitly deferred to Phase 4 (`plan.md:162`). Met for this phase's acceptance-criteria scope.
 
 ## Findings
 | # | File:line | Problem | Owner | Blocking? |
 |---|---|---|---|---|
-| 1 | `src/lib/game-initializer.ts:4-5` | Plan said "single import line" for the `BASE_CARDS`/`PLAYER_COLORS` repoint (`plan.md:73`); implementer-b left two separate `import { X } from '@/modules/game-rules'` lines. Cosmetic only — no lint rule flags duplicate import sources in this repo, typecheck/lint/tests all pass. | implementer-b | No |
-| 2 | `.claude/agents/game-designer-a.md:20`, `.claude/skills/game-design/SKILL.md:28`, `.claude/skills/anti-hallucination/SKILL.md:18`, `docs/balance-simulator-guide.md:125` | These still cite `src/lib/card-data.ts`, which no longer exists after this phase. Not in this phase's (or any phase's) File plan — Phase 4's docs step only touches `docs/README.md`. Pre-existing plan gap already implicitly accepted at plan-approval time (no File plan entry proposes touching them), not a Phase 1 build defect. | — (plan gap, not this phase's build) | No |
+| 1 | `src/modules/game-rules/map-generation.ts:18,23,40,63`, `src/modules/game-rules/game-setup.reducer.ts:68,94` | FIXED — six gratuitous type casts removed, direct assignment restored, `tsc --noEmit` confirms no error. | implementer-a | Resolved |
+| 2 | `src/modules/game-rules/index.ts:3,5` | FIXED — the three unplanned exports (`MONSTER_DATA`, `generateMonsters`, `generateIslandTerrain`) removed; `index.ts` now matches `plan.md:88` exactly. | implementer-a | Resolved |
 
 ## Docs
-- `docs/README.md`: not updated — correct per plan, scheduled for Phase 4 (`plan.md:13,162`). `docs/README.md:163` still says `src/lib/player-data.ts`, expected until Phase 4 lands.
+- `docs/README.md`: not updated — correct per plan, scheduled for Phase 4 (`plan.md:13,162`).
 
 ## progress.md
-Confirmed for the coordinator to tick: implementation, tests (tester-a's "no new tests needed" call for card-data/player-data confirmed correct — pure re-exported constants, already covered transitively by every consumer's existing tests, none of which changed behavior), checks (typecheck/lint/unit tests), and final review for Phase 1. Previews/UI-verify boxes stay unticked — not applicable, per plan.
+Both findings fixed and re-verified in this session (not taken on implementer-a's word alone): re-read `map-generation.ts`, `game-setup.reducer.ts`, `index.ts` directly, reran `tsc --noEmit`, `npm run lint`, and `npx jest src/modules/game-rules src/lib/__tests__ scripts/balance-simulator` (334/334 passing). Phase 2 boxes ticked: implementation, tests, checks, final review. Previews/UI-verify stay unticked — not applicable, per plan.

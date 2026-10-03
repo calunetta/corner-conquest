@@ -1,6 +1,6 @@
 import { PlayerColor, CardName, GameAction } from '@/lib/types';
 import type { GameState } from '@/lib/types';
-import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
+import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { handleCancelAction, handleDeployAction, handleUpgradeAction } from './player-actions.reducer';
 
 function buildGame(): GameState {

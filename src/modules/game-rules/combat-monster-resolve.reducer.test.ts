@@ -1,6 +1,6 @@
 import { PlayerColor, IslandType, MonsterName, GameStatus, ResourceType } from '@/lib/types';
 import type { GameState, Monster, MonsterCombatState } from '@/lib/types';
-import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
+import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { handleCloseMonsterCombat } from './combat-monster-resolve.reducer';
 
 function buildGame(): GameState {

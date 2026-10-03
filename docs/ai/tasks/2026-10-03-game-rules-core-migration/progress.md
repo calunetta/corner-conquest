@@ -17,13 +17,13 @@ Tier: L · Phases: 4
 - [x] committed: 15563b6
 
 ## Phase 2: game-initializer split (monster-catalog, player-factory, map-generation, game-setup)
-- [ ] plan approved (architect-b)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a, preview-b)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
+- [x] plan approved (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [ ] previews (preview-a, preview-b) — not applicable, no UI change
+- [x] checks: typecheck, lint, unit tests — pass (scoped: 39 suites/334 tests; repo-wide failures/errors trace only to untracked concurrent tasks' files)
+- [ ] UI verified (ui-verify) — not applicable, no UI change
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 3: game-logic + turn-progression
@@ -53,3 +53,7 @@ Tier: L · Phases: 4
 - 2026-10-03 implementer-a, implementer-b: DONE, Phase 1 built, cross-reviewed, both APPROVED
 - 2026-10-03 architect-b: DONE, Phase 1 final review APPROVED (2 non-blocking findings: cosmetic import-line merge, stale doc references to deleted src/lib/card-data.ts outside this plan's scope)
 - 2026-10-03 Phase 1 committed: 15563b6
+- 2026-10-03 implementer-a, implementer-b, tester-a: DONE, Phase 2 built (monster-catalog, player-factory, map-generation, game-setup.reducer), call sites repointed, tests ported/added
+- 2026-10-03 architect-b: DONE, Phase 2 final review CHANGES REQUESTED (gratuitous casts in map-generation.ts/game-setup.reducer.ts; 3 unplanned/unused exports in index.ts)
+- 2026-10-03 implementer-a: DONE, both findings fixed
+- 2026-10-03 architect-b: DONE, Phase 2 final review APPROVED (fixes re-verified independently)

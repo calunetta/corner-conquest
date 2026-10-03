@@ -1,5 +1,5 @@
 import { takeBotTurn } from '../bot-logic';
-import { initializeGame, startGame, defaultGameSettings } from '../game-initializer';
+import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { PlayerColor, GameStatus } from '../types';
 
 jest.mock('../firebase', () => ({

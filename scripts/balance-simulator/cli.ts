@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { defaultGameSettings } from '../../src/lib/game-initializer';
+import { defaultGameSettings } from '../../src/modules/game-rules';
 import { deriveMatchSeeds, runMatch, type MatchResult } from './engine';
 import { computeConfigMetrics, type ConfigMetrics } from './metrics/index';
 import { toJson, toMarkdown, type RunReport } from './report/index';

@@ -1,7 +1,7 @@
 /**
  * Deterministic randomness for the balance simulator.
  *
- * The real game calls `Math.random()` directly (see `src/lib/game-initializer.ts` and
+ * The real game calls `Math.random()` directly (see `src/modules/game-rules/game-setup.reducer.ts` and
  * `src/lib/actions/attack.ts`), so the only way to make a simulated match reproducible is to
  * temporarily replace the global `Math.random` with a seeded generator, run the match, then
  * restore it. `withSeededRandom` does exactly that and nothing else.

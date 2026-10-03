@@ -1,7 +1,7 @@
-import { initializeGame, startGame, defaultGameSettings } from '../game-initializer';
-import { GameStatus, IslandType, PlayerColor, MAP_COLS, MAP_ROWS } from '../types';
+import { initializeGame, startGame, defaultGameSettings } from './game-setup.reducer';
+import { GameStatus, IslandType, PlayerColor, MAP_COLS, MAP_ROWS } from '@/lib/types';
 
-describe('Game Initializer', () => {
+describe('Game Setup Reducer', () => {
   it('creates a game with valid initial state and corner bases', () => {
     const creator = { playerId: 'user_1', name: 'Alice', color: PlayerColor.Blue };
     const game = initializeGame('game_123', 'Test Match', 2, creator, 0, false, defaultGameSettings);

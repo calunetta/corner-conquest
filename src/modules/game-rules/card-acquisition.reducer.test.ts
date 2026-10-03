@@ -1,6 +1,6 @@
 import { PlayerColor, AbilityName, GameAction, HAND_LIMIT } from '@/lib/types';
 import type { GameState } from '@/lib/types';
-import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
+import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import {
   handleBuyAbility,
   handleBuyCardAction,

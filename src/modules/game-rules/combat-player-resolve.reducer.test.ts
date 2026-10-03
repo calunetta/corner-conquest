@@ -1,6 +1,6 @@
 import { PlayerColor, ResourceType, GameStatus } from '@/lib/types';
 import type { GameState, CombatState } from '@/lib/types';
-import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
+import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { addPlayerToGame } from '@/lib/game-logic';
 import { handleCloseCombat } from './combat-player-resolve.reducer';
 

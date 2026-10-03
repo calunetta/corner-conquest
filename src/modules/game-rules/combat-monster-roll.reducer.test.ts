@@ -1,6 +1,6 @@
 import { PlayerColor, IslandType, MonsterName, CardName, GameAction } from '@/lib/types';
 import type { GameState, Monster } from '@/lib/types';
-import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
+import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { handleInitiateCombatAction } from './combat-initiate.reducer';
 import { handleMonsterCombatRoll } from './combat-monster-roll.reducer';
 

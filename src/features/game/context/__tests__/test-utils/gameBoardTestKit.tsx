@@ -3,8 +3,8 @@
  *
  * Jest mocks used by this kit (declare in each test file):
  *   jest.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: mockToast }) }));
- *   jest.mock('@/lib/game-initializer', () => ({ startGame: jest.fn((state) => state) }));
  *   jest.mock('@/modules/game-rules', () => ({
+ *     startGame: jest.fn((state) => state),
  *     getPossibleMoves: jest.fn(() => []),
  *     handleGameAction: jest.fn(({ gameState }) => ({ state: gameState })),
  *     handlePlayerExit: jest.fn().mockResolvedValue(undefined),

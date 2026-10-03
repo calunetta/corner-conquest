@@ -1,7 +1,6 @@
 
 import type { GameState, Player, PlayerColor, BaseTileInfo } from './types';
-import { PLAYER_COLORS } from '@/modules/game-rules';
-import { createPlayer } from './game-initializer';
+import { PLAYER_COLORS, createPlayer } from '@/modules/game-rules';
 import { GameStatus, IslandType, ResourceType, MAP_COLS, MAP_ROWS } from './types';
 
 export const BASE_TILE_SIZE = 150;

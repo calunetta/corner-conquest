@@ -1,6 +1,6 @@
 import { PlayerColor, IslandType, CardName, HAND_LIMIT, GameStatus } from '@/lib/types';
 import type { GameState } from '@/lib/types';
-import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
+import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { revealIsland } from './island-discovery.reducer';
 
 function buildGame(): GameState {

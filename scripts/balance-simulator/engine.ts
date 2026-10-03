@@ -1,4 +1,4 @@
-import { initializeGame, startGame, defaultGameSettings } from '../../src/lib/game-initializer';
+import { initializeGame, startGame, defaultGameSettings } from '../../src/modules/game-rules';
 import { PlayerColor, GameStatus } from '../../src/lib/types';
 import type { GameState, Player } from '../../src/lib/types';
 import type { takeBotTurn as TakeBotTurn } from '../../src/lib/bot-logic';

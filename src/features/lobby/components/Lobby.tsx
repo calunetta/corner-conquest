@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db, collection, doc, query, where, onSnapshot, setDoc, runTransaction } from '@/lib/firebase';
 import { usePlayer } from '@/hooks/use-player';
-import { initializeGame, startGame, defaultGameSettings } from '@/lib/game-initializer';
+import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { addPlayerToGame } from '@/lib/game-logic';
 import type { GameState, GameSettings, PlayerColor } from '@/lib/types';
 import { GameStatus } from '@/lib/types';

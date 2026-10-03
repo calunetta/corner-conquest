@@ -1,4 +1,4 @@
-import { initializeGame, startGame, defaultGameSettings } from '../game-initializer';
+import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { addPlayerToGame } from '../game-logic';
 import { PlayerColor, GameAction } from '../types';
 

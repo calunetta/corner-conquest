@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
-import { handlePlayerExit } from '@/modules/game-rules';
-import { startGame } from '@/lib/game-initializer';
+import { handlePlayerExit, startGame } from '@/modules/game-rules';
 import type { SessionHandlers, SessionHandlersArgs } from './game-board.hook.types';
 
 export function useSessionHandlers({
