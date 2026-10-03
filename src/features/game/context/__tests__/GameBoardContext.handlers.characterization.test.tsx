@@ -20,7 +20,7 @@ jest.mock('@/lib/actions', () => ({
   handlePlayerExit: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('@/lib/game-initializer', () => ({ startGame: jest.fn((state) => state) }));
-jest.mock('@/lib/actions/movement', () => ({ getPossibleMoves: jest.fn(() => []) }));
+jest.mock('@/modules/game-rules', () => ({ getPossibleMoves: jest.fn(() => []) }));
 jest.mock('@/lib/turn-progression', () => ({ hasPlayerRemainingActions: jest.fn(() => true) }));
 
 const { handleGameAction } = require('@/lib/actions');

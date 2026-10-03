@@ -18,8 +18,8 @@ Phases: 2
 - `src/lib/actions/resource.ts` and `index.ts` are explicitly out of scope — only the 4 named files move.
 
 ## Scope
-- In: convert `attack.ts`, `player.ts`, `card.ts`, `movement.ts` into `.map.ts` pure functions under `src/modules/game-rules/`, matching `component-architecture` conventions (types, index, tests); update all call sites; port/extend unit tests for each reducer.
-- Out: `src/lib/actions/resource.ts`, `index.ts`, any reducer behavior change, Firestore document shape, UI/view code.
+- In: convert `attack.ts`, `player.ts`, `card.ts`, `movement.ts`, `resource.ts`, `index.ts` into `src/modules/game-rules/` per `component-architecture` conventions (types, index, tests); update all call sites; port/extend unit tests for each reducer. Scope expanded by user request 2026-10-03 to match `docs/ai/refactor.md` row #1 exactly.
+- Out: any reducer behavior change, Firestore document shape, UI/view code.
 
 ## Open questions
 - None — architect-a to confirm the exact module/file split and phase boundary (likely by reducer-count or by call-site risk) and record it in `plan.md`.

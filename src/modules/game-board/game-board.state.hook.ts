@@ -1,6 +1,6 @@
 import React, { useReducer, useEffect, useMemo } from 'react';
 import { cloneDeep } from 'lodash';
-import { getPossibleMoves } from '@/lib/actions/movement';
+import { getPossibleMoves } from '@/modules/game-rules';
 import type { GameState } from '@/lib/types';
 import { gameBoardReducer } from './game-board.reducer';
 import { initialUIState } from './game-board.types';

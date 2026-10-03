@@ -3,9 +3,8 @@
 import type { GameState, ActionHandlerResult, Army } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 
-import { handleInitiateCombatAction, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat } from './attack';
+import { handleInitiateCombatAction, handleCombatRoll, handleCloseCombat, handleMonsterCombatRoll, handleCloseMonsterCombat, handleMoveAction } from '@/modules/game-rules';
 import { handleBuyCardAction, handleUseCard, handleSabotagePlayer, handleGainWealth, handleStealResource, handleBuyAbility, handleUseProductiveCard, handleRollOnSpecialIsland, handleCloseSpecialIslandDialog, handleScoutAction } from './card';
-import { handleMoveAction } from './movement';
 import { handleDeployAction, handleUpgradeAction, handleEndTurn, handleCancelAction, handlePlayerExit } from './player';
 import { handleSelectResourceForPosition } from './resource';
 import { cloneDeep } from 'lodash';

@@ -5,7 +5,10 @@ import {
   handleStealResource, 
   handleUseProductiveCard 
 } from '../actions/card';
-import { handleMoveAction } from '../actions/movement';
+// movement.ts was migrated to @/modules/game-rules in Phase 1 of the game-rules-actions-migration
+// task; this file (card.ts/player.ts coverage) still awaits its own Phase 2 migration, so only the
+// import path changes here, not the test content.
+import { handleMoveAction } from '@/modules/game-rules';
 import { handleCancelAction } from '../actions/player';
 import { initializeGame, startGame, defaultGameSettings } from '../game-initializer';
 import { addPlayerToGame } from '../game-logic';

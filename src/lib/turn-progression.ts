@@ -1,6 +1,6 @@
 import type { GameState, Player } from './types';
 import { GameAction, IslandType, HAND_LIMIT } from './types';
-import { getPossibleMoves } from './actions/movement';
+import { getPossibleMoves } from '@/modules/game-rules';
 
 /**
  * Evaluates whether a player has any available actions remaining in their active turn:

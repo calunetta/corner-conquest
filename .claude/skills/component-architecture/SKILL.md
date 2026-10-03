@@ -36,6 +36,7 @@ Create only the files a component needs. A static badge may be `.tsx`, `.styles.
 | `.hook.ts` | `useName(…)`: state, effects, handlers; read app state (board context, player session); call services; return a view model | Return JSX; import Firestore directly |
 | `.styles.ts` | Export `styles` (class strings, `cva` variants) and class lookup tables | Logic beyond choosing a variant |
 | `.map.ts` | Pure functions `toSomething(source): ViewModel`; formatting, sorting, ranking | React, I/O, `Date.now()`, `Math.random()` |
+| `.reducer.ts` | Pure game-rule functions `handleX(state, payload): GameState`; domain randomness/timestamps (`Math.random()`, `Date.now()`) allowed — this is game-rule logic, not a view-model transform | React, Firestore, returning JSX |
 | `.service.ts` | Firestore reads and writes via `@/lib/firebase`; return plain data | React, legacy UI |
 | `.types.ts` | Props and view-model types | Redefining domain types (import them from `@/lib/types`) |
 | `.fixtures.ts` | Deterministic sample data | Random values, dates |
