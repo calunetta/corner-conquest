@@ -47,13 +47,13 @@ Tier: L · Phases: 5
 - [x] committed: 7d4fb51
 
 ## Phase 5: Verification and docs
-- [ ] plan approved (architect-b)
-- [ ] implementation (implementer-b: docs/README.md)
-- [ ] tests (full suite + e2e if available)
-- [ ] previews (all 13 components, browser smoke)
-- [ ] checks: typecheck, lint, unit tests, build
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
+- [x] plan approved (architect-b)
+- [x] implementation (implementer-b: docs/README.md)
+- [x] tests (full suite: 1413 passed, 143 suites; e2e: not run: Java 21 unavailable in this environment)
+- [x] previews (all 13 components, browser smoke: 26/26 screenshots passed, no console errors)
+- [x] checks: typecheck, lint, unit tests, build
+- [x] UI verified (ui-verify)
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Log
@@ -76,3 +76,4 @@ Tier: L · Phases: 5
 2026-10-03 implementer-b: DONE, deleted 3 legacy .tsx files
 2026-10-03 tester-a: DONE, confirmed ported assertions, deleted 4 legacy test files (__tests__/ now empty)
 2026-10-03 architect-b: APPROVED (Phase 2 final review, second pass)
+2026-10-04 architect-b: APPROVED (Phase 5 final review). All 13 legacy dialogs confirmed deleted, all 13 module components + shared/player-sprite confirmed present and wired, typecheck/lint/test/build all clean. Flagged non-blocking: docs/README.md's diff interleaves this task's hunks with unrelated in-progress sibling tasks' hunks — coordinator must stage only this task's hunks when committing; docs/ai/refactor.md row #4 still says "in-progress," update to "done" once committed.

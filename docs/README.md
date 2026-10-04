@@ -30,31 +30,21 @@ Understanding the project's structure is key to making changes efficiently and c
 
 - `docs/ai/`: AI workflow guide, task record templates, and one folder per task under `docs/ai/tasks/` (see `docs/ai/README.md`).
 - `e2e/`: Playwright End-to-End browser test suites (`auth-and-lobby.spec.ts`, `gameplay.spec.ts`, `map-viewport.spec.ts`, `tutorial-beacons.spec.ts`).
-- `src/modules/`: New code, organised by domain (created with the first module). `game-board/` holds the `GameBoardContext`/provider implementation (§3.3); `game-rules/` holds the pure game-rule reducers that compute the next `GameState` for each `GameAction` (`*.reducer.ts`), the root dispatcher (`game-rules.reducer.ts`), and the one Firestore-touching exception, `services/player-exit.service.ts` (§6.11); `combat/components/` holds `CombatDialog` and `MonsterCombatDialog`, each split into view/hook/map/styles/types/fixtures per `component-architecture`, migrated from `src/features/game/dialogs/` — see `docs/ai/tasks/2026-10-03-migrate-dialog-components/`; `hud/components/` holds `GameBoardHeader`, `GameStatusBadge`, `GameLog`, `PlayerInfo`, and `ActionsPanel`, each migrated per `component-architecture` with sub-components extracted for line-count compliance (`PlayerInfoStats.tsx`, `BuffIcons.tsx`, `ActionButton.tsx`, `ActionsPanel.disabledReasons.ts`).
+- `src/modules/`: New code, organised by domain (created with the first module). `game-board/` holds the `GameBoardContext`/provider implementation (§3.3); `game-rules/` holds the pure game-rule reducers that compute the next `GameState` for each `GameAction` (`*.reducer.ts`), the root dispatcher (`game-rules.reducer.ts`), match setup (`game-setup.reducer.ts`, `player-join.reducer.ts`, `turn-progression.ts`), the card/player static catalogs (`card-data.ts`, `player-data.ts`, `monster-catalog.ts`, `player-factory.ts`, `map-generation.ts`), the bot AI decision tree (`bot-helpers.ts`, `bot-card-strategy.reducer.ts`, `bot-purchases.reducer.ts`, `bot-army-actions.reducer.ts`, `bot-turn.reducer.ts`), and the two Firestore-touching exceptions, `services/player-exit.service.ts` (§6.11) and `services/bot-turn.service.ts`; `map/components/` holds terrain visuals (`MapGrid`, `MapDecorations`) and 8 island-tile children (`IslandTile`, `TileForest`, `TileResources`, `TileBoats`, `TileOccupants`, `AnimatedMonster`, `DeathEffect`, and the pan/zoom hook split across `MapGrid.pan.hook.ts`, `MapGrid.zoom-state.hook.ts`, `MapGrid.pan-zoom.hook.ts`), each split per `component-architecture` and `MapZoomControls`, all migrated from `src/features/game/components/` — see `docs/ai/tasks/2026-10-03-game-map-migration/`; `cards/components/` holds 7 card-and-ability dialogs (`CardsDialog`, `ProductiveCardDialog`, `SpecialIslandRollDialog`, `AbilitiesDialog`, `SabotageDialog`, `WealthyDialog`, `StealResourceDialog`), each split per `component-architecture`, migrated from `src/features/game/dialogs/` — see `docs/ai/tasks/2026-10-03-game-dialogs-remaining-migration/`; `combat/components/` holds pre-combat squad and target selection (`ArmySelectionDialog`, `AttackSelectionDialog`, `MonsterSelectionDialog`, `PositionDialog`) and the core combat (`CombatDialog`, `MonsterCombatDialog`), each split per `component-architecture`, migrated from `src/features/game/dialogs/` — see `docs/ai/tasks/2026-10-03-game-dialogs-remaining-migration/` and `docs/ai/tasks/2026-10-03-migrate-dialog-components/`; `session/components/` holds session lifecycle (`ConfirmExitDialog`, `HostLeaveDialog`), each split per `component-architecture`, migrated from `src/features/game/dialogs/` — see `docs/ai/tasks/2026-10-03-game-dialogs-remaining-migration/`; `shared/` holds cross-module utilities (`toPlayerIdleSprite`); `hud/components/` holds `GameBoardHeader`, `GameStatusBadge`, `GameLog`, `PlayerInfo`, and `ActionsPanel`, each migrated per `component-architecture` with sub-components extracted for line-count compliance (`PlayerInfoStats.tsx`, `BuffIcons.tsx`, `ActionButton.tsx`, `ActionsPanel.disabledReasons.ts`).
 - `src/testbed/` and `src/app/testbed/`: Dev-only component testbed at `/testbed`. `registry.ts` lists every preview (`*.preview.tsx`); previews of legacy components live in `src/testbed/legacy/`. Hidden in production builds unless `NEXT_PUBLIC_ENABLE_TESTBED=true` at build time.
 - `src/app/`: Core application, pages, and layout.
 - `src/components/`: Reusable, generic UI components (mostly from ShadCN).
 - `src/features/`: Contains domain-specific components and logic structured according to the **SOLID paradigm** (Single Responsibility Principle):
   - `game/`: All components, dialogs, hooks, context, and panels related to the active game board.
     - `context/`:
-      - `GameBoardContext.tsx`: a thin re-export of `src/modules/game-board/` under the original names, kept so the legacy consumers (`GameBoard.tsx`, `GameDialogManager.tsx`, map components, and other panels) need no changes. The actual UI-state types, pure `gameBoardReducer`, `GameBoardProvider`, and `useGameBoard()` all live in `src/modules/game-board/`, which composes the provider's effects and handlers out of focused hooks (`game-board.state.hook.ts`, `.actions.hook.ts`, `.card-actions.hook.ts`, `.local-actions.hook.ts`, `.tile-click.hook.ts`, `.session.hook.ts`) assembled by `game-board.hook.ts` — see `docs/ai/tasks/2026-10-02-gameboardcontext-migration/`.
+      - `GameBoardContext.tsx`: a thin re-export of `src/modules/game-board/` under the original names, kept so the legacy consumers (`GameBoard.tsx`, `GameDialogManager.tsx`, and other panels) need no changes. The actual UI-state types, pure `gameBoardReducer`, `GameBoardProvider`, and `useGameBoard()` all live in `src/modules/game-board/`, which composes the provider's effects and handlers out of focused hooks (`game-board.state.hook.ts`, `.actions.hook.ts`, `.card-actions.hook.ts`, `.local-actions.hook.ts`, `.tile-click.hook.ts`, `.session.hook.ts`) assembled by `game-board.hook.ts` — see `docs/ai/tasks/2026-10-02-gameboardcontext-migration/`.
     - `components/`:
-      - `GameBoard.tsx`: High-level layout orchestrator (<80 lines) composing atomic subcomponents with `<GameBoardProvider>`.
+      - `GameBoard.tsx`: High-level layout orchestrator (<80 lines) composing atomic subcomponents with `<GameBoardProvider>`; imports `MapGrid` from `@/modules/map`.
       - `GameBoardHeader`: Navigation, match status, VP goal, and start game controls with **0 props** (migrated to `src/modules/hud/components/GameBoardHeader` per `component-architecture`).
       - `PlayerInfoBar.tsx`: Collapsible player cards list, goal badge, and tutorial beacon with **0 props**; imports `PlayerInfo` from `@/modules/hud`. Stays at legacy path pending migration of its two JSX children (`PlayerInfo` row #5, `TutorialBeacon` row #8 in `docs/ai/refactor.md`); once they are migrated, `PlayerInfoBar` can move to `src/modules/hud` — see `docs/ai/tasks/2026-10-03-game-header-migration/plan.md` Decisions.
       - `GameStatusBadge`: Turn indicator and player queue badge with **0 props** (migrated to `src/modules/hud/components/GameStatusBadge` per `component-architecture`).
-      - `GameDialogManager.tsx`: Dedicated container for mounting all 15+ modal dialogs with **zero prop-drilling**. Imports `CombatDialog` and `MonsterCombatDialog` from `src/modules/combat`; the other 13 dialogs still live under `src/features/game/dialogs/`. It stays at this legacy path itself — it renders those legacy dialogs directly, which `src/modules/**` is not allowed to import (see `component-architecture`'s import boundaries).
-      - `MapGrid.tsx`: Lightweight terrain board orchestrator (<70 lines, **0 props**) with pan and pinch-to-zoom support.
-      - `MapZoomControls.tsx`: Glassmorphic zoom controls HUD (+ / - / Reset 100%) with **0 props or callback props**.
-      - `MapDecorations.tsx`: Strategic fixed rocks and outer perimeter cloud formations framing uncharted ocean margins.
-      - `IslandTile.tsx`: Island tile orchestrator composing terrain, forest, resources, boats, castle, and occupants with **1 prop (`{ island }`)**.
-      - `TileForest.tsx`: Small deterministic forest cluster (2–3 trees of identical type) with **2 props (`{ island, isBase }`)**.
-      - `TileResources.tsx`: Animated resource nodes (sheep, trees, mines) with double-sprite rendering, farming animations, and monster suppression with **2 props (`{ island, isBase }`)**.
-      - `TileBoats.tsx`: 4-corner non-overlapping boat docking and idle collectors with **1 prop (`{ island }`)**.
-      - `AnimatedMonster.tsx`: Monster sprite animation and interval tracking.
-      - `TileOccupants.tsx`: Fog-of-war aware army sprites and death animations with **1 prop (`{ island }`)**.
+      - `GameDialogManager.tsx`: Dedicated container for mounting all 15+ modal dialogs with **zero prop-drilling**. Imports all 13 game dialogs from `src/modules/cards` (7), `src/modules/combat` (4), and `src/modules/session` (2); also imports `CombatDialog` and `MonsterCombatDialog` from `src/modules/combat`. It stays at this legacy path itself — it renders those dialogs directly, which `src/modules/**` is not allowed to import (see `component-architecture`'s import boundaries).
     - `hooks/`:
-      - `useMapPanZoom.ts`: Pure pan, pinch-to-zoom, mouse wheel zoom, and drag handler hook.
       - `useTurnTimer.ts`: Turn countdown timer, interval tracking, and auto-timeout dispatch.
     - `types.ts`: Re-exports domain dialog types from `@/lib/types/dialogs`.
   - `lobby/`: Components for creating and joining games (`Lobby.tsx` with 2-column command center and scrollable match list, `LobbyBackground.tsx` with animated battle diorama and 4 faction bases, `LobbyGameRow.tsx`, `CreateGameDialog.tsx`, `CustomSettingsSheet.tsx`).
@@ -62,7 +52,7 @@ Understanding the project's structure is key to making changes efficiently and c
     > **Visual Parity Rule:** The Login page (`src/app/page.tsx`) must always share the exact same aesthetic theme, background (`<LobbyBackground />`), glassmorphism, and color palette as the Game Lobby. Any updates to the Lobby's visual presentation must be mirrored in the Login view.
 - `src/hooks/`: Custom React hooks (`useGameEngine`, `usePlayer`, `useIsMobile`, `useToast`).
 - `src/lib/`: Core application logic, type definitions, and Firebase configuration.
-  - `__tests__/`: Jest test suites for what's left at this legacy path (`bot-logic.test.ts`, `firebase.test.ts`, `game-initializer.test.ts`, a trimmed `turn-progression.test.ts`). The game-rule reducers themselves — and their tests — moved to `src/modules/game-rules/` (see below).
+  - `__tests__/`: Jest test suites for what's left at this legacy path (`firebase.test.ts`). The game-rule reducers themselves — and their tests — moved to `src/modules/game-rules/` (see below).
   - `types/`: **Domain-specific Modular Types** with central barrel export (`index.ts`):
     - `actions.ts`: `GameAction`, `MAP_ROWS`, `MAP_COLS`, `HAND_LIMIT`
     - `cards.ts`: `CardName`, `AbilityName`, `ResourceType`, `PassiveAbilities`
@@ -73,9 +63,6 @@ Understanding the project's structure is key to making changes efficiently and c
     - `game.ts`: `GameStatus`, `GameSettings`, `GameState`, `ActionHandlerResult`
     - `dialogs.ts`: `PendingAction`, `ProductiveCardDialogState`, `SpecialIslandRollDialogState`, `ArmySelectionDialogState`, etc.
     - `index.ts`: Barrel export aggregating all domain types.
-  - `game-initializer.ts`: Map generation and initial match setup.
-  - `game-logic.ts`: Higher-level room management and player joins.
-  - `bot-logic.ts`: AI bot decision engine.
 
 ## 3. State Management & Session Logic
 
@@ -155,8 +142,8 @@ The first player to reach the `victoryPointGoal` (default: 30 VP) wins the game.
 - **Passive Abilities:** The `Explorer` ability grants VP each turn for non-base islands you occupy.
 
 ### 5.2. The Map & Islands
-The game is played on a grid of islands with configurable dimensions (`settings.gridSize.cols` by `settings.gridSize.rows`). Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to a tile, revealing it. The procedural generation of the map is governed by the `game-initializer.ts` file and can be tweaked via the "Customize Match" settings in the lobby.
-- **Base:** Your starting point. Where you deploy new armies and where defeated armies respawn. Bases also generate all three resource types. The Base's appearance is a castle sprite specific to the player's color, defined in `src/lib/player-data.ts`.
+The game is played on a grid of islands with configurable dimensions (`settings.gridSize.cols` by `settings.gridSize.rows`). Each player starts at their **Base** in a corner. The rest of the map is hidden by Fog of War until a player's army moves to a tile, revealing it. The procedural generation of the map is governed by `src/modules/game-rules/game-setup.reducer.ts` and `map-generation.ts`, and can be tweaked via the "Customize Match" settings in the lobby.
+- **Base:** Your starting point. Where you deploy new armies and where defeated armies respawn. Bases also generate all three resource types. The Base's appearance is a castle sprite specific to the player's color, defined in `src/modules/game-rules/player-data.ts`.
 - **Resource Islands:** Contain **Food**, **Wood**, or **Gold**. The generation logic is as follows:
     - An island can have one or two types of resources, determined by its distance from the map's center.
     - If an island has **one** resource type, it will always have **two** collection spots for that resource.
@@ -377,7 +364,7 @@ These actions are available once per turn each and do not set the `hasActed` fla
     -   **All Special Cards & 20 Starting Resources:** The human player begins the game with one of every available Special Card and **20 Food, 20 Wood, and 20 Gold**, allowing for immediate testing of all strategic and army mechanics.
 
 ### 6.8. Bot Logic
-The AI behavior is defined in `src/lib/bot-logic.ts`. It executes as a complete, atomic turn loop to eliminate timeout debouncing, state deadlocks, or dangling combat states:
+The AI behavior is defined in `src/modules/game-rules/bot-turn.reducer.ts` and `services/bot-turn.service.ts`. It executes as a complete, atomic turn loop to eliminate timeout debouncing, state deadlocks, or dangling combat states:
 
 > [!IMPORTANT]
 > **Balance Simulator:** `scripts/balance-simulator/` plays many complete bot-vs-bot matches through this real logic (Firestore stubbed, zero writes) and reports win rates, match length, resource and card economy, combat accuracy, and bot-health signals (does a seat ever leave its own Base, get stuck on Productive, etc.). See `docs/balance-simulator-guide.md` for how to run it and read its report, including its known limitations and the bot quirks it already confirmed.

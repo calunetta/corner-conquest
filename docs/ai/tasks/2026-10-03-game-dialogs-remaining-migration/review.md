@@ -218,3 +218,39 @@ Both blocking findings from the first pass are resolved. No new findings.
 
 ## progress.md
 - Ticked "final review (architect-b)" for Phase 4; "committed" is the coordinator's to fill in once Phase 4 is committed.
+
+---
+
+# Final review: Migrate the remaining 13 game dialogs into src/modules, phase 5/5
+
+VERDICT: APPROVED
+
+## Checks run
+- `npm run typecheck`: clean, zero errors repo-wide (`tsc --noEmit` → no output).
+- `npm run lint`: clean, zero errors/warnings repo-wide (`eslint . --max-warnings 0 --no-error-on-unmatched-pattern` → no output).
+- `npx jest src/modules/cards src/modules/combat src/modules/session src/modules/shared src/features/game/components/GameDialogManager`: `Test Suites: 50 passed, 50 total` / `Tests: 450 passed, 450 total`.
+- `npm test` (full repo): `Test Suites: 149 passed, 149 total` / `Tests: 1472 passed, 1472 total`.
+- `npm run build`: `✓ Compiled successfully`, static pages generated, no type or lint errors during build.
+- ui-verify: trusted the coordinator's report for this phase (26/26 screenshots across all 13 components, no console errors) — not re-run in this session.
+
+## Plan adherence
+- All 13 dialogs confirmed present under `src/modules/<domain>/components/`: `cards` has `AbilitiesDialog, CardsDialog, ProductiveCardDialog, SabotageDialog, SpecialIslandRollDialog, StealResourceDialog, WealthyDialog` (7); `combat` has `ArmySelectionDialog, AttackSelectionDialog, MonsterSelectionDialog, PositionDialog` alongside the pre-existing `CombatDialog, MonsterCombatDialog`; `session` has `ConfirmExitDialog, HostLeaveDialog` (2) — 7+4+2 = 13, met.
+- `src/features/game/dialogs/`: `ls -la` shows only an empty `__tests__/` subfolder, zero `.tsx` files — all 13 legacy files and their characterization tests are gone. `grep -rn` for each legacy dialog path across `src/`, `e2e/`, `docs/`, `.claude/`, `scripts/` returns no production-code hits (only historical mentions in other tasks' own `plan.md`/`triage.md` files and `docs/ai/refactor.md`'s row #4, none of which are code) — met.
+- `src/modules/shared/player-sprite.ts`'s `toPlayerIdleSprite` is used in exactly the 4 places the plan names, crossing the `cards`/`combat` boundary: `SabotageDialog.map.ts`, `StealResourceDialog.map.ts`, `ArmySelectionDialog.map.ts`, `AttackSelectionDialog.map.ts` — met.
+- `StealResourceDialog` split into `StealResourceDialog.tsx` (32 lines) + `PlayerSelectionStep.tsx` + `ResourceSelectionStep.tsx` (84 lines), all well under the 150-line cap; only `StealResourceDialog` exported from `src/modules/cards/components/StealResourceDialog/index.ts` — met.
+- `AbilitiesDialog.hook.ts:21` uses `catch (e: unknown)` per the mandated behavior-preserving fix — met.
+- `src/features/game/components/GameDialogManager.tsx` imports all 13 dialogs from `@/modules/cards` (7) and `@/modules/combat` (4) and `@/modules/session` (2), plus the already-migrated `CombatDialog`/`MonsterCombatDialog` from `@/modules/combat`; `git log` shows this file was last touched at the Phase 4 commit (`7d4fb51`) and has no further changes in this phase — met, no further edit needed since Phase 4 already completed the import swap.
+- `docs/README.md`: diff reviewed. The `src/modules/` bullet now documents `cards/` (7 dialogs), the extended `combat/` (adds `ArmySelectionDialog, AttackSelectionDialog, MonsterSelectionDialog, PositionDialog`), new `session/` (`ConfirmExitDialog, HostLeaveDialog`), and new `shared/` (`toPlayerIdleSprite`) — matches the actual file tree confirmed above. The `GameDialogManager.tsx` bullet is updated from "the other 13 dialogs still live under `src/features/game/dialogs/`" to naming all 13 by their new module imports — met, satisfies the acceptance criterion.
+- All files under the 150-line cap, confirmed by both direct line counts on the largest files and lint's clean `max-lines` pass — met.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | `docs/README.md` | The working tree's diff to this file currently interleaves this task's hunks (cards/combat/session/shared bullet, `GameDialogManager.tsx` bullet) with unrelated, still-in-progress sibling tasks' hunks (`game-map-migration`'s `MapGrid`/`IslandTile`/tile-children bullets removed, bot-logic migration's bullets). Content of this task's hunks is correct and verified above, but committing the whole file as-is would bundle unrelated, not-yet-reviewed sibling work into this phase's commit. | coordinator | Yes, for the commit step only — stage only this task's hunks of `docs/README.md` (`git add -p` or equivalent), not the full file, when committing Phase 5. Not a content defect. |
+| 2 | `docs/ai/refactor.md:33` | Row #4 ("Game dialogs — remaining") still reads `in-progress (phase 1/5 committed 1cb8ac3)`, stale since Phase 2. | coordinator | No — update to `done` with all 5 commit hashes once Phase 5 is committed, per that file's own "How an agent should use this file" step 2. Routine end-of-task housekeeping, not a defect in this phase's diff. |
+
+## Docs
+- `docs/README.md`: updated, content verified correct for this task's scope (see Plan adherence and Finding 1 for the staging caveat).
+
+## progress.md
+- Ticked "final review (architect-b)" for Phase 5; "committed" is the coordinator's to fill in once Phase 5 is committed (with the hunk-staging caveat in Finding 1 applied to `docs/README.md`).
