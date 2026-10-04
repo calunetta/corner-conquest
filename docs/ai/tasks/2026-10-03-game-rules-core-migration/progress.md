@@ -45,7 +45,7 @@ Tier: L · Phases: 4
   - not run: e2e (`npm run test:e2e -- e2e/gameplay.spec.ts`) — "Unable to locate a Java Runtime" (no Java 21 on this machine), confirmed independently by tester-b and architect-b
 - [ ] UI verified (ui-verify) — not applicable, no UI change
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 30f1c0a
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
