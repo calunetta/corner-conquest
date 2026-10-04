@@ -32,6 +32,7 @@ export const playerStandingsPreview: ComponentPreview = {
 Legacy previews import the type from `../testbed.types` instead of `@/testbed`.
 
 ## Rules
+- **Previews are closed by default.** Selecting a component in the testbed shows a list of state names without rendering any state's component. A state only renders when the user opens it via `?state=<name>`. This keeps state lists lightweight and prevents assuming all states mount at once.
 - Render the pure `NameView` with props: never the connected component, never a provider that talks to Firestore.
 - One state per meaningful visual difference: default, empty, loading, error, disabled, edge values (max, ties, long names), selected. Take the list from `plan.md` (Preview states) and `ui-design.md` (States).
 - Data comes from `Name.fixtures.ts`, shared with the tests. Deterministic: no `Math.random()`, no `Date.now()`.

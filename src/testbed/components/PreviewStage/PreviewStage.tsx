@@ -13,14 +13,14 @@ interface PreviewStageProps {
 
 export function PreviewStage({ slug, stateName }: PreviewStageProps) {
   const preview = findPreview(slug);
-  const states = preview ? selectStates(preview.states, stateName) : [];
+  const states = preview && stateName ? selectStates(preview.states, stateName) : [];
   const availableStates = preview?.states.map((state) => state.name).join(', ');
 
   return (
     <div className={styles.page} data-testid="testbed-stage">
       <header className={styles.header}>
         <Link href="/testbed" className={styles.backLink}>
-          ← All components
+          {'← All components'}
         </Link>
         <h1 className={styles.title}>{preview?.title ?? 'Preview not found'}</h1>
         {preview && <p className={styles.group}>{preview.group}</p>}
@@ -28,13 +28,28 @@ export function PreviewStage({ slug, stateName }: PreviewStageProps) {
 
       {!preview && (
         <p className={styles.message} data-testid="testbed-missing">
-          No preview is registered with the slug “{slug}”.
+          No preview is registered with the slug &quot;{slug}&quot;.
         </p>
       )}
 
-      {preview && states.length === 0 && (
+      {preview && !stateName && (
+        <ul className={styles.stateList} data-testid="testbed-state-list">
+          {preview.states.map((state) => (
+            <li key={state.name} className={styles.stateListItem}>
+              <Link
+                href={`/testbed/${slug}?state=${state.name}`}
+                className={styles.stateLink}
+              >
+                {state.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {preview && stateName && states.length === 0 && (
         <p className={styles.message} data-testid="testbed-missing">
-          No state named “{stateName}”. Available: {availableStates}.
+          No state named &quot;{stateName}&quot;. Available: {availableStates}.
         </p>
       )}
 

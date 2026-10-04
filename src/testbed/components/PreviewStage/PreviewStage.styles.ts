@@ -5,6 +5,10 @@ export const styles = {
     'w-fit text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden',
   title: 'text-2xl font-black tracking-wide text-foreground',
   group: 'text-xs uppercase tracking-widest text-muted-foreground',
+  stateList: 'flex flex-col gap-3',
+  stateListItem: 'flex items-center',
+  stateLink:
+    'text-sm text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
   state: 'flex flex-col gap-2',
   stateName: 'text-sm font-semibold text-muted-foreground',
   canvas: 'relative min-h-48 overflow-x-auto rounded-xl border border-dashed border-border bg-background/60 p-6',

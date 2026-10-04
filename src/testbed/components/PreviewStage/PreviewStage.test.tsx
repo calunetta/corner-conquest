@@ -17,12 +17,24 @@ jest.mock('../../registry', () => ({
 }));
 
 describe('PreviewStage', () => {
-  it('renders every state of the preview in its own labelled section', () => {
+  it('renders a closed list of state links when no stateName is provided', () => {
     render(<PreviewStage slug="sample-badge" />);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Sample badge' })).toBeInTheDocument();
-    expect(screen.getByTestId('testbed-state-default')).toHaveTextContent('default badge');
-    expect(screen.getByTestId('testbed-state-expiring')).toHaveTextContent('expiring badge');
+
+    // State content should NOT appear
+    expect(screen.queryByText('default badge')).not.toBeInTheDocument();
+    expect(screen.queryByText('expiring badge')).not.toBeInTheDocument();
+
+    // State links should appear
+    const stateLinks = screen.getByTestId('testbed-state-list');
+    expect(stateLinks).toBeInTheDocument();
+
+    const defaultLink = screen.getByRole('link', { name: 'Default' });
+    expect(defaultLink).toHaveAttribute('href', '/testbed/sample-badge?state=Default');
+
+    const expiringLink = screen.getByRole('link', { name: 'Expiring' });
+    expect(expiringLink).toHaveAttribute('href', '/testbed/sample-badge?state=Expiring');
   });
 
   it('renders only the requested state', () => {
@@ -32,16 +44,29 @@ describe('PreviewStage', () => {
     expect(screen.queryByText('default badge')).not.toBeInTheDocument();
   });
 
+  it('renders a state link with a simple name (no special-casing needed)', () => {
+    render(<PreviewStage slug="sample-badge" />);
+
+    const stateList = screen.getByTestId('testbed-state-list');
+    const links = stateList.querySelectorAll('a');
+
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveTextContent('Default');
+    expect(links[0]).toHaveAttribute('href', '/testbed/sample-badge?state=Default');
+  });
+
   it('lists the available states when the requested one does not exist', () => {
     render(<PreviewStage slug="sample-badge" stateName="Missing" />);
 
-    expect(screen.getByText(/No state named “Missing”. Available: Default, Expiring./)).toBeInTheDocument();
+    const message = screen.getByTestId('testbed-missing');
+    expect(message).toHaveTextContent('No state named "Missing". Available: Default, Expiring.');
   });
 
   it('explains when no preview matches the slug', () => {
     render(<PreviewStage slug="unknown" />);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Preview not found' })).toBeInTheDocument();
-    expect(screen.getByText(/No preview is registered with the slug “unknown”/)).toBeInTheDocument();
+    const message = screen.getByTestId('testbed-missing');
+    expect(message).toHaveTextContent('No preview is registered with the slug "unknown"');
   });
 });
