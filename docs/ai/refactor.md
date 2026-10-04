@@ -37,7 +37,7 @@ Full inventory of everything still outside the `src/modules/<domain>/` standard 
 | 8 | Game effects | `src/features/game/components/AnimatedMonster.tsx`, `DeathEffect.tsx`, `TutorialBeacon.tsx`, `src/features/game/hooks/useTurnTimer.ts` | — | `2026-10-04-game-effects-migration` | done (c6759e8) — `AnimatedMonster.tsx`/`DeathEffect.tsx` were already migrated under row #6; this task covered the remaining 2 files, `TutorialBeacon.tsx` and `useTurnTimer.ts` |
 | 9 | Lobby | `src/features/lobby/components/Lobby.tsx`, `LobbyBackground.tsx`, `LobbyGameRow.tsx`, `CreateGameDialog.tsx`, `CustomSettingsSheet.tsx` | — | `lobby-migration` | done (4f33033, 6756371) |
 | 10 | Shared hooks | `src/hooks/use-game-engine.ts`, `use-player.tsx`, `use-toast.ts`; also dedupe `use-is-mobile.ts` vs `use-mobile.ts` (near-duplicates — confirm which is actually imported before deleting the other) | — | `shared-hooks-migration` | done (215ca0f) |
-| 11 | App entry points | `src/app/page.tsx`, `src/app/layout.tsx`, `src/components/icons.tsx` | #6, #9, #10 | `app-entry-migration` | pending |
+| 11 | App entry points | `src/app/page.tsx`, `src/app/layout.tsx`, `src/components/icons.tsx` | #6, #9, #10 | `app-entry-migration` | done (10dc4b8, 4cfd509, 9532cfd) |
 
 ## Not in scope here
 - `src/lib/types/*.ts`, `src/features/game/types.ts`: shared type definitions. Move each type
