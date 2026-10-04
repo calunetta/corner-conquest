@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { GameBoard } from '@/features/game/components/GameBoard';
-import { Lobby } from '@/features/lobby/components/Lobby';
-import { LobbyBackground } from '@/features/lobby/components/LobbyBackground';
+import { Lobby, LobbyBackground } from '@/modules/lobby';
 import { usePlayer } from '@/hooks/use-player';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2, Swords, Compass } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import Image from 'next/image';
 
 function Login() {
   const [mounted, setMounted] = useState(false);

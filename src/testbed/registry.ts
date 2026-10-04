@@ -28,6 +28,11 @@ import { wealthyDialogPreview } from '@/modules/cards/components/WealthyDialog/W
 import { stealResourceDialogPreview } from '@/modules/cards/components/StealResourceDialog/StealResourceDialog.preview';
 import { confirmExitDialogPreview } from '@/modules/session/components/ConfirmExitDialog/ConfirmExitDialog.preview';
 import { hostLeaveDialogPreview } from '@/modules/session/components/HostLeaveDialog/HostLeaveDialog.preview';
+import { lobbyPreview } from '@/modules/lobby/components/Lobby/Lobby.preview';
+import { lobbyBackgroundPreview } from '@/modules/lobby/components/LobbyBackground/LobbyBackground.preview';
+import { lobbyGameRowPreview } from '@/modules/lobby/components/LobbyGameRow/LobbyGameRow.preview';
+import { createGameDialogPreview } from '@/modules/lobby/components/CreateGameDialog/CreateGameDialog.preview';
+import { customSettingsSheetPreview } from '@/modules/lobby/components/CustomSettingsSheet/CustomSettingsSheet.preview';
 import type { ComponentPreview } from './testbed.types';
 
 /** Every preview shown in the testbed. Register new previews here (skill: testbed-preview). */
@@ -62,6 +67,11 @@ export const previews: ComponentPreview[] = [
   stealResourceDialogPreview,
   confirmExitDialogPreview,
   hostLeaveDialogPreview,
+  lobbyPreview,
+  lobbyBackgroundPreview,
+  lobbyGameRowPreview,
+  createGameDialogPreview,
+  customSettingsSheetPreview,
 ];
 
 export function findPreview(slug: string): ComponentPreview | undefined {
