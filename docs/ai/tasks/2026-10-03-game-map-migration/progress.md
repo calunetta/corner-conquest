@@ -30,7 +30,7 @@ Tier: M · Phases: 3
 - [x] checks: typecheck, lint, unit tests, build
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: c512514
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
