@@ -1,5 +1,5 @@
 export const styles = {
-  root: 'relative flex h-screen w-screen items-center justify-center p-4 overflow-hidden',
+  root: 'relative z-0 flex h-screen w-screen items-center justify-center p-4 overflow-hidden',
   card: 'z-10 w-full max-w-md bg-background/55 backdrop-blur-2xl border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden',
   header: 'text-center pb-2',
   iconWrap: 'mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-primary/20 border border-amber-500/30 shadow-inner',

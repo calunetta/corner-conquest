@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { LoginView } from './Login';
 import type { LoginViewProps } from './Login.types';
+import { styles } from './Login.styles';
 
 // Mock next/image to avoid issues with Image component in tests
 jest.mock('next/image', () => ({
@@ -239,6 +240,16 @@ describe('LoginView', () => {
 
       const label = screen.getByText('Commander Name');
       expect(label).toHaveAttribute('for', 'username');
+    });
+  });
+
+  describe('root stacking context (z-index regression)', () => {
+    it('root has explicit z-index utility class to establish stacking context', () => {
+      expect(styles.root).toMatch(/\bz-\d+/);
+    });
+
+    it('root uses relative positioning', () => {
+      expect(styles.root).toMatch(/relative/);
     });
   });
 });

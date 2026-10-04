@@ -1,5 +1,5 @@
 export const styles = {
-  root: 'relative min-h-screen w-full flex items-center justify-center p-3 sm:p-6 lg:p-8 overflow-x-hidden',
+  root: 'relative z-0 min-h-screen w-full flex items-center justify-center p-3 sm:p-6 lg:p-8 overflow-x-hidden',
   card: 'w-full max-w-6xl bg-background/55 backdrop-blur-2xl border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] relative z-10 overflow-hidden',
   header: 'p-4 sm:p-6 pb-4 border-b border-white/10',
   headerContent: 'flex flex-col sm:flex-row w-full items-start sm:items-center justify-between gap-4',

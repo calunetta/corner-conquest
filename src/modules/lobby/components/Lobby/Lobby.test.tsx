@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { LobbyView } from './Lobby';
 import { emptyLobby, loadingLobby, lobbyWithOpenGames } from './Lobby.fixtures';
+import { styles } from './Lobby.styles';
 
 describe('LobbyView', () => {
   it('renders the header with title and player greeting', () => {
@@ -64,5 +65,15 @@ describe('LobbyView', () => {
     render(<LobbyView {...emptyLobby} />);
 
     expect(screen.getByRole('button', { name: /create new game/i })).toBeInTheDocument();
+  });
+
+  describe('root stacking context (z-index regression)', () => {
+    it('root has explicit z-index utility class to establish stacking context', () => {
+      expect(styles.root).toMatch(/\bz-\d+/);
+    });
+
+    it('root uses relative positioning', () => {
+      expect(styles.root).toMatch(/relative/);
+    });
   });
 });
