@@ -7,7 +7,7 @@ Tier: S · Phases: 1
 - [x] implementation (implementer-a): LobbyBackground, Login, Lobby stacking-context fix
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify) on Login, Lobby, lobby-background testbed preview
-- [ ] committed: <hash>
+- [x] committed: e22eca0
 
 ## Log
 - 2026-10-04 tester-a: DONE, added 3 failing regression tests (LobbyBackground, Login, Lobby `root stacking context` describe blocks).
