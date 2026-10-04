@@ -30,6 +30,22 @@ export const baseIsland: Island = {
   positionedBy: [],
 };
 
+/** A base tile contested by its owner's own army plus an attacker — the scenario that
+ * exposed the corner-collision bug in getCornerPosition (fixed in TileBoats.map.ts). */
+export const contestedBaseIsland: Island = {
+  id: 'base-contested-owner-attacker',
+  x: 0,
+  y: 0,
+  type: IslandType.Base,
+  owner: 0,
+  resources: [],
+  occupants: [
+    { playerId: 0, armyId: 0 },
+    { playerId: 1, armyId: 1 },
+  ],
+  positionedBy: [],
+};
+
 export const baseIslandWithOccupants: Island = {
   id: 'base-contested-1',
   x: 0,

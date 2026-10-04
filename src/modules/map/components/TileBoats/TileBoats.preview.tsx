@@ -1,7 +1,8 @@
 'use client';
 
 import { TileBoatsView } from './TileBoats';
-import { boatEntryFixture } from './TileBoats.fixtures';
+import { toTileBoatsViewModel } from './TileBoats.map';
+import { boatEntryFixture, bluePlayer, redPlayer, contestedBaseIsland } from './TileBoats.fixtures';
 import type { ComponentPreview } from '@/testbed/testbed.types';
 import type { BoatEntryViewModel } from './TileBoats.types';
 import { PlayerColor } from '@/lib/types';
@@ -68,6 +69,14 @@ export const tileBoatsPreview: ComponentPreview = {
     {
       name: 'All four corners',
       render: () => <TileBoatsView boats={allCornersBoatsFixture} />,
+    },
+    {
+      name: 'Contested base (real map function)',
+      render: () => (
+        <TileBoatsView
+          boats={toTileBoatsViewModel(contestedBaseIsland, [bluePlayer, redPlayer], bluePlayer, false, false)}
+        />
+      ),
     },
   ],
 };
