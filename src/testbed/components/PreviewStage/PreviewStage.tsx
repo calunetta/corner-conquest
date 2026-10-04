@@ -32,19 +32,31 @@ export function PreviewStage({ slug, stateName }: PreviewStageProps) {
         </p>
       )}
 
+      {preview && (
+        <nav aria-label="Preview states" data-testid="testbed-state-list">
+          <ul className={styles.stateList}>
+            {preview.states.map((state) => {
+              const isActive = stateName?.toLowerCase() === state.name.toLowerCase();
+              return (
+                <li key={state.name} className={styles.stateListItem}>
+                  <Link
+                    href={`/testbed/${slug}?state=${state.name}`}
+                    className={styles.stateLink(isActive)}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    {state.name}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
+
       {preview && !stateName && (
-        <ul className={styles.stateList} data-testid="testbed-state-list">
-          {preview.states.map((state) => (
-            <li key={state.name} className={styles.stateListItem}>
-              <Link
-                href={`/testbed/${slug}?state=${state.name}`}
-                className={styles.stateLink}
-              >
-                {state.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <p className={styles.message} data-testid="testbed-no-selection">
+          Select a state above to preview it.
+        </p>
       )}
 
       {preview && stateName && states.length === 0 && (
