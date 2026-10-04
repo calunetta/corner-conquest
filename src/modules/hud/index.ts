@@ -3,3 +3,4 @@ export { GameStatusBadge } from './components/GameStatusBadge';
 export { GameLog } from './components/GameLog';
 export { PlayerInfo } from './components/PlayerInfo';
 export { ActionsPanel } from './components/ActionsPanel';
+export { TutorialBeacon } from './components/TutorialBeacon';

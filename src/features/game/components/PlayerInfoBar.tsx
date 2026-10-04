@@ -5,8 +5,7 @@ import { ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-is-mobile';
-import { PlayerInfo } from '@/modules/hud';
-import { TutorialBeacon } from './TutorialBeacon';
+import { PlayerInfo, TutorialBeacon } from '@/modules/hud';
 import { useGameBoard } from '../context/GameBoardContext';
 
 export function PlayerInfoBar() {

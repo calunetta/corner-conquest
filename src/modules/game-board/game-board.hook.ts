@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { hasPlayerRemainingActions } from '@/modules/game-rules';
-import { useTurnTimer } from '@/features/game/hooks/useTurnTimer';
+import { useTurnTimer } from './turn-timer.hook';
 import { useGameBoardState } from './game-board.state.hook';
 import { useGameBoardActions } from './game-board.actions.hook';
 import { useCardActions } from './game-board.card-actions.hook';

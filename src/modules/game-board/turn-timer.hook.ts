@@ -8,7 +8,7 @@ export const TURN_DURATION = 120; // 2 minutes in seconds
 interface UseTurnTimerProps {
   isMyTurn: boolean;
   gameStatus: string;
-  onAction?: (action: GameAction, payload?: any) => void;
+  onAction?: (action: GameAction, payload?: unknown) => void;
 }
 
 export function useTurnTimer({ isMyTurn, gameStatus, onAction }: UseTurnTimerProps) {
