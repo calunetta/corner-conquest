@@ -3,7 +3,7 @@ import { CardName, GameStatus, IslandType } from '@/lib/types';
 
 const DEATH_ANIMATION_DURATION_MS = 2000;
 
-/** Collects resources from all of a player's positioned armies, then clears those positions. */
+/** Collects resources from all of a player's positioned armies. Positions persist until the army moves, loses a fight, or dies. */
 function applyAutomaticCollection(state: GameState, player: Player): GameState {
   const collectedResources: Record<string, number> = {};
 
@@ -20,14 +20,6 @@ function applyAutomaticCollection(state: GameState, player: Player): GameState {
   if (collectedStrings.length > 0) {
     state.log.push(`${player.name} automatically collected ${collectedStrings.join(', ')}.`);
   }
-
-  player.positions.forEach((pos) => {
-    const tile = state.map[pos.y * state.settings.gridSize.cols + pos.x];
-    if (tile && tile.positionedBy) {
-      tile.positionedBy = tile.positionedBy.filter((p) => !(p.playerId === player.id && p.resource === pos.resource));
-    }
-  });
-  player.positions = [];
 
   return state;
 }

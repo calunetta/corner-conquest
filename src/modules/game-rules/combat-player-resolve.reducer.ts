@@ -69,6 +69,7 @@ export function handleCloseCombat(state: GameState): GameState {
     const loserArmy = loser.armies.find((a) => a.id === attackingArmyId);
     const baseTile = baseTiles.find((b) => b.owner === loserId);
     if (loserArmy && baseTile) {
+      const oldPos = loserArmy.position;
       const deathAnim: DeathAnimation = {
         id: `army-${loser.id}-${loserArmy.id}-${Date.now()}`,
         x: loserArmy.position.x,
@@ -82,6 +83,17 @@ export function handleCloseCombat(state: GameState): GameState {
       loserArmy.position = { x: baseTile.x, y: baseTile.y };
       loserArmy.hasActed = false; // Reset status on respawn
       map[baseTile.y * settings.gridSize.cols + baseTile.x].occupants.push({ playerId: loserId, armyId: loserArmy.id });
+
+      const positionIndex = loser.positions.findIndex((p) => p.armyId === loserArmy.id);
+      if (positionIndex > -1) {
+        const removedPosition = loser.positions.splice(positionIndex, 1)[0];
+        const oldTile = map[oldPos.y * settings.gridSize.cols + oldPos.x];
+        if (oldTile?.positionedBy) {
+          oldTile.positionedBy = oldTile.positionedBy.filter(
+            (p) => !(p.playerId === loserId && p.resource === removedPosition.resource),
+          );
+        }
+      }
     }
   }
 

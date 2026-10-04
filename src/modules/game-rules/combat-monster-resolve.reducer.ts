@@ -63,6 +63,8 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
     }
   } else {
     state.log.push(`${attacker.name} was defeated by the ${monster.name}!`);
+    // No position cleanup needed here: a tile only gets `resources` once its monster is defeated
+    // (see the winning branch above), so a live-monster tile can never have a positioned army on it.
     const baseTile = baseTiles.find((t) => t.owner === attacker.id);
     const losingArmy = attacker.armies.find(
       (a) => a.position.x === attackerPosition.x && a.position.y === attackerPosition.y,

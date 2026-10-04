@@ -73,14 +73,7 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
     state.log.push(`${player.name} collected ${collectedStrings.join(', ')}${doubledResourceString}.`);
   }
 
-  player.positions.forEach((pos) => {
-    const tile = state.map[pos.y * state.settings.gridSize.cols + pos.x];
-    if (tile && tile.positionedBy) {
-      tile.positionedBy = tile.positionedBy.filter((p) => !(p.playerId === player.id && p.resource === pos.resource));
-    }
-  });
-  player.positions = [];
-
+  // Positions persist until the army moves, loses a fight, or dies (same rule as automatic collection).
   state.productiveDialogState = null;
   return state;
 }

@@ -128,6 +128,20 @@ describe('handleCloseCombat', () => {
     expect(losingArmy.hasActed).toBe(false);
   });
 
+  it('attacker loses while positioned on the attacked tile: loser.positions and the tile\'s positionedBy no longer reference that army', () => {
+    const attacker = game.players[0];
+    const defender = game.players[1];
+    game.combatState!.winnerId = defender.id;
+    const { loser, tile } = placeCombatants(game, defender.id, attacker.id, game.combatState!.attackingArmyId, game.combatState!.defendingArmyId);
+    const losingArmyId = game.combatState!.attackingArmyId;
+    expect(loser.positions).toContainEqual(expect.objectContaining({ armyId: losingArmyId })); // sanity: positioned before combat resolves
+
+    handleCloseCombat(game);
+
+    expect(loser.positions.find((p) => p.armyId === losingArmyId)).toBeUndefined();
+    expect(tile.positionedBy).toEqual([]);
+  });
+
   it('sets state.winner and GameStatus.Finished when the victory point goal is reached', () => {
     const winner = game.players[0];
     const defender = game.players[1];

@@ -115,7 +115,8 @@ describe('handleUseProductiveCard', () => {
     expect(nextState.players[0].specialCards).not.toContain(CardName.Productive);
     expect(nextState.discardPile).toContain(CardName.Productive);
     expect(nextState.players[0].actionsThisTurn).toContain(GameAction.UseCard);
-    expect(nextState.players[0].positions).toHaveLength(0);
+    // Positions persist after Productive card collection (same rule as automatic collection)
+    expect(nextState.players[0].positions).toHaveLength(1);
     expect(nextState.productiveDialogState).toBeNull();
   });
 
@@ -142,18 +143,23 @@ describe('handleUseProductiveCard', () => {
     expect(nextState.players[0].resources.food).toBe(1);
     expect(nextState.players[0].specialCards).toContain(CardName.Productive); // no card consumed
     expect(nextState.players[0].actionsThisTurn).not.toContain(GameAction.UseCard);
+    // Positions persist regardless of whether doubling was used
+    expect(nextState.players[0].positions).toHaveLength(1);
   });
 
-  it('clears the positioned tile\'s positionedBy entry for the player after collecting', () => {
+  it('does not clear the positioned tile\'s positionedBy entry after collecting (positions persist)', () => {
     const player = game.players[0];
     player.specialCards = [CardName.Productive];
     player.positions = [{ x: 0, y: 0, resource: ResourceType.Food, armyId: 0 }];
     const tile = game.map[0 * game.settings.gridSize.cols + 0];
     tile.positionedBy = [{ playerId: player.id, resource: ResourceType.Food }];
 
-    handleUseProductiveCard(game, ResourceType.Food);
+    const nextState = handleUseProductiveCard(game, ResourceType.Food);
 
-    expect(tile.positionedBy).toEqual([]);
+    // positionedBy persists after collection; only cleared when army moves, loses, or dies
+    expect(nextState.map[0 * nextState.settings.gridSize.cols + 0].positionedBy).toEqual([
+      { playerId: player.id, resource: ResourceType.Food },
+    ]);
   });
 
   it('is a no-op on resources when the player has no positions at all (boundary)', () => {

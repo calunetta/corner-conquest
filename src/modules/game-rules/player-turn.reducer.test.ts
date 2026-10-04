@@ -79,8 +79,38 @@ describe('handleEndTurn', () => {
     const nextState = handleEndTurn(game);
 
     expect(nextState.players[1].resources.gold).toBe(initialGold + goldYield);
-    expect(nextState.players[1].positions).toHaveLength(0);
+    // Position persists after collection; only cleared when the army moves, loses, or dies
+    expect(nextState.players[1].positions).toHaveLength(1);
+    expect(nextState.players[1].positions[0].armyId).toBe(player2.armies[0].id);
     expect(nextState.log).toContain(`${player2.name} automatically collected ${goldYield} gold.`);
+  });
+
+  it('positions persist across two consecutive turns (new behavior: armies continue generating resources)', () => {
+    const player2 = game.players[1];
+    player2.armies[0].hasActed = true;
+    player2.positions.push({
+      armyId: player2.armies[0].id,
+      resource: ResourceType.Gold,
+      x: player2.armies[0].position.x,
+      y: player2.armies[0].position.y,
+    });
+    const baseTile = game.map[player2.armies[0].position.y * game.settings.gridSize.cols + player2.armies[0].position.x];
+    const goldYield = baseTile.resources.find((r) => r.type === ResourceType.Gold)!.amount;
+
+    // First turn: end of player 1, into player 2
+    let nextState = handleEndTurn(game);
+    const goldAfterFirstCollection = nextState.players[1].resources.gold;
+    expect(nextState.players[1].positions).toHaveLength(1);
+
+    // Second turn: end of player 2 (back to player 1), then reset for player 2 again
+    nextState = handleEndTurn(nextState);
+    nextState = handleEndTurn(nextState); // Now back to player 2's turn
+    const goldAfterSecondCollection = nextState.players[1].resources.gold;
+
+    // Gold should have increased again (second automatic collection)
+    expect(goldAfterSecondCollection).toBe(goldAfterFirstCollection + goldYield);
+    // Position should still be there
+    expect(nextState.players[1].positions).toHaveLength(1);
   });
 
   it('opens the Productive dialog instead of auto-collecting when the incoming player holds a Productive card', () => {
