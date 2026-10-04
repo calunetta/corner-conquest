@@ -44,7 +44,7 @@ Tier: L · Phases: 5
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 7d4fb51
 
 ## Phase 5: Verification and docs
 - [ ] plan approved (architect-b)
