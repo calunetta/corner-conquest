@@ -26,6 +26,8 @@ Wiring it into the legacy board would be one import in the legacy parent:
 Registering the preview is an import plus an entry in the `previews` array of `src/testbed/registry.ts`:
 `import { playerStandingsPreview } from '@/modules/hud/components/PlayerStandings/PlayerStandings.preview';`
 
+<!-- Logic-layer files (implementer-a) below. View-layer files (implementer-b) start at "PlayerStandings.styles.ts". -->
+
 ## `PlayerStandings.types.ts`
 
 ```ts
@@ -101,86 +103,6 @@ export function usePlayerStandings(): PlayerStandingsViewModel {
 }
 ```
 
-## `PlayerStandings.styles.ts`
-
-```ts
-import { cva } from 'class-variance-authority';
-import type { PlayerColor } from '@/lib/types';
-
-export const styles = {
-  root: 'flex w-64 flex-col gap-2 rounded-xl border border-white/10 bg-black/60 p-3 shadow-lg backdrop-blur-md',
-  title: 'text-xs font-semibold uppercase tracking-widest text-muted-foreground',
-  list: 'flex flex-col gap-1.5',
-  row: cva('flex items-center gap-2 rounded-lg px-2 py-1 text-sm', {
-    variants: {
-      isLocalPlayer: { true: 'bg-primary/15 ring-1 ring-primary/40', false: '' },
-    },
-  }),
-  rank: 'w-4 text-right font-mono text-xs text-muted-foreground',
-  colorDot: 'h-2.5 w-2.5 shrink-0 rounded-full',
-  name: 'flex-1 truncate font-semibold text-foreground',
-  points: 'font-mono text-xs font-bold text-accent',
-  track: 'h-1.5 w-14 overflow-hidden rounded-full bg-white/10',
-  fill: 'block h-full rounded-full bg-primary transition-[width] duration-500 motion-reduce:transition-none',
-} as const;
-
-export const colorDotByPlayerColor: Record<PlayerColor, string> = {
-  blue: 'bg-blue-500',
-  red: 'bg-red-500',
-  purple: 'bg-purple-500',
-  yellow: 'bg-yellow-400',
-};
-```
-
-## `PlayerStandings.tsx`
-
-```tsx
-'use client';
-
-import { cn } from '@/lib/utils';
-import { usePlayerStandings } from './PlayerStandings.hook';
-import { colorDotByPlayerColor, styles } from './PlayerStandings.styles';
-import type { PlayerStandingsViewModel } from './PlayerStandings.types';
-
-/** Pure view: everything comes from props, so tests and previews need no providers. */
-export function PlayerStandingsView({ victoryPointGoal, rows }: PlayerStandingsViewModel) {
-  return (
-    <section className={styles.root} aria-label="Standings">
-      <h2 className={styles.title}>Race to {victoryPointGoal} VP</h2>
-      <ol className={styles.list}>
-        {rows.map((row) => (
-          <li
-            key={row.playerId}
-            className={styles.row({ isLocalPlayer: row.isLocalPlayer })}
-            aria-current={row.isLocalPlayer ? 'true' : undefined}
-          >
-            <span className={styles.rank}>{row.rank}</span>
-            <span className={cn(styles.colorDot, colorDotByPlayerColor[row.color])} aria-hidden />
-            <span className={styles.name}>{row.name}</span>
-            <span className={styles.points}>{row.victoryPoints}</span>
-            <span
-              className={styles.track}
-              role="progressbar"
-              aria-label={`${row.name}: ${row.victoryPoints} of ${victoryPointGoal} VP`}
-              aria-valuenow={row.progressPercent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <span className={styles.fill} style={{ width: `${row.progressPercent}%` }} />
-            </span>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-/** Connected component for the game board: reads the match through its hook. */
-export function PlayerStandings() {
-  return <PlayerStandingsView {...usePlayerStandings()} />;
-}
-```
-
 ## `PlayerStandings.fixtures.ts`
 
 ```ts
@@ -201,24 +123,6 @@ export const tiedForFirstStandings: PlayerStandingsViewModel = {
   rows: [
     { playerId: 0, name: 'You', color: 'blue', victoryPoints: 21, progressPercent: 70, rank: 1, isLocalPlayer: true },
     { playerId: 3, name: 'Sol', color: 'yellow', victoryPoints: 21, progressPercent: 70, rank: 1, isLocalPlayer: false },
-  ],
-};
-```
-
-## `PlayerStandings.preview.tsx`
-
-```tsx
-import type { ComponentPreview } from '@/testbed';
-import { PlayerStandingsView } from './PlayerStandings';
-import { midGameStandings, tiedForFirstStandings } from './PlayerStandings.fixtures';
-
-export const playerStandingsPreview: ComponentPreview = {
-  slug: 'hud-player-standings',
-  title: 'Player standings',
-  group: 'HUD',
-  states: [
-    { name: 'Mid game', render: () => <PlayerStandingsView {...midGameStandings} /> },
-    { name: 'Tied for first', render: () => <PlayerStandingsView {...tiedForFirstStandings} /> },
   ],
 };
 ```
@@ -312,6 +216,112 @@ describe('usePlayerStandings', () => {
 });
 ```
 
+## `src/modules/hud/index.ts`
+
+```ts
+export { PlayerStandings } from './components/PlayerStandings';
+```
+
+<!-- View-layer files (implementer-b) below. -->
+
+## `PlayerStandings.styles.ts`
+
+```ts
+import { cva } from 'class-variance-authority';
+import type { PlayerColor } from '@/lib/types';
+
+export const styles = {
+  root: 'flex w-64 flex-col gap-2 rounded-xl border border-white/10 bg-black/60 p-3 shadow-lg backdrop-blur-md',
+  title: 'text-xs font-semibold uppercase tracking-widest text-muted-foreground',
+  list: 'flex flex-col gap-1.5',
+  row: cva('flex items-center gap-2 rounded-lg px-2 py-1 text-sm', {
+    variants: {
+      isLocalPlayer: { true: 'bg-primary/15 ring-1 ring-primary/40', false: '' },
+    },
+  }),
+  rank: 'w-4 text-right font-mono text-xs text-muted-foreground',
+  colorDot: 'h-2.5 w-2.5 shrink-0 rounded-full',
+  name: 'flex-1 truncate font-semibold text-foreground',
+  points: 'font-mono text-xs font-bold text-accent',
+  track: 'h-1.5 w-14 overflow-hidden rounded-full bg-white/10',
+  fill: 'block h-full rounded-full bg-primary transition-[width] duration-500 motion-reduce:transition-none',
+} as const;
+
+export const colorDotByPlayerColor: Record<PlayerColor, string> = {
+  blue: 'bg-blue-500',
+  red: 'bg-red-500',
+  purple: 'bg-purple-500',
+  yellow: 'bg-yellow-400',
+};
+```
+
+## `PlayerStandings.tsx`
+
+```tsx
+'use client';
+
+import { cn } from '@/lib/utils';
+import { usePlayerStandings } from './PlayerStandings.hook';
+import { colorDotByPlayerColor, styles } from './PlayerStandings.styles';
+import type { PlayerStandingsViewModel } from './PlayerStandings.types';
+
+/** Pure view: everything comes from props, so tests and previews need no providers. */
+export function PlayerStandingsView({ victoryPointGoal, rows }: PlayerStandingsViewModel) {
+  return (
+    <section className={styles.root} aria-label="Standings">
+      <h2 className={styles.title}>Race to {victoryPointGoal} VP</h2>
+      <ol className={styles.list}>
+        {rows.map((row) => (
+          <li
+            key={row.playerId}
+            className={styles.row({ isLocalPlayer: row.isLocalPlayer })}
+            aria-current={row.isLocalPlayer ? 'true' : undefined}
+          >
+            <span className={styles.rank}>{row.rank}</span>
+            <span className={cn(styles.colorDot, colorDotByPlayerColor[row.color])} aria-hidden />
+            <span className={styles.name}>{row.name}</span>
+            <span className={styles.points}>{row.victoryPoints}</span>
+            <span
+              className={styles.track}
+              role="progressbar"
+              aria-label={`${row.name}: ${row.victoryPoints} of ${victoryPointGoal} VP`}
+              aria-valuenow={row.progressPercent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <span className={styles.fill} style={{ width: `${row.progressPercent}%` }} />
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** Connected component for the game board: reads the match through its hook. */
+export function PlayerStandings() {
+  return <PlayerStandingsView {...usePlayerStandings()} />;
+}
+```
+
+## `PlayerStandings.preview.tsx`
+
+```tsx
+import type { ComponentPreview } from '@/testbed';
+import { PlayerStandingsView } from './PlayerStandings';
+import { midGameStandings, tiedForFirstStandings } from './PlayerStandings.fixtures';
+
+export const playerStandingsPreview: ComponentPreview = {
+  slug: 'hud-player-standings',
+  title: 'Player standings',
+  group: 'HUD',
+  states: [
+    { name: 'Mid game', render: () => <PlayerStandingsView {...midGameStandings} /> },
+    { name: 'Tied for first', render: () => <PlayerStandingsView {...tiedForFirstStandings} /> },
+  ],
+};
+```
+
 ## `PlayerStandings.test.tsx`
 
 ```tsx
@@ -343,10 +353,4 @@ describe('PlayerStandingsView', () => {
     );
   });
 });
-```
-
-## `src/modules/hud/index.ts`
-
-```ts
-export { PlayerStandings } from './components/PlayerStandings';
 ```

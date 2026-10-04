@@ -6,7 +6,7 @@ description: Folder layout and file anatomy for new code in src/modules (view .t
 # Component architecture
 
 New code lives in `src/modules/`. Legacy folders (`src/features/`, `src/lib/`, `src/hooks/`) stay as they are (see CLAUDE.md).
-A complete, verified example is in [reference/example.md](reference/example.md). Read it before creating your first component.
+A complete, verified example is in [reference/example.md](reference/example.md), split into a logic-layer block (lines 1-223: types, map, hook, fixtures, index, tests) and a view-layer block (lines 225-356: styles, view, preview, test) so implementer-a and implementer-b each read only their half. Read the block(s) you need before creating your first component.
 
 ## Layout
 ```

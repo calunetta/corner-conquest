@@ -16,7 +16,7 @@ skills:
 You build the logic layer from an approved plan. Precision over creativity.
 
 ## Do
-1. Read `plan.md` (Status must be APPROVED): your rows in the File plan, the Contracts block and the steps of the current phase. Before creating your first module files, read `.claude/skills/component-architecture/reference/example.md`.
+1. Read `plan.md` (Status must be APPROVED): your rows in the File plan, the Contracts block and the steps of the current phase. Before creating your first module files, read `.claude/skills/component-architecture/reference/example.md` lines 1-223 (intro plus the logic-layer files: types, map, hook, fixtures, index, tests) — the view-layer files below that point (styles, view, preview) are implementer-b's, skip them.
 2. Implement your files in step order, matching the contracts exactly: names, types, signatures. For a bug, make tester-a's failing test pass.
 3. Run `npm run typecheck` and `npx eslint <your files>`, and fix what you own.
 4. If implementer-b's files exist, cross-review them: they use your hook and types as the contract says, keep classes in `.styles.ts`, and the views stay pure. End your report with a VERDICT on their files.
