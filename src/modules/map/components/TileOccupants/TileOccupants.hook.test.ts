@@ -1,58 +1,36 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { renderHook } from '@testing-library/react';
 import { useTileOccupants } from './TileOccupants.hook';
-import { IslandType, PlayerColor, type Island, type GameState, type DeathAnimation, type Player } from '@/lib/types';
+import { IslandType, PlayerColor, type Island, type DeathAnimation } from '@/lib/types';
 import { useGameBoard } from '@/modules/game-board';
 import type { GameBoardContextType } from '@/modules/game-board';
+import { gameStateFixture, bluePlayer, redPlayer } from './TileOccupants.fixtures';
 
 jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
 }));
 
 describe('useTileOccupants', () => {
-  const mockGameState: GameState = {
-    turn: 1,
-    currentPlayerId: 0,
-    players: [
-      {
-        id: 0,
-        name: 'Player Blue',
-        color: PlayerColor.Blue,
-        resources: { gold: 0, wood: 0, food: 0 },
-        armies: [{ id: 0, position: { x: 1, y: 1 }, hasActed: false }],
-        positions: [],
-        specialCards: [],
-        revealedTiles: ['0-0', '1-1'],
-        victoryPoints: 0,
-        attackPower: 1,
-        actionsThisTurn: [],
-        nextArmyCost: 3,
-        reinforceActive: false,
-        efficientActive: false,
-        masterBuilderActive: false,
-        hasExtraMove: false,
-        lastResourceRoll: null,
-      } as unknown as Player,
-    ],
-    map: [],
-    deathAnimations: [],
-    debugMode: false,
-    settings: {
-      fogOfWar: false,
-      victoryPointGoal: 10,
-      upgradeCost: 5,
-      abilityCost: 3,
-      baseResourceAmount: 1,
-      availableAbilities: [],
-    },
-  } as unknown as GameState;
+  const mockGameState = { ...gameStateFixture, deathAnimations: [] };
 
   beforeEach(() => {
     jest.useFakeTimers();
     jest.mocked(useGameBoard).mockReturnValue({
       gameState: mockGameState,
-      localPlayer: mockGameState.players[0] as Player,
-    } as GameBoardContextType);
+      localPlayer: bluePlayer,
+      uiState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
+      selectedArmy: null,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleTileClick: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
+    } as unknown as GameBoardContextType);
   });
 
   afterEach(() => {
@@ -87,12 +65,22 @@ describe('useTileOccupants', () => {
     };
 
     jest.mocked(useGameBoard).mockReturnValue({
-      gameState: {
-        ...mockGameState,
-        deathAnimations: [deathAnimation],
-      } as GameState,
-      localPlayer: mockGameState.players[0] as Player,
-    } as GameBoardContextType);
+      gameState: { ...mockGameState, deathAnimations: [deathAnimation] },
+      localPlayer: bluePlayer,
+      uiState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
+      selectedArmy: null,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleTileClick: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
+    } as unknown as GameBoardContextType);
 
     const island: Island = {
       id: '1-1',
@@ -120,12 +108,22 @@ describe('useTileOccupants', () => {
     };
 
     jest.mocked(useGameBoard).mockReturnValue({
-      gameState: {
-        ...mockGameState,
-        deathAnimations: [deathAnimation],
-      } as GameState,
-      localPlayer: mockGameState.players[0] as Player,
-    } as GameBoardContextType);
+      gameState: { ...mockGameState, deathAnimations: [deathAnimation] },
+      localPlayer: bluePlayer,
+      uiState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
+      selectedArmy: null,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleTileClick: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
+    } as unknown as GameBoardContextType);
 
     const island: Island = {
       id: '1-1',
@@ -148,12 +146,22 @@ describe('useTileOccupants', () => {
         ...mockGameState,
         debugMode: true,
         settings: { ...mockGameState.settings, fogOfWar: true },
-      } as GameState,
-      localPlayer: {
-        ...mockGameState.players[0],
-        revealedTiles: [],
-      } as Player,
-    } as GameBoardContextType);
+      },
+      localPlayer: { ...bluePlayer, revealedTiles: [] },
+      uiState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
+      selectedArmy: null,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleTileClick: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
+    } as unknown as GameBoardContextType);
 
     const island: Island = {
       id: '2-2',
@@ -175,12 +183,22 @@ describe('useTileOccupants', () => {
       gameState: {
         ...mockGameState,
         settings: { ...mockGameState.settings, fogOfWar: false },
-      } as GameState,
-      localPlayer: {
-        ...mockGameState.players[0],
-        revealedTiles: [],
-      } as Player,
-    } as GameBoardContextType);
+      },
+      localPlayer: { ...bluePlayer, revealedTiles: [] },
+      uiState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
+      selectedArmy: null,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleTileClick: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
+    } as unknown as GameBoardContextType);
 
     const island: Island = {
       id: '2-2',
@@ -202,9 +220,22 @@ describe('useTileOccupants', () => {
       gameState: {
         ...mockGameState,
         settings: { ...mockGameState.settings, fogOfWar: true },
-      } as GameState,
-      localPlayer: mockGameState.players[0] as Player,
-    } as GameBoardContextType);
+      },
+      localPlayer: bluePlayer,
+      uiState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
+      selectedArmy: null,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleTileClick: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
+    } as unknown as GameBoardContextType);
 
     const island: Island = {
       id: '2-2',
@@ -226,18 +257,26 @@ describe('useTileOccupants', () => {
       gameState: {
         ...mockGameState,
         players: [
-          mockGameState.players[0],
-          {
-            ...mockGameState.players[0],
-            id: 1,
-            color: PlayerColor.Red,
-            armies: [{ id: 1, position: { x: 2, y: 2 }, hasActed: false }],
-          },
-        ] as any,
+          bluePlayer,
+          { ...redPlayer, armies: [{ id: 1, position: { x: 2, y: 2 }, hasActed: false }] },
+        ],
         settings: { ...mockGameState.settings, fogOfWar: true },
       },
-      localPlayer: mockGameState.players[0],
-    } as any);
+      localPlayer: bluePlayer,
+      uiState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
+      selectedArmy: null,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleTileClick: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
+    } as unknown as GameBoardContextType);
 
     const island: Island = {
       id: '2-2',
@@ -259,18 +298,26 @@ describe('useTileOccupants', () => {
       gameState: {
         ...mockGameState,
         players: [
-          mockGameState.players[0],
-          {
-            ...mockGameState.players[0],
-            id: 1,
-            color: PlayerColor.Red,
-            armies: [{ id: 1, position: { x: 0, y: 0 }, hasActed: false }],
-          },
-        ] as any,
+          bluePlayer,
+          { ...redPlayer, armies: [{ id: 1, position: { x: 0, y: 0 }, hasActed: false }] },
+        ],
         settings: { ...mockGameState.settings, fogOfWar: true },
       },
-      localPlayer: mockGameState.players[0],
-    } as any);
+      localPlayer: bluePlayer,
+      uiState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
+      selectedArmy: null,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleTileClick: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
+    } as unknown as GameBoardContextType);
 
     const island: Island = {
       id: '0-0',
@@ -293,21 +340,26 @@ describe('useTileOccupants', () => {
       gameState: {
         ...mockGameState,
         players: [
-          mockGameState.players[0],
-          {
-            ...mockGameState.players[0],
-            id: 1,
-            color: PlayerColor.Red,
-            armies: [{ id: 1, position: { x: 2, y: 2 }, hasActed: false }],
-          },
-        ] as any,
+          bluePlayer,
+          { ...redPlayer, armies: [{ id: 1, position: { x: 2, y: 2 }, hasActed: false }] },
+        ],
         settings: { ...mockGameState.settings, fogOfWar: true },
       },
-      localPlayer: {
-        ...mockGameState.players[0],
-        revealedTiles: ['2-2'],
-      },
-    } as any);
+      localPlayer: { ...bluePlayer, revealedTiles: ['2-2'] },
+      uiState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
+      selectedArmy: null,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleTileClick: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
+    } as unknown as GameBoardContextType);
 
     const island: Island = {
       id: '2-2',
@@ -329,14 +381,24 @@ describe('useTileOccupants', () => {
       gameState: {
         ...mockGameState,
         players: [
-          {
-            ...mockGameState.players[0],
-            armies: [{ id: 0, position: { x: 1, y: 1 }, hasActed: true }],
-          },
-        ] as any,
+          { ...bluePlayer, armies: [{ id: 0, position: { x: 1, y: 1 }, hasActed: true }] },
+        ],
       },
-      localPlayer: mockGameState.players[0],
-    } as any);
+      localPlayer: bluePlayer,
+      uiState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
+      selectedArmy: null,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleTileClick: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
+    } as unknown as GameBoardContextType);
 
     const island: Island = {
       id: '1-1',
@@ -372,17 +434,25 @@ describe('useTileOccupants', () => {
       gameState: {
         ...mockGameState,
         players: [
-          mockGameState.players[0] as Player,
-          {
-            ...mockGameState.players[0],
-            id: 1,
-            color: PlayerColor.Red,
-            armies: [{ id: 1, position: { x: 1, y: 1 }, hasActed: false }],
-          } as Player,
+          bluePlayer,
+          { ...redPlayer, armies: [{ id: 1, position: { x: 1, y: 1 }, hasActed: false }] },
         ],
       },
-      localPlayer: mockGameState.players[0],
-    } as any);
+      localPlayer: bluePlayer,
+      uiState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
+      selectedArmy: null,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleTileClick: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
+    } as unknown as GameBoardContextType);
 
     const island: Island = {
       id: '1-1',

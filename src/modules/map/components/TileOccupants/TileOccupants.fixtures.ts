@@ -1,6 +1,34 @@
-import type { Island } from '@/lib/types';
+import type { Island, Player, GameState } from '@/lib/types';
 import { IslandType, PlayerColor } from '@/lib/types';
 import type { OccupantSpriteViewModel } from './TileOccupants.types';
+import { buildPlayer, buildGameState } from '../../board-context.fixtures';
+
+export const bluePlayer: Player = buildPlayer({
+  id: 0,
+  playerId: 'p0',
+  color: PlayerColor.Blue,
+  revealedTiles: ['0-0', '1-1'],
+});
+
+export const redPlayer: Player = buildPlayer({
+  id: 1,
+  playerId: 'p1',
+  color: PlayerColor.Red,
+  revealedTiles: ['1-1'],
+});
+
+export const gameStateFixture: GameState = buildGameState({
+  players: [bluePlayer, redPlayer],
+  map: [],
+  settings: {
+    victoryPointGoal: 30,
+    fogOfWar: false,
+    upgradeCost: 5,
+    abilityCost: 3,
+    baseResourceAmount: 1,
+    availableAbilities: [],
+  } as unknown as GameState['settings'],
+});
 
 export const islandWithOccupant: Island = {
   id: 'occupied-1',

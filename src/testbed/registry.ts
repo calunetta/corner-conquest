@@ -1,4 +1,11 @@
 import { mapZoomControlsPreview } from '@/modules/map/components/MapZoomControls/MapZoomControls.preview';
+import { animatedMonsterPreview } from '@/modules/map/components/AnimatedMonster/AnimatedMonster.preview';
+import { deathEffectPreview } from '@/modules/map/components/DeathEffect/DeathEffect.preview';
+import { tileForestPreview } from '@/modules/map/components/TileForest/TileForest.preview';
+import { tileResourcesPreview } from '@/modules/map/components/TileResources/TileResources.preview';
+import { tileBoatsPreview } from '@/modules/map/components/TileBoats/TileBoats.preview';
+import { tileOccupantsPreview } from '@/modules/map/components/TileOccupants/TileOccupants.preview';
+import { islandTilePreview } from '@/modules/map/components/IslandTile/IslandTile.preview';
 import { combatDialogPreview } from '@/modules/combat/components/CombatDialog/CombatDialog.preview';
 import { monsterCombatDialogPreview } from '@/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.preview';
 import { armySelectionDialogPreview } from '@/modules/combat/components/ArmySelectionDialog/ArmySelectionDialog.preview';
@@ -24,6 +31,13 @@ import type { ComponentPreview } from './testbed.types';
 /** Every preview shown in the testbed. Register new previews here (skill: testbed-preview). */
 export const previews: ComponentPreview[] = [
   mapZoomControlsPreview,
+  animatedMonsterPreview,
+  deathEffectPreview,
+  tileForestPreview,
+  tileResourcesPreview,
+  tileBoatsPreview,
+  tileOccupantsPreview,
+  islandTilePreview,
   combatDialogPreview,
   monsterCombatDialogPreview,
   armySelectionDialogPreview,

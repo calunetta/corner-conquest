@@ -1,37 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { renderHook } from '@testing-library/react';
 import { useIslandTile } from './IslandTile.hook';
-import { IslandType, PlayerColor, type Island, type DeathAnimation, type Player, type GameState } from '@/lib/types';
-import { useGameBoard } from '@/modules/game-board';
-import type { GameBoardContextType, GameBoardUIState } from '@/modules/game-board';
+import { IslandType, type Island, type DeathAnimation } from '@/lib/types';
+import { useGameBoard, initialUIState } from '@/modules/game-board';
+import type { GameBoardContextType } from '@/modules/game-board';
+import { gameStateFixture, localPlayerFixture } from './IslandTile.fixtures';
 
 jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
+  initialUIState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
 }));
 
 describe('useIslandTile', () => {
-  const mockGameState: GameState = {
-    turn: 1,
-    currentPlayerId: 0,
-    players: [
-      {
-        id: 0,
-        color: PlayerColor.Blue,
-        armies: [{ id: 0, position: { x: 1, y: 1 }, hasActed: false }],
-        revealedTiles: ['1-1'],
-      },
-    ] as any,
-    map: [],
-    deathAnimations: [],
-    debugMode: false,
-    settings: { fogOfWar: false, victoryPointGoal: 10, upgradeCost: 5, abilityCost: 3, baseResourceAmount: 1, availableAbilities: [] },
-  } as unknown as GameState;
-
-  const mockUIState: GameBoardUIState = {
-    possibleMoves: [],
-    pendingAction: null,
-    selectedArmyId: null,
-  } as unknown as GameBoardUIState;
+  const mockGameState = { ...gameStateFixture, deathAnimations: [], debugMode: false };
+  const mockUIState = initialUIState;
 
   const mockHandleTileClick = jest.fn();
 
@@ -40,10 +21,20 @@ describe('useIslandTile', () => {
     mockHandleTileClick.mockClear();
     jest.mocked(useGameBoard).mockReturnValue({
       gameState: mockGameState,
-      localPlayer: mockGameState.players[0] as Player,
+      localPlayer: localPlayerFixture,
       uiState: mockUIState,
       selectedArmy: null,
       handleTileClick: mockHandleTileClick,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
     } as unknown as GameBoardContextType);
   });
 
@@ -95,14 +86,21 @@ describe('useIslandTile', () => {
     };
 
     jest.mocked(useGameBoard).mockReturnValue({
-      gameState: {
-        ...mockGameState,
-        deathAnimations: [deathAnimation],
-      } as GameState,
-      localPlayer: mockGameState.players[0] as Player,
+      gameState: { ...mockGameState, deathAnimations: [deathAnimation] },
+      localPlayer: localPlayerFixture,
       uiState: mockUIState,
       selectedArmy: null,
       handleTileClick: mockHandleTileClick,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
     } as unknown as GameBoardContextType);
 
     const island: Island = {
@@ -130,14 +128,21 @@ describe('useIslandTile', () => {
     };
 
     jest.mocked(useGameBoard).mockReturnValue({
-      gameState: {
-        ...mockGameState,
-        deathAnimations: [deathAnimation],
-      } as GameState,
-      localPlayer: mockGameState.players[0] as Player,
+      gameState: { ...mockGameState, deathAnimations: [deathAnimation] },
+      localPlayer: localPlayerFixture,
       uiState: mockUIState,
       selectedArmy: null,
       handleTileClick: mockHandleTileClick,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
     } as unknown as GameBoardContextType);
 
     const island: Island = {
@@ -165,14 +170,21 @@ describe('useIslandTile', () => {
     };
 
     jest.mocked(useGameBoard).mockReturnValue({
-      gameState: {
-        ...mockGameState,
-        deathAnimations: [deathAnimation],
-      } as GameState,
-      localPlayer: mockGameState.players[0] as Player,
+      gameState: { ...mockGameState, deathAnimations: [deathAnimation] },
+      localPlayer: localPlayerFixture,
       uiState: mockUIState,
       selectedArmy: null,
       handleTileClick: mockHandleTileClick,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
     } as unknown as GameBoardContextType);
 
     const island: Island = {
@@ -380,14 +392,21 @@ describe('useIslandTile', () => {
     };
 
     jest.mocked(useGameBoard).mockReturnValue({
-      gameState: {
-        ...mockGameState,
-        deathAnimations: [deathAnimation],
-      } as GameState,
-      localPlayer: mockGameState.players[0] as Player,
+      gameState: { ...mockGameState, deathAnimations: [deathAnimation] },
+      localPlayer: localPlayerFixture,
       uiState: mockUIState,
       selectedArmy: null,
       handleTileClick: mockHandleTileClick,
+      dispatch: jest.fn(),
+      isMyTurn: true,
+      isHost: true,
+      turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+      onAction: jest.fn(),
+      onLocalAction: jest.fn(),
+      handleStartGame: jest.fn(),
+      handleExitClick: jest.fn(),
+      handleConfirmExit: jest.fn(),
+      handleConfirmHostLeave: jest.fn(),
     } as unknown as GameBoardContextType);
 
     rerender();

@@ -3,30 +3,7 @@ import { IslandType, PlayerColor } from '@/lib/types';
 import type { BoatEntryViewModel } from './TileBoats.types';
 import type { GameBoardContextType } from '@/modules/game-board';
 import { initialUIState } from '@/modules/game-board';
-
-const buildPlayer = (overrides: Partial<Player> & { id: number; playerId: string }): Player =>
-  ({
-    name: `Player ${overrides.id}`,
-    color: PlayerColor.Blue,
-    isBot: false,
-    armies: [{ id: overrides.id, position: { x: 1, y: 1 }, hasActed: false }],
-    resources: { food: 0, wood: 0, gold: 0 },
-    armyCount: 1,
-    attackPower: 0,
-    nextArmyCost: 6,
-    victoryPoints: 0,
-    specialCards: [],
-    positions: [],
-    hasExtraMove: false,
-    actionsThisTurn: [],
-    passiveAbilities: {},
-    isSabotaged: false,
-    reinforceActive: false,
-    efficientActive: false,
-    masterBuilderActive: false,
-    revealedTiles: [],
-    ...overrides,
-  }) as Player;
+import { buildPlayer, buildGameState } from '../../board-context.fixtures';
 
 export const bluePlayer: Player = buildPlayer({
   id: 0,
@@ -95,56 +72,38 @@ export const boatEntryFixture: BoatEntryViewModel = {
   idleCollectorSprite: '/sprites/collector_blue_idle.gif',
 };
 
-const buildGameState = (overrides: Partial<GameState> = {}): GameState =>
-  ({
-    id: 'game_test',
-    name: 'Test Game',
-    status: 'playing',
-    maxPlayers: 4,
-    debugMode: false,
-    players: [],
-    map: [],
-    baseTiles: [],
-    currentPlayerIndex: 0,
-    turn: 1,
-    log: [],
-    discardPile: [],
-    specialCardsDeck: [],
-    settings: {
-      victoryPointGoal: 30,
-      fogOfWar: false,
-      upgradeCost: 5,
-      abilityCost: 3,
-      baseResourceAmount: 1,
-      availableAbilities: [],
-    },
-    deathAnimations: [],
-    winner: null,
-    combatState: null,
-    monsterCombatState: null,
-    productiveDialogState: null,
-    ...overrides,
-  }) as unknown as GameState;
-
 export const gameStateFixture: GameState = buildGameState({
   players: [bluePlayer, redPlayer],
   map: [baseIsland, baseIslandWithOccupants, islandWithOccupants],
+  settings: {
+    victoryPointGoal: 30,
+    fogOfWar: false,
+    upgradeCost: 5,
+    abilityCost: 3,
+    baseResourceAmount: 1,
+    availableAbilities: [],
+  } as unknown as GameState['settings'],
 });
 
+const noop = (): void => undefined;
+const asyncNoop = (): Promise<void> => Promise.resolve();
+
+/** A GameBoardContextType for tests; callbacks are plain no-ops, not jest.fn() spies — a test
+ * that needs to assert a call happened should create its own local jest.fn() instead. */
 export const gameBoardContextFixture: GameBoardContextType = {
   gameState: gameStateFixture,
   localPlayer: bluePlayer,
   uiState: initialUIState,
-  dispatch: jest.fn(),
+  dispatch: noop,
   isMyTurn: true,
   isHost: true,
   selectedArmy: null,
   turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
-  onAction: jest.fn(),
-  onLocalAction: jest.fn(),
-  handleTileClick: jest.fn(),
-  handleStartGame: jest.fn(),
-  handleExitClick: jest.fn(),
-  handleConfirmExit: jest.fn(),
-  handleConfirmHostLeave: jest.fn(),
-} as unknown as GameBoardContextType;
+  onAction: asyncNoop,
+  onLocalAction: noop,
+  handleTileClick: asyncNoop,
+  handleStartGame: asyncNoop,
+  handleExitClick: asyncNoop,
+  handleConfirmExit: asyncNoop,
+  handleConfirmHostLeave: asyncNoop,
+};

@@ -2,48 +2,16 @@ import type { Army, GameState, Island, Player } from '@/lib/types';
 import { IslandType, PlayerColor, ResourceType } from '@/lib/types';
 import { initialUIState } from '@/modules/game-board';
 import type { GameBoardUIState } from '@/modules/game-board';
+import { buildPlayer, buildGameState } from '../../board-context.fixtures';
 import type { IslandTileContext } from './IslandTile.types';
 
 const GRID_SIZE = 5;
-
-const buildPlayer = (overrides: Partial<Player> & { id: number; playerId: string }): Player =>
-  ({
-    name: `Player ${overrides.id}`,
-    color: PlayerColor.Blue,
-    isBot: false,
-    armies: [],
-    resources: { food: 0, wood: 0, gold: 0 },
-    armyCount: 1,
-    attackPower: 0,
-    nextArmyCost: 6,
-    victoryPoints: 0,
-    specialCards: [],
-    positions: [],
-    hasExtraMove: false,
-    actionsThisTurn: [],
-    passiveAbilities: {},
-    isSabotaged: false,
-    reinforceActive: false,
-    efficientActive: false,
-    masterBuilderActive: false,
-    revealedTiles: [],
-    ...overrides,
-  }) as Player;
 
 const BASE_SETTINGS = {
   victoryPointGoal: 30, vpPerIslandDiscovery: 1, initialDeployCost: 2, deployCostIncrement: 1,
   upgradeCost: 2, abilityCost: 10, baseResourceAmount: 1, resourceDensity: 0.5,
   availableCards: [], availableAbilities: [], fogOfWar: true, gridSize: { rows: GRID_SIZE, cols: GRID_SIZE },
-};
-
-const buildGameState = (overrides: Partial<GameState> = {}): GameState =>
-  ({
-    id: 'game_test', name: 'Test Game', status: 'playing', maxPlayers: 4, debugMode: false,
-    players: [], map: [], baseTiles: [], currentPlayerIndex: 0, turn: 1, log: [],
-    discardPile: [], specialCardsDeck: [], settings: BASE_SETTINGS, deathAnimations: [],
-    winner: null, combatState: null, monsterCombatState: null, productiveDialogState: null,
-    ...overrides,
-  }) as unknown as GameState;
+} as GameState['settings'];
 
 export const armyFixture: Army = { id: 0, position: { x: 1, y: 1 }, hasActed: false };
 
@@ -79,7 +47,7 @@ export const resourceIsland: Island = {
 
 export const monsterIslandWithLivingMonster: Island = {
   id: '3-3', x: 3, y: 3, type: IslandType.Monster,
-  monsters: [{ name: 'Lancer', level: 1, sprite: { idle: '', attack: '', death: '' } }],
+  monsters: [{ name: 'Lancer', level: 1, sprite: { idle: '/sprites/lancer_idle.gif', attack: '/sprites/lancer_attack.gif', death: '/sprites/death.gif' } }],
   resources: [], occupants: [],
 };
 
@@ -101,6 +69,7 @@ export const gameStateFixture: GameState = buildGameState({
     baseIslandOwnedByLocalPlayer, baseIslandOwnedByOpponent, resourceIsland,
     monsterIslandWithLivingMonster, specialIsland, emptyIsland, hiddenFogIsland,
   ],
+  settings: BASE_SETTINGS,
 });
 
 export const uiStateFixture: GameBoardUIState = initialUIState;
