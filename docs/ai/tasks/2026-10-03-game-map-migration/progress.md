@@ -20,7 +20,7 @@ Tier: M · Phases: 3
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 057be00 (source/tests, mixed with phase 2/3 label per the stray-commit incident above), 07c289c (previews, fixture dedup, docs)
 
 ## Phase 3: MapGrid, MapDecorations, GameBoard wiring, docs
 - [x] plan approved (architect-b)
