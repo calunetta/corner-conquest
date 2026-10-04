@@ -13,8 +13,6 @@ const LEGACY_PATHS = [
   'src/features/**',
   'src/lib/**',
   'src/ai/**',
-  'src/app/page.tsx',
-  'src/app/layout.tsx',
   'jest.config.js',
   'jest.setup.js',
   'tailwind.config.ts',

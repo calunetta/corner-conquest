@@ -11,7 +11,7 @@ The code is the source of truth for the look. The style section of `docs/bluepri
 - **Theme**: dark only (`<html class="dark">` in `src/app/layout.tsx`). `.dark` tokens in `src/app/globals.css`: deep navy `background` (230 40% 6%), cyan `primary` (190 90% 50%), gold `accent` (45 100% 55%), violet `secondary`, red `destructive`. Use token classes (`bg-primary/20`, `text-muted-foreground`, `border-border`), never hex.
 - **Font**: Outfit, weights 400–900, via `next/font`. Headings are heavy (`font-black tracking-wide`).
 - **Panels**: glass over the map, `rounded-xl border border-white/10 bg-black/60 backdrop-blur-md shadow-lg` (`MapZoomControls.tsx`, `GameStatusBadge.tsx`).
-- **Hero text**: gold-to-cyan gradient, `bg-gradient-to-r from-amber-300 via-yellow-400 to-primary bg-clip-text text-transparent` (login card, `src/app/page.tsx`).
+- **Hero text**: gold-to-cyan gradient, `bg-gradient-to-r from-amber-300 via-yellow-400 to-primary bg-clip-text text-transparent` (login card, `src/modules/session/components/Login/Login.tsx`).
 - **Art**: pixel-art sprites in `public/sprites/` (armies per color, monsters, castles, terrain). Animated GIFs render through `next/image` with `unoptimized`. Player colors: blue, red, purple, yellow (`PlayerColor`).
 - **Icons**: `lucide-react`.
 - **Primitives**: shadcn/ui in `src/components/ui/` (Dialog, Sheet, Popover, Tooltip, Button, Badge, Progress, RadioGroup, Slider, …). Reuse them.

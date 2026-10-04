@@ -47,7 +47,7 @@ Understanding the project's structure is key to making changes efficiently and c
     - `types.ts`: Re-exports domain dialog types from `@/lib/types/dialogs`.
   - `src/modules/lobby/`: Lobby domain with game creation and joining flows (migrated per `component-architecture`): `Lobby` (2-column command center and scrollable match list), `LobbyBackground` (animated battle diorama and 4 faction bases), `LobbyGameRow` (room preview with settings popover), `CreateGameDialog` (game setup with faction, format, and advanced settings), `CustomSettingsSheet` (tabbed settings for rules, costs, and content).
     > [!IMPORTANT]
-    > **Visual Parity Rule:** The Login page (`src/app/page.tsx`) must always share the exact same aesthetic theme, background (`<LobbyBackground />`), glassmorphism, and color palette as the Game Lobby. Any updates to the Lobby's visual presentation must be mirrored in the Login view.
+    > **Visual Parity Rule:** The Login page (`src/app/page.tsx` renders `src/modules/session/components/Login/Login.tsx`) must always share the exact same aesthetic theme, background (`<LobbyBackground />`), glassmorphism, and color palette as the Game Lobby. Any updates to the Lobby's visual presentation must be mirrored in the Login view.
 - `src/lib/`: Core application logic, type definitions, and Firebase configuration.
   - `__tests__/`: Jest test suites for what's left at this legacy path (`firebase.test.ts`). The game-rule reducers themselves — and their tests — moved to `src/modules/game-rules/` (see below).
   - `types/`: **Domain-specific Modular Types** with central barrel export (`index.ts`):

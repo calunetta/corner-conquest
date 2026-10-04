@@ -1,0 +1,16 @@
+export const styles = {
+  root: 'relative flex h-screen w-screen items-center justify-center p-4 overflow-hidden',
+  card: 'z-10 w-full max-w-md bg-background/55 backdrop-blur-2xl border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden',
+  header: 'text-center pb-2',
+  iconWrap: 'mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-primary/20 border border-amber-500/30 shadow-inner',
+  icon: 'h-8 w-8 text-amber-400 animate-spin [animation-duration:20s]',
+  title: 'text-2xl sm:text-3xl font-black tracking-wide bg-gradient-to-r from-amber-300 via-yellow-400 to-primary bg-clip-text text-transparent',
+  description: 'text-xs sm:text-sm text-muted-foreground mt-1',
+  content: 'space-y-4 pt-2',
+  fieldGroup: 'grid w-full items-center gap-1.5',
+  label: 'text-xs font-semibold text-muted-foreground',
+  input: 'bg-black/40 border-white/10 focus-visible:ring-amber-400 text-foreground',
+  submitButton: 'w-full font-bold bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-all duration-300 hover:scale-[1.02] py-5',
+  loadingIcon: 'mr-2 h-4 w-4 animate-spin',
+  submitIcon: 'mr-2 h-4 w-4',
+} as const;
