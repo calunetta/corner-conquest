@@ -6,6 +6,8 @@ import { tileResourcesPreview } from '@/modules/map/components/TileResources/Til
 import { tileBoatsPreview } from '@/modules/map/components/TileBoats/TileBoats.preview';
 import { tileOccupantsPreview } from '@/modules/map/components/TileOccupants/TileOccupants.preview';
 import { islandTilePreview } from '@/modules/map/components/IslandTile/IslandTile.preview';
+import { mapDecorationsPreview } from '@/modules/map/components/MapDecorations/MapDecorations.preview';
+import { mapGridPreview } from '@/modules/map/components/MapGrid/MapGrid.preview';
 import { combatDialogPreview } from '@/modules/combat/components/CombatDialog/CombatDialog.preview';
 import { monsterCombatDialogPreview } from '@/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.preview';
 import { armySelectionDialogPreview } from '@/modules/combat/components/ArmySelectionDialog/ArmySelectionDialog.preview';
@@ -38,6 +40,8 @@ export const previews: ComponentPreview[] = [
   tileBoatsPreview,
   tileOccupantsPreview,
   islandTilePreview,
+  mapDecorationsPreview,
+  mapGridPreview,
   combatDialogPreview,
   monsterCombatDialogPreview,
   armySelectionDialogPreview,

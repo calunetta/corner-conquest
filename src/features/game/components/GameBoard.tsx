@@ -4,7 +4,7 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { usePlayer } from '@/hooks/use-player';
 import { useGameEngine } from '@/hooks/use-game-engine';
-import { MapGrid } from './MapGrid';
+import { MapGrid } from '@/modules/map';
 import { ActionsPanel, GameLog } from '@/modules/hud';
 import { TutorialBeacon } from './TutorialBeacon';
 import { GameBoardHeader, GameStatusBadge } from '@/modules/hud';
