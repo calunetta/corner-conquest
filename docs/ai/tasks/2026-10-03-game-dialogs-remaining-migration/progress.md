@@ -54,7 +54,7 @@ Tier: L · Phases: 5
 - [x] checks: typecheck, lint, unit tests, build
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 3ec5886
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
@@ -77,3 +77,4 @@ Tier: L · Phases: 5
 2026-10-03 tester-a: DONE, confirmed ported assertions, deleted 4 legacy test files (__tests__/ now empty)
 2026-10-03 architect-b: APPROVED (Phase 2 final review, second pass)
 2026-10-04 architect-b: APPROVED (Phase 5 final review). All 13 legacy dialogs confirmed deleted, all 13 module components + shared/player-sprite confirmed present and wired, typecheck/lint/test/build all clean. Flagged non-blocking: docs/README.md's diff interleaves this task's hunks with unrelated in-progress sibling tasks' hunks — coordinator must stage only this task's hunks when committing; docs/ai/refactor.md row #4 still says "in-progress," update to "done" once committed.
+2026-10-04 coordinator: committed 3ec5886 (docs/README.md's two bullets isolated via git apply --cached, leaving sibling tasks' concurrent docs/README.md edits uncommitted in the working tree); updated docs/ai/refactor.md row #4 to done. Task complete.
