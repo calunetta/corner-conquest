@@ -14,7 +14,7 @@ Tier: M · Phases: 1
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 793abd6 (plus 057be00, which incidentally bundled in this task's files before the proper commit — see log)
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
