@@ -202,7 +202,7 @@ describe('toTileBoatsViewModel', () => {
     const result = toTileBoatsViewModel(baseIsland, mockPlayers, mockPlayers[0], false, false);
 
     expect(result).not.toBeNull();
-    // Owner id 0 should get corner 0 (baseCornerMap[0] = 0)
+    // Entry at index 0 should be assigned to corner 0 via entryIndex % BOAT_CORNER_POSITIONS.length
     expect(result![0].cornerStyle).toBeDefined();
   });
 
@@ -310,5 +310,30 @@ describe('toTileBoatsViewModel', () => {
     const keys = result!.map((b) => b.key);
     const uniqueKeys = new Set(keys);
     expect(keys.length).toBe(uniqueKeys.size);
+  });
+
+  it('assigns distinct corners to 2+ occupants on a base tile', () => {
+    const baseIsland: Island = {
+      id: '0-0',
+      x: 0,
+      y: 0,
+      type: IslandType.Base,
+      owner: 0,
+      resources: [],
+      occupants: [
+        { playerId: 0, armyId: 0 },
+        { playerId: 1, armyId: 1 },
+      ],
+    };
+
+    const result = toTileBoatsViewModel(baseIsland, mockPlayers, mockPlayers[0], false, false);
+
+    expect(result).not.toBeNull();
+    expect(result!.length).toBe(2);
+    // Each boat should have a defined cornerStyle
+    expect(result![0].cornerStyle).toBeDefined();
+    expect(result![1].cornerStyle).toBeDefined();
+    // The two boats should have different corner assignments
+    expect(result![0].cornerStyle).not.toEqual(result![1].cornerStyle);
   });
 });

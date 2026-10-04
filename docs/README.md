@@ -423,12 +423,9 @@ The AI behavior is defined in `src/modules/game-rules/bot-turn.reducer.ts` and `
     - **Gems / Gold:** Gold mine (`/sprites/mine.png` idle, `/sprites/mine_active.png` when farmed, dialog/HUD icons: `/sprites/icon_gold.png` / `/sprites/gold.gif`).
   - **Organic Island Clearings:** Resources are distributed organically across island clearings (non-linear 2D scatter) for a natural, rich RPG aesthetic.
   - **Individual Multi-Sprite Rendering (No x2 Badges):** Islands with multiple resources of the same type render distinct individual animated sprites side-by-side (e.g. 2 sheep, 2 trees, 2 mines) instead of number badges.
-  - **Active Collector Farming:** Stationed collectors (`/sprites/farm_${player.color}.gif`) harvest directly on top of the specific resource node they are assigned to.
-- **Persistent Soldier / Knight Visibility & Collector Farming (`TileOccupants.tsx`)**:
+- **Active Collector Farming:** Stationed collectors (`/sprites/farm_${player.color}.gif`) harvest directly on top of the specific resource node they are assigned to. When an army is positioned to harvest a resource, the active farming collector harvests directly at that specific resource node while the soldier remains stationed on the island.
+- **Persistent Soldier / Knight Visibility (`TileOccupants.tsx`)**:
   - Army soldiers / knights remain **persistently visible** on island tiles at all times, ensuring commanders and opponents always have complete situational awareness of garrisoned forces.
-  - When an army is positioned to harvest a resource, the active farming collector (`/sprites/farm_${player.color}.gif`) harvests directly at that specific resource node while the soldier remains stationed on the island.
-  - When an army is occupying an island without being positioned on a resource, an idle faction collector (`/sprites/collector_${player.color}_idle.gif`) waits docked at the shoreline boat.
-  - Player Base tiles start with the owner's boat anchored in the water canal and idle collector.
 - **Extra Move Card Mechanics & Balance (Nerfed to 1 Bonus Action)**:
   - Using the `Extra Move` card activates `hasExtraMove = true` on the player, allowing any 1 selected army on the board to perform a bonus action (`Move`, `Position`, or `Attack`).
   - As soon as that army completes its action, `hasExtraMove` is consumed (`false`) and all other armies that had previously acted remain disabled (`hasActed = true`), preventing whole-fleet multi-move exploits.
@@ -438,11 +435,12 @@ The AI behavior is defined in `src/modules/game-rules/bot-turn.reducer.ts` and `
   - All interactive dialogs (`ProductiveCardDialog`, `WealthyDialog`, `StealResourceDialog`, `PositionDialog`, `AbilitiesDialog`) feature rich animated preview sprites (`sheep.gif`, `tree.gif`, `gold.gif`), custom icons (`FightIcon`, `ResourceIcon`), and consistent presentation of resources as **Food**, **Wood**, and **Gold**.
 - **Shoreline Boat Docking System (`TileBoats.tsx`)**:
   - Each island features 4 discrete shore corner anchors:
-    - Corner 0: Bottom-Left
-    - Corner 1: Bottom-Right
+    - Corner 0: Bottom-Right
+    - Corner 1: Top-Right
     - Corner 2: Top-Left
-    - Corner 3: Top-Right
+    - Corner 3: Bottom-Left
   - Every player's expedition boat (`/sprites/boat.gif`) begins anchored to their home Base shoreline.
+  - When an army is occupying an island without being positioned on a resource, an idle faction collector (`/sprites/collector_${player.color}_idle.gif`) waits docked at the shoreline boat. Player Base tiles start with the owner's boat anchored in the water canal and idle collector.
   - When an army is landed on an island, their boat docks at the first available corner on that tile. Multiple players or armies occupying the same island receive separate corners without visual collision.
 - **Perimeter Map Clouds & Atmosphere (`MapDecorations.tsx`)**:
   - Outer ocean margins surrounding the playable board are decorated with fixed atmospheric cloud formations (`/sprites/cloud_small.png`, `/sprites/cloud_medium.png`, `/sprites/cloud_big.png`) along margins and outer corners, framing uncharted waters.

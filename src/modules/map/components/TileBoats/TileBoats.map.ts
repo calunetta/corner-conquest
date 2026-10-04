@@ -98,22 +98,12 @@ export function toTileBoatsViewModel(
     return null;
   }
 
-  function getCornerPosition(entryIndex: number, isBaseTile: boolean, ownerId?: number): (typeof BOAT_CORNER_POSITIONS)[number] {
-    if (isBaseTile && ownerId !== undefined) {
-      const baseCornerMap: Record<number, number> = {
-        0: 0,
-        1: 1,
-        2: 1,
-        3: 3,
-      };
-      const cornerIdx = baseCornerMap[ownerId] ?? (entryIndex % BOAT_CORNER_POSITIONS.length);
-      return BOAT_CORNER_POSITIONS[cornerIdx];
-    }
+  function getCornerPosition(entryIndex: number): (typeof BOAT_CORNER_POSITIONS)[number] {
     return BOAT_CORNER_POSITIONS[entryIndex % BOAT_CORNER_POSITIONS.length];
   }
 
   return boatEntries.map((entry, index) => {
-    const corner = getCornerPosition(index, isBase, baseOwner?.id);
+    const corner = getCornerPosition(index);
     const idleCollectorSprite = COLLECTOR_IDLE_SPRITES[entry.player.color];
 
     const cornerStyle: Record<string, string> = {};
