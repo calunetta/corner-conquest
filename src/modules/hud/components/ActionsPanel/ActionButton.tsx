@@ -4,7 +4,7 @@ import type { GameAction } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Shield, ShoppingCart, Anchor, Zap, Album, University } from 'lucide-react';
-import { FightIcon } from '@/components/icons';
+import { FightIcon } from '@/modules/shared';
 import { styles } from './ActionsPanel.styles';
 import type { ActionViewModel } from './ActionsPanel.types';
 

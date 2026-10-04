@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { ResourceIcon } from '@/components/icons';
+import { ResourceIcon } from '@/modules/shared';
 import { toPositionDialogViewModel } from './PositionDialog.map';
 import { styles } from './PositionDialog.styles';
 import type { PositionDialogProps, PositionOptionViewModel } from './PositionDialog.types';

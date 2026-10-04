@@ -13,7 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { FightIcon } from '@/components/icons';
+import { FightIcon } from '@/modules/shared';
 import { toArmySelectionViewModel } from './ArmySelectionDialog.map';
 import { styles } from './ArmySelectionDialog.styles';
 import type { ArmyOptionViewModel, ArmySelectionDialogProps, ArmyStatus } from './ArmySelectionDialog.types';

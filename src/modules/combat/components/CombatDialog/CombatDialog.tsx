@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { FightIcon } from '@/components/icons';
+import { FightIcon } from '@/modules/shared';
 import { cn } from '@/lib/utils';
 import { styles } from './CombatDialog.styles';
 import { CombatantCard } from './CombatantCard';

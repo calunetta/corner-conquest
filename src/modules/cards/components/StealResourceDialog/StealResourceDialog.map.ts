@@ -1,6 +1,5 @@
 import type { Player, ResourceType } from '@/lib/types';
-import { getResourceDisplayName, RESOURCE_SPRITES } from '@/components/icons';
-import { toPlayerIdleSprite } from '@/modules/shared';
+import { getResourceDisplayName, RESOURCE_SPRITES, toPlayerIdleSprite } from '@/modules/shared';
 import type { StealPlayerOptionViewModel, StealResourceOptionViewModel } from './StealResourceDialog.types';
 
 const DEFAULT_RESOURCE_SPRITE = '/sprites/mine.png';

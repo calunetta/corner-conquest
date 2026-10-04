@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { ResourceIcon } from '@/components/icons';
+import { ResourceIcon } from '@/modules/shared';
 import { ArrowLeft, Check, HandMetal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { styles } from './StealResourceDialog.styles';

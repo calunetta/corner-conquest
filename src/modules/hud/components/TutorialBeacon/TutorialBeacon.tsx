@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import { InfoIcon } from '@/components/icons';
+import { InfoIcon } from '@/modules/shared';
 import { cn } from '@/lib/utils';
 import { styles } from './TutorialBeacon.styles';
 import type { TutorialBeaconProps } from './TutorialBeacon.types';

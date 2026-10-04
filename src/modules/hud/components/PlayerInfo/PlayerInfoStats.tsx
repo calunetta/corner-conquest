@@ -1,7 +1,7 @@
 'use client';
 
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { ResourceIcon, FightIcon } from '@/components/icons';
+import { ResourceIcon, FightIcon } from '@/modules/shared';
 import { Anchor, Album, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { styles } from './PlayerInfo.styles';

@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { ResourceIcon } from '@/components/icons';
+import { ResourceIcon } from '@/modules/shared';
 import { toWealthyDialogViewModel } from './WealthyDialog.map';
 import { styles } from './WealthyDialog.styles';
 import type { WealthyDialogProps } from './WealthyDialog.types';

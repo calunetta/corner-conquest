@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { ResourceIcon } from '@/components/icons';
+import { ResourceIcon } from '@/modules/shared';
 import { TrendingUp, Check } from 'lucide-react';
 import { useProductiveCardDialog } from './ProductiveCardDialog.hook';
 import { styles } from './ProductiveCardDialog.styles';

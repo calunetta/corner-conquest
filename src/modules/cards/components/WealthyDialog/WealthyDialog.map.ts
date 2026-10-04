@@ -1,5 +1,5 @@
 import { ResourceType } from '@/lib/types';
-import { RESOURCE_SPRITES, getResourceDisplayName } from '@/components/icons';
+import { RESOURCE_SPRITES, getResourceDisplayName } from '@/modules/shared';
 import type { WealthyDialogViewModel } from './WealthyDialog.types';
 
 const DEFAULT_RESOURCE_SPRITE = '/sprites/mine.png';

@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ResourceIcon } from '@/components/icons';
+import { ResourceIcon } from '@/modules/shared';
 import { ResourceType } from '@/lib/types';
 import { CheckCircle, Award } from 'lucide-react';
 import { useAbilitiesDialog } from './AbilitiesDialog.hook';

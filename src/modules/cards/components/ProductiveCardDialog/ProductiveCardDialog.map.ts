@@ -1,5 +1,5 @@
 import type { ProductiveCardDialogState, ResourceType } from '@/lib/types';
-import { RESOURCE_SPRITES, getResourceDisplayName } from '@/components/icons';
+import { RESOURCE_SPRITES, getResourceDisplayName } from '@/modules/shared';
 import type { ProductiveCardDialogViewModel, ProductiveOptionViewModel } from './ProductiveCardDialog.types';
 
 const FALLBACK_SPRITE = '/sprites/mine.png';

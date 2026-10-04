@@ -1,5 +1,5 @@
 import type { IslandResource } from '@/lib/types';
-import { RESOURCE_SPRITES, getResourceDisplayName } from '@/components/icons';
+import { RESOURCE_SPRITES, getResourceDisplayName } from '@/modules/shared';
 import type { PositionDialogViewModel } from './PositionDialog.types';
 
 const DEFAULT_RESOURCE_SPRITE = '/sprites/mine.png';
