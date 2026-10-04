@@ -4,6 +4,8 @@ import { monsterCombatDialogPreview } from '@/modules/combat/components/MonsterC
 import { armySelectionDialogPreview } from '@/modules/combat/components/ArmySelectionDialog/ArmySelectionDialog.preview';
 import { attackSelectionDialogPreview } from '@/modules/combat/components/AttackSelectionDialog/AttackSelectionDialog.preview';
 import { monsterSelectionDialogPreview } from '@/modules/combat/components/MonsterSelectionDialog/MonsterSelectionDialog.preview';
+import { gameBoardHeaderPreview } from '@/modules/hud/components/GameBoardHeader/GameBoardHeader.preview';
+import { gameStatusBadgePreview } from '@/modules/hud/components/GameStatusBadge/GameStatusBadge.preview';
 import { gameLogPreview } from '@/modules/hud/components/GameLog/GameLog.preview';
 import { playerInfoPreview } from '@/modules/hud/components/PlayerInfo/PlayerInfo.preview';
 import { actionsPanelPreview } from '@/modules/hud/components/ActionsPanel/ActionsPanel.preview';
@@ -24,6 +26,8 @@ export const previews: ComponentPreview[] = [
   armySelectionDialogPreview,
   attackSelectionDialogPreview,
   monsterSelectionDialogPreview,
+  gameBoardHeaderPreview,
+  gameStatusBadgePreview,
   gameLogPreview,
   playerInfoPreview,
   actionsPanelPreview,

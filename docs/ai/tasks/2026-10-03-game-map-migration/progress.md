@@ -14,7 +14,7 @@ Tier: M · Phases: 3
 
 ## Phase 2: IslandTile and its tile children (+ AnimatedMonster, DeathEffect)
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-a, implementer-b)
+- [x] implementation (implementer-a, implementer-b)
 - [ ] tests (tester-a, tester-b)
 - [ ] previews (preview-b)
 - [ ] checks: typecheck, lint, unit tests
