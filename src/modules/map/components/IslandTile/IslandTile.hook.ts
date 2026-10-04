@@ -10,6 +10,14 @@ const BORDER_IMAGES = [
   '/sprites/island_edge_3.gif',
 ];
 
+/**
+ * Simple deterministic hash from island coordinates.
+ * Used to select a consistent middle sprite across server and client renders.
+ */
+function hashIsland(x: number, y: number): number {
+  return Math.abs((x * 73856093) ^ (y * 19349663)) >>> 0;
+}
+
 export function useIslandTile(props: IslandTileProps): IslandTileViewModel {
   const { island } = props;
   const { gameState, localPlayer, uiState, selectedArmy, handleTileClick } = useGameBoard();
@@ -24,11 +32,13 @@ export function useIslandTile(props: IslandTileProps): IslandTileViewModel {
       (!anim.createdAt || now - anim.createdAt < DEATH_ANIMATION_DURATION),
   );
 
-  // Picked once per mount, same as legacy IslandTile.tsx:82-85.
+  // Deterministic sprite selection based on island coordinates.
+  // Ensures server and client render the same middle sprite during hydration.
   const borderImageSequence = useMemo((): [string, string, string] => {
-    const middleImage = BORDER_IMAGES[Math.floor(Math.random() * BORDER_IMAGES.length)];
+    const hash = hashIsland(island.x, island.y);
+    const middleImage = BORDER_IMAGES[hash % BORDER_IMAGES.length];
     return [BORDER_IMAGES[0], middleImage, BORDER_IMAGES[1]];
-  }, []);
+  }, [island.x, island.y]);
 
   const onClick = (): void => {
     void handleTileClick(island.x, island.y);

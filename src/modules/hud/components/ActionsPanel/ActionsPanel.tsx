@@ -41,7 +41,7 @@ export function ActionsPanelView({
             Actions
             {infoBeacon && infoBeacon}
           </CardTitle>
-          <div className={styles.deckCount}>Deck: {deckCount}</div>
+          <div className={styles.deckCount}>Cards left in deck: {deckCount}</div>
         </div>
         <div className={styles.controls}>
           {isMyTurn && isCancellableActionInProgress && (

@@ -32,7 +32,7 @@ export function PlayerInfoStats({
         {/* Armies count + Positioned indicator */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className={styles.statChip} data-testid="player-info-armies">
+            <div className={styles.statChip} data-testid="player-info-armies" aria-label="Armies deployed">
               <FightIcon className={cn(styles.statIcon, 'text-red-400')} />
               <span className={styles.statValue}>{armyCount}/5</span>
               {positionedCount > 0 && (
@@ -54,7 +54,7 @@ export function PlayerInfoStats({
         {/* Attack Power */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className={styles.statChip} data-testid="player-info-attack">
+            <div className={styles.statChip} data-testid="player-info-attack" aria-label="Attack power bonus">
               <Zap className={cn(styles.statIcon, 'text-yellow-400')} />
               <span className={styles.statValue}>+{attackPower} AP</span>
             </div>
@@ -67,7 +67,7 @@ export function PlayerInfoStats({
         {/* Special Cards in hand */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className={styles.statChip} data-testid="player-info-cards">
+            <div className={styles.statChip} data-testid="player-info-cards" aria-label="Cards in hand">
               <Album className={cn(styles.statIcon, 'text-purple-400')} />
               <span className={styles.statValue}>{specialCardsCount}/3</span>
             </div>
@@ -86,7 +86,7 @@ export function PlayerInfoStats({
         {resources.map(({ type, label, value }) => (
           <Tooltip key={type}>
             <TooltipTrigger asChild>
-              <div className={styles.resourceChip} data-testid={`player-info-resource-${type}`}>
+              <div className={styles.resourceChip} data-testid={`player-info-resource-${type}`} aria-label={label}>
                 <ResourceIcon type={type} className="h-3.5 w-3.5 shrink-0" />
                 <span className={styles.resourceValue}>{value}</span>
               </div>

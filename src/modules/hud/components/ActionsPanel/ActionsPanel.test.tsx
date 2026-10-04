@@ -31,7 +31,7 @@ describe('ActionsPanelView', () => {
     it('displays the deck count', () => {
       const viewModel = myTurnNoSelection;
       renderWithTooltip(<ActionsPanelView {...viewModel} />);
-      expect(screen.getByText(new RegExp(`Deck: ${viewModel.deckCount}`))).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(`Cards left in deck: ${viewModel.deckCount}`))).toBeInTheDocument();
     });
   });
 

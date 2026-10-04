@@ -282,6 +282,30 @@ describe('useIslandTile', () => {
     expect(result.current.borderImageSequence).toBeDefined();
   });
 
+  it('borderImageSequence is deterministic for same island across separate renders', () => {
+    const island: Island = {
+      id: '1-1',
+      x: 1,
+      y: 1,
+      type: IslandType.Empty,
+      resources: [],
+      occupants: [],
+    };
+
+    // First independent render of the hook with island
+    const { result: result1 } = renderHook(() => useIslandTile({ island }));
+    const sequence1 = result1.current.borderImageSequence;
+
+    // Second independent render of the hook with the same island
+    const { result: result2 } = renderHook(() => useIslandTile({ island }));
+    const sequence2 = result2.current.borderImageSequence;
+
+    // Both renders should produce the same borderImageSequence.
+    // This ensures borderImageSequence is deterministic (derived from island properties, not random),
+    // so server and client renders during hydration agree and don't trigger a hydration-mismatch error.
+    expect(sequence1).toEqual(sequence2);
+  });
+
   it('onClick calls handleTileClick with island coordinates', () => {
     const island: Island = {
       id: '1-1',

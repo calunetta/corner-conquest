@@ -27,6 +27,7 @@ export function MapZoomControls({
               className={styles.zoomOut}
               onClick={onZoomOut}
               data-testid="map-zoom-out"
+              aria-label="Zoom out"
             >
               <ZoomOut className={styles.zoomOutIcon} />
             </Button>
@@ -62,6 +63,7 @@ export function MapZoomControls({
               className={styles.zoomIn}
               onClick={onZoomIn}
               data-testid="map-zoom-in"
+              aria-label="Zoom in"
             >
               <ZoomIn className={styles.zoomInIcon} />
             </Button>
