@@ -28,7 +28,7 @@ export function GameBoardHeaderView({
           disabled={isExiting}
           data-testid="gameboard-exit-btn"
         >
-          {isExiting ? <Loader2 className="animate-spin" /> : <ArrowLeft className="h-4 w-4" />}
+          {isExiting ? <Loader2 className={styles.exitButtonLoader} /> : <ArrowLeft className={styles.exitButtonArrow} />}
         </Button>
         <h1 className={styles.title}>{gameName}</h1>
         {isPlaying && (
@@ -51,7 +51,7 @@ export function GameBoardHeaderView({
 
         {canStartGame && (
           <Button onClick={onStartGame} className={styles.startGameButton}>
-            <Play className="mr-2 h-4 w-4" /> Start Game
+            <Play className={styles.startGameIcon} /> Start Game
           </Button>
         )}
       </div>

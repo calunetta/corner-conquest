@@ -3,6 +3,7 @@ import { GameBoardHeaderView } from './GameBoardHeader';
 import {
   waitingCanStartProps,
   waitingCannotStartProps,
+  waitingNotHostProps,
   playingMyTurnNotExpiringProps,
   playingMyTurnExpiringProps,
   playingOpponentTurnProps,
@@ -14,11 +15,12 @@ export const gameBoardHeaderPreview: ComponentPreview = {
   title: 'Game board header',
   group: 'HUD',
   states: [
-    { name: 'Waiting – can start', render: () => <GameBoardHeaderView {...waitingCanStartProps} /> },
-    { name: 'Waiting – cannot start', render: () => <GameBoardHeaderView {...waitingCannotStartProps} /> },
-    { name: 'Playing – my turn', render: () => <GameBoardHeaderView {...playingMyTurnNotExpiringProps} /> },
-    { name: 'Playing – my turn expiring', render: () => <GameBoardHeaderView {...playingMyTurnExpiringProps} /> },
+    { name: 'Waiting – host, can start', render: () => <GameBoardHeaderView {...waitingCanStartProps} /> },
+    { name: 'Waiting – host, cannot start', render: () => <GameBoardHeaderView {...waitingCannotStartProps} /> },
+    { name: 'Waiting – not host', render: () => <GameBoardHeaderView {...waitingNotHostProps} /> },
     { name: 'Playing – opponent turn', render: () => <GameBoardHeaderView {...playingOpponentTurnProps} /> },
+    { name: 'Playing – my turn, expiring', render: () => <GameBoardHeaderView {...playingMyTurnExpiringProps} /> },
+    { name: 'Playing – my turn, not expiring', render: () => <GameBoardHeaderView {...playingMyTurnNotExpiringProps} /> },
     { name: 'Exiting', render: () => <GameBoardHeaderView {...exitingProps} /> },
   ],
 };

@@ -11,6 +11,9 @@ export const styles = {
   turnLabel: 'text-muted-foreground hidden sm:inline',
   playerName: 'font-bold text-foreground',
   startGameButton: 'font-bold bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black',
+  exitButtonArrow: 'h-4 w-4',
+  exitButtonLoader: 'animate-spin',
+  startGameIcon: 'mr-2 h-4 w-4',
   turnTimerIcon: cva('h-3.5 w-3.5', {
     variants: {
       isExpiring: {

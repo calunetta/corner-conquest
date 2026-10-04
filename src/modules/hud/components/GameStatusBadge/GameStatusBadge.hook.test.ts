@@ -68,5 +68,33 @@ describe('useGameStatusBadge', () => {
     const { result } = renderHook(() => useGameStatusBadge());
 
     expect(result.current.isWaiting).toBe(true);
+    expect(result.current.playerCount).toBe(2);
+    expect(result.current.maxPlayers).toBe(4);
+  });
+
+  it('returns "Your Turn" label when isMyTurn is true', () => {
+    const players = [createPlayer(0, 'Player 1')];
+
+    jest.mocked(useGameBoard).mockReturnValue({
+      gameState: {
+        status: 'playing',
+        maxPlayers: 4,
+        players,
+        currentPlayerIndex: 0,
+      },
+      isMyTurn: true,
+      turnTimer: {
+        timeLeft: 90000,
+        formattedTime: '01:30',
+        turnDuration: 180000,
+        isExpiring: false,
+        percentage: 50,
+      },
+    } as unknown as ReturnType<typeof useGameBoard>);
+
+    const { result } = renderHook(() => useGameStatusBadge());
+
+    expect(result.current.turnLabel).toBe('Your Turn');
+    expect(result.current.isMyTurn).toBe(true);
   });
 });

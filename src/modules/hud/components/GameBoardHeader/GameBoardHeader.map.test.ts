@@ -75,6 +75,20 @@ describe('toGameBoardHeaderViewModel', () => {
 
       expect(result.canStartGame).toBe(false);
     });
+
+    it('is false when players array is empty', () => {
+      const gameState = {
+        status: 'waiting' as const,
+        name: 'Test Game',
+        players: [] as Player[],
+        settings: { victoryPointGoal: 50 },
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameBoardHeaderViewModel(gameState, true, false, turnTimer);
+
+      expect(result.canStartGame).toBe(false);
+    });
   });
 
   describe('isPlaying', () => {
@@ -95,6 +109,20 @@ describe('toGameBoardHeaderViewModel', () => {
     it('is false when status is waiting', () => {
       const gameState = {
         status: 'waiting' as const,
+        name: 'Test Game',
+        players: [createPlayer(0, 'Player 1')],
+        settings: { victoryPointGoal: 50 },
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+
+      expect(result.isPlaying).toBe(false);
+    });
+
+    it('is false when status is finished', () => {
+      const gameState = {
+        status: 'finished' as const,
         name: 'Test Game',
         players: [createPlayer(0, 'Player 1')],
         settings: { victoryPointGoal: 50 },
@@ -134,6 +162,64 @@ describe('toGameBoardHeaderViewModel', () => {
       const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
 
       expect(result.turnPlayerName).toBeUndefined();
+    });
+
+    it('returns undefined when players array is empty', () => {
+      const gameState = {
+        status: 'playing' as const,
+        name: 'Test Game',
+        players: [] as Player[],
+        settings: { victoryPointGoal: 50 },
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+
+      expect(result.turnPlayerName).toBeUndefined();
+    });
+  });
+
+  describe('passthrough properties', () => {
+    it('passes through gameName from gameState.name', () => {
+      const gameState = {
+        status: 'playing' as const,
+        name: 'My Test Game',
+        players: [createPlayer(0, 'Player 1')],
+        settings: { victoryPointGoal: 50 },
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+
+      expect(result.gameName).toBe('My Test Game');
+    });
+
+    it('passes through victoryPointGoal from gameState.settings', () => {
+      const gameState = {
+        status: 'playing' as const,
+        name: 'Test Game',
+        players: [createPlayer(0, 'Player 1')],
+        settings: { victoryPointGoal: 75 },
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+
+      expect(result.victoryPointGoal).toBe(75);
+    });
+
+    it('passes through isMyTurn unchanged', () => {
+      const gameState = {
+        status: 'playing' as const,
+        name: 'Test Game',
+        players: [createPlayer(0, 'Player 1')],
+        settings: { victoryPointGoal: 50 },
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameBoardHeaderViewModel(gameState, false, true, turnTimer);
+
+      expect(result.isMyTurn).toBe(true);
     });
   });
 

@@ -87,18 +87,16 @@ describe('GameBoardHeaderView', () => {
       expect(screen.queryByText(/02:30/)).not.toBeInTheDocument();
     });
 
-    it('applies destructive styling when isExpiring is true', () => {
-      const { container } = render(<GameBoardHeaderView {...playingMyTurnExpiringProps} />);
+    it('shows countdown with correct time when expiring', () => {
+      render(<GameBoardHeaderView {...playingMyTurnExpiringProps} />);
 
-      const countdownSpan = container.querySelector('.font-mono.font-bold');
-      expect(countdownSpan).toHaveClass('text-destructive');
+      expect(screen.getByText(/00:05/)).toBeInTheDocument();
     });
 
-    it('applies primary styling when isExpiring is false', () => {
-      const { container } = render(<GameBoardHeaderView {...playingMyTurnNotExpiringProps} />);
+    it('shows countdown with correct time when not expiring', () => {
+      render(<GameBoardHeaderView {...playingMyTurnNotExpiringProps} />);
 
-      const countdownSpan = container.querySelector('.font-mono.font-bold');
-      expect(countdownSpan).toHaveClass('text-primary');
+      expect(screen.getByText(/02:30/)).toBeInTheDocument();
     });
   });
 

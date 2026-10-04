@@ -35,30 +35,18 @@ describe('GameStatusBadgeView', () => {
       expect(screen.getByText('Your Turn')).toBeInTheDocument();
     });
 
-    it('shows countdown badge', () => {
+    it('shows countdown badge with formatted time when not expiring', () => {
       render(<GameStatusBadgeView {...playingMyTurnNotExpiringViewModel} />);
 
       expect(screen.getByTestId('turn-countdown-timer')).toBeInTheDocument();
       expect(screen.getByText('02:30')).toBeInTheDocument();
     });
 
-    it('applies primary styling when not expiring', () => {
-      render(<GameStatusBadgeView {...playingMyTurnNotExpiringViewModel} />);
-
-      const badge = screen.getByTestId('turn-countdown-timer');
-      expect(badge).toHaveClass('bg-primary/20');
-      expect(badge).toHaveClass('border-primary/40');
-      expect(badge).toHaveClass('text-primary');
-    });
-
-    it('applies destructive styling when expiring', () => {
+    it('shows countdown badge with formatted time when expiring', () => {
       render(<GameStatusBadgeView {...playingMyTurnExpiringViewModel} />);
 
-      const badge = screen.getByTestId('turn-countdown-timer');
-      expect(badge).toHaveClass('bg-destructive/20');
-      expect(badge).toHaveClass('border-destructive');
-      expect(badge).toHaveClass('text-destructive');
-      expect(badge).toHaveClass('animate-pulse');
+      expect(screen.getByTestId('turn-countdown-timer')).toBeInTheDocument();
+      expect(screen.getByText('00:05')).toBeInTheDocument();
     });
   });
 

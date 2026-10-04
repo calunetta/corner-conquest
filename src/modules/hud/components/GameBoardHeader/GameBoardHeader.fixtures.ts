@@ -30,6 +30,16 @@ export const waitingCannotStartViewModel: GameBoardHeaderViewModel = {
   turnTimer: baseTurnTimer,
 };
 
+export const waitingNotHostViewModel: GameBoardHeaderViewModel = {
+  gameName: 'Island Quest',
+  isPlaying: false,
+  victoryPointGoal: 30,
+  canStartGame: false,
+  turnPlayerName: undefined,
+  isMyTurn: false,
+  turnTimer: baseTurnTimer,
+};
+
 export const playingMyTurnNotExpiringViewModel: GameBoardHeaderViewModel = {
   gameName: 'Island Quest',
   isPlaying: true,
@@ -69,6 +79,13 @@ export const waitingCanStartProps: GameBoardHeaderViewProps = {
 
 export const waitingCannotStartProps: GameBoardHeaderViewProps = {
   ...waitingCannotStartViewModel,
+  isExiting: false,
+  onExitClick: async () => {},
+  onStartGame: async () => {},
+};
+
+export const waitingNotHostProps: GameBoardHeaderViewProps = {
+  ...waitingNotHostViewModel,
   isExiting: false,
   onExitClick: async () => {},
   onStartGame: async () => {},

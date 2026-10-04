@@ -45,6 +45,19 @@ describe('toGameStatusBadgeViewModel', () => {
 
       expect(result.isWaiting).toBe(false);
     });
+
+    it('is false when status is finished', () => {
+      const gameState = {
+        status: 'finished' as const,
+        maxPlayers: 4,
+        players: [createPlayer(0, 'Player 1')],
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameStatusBadgeViewModel(gameState, false, turnTimer);
+
+      expect(result.isWaiting).toBe(false);
+    });
   });
 
   describe('turnLabel', () => {
@@ -86,6 +99,19 @@ describe('toGameStatusBadgeViewModel', () => {
 
       expect(result.turnLabel).toBe("Player's Turn");
     });
+
+    it("is \"Player's Turn\" when players array is empty", () => {
+      const gameState = {
+        status: 'playing' as const,
+        maxPlayers: 4,
+        players: [] as Player[],
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameStatusBadgeViewModel(gameState, false, turnTimer);
+
+      expect(result.turnLabel).toBe("Player's Turn");
+    });
   });
 
   describe('formattedTime fallback', () => {
@@ -119,6 +145,27 @@ describe('toGameStatusBadgeViewModel', () => {
       } as GameState;
 
       const result = toGameStatusBadgeViewModel(gameState, false, emptyTimer);
+
+      expect(result.formattedTime).toBe('02:00');
+    });
+
+    it('falls back to "02:00" when formattedTime is undefined', () => {
+      const undefinedTimer = {
+        timeLeft: 90000,
+        formattedTime: undefined,
+        turnDuration: 180000,
+        isExpiring: false,
+        percentage: 50,
+      } as unknown as TurnTimer;
+
+      const gameState = {
+        status: 'playing' as const,
+        maxPlayers: 4,
+        players: [createPlayer(0, 'Player 1')],
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameStatusBadgeViewModel(gameState, false, undefinedTimer);
 
       expect(result.formattedTime).toBe('02:00');
     });
@@ -173,6 +220,62 @@ describe('toGameStatusBadgeViewModel', () => {
 
       expect(result.playerCount).toBe(2);
       expect(result.maxPlayers).toBe(4);
+    });
+
+    it('handles zero players', () => {
+      const gameState = {
+        status: 'waiting' as const,
+        maxPlayers: 4,
+        players: [] as Player[],
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameStatusBadgeViewModel(gameState, false, turnTimer);
+
+      expect(result.playerCount).toBe(0);
+      expect(result.maxPlayers).toBe(4);
+    });
+
+    it('handles full player count', () => {
+      const gameState = {
+        status: 'waiting' as const,
+        maxPlayers: 2,
+        players: [createPlayer(0, 'Player 1'), createPlayer(1, 'Player 2')],
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameStatusBadgeViewModel(gameState, false, turnTimer);
+
+      expect(result.playerCount).toBe(2);
+      expect(result.maxPlayers).toBe(2);
+    });
+  });
+
+  describe('isMyTurn passthrough', () => {
+    it('passes through isMyTurn true', () => {
+      const gameState = {
+        status: 'playing' as const,
+        maxPlayers: 4,
+        players: [createPlayer(0, 'Player 1')],
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameStatusBadgeViewModel(gameState, true, turnTimer);
+
+      expect(result.isMyTurn).toBe(true);
+    });
+
+    it('passes through isMyTurn false', () => {
+      const gameState = {
+        status: 'playing' as const,
+        maxPlayers: 4,
+        players: [createPlayer(0, 'Player 1')],
+        currentPlayerIndex: 0,
+      } as GameState;
+
+      const result = toGameStatusBadgeViewModel(gameState, false, turnTimer);
+
+      expect(result.isMyTurn).toBe(false);
     });
   });
 });
