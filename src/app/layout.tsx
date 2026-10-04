@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Outfit } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { PlayerProvider } from '@/hooks/use-player';
+import { PlayerProvider } from '@/modules/session';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 const outfit = Outfit({

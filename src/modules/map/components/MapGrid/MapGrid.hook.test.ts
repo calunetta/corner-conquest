@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { useMapGrid } from './MapGrid.hook';
 import { useGameBoard } from '@/modules/game-board';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/modules/shared';
 import { useMapPanZoom, DEFAULT_DESKTOP_ZOOM } from './MapGrid.pan-zoom.hook';
 import type { GameBoardContextType } from '@/modules/game-board';
 import type { UseMapPanZoomResult } from './MapGrid.pan-zoom.hook';
@@ -12,7 +12,7 @@ jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
 }));
 
-jest.mock('@/hooks/use-is-mobile', () => ({
+jest.mock('@/modules/shared', () => ({
   useIsMobile: jest.fn(),
 }));
 

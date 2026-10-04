@@ -14,7 +14,7 @@ import { GameBoardProvider, useGameBoard } from '../GameBoardContext';
 import { mockToast, buildPlayer, buildGameState, withTile, renderProvider } from './test-utils/gameBoardTestKit';
 
 const mockToastObj = { toast: mockToast };
-jest.mock('@/hooks/use-toast', () => ({ useToast: () => mockToastObj }));
+jest.mock('@/modules/shared', () => ({ useToast: () => mockToastObj }));
 jest.mock('@/modules/game-rules', () => ({
   startGame: jest.fn((state) => state),
   getPossibleMoves: jest.fn(() => []),

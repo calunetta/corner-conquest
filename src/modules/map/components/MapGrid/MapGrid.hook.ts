@@ -1,7 +1,7 @@
 'use client';
 
 import { useGameBoard } from '@/modules/game-board';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/modules/shared';
 import { useMapPanZoom, DEFAULT_DESKTOP_ZOOM } from './MapGrid.pan-zoom.hook';
 import { toGridDimensions } from './MapGrid.map';
 import type { MapGridViewModel } from './MapGrid.types';

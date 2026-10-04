@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { Loader2 } from 'lucide-react';
-import { usePlayer } from '@/hooks/use-player';
-import { useGameEngine } from '@/hooks/use-game-engine';
+import { usePlayer } from '@/modules/session';
+import { useGameEngine } from '@/modules/game-board';
 import { MapGrid } from '@/modules/map';
 import { ActionsPanel, GameLog, GameBoardHeader, GameStatusBadge, TutorialBeacon } from '@/modules/hud';
 import { PlayerInfoBar } from './PlayerInfoBar';

@@ -9,7 +9,7 @@ import { act, render, screen } from '@testing-library/react';
 import { GameAction, IslandType, PlayerColor, type GameState, type Player } from '@/lib/types';
 import { GameBoardProvider, useGameBoard } from '../GameBoardContext';
 
-jest.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: jest.fn() }) }));
+jest.mock('@/modules/shared', () => ({ useToast: () => ({ toast: jest.fn() }) }));
 jest.mock('@/modules/game-rules', () => ({
   startGame: jest.fn((state) => state),
   getPossibleMoves: jest.fn(() => []),

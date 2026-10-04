@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { Army, CardName, GameState, Player } from '@/lib/types';
-import type { useToast } from '@/hooks/use-toast';
+import type { useToast } from '@/modules/shared';
 import type { GameBoardContextType, GameBoardProviderProps, GameBoardUIAction, GameBoardUIState } from './game-board.types';
 
 export type ToastFn = ReturnType<typeof useToast>['toast'];

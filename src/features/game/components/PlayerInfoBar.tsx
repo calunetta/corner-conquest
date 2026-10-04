@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/modules/shared';
 import { PlayerInfo, TutorialBeacon } from '@/modules/hud';
 import { useGameBoard } from '../context/GameBoardContext';
 

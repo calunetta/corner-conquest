@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { usePlayer } from '@/hooks/use-player';
-import { useToast } from '@/hooks/use-toast';
+import { usePlayer } from '@/modules/session';
+import { useToast } from '@/modules/shared';
 import { initializeGame, startGame } from '@/modules/game-rules';
 import type { GameSettings, GameState, PlayerColor } from '@/lib/types';
 import { createGameId, joinOpenGame, saveGame, subscribeToOpenGames } from '../../services/lobby.service';

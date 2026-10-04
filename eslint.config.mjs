@@ -12,7 +12,6 @@ const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta
 const LEGACY_PATHS = [
   'src/features/**',
   'src/lib/**',
-  'src/hooks/**',
   'src/ai/**',
   'src/components/icons.tsx',
   'src/app/page.tsx',

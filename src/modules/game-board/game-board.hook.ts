@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/modules/shared';
 import { hasPlayerRemainingActions } from '@/modules/game-rules';
 import { useTurnTimer } from './turn-timer.hook';
 import { useGameBoardState } from './game-board.state.hook';

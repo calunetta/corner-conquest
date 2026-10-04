@@ -44,5 +44,5 @@ The bar: a senior front-end engineer reads the code once and understands it. Mat
 
 ## Firestore
 - Only services touch Firestore. Keep the write economics in `docs/README.md` §6.9: human actions are buffered locally and written once per turn; never add a write per click.
-- Catch I/O errors at the service or hook boundary and tell the player through `useToast` (`@/hooks/use-toast`); never swallow an error silently.
+- Catch I/O errors at the service or hook boundary and tell the player through `useToast` (`@/modules/shared`); never swallow an error silently.
 - `firestore.rules` allows public read and write today. Raise it before building anything that relies on secrecy or ownership.

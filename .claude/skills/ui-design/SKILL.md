@@ -19,7 +19,7 @@ The code is the source of truth for the look. The style section of `docs/bluepri
 - **Login/lobby parity**: the login page shares the lobby's background and glass style (`docs/README.md` §2).
 
 ## Layout rules
-- Desktop reference 1280×720, mobile 390×844. `useIsMobile()` (`src/hooks/use-is-mobile.ts`) switches below 768 px.
+- Desktop reference 1280×720, mobile 390×844. `useIsMobile()` (`@/modules/shared`) switches below 768 px.
 - On mobile the whole map grid (`MAP_COLS` × `MAP_ROWS` = 5 × 6) stays visible; tiles are `clamp(46px, 13.5vw, 68px)` (`src/features/game/components/MapGrid.tsx`). New HUD elements must not cover it; collapse them on mobile.
 - Touch targets: aim for 44 × 44 px (WCAG 2.5.5); never below 24 × 24 px (WCAG 2.5.8).
 

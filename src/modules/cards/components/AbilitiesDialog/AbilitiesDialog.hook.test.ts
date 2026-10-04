@@ -9,7 +9,7 @@ import {
 } from './AbilitiesDialog.fixtures';
 
 const mockToast = jest.fn();
-jest.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: mockToast }) }));
+jest.mock('@/modules/shared', () => ({ useToast: () => ({ toast: mockToast }) }));
 
 describe('AbilitiesDialog.hook', () => {
   describe('useAbilitiesDialog', () => {

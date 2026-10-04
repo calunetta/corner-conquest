@@ -2,7 +2,7 @@
  * Shared test utilities for GameBoardContext tests.
  *
  * Jest mocks used by this kit (declare in each test file):
- *   jest.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: mockToast }) }));
+ *   jest.mock('@/modules/shared', () => ({ useToast: () => ({ toast: mockToast }) }));
  *   jest.mock('@/modules/game-rules', () => ({
  *     startGame: jest.fn((state) => state),
  *     getPossibleMoves: jest.fn(() => []),

@@ -2,11 +2,11 @@ import { renderHook, act } from '@testing-library/react';
 import { PlayerColor } from '@/lib/types';
 import type { GameSettings, GameState } from '@/lib/types';
 import { defaultGameSettings } from '@/modules/game-rules';
-import { usePlayer } from '@/hooks/use-player';
+import { usePlayer } from '@/modules/session';
 
 const mockToast = jest.fn();
-jest.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: mockToast }) }));
-jest.mock('@/hooks/use-player');
+jest.mock('@/modules/shared', () => ({ useToast: () => ({ toast: mockToast }) }));
+jest.mock('@/modules/session');
 
 jest.mock('../../services/lobby.service', () => ({
   subscribeToOpenGames: jest.fn(),

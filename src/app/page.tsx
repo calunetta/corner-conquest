@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { GameBoard } from '@/features/game/components/GameBoard';
 import { Lobby, LobbyBackground } from '@/modules/lobby';
-import { usePlayer } from '@/hooks/use-player';
+import { usePlayer } from '@/modules/session';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

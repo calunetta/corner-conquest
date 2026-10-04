@@ -29,7 +29,7 @@ description: How KISS, DRY and SOLID apply to React and TypeScript in this repo,
 ## Legacy anti-patterns (don't repeat them)
 - A 700-line file mixing reducer, effects and handlers: `src/features/game/context/GameBoardContext.tsx`.
 - Zero-prop components that read the whole board context, which can't be previewed or tested in isolation.
-- Two entry points for one hook: `src/hooks/use-mobile.ts` only re-exports `src/hooks/use-is-mobile.ts`.
+- Two entry points for one hook: a hook file that only re-exports another hook under a different name (formerly `src/hooks/use-mobile.ts` → `use-is-mobile.ts`, fixed by migrating both into `src/modules/shared`).
 - `any` payloads in action handlers.
 
 ## Checklist before DONE

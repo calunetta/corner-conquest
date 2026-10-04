@@ -1,4 +1,4 @@
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/modules/shared';
 import { toAbilitiesDialogViewModel } from './AbilitiesDialog.map';
 import type { AbilitiesDialogProps, AbilitiesDialogViewModel, AbilityViewModel } from './AbilitiesDialog.types';
 
