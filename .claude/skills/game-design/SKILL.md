@@ -13,7 +13,7 @@ Verified at bootstrap. The code wins over this table: re-check the source before
 
 | Rule | Value | Source |
 |---|---|---|
-| Victory point goal | 30 (lobby slider 10–100) | `src/lib/game-initializer.ts` (`defaultGameSettings`) |
+| Victory point goal | 30 (lobby slider 10–100) | `src/modules/game-rules/game-setup.reducer.ts` (`defaultGameSettings`) |
 | VP for first discovery of an island | 1 | same |
 | Deploy an army | 6 wheat, +2 per army deployed | same (`initialDeployCost`, `deployCostIncrement`) |
 | Upgrade attack power | 6 iron | same (`upgradeCost`), `src/modules/game-rules/player-actions.reducer.ts` |
@@ -21,13 +21,13 @@ Verified at bootstrap. The code wins over this table: re-check the source before
 | Buy a card / hand limit | 10 gems / 7 cards | `src/modules/game-rules/card-acquisition.reducer.ts`, `src/lib/types/actions.ts` |
 | Max armies / max attack power | 5 / 4 | `src/modules/game-rules/player-actions.reducer.ts` |
 | Player dice | attack power + 1 (+2 with War Chief), at least 1 | `src/modules/game-rules/combat-player-roll.reducer.ts`, `src/modules/game-rules/dice.ts` |
-| Monster dice | its level: Lancer 1, Bear 2, Ogre 3, Minotaur 4 | `src/modules/game-rules/combat-monster-roll.reducer.ts`, `src/lib/game-initializer.ts` |
+| Monster dice | its level: Lancer 1, Bear 2, Ogre 3, Minotaur 4 | `src/modules/game-rules/combat-monster-roll.reducer.ts`, `src/modules/game-rules/monster-catalog.ts` |
 | Ties | player vs player: the defender wins; player vs monster: the monster wins | `src/modules/game-rules/combat-player-roll.reducer.ts`, `src/modules/game-rules/combat-monster-roll.reducer.ts` |
 | Rewards | +5 VP for beating a player; 2 / 5 / 7 / 10 VP for monster levels 1–4 | `src/modules/game-rules/combat-player-resolve.reducer.ts`, `src/modules/game-rules/combat-monster-resolve.reducer.ts` |
 | Turn timer | 120 s | `src/features/game/hooks/useTurnTimer.ts` |
-| Cards | 13 kinds in a weighted deck | `src/lib/card-data.ts` |
+| Cards | 13 kinds in a weighted deck | `src/modules/game-rules/card-data.ts` |
 
-Full flows: `docs/README.md` §5–6. Bot strategy: `src/lib/bot-logic.ts`.
+Full flows: `docs/README.md` §5–6. Bot strategy: `src/modules/game-rules/bot-turn.reducer.ts`.
 
 ## Design pillars
 1. Every turn offers a meaningful choice: expand, exploit, fight or invest.
@@ -47,7 +47,7 @@ Name the one a proposal serves: agency, risk and reward, tension and pacing, dis
 ## Constraints
 - Complexity budget: a new rule replaces or simplifies something, or clearly earns its place. It must fit in one tooltip-sized sentence.
 - Firestore cost: no extra writes per action (`docs/README.md` §6.9).
-- Bots: every new rule states what `src/lib/bot-logic.ts` does with it.
+- Bots: every new rule states what `src/modules/game-rules/bot-turn.reducer.ts` does with it.
 - Tutorial: update the matching `TutorialBeacon` text (`docs/README.md` §6.10).
 - Docs: rule changes update `docs/README.md` §5–6 in the same phase.
 

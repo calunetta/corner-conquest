@@ -23,3 +23,4 @@ export { handleEndTurn } from './player-turn.reducer';
 export { handleSelectResourceForPosition } from './resource-position.reducer';
 export { handlePlayerExit } from './services/player-exit.service';
 export { handleGameAction, type HandleActionParams } from './game-rules.reducer';
+export { takeBotTurn } from './services/bot-turn.service';

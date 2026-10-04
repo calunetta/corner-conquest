@@ -78,7 +78,7 @@ Create only the files a component needs. A static badge may be `.tsx`, `.styles.
 
 ## Migrating a legacy component
 1. Characterization tests: capture today's behavior of the legacy component.
-2. Build the new version in `src/modules/` with all its files, preview included. When fixtures reference assets (sprites, images), copy the real paths from the actual data source (e.g. `MONSTER_DATA` in `src/lib/game-initializer.ts`) — don't invent a plausible-looking path; a wrong extension or a per-item path where the real data shares one file (e.g. a single `death.gif` for every monster) 404s silently in the preview.
+2. Build the new version in `src/modules/` with all its files, preview included. When fixtures reference assets (sprites, images), copy the real paths from the actual data source (e.g. `MONSTER_DATA` in `src/modules/game-rules/monster-catalog.ts`) — don't invent a plausible-looking path; a wrong extension or a per-item path where the real data shares one file (e.g. a single `death.gif` for every monster) 404s silently in the preview.
 3. Switch the import in the parent; run the characterization tests against the new version.
 4. Delete the legacy file in a separate commit once verified; remove its entry from `LEGACY_PATHS` in `eslint.config.mjs` if listed.
 5. Update `docs/README.md` §2.

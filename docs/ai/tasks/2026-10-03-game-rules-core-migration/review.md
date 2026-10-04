@@ -1,102 +1,118 @@
-# Final review: Migrate game rules core logic into src/modules/game-rules, phase 3/4
+# Final review: Migrate game rules core logic into src/modules/game-rules, phase 4/4
 
 VERDICT: APPROVED
 
-## Out-of-band event (not a build defect)
-A concurrent sibling session (unrelated cards-dialog migration task) committed the deletions of
-`src/lib/game-logic.ts` and `src/lib/turn-progression.ts` as part of its own commit `2a396f1`
-("refactor(cards): migrate SabotageDialog, WealthyDialog, StealResourceDialog to src/modules
-[phase 2/5]") before this task's Phase 3 could commit them itself. Verified via
-`git show 2a396f1 --stat`: both files appear as `D` in that diff, alongside that unrelated task's
-own dialog moves. This task's new module files
-(`src/modules/game-rules/player-join.reducer.ts`, `src/modules/game-rules/turn-progression.ts`)
-were already created from the legacy files' content before the sweep, so nothing is lost — but
-there is no separate "delete" step left for this phase to perform, and the deletion's commit hash
-belongs to an unrelated task. Recorded here for traceability, not routed to any builder as a fix.
-
 ## Checks run (this session)
-- `npx tsc --noEmit`: errors only in untracked `src/modules/map/components/{AnimatedMonster,
-  DeathEffect,IslandTile,TileBoats}/*.test.ts(x)` — confirmed via `git status --porcelain` (`??`),
-  belonging to the concurrent `game-map-migration` task. Zero errors in any file this phase
-  touches or created.
-- `npx eslint src/modules/game-board/game-board.hook.ts src/modules/game-rules/player-join.reducer.ts src/modules/game-rules/turn-progression.ts src/modules/game-rules/player-join.reducer.test.ts src/modules/game-rules/turn-progression.test.ts src/modules/game-rules/index.ts`:
-  no output, exit 0.
-- `npm run lint` (repo-wide): `35 problems (35 errors, 0 warnings)`, all in untracked
-  `src/modules/combat/components/AttackSelectionDialog/AttackSelectionDialog.tsx` and
-  `src/modules/map/components/*` test files — confirmed `??` in `git status`, zero hits for
-  "game-rules" or any file this phase owns.
-- `npx jest src/modules/game-rules src/features/lobby src/features/game/context src/modules/game-board`:
-  `Test Suites: 25 passed, 25 total` / `Tests: 296 passed, 296 total`.
-- `npm test` (full repo, informational): `Test Suites: 1 failed, 125 passed, 126 total` /
-  `Tests: 14 failed, 1252 passed, 1266 total` — the one failing suite is
-  `src/modules/map/components/IslandTile/IslandTile.test.tsx`, untracked, concurrent
-  `game-map-migration` task (`TypeError: Cannot destructure property 'possibleMoves' of 'uiState'
-  as it is undefined` — unrelated fixture/mock shape issue in that task's own file). Not this
-  phase's scope.
-- `git grep -n "@/lib/game-logic\|@/lib/turn-progression"` across the whole repo (tracked +
-  untracked via plain `grep -rn` over `src e2e scripts docs .claude`): zero hits anywhere.
-  Confirms the acceptance criterion "no file imports from any of the six deleted legacy paths"
-  for these two files.
+- `npm run typecheck`: clean, no output (`tsc --noEmit` exit 0).
+- `npx eslint <every file this phase created/edited>` (`src/modules/game-rules/bot-helpers.ts`,
+  `bot-card-strategy.reducer.ts`, `bot-purchases.reducer.ts`, `bot-army-actions.reducer.ts`,
+  `bot-turn.reducer.ts`, `bot-turn.reducer.test.ts`, `services/bot-turn.service.ts`,
+  `services/bot-turn.service.test.ts`, `index.ts`, plus the two repointed call sites
+  `src/hooks/use-game-engine.ts`, `scripts/balance-simulator/engine.ts`): `0 errors`, one expected
+  warning (`use-game-engine.ts` is in `LEGACY_PATHS`, ignored by design).
+- `npm run lint` (repo-wide): `eslint . --max-warnings 0 --no-error-on-unmatched-pattern` — no
+  output, exit 0.
+- `npx jest src/modules/game-rules`: `Test Suites: 23 passed, 23 total` /
+  `Tests: 235 passed, 235 total`.
+- `npm test` (full repo): `Test Suites: 149 passed, 149 total` / `Tests: 1473 passed, 1473 total`.
+- `npx jest scripts/balance-simulator`: `Test Suites: 17 passed, 17 total` /
+  `Tests: 110 passed, 110 total` — confirms the `engine.ts`/`acceptance.test.ts` repoint didn't
+  break the simulator.
+- e2e (`e2e/gameplay.spec.ts`): not run — `java -version` on this machine: "Unable to locate a
+  Java Runtime." Confirms tester-b's report; not a blocker per CLAUDE.md's Phases section.
 
 ## Plan adherence
-- `src/modules/game-rules/player-join.reducer.ts` (86 lines) and
-  `src/modules/game-rules/turn-progression.ts` (104 lines): both under the 150-line cap, as the
-  plan predicted ("no split needed"). Met.
-- Body comparison against `git show 2a396f1~1:src/lib/game-logic.ts` and
-  `git show 2a396f1~1:src/lib/turn-progression.ts` (the pre-deletion legacy content): both new
-  files are byte-identical to the originals except import repoints (now relative to
-  `./player-data`, `./player-factory`, `./movement.reducer` instead of `@/lib/...`/
-  `@/modules/game-rules`) and one trivial, behavior-neutral change:
-  `player-join.reducer.ts:25` uses `const newGameState = ...` where the original used
-  `let newGameState = ...`. The variable is never reassigned in either version, so this is a
-  no-op correctness-preserving tweak (likely a `prefer-const` lint autofix), not a body change.
-  Non-blocking.
-- `turn-progression.ts:18`'s `hasActiveDialogOrPendingAction: boolean = false` matches the
-  original legacy file exactly. The plan's own Contracts section (`plan.md:234`) describes it as
-  `?: boolean`, but the Verified context (`plan.md:19`) and the actual legacy source both show a
-  default value, not an optional-without-default signature — the contract's shorthand was
-  imprecise, not the implementation. Functionally equivalent (`boolean = false` makes the
-  parameter optional with the same default as `?: boolean` would via `undefined` coalescing
-  through the function's own falsy checks). No fix needed; same conclusion the implementers
-  already reached cross-reviewing each other.
-- `index.ts` adds exactly the two export lines the plan specifies
-  (`plan.md:126`): `export { addPlayerToGame, BASE_TILE_SIZE } from './player-join.reducer';` and
-  `export { hasPlayerRemainingActions } from './turn-progression';` — present at
-  `src/modules/game-rules/index.ts:5-6`. No unplanned exports added (lesson from Phase 2's review
-  applied correctly this time).
-- `player-join.reducer.test.ts`: 9 cases covering full-game, color-exhausted, already-joined,
-  status-not-Waiting, last-seat-fills-game, seats-remain, distinct-colors, and base-tile-placement
-  branches — matches the Test plan's named branches (`plan.md:309`) plus extra coverage, all using
-  the real `initializeGame`/`startGame`/`addPlayerToGame` reducers per the testing skill's
-  fixture-building guidance.
-- `turn-progression.test.ts`: the one ported case, assertions verified byte-identical to
-  `git show 2a396f1~1:src/lib/__tests__/turn-progression.test.ts`'s test body (same setup,
-  same three assertions in the same order).
-- Call-site repoints verified via `git diff` for all files in Phase 3's File plan: `Lobby.tsx`
-  (merged into the single `@/modules/game-rules` import, consistent with the module's existing
-  pattern), `game-board.hook.ts`, both `GameBoardContext*.characterization.test.tsx` (mock path
-  updated, `hasPlayerRemainingActions` added to the shared `@/modules/game-rules` mock factory),
-  `gameBoardTestKit.tsx` docstring, and all 10 `game-rules/*.test.ts` + `player-exit.service.test.ts`
-  fixture-import repoints (`addPlayerToGame` now imported from `@/modules/game-rules` instead of
-  `@/lib/game-logic`). All present and correct.
-- `src/lib/game-logic.ts`, `src/lib/turn-progression.ts`,
-  `src/lib/__tests__/turn-progression.test.ts` confirmed deleted (via `git show 2a396f1 --stat`
-  and `ls` — absent from disk). See "Out-of-band event" above for why no separate delete step
-  landed in this phase's own commit.
-- `bot-logic.test.ts` line 134 of the plan, flagged as "no change" for this phase: confirmed —
-  `src/lib/__tests__/bot-logic.test.ts` does not import `game-logic` (grep confirms), so no edit
-  was needed here; it is untouched in this phase's diff.
+- `src/lib/bot-logic.ts` and `src/lib/__tests__/bot-logic.test.ts`: confirmed deleted (`ls` fails
+  on both). All six legacy files named in the task's acceptance criteria
+  (`game-logic.ts`, `turn-progression.ts`, `bot-logic.ts`, `game-initializer.ts`, `card-data.ts`,
+  `player-data.ts`) are now gone from `src/lib/`.
+- `bot-helpers.ts` (19 lines), `bot-card-strategy.reducer.ts` (59), `bot-purchases.reducer.ts`
+  (50), `bot-army-actions.reducer.ts` (126), `bot-turn.reducer.ts` (27),
+  `services/bot-turn.service.ts` (16): all under the 150-line cap; `bot-army-actions.reducer.ts`
+  is the biggest as the plan predicted, with headroom to spare — the per-army-scoring extraction
+  fallback was correctly not needed.
+- Body comparison against `git show HEAD~N:src/lib/bot-logic.ts` (the file as it stood before
+  deletion, read in full this session): every phase's logic is unchanged — same branching
+  conditions, same cost/priority formulas, same combat auto-resolve payloads
+  (`MonsterCombatRoll{useDecideCard:false, decidedValue:6, useOvercomeCard:false,
+  useWarChief:false}`, `CombatRoll{useWarChild:false,useOvercome:false}` wording matches), same
+  "mark first unacted army as acted" fallback on a failed action. Only changes: `state`/`activeBot`
+  renamed `currentState`/`activeBot` (no behavior change), `any` annotations dropped in favor of
+  inference (`(p: any) =>` → `(p) =>`), `console.log` debug lines dropped (per Decisions, not a
+  game rule), guard moved from the reducer into the service exactly as Decisions specifies, and
+  `JSON.parse(JSON.stringify())` replaced with `cloneDeep` from `lodash` — already the precedent
+  in `src/modules/game-rules/game-rules.reducer.ts:3,34` for the same reason (deep-clone
+  `GameState`), not an invented dependency.
+- `BotAction.payload` is `unknown`, not `any` (`bot-helpers.ts:18`), matching the Contract and
+  Decisions.
+- `decideBotTurn(initialState)` has no guard and composes the three phase functions plus
+  `handleGameAction({action: GameAction.EndTurn, ...})` in the exact order the Contract specifies
+  (`bot-turn.reducer.ts:17-24`).
+- `takeBotTurn` (service) guard is byte-equivalent to the original
+  (`!botPlayer || !botPlayer.isBot || initialState.status !== 'playing'`,
+  `services/bot-turn.service.ts:11`), checked against `initialState` directly as Decisions
+  requires (no clone needed to read two fields).
+- `index.ts` adds exactly one line, `export { takeBotTurn } from './services/bot-turn.service';`
+  — no unplanned exports (the Phase 2 lesson still applied).
+- `bot-turn.reducer.test.ts`: 6 cases covering every branch the Test plan names (Reinforce
+  pre-turn, attack-over-move, monster-combat auto-resolve, outer guard
+  `unactedArmies.length === 0`, inner guard `possibleActions.length === 0`, purity) — the inner-
+  guard test is correctly titled and its fixture (every reachable tile forced to `Empty`, origin
+  occupied only by the bot's own army) actually produces an empty `possibleActions` array for that
+  army, confirming tester-a's fix for tester-b's earlier finding landed.
+- `services/bot-turn.service.test.ts`: ported integration case plus two guard cases
+  (non-bot-current-player, non-'playing'-status) — matches the Test plan's named cases.
+- Call-site repoints: `src/hooks/use-game-engine.ts:8` and
+  `scripts/balance-simulator/engine.ts:4` both now import `takeBotTurn` from
+  `@/modules/game-rules` / `'../../src/modules/game-rules'` — matches the File plan exactly, and
+  `engine.ts`'s doc-comments were updated to describe the new file, not just the import line.
+- `docs/README.md`: the five Phase-4-scoped edits all landed and match the plan
+  (`§"src/modules/"`'s `game-rules/` description now lists setup/player-join/turn-progression/
+  catalogs/bot-AI files; `§"src/lib/"`'s three legacy bullets removed and the `__tests__` bullet
+  now lists only `firebase.test.ts`; the game-initializer/player-data prose at the old `:162-163`
+  and the bot-logic prose at the old `:384` both repoint to `src/modules/game-rules/...`).
 
 ## Findings
-None blocking. One cosmetic note already surfaced by the implementers' cross-review
-(`turn-progression.ts` using `boolean = false` instead of the Contracts section's `?: boolean`
-shorthand) — confirmed functionally equivalent and in fact the byte-accurate choice matching the
-legacy source; no action needed.
+None blocking. The 5 stale-citation findings from the first pass of this review are fixed, verified
+independently in this session:
+- `.claude/agents/game-designer-a.md:20` now reads `src/modules/game-rules/`,
+  `src/modules/game-rules/game-setup.reducer.ts`, `src/modules/game-rules/card-data.ts`,
+  `src/modules/game-rules/bot-turn.reducer.ts`.
+- `.claude/skills/game-design/SKILL.md:16,24,28,30,50` now cite `game-setup.reducer.ts` (×2, VP
+  goal and monster dice — line 24 actually cites `monster-catalog.ts`, correctly, not
+  `game-setup.reducer.ts`), `card-data.ts`, and `bot-turn.reducer.ts` (×2) under
+  `src/modules/game-rules/`.
+- `.claude/skills/anti-hallucination/SKILL.md:18` now cites `src/modules/game-rules/`,
+  `src/modules/game-rules/game-setup.reducer.ts`, `src/modules/game-rules/card-data.ts`.
+- `.claude/skills/component-architecture/SKILL.md:81` now cites `MONSTER_DATA` in
+  `src/modules/game-rules/monster-catalog.ts`.
+- `scripts/balance-simulator/acceptance.test.ts:7-11`: rewritten to cite
+  `src/modules/game-rules/bot-card-strategy.reducer.ts` and corrected the line-number citation to
+  `bot-card-strategy.reducer.ts:51` — verified against the actual file: line 51 is
+  `const opponent = currentState.players.find((p) => !p.isBot && p.id !== activeBot.id);`, the
+  exact Sabotage-targeting line the comment describes. Accurate, not a guessed line-shift.
+
+Re-grepped the whole repo (`scripts src e2e .claude`) for all six legacy path strings: zero hits
+outside the already-known, non-blocking `src/docs/README.md` (see below).
+
+Not re-flagging (already recorded, out of this plan's scope, non-blocking): `src/docs/README.md`
+is a stray tracked duplicate of `docs/README.md` that still says `src/lib/player-data.ts`
+(`:157`) and `src/lib/bot-logic.ts` (`:378`) — Phase 3's review already identified this exact file
+as unreachable from the app and recommended a separate cleanup task, not a fix inside this plan
+(the acceptance criteria name `docs/README.md`, not `src/docs/README.md`). Still true.
 
 ## Docs
-- `docs/README.md`: not updated — correct per plan, scheduled for Phase 4 (`plan.md:13,162`).
+- `docs/README.md`: updated, matches plan (see Plan adherence above).
+- `.claude/skills/*`, `.claude/agents/game-designer-a.md`, `scripts/balance-simulator/acceptance.test.ts`:
+  updated by implementer-b in revise mode; re-verified in this session (see Findings).
+
+## Checks re-run after implementer-b's fix (this session)
+- `npx eslint scripts/balance-simulator/acceptance.test.ts`: no output, exit 0.
+- `npm run typecheck`: clean, no output.
+- `npm run lint` (repo-wide): no output, exit 0.
+- `npm test` (full repo): `Test Suites: 149 passed, 149 total` / `Tests: 1473 passed, 1473 total`.
 
 ## progress.md
-Phase 3 boxes ticked after independent re-verification in this session: plan approved (already
-APPROVED from architect-b's original sign-off), implementation, tests, checks, final review.
-Previews/UI-verify stay unticked — not applicable, per plan (no UI change).
+Phase 4 boxes ticked after independent re-verification in this session: plan approved (already
+APPROVED from architect-b's original sign-off on the whole task), implementation, tests, checks,
+final review. Previews/UI-verify stay unticked — not applicable, per plan (no UI change).

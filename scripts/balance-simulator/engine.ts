@@ -1,7 +1,7 @@
 import { initializeGame, startGame, defaultGameSettings } from '../../src/modules/game-rules';
 import { PlayerColor, GameStatus } from '../../src/lib/types';
 import type { GameState, Player } from '../../src/lib/types';
-import type { takeBotTurn as TakeBotTurn } from '../../src/lib/bot-logic';
+import type { takeBotTurn as TakeBotTurn } from '../../src/modules/game-rules';
 import { parseLogLine, type LogEvent } from './log-parsers';
 import { deriveSeed, withSeededRandom } from './rng';
 
@@ -47,8 +47,9 @@ export interface MatchResult {
   finalState: SeatFinalState[];
 }
 
-/** `src/lib/bot-logic.ts`'s `setDoc` is the only way to read the state it produces each turn: it
- *  deep-clones its argument internally and never mutates it (see plan.md's "Verified context"). */
+/** `src/modules/game-rules/services/bot-turn.service.ts`'s `setDoc` is the only way to read the
+ *  state it produces each turn: it deep-clones its argument internally and never mutates it
+ *  (see plan.md's "Verified context"). */
 function createFirestoreCapture() {
   let lastWrittenState: GameState | null = null;
   const stub = {
@@ -115,13 +116,13 @@ export async function runMatch(config: MatchConfig): Promise<MatchResult> {
   jest.resetModules();
   jest.doMock('../../src/lib/firebase', () => stub);
   jest.doMock('@/lib/firebase', () => stub);
-  // Imported dynamically, after doMock, so bot-logic's `./firebase` resolves to the stub above.
+  // Imported dynamically, after doMock, so bot-turn.service's `@/lib/firebase` resolves to the stub above.
   const { takeBotTurn: takeBotTurnWithStub }: { takeBotTurn: typeof TakeBotTurn } = await import(
-    '../../src/lib/bot-logic'
+    '../../src/modules/game-rules'
   );
 
-  // Per the Final spec, silence every console.* during the run — bot-logic.ts logs its own
-  // progress (console.log), and the reducers log a caught error instead of throwing
+  // Per the Final spec, silence every console.* during the run — the reducers log a caught
+  // error instead of throwing
   // (src/lib/actions/index.ts:94), which happens on real, confirmed bot-logic bugs (see
   // docs/ai/tasks/2026-10-02-bot-balance-simulator/progress.md) and would otherwise spam a run's
   // output without being a simulator problem.

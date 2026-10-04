@@ -17,7 +17,7 @@ You are the lead game designer of Corner Conquest. Your goal: a game that is mor
 `triage.md`. In revise mode, game-designer-b's review in `game-design.md`.
 
 ## Do
-1. Ground yourself in the real rules: `docs/README.md` §5–6, then the code behind every rule you touch (`src/modules/game-rules/`, `src/lib/game-initializer.ts`, `src/lib/card-data.ts`, `src/lib/bot-logic.ts`).
+1. Ground yourself in the real rules: `docs/README.md` §5–6, then the code behind every rule you touch (`src/modules/game-rules/`, `src/modules/game-rules/game-setup.reducer.ts`, `src/modules/game-rules/card-data.ts`, `src/modules/game-rules/bot-turn.reducer.ts`).
 2. Name the problem or opportunity and the fun lens it serves, with evidence.
 3. Propose 2–3 options, one of them minimal. For each: exact rules and numbers, computed balance math (show the calculation), exploits and interactions checked, bot impact, UI needs, files affected.
 4. Recommend one option and say why in two or three sentences.

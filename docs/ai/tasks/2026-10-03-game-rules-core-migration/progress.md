@@ -37,13 +37,14 @@ Tier: L · Phases: 4
 - [x] committed: 1bebb20 (legacy-file deletions landed earlier under sibling commit 2a396f1, see review.md "Out-of-band event")
 
 ## Phase 4: bot-logic split + docs
-- [ ] plan approved (architect-b)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a, preview-b)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
+- [x] plan approved (architect-b) — plan.md Status: APPROVED, applies to whole task
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [ ] previews (preview-a, preview-b) — not applicable, no UI change
+- [x] checks: typecheck, lint, unit tests — pass (149 suites/1473 tests repo-wide)
+  - not run: e2e (`npm run test:e2e -- e2e/gameplay.spec.ts`) — "Unable to locate a Java Runtime" (no Java 21 on this machine), confirmed independently by tester-b and architect-b
+- [ ] UI verified (ui-verify) — not applicable, no UI change
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Log
@@ -61,3 +62,10 @@ Tier: L · Phases: 4
 - 2026-10-04 implementer-a, implementer-b, tester-a: DONE, Phase 3 built (player-join.reducer, turn-progression), call sites repointed, tests ported/added, cross-reviewed (1 non-blocking note on `boolean = false` vs. `?: boolean`)
 - 2026-10-04 architect-b: DONE, Phase 3 final review APPROVED. Noted out-of-band event: src/lib/game-logic.ts and src/lib/turn-progression.ts deletions were swept into concurrent sibling commit 2a396f1 before this phase could commit them; confirmed via git show, nothing lost, zero remaining imports of either legacy path repo-wide (git grep)
 - 2026-10-04 Phase 3 committed: 1bebb20
+- 2026-10-04 implementer-a, implementer-b, tester-a: DONE, Phase 4 built (bot-helpers, bot-card-strategy/purchases/army-actions reducers, bot-turn.reducer, services/bot-turn.service), call sites repointed, docs/README.md updated, tests written/ported, all cross-reviewed and APPROVED
+- 2026-10-04 tester-b: DONE, reviewed tester-a's tests, CHANGES REQUESTED (one test mislabeled, missed the inner-guard branch `bot-army-actions.reducer.ts:88`)
+- 2026-10-04 tester-a: DONE, added the missing branch-coverage case and retitled the mislabeled test
+- 2026-10-04 tester-b: DONE, re-reviewed, APPROVED
+- 2026-10-04 architect-b: DONE, Phase 4 final review CHANGES REQUESTED (5 stale `src/lib/*` citations left in `.claude/agents`, `.claude/skills`, and `scripts/balance-simulator/acceptance.test.ts`, outside any phase's File plan)
+- 2026-10-04 implementer-b: DONE, all 5 citations fixed
+- 2026-10-04 architect-b: DONE, Phase 4 final review APPROVED (fixes re-verified independently). All six legacy src/lib files now deleted; task complete pending commit

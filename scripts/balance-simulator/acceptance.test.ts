@@ -4,10 +4,11 @@ import { deriveMatchSeeds, runMatch } from './engine';
 
 /**
  * Encodes the Final spec's Acceptance #3 (Faithfulness) directly against real matches, not
- * synthetic fixtures: in an all-bot match, `src/lib/bot-logic.ts` only ever actively plays
- * Reinforce, Efficient, MasterBuilder and Wealthy (verified by reading the file — it calls
- * `GameAction.UseCard` for exactly those four), and Sabotage only targets `!p.isBot` players
- * (bot-logic.ts:70), so it can never fire when every seat is a bot. Every other card can only
+ * synthetic fixtures: in an all-bot match, `src/modules/game-rules/bot-card-strategy.reducer.ts`
+ * only ever actively plays Reinforce, Efficient, MasterBuilder and Wealthy (verified by reading
+ * the file — it calls `GameAction.UseCard` for exactly those four), and Sabotage only targets
+ * `!p.isBot` players (bot-card-strategy.reducer.ts:51), so it can never fire when every seat is a
+ * bot. Every other card can only
  * enter a bot's hand through chance (a bought card or a Special island), never be played.
  */
 describe('Acceptance #3: faithfulness (real matches, not fixtures)', () => {
