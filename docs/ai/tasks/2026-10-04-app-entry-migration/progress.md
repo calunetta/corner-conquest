@@ -8,7 +8,7 @@ Tier: M · Phases: 2
 - [x] tests (tester-a, tester-b)
 - [x] checks: typecheck, lint, unit tests
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 10dc4b8
 
 ## Phase 2: app entry points
 - [ ] implementation (implementer-a, implementer-b)
