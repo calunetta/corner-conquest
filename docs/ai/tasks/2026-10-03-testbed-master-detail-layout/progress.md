@@ -10,11 +10,11 @@ Tier: M · Phases: 1
 - [x] plan approved (architect-b)
 - [x] implementation (implementer-a, implementer-b)
 - [x] tests (tester-a, tester-b)
-- [ ] previews (preview-a, preview-b) — not in this pipeline (triage.md:6); skip
+- [x] previews (preview-a, preview-b) — not in this pipeline (triage.md:6); skip
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 322480c
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->

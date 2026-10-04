@@ -9,7 +9,7 @@ Tier: S (bug) · Phases: 1
 - [x] coordinator follow-up: extended the fix to all 3 states (Full grid, Long name were still using the old no-op `StaticSabotageDialog`) and added 2 tests proving it
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify) — single-state screenshots clean; scripted Playwright check confirms Cancel actually closes the dialog and shows "Reopen dialog"
-- [ ] committed: <hash>
+- [x] committed: 322480c
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->

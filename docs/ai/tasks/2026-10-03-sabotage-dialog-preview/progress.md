@@ -12,7 +12,7 @@ Tier: S · Phases: 1
 - [x] tests (tester-a): `src/testbed/registry.test.ts` passes with the new entry
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
-- [ ] committed: <hash>
+- [x] committed: 322480c
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
