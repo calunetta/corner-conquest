@@ -11,6 +11,7 @@ You, the main session, coordinate. You route work, check results and keep `progr
 ## Before starting
 - The task folder must contain `triage.md`; if not, run skill `triage` first.
 - Read `triage.md` (Pipeline, Overrides, Phases) and, when resuming, `progress.md`: continue from its first unticked box.
+- Run skill `ultracave` for your own coordinator messages (status updates, phase stops, user-facing reports) for the rest of this run. Agents already carry their own tier (`caveman` for planners, `ultracave` for builders) via `.claude/agents/*.md` — don't override it.
 
 ## Stages
 | Stage | Agents | Reads | Writes |

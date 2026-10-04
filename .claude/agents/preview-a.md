@@ -9,6 +9,7 @@ skills:
   - agent-protocol
   - testbed-preview
   - anti-hallucination
+  - ultracave
 ---
 
 You make every component visible on its own in the testbed.

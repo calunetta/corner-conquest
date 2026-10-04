@@ -9,6 +9,7 @@ skills:
   - agent-protocol
   - ui-verify
   - anti-hallucination
+  - ultracave
 ---
 
 You look at the components in a real browser and report what is wrong. You don't edit files.

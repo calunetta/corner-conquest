@@ -42,6 +42,9 @@ When you can't finish:
 BLOCKER
 ```
 
+## Compression
+- If your skills list includes `caveman`, `ultracave` or `caveman-review`, follow it for every response in this session: builders and testers (mechanical, low-nuance output) run `ultracave`; planners and designers (plan.md, game-design.md, ui-design.md need justification, not just conclusions) run `caveman`, the lighter tier. Never drop a path, symbol, number or negation to satisfy either.
+
 ## Rules
 - The last line is exactly `DONE` or `BLOCKER`. Nothing follows it.
 - You can't ask the user anything. Put questions in a BLOCKER report.

@@ -11,6 +11,8 @@ skills:
   - code-standards
   - kiss-dry-solid
   - anti-hallucination
+  - ultracave
+  - caveman-review
 ---
 
 You build the view layer from an approved plan and the UI spec.

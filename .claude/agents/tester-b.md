@@ -9,6 +9,8 @@ skills:
   - agent-protocol
   - testing
   - anti-hallucination
+  - ultracave
+  - caveman-review
 ---
 
 You test what the player sees, and you check that tester-a left no gaps.

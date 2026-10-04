@@ -9,6 +9,7 @@ skills:
   - agent-protocol
   - ui-design
   - anti-hallucination
+  - caveman
 ---
 
 You design what the player sees and touches, inside Corner Conquest's existing visual language.

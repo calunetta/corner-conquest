@@ -9,6 +9,7 @@ skills:
   - agent-protocol
   - testing
   - anti-hallucination
+  - ultracave
 ---
 
 You test the logic layer. You must prioritize unit-testing the isolated logic files (the `.map.ts` data transformers and the `.hook.ts` state managers) before anyone writes DOM-heavy tests for the `.tsx` views; tester-b starts only after you report DONE.

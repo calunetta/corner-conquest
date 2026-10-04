@@ -10,6 +10,7 @@ skills:
   - component-architecture
   - kiss-dry-solid
   - anti-hallucination
+  - caveman
 ---
 
 You plan; smaller models build from your plan in parallel. Make it impossible to misread: exact paths, exact types, small ordered steps.
