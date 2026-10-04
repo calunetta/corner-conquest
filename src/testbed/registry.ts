@@ -4,6 +4,7 @@ import { monsterCombatDialogPreview } from '@/modules/combat/components/MonsterC
 import { armySelectionDialogPreview } from '@/modules/combat/components/ArmySelectionDialog/ArmySelectionDialog.preview';
 import { attackSelectionDialogPreview } from '@/modules/combat/components/AttackSelectionDialog/AttackSelectionDialog.preview';
 import { monsterSelectionDialogPreview } from '@/modules/combat/components/MonsterSelectionDialog/MonsterSelectionDialog.preview';
+import { positionDialogPreview } from '@/modules/combat/components/PositionDialog/PositionDialog.preview';
 import { gameBoardHeaderPreview } from '@/modules/hud/components/GameBoardHeader/GameBoardHeader.preview';
 import { gameStatusBadgePreview } from '@/modules/hud/components/GameStatusBadge/GameStatusBadge.preview';
 import { gameLogPreview } from '@/modules/hud/components/GameLog/GameLog.preview';
@@ -16,6 +17,8 @@ import { abilitiesDialogPreview } from '@/modules/cards/components/AbilitiesDial
 import { sabotageDialogPreview } from '@/modules/cards/components/SabotageDialog/SabotageDialog.preview';
 import { wealthyDialogPreview } from '@/modules/cards/components/WealthyDialog/WealthyDialog.preview';
 import { stealResourceDialogPreview } from '@/modules/cards/components/StealResourceDialog/StealResourceDialog.preview';
+import { confirmExitDialogPreview } from '@/modules/session/components/ConfirmExitDialog/ConfirmExitDialog.preview';
+import { hostLeaveDialogPreview } from '@/modules/session/components/HostLeaveDialog/HostLeaveDialog.preview';
 import type { ComponentPreview } from './testbed.types';
 
 /** Every preview shown in the testbed. Register new previews here (skill: testbed-preview). */
@@ -26,6 +29,7 @@ export const previews: ComponentPreview[] = [
   armySelectionDialogPreview,
   attackSelectionDialogPreview,
   monsterSelectionDialogPreview,
+  positionDialogPreview,
   gameBoardHeaderPreview,
   gameStatusBadgePreview,
   gameLogPreview,
@@ -38,6 +42,8 @@ export const previews: ComponentPreview[] = [
   sabotageDialogPreview,
   wealthyDialogPreview,
   stealResourceDialogPreview,
+  confirmExitDialogPreview,
+  hostLeaveDialogPreview,
 ];
 
 export function findPreview(slug: string): ComponentPreview | undefined {

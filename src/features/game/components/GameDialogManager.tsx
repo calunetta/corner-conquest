@@ -11,6 +11,7 @@ import {
   CombatDialog,
   MonsterCombatDialog,
   MonsterSelectionDialog,
+  PositionDialog,
 } from '@/modules/combat';
 import {
   AbilitiesDialog,
@@ -21,9 +22,7 @@ import {
   StealResourceDialog,
   WealthyDialog,
 } from '@/modules/cards';
-import { PositionDialog } from '../dialogs/PositionDialog';
-import { ConfirmExitDialog } from '../dialogs/ConfirmExitDialog';
-import { HostLeaveDialog } from '../dialogs/HostLeaveDialog';
+import { ConfirmExitDialog, HostLeaveDialog } from '@/modules/session';
 
 export function GameDialogManager() {
   const {
