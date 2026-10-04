@@ -22,7 +22,7 @@ Tier: M · Phases: 2
 - [x] checks: typecheck, lint, unit tests — typecheck clean, lint clean, `npm test` 160/160 suites, 1637/1637 tests (one SIGSEGV worker flake on first run, clean on re-run)
 - [x] UI verified (ui-verify) — preview-b screenshots at test-results/ui-verify/
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 6756371
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
@@ -36,3 +36,5 @@ Tier: M · Phases: 2
 - 2026-10-04 tester-b: DONE, Phase 2 test review + coverage additions, e2e not run (Java 21)
 - 2026-10-04 preview-a: DONE, 5 previews/10 states verified, fixed CreateGameDialog's two-state preview
 - 2026-10-04 preview-b: DONE, visual verification at desktop/mobile, no defects
+- 2026-10-04 architect-b: APPROVED, Phase 2 final review, no findings
+- 2026-10-04 coordinator: committed 6756371, refactor.md row #9 set to done
