@@ -14,7 +14,13 @@ Tier: M · Phases: 1
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify) — login page renders correctly, no console error (snapshot: 0 failing)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 215ca0f
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
+2026-10-04 architect-a: DONE, plan.md drafted
+2026-10-04 architect-b: DONE, APPROVED
+2026-10-04 implementer-a: DONE, implementer-b: DONE, cross-review round resolved 2 lint findings
+2026-10-04 tester-a: DONE, tester-b: DONE (resumed once to add missing player.provider.test.tsx)
+2026-10-04 architect-b (final-review): DONE, APPROVED
+2026-10-04 coordinator: committed 215ca0f
