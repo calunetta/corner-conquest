@@ -7,7 +7,7 @@ Tier: S · Phases: 1
 - [x] tests (tester-a)
 - [x] checks: typecheck, lint, unit tests
 - [x] coordinator review (no architect-b at this tier)
-- [x] committed: (pending hash, see follow-up commit)
+- [x] committed: c6759e8
 
 ## Log
 - 2026-10-04 implementer-a: DONE. `TutorialBeacon` → `src/modules/hud/components/TutorialBeacon/` (view + types + styles + preview + test + index), `useTurnTimer` → `src/modules/game-board/turn-timer.hook.ts`. Repointed 3 call sites (`GameBoard.tsx`, `PlayerInfoBar.tsx`, `game-board.hook.ts`). Deleted old files. `npm run typecheck`/`lint`/`test`/`build` all pass (1462 tests).
