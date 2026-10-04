@@ -6,7 +6,7 @@ Tier: S · Phases: 1
 - [x] reproduction test for the hydration bug (tester-a)
 - [x] implementation (implementer-a): deterministic border sprite, aria-labels, deck copy, player-info labels
 - [x] checks: typecheck, lint, unit tests
-- [ ] committed: <hash>
+- [x] committed: 43227a0
 
 ## Log
 - 2026-10-04 tester-a: DONE, added failing reproduction test IslandTile.hook.test.ts:285-307 for the SSR/client hydration mismatch.
