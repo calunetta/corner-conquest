@@ -24,16 +24,16 @@ Tier: L · Phases: 5
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 2a396f1
 
 ## Phase 3: combat domain, batch 1 — ArmySelectionDialog, AttackSelectionDialog, MonsterSelectionDialog
-- [ ] plan approved (architect-b)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
+- [x] plan approved (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify)
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 4: combat domain batch 2 (PositionDialog) + session domain (ConfirmExitDialog, HostLeaveDialog)

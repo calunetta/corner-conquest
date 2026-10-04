@@ -5,7 +5,13 @@ import type { CardName } from '@/lib/types';
 import { GameAction, ResourceType } from '@/lib/types';
 import { useGameBoard } from '../context/GameBoardContext';
 
-import { CombatDialog, MonsterCombatDialog } from '@/modules/combat';
+import {
+  ArmySelectionDialog,
+  AttackSelectionDialog,
+  CombatDialog,
+  MonsterCombatDialog,
+  MonsterSelectionDialog,
+} from '@/modules/combat';
 import {
   AbilitiesDialog,
   CardsDialog,
@@ -16,9 +22,6 @@ import {
   WealthyDialog,
 } from '@/modules/cards';
 import { PositionDialog } from '../dialogs/PositionDialog';
-import { ArmySelectionDialog } from '../dialogs/ArmySelectionDialog';
-import { AttackSelectionDialog } from '../dialogs/AttackSelectionDialog';
-import { MonsterSelectionDialog } from '../dialogs/MonsterSelectionDialog';
 import { ConfirmExitDialog } from '../dialogs/ConfirmExitDialog';
 import { HostLeaveDialog } from '../dialogs/HostLeaveDialog';
 
