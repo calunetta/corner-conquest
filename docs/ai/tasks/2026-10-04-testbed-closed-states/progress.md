@@ -7,7 +7,7 @@ Tier: S · Phases: 1
 - [x] tests (tester-a)
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (manual check in browser, see log)
-- [ ] committed: <hash>
+- [x] committed: 2ccfefe
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
