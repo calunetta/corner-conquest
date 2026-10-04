@@ -49,7 +49,7 @@ export const SPECIAL_CARD_DESCRIPTIONS: Record<CardName, string> = {
     'Productive': 'Double your resource collection from all positioned armies for one turn. You will be prompted at the start of your turn.',
     'Efficient': 'Your next deployment costs 50% less Food.',
     'Master Builder': 'Your next army upgrade costs 50% less Wood.',
-    'War Chief': 'Gain +2 attack power for your next battle. This card is used during the combat dialog.',
+    'War Chief': 'Gain +2 to your combat score for your next battle. This card is used during the combat dialog.',
     'Decide Dice Roll': 'When attacking a monster, choose the value of one of your dice. This card is used during the monster combat dialog.',
     'Teleport': 'Move one of your armies to any tile on the map. This action ends the army\'s turn and does not grant discovery VP.'
 };

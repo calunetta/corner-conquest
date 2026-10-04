@@ -136,4 +136,47 @@ describe('handleMonsterCombatRoll', () => {
       expect(nextState.players[0].specialCards).not.toContain(CardName.DecideDiceRoll);
     });
   });
+
+  it('War Chief adds +2 to combat score and discards the card', () => {
+    const attacker = game.players[0];
+    attacker.specialCards = [CardName.WarChief];
+
+    const nextState = handleMonsterCombatRoll(game, {
+      monster,
+      useWarChief: true,
+      useOvercomeCard: false,
+      useDecideCard: false,
+      decidedValue: 0,
+    });
+
+    // attackPower 0 + 1 = 1 die roll. War Chief adds flat +2 to the score.
+    expect(nextState.monsterCombatState?.attackerRolls).toHaveLength(1);
+    const attackerScore = nextState.monsterCombatState!.attackerRolls.reduce((a, b) => a + b, 0) + 2;
+    const monsterScore = nextState.monsterCombatState!.monsterRolls.reduce((a, b) => a + b, 0);
+    expect(nextState.monsterCombatState?.winnerId).toBe(attackerScore > monsterScore ? attacker.id : null);
+    expect(nextState.players[0].specialCards).not.toContain(CardName.WarChief);
+    expect(nextState.discardPile).toContain(CardName.WarChief);
+  });
+
+  it('War Chief blocks Decide Dice Roll (only one card can be used per action)', () => {
+    const attacker = game.players[0];
+    attacker.specialCards = [CardName.WarChief, CardName.DecideDiceRoll];
+
+    const nextState = handleMonsterCombatRoll(game, {
+      monster,
+      useWarChief: true,
+      useOvercomeCard: false,
+      useDecideCard: true,
+      decidedValue: 5,
+    });
+
+    // War Chief is used first (processingly), blocking Decide Dice Roll from being used.
+    // So the roll should be a normal 1d roll (attackPower 0 + 1), and War Chief adds +2.
+    expect(nextState.monsterCombatState?.attackerRolls).toHaveLength(1);
+    const attackerScore = nextState.monsterCombatState!.attackerRolls[0] + 2; // Normal roll + War Chief bonus
+    const monsterScore = nextState.monsterCombatState!.monsterRolls.reduce((a, b) => a + b, 0);
+    expect(nextState.monsterCombatState?.winnerId).toBe(attackerScore > monsterScore ? attacker.id : null);
+    expect(nextState.players[0].specialCards).toContain(CardName.DecideDiceRoll); // Decide not used
+    expect(nextState.discardPile).toContain(CardName.WarChief); // War Chief was used
+  });
 });

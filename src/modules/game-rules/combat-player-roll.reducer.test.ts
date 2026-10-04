@@ -69,13 +69,18 @@ describe('handleCombatRoll', () => {
 
   it('accepts a plain boolean payload as the useWarChief flag (legacy call shape)', () => {
     const attacker = game.players[0];
+    const defender = game.players[1];
     attacker.specialCards = [CardName.WarChief];
 
     const nextState = handleCombatRoll(game, true);
 
-    // attacker.attackPower is 0, so without War Chief there'd be exactly 1 roll; +2 bonus power -> 3.
-    expect(nextState.combatState?.attackerRolls).toHaveLength(3);
+    // attacker.attackPower is 0, so 1 die roll (attackPower + 1). War Chief adds +2 to final score.
+    expect(nextState.combatState?.attackerRolls).toHaveLength(1);
+    const attackerScore = nextState.combatState!.attackerRolls.reduce((a, b) => a + b, 0) + 2;
+    const defenderScore = nextState.combatState!.defenderRolls.reduce((a, b) => a + b, 0);
+    expect(nextState.combatState?.winnerId).toBe(attackerScore > defenderScore ? attacker.id : defender.id);
     expect(nextState.players[0].specialCards).not.toContain(CardName.WarChief);
+    expect(nextState.discardPile).toContain(CardName.WarChief);
   });
 
   it("Overcome card auto-wins the battle and discards the card", () => {
@@ -92,14 +97,18 @@ describe('handleCombatRoll', () => {
     expect(nextState.discardPile).toContain(CardName.Overcome);
   });
 
-  it('War Chief adds +2 power (one extra die) and discards the card', () => {
+  it('War Chief adds +2 to combat score and discards the card', () => {
     const attacker = game.players[0];
+    const defender = game.players[1];
     attacker.specialCards = [CardName.WarChief];
 
     const nextState = handleCombatRoll(game, { useWarChief: true });
 
-    // attackPower 0 + 1 + 2 bonus = 3 dice, vs. 1 without the card.
-    expect(nextState.combatState?.attackerRolls).toHaveLength(3);
+    // attackPower 0 + 1 = 1 die roll. War Chief adds flat +2 to the score.
+    expect(nextState.combatState?.attackerRolls).toHaveLength(1);
+    const attackerScore = nextState.combatState!.attackerRolls.reduce((a, b) => a + b, 0) + 2;
+    const defenderScore = nextState.combatState!.defenderRolls.reduce((a, b) => a + b, 0);
+    expect(nextState.combatState?.winnerId).toBe(attackerScore > defenderScore ? attacker.id : defender.id);
     expect(nextState.players[0].specialCards).not.toContain(CardName.WarChief);
     expect(nextState.discardPile).toContain(CardName.WarChief);
   });

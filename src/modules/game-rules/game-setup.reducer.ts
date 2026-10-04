@@ -1,6 +1,6 @@
 import type { GameState, GameSettings, PlayerColor, Island } from '@/lib/types';
 import { IslandType, ResourceType, AbilityName, GameStatus, MAP_COLS, MAP_ROWS } from '@/lib/types';
-import { BASE_CARDS } from './card-data';
+import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './player-factory';
 import { generateIslandTerrain } from './map-generation';
@@ -107,8 +107,7 @@ export function initializeGame(
   generateIslandTerrain(map2D, settings);
 
   // Prepare the card deck
-  const finalCardDeck = BASE_CARDS.filter((card) => settings.availableCards.includes(card));
-  const initialDeck = [...finalCardDeck, ...finalCardDeck];
+  const initialDeck = SPECIAL_CARDS.filter((card) => settings.availableCards.includes(card));
   for (let i = initialDeck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [initialDeck[i], initialDeck[j]] = [initialDeck[j], initialDeck[i]];

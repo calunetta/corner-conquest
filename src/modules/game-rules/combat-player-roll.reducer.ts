@@ -45,22 +45,22 @@ export function handleCombatRoll(
     }
   }
 
-  let attackerBonusPower = 0;
+  let warChiefApplied = false;
   if (useWarChief && canUseCard) {
     const cardIndex = attacker.specialCards.indexOf(CardName.WarChief);
     if (cardIndex > -1) {
       attacker.actionsThisTurn.push(GameAction.UseCard);
-      attackerBonusPower += WAR_CHIEF_BONUS_POWER;
-      state.log.push(`${attacker.name} used 'War Chief' for +2 power!`);
+      warChiefApplied = true;
+      state.log.push(`${attacker.name} used 'War Chief' for +2 to combat score!`);
       const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
       discardPile.push(usedCard);
     }
   }
 
-  combatState.attackerRolls = rollDice(attacker.attackPower + 1 + attackerBonusPower);
+  combatState.attackerRolls = rollDice(attacker.attackPower + 1);
   combatState.defenderRolls = rollDice(defender.attackPower + 1);
 
-  const attackerScore = combatState.attackerRolls.reduce((a, b) => a + b, 0);
+  const attackerScore = combatState.attackerRolls.reduce((a, b) => a + b, 0) + (warChiefApplied ? WAR_CHIEF_BONUS_POWER : 0);
   const defenderScore = combatState.defenderRolls.reduce((a, b) => a + b, 0);
 
   combatState.winnerId = attackerScore > defenderScore ? combatState.attackerId : combatState.defenderId;

@@ -54,14 +54,14 @@ export function handleMonsterCombatRoll(
   }
 
   if (winnerId === null) {
-    let attackerBonusPower = 0;
+    let warChiefApplied = false;
 
     if (useWarChief && canUseCard && !cardUsedThisAction) {
       const cardIndex = attacker.specialCards.indexOf(CardName.WarChief);
       if (cardIndex > -1) {
         cardUsedThisAction = true;
-        attackerBonusPower += WAR_CHIEF_BONUS_POWER;
-        state.log.push(`${attacker.name} used '${CardName.WarChief}' for +2 power!`);
+        warChiefApplied = true;
+        state.log.push(`${attacker.name} used '${CardName.WarChief}' for +2 to combat score!`);
         discardPile.push(attacker.specialCards.splice(cardIndex, 1)[0]);
       }
     }
@@ -80,7 +80,7 @@ export function handleMonsterCombatRoll(
       canUseDecideCard = false;
     }
 
-    attackerRolls = rollDice(attacker.attackPower + 1 + attackerBonusPower);
+    attackerRolls = rollDice(attacker.attackPower + 1);
     if (canUseDecideCard) {
       const safeDecidedValue = Math.max(DECIDE_DICE_MIN, Math.min(DECIDE_DICE_MAX, decidedValue || DECIDE_DICE_MAX));
       attackerRolls[0] = safeDecidedValue;
@@ -88,7 +88,7 @@ export function handleMonsterCombatRoll(
 
     const monsterDiceCount = Math.max(1, monster.level);
     monsterRolls = rollDice(monsterDiceCount);
-    const attackerScore = attackerRolls.reduce((a, b) => a + b, 0);
+    const attackerScore = attackerRolls.reduce((a, b) => a + b, 0) + (warChiefApplied ? WAR_CHIEF_BONUS_POWER : 0);
     const monsterScore = monsterRolls.reduce((a, b) => a + b, 0);
     winnerId = attackerScore > monsterScore ? attacker.id : null;
   }

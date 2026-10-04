@@ -1,5 +1,6 @@
 import { initializeGame, startGame, defaultGameSettings } from './game-setup.reducer';
 import { GameStatus, IslandType, PlayerColor, MAP_COLS, MAP_ROWS } from '@/lib/types';
+import { SPECIAL_CARDS } from './card-data';
 
 describe('Game Setup Reducer', () => {
   it('creates a game with valid initial state and corner bases', () => {
@@ -23,6 +24,18 @@ describe('Game Setup Reducer', () => {
     // Special card deck
     expect(game.specialCardsDeck.length).toBeGreaterThan(0);
     expect(game.discardPile).toEqual([]);
+  });
+
+  it('builds the deck from SPECIAL_CARDS (19 cards, weighted) instead of doubled BASE_CARDS', () => {
+    const creator = { playerId: 'user_1', name: 'Alice', color: PlayerColor.Blue };
+    const game = initializeGame('game_123', 'Test Match', 2, creator, 0, false, defaultGameSettings);
+
+    // The deck should have exactly 19 cards (SPECIAL_CARDS.length), not 26 (doubled BASE_CARDS).
+    expect(game.specialCardsDeck.length).toBe(SPECIAL_CARDS.length);
+    // Verify all cards in the deck are from SPECIAL_CARDS
+    for (const card of game.specialCardsDeck) {
+      expect(SPECIAL_CARDS).toContain(card);
+    }
   });
 
   it('creates bot players when numBots is greater than 0', () => {
