@@ -8,9 +8,9 @@ Tier: L · Phases: 2 (estimate, architect-a to confirm/cut)
 - [x] tests (tester-a, tester-b)
 - [x] previews (preview-a, preview-b)
 - [x] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
+- [x] UI verified (ui-verify) — not applicable: zero visible change by design (plan.md)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: e688b3f
 
 ## Phase 2: GameLog consumes structured entries (turn dividers, color, declutter toggle, copy)
 - [x] plan approved (architect-b)
