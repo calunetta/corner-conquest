@@ -63,11 +63,15 @@ export const hiddenFogIsland: Island = {
   id: '4-0', x: 4, y: 0, type: IslandType.Empty, resources: [], occupants: [],
 };
 
+export const occupiedResourceIsland: Island = {
+  id: '2-2-occupied', x: 2, y: 2, type: IslandType.Resource, resources: [{ type: ResourceType.Food, amount: 1 }], occupants: [{ playerId: 0, armyId: 0 }], positionedBy: [],
+};
+
 export const gameStateFixture: GameState = buildGameState({
   players: [localPlayerFixture, opponentPlayerFixture],
   map: [
     baseIslandOwnedByLocalPlayer, baseIslandOwnedByOpponent, resourceIsland,
-    monsterIslandWithLivingMonster, specialIsland, emptyIsland, hiddenFogIsland,
+    monsterIslandWithLivingMonster, specialIsland, emptyIsland, hiddenFogIsland, occupiedResourceIsland,
   ],
   settings: BASE_SETTINGS,
 });

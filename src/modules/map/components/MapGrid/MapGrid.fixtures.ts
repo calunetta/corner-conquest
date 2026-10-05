@@ -32,7 +32,7 @@ const resourceIsland: Island = {
   y: 2,
   type: IslandType.Resource,
   resources: [{ type: ResourceType.Food, amount: 3 }],
-  occupants: [],
+  occupants: [{ playerId: 0, armyId: 0 }],
   positionedBy: [],
 };
 

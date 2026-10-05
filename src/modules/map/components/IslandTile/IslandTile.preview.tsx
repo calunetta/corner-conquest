@@ -10,6 +10,7 @@ import {
   emptyIsland,
   localPlayerFixture,
   gameStateFixture,
+  occupiedResourceIsland,
 } from './IslandTile.fixtures';
 import { GameBoardProvider } from '@/modules/game-board';
 import type { ComponentPreview } from '@/testbed/testbed.types';
@@ -141,6 +142,10 @@ export const islandTilePreview: ComponentPreview = {
             isClickable: true,
           })}
         />,
+    },
+    {
+      name: 'Occupied resource island (collector overlay test)',
+      render: () => <WithGameBoardContext viewModel={createViewModel(occupiedResourceIsland)} />,
     },
   ],
 };
