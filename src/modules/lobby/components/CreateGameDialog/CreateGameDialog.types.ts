@@ -1,4 +1,5 @@
 import type { GameSettings, PlayerColor } from '@/lib/types';
+import type { LucideIcon } from 'lucide-react';
 
 export type CreateGameDialogProps = {
   open: boolean;
@@ -19,6 +20,13 @@ export type FactionOption = {
   spriteSrc: string;
 };
 
+export type FormatOption = {
+  value: number;
+  title: string;
+  meta: string;
+  icon: LucideIcon;
+};
+
 export type CreateGameDialogViewModel = {
   gameName: string;
   onGameNameChange: (value: string) => void;
@@ -34,6 +42,7 @@ export type CreateGameDialogViewModel = {
   onCustomizeChange: (open: boolean) => void;
   customSettings: GameSettings;
   factionOptions: FactionOption[];
+  formatOptions: FormatOption[];
   onSubmit: () => void;
   onSettingsSave: (settings: GameSettings) => void;
 };

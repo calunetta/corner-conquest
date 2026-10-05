@@ -64,6 +64,21 @@ describe('CreateGameDialog', () => {
     expect(createButton).not.toBeDisabled();
   });
 
+  it('renders all 4 format cards with titles', () => {
+    renderWithProviders(
+      <CreateGameDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        onCreateGame={mockOnCreateGame}
+      />,
+    );
+
+    expect(screen.getByText('Solo vs. Bot AI')).toBeInTheDocument();
+    expect(screen.getByText('2 Players')).toBeInTheDocument();
+    expect(screen.getByText('3 Players')).toBeInTheDocument();
+    expect(screen.getByText('4 Players')).toBeInTheDocument();
+  });
+
   it('renders faction options', () => {
     renderWithProviders(
       <CreateGameDialog
@@ -121,5 +136,82 @@ describe('CreateGameDialog', () => {
       return btn.querySelector('img') !== null;
     });
     expect(factionButtons.length).toBeGreaterThan(0);
+  });
+
+  it('default render shows "4 Players" format card selected (aria-pressed=true)', () => {
+    renderWithProviders(
+      <CreateGameDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        onCreateGame={mockOnCreateGame}
+      />,
+    );
+
+    const formatButtons = screen.getAllByRole('button').filter((btn) => {
+      return btn.getAttribute('aria-pressed') !== null;
+    });
+    expect(formatButtons.length).toBe(4);
+
+    const fourPlayersButton = formatButtons.find((btn) => btn.textContent?.includes('4 Players'));
+    expect(fourPlayersButton).toHaveAttribute('aria-pressed', 'true');
+
+    const otherButtons = formatButtons.filter((btn) => !btn.textContent?.includes('4 Players'));
+    otherButtons.forEach((btn) => {
+      expect(btn).toHaveAttribute('aria-pressed', 'false');
+    });
+  });
+
+  it('clicking "Solo vs. Bot AI" card makes it selected and reveals Debug Training Mode', () => {
+    renderWithProviders(
+      <CreateGameDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        onCreateGame={mockOnCreateGame}
+      />,
+    );
+
+    // Debug Training Mode should not be visible initially (default is 4 players)
+    expect(screen.queryByText('Debug Training Mode')).not.toBeInTheDocument();
+
+    const soloButton = screen.getByText('Solo vs. Bot AI').closest('button');
+    fireEvent.click(soloButton!);
+
+    // After clicking, Solo card should be selected
+    expect(soloButton).toHaveAttribute('aria-pressed', 'true');
+
+    // Debug Training Mode should now be visible
+    expect(screen.getByText('Debug Training Mode')).toBeInTheDocument();
+  });
+
+  it('clicking non-solo format card hides Debug Training Mode', () => {
+    renderWithProviders(
+      <CreateGameDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        onCreateGame={mockOnCreateGame}
+      />,
+    );
+
+    const soloButton = screen.getByText('Solo vs. Bot AI').closest('button');
+    fireEvent.click(soloButton!);
+    expect(screen.getByText('Debug Training Mode')).toBeInTheDocument();
+
+    const twoPlayersButton = screen.getByText('2 Players').closest('button');
+    fireEvent.click(twoPlayersButton!);
+
+    expect(screen.queryByText('Debug Training Mode')).not.toBeInTheDocument();
+    expect(twoPlayersButton).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('does not render Select placeholder text after replacement', () => {
+    renderWithProviders(
+      <CreateGameDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        onCreateGame={mockOnCreateGame}
+      />,
+    );
+
+    expect(screen.queryByText('Select format')).not.toBeInTheDocument();
   });
 });

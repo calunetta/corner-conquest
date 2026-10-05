@@ -209,4 +209,11 @@ describe('useCreateGameDialog', () => {
     expect(result.current.factionOptions.length).toBeGreaterThan(0);
     expect(result.current.factionOptions[0].color).toBe(PlayerColor.Blue);
   });
+
+  it('formatOptions mirrors CreateGameDialog.map.toFormatOptions()', () => {
+    const { result } = renderHook(() => useCreateGameDialog(createProps()));
+
+    expect(result.current.formatOptions).toHaveLength(4);
+    expect(result.current.formatOptions.map((opt) => opt.value)).toEqual([1, 2, 3, 4]);
+  });
 });

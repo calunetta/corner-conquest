@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { defaultGameSettings } from '@/modules/game-rules';
 import type { GameSettings, PlayerColor } from '@/lib/types';
 import { PlayerColor as PlayerColorEnum } from '@/lib/types';
-import { toFactionOptions } from './CreateGameDialog.map';
+import { toFactionOptions, toFormatOptions } from './CreateGameDialog.map';
 import type { CreateGameDialogProps, CreateGameDialogViewModel } from './CreateGameDialog.types';
 
 const DEFAULT_MAX_PLAYERS = 4;
@@ -60,6 +60,7 @@ export function useCreateGameDialog(props: CreateGameDialogProps): CreateGameDia
     onCustomizeChange: setIsCustomizing,
     customSettings,
     factionOptions: toFactionOptions(),
+    formatOptions: toFormatOptions(),
     onSubmit: () => {
       void handleSubmit();
     },

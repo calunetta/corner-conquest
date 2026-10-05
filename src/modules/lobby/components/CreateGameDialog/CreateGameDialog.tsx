@@ -5,10 +5,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, HelpCircle, Settings, Swords, Shield } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { CustomSettingsSheet } from '../CustomSettingsSheet';
 import { useCreateGameDialog } from './CreateGameDialog.hook';
 import { styles } from './CreateGameDialog.styles';
@@ -41,18 +41,26 @@ export function CreateGameDialog(props: CreateGameDialogProps) {
                 className={styles.input} placeholder="Archipelago Conquest" />
             </div>
             <div className={styles.formGroup}>
-              <Label htmlFor="maxPlayers" className={styles.label}>Match Format</Label>
-              <Select value={String(vm.maxPlayers)} onValueChange={(val) => vm.onMaxPlayersChange(Number(val))}>
-                <SelectTrigger className={styles.selectTrigger}>
-                  <SelectValue placeholder="Select format" />
-                </SelectTrigger>
-                <SelectContent className={styles.selectContent}>
-                  <SelectItem value="1">Solo vs. Bot AI (Training match)</SelectItem>
-                  <SelectItem value="2">2 Players (1v1 Duel)</SelectItem>
-                  <SelectItem value="3">3 Players (Archipelago Skirmish)</SelectItem>
-                  <SelectItem value="4">4 Players (Grand Conquest)</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label id="maxPlayers" htmlFor="maxPlayers" className={styles.label}>Match Format</Label>
+              <div role="group" aria-labelledby="maxPlayers" className={styles.formatGrid}>
+                {vm.formatOptions.map((opt) => {
+                  const Icon = opt.icon;
+                  const isSelected = vm.maxPlayers === opt.value;
+                  return (
+                    <button key={opt.value} type="button" aria-pressed={isSelected}
+                      onClick={() => vm.onMaxPlayersChange(opt.value)}
+                      className={cn(styles.formatCard, isSelected ? styles.formatCardSelected : styles.formatCardUnselected)}>
+                      <div className={cn(styles.formatIconCircle, isSelected ? styles.formatIconCircleSelected : styles.formatIconCircleUnselected)}>
+                        <Icon className={styles.formatIconSize} />
+                      </div>
+                      <div className={styles.formatTextGroup}>
+                        <div className={styles.formatTitle}>{opt.title}</div>
+                        <div className={styles.formatMeta}>{opt.meta}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className={styles.formGroup}>
               <Label className={styles.label}>Choose Faction Army</Label>
