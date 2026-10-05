@@ -15,7 +15,7 @@ Tier: M · Phases: 1
 - [x] checks: typecheck, lint, unit tests — lint scoped to this phase's files clean; repo-wide lint still fails on an unrelated pre-existing file (see review.md Finding #4)
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 6641210
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
