@@ -1,3 +1,5 @@
+import type { LogEntry } from '@/lib/types';
+
 export interface GameLogViewModel {
-  entries: string[];
+  entries: LogEntry[];
 }

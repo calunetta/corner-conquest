@@ -1,6 +1,7 @@
 import { initializeGame, startGame, defaultGameSettings } from './game-setup.reducer';
 import { GameStatus, IslandType, PlayerColor, MAP_COLS, MAP_ROWS } from '@/lib/types';
 import { SPECIAL_CARDS } from './card-data';
+import { toLogMessage } from './log-entry';
 
 describe('Game Setup Reducer', () => {
   it('creates a game with valid initial state and corner bases', () => {
@@ -54,6 +55,8 @@ describe('Game Setup Reducer', () => {
 
     expect(started.status).toBe(GameStatus.Playing);
     expect(started.turn).toBe(1);
-    expect(started.log[started.log.length - 1]).toContain('started the game');
+    // startGame pushes two entries (copy fix #3): "started the game." then the turn-transition line.
+    expect(toLogMessage(started.log[started.log.length - 2])).toContain('started the game');
+    expect(toLogMessage(started.log[started.log.length - 1])).toContain("It's now");
   });
 });

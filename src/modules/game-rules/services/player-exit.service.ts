@@ -2,6 +2,7 @@ import type { GameState } from '@/lib/types';
 import { GameStatus } from '@/lib/types';
 import { db, doc, runTransaction } from '@/lib/firebase';
 import { handleEndTurn } from '../player-turn.reducer';
+import { pushLogEntry } from '../log-entry';
 
 /**
  * Removes a player from an in-progress match, in one Firestore transaction. Deletes the match
@@ -38,7 +39,11 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
 
       const isCurrentPlayerExiting = currentState.currentPlayerIndex === playerIndex;
 
-      currentState.log.push(`${currentState.players[playerIndex].name} has left the game.`);
+      pushLogEntry(currentState, {
+        category: 'system',
+        message: `${currentState.players[playerIndex].name} has left the game.`,
+        playerId: currentState.players[playerIndex].playerId,
+      });
 
       currentState.map.forEach((tile) => {
         tile.occupants = tile.occupants.filter((o) => o.playerId !== playerIndex);

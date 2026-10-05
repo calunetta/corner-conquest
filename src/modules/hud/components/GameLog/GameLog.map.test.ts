@@ -1,3 +1,4 @@
+import type { StructuredLogEntry } from '@/lib/types';
 import { toGameLogEntries } from './GameLog.map';
 
 describe('toGameLogEntries', () => {
@@ -22,6 +23,19 @@ describe('toGameLogEntries', () => {
     const original = [...input];
     toGameLogEntries(input);
     expect(input).toEqual(original);
+  });
+
+  it('reverses a list containing both strings and structured entries, unchanged in type/order', () => {
+    const structured: StructuredLogEntry = {
+      kind: 'structured',
+      turn: 2,
+      category: 'combat',
+      message: 'Player Blue defeated Player Red in battle!',
+    };
+    const input = ['legacy first', structured, 'legacy third'];
+    const result = toGameLogEntries(input);
+    expect(result).toEqual(['legacy third', structured, 'legacy first']);
+    expect(result[1]).toBe(structured);
   });
 
   it('handles array with mixed log entry patterns', () => {

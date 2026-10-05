@@ -4,6 +4,7 @@ import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-r
 import { addPlayerToGame } from '@/modules/game-rules';
 import { handleInitiateCombatAction } from './combat-initiate.reducer';
 import { handleCombatRoll } from './combat-player-roll.reducer';
+import { toLogMessage } from './log-entry';
 
 describe('handleCombatRoll', () => {
   let game: GameState;
@@ -133,6 +134,6 @@ describe('handleCombatRoll', () => {
     const nextState = handleCombatRoll(game, {});
 
     expect(nextState.players[0].hasExtraMove).toBe(false);
-    expect(nextState.log).toContain(`${attacker.name} used their Extra Move in battle.`);
+    expect(nextState.log.map(toLogMessage)).toContain(`${attacker.name} used their Extra Move in battle.`);
   });
 });

@@ -1,3 +1,5 @@
-export function toGameLogEntries(logs: string[]): string[] {
+import type { LogEntry } from '@/lib/types';
+
+export function toGameLogEntries(logs: LogEntry[]): LogEntry[] {
   return [...logs].reverse();
 }

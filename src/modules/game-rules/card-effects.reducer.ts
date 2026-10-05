@@ -1,5 +1,6 @@
 import type { GameState, ResourceType } from '@/lib/types';
 import { CardName, GameAction } from '@/lib/types';
+import { pushLogEntry } from './log-entry';
 
 const IMMEDIATE_EFFECT_CARDS: CardName[] = [CardName.Reinforce, CardName.Efficient, CardName.MasterBuilder];
 
@@ -18,16 +19,24 @@ export function handleUseCard(state: GameState, payload: { cardName: CardName; i
     if (cardName === CardName.Reinforce) player.reinforceActive = true;
     if (cardName === CardName.Efficient) player.efficientActive = true;
     if (cardName === CardName.MasterBuilder) player.masterBuilderActive = true;
-    state.log.push(`${player.name} activated '${cardName}'.`);
+    pushLogEntry(state, { category: 'cards', message: `${player.name} activated '${cardName}'.`, playerId: player.playerId });
   } else if (cardName === CardName.ExtraMove) {
     player.hasExtraMove = true;
     player.actionsThisTurn.push(GameAction.UseCard);
     const usedCard = player.specialCards.splice(cardIndex, 1)[0];
     discardPile.push(usedCard);
-    state.log.push(`${player.name} activated 'Extra Move' - select any soldier on the map for 1 bonus action.`);
+    pushLogEntry(state, {
+      category: 'cards',
+      message: `${player.name} activated 'Extra Move' - select any soldier on the map for 1 bonus action.`,
+      playerId: player.playerId,
+    });
   } else if (isScout) {
     player.actionsThisTurn.push(GameAction.UseCard);
-    state.log.push(`${player.name} used the '${cardName}' card to scout ahead.`);
+    pushLogEntry(state, {
+      category: 'cards',
+      message: `${player.name} used the '${cardName}' card to scout ahead.`,
+      playerId: player.playerId,
+    });
     const usedCard = player.specialCards.splice(cardIndex, 1)[0];
     discardPile.push(usedCard);
   }
@@ -70,7 +79,11 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
 
   const collectedStrings = Object.entries(collectedResources).map(([type, amount]) => `${amount} ${type}`);
   if (collectedStrings.length > 0) {
-    state.log.push(`${player.name} collected ${collectedStrings.join(', ')}${doubledResourceString}.`);
+    pushLogEntry(state, {
+      category: 'cards',
+      message: `${player.name} collected ${collectedStrings.join(', ')}${doubledResourceString}.`,
+      playerId: player.playerId,
+    });
   }
 
   // Positions persist until the army moves, loses a fight, or dies (same rule as automatic collection).

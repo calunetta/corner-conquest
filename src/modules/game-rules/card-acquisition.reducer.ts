@@ -1,5 +1,6 @@
 import type { AbilityName, CardName, GameState } from '@/lib/types';
 import { GameAction, HAND_LIMIT } from '@/lib/types';
+import { pushLogEntry } from './log-entry';
 
 /** Spends 10 gold to draw a special card, reshuffling the discard pile into the deck if it's empty. */
 export function handleBuyCardAction(state: GameState): GameState {
@@ -9,16 +10,28 @@ export function handleBuyCardAction(state: GameState): GameState {
   if (player.actionsThisTurn.includes(GameAction.BuyCard)) throw new Error('You can only buy one card per turn.');
   if (player.resources.gold < 10) throw new Error('Not enough gold to buy a card.');
   if (player.specialCards.length >= HAND_LIMIT && !debugMode) {
-    state.log.push(`${player.name} tried to buy a card, but their hand is full!`);
+    pushLogEntry(state, {
+      category: 'cards',
+      message: `${player.name} tried to buy a card, but their hand was full.`,
+      playerId: player.playerId,
+    });
     return state;
   }
   if (state.specialCardsDeck.length === 0 && state.discardPile.length === 0) {
-    state.log.push(`${player.name} tried to buy a card, but there are none left!`);
+    pushLogEntry(state, {
+      category: 'cards',
+      message: `${player.name} tried to buy a card, but there are none left!`,
+      playerId: player.playerId,
+    });
     return state;
   }
 
   if (state.specialCardsDeck.length === 0 && state.discardPile.length > 0) {
-    state.log.push('The deck is empty. Reshuffling the discard pile...');
+    pushLogEntry(state, {
+      category: 'cards',
+      message: 'The deck ran out; reshuffled the discard pile.',
+      playerId: player.playerId,
+    });
     const newDeck = [...state.discardPile];
     for (let i = newDeck.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -29,7 +42,11 @@ export function handleBuyCardAction(state: GameState): GameState {
   }
 
   if (state.specialCardsDeck.length === 0) {
-    state.log.push(`${player.name} tried to buy a card, but no cards could be drawn.`);
+    pushLogEntry(state, {
+      category: 'cards',
+      message: `${player.name} tried to buy a card, but no cards could be drawn.`,
+      playerId: player.playerId,
+    });
     return state;
   }
 
@@ -38,7 +55,11 @@ export function handleBuyCardAction(state: GameState): GameState {
   const drawnCard = state.specialCardsDeck.splice(cardIndex, 1)[0];
   player.specialCards.push(drawnCard);
   player.actionsThisTurn.push(GameAction.BuyCard);
-  state.log.push(`${player.name} bought a special card: "${drawnCard}"!`);
+  pushLogEntry(state, {
+    category: 'cards',
+    message: `${player.name} bought a special card: "${drawnCard}"!`,
+    playerId: player.playerId,
+  });
 
   return state;
 }
@@ -56,9 +77,11 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ga
 
   player.resources.gold -= cost;
   player.passiveAbilities[abilityName] = true;
-  state.log.push(
-    `${player.name} has acquired the '${abilityName.charAt(0).toUpperCase() + abilityName.slice(1)}' passive ability!`,
-  );
+  pushLogEntry(state, {
+    category: 'cards',
+    message: `${player.name} has acquired the '${abilityName.charAt(0).toUpperCase() + abilityName.slice(1)}' passive ability!`,
+    playerId: player.playerId,
+  });
 
   return state;
 }
@@ -72,10 +95,18 @@ export function handleRollOnSpecialIsland(state: GameState, payload?: { roll?: n
 
   if (roll === 3 || roll === 6) {
     if (player.specialCards.length >= HAND_LIMIT && !state.debugMode) {
-      state.log.push(`${player.name} was lucky, but their hand is full!`);
+      pushLogEntry(state, {
+        category: 'cards',
+        message: `${player.name} was lucky, but their hand is full!`,
+        playerId: player.playerId,
+      });
     } else if (state.specialCardsDeck.length > 0 || state.discardPile.length > 0) {
       if (state.specialCardsDeck.length === 0) {
-        state.log.push('The deck is empty. Reshuffling the discard pile...');
+        pushLogEntry(state, {
+          category: 'cards',
+          message: 'The deck is empty. Reshuffling the discard pile...',
+          playerId: player.playerId,
+        });
         const newDeck = [...state.discardPile];
         for (let i = newDeck.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
@@ -89,13 +120,25 @@ export function handleRollOnSpecialIsland(state: GameState, payload?: { roll?: n
         const drawnCardResult = state.specialCardsDeck.splice(cardIndex, 1)[0];
         player.specialCards.push(drawnCardResult);
         cardDrawn = drawnCardResult;
-        state.log.push(`${player.name} rolled a ${roll} and found a card: "${cardDrawn}"!`);
+        pushLogEntry(state, {
+          category: 'cards',
+          message: `${player.name} rolled a ${roll} and found a card: "${cardDrawn}"!`,
+          playerId: player.playerId,
+        });
       }
     } else {
-      state.log.push(`${player.name} rolled a ${roll} but the deck is completely empty!`);
+      pushLogEntry(state, {
+        category: 'cards',
+        message: `${player.name} rolled a ${roll} but the deck is completely empty!`,
+        playerId: player.playerId,
+      });
     }
   } else {
-    state.log.push(`${player.name} rolled a ${roll} and found nothing.`);
+    pushLogEntry(state, {
+      category: 'cards',
+      message: `${player.name} rolled a ${roll} and found nothing.`,
+      playerId: player.playerId,
+    });
   }
 
   return state;

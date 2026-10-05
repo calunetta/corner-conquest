@@ -1,6 +1,7 @@
 import type { Army, GameState } from '@/lib/types';
 import { CardName, GameAction, IslandType } from '@/lib/types';
 import { revealIsland } from './island-discovery.reducer';
+import { pushLogEntry } from './log-entry';
 
 const MOVE_RADIUS = 2;
 
@@ -64,7 +65,7 @@ export function handleMoveAction(
     if (cardIndex > -1) {
       discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
       player.actionsThisTurn.push(GameAction.UseCard);
-      state.log.push(`${player.name} teleported an army!`);
+      pushLogEntry(state, { category: 'economy', message: `${player.name} teleported an army!`, playerId: player.playerId });
     } else {
       throw new Error('Teleport card not found, but was attempted to be used.');
     }
@@ -89,7 +90,11 @@ export function handleMoveAction(
         (p) => !(p.playerId === player.id && p.resource === removedPosition.resource),
       );
     }
-    state.log.push(`${player.name}'s army moved and is no longer positioned on ${removedPosition.resource}.`);
+    pushLogEntry(state, {
+      category: 'economy',
+      message: `${player.name} moved an army off ${removedPosition.resource}.`,
+      playerId: player.playerId,
+    });
   }
 
   armyInState.position = { x, y };
@@ -100,7 +105,11 @@ export function handleMoveAction(
     armyInState.hasActed = true;
   } else if (player.hasExtraMove) {
     player.hasExtraMove = false;
-    state.log.push(`${player.name} used their Extra Move on an army.`);
+    pushLogEntry(state, {
+      category: 'economy',
+      message: `${player.name} used their Extra Move on an army.`,
+      playerId: player.playerId,
+    });
   } else {
     armyInState.hasActed = true;
   }

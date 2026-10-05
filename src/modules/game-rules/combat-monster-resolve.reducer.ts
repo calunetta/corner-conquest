@@ -1,6 +1,7 @@
 import type { DeathAnimation, GameState, IslandResource, ResourceType } from '@/lib/types';
 import { GameStatus, IslandType, ResourceType as ResourceTypeValue } from '@/lib/types';
 import { PLAYER_DATA } from './player-data';
+import { pushLogEntry } from './log-entry';
 
 const MONSTER_VICTORY_POINTS_BY_LEVEL = [0, 2, 5, 7, 10];
 const TWO_RESOURCE_TYPES_CHANCE = 0.4;
@@ -33,7 +34,11 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
     state.deathAnimations.push(deathAnim);
 
     currentTile.monsters = (currentTile.monsters || []).filter((m) => m.name !== monster.name);
-    state.log.push(`${attacker.name} defeated the ${monster.name} for ${monsterVP} VP!`);
+    pushLogEntry(state, {
+      category: 'combat',
+      message: `${attacker.name} defeated the ${monster.name} for ${monsterVP} VP!`,
+      playerId: attacker.playerId,
+    });
 
     if (currentTile.monsters?.length === 0) {
       currentTile.type = IslandType.Resource;
@@ -59,10 +64,18 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
 
       currentTile.resources = islandResources;
       const resourceNames = islandResources.map((r) => r.type).join(' and ');
-      state.log.push(`The defeated monster revealed new resources on the island: ${resourceNames}!`);
+      pushLogEntry(state, {
+        category: 'combat',
+        message: `The defeated monster revealed new resources on the island: ${resourceNames}!`,
+        playerId: attacker.playerId,
+      });
     }
   } else {
-    state.log.push(`${attacker.name} was defeated by the ${monster.name}!`);
+    pushLogEntry(state, {
+      category: 'combat',
+      message: `${attacker.name} was defeated by the ${monster.name}!`,
+      playerId: attacker.playerId,
+    });
     // No position cleanup needed here: a tile only gets `resources` once its monster is defeated
     // (see the winning branch above), so a live-monster tile can never have a positioned army on it.
     const baseTile = baseTiles.find((t) => t.owner === attacker.id);
@@ -93,7 +106,12 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
   if (attacker.victoryPoints >= settings.victoryPointGoal && !state.winner) {
     state.winner = attacker;
     state.status = GameStatus.Finished;
-    state.log.push(`🎉 ${attacker.name} has reached ${attacker.victoryPoints} Victory Points and won the game!`);
+    pushLogEntry(state, {
+      category: 'combat',
+      message: `🎉 ${attacker.name} has reached ${attacker.victoryPoints} Victory Points and won the game!`,
+      playerId: attacker.playerId,
+      isMilestone: true,
+    });
   }
 
   state.monsterCombatState = null;

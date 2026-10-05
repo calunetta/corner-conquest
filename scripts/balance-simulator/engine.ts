@@ -155,7 +155,9 @@ export async function runMatch(config: MatchConfig): Promise<MatchResult> {
         const nextState = readCapturedState();
         if (!nextState) throw new Error(`takeBotTurn for seat ${actingSeat} never wrote a state (setDoc not called).`);
 
-        const newLogLines = nextState.log.slice(logLengthBeforeTurn);
+        const newLogLines = nextState.log
+          .slice(logLengthBeforeTurn)
+          .map((entry) => (typeof entry === 'string' ? entry : entry.message));
         const events = newLogLines.flatMap((line) => parseLogLine(line));
 
         turns.push(snapshotSeat(actingSeat, round, events, nextState));

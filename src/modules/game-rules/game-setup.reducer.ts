@@ -1,24 +1,13 @@
 import type { GameState, GameSettings, PlayerColor, Island } from '@/lib/types';
-import { IslandType, ResourceType, AbilityName, GameStatus, MAP_COLS, MAP_ROWS } from '@/lib/types';
-import { BASE_CARDS, SPECIAL_CARDS } from './card-data';
+import { IslandType, ResourceType, GameStatus, MAP_COLS, MAP_ROWS } from '@/lib/types';
+import { SPECIAL_CARDS } from './card-data';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './player-factory';
 import { generateIslandTerrain } from './map-generation';
+import { pushLogEntry } from './log-entry';
+import { defaultGameSettings } from './game-settings';
 
-export const defaultGameSettings: GameSettings = {
-  victoryPointGoal: 30,
-  vpPerIslandDiscovery: 1,
-  initialDeployCost: 6,
-  deployCostIncrement: 2,
-  upgradeCost: 6,
-  abilityCost: 15,
-  baseResourceAmount: 1,
-  resourceDensity: 0.6, // 60% chance for a tile to be resource vs monster
-  availableCards: [...BASE_CARDS],
-  availableAbilities: [AbilityName.Explorer, AbilityName.Collector],
-  fogOfWar: true,
-  gridSize: { rows: MAP_ROWS, cols: MAP_COLS },
-};
+export { defaultGameSettings };
 
 function createEmptyIsland(x: number, y: number): Island {
   return {
@@ -146,7 +135,12 @@ export function startGame(gameState: GameState, starterName: string): GameState 
   const newState = { ...gameState };
   newState.status = GameStatus.Playing;
   newState.turn = 1;
-  newState.log.push(`${starterName} started the game! It's now ${newState.players[0].name}'s turn.`);
+  pushLogEntry(newState, { category: 'system', message: `${starterName} started the game.` });
+  pushLogEntry(newState, {
+    category: 'turn',
+    message: `It's now ${newState.players[0].name}'s turn.`,
+    isPassive: true,
+  });
 
   return newState;
 }

@@ -5,6 +5,7 @@ import {
   defaultGameSettings,
   addPlayerToGame,
 } from './index';
+import { toLogMessage } from './log-entry';
 
 describe('player-join.reducer: addPlayerToGame', () => {
   describe('full game branch', () => {
@@ -141,7 +142,7 @@ describe('player-join.reducer: addPlayerToGame', () => {
       expect(game.players.length).toBe(2);
       expect(game.status).toBe(GameStatus.Playing);
       expect(game.turn).toBe(1);
-      expect(game.log.some(log => log.includes('Starting now'))).toBe(true);
+      expect(game.log.some((entry) => toLogMessage(entry).includes('Starting now'))).toBe(true);
     });
 
     it('accepts a valid join and keeps game in Waiting status when seats remain', () => {
@@ -169,7 +170,7 @@ describe('player-join.reducer: addPlayerToGame', () => {
       // Game should still be waiting
       expect(game.players.length).toBe(2);
       expect(game.status).toBe(GameStatus.Waiting);
-      expect(game.log.some(log => log.includes('has joined the game'))).toBe(true);
+      expect(game.log.some((entry) => toLogMessage(entry).includes('has joined the game'))).toBe(true);
     });
 
     it('assigns distinct colors to each player', () => {

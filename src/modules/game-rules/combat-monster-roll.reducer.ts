@@ -1,6 +1,7 @@
 import type { GameState, Monster } from '@/lib/types';
 import { CardName, GameAction } from '@/lib/types';
 import { rollDice } from './dice';
+import { pushLogEntry } from './log-entry';
 
 const WAR_CHIEF_BONUS_POWER = 2;
 const DECIDE_DICE_MIN = 1;
@@ -29,7 +30,11 @@ export function handleMonsterCombatRoll(
   attackingArmy.hasActed = true;
   if (attacker.hasExtraMove) {
     attacker.hasExtraMove = false;
-    state.log.push(`${attacker.name} used their Extra Move in monster battle.`);
+    pushLogEntry(state, {
+      category: 'combat',
+      message: `${attacker.name} used their Extra Move in monster battle.`,
+      playerId: attacker.playerId,
+    });
   }
 
   const { monster, useDecideCard, decidedValue, useOvercomeCard, useWarChief } = payload;
@@ -46,7 +51,11 @@ export function handleMonsterCombatRoll(
     if (cardIndex > -1) {
       cardUsedThisAction = true;
       winnerId = attacker.id;
-      state.log.push(`${attacker.name} used the '${CardName.Overcome}' card to win automatically!`);
+      pushLogEntry(state, {
+        category: 'combat',
+        message: `${attacker.name} used the '${CardName.Overcome}' card to win automatically!`,
+        playerId: attacker.playerId,
+      });
       discardPile.push(attacker.specialCards.splice(cardIndex, 1)[0]);
     } else {
       throw new Error('Overcome card not found, but was attempted to be used.');
@@ -61,7 +70,11 @@ export function handleMonsterCombatRoll(
       if (cardIndex > -1) {
         cardUsedThisAction = true;
         warChiefApplied = true;
-        state.log.push(`${attacker.name} used '${CardName.WarChief}' for +2 to combat score!`);
+        pushLogEntry(state, {
+          category: 'combat',
+          message: `${attacker.name} used '${CardName.WarChief}' for +2 to combat score!`,
+          playerId: attacker.playerId,
+        });
         discardPile.push(attacker.specialCards.splice(cardIndex, 1)[0]);
       }
     }
@@ -71,7 +84,11 @@ export function handleMonsterCombatRoll(
       const cardIndex = attacker.specialCards.indexOf(CardName.DecideDiceRoll);
       if (cardIndex > -1) {
         cardUsedThisAction = true;
-        state.log.push(`${attacker.name} used the '${CardName.DecideDiceRoll}' card!`);
+        pushLogEntry(state, {
+          category: 'combat',
+          message: `${attacker.name} used the '${CardName.DecideDiceRoll}' card!`,
+          playerId: attacker.playerId,
+        });
         discardPile.push(attacker.specialCards.splice(cardIndex, 1)[0]);
       } else {
         canUseDecideCard = false;

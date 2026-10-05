@@ -2,6 +2,7 @@ import { PlayerColor } from '@/lib/types';
 import type { GameState, Monster } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { addPlayerToGame } from '@/modules/game-rules';
+import { toLogMessage } from '../log-entry';
 
 jest.mock('@/lib/firebase', () => ({
   db: {},
@@ -176,7 +177,7 @@ describe('handlePlayerExit', () => {
     expect(writtenState.players.map((p) => p.playerId)).toEqual(['host', 'p3']);
     expect(writtenState.players.map((p) => p.id)).toEqual([0, 1]); // reindexed contiguous 0..n-1
     expect(writtenState.baseTiles.map((b) => b.owner)).toEqual([0, 1]);
-    expect(writtenState.log.some((entry) => entry.includes('Player 2 has left the game.'))).toBe(true);
+    expect(writtenState.log.some((entry) => toLogMessage(entry).includes('Player 2 has left the game.'))).toBe(true);
 
     // After reindexing, every remaining occupant/position reference must point at one of the two
     // surviving seats (0 or 1) — none left dangling at or beyond the departed seat's old index.
@@ -202,7 +203,7 @@ describe('handlePlayerExit', () => {
     expect(writtenState.currentPlayerIndex).toBe(1);
     expect(writtenState.players[writtenState.currentPlayerIndex].name).toBe('Player 3');
     expect(writtenState.turn).toBe(turnBefore); // no wrap past the last seat
-    expect(writtenState.log).toContain("It's now Player 3's turn.");
+    expect(writtenState.log.map(toLogMessage)).toContain("It's now Player 3's turn.");
   });
 
   it('when the exiting current player is the last seat, the turn wraps to the host', async () => {

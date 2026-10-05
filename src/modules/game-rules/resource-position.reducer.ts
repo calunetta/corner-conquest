@@ -1,4 +1,5 @@
 import type { GameState, ResourceType } from '@/lib/types';
+import { pushLogEntry } from './log-entry';
 
 /** Positions an army on a resource node so it yields that resource automatically each turn. */
 export function handleSelectResourceForPosition(state: GameState, resource: ResourceType, armyId: number): GameState {
@@ -36,9 +37,17 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
   selectedArmy.hasActed = true;
   if (player.hasExtraMove) {
     player.hasExtraMove = false;
-    state.log.push(`${player.name} used their Extra Move to position Army #${selectedArmy.id + 1} on ${resource}.`);
+    pushLogEntry(state, {
+      category: 'economy',
+      message: `${player.name} used their Extra Move to position Army #${selectedArmy.id + 1} on ${resource}.`,
+      playerId: player.playerId,
+    });
   } else {
-    state.log.push(`${player.name} positioned an army on ${resource}.`);
+    pushLogEntry(state, {
+      category: 'economy',
+      message: `${player.name} positioned an army on ${resource}.`,
+      playerId: player.playerId,
+    });
   }
 
   return state;

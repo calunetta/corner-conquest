@@ -2,6 +2,7 @@ import { PlayerColor, IslandType, CardName, HAND_LIMIT, GameStatus } from '@/lib
 import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { revealIsland } from './island-discovery.reducer';
+import { toLogMessage } from './log-entry';
 
 function buildGame(): GameState {
   return startGame(
@@ -64,7 +65,7 @@ describe('revealIsland', () => {
 
     expect(nextState.winner).toBe(player);
     expect(nextState.status).toBe(GameStatus.Finished);
-    expect(nextState.log.some((entry) => entry.includes('won the game'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('won the game'))).toBe(true);
   });
 
   it('isScout suppresses the discovery VP award', () => {
@@ -87,7 +88,7 @@ describe('revealIsland', () => {
     revealIsland(game, tile.x, tile.y);
 
     expect(player.specialCards.length).toBe(handSizeBefore + 1);
-    expect(game.log.some((entry) => entry.includes('found a card'))).toBe(true);
+    expect(game.log.some((entry) => toLogMessage(entry).includes('found a card'))).toBe(true);
   });
 
   it('isScout suppresses the special-card draw on a Special island', () => {
@@ -108,7 +109,7 @@ describe('revealIsland', () => {
     revealIsland(game, tile.x, tile.y);
 
     expect(player.specialCards).toHaveLength(HAND_LIMIT);
-    expect(game.log.some((entry) => entry.includes('hand is full'))).toBe(true);
+    expect(game.log.some((entry) => toLogMessage(entry).includes('hand is full'))).toBe(true);
   });
 
   it('logs that the deck is empty when both the deck and discard pile are empty (empty-input boundary)', () => {
@@ -121,7 +122,7 @@ describe('revealIsland', () => {
     revealIsland(game, tile.x, tile.y);
 
     expect(player.specialCards).toHaveLength(handSizeBefore);
-    expect(game.log.some((entry) => entry.includes('deck is empty!'))).toBe(true);
+    expect(game.log.some((entry) => toLogMessage(entry).includes('deck is empty!'))).toBe(true);
   });
 
   it('reshuffles the discard pile into the deck when the deck is empty but the discard pile is not', () => {

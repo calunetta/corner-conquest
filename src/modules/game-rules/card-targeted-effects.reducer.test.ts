@@ -3,6 +3,7 @@ import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { addPlayerToGame } from '@/modules/game-rules';
 import { handleGainWealth, handleSabotagePlayer, handleStealResource } from './card-targeted-effects.reducer';
+import { toLogMessage } from './log-entry';
 
 function buildGame(): GameState {
   let game = initializeGame(
@@ -124,7 +125,7 @@ describe('handleStealResource', () => {
 
     expect(nextState.players[0].resources.wood).toBe(0);
     expect(nextState.discardPile).toContain(CardName.StealResource);
-    expect(nextState.log.some((entry) => entry.includes('they had none'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('they had none'))).toBe(true);
   });
 
   it('is a no-op (no throw, no discard) when the target player id does not exist (invalid input)', () => {

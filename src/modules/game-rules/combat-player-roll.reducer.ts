@@ -1,6 +1,7 @@
 import type { GameState } from '@/lib/types';
 import { CardName, GameAction } from '@/lib/types';
 import { rollDice } from './dice';
+import { pushLogEntry } from './log-entry';
 
 const WAR_CHIEF_BONUS_POWER = 2;
 
@@ -25,7 +26,11 @@ export function handleCombatRoll(
   attackingArmy.hasActed = true;
   if (attacker.hasExtraMove) {
     attacker.hasExtraMove = false;
-    state.log.push(`${attacker.name} used their Extra Move in battle.`);
+    pushLogEntry(state, {
+      category: 'combat',
+      message: `${attacker.name} used their Extra Move in battle.`,
+      playerId: attacker.playerId,
+    });
   }
 
   const canUseCard = !attacker.actionsThisTurn.includes(GameAction.UseCard);
@@ -36,7 +41,11 @@ export function handleCombatRoll(
       attacker.actionsThisTurn.push(GameAction.UseCard);
       const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
       discardPile.push(usedCard);
-      state.log.push(`${attacker.name} used 'Overcome' to win the battle automatically!`);
+      pushLogEntry(state, {
+        category: 'combat',
+        message: `${attacker.name} used 'Overcome' to win the battle automatically!`,
+        playerId: attacker.playerId,
+      });
       combatState.attackerRolls = [6, 6];
       combatState.defenderRolls = [1];
       combatState.winnerId = combatState.attackerId;
@@ -51,7 +60,11 @@ export function handleCombatRoll(
     if (cardIndex > -1) {
       attacker.actionsThisTurn.push(GameAction.UseCard);
       warChiefApplied = true;
-      state.log.push(`${attacker.name} used 'War Chief' for +2 to combat score!`);
+      pushLogEntry(state, {
+        category: 'combat',
+        message: `${attacker.name} used 'War Chief' for +2 to combat score!`,
+        playerId: attacker.playerId,
+      });
       const usedCard = attacker.specialCards.splice(cardIndex, 1)[0];
       discardPile.push(usedCard);
     }

@@ -3,6 +3,7 @@ import type { GameState, CombatState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { addPlayerToGame } from '@/modules/game-rules';
 import { handleCloseCombat } from './combat-player-resolve.reducer';
+import { toLogMessage } from './log-entry';
 
 const COMBAT_TILE = { x: 2, y: 2 };
 
@@ -109,7 +110,7 @@ describe('handleCloseCombat', () => {
     expect(tile.positionedBy).toEqual([]);
     expect(tile.occupants).not.toContainEqual({ playerId: loser.id, armyId: losingArmy.id });
     expect(nextState.combatState).toBeNull();
-    expect(nextState.log).toContain(`${winner.name} defeated ${loser.name} in battle!`);
+    expect(nextState.log.map(toLogMessage)).toContain(`${winner.name} defeated ${loser.name} in battle!`);
   });
 
   it('when the attacker loses, their own army (attackingArmyId) respawns at their base', () => {
@@ -152,6 +153,6 @@ describe('handleCloseCombat', () => {
 
     expect(nextState.winner).toBe(winner);
     expect(nextState.status).toBe(GameStatus.Finished);
-    expect(nextState.log.some((entry) => entry.includes('won the game'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('won the game'))).toBe(true);
   });
 });

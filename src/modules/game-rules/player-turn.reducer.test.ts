@@ -3,6 +3,7 @@ import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { addPlayerToGame } from '@/modules/game-rules';
 import { handleEndTurn } from './player-turn.reducer';
+import { toLogMessage } from './log-entry';
 
 function buildGame(): GameState {
   let game = initializeGame(
@@ -82,7 +83,7 @@ describe('handleEndTurn', () => {
     // Position persists after collection; only cleared when the army moves, loses, or dies
     expect(nextState.players[1].positions).toHaveLength(1);
     expect(nextState.players[1].positions[0].armyId).toBe(player2.armies[0].id);
-    expect(nextState.log).toContain(`${player2.name} automatically collected ${goldYield} gold.`);
+    expect(nextState.log.map(toLogMessage)).toContain(`${player2.name} automatically collected ${goldYield} gold.`);
   });
 
   it('positions persist across two consecutive turns (new behavior: armies continue generating resources)', () => {
@@ -139,7 +140,7 @@ describe('handleEndTurn', () => {
 
     expect(nextState.status).toBe(GameStatus.Finished);
     expect(nextState.winner?.id).toBe(player2.id);
-    expect(nextState.log.some((entry) => entry.includes('won the game'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('won the game'))).toBe(true);
   });
 
   it('does not overwrite an existing winner (boundary: winner already set)', () => {

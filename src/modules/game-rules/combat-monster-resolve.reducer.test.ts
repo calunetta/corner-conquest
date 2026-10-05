@@ -2,6 +2,7 @@ import { PlayerColor, IslandType, MonsterName, GameStatus, ResourceType } from '
 import type { GameState, Monster, MonsterCombatState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { handleCloseMonsterCombat } from './combat-monster-resolve.reducer';
+import { toLogMessage } from './log-entry';
 
 function buildGame(): GameState {
   return startGame(
@@ -140,7 +141,7 @@ describe('handleCloseMonsterCombat', () => {
     expect(army.position).toEqual({ x: baseTile.x, y: baseTile.y });
     expect(army.hasActed).toBe(false);
     expect(nextState.deathAnimations).toHaveLength(1);
-    expect(nextState.log.some((entry) => entry.includes('was defeated by'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('was defeated by'))).toBe(true);
   });
 
   it('sets state.winner and GameStatus.Finished when the victory point goal is reached', () => {
@@ -152,6 +153,6 @@ describe('handleCloseMonsterCombat', () => {
 
     expect(nextState.winner).toBe(attacker);
     expect(nextState.status).toBe(GameStatus.Finished);
-    expect(nextState.log.some((entry) => entry.includes('won the game'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('won the game'))).toBe(true);
   });
 });

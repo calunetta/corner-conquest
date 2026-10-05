@@ -1,5 +1,6 @@
 import type { Army, GameState, Player } from '@/lib/types';
 import { CardName, GameStatus, IslandType } from '@/lib/types';
+import { pushLogEntry } from './log-entry';
 
 const DEATH_ANIMATION_DURATION_MS = 2000;
 
@@ -18,7 +19,12 @@ function applyAutomaticCollection(state: GameState, player: Player): GameState {
 
   const collectedStrings = Object.entries(collectedResources).map(([type, amount]) => `${amount} ${type}`);
   if (collectedStrings.length > 0) {
-    state.log.push(`${player.name} automatically collected ${collectedStrings.join(', ')}.`);
+    pushLogEntry(state, {
+      category: 'economy',
+      message: `${player.name} automatically collected ${collectedStrings.join(', ')}.`,
+      playerId: player.playerId,
+      isPassive: true,
+    });
   }
 
   return state;
@@ -39,7 +45,12 @@ export function handleEndTurn(state: GameState): GameState {
 
   while (nextPlayer.isSabotaged && attempts < state.players.length) {
     nextPlayer.isSabotaged = false;
-    state.log.push(`${nextPlayer.name}'s turn was skipped due to Sabotage!`);
+    pushLogEntry(state, {
+      category: 'turn',
+      message: `${nextPlayer.name}'s turn was skipped due to Sabotage!`,
+      playerId: nextPlayer.playerId,
+      isPassive: true,
+    });
     nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
     state.currentPlayerIndex = nextPlayerIndex;
     nextPlayer = state.players[nextPlayerIndex];
@@ -71,7 +82,12 @@ export function handleEndTurn(state: GameState): GameState {
     const vpGained = occupiedIslands.size;
     if (vpGained > 0) {
       nextPlayer.victoryPoints += vpGained;
-      state.log.push(`${nextPlayer.name}'s Explorer ability generated ${vpGained} VP.`);
+      pushLogEntry(state, {
+        category: 'economy',
+        message: `${nextPlayer.name}'s Explorer ability generated ${vpGained} VP.`,
+        playerId: nextPlayer.playerId,
+        isPassive: true,
+      });
     }
   }
 
@@ -94,7 +110,12 @@ export function handleEndTurn(state: GameState): GameState {
 
     const collectedStrings = Object.entries(resourcesCollected).map(([type, amount]) => `${amount} ${type}`);
     if (collectedStrings.length > 0) {
-      state.log.push(`${nextPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`);
+      pushLogEntry(state, {
+        category: 'economy',
+        message: `${nextPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`,
+        playerId: nextPlayer.playerId,
+        isPassive: true,
+      });
     }
   }
 
@@ -111,10 +132,20 @@ export function handleEndTurn(state: GameState): GameState {
   if (nextPlayer.victoryPoints >= state.settings.victoryPointGoal && !state.winner) {
     state.winner = nextPlayer;
     state.status = GameStatus.Finished;
-    state.log.push(`🎉 ${nextPlayer.name} has reached ${nextPlayer.victoryPoints} Victory Points and won the game!`);
+    pushLogEntry(state, {
+      category: 'turn',
+      message: `🎉 ${nextPlayer.name} has reached ${nextPlayer.victoryPoints} Victory Points and won the game!`,
+      playerId: nextPlayer.playerId,
+      isMilestone: true,
+    });
   }
 
-  state.log.push(`It's now ${nextPlayer.name}'s turn.`);
+  pushLogEntry(state, {
+    category: 'turn',
+    message: `It's now ${nextPlayer.name}'s turn.`,
+    playerId: nextPlayer.playerId,
+    isPassive: true,
+  });
 
   state.combatState = null;
   state.monsterCombatState = null;

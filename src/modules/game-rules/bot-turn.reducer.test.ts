@@ -2,6 +2,7 @@ import { PlayerColor, CardName, IslandType, MonsterName } from '@/lib/types';
 import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from './game-setup.reducer';
 import { decideBotTurn } from './bot-turn.reducer';
+import { toLogMessage } from './log-entry';
 
 /** A 1-human + 1-bot game, started, with the bot as the current player. */
 function buildBotTurnGame(): GameState {
@@ -27,7 +28,7 @@ describe('decideBotTurn', () => {
 
     const finalState = decideBotTurn(game);
 
-    expect(finalState.log).toContain(`${bot.name} activated '${CardName.Reinforce}'.`);
+    expect(finalState.log.map(toLogMessage)).toContain(`${bot.name} activated '${CardName.Reinforce}'.`);
   });
 
   it('a bot on the same tile as an enemy army attacks instead of moving away', () => {
@@ -54,7 +55,7 @@ describe('decideBotTurn', () => {
     // Combat resolves and clears to null in every outcome; the "in battle!" line is only ever
     // logged by handleCloseCombat, so its presence proves the bot attacked rather than moved away.
     expect(finalState.combatState).toBeNull();
-    expect(finalState.log.some((entry) => entry.includes('in battle!'))).toBe(true);
+    expect(finalState.log.some((entry) => toLogMessage(entry).includes('in battle!'))).toBe(true);
   });
 
   it('a monster-combat triggered mid-army-actions auto-resolves via MonsterCombatRoll and CloseMonsterCombat', () => {
@@ -87,7 +88,7 @@ describe('decideBotTurn', () => {
     // handleEndTurn ran exactly once: current player advanced from the bot (seat 1) back to the
     // human (seat 0), and its log line was appended.
     expect(finalState.currentPlayerIndex).toBe(0);
-    expect(finalState.log).toContain("It's now Player 1's turn.");
+    expect(finalState.log.map(toLogMessage)).toContain("It's now Player 1's turn.");
   });
 
   it('a bot with an unacted army that has zero scoreable actions ends its turn without looping forever (inner guard: possibleActions.length === 0)', () => {
@@ -123,7 +124,7 @@ describe('decideBotTurn', () => {
     const finalState = decideBotTurn(game);
 
     expect(finalState.currentPlayerIndex).toBe(0);
-    expect(finalState.log).toContain("It's now Player 1's turn.");
+    expect(finalState.log.map(toLogMessage)).toContain("It's now Player 1's turn.");
     // The army never got a chance to act (no move, attack or position had a candidate).
     expect(finalState.players[1].armies[0].hasActed).toBe(false);
   });

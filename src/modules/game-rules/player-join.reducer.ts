@@ -3,6 +3,7 @@ import type { GameState, Player, BaseTileInfo } from '@/lib/types';
 import { PLAYER_COLORS } from './player-data';
 import { createPlayer } from './player-factory';
 import { GameStatus, IslandType, ResourceType, MAP_COLS, MAP_ROWS } from '@/lib/types';
+import { pushLogEntry } from './log-entry';
 
 export const BASE_TILE_SIZE = 150;
 
@@ -74,12 +75,21 @@ export function addPlayerToGame(
     newGameState.baseTiles.push(newBaseTile);
 
     if (newGameState.players.length === newGameState.maxPlayers) {
-        newGameState.log.push(`The game is full! Starting now.`);
+        pushLogEntry(newGameState, { category: 'system', message: 'The game is full. Starting now.' });
         newGameState.status = GameStatus.Playing;
         newGameState.turn = 1;
-        newGameState.log.push(`It's now ${newGameState.players[0].name}'s turn.`)
+        pushLogEntry(newGameState, {
+            category: 'turn',
+            message: `It's now ${newGameState.players[0].name}'s turn.`,
+            playerId: newGameState.players[0].playerId,
+            isPassive: true,
+        });
     } else {
-        newGameState.log.push(`${playerInfo.name} has joined the game!`);
+        pushLogEntry(newGameState, {
+            category: 'system',
+            message: `${playerInfo.name} has joined the game!`,
+            playerId: newPlayer.playerId,
+        });
     }
 
     return { newGameState, newBaseTile };

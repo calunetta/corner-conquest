@@ -3,6 +3,7 @@ import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { addPlayerToGame } from '@/modules/game-rules';
 import { handleSelectResourceForPosition } from './resource-position.reducer';
+import { toLogMessage } from './log-entry';
 
 function buildGame(): GameState {
   let game = initializeGame(
@@ -51,7 +52,7 @@ describe('handleSelectResourceForPosition', () => {
 
     expect(nextState.players[0].hasExtraMove).toBe(false);
     expect(nextState.players[0].armies[0].hasActed).toBe(true);
-    expect(nextState.log.some((entry) => entry.includes('Extra Move'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('Extra Move'))).toBe(true);
   });
 
   it('throws when the army is not found on the player (invalid input)', () => {

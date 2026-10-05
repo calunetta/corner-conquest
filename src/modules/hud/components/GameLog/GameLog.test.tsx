@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import type { StructuredLogEntry } from '@/lib/types';
 import { GameLogView } from './GameLog';
 import type { GameLogViewModel } from './GameLog.types';
 
@@ -81,5 +82,42 @@ describe('GameLogView', () => {
     const entries = within(scrollArea).getAllByRole('paragraph');
     expect(entries[0]).toHaveTextContent('Player "Blue" defeated [Monster Level 2]!');
     expect(entries[1]).toHaveTextContent('Island gained +5 Gold (Resource bonus)');
+  });
+
+  it('renders a structured entry by its message text, not [object Object]', () => {
+    const structured: StructuredLogEntry = {
+      kind: 'structured',
+      turn: 3,
+      category: 'cards',
+      message: 'Player Blue bought a card',
+      playerId: 'p1',
+    };
+    const viewModel: GameLogViewModel = { entries: [structured] };
+    render(<GameLogView {...viewModel} />);
+
+    const scrollArea = screen.getByTestId('game-log-scroll');
+    const entries = within(scrollArea).getAllByRole('paragraph');
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toHaveTextContent('Player Blue bought a card');
+    expect(entries[0]).not.toHaveTextContent('[object Object]');
+  });
+
+  it('renders a mix of legacy string and structured entries, each shown as plain text', () => {
+    const structured: StructuredLogEntry = {
+      kind: 'structured',
+      turn: 1,
+      category: 'system',
+      message: 'Player Red has joined the game.',
+    };
+    const viewModel: GameLogViewModel = {
+      entries: [structured, 'Legacy entry, unchanged'],
+    };
+    render(<GameLogView {...viewModel} />);
+
+    const scrollArea = screen.getByTestId('game-log-scroll');
+    const entries = within(scrollArea).getAllByRole('paragraph');
+    expect(entries).toHaveLength(2);
+    expect(entries[0]).toHaveTextContent('Player Red has joined the game.');
+    expect(entries[1]).toHaveTextContent('Legacy entry, unchanged');
   });
 });

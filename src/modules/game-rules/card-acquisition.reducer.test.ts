@@ -7,6 +7,7 @@ import {
   handleCloseSpecialIslandDialog,
   handleRollOnSpecialIsland,
 } from './card-acquisition.reducer';
+import { toLogMessage } from './log-entry';
 
 function buildGame(): GameState {
   let game = initializeGame(
@@ -62,7 +63,7 @@ describe('handleBuyCardAction', () => {
 
     expect(nextState.players[0].specialCards.length).toBe(HAND_LIMIT);
     expect(nextState.players[0].resources.gold).toBe(20);
-    expect(nextState.log.some((entry) => entry.includes('hand is full'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('hand was full'))).toBe(true);
   });
 
   it('logs and returns without drawing when both the deck and discard pile are empty (invalid/empty input)', () => {
@@ -74,7 +75,7 @@ describe('handleBuyCardAction', () => {
     const nextState = handleBuyCardAction(game);
 
     expect(nextState.players[0].resources.gold).toBe(20);
-    expect(nextState.log.some((entry) => entry.includes('none left'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('none left'))).toBe(true);
   });
 
   it('reshuffles the discard pile into the deck when the deck is empty but the discard pile is not', () => {
@@ -87,7 +88,7 @@ describe('handleBuyCardAction', () => {
 
     expect(nextState.players[0].specialCards.length).toBe(1);
     expect(nextState.discardPile).toEqual([]);
-    expect(nextState.log.some((entry) => entry.includes('Reshuffling'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('The deck ran out; reshuffled the discard pile.'))).toBe(true);
   });
 });
 
@@ -139,14 +140,14 @@ describe('handleRollOnSpecialIsland', () => {
     const initialCards = game.players[0].specialCards.length;
     const nextState = handleRollOnSpecialIsland(game, { roll });
     expect(nextState.players[0].specialCards.length).toBe(initialCards + 1);
-    expect(nextState.log.some((entry) => entry.includes(`rolled a ${roll} and found a card`))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes(`rolled a ${roll} and found a card`))).toBe(true);
   });
 
   it.each([1, 2, 4, 5])('a forced roll of %i draws nothing', (roll) => {
     const initialCards = game.players[0].specialCards.length;
     const nextState = handleRollOnSpecialIsland(game, { roll });
     expect(nextState.players[0].specialCards.length).toBe(initialCards);
-    expect(nextState.log.some((entry) => entry.includes('found nothing'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('found nothing'))).toBe(true);
   });
 
   it('logs without drawing when the hand is full even on a winning roll (boundary)', () => {
@@ -154,14 +155,14 @@ describe('handleRollOnSpecialIsland', () => {
     player.specialCards = new Array(HAND_LIMIT).fill('Scout');
     const nextState = handleRollOnSpecialIsland(game, { roll: 3 });
     expect(nextState.players[0].specialCards.length).toBe(HAND_LIMIT);
-    expect(nextState.log.some((entry) => entry.includes('hand is full'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('hand is full'))).toBe(true);
   });
 
   it('logs when the deck and discard pile are both empty on a winning roll (empty input)', () => {
     game.specialCardsDeck = [];
     game.discardPile = [];
     const nextState = handleRollOnSpecialIsland(game, { roll: 6 });
-    expect(nextState.log.some((entry) => entry.includes('deck is completely empty'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('deck is completely empty'))).toBe(true);
   });
 
   it('reshuffles the discard pile into the deck on a winning roll when the deck is empty', () => {

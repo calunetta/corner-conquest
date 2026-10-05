@@ -1,6 +1,7 @@
 import type { DeathAnimation, GameState } from '@/lib/types';
 import { GameStatus } from '@/lib/types';
 import { PLAYER_DATA } from './player-data';
+import { pushLogEntry } from './log-entry';
 
 const COMBAT_WIN_VICTORY_POINTS = 5;
 
@@ -29,7 +30,12 @@ export function handleCloseCombat(state: GameState): GameState {
 
   if (loserId === defenderId) {
     winner.victoryPoints += COMBAT_WIN_VICTORY_POINTS;
-    state.log.push(`${winner.name} receives 5 VP for defeating ${loser.name}!`);
+    pushLogEntry(state, {
+      category: 'combat',
+      message: `${winner.name} receives 5 VP for defeating ${loser.name}!`,
+      playerId: winner.playerId,
+      targetPlayerId: loser.playerId,
+    });
 
     const losingArmy = loser.armies.find((a) => a.id === defendingArmyId);
     const baseTile = baseTiles.find((b) => b.owner === loserId);
@@ -64,7 +70,12 @@ export function handleCloseCombat(state: GameState): GameState {
   } else {
     // Attacker lost
     winner.victoryPoints += COMBAT_WIN_VICTORY_POINTS;
-    state.log.push(`${winner.name} receives 5 VP for defeating ${loser.name}!`);
+    pushLogEntry(state, {
+      category: 'combat',
+      message: `${winner.name} receives 5 VP for defeating ${loser.name}!`,
+      playerId: winner.playerId,
+      targetPlayerId: loser.playerId,
+    });
 
     const loserArmy = loser.armies.find((a) => a.id === attackingArmyId);
     const baseTile = baseTiles.find((b) => b.owner === loserId);
@@ -100,10 +111,20 @@ export function handleCloseCombat(state: GameState): GameState {
   if (winner.victoryPoints >= settings.victoryPointGoal && !state.winner) {
     state.winner = winner;
     state.status = GameStatus.Finished;
-    state.log.push(`🎉 ${winner.name} has reached ${winner.victoryPoints} Victory Points and won the game!`);
+    pushLogEntry(state, {
+      category: 'combat',
+      message: `🎉 ${winner.name} has reached ${winner.victoryPoints} Victory Points and won the game!`,
+      playerId: winner.playerId,
+      isMilestone: true,
+    });
   }
 
-  state.log.push(`${winner.name} defeated ${loser.name} in battle!`);
+  pushLogEntry(state, {
+    category: 'combat',
+    message: `${winner.name} defeated ${loser.name} in battle!`,
+    playerId: winner.playerId,
+    targetPlayerId: loser.playerId,
+  });
   state.combatState = null;
 
   return state;

@@ -18,7 +18,7 @@ export function GameLogView({ entries }: GameLogViewModel) {
           <div className={styles.entriesContainer}>
             {entries.map((entry, index) => (
               <p key={entries.length - 1 - index} className={styles.entry}>
-                {entry}
+                {typeof entry === 'string' ? entry : entry.message}
               </p>
             ))}
           </div>

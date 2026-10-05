@@ -1,11 +1,11 @@
 import { renderHook } from '@testing-library/react';
 import { useGameBoard } from '@/features/game/context/GameBoardContext';
-import type { GameState } from '@/lib/types';
+import type { GameState, LogEntry, StructuredLogEntry } from '@/lib/types';
 import { useGameLog } from './GameLog.hook';
 
 jest.mock('@/features/game/context/GameBoardContext');
 
-const createGameState = (log: string[] = []): GameState =>
+const createGameState = (log: LogEntry[] = []): GameState =>
   ({
     id: 'game-1',
     name: 'Test Game',
@@ -64,6 +64,26 @@ describe('useGameLog', () => {
     const { result } = renderHook(() => useGameLog());
 
     expect(result.current.entries).toEqual([]);
+  });
+
+  it('passes a structured entry through unchanged', () => {
+    const structured: StructuredLogEntry = {
+      kind: 'structured',
+      turn: 3,
+      category: 'cards',
+      message: 'Player Blue bought a card',
+      playerId: 'p1',
+    };
+    const gameState = createGameState(['legacy entry', structured]);
+
+    jest.mocked(useGameBoard).mockReturnValue({
+      gameState,
+    } as unknown as ReturnType<typeof useGameBoard>);
+
+    const { result } = renderHook(() => useGameLog());
+
+    expect(result.current.entries).toEqual([structured, 'legacy entry']);
+    expect(result.current.entries[0]).toBe(structured);
   });
 
   it('falls back to empty array when log is undefined', () => {

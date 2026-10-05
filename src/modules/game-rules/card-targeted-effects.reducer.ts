@@ -1,5 +1,6 @@
 import type { GameState } from '@/lib/types';
 import { CardName, GameAction, ResourceType } from '@/lib/types';
+import { pushLogEntry } from './log-entry';
 
 const WEALTHY_GAIN_AMOUNT = 5;
 const STEAL_RESOURCE_MAX_AMOUNT = 2;
@@ -11,7 +12,12 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
 
   if (targetPlayer) {
     targetPlayer.isSabotaged = true;
-    state.log.push(`${player.name} sabotaged ${targetPlayer.name}! They will miss their next turn.`);
+    pushLogEntry(state, {
+      category: 'cards',
+      message: `${player.name} sabotaged ${targetPlayer.name}! They will miss their next turn.`,
+      playerId: player.playerId,
+      targetPlayerId: targetPlayer.playerId,
+    });
 
     player.actionsThisTurn.push(GameAction.UseCard);
     const cardIndex = player.specialCards.indexOf(CardName.Sabotage);
@@ -32,7 +38,11 @@ export function handleGainWealth(state: GameState, resource: ResourceType): Game
   }
 
   player.resources[resource] = (player.resources[resource] || 0) + WEALTHY_GAIN_AMOUNT;
-  state.log.push(`${player.name} used 'Wealthy' to gain ${WEALTHY_GAIN_AMOUNT} ${resource}.`);
+  pushLogEntry(state, {
+    category: 'cards',
+    message: `${player.name} used 'Wealthy' to gain ${WEALTHY_GAIN_AMOUNT} ${resource}.`,
+    playerId: player.playerId,
+  });
 
   player.actionsThisTurn.push(GameAction.UseCard);
   const cardIndex = player.specialCards.indexOf(CardName.Wealthy);
@@ -62,11 +72,19 @@ export function handleStealResource(
   if (stolenAmount > 0) {
     targetPlayer.resources[payload.resource] -= stolenAmount;
     currentPlayer.resources[payload.resource] = (currentPlayer.resources[payload.resource] || 0) + stolenAmount;
-    state.log.push(`${currentPlayer.name} stole ${stolenAmount} ${payload.resource} from ${targetPlayer.name}!`);
+    pushLogEntry(state, {
+      category: 'cards',
+      message: `${currentPlayer.name} stole ${stolenAmount} ${payload.resource} from ${targetPlayer.name}!`,
+      playerId: currentPlayer.playerId,
+      targetPlayerId: targetPlayer.playerId,
+    });
   } else {
-    state.log.push(
-      `${currentPlayer.name} tried to steal ${payload.resource} from ${targetPlayer.name}, but they had none.`,
-    );
+    pushLogEntry(state, {
+      category: 'cards',
+      message: `${currentPlayer.name} tried to steal ${payload.resource} from ${targetPlayer.name}, but they had none.`,
+      playerId: currentPlayer.playerId,
+      targetPlayerId: targetPlayer.playerId,
+    });
   }
 
   currentPlayer.actionsThisTurn.push(GameAction.UseCard);

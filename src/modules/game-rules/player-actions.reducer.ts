@@ -1,44 +1,11 @@
 import type { Army, GameState } from '@/lib/types';
 import { CardName, GameAction } from '@/lib/types';
+import { pushLogEntry } from './log-entry';
+
+export { handleCancelAction } from './player-cancel-action.reducer';
 
 const MAX_ARMY_SIZE = 5;
 const MAX_ATTACK_POWER = 4;
-
-/** Cancels an in-progress card action: restores the card to hand, reverts its flag, and un-scouts any tiles. */
-export function handleCancelAction(
-  state: GameState,
-  payload?: { cardName?: CardName; scoutedTiles?: string[] },
-): GameState {
-  const player = state.players[state.currentPlayerIndex];
-
-  if (payload?.cardName) {
-    const { cardName } = payload;
-    const cardUseIndex = player.actionsThisTurn.indexOf(GameAction.UseCard);
-    if (cardUseIndex > -1) {
-      player.actionsThisTurn.splice(cardUseIndex, 1);
-    }
-
-    const discardIndex = state.discardPile.indexOf(cardName);
-    if (discardIndex > -1) {
-      const card = state.discardPile.splice(discardIndex, 1)[0];
-      player.specialCards.push(card);
-    }
-
-    if (cardName === CardName.ExtraMove) player.hasExtraMove = false;
-    if (cardName === CardName.Reinforce) player.reinforceActive = false;
-    if (cardName === CardName.Efficient) player.efficientActive = false;
-    if (cardName === CardName.MasterBuilder) player.masterBuilderActive = false;
-
-    if (payload.scoutedTiles && Array.isArray(payload.scoutedTiles)) {
-      const scoutedTiles = payload.scoutedTiles;
-      player.revealedTiles = player.revealedTiles.filter((t) => !scoutedTiles.includes(t));
-    }
-
-    state.log.push(`${player.name} cancelled their action with ${cardName}.`);
-  }
-
-  return state;
-}
 
 /** Deploys a new army at the player's base, applying Reinforce (free) or Efficient (half cost) if active. */
 export function handleDeployAction(state: GameState): GameState {
@@ -80,7 +47,7 @@ export function handleDeployAction(state: GameState): GameState {
   });
 
   if (isEfficientUsed) {
-    state.log.push(`${player.name} used 'Efficient' to deploy!`);
+    pushLogEntry(state, { category: 'economy', message: `${player.name} used 'Efficient' to deploy!`, playerId: player.playerId });
     player.efficientActive = false;
     const cardIndex = player.specialCards.indexOf(CardName.Efficient);
     if (cardIndex > -1) {
@@ -91,7 +58,7 @@ export function handleDeployAction(state: GameState): GameState {
   }
 
   if (isReinforceUsed) {
-    state.log.push(`${player.name} used 'Reinforce' to deploy for free!`);
+    pushLogEntry(state, { category: 'economy', message: `${player.name} used 'Reinforce' to deploy for free!`, playerId: player.playerId });
     player.reinforceActive = false;
     const cardIndex = player.specialCards.indexOf(CardName.Reinforce);
     if (cardIndex > -1) {
@@ -106,7 +73,7 @@ export function handleDeployAction(state: GameState): GameState {
   }
 
   player.actionsThisTurn.push(GameAction.Deploy);
-  state.log.push(`${player.name} deployed a new army!`);
+  pushLogEntry(state, { category: 'economy', message: `${player.name} deployed a new army!`, playerId: player.playerId });
 
   return state;
 }
@@ -131,7 +98,11 @@ export function handleUpgradeAction(state: GameState): GameState {
   player.attackPower += 1;
 
   if (player.masterBuilderActive && canUseCard) {
-    state.log.push(`${player.name} used 'Master Builder' for a cheaper upgrade!`);
+    pushLogEntry(state, {
+      category: 'economy',
+      message: `${player.name} used 'Master Builder' for a cheaper upgrade!`,
+      playerId: player.playerId,
+    });
     player.masterBuilderActive = false;
     const cardIndex = player.specialCards.indexOf(CardName.MasterBuilder);
     if (cardIndex > -1) {
@@ -142,7 +113,11 @@ export function handleUpgradeAction(state: GameState): GameState {
   }
 
   player.actionsThisTurn.push(GameAction.Upgrade);
-  state.log.push(`${player.name} upgraded their army's attack power to ${player.attackPower}.`);
+  pushLogEntry(state, {
+    category: 'economy',
+    message: `${player.name} upgraded their army's attack power to ${player.attackPower}.`,
+    playerId: player.playerId,
+  });
 
   return state;
 }

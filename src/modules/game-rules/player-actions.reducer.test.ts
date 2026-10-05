@@ -2,6 +2,7 @@ import { PlayerColor, CardName, GameAction } from '@/lib/types';
 import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { handleCancelAction, handleDeployAction, handleUpgradeAction } from './player-actions.reducer';
+import { toLogMessage } from './log-entry';
 
 function buildGame(): GameState {
   let game = initializeGame(
@@ -181,7 +182,7 @@ describe('handleCancelAction', () => {
     expect(updatedPlayer.specialCards).toContain(CardName.Reinforce);
     expect(nextState.discardPile).not.toContain(CardName.Reinforce);
     expect(updatedPlayer.actionsThisTurn).not.toContain(GameAction.UseCard);
-    expect(nextState.log.some((entry) => entry.includes('cancelled their action'))).toBe(true);
+    expect(nextState.log.some((entry) => toLogMessage(entry).includes('cancelled their action'))).toBe(true);
   });
 
   it('un-scouts tiles listed in scoutedTiles', () => {
