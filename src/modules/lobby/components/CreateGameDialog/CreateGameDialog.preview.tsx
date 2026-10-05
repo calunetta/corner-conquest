@@ -127,12 +127,16 @@ function CreateGameDialogWrapper({ targetMaxPlayers }: { targetMaxPlayers?: numb
   const [isOpen, setIsOpen] = useState(true);
   const vm = useCreateGameDialog({ open: true, onOpenChange: setIsOpen, onCreateGame: noopAsync });
 
-  // Drive the hook to the target maxPlayers state via useEffect
+  // Drive the hook to the target maxPlayers state via useEffect.
+  // Intentionally omit vm from dependencies so this only runs when the preview's
+  // targetMaxPlayers prop changes, not on every internal vm state update (e.g., card clicks).
+  // This allows user clicks on format cards to persist and update aria-pressed states.
   useEffect(() => {
     if (targetMaxPlayers !== undefined && vm.maxPlayers !== targetMaxPlayers) {
       vm.onMaxPlayersChange(targetMaxPlayers);
     }
-  }, [targetMaxPlayers, vm.maxPlayers, vm]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetMaxPlayers]);
 
   if (!isOpen) {
     return (

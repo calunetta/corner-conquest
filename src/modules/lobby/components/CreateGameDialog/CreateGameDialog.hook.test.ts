@@ -2,6 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { PlayerColor } from '@/lib/types';
 import type { GameSettings } from '@/lib/types';
 import { defaultGameSettings } from '@/modules/game-rules';
+import { toFormatOptions } from './CreateGameDialog.map';
 import { useCreateGameDialog } from './CreateGameDialog.hook';
 import type { CreateGameDialogProps } from './CreateGameDialog.types';
 
@@ -212,8 +213,15 @@ describe('useCreateGameDialog', () => {
 
   it('formatOptions mirrors CreateGameDialog.map.toFormatOptions()', () => {
     const { result } = renderHook(() => useCreateGameDialog(createProps()));
+    const expected = toFormatOptions();
 
     expect(result.current.formatOptions).toHaveLength(4);
-    expect(result.current.formatOptions.map((opt) => opt.value)).toEqual([1, 2, 3, 4]);
+    result.current.formatOptions.forEach((opt, index) => {
+      expect(opt.value).toBe(expected[index].value);
+      expect(opt.title).toBe(expected[index].title);
+      expect(opt.meta).toBe(expected[index].meta);
+      // Verify icon is a function (component reference is tested in map.test.ts)
+      expect(typeof opt.icon).toBe('function');
+    });
   });
 });

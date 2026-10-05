@@ -14,14 +14,14 @@ if (typeof window !== 'undefined' && !window.ResizeObserver) {
   }));
 }
 
+const renderWithProviders = (component: React.ReactElement) => {
+  return render(<TooltipProvider>{component}</TooltipProvider>);
+};
+
 describe('CreateGameDialog', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
-
-  const renderWithProviders = (component: React.ReactElement) => {
-    return render(<TooltipProvider>{component}</TooltipProvider>);
-  };
 
   it('renders the dialog when open is true', () => {
     renderWithProviders(
@@ -213,5 +213,170 @@ describe('CreateGameDialog', () => {
     );
 
     expect(screen.queryByText('Select format')).not.toBeInTheDocument();
+  });
+
+  // tester-b: Comprehensive state and accessibility tests
+  describe('Format card states and meta text', () => {
+    it('renders meta text for all 4 format cards', () => {
+      renderWithProviders(
+        <CreateGameDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onCreateGame={mockOnCreateGame}
+        />,
+      );
+
+      expect(screen.getByText('Training match')).toBeInTheDocument();
+      expect(screen.getByText('1v1 Duel')).toBeInTheDocument();
+      expect(screen.getByText('Archipelago Skirmish')).toBeInTheDocument();
+      expect(screen.getByText('Grand Conquest')).toBeInTheDocument();
+    });
+
+    it('all format cards have aria-pressed attribute (ARIA for selection state)', () => {
+      renderWithProviders(
+        <CreateGameDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onCreateGame={mockOnCreateGame}
+        />,
+      );
+
+      const soloButton = screen.getByText('Solo vs. Bot AI').closest('button');
+      const twoPlayersButton = screen.getByText('2 Players').closest('button');
+      const threePlayersButton = screen.getByText('3 Players').closest('button');
+      const fourPlayersButton = screen.getByText('4 Players').closest('button');
+
+      // All buttons should have aria-pressed attribute
+      [soloButton, twoPlayersButton, threePlayersButton, fourPlayersButton].forEach((btn) => {
+        expect(btn).toHaveAttribute('aria-pressed');
+      });
+    });
+
+    it('format cards wrap in a group with aria-labelledby pointing to the label', () => {
+      renderWithProviders(
+        <CreateGameDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onCreateGame={mockOnCreateGame}
+        />,
+      );
+
+      const group = screen.getByRole('group', { hidden: true });
+      expect(group).toHaveAttribute('aria-labelledby', 'maxPlayers');
+
+      const label = screen.getByText('Match Format');
+      expect(label).toHaveAttribute('id', 'maxPlayers');
+    });
+
+    it('clicking format card toggles only that card selected (others become unselected)', () => {
+      renderWithProviders(
+        <CreateGameDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onCreateGame={mockOnCreateGame}
+        />,
+      );
+
+      const soloButton = screen.getByText('Solo vs. Bot AI').closest('button')!;
+      const threePlayersButton = screen.getByText('3 Players').closest('button')!;
+
+      // Initially 4 Players is selected
+      expect(screen.getByText('4 Players').closest('button')).toHaveAttribute('aria-pressed', 'true');
+
+      // Click Solo
+      fireEvent.click(soloButton);
+      expect(soloButton).toHaveAttribute('aria-pressed', 'true');
+      expect(threePlayersButton).toHaveAttribute('aria-pressed', 'false');
+
+      // Click 3 Players
+      fireEvent.click(threePlayersButton);
+      expect(threePlayersButton).toHaveAttribute('aria-pressed', 'true');
+      expect(soloButton).toHaveAttribute('aria-pressed', 'false');
+    });
+  });
+
+  describe('Keyboard navigation', () => {
+    it('all format cards are keyboard-focusable (type="button")', () => {
+      renderWithProviders(
+        <CreateGameDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onCreateGame={mockOnCreateGame}
+        />,
+      );
+
+      const formatCardButtons = Array.from(
+        screen.getAllByRole('button'),
+      ).filter((btn) => btn.getAttribute('aria-pressed') !== null) as HTMLButtonElement[];
+
+      expect(formatCardButtons).toHaveLength(4);
+      formatCardButtons.forEach((btn) => {
+        expect(btn).toHaveAttribute('type', 'button');
+        expect(btn).not.toBeDisabled();
+      });
+    });
+
+    it('format card buttons activate on click (native button behavior)', () => {
+      renderWithProviders(
+        <CreateGameDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onCreateGame={mockOnCreateGame}
+        />,
+      );
+
+      const soloButton = screen.getByText('Solo vs. Bot AI').closest('button')!;
+
+      fireEvent.click(soloButton);
+      expect(soloButton).toHaveAttribute('aria-pressed', 'true');
+    });
+  });
+
+  describe('Switching between format cards maintains proper state', () => {
+    it('switches through all options with proper aria-pressed state', () => {
+      renderWithProviders(
+        <CreateGameDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onCreateGame={mockOnCreateGame}
+        />,
+      );
+
+      const soloButton = screen.getByText('Solo vs. Bot AI').closest('button')!;
+      const twoPlayersButton = screen.getByText('2 Players').closest('button')!;
+      const threePlayersButton = screen.getByText('3 Players').closest('button')!;
+      const fourPlayersButton = screen.getByText('4 Players').closest('button')!;
+
+      // Start with 4 Players selected
+      expect(fourPlayersButton).toHaveAttribute('aria-pressed', 'true');
+      expect(soloButton).toHaveAttribute('aria-pressed', 'false');
+      expect(twoPlayersButton).toHaveAttribute('aria-pressed', 'false');
+      expect(threePlayersButton).toHaveAttribute('aria-pressed', 'false');
+
+      // Switch through all options
+      fireEvent.click(soloButton);
+      expect(soloButton).toHaveAttribute('aria-pressed', 'true');
+      [twoPlayersButton, threePlayersButton, fourPlayersButton].forEach((btn) => {
+        expect(btn).toHaveAttribute('aria-pressed', 'false');
+      });
+
+      fireEvent.click(twoPlayersButton);
+      expect(twoPlayersButton).toHaveAttribute('aria-pressed', 'true');
+      [soloButton, threePlayersButton, fourPlayersButton].forEach((btn) => {
+        expect(btn).toHaveAttribute('aria-pressed', 'false');
+      });
+
+      fireEvent.click(threePlayersButton);
+      expect(threePlayersButton).toHaveAttribute('aria-pressed', 'true');
+      [soloButton, twoPlayersButton, fourPlayersButton].forEach((btn) => {
+        expect(btn).toHaveAttribute('aria-pressed', 'false');
+      });
+
+      fireEvent.click(fourPlayersButton);
+      expect(fourPlayersButton).toHaveAttribute('aria-pressed', 'true');
+      [soloButton, twoPlayersButton, threePlayersButton].forEach((btn) => {
+        expect(btn).toHaveAttribute('aria-pressed', 'false');
+      });
+    });
   });
 });

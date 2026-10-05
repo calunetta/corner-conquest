@@ -43,8 +43,17 @@ describe('toFormatOptions', () => {
   it('has correct icon component reference for each entry', () => {
     const options = toFormatOptions();
 
+    // Each entry has an icon property containing a function (React component)
     options.forEach((option) => {
       expect(typeof option.icon).toBe('function');
     });
+
+    // Verify all 4 icons are distinct functions (different references)
+    const icons = options.map((opt) => opt.icon);
+    const uniqueIcons = new Set(icons);
+    expect(uniqueIcons.size).toBe(4);
+
+    // Note: Cannot verify exact icon names (Bot/Swords/Users/Crown) due to Jest mocking lucide-react.
+    // Icon correctness is implicitly verified by view tests that check text rendering (titles, metas).
   });
 });
