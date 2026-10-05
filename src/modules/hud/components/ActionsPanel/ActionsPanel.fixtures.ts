@@ -133,3 +133,23 @@ export const extraMoveActive: ActionsPanelViewModel = {
   isCancellableActionInProgress: true,
   alwaysAvailableActions: [{ ...myTurnNoSelection.alwaysAvailableActions[0], label: 'Deploy (0 Food)' }],
 };
+
+export const notMyTurn: ActionsPanelViewModel = {
+  ...myTurnNoSelection,
+  isMyTurn: false,
+  hasExtraMoveBanner: false,
+  isCancellableActionInProgress: false,
+  mainActions: [
+    { ...myTurnNoSelection.mainActions[0], disabled: true, disabledReason: "It's not your turn." },
+    { ...myTurnNoSelection.mainActions[1], disabled: true, disabledReason: "It's not your turn." },
+  ],
+  alwaysAvailableActions: [
+    { ...myTurnNoSelection.alwaysAvailableActions[0], disabled: true, disabledReason: "It's not your turn." },
+  ],
+  secondaryActions: [
+    { ...myTurnNoSelection.secondaryActions[0], disabled: true, disabledReason: "It's not your turn." },
+    { ...myTurnNoSelection.secondaryActions[1], disabled: true, disabledReason: "It's not your turn." },
+    myTurnNoSelection.secondaryActions[2], // Cards stays exactly as in myTurnNoSelection
+    { ...myTurnNoSelection.secondaryActions[3], disabled: true, disabledReason: "It's not your turn." },
+  ],
+};

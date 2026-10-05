@@ -23,6 +23,7 @@ export const styles = {
   mainGrid: 'grid grid-cols-3 gap-1.5',
   separator: 'my-2 bg-white/10',
   secondaryGrid: 'grid grid-cols-2 gap-1.5',
+  disabledReasonCaption: 'mt-1 block w-full truncate text-[10px] text-destructive/90',
   buttonVariant: cva(
     'flex h-auto min-h-12 w-full flex-col items-center justify-center gap-1 p-2 text-center',
     {

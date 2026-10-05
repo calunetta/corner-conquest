@@ -22,14 +22,17 @@ interface ActionButtonProps {
   action: ActionViewModel;
   isMain: boolean;
   onActionClick: (id: GameAction) => void;
+  /** Mobile bar/sheet only: render `action.disabledReason` as static text under the button
+   *  instead of relying on hover/focus Tooltip. Desktop never passes this (stays false). */
+  disabledReasonVisible?: boolean;
 }
 
 /** Renders a single action button with tooltip. */
-export function ActionButton({ action, isMain, onActionClick }: ActionButtonProps) {
+export function ActionButton({ action, isMain, onActionClick, disabledReasonVisible = false }: ActionButtonProps) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div className={isMain ? 'w-full' : ''}>
+    <div className={isMain ? 'w-full' : ''}>
+      <Tooltip>
+        <TooltipTrigger asChild>
           <Button
             variant={action.isPendingMatch ? 'default' : 'outline'}
             onClick={() => onActionClick(action.id)}
@@ -40,12 +43,17 @@ export function ActionButton({ action, isMain, onActionClick }: ActionButtonProp
             {actionIconMap[action.icon]}
             <span className="whitespace-normal">{action.label}</span>
           </Button>
-        </div>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>{action.tooltip}</p>
-        {action.disabled && <p className="mt-1 text-xs text-destructive">{action.disabledReason}</p>}
-      </TooltipContent>
-    </Tooltip>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{action.tooltip}</p>
+          {action.disabled && <p className="mt-1 text-xs text-destructive">{action.disabledReason}</p>}
+        </TooltipContent>
+      </Tooltip>
+      {disabledReasonVisible && action.disabled && (
+        <p className={styles.disabledReasonCaption} title={action.disabledReason}>
+          {action.disabledReason}
+        </p>
+      )}
+    </div>
   );
 }

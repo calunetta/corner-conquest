@@ -1,19 +1,17 @@
 'use client';
 
 import React from 'react';
-import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { XCircle, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/modules/shared';
 import { ActionButton } from './ActionButton';
+import { MobileActionsBar } from './MobileActionsBar';
 import { useActionsPanel } from './ActionsPanel.hook';
 import { styles } from './ActionsPanel.styles';
-import type { ActionsPanelProps, ActionsPanelViewModel } from './ActionsPanel.types';
-interface ActionsPanelViewProps extends ActionsPanelViewModel {
-  infoBeacon?: ReactNode;
-}
+import type { ActionsPanelProps, ActionsPanelViewProps } from './ActionsPanel.types';
 
 /** Pure view: renders the actions panel. */
 export function ActionsPanelView({
@@ -123,5 +121,11 @@ export function ActionsPanelView({
 /** Connected component: reads the game board context. */
 export function ActionsPanel(props: ActionsPanelProps) {
   const viewModel = useActionsPanel();
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobileActionsBar {...viewModel} infoBeacon={props.infoBeacon} />;
+  }
+
   return <ActionsPanelView {...viewModel} infoBeacon={props.infoBeacon} />;
 }

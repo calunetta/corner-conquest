@@ -38,3 +38,16 @@ export type ActionsPanelViewModel = ActionsPanelData & ActionsPanelHandlers;
 export interface ActionsPanelProps {
   infoBeacon?: ReactNode;
 }
+
+export interface ActionsPanelViewProps extends ActionsPanelViewModel {
+  infoBeacon?: ReactNode;
+}
+
+export interface MobileActionsSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  secondaryActions: ActionViewModel[];
+  deckCount: number;
+  infoBeacon?: ReactNode;
+  onActionClick: (id: GameAction) => void;
+}

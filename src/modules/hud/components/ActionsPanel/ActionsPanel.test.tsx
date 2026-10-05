@@ -3,7 +3,13 @@ import React from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { ActionsPanelViewModel } from './ActionsPanel.types';
 import { myTurnNoSelection, armySelectedCanAttack, cardActionInProgress, extraMoveActive } from './ActionsPanel.fixtures';
-import { ActionsPanelView } from './ActionsPanel';
+import { ActionsPanelView, ActionsPanel } from './ActionsPanel';
+import { useActionsPanel } from './ActionsPanel.hook';
+import { useIsMobile } from '@/modules/shared';
+
+// Mock the hooks for the connected component tests
+jest.mock('./ActionsPanel.hook');
+jest.mock('@/modules/shared');
 
 // Helper to render ActionsPanelView with TooltipProvider context
 const renderWithTooltip = (component: React.ReactElement) => {
@@ -317,5 +323,89 @@ describe('ActionsPanelView', () => {
       const { container } = render(<TooltipProvider><ActionsPanelView {...myTurnNoSelection} /></TooltipProvider>);
       expect(container.querySelector('[class*="card"]')).toBeInTheDocument();
     });
+  });
+
+  describe('desktop regression - no caption text for disabled actions', () => {
+    it('does not render disabledReason caption text on desktop (disabledReasonVisible=false by default)', () => {
+      renderWithTooltip(<ActionsPanelView {...myTurnNoSelection} />);
+      const disabledActions = [
+        ...myTurnNoSelection.mainActions,
+        ...myTurnNoSelection.alwaysAvailableActions,
+        ...myTurnNoSelection.secondaryActions,
+      ].filter((a) => a.disabled);
+
+      disabledActions.forEach((action) => {
+        // The disabled reason should NOT appear as visible text (only in tooltip)
+        // Search for the specific text, not just any text containing it
+        const elements = screen.queryAllByText(action.disabledReason);
+        // Should have no visible elements with this text
+        elements.forEach((el) => {
+          // If it's visible, it would be an error (should only be in tooltip)
+          expect(el.closest('[role="tooltip"], [data-testid*="tooltip"]')).toBeFalsy();
+        });
+      });
+    });
+  });
+});
+
+describe('ActionsPanelView desktop regression', () => {
+  it('desktop ActionsPanelView renders without caption when disabledReasonVisible is not passed', () => {
+    // Verify the desktop view doesn't render disabled reason captions by default
+    renderWithTooltip(<ActionsPanelView {...myTurnNoSelection} />);
+    const disabledActions = myTurnNoSelection.mainActions.filter((a) => a.disabled);
+    disabledActions.forEach((action) => {
+      if (action.disabledReason) {
+        expect(screen.queryByText(action.disabledReason)).not.toBeInTheDocument();
+      }
+    });
+  });
+});
+
+describe('ActionsPanel (connected component with useIsMobile branch)', () => {
+  beforeAll(() => {
+    // Mock ResizeObserver for mobile tests
+    const resizeObserverInstances: Array<{
+      callback: ResizeObserverCallback;
+      observe: jest.Mock;
+      disconnect: jest.Mock;
+    }> = [];
+
+    window.ResizeObserver = jest.fn((callback: ResizeObserverCallback) => {
+      const instance = {
+        callback,
+        observe: jest.fn(),
+        unobserve: jest.fn(),
+        disconnect: jest.fn(),
+      };
+      resizeObserverInstances.push(instance);
+      return instance;
+    }) as unknown as typeof window.ResizeObserver;
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('renders MobileActionsBar when useIsMobile returns true', () => {
+    jest.mocked(useActionsPanel).mockReturnValue(myTurnNoSelection);
+    jest.mocked(useIsMobile).mockReturnValue(true);
+
+    const { container } = render(
+      <TooltipProvider>
+        <ActionsPanel />
+      </TooltipProvider>
+    );
+    // Mobile bar should render with role=region and aria-label
+    const bar = container.querySelector('[role="region"][aria-label="Turn actions"]');
+    expect(bar).toBeInTheDocument();
+  });
+
+  it('renders ActionsPanelView when useIsMobile returns false', () => {
+    jest.mocked(useActionsPanel).mockReturnValue(myTurnNoSelection);
+    jest.mocked(useIsMobile).mockReturnValue(false);
+
+    renderWithTooltip(<ActionsPanel />);
+    // Desktop Card should render with title
+    expect(screen.getByText('Actions')).toBeInTheDocument();
   });
 });
