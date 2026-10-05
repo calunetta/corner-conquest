@@ -203,6 +203,26 @@ describe('CreateGameDialog', () => {
     expect(twoPlayersButton).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('renders the correct icon for each format card', () => {
+    renderWithProviders(
+      <CreateGameDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        onCreateGame={mockOnCreateGame}
+      />,
+    );
+
+    const soloCard = screen.getByText('Solo vs. Bot AI').closest('button')!;
+    const twoPlayersCard = screen.getByText('2 Players').closest('button')!;
+    const threePlayersCard = screen.getByText('3 Players').closest('button')!;
+    const fourPlayersCard = screen.getByText('4 Players').closest('button')!;
+
+    expect(soloCard.querySelector('[data-testid="lucide-icon-bot"]')).toBeInTheDocument();
+    expect(twoPlayersCard.querySelector('[data-testid="lucide-icon-swords"]')).toBeInTheDocument();
+    expect(threePlayersCard.querySelector('[data-testid="lucide-icon-users"]')).toBeInTheDocument();
+    expect(fourPlayersCard.querySelector('[data-testid="lucide-icon-crown"]')).toBeInTheDocument();
+  });
+
   it('does not render Select placeholder text after replacement', () => {
     renderWithProviders(
       <CreateGameDialog

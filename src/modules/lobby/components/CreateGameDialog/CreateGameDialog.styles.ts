@@ -10,8 +10,6 @@ export const styles = {
   formGroup: 'space-y-1.5',
   label: 'text-xs font-semibold text-foreground',
   input: 'bg-black/40 border-white/10 focus-visible:ring-amber-400',
-  selectTrigger: 'bg-black/40 border-white/10',
-  selectContent: 'bg-background/95 backdrop-blur-xl border-white/15',
   formatGrid: 'grid grid-cols-2 gap-2',
   formatCard: 'flex items-center gap-2.5 p-2.5 rounded-xl border transition-all duration-200 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
   formatCardSelected: 'border-amber-400 bg-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.4)] scale-105 motion-reduce:transition-none motion-reduce:scale-100',

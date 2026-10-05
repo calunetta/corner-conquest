@@ -53,7 +53,9 @@ describe('toFormatOptions', () => {
     const uniqueIcons = new Set(icons);
     expect(uniqueIcons.size).toBe(4);
 
-    // Note: Cannot verify exact icon names (Bot/Swords/Users/Crown) due to Jest mocking lucide-react.
-    // Icon correctness is implicitly verified by view tests that check text rendering (titles, metas).
+    // Icon-to-value correctness (Bot/Swords/Users/Crown) is verified by rendering, in
+    // CreateGameDialog.test.tsx's "renders the correct icon for each format card" — the
+    // lucide-react jest mock returns a new function per access, so reference equality
+    // here can't distinguish which icon is which. See docs/ai/lessons-learned.md.
   });
 });
