@@ -10,7 +10,7 @@ Tier: M · Phases: 1
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify): hud-mobile-actions-bar (all 5 states, both sizes), hud-actions-panel regression, reduced-motion sheet check, focus-return check
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: ea333af
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
