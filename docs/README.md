@@ -153,6 +153,7 @@ The game is played on a grid of islands with configurable dimensions (`settings.
 - **Food (`ResourceType.Food`):** Represented on tiles by grazing livestock pasture (`/sprites/sheep.gif`) and in HUD/dialogs by meat icons (`/sprites/icon_meat.png`). Used to **Deploy** new armies. The cost increases with each new army.
 - **Wood (`ResourceType.Wood`):** Represented on tiles by timber trees (`/sprites/tree.gif`) and in HUD/dialogs by wood icons (`/sprites/icon_wood.png`). Used to **Upgrade** the Attack Power of all your armies permanently.
 - **Gold (`ResourceType.Gold`):** Represented on tiles by gold mines (`/sprites/mine.png` / `/sprites/mine_active.png`) and in HUD/dialogs by gold icons (`/sprites/icon_gold.png` / `/sprites/gold.gif`). Used to **Buy Special Cards** or purchase permanent **Passive Abilities**.
+- **Collecting:** An army positioned on a resource (see **Position** in §6.3) yields that resource at the start of each of its owner's turns until the position is removed.
 
 ## 6. Detailed Interaction Flows: The Turn and Action Lifecycle
 
@@ -193,7 +194,8 @@ A player's turn consists of a series of actions. The game automatically ends a p
 4.  **Resolution (Shared):** A `GameAction.SelectResourcePosition` action is dispatched.
     -   The `GameState` is updated to mark the army as positioned on that resource spot.
     -   **The army's `hasActed` flag is set to `true`.**
-    -   This action ends the army's turn. The army will collect that resource at the start of the player's next turn.
+    -   This action ends the army's turn. The army collects that resource at the start of the player's next turn, and keeps collecting it every turn after that without re-clicking Position.
+    -   The position is removed only when the army moves (plain move or Teleport), loses a fight it was in (as attacker or defender), or is defeated. Winning a fight from its tile keeps the position.
 
 #### **Attack**
 1.  **Trigger:** Player clicks the "Attack" button in the `ActionsPanel` while a valid, un-acted army is selected on an island with a valid target (enemy army or monster).
@@ -322,7 +324,7 @@ These actions are available once per turn each and do not set the `hasActed` fla
 -   **War Chief:**
     1.  **Trigger:** Appears as a mutually exclusive checkbox in the combat dialogs.
     2.  **Input:** Player checks the "Use War Chief" box before rolling.
-    3.  **Resolution (Shared):** The player gains +2 attack power for that single combat. The `War Chief` card is consumed during combat resolution.
+    3.  **Resolution (Shared):** The player's combat score gets a flat +2 added to the dice total for that single combat. It is not extra dice, and it does not change the permanent attack power. The `War Chief` card is consumed during combat resolution.
 
 -   **Decide Dice Roll:**
     1.  **Trigger:** Appears as a mutually exclusive checkbox and slider in the *monster* combat dialog.
