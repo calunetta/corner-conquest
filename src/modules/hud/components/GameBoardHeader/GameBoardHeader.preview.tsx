@@ -21,6 +21,7 @@ export const gameBoardHeaderPreview: ComponentPreview = {
     { name: 'Playing – opponent turn', render: () => <GameBoardHeaderView {...playingOpponentTurnProps} /> },
     { name: 'Playing – my turn, expiring', render: () => <GameBoardHeaderView {...playingMyTurnExpiringProps} /> },
     { name: 'Playing – my turn, not expiring', render: () => <GameBoardHeaderView {...playingMyTurnNotExpiringProps} /> },
+    { name: 'Playing – with resources', render: () => <GameBoardHeaderView {...playingMyTurnNotExpiringProps} /> },
     { name: 'Exiting', render: () => <GameBoardHeaderView {...exitingProps} /> },
   ],
 };

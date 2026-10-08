@@ -1,3 +1,4 @@
+import { ResourceType } from '@/lib/types';
 import type { GameBoardHeaderViewModel, GameBoardHeaderViewProps } from './GameBoardHeader.types';
 
 const baseTurnTimer = {
@@ -10,6 +11,18 @@ const expiringTurnTimer = {
   isExpiring: true,
 };
 
+const startingResources = [
+  { type: ResourceType.Food, label: 'Food', value: 0 },
+  { type: ResourceType.Wood, label: 'Wood', value: 0 },
+  { type: ResourceType.Gold, label: 'Gold', value: 0 },
+];
+
+const playingResources = [
+  { type: ResourceType.Food, label: 'Food', value: 4 },
+  { type: ResourceType.Wood, label: 'Wood', value: 2 },
+  { type: ResourceType.Gold, label: 'Gold', value: 1 },
+];
+
 export const waitingCanStartViewModel: GameBoardHeaderViewModel = {
   gameName: 'Island Quest',
   isPlaying: false,
@@ -18,6 +31,7 @@ export const waitingCanStartViewModel: GameBoardHeaderViewModel = {
   turnPlayerName: undefined,
   isMyTurn: false,
   turnTimer: baseTurnTimer,
+  resources: startingResources,
 };
 
 export const waitingCannotStartViewModel: GameBoardHeaderViewModel = {
@@ -28,6 +42,7 @@ export const waitingCannotStartViewModel: GameBoardHeaderViewModel = {
   turnPlayerName: undefined,
   isMyTurn: false,
   turnTimer: baseTurnTimer,
+  resources: startingResources,
 };
 
 export const waitingNotHostViewModel: GameBoardHeaderViewModel = {
@@ -38,6 +53,7 @@ export const waitingNotHostViewModel: GameBoardHeaderViewModel = {
   turnPlayerName: undefined,
   isMyTurn: false,
   turnTimer: baseTurnTimer,
+  resources: startingResources,
 };
 
 export const playingMyTurnNotExpiringViewModel: GameBoardHeaderViewModel = {
@@ -48,6 +64,7 @@ export const playingMyTurnNotExpiringViewModel: GameBoardHeaderViewModel = {
   turnPlayerName: 'You',
   isMyTurn: true,
   turnTimer: baseTurnTimer,
+  resources: playingResources,
 };
 
 export const playingMyTurnExpiringViewModel: GameBoardHeaderViewModel = {
@@ -58,6 +75,7 @@ export const playingMyTurnExpiringViewModel: GameBoardHeaderViewModel = {
   turnPlayerName: 'You',
   isMyTurn: true,
   turnTimer: expiringTurnTimer,
+  resources: playingResources,
 };
 
 export const playingOpponentTurnViewModel: GameBoardHeaderViewModel = {
@@ -68,6 +86,7 @@ export const playingOpponentTurnViewModel: GameBoardHeaderViewModel = {
   turnPlayerName: 'Alice',
   isMyTurn: false,
   turnTimer: baseTurnTimer,
+  resources: playingResources,
 };
 
 export const waitingCanStartProps: GameBoardHeaderViewProps = {

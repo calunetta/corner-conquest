@@ -1,4 +1,6 @@
+import { ResourceType } from '@/lib/types';
 import type { GameState, Player } from '@/lib/types';
+import { toResources } from '../PlayerInfo/PlayerInfo.map';
 import { toGameBoardHeaderViewModel } from './GameBoardHeader.map';
 import type { TurnTimer } from './GameBoardHeader.types';
 
@@ -29,7 +31,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 0,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, true, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, true, false, turnTimer, null);
 
       expect(result.canStartGame).toBe(true);
     });
@@ -43,7 +45,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 0,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, true, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, true, false, turnTimer, null);
 
       expect(result.canStartGame).toBe(false);
     });
@@ -57,7 +59,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 0,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, null);
 
       expect(result.canStartGame).toBe(false);
     });
@@ -71,7 +73,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 0,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, true, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, true, false, turnTimer, null);
 
       expect(result.canStartGame).toBe(false);
     });
@@ -85,7 +87,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 0,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, true, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, true, false, turnTimer, null);
 
       expect(result.canStartGame).toBe(false);
     });
@@ -101,7 +103,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 0,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, null);
 
       expect(result.isPlaying).toBe(true);
     });
@@ -115,7 +117,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 0,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, null);
 
       expect(result.isPlaying).toBe(false);
     });
@@ -129,7 +131,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 0,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, null);
 
       expect(result.isPlaying).toBe(false);
     });
@@ -145,7 +147,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 1,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, null);
 
       expect(result.turnPlayerName).toBe('Alice');
     });
@@ -159,7 +161,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 5,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, null);
 
       expect(result.turnPlayerName).toBeUndefined();
     });
@@ -173,7 +175,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 0,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, null);
 
       expect(result.turnPlayerName).toBeUndefined();
     });
@@ -189,7 +191,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 0,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, null);
 
       expect(result.gameName).toBe('My Test Game');
     });
@@ -203,7 +205,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 0,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, null);
 
       expect(result.victoryPointGoal).toBe(75);
     });
@@ -217,7 +219,7 @@ describe('toGameBoardHeaderViewModel', () => {
         currentPlayerIndex: 0,
       } as GameState;
 
-      const result = toGameBoardHeaderViewModel(gameState, false, true, turnTimer);
+      const result = toGameBoardHeaderViewModel(gameState, false, true, turnTimer, null);
 
       expect(result.isMyTurn).toBe(true);
     });
@@ -241,10 +243,73 @@ describe('toGameBoardHeaderViewModel', () => {
         percentage: 2,
       };
 
-      const result = toGameBoardHeaderViewModel(gameState, false, false, expiringTimer);
+      const result = toGameBoardHeaderViewModel(gameState, false, false, expiringTimer, null);
 
       expect(result.turnTimer.formattedTime).toBe('00:05');
       expect(result.turnTimer.isExpiring).toBe(true);
+    });
+  });
+
+  describe('resources', () => {
+    const gameState = {
+      status: 'playing' as const,
+      name: 'Test Game',
+      players: [createPlayer(0, 'Player 1')],
+      settings: { victoryPointGoal: 50 },
+      currentPlayerIndex: 0,
+    } as GameState;
+
+    const localPlayer = {
+      id: 0,
+      name: 'Player 1',
+      color: 'blue',
+      victoryPoints: 0,
+      resources: { food: 4, wood: 2, gold: 1 },
+    } as unknown as Player;
+
+    it('is an empty array when localPlayer is null', () => {
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, null);
+
+      expect(result.resources).toEqual([]);
+    });
+
+    it('matches toResources output for the local player', () => {
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, localPlayer);
+
+      expect(result.resources).toEqual(toResources(localPlayer));
+    });
+
+    it('lists food, wood and gold with the local player values', () => {
+      const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, localPlayer);
+
+      expect(result.resources).toEqual([
+        { type: ResourceType.Food, label: 'Food', value: 4 },
+        { type: ResourceType.Wood, label: 'Wood', value: 2 },
+        { type: ResourceType.Gold, label: 'Gold', value: 1 },
+      ]);
+    });
+
+    it('is zero for each resource when the local player has no resources data', () => {
+      const playerWithoutResources = {
+        id: 0,
+        name: 'Player 1',
+        color: 'blue',
+        victoryPoints: 0,
+      } as unknown as Player;
+
+      const result = toGameBoardHeaderViewModel(
+        gameState,
+        false,
+        false,
+        turnTimer,
+        playerWithoutResources,
+      );
+
+      expect(result.resources).toEqual([
+        { type: ResourceType.Food, label: 'Food', value: 0 },
+        { type: ResourceType.Wood, label: 'Wood', value: 0 },
+        { type: ResourceType.Gold, label: 'Gold', value: 0 },
+      ]);
     });
   });
 });

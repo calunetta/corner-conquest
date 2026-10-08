@@ -78,7 +78,7 @@ function toBuffs(player: Player): BuffViewModel[] {
   return buffs;
 }
 
-function toResources(player: Player): ResourceStatViewModel[] {
+export function toResources(player: Player): ResourceStatViewModel[] {
   return [
     {
       type: ResourceType.Food,

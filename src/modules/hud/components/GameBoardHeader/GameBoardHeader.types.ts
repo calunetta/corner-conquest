@@ -1,4 +1,5 @@
 import type { GameBoardContextType } from '@/modules/game-board';
+import type { ResourceStatViewModel } from '../PlayerInfo';
 
 export type TurnTimer = GameBoardContextType['turnTimer'];
 
@@ -10,6 +11,7 @@ export interface GameBoardHeaderViewModel {
   turnPlayerName: string | undefined; // players[currentPlayerIndex]?.name
   isMyTurn: boolean;
   turnTimer: { formattedTime: string; isExpiring: boolean };
+  resources: ResourceStatViewModel[]; // local player's food/wood/gold; [] when there is no local player
 }
 
 export interface GameBoardHeaderViewProps extends GameBoardHeaderViewModel {

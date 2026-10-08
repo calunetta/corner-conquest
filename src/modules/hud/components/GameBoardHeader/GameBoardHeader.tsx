@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Play, Trophy, Loader2, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ResourceIcon } from '@/modules/shared';
 import { useGameBoardHeader } from './GameBoardHeader.hook';
 import { styles } from './GameBoardHeader.styles';
 import type { GameBoardHeaderViewProps } from './GameBoardHeader.types';
@@ -14,6 +15,7 @@ export function GameBoardHeaderView({
   turnPlayerName,
   isMyTurn,
   turnTimer,
+  resources,
   isExiting,
   onExitClick,
   onStartGame,
@@ -35,6 +37,16 @@ export function GameBoardHeaderView({
           <div className={styles.vpGoalBadge}>
             <Trophy className={styles.vpGoalIcon} />
             <span>VP Goal: {victoryPointGoal}</span>
+          </div>
+        )}
+        {isPlaying && (
+          <div className={styles.resourceStrip} data-testid="gameboard-resource-strip">
+            {resources.map(({ type, value }) => (
+              <span key={type} className={styles.resourcePair}>
+                <ResourceIcon type={type} className={styles.resourceIcon} />
+                <span className={styles.resourceValue}>{value}</span>
+              </span>
+            ))}
           </div>
         )}
       </div>
