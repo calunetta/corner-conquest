@@ -1,18 +1,21 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { useGameBoard } from '@/features/game/context/GameBoardContext';
-import type { GameState, LogEntry, StructuredLogEntry } from '@/lib/types';
+import type { GameState, LogEntry, Player } from '@/lib/types';
 import { useGameLog } from './GameLog.hook';
 
 jest.mock('@/features/game/context/GameBoardContext');
 
-const createGameState = (log: LogEntry[] = []): GameState =>
+const bluePlayer = { playerId: 'p-blue', name: 'Ada', color: 'blue' } as Player;
+const redPlayer = { playerId: 'p-red', name: 'Bo', color: 'red' } as Player;
+
+const createGameState = (log: LogEntry[] = [], players: Player[] = [bluePlayer, redPlayer]): GameState =>
   ({
     id: 'game-1',
     name: 'Test Game',
     status: 'playing' as const,
     maxPlayers: 4,
     debugMode: false,
-    players: [],
+    players,
     currentPlayerIndex: 0,
     turn: 1,
     baseTiles: [],
@@ -41,83 +44,97 @@ const createGameState = (log: LogEntry[] = []): GameState =>
     log,
   } as unknown as GameState);
 
+function mockGameState(gameState: GameState) {
+  jest.mocked(useGameBoard).mockReturnValue({ gameState } as unknown as ReturnType<typeof useGameBoard>);
+}
+
 describe('useGameLog', () => {
-  it('returns reversed log entries from gameState', () => {
-    const gameState = createGameState(['first', 'second', 'third']);
-
-    jest.mocked(useGameBoard).mockReturnValue({
-      gameState,
-    } as unknown as ReturnType<typeof useGameBoard>);
-
+  it('defaults showRoutineActivity to false', () => {
+    mockGameState(createGameState([]));
     const { result } = renderHook(() => useGameLog());
-
-    expect(result.current.entries).toEqual(['third', 'second', 'first']);
+    expect(result.current.showRoutineActivity).toBe(false);
   });
 
-  it('handles empty log', () => {
-    const gameState = createGameState([]);
-
-    jest.mocked(useGameBoard).mockReturnValue({
-      gameState,
-    } as unknown as ReturnType<typeof useGameBoard>);
-
+  it('handles an empty log', () => {
+    mockGameState(createGameState([]));
     const { result } = renderHook(() => useGameLog());
-
     expect(result.current.entries).toEqual([]);
-  });
-
-  it('passes a structured entry through unchanged', () => {
-    const structured: StructuredLogEntry = {
-      kind: 'structured',
-      turn: 3,
-      category: 'cards',
-      message: 'Player Blue bought a card',
-      playerId: 'p1',
-    };
-    const gameState = createGameState(['legacy entry', structured]);
-
-    jest.mocked(useGameBoard).mockReturnValue({
-      gameState,
-    } as unknown as ReturnType<typeof useGameBoard>);
-
-    const { result } = renderHook(() => useGameLog());
-
-    expect(result.current.entries).toEqual([structured, 'legacy entry']);
-    expect(result.current.entries[0]).toBe(structured);
   });
 
   it('falls back to empty array when log is undefined', () => {
     const gameState = createGameState();
-    (gameState as unknown as { log?: string[] }).log = undefined;
-
-    jest.mocked(useGameBoard).mockReturnValue({
-      gameState,
-    } as unknown as ReturnType<typeof useGameBoard>);
+    (gameState as unknown as { log?: LogEntry[] }).log = undefined;
+    mockGameState(gameState);
 
     const { result } = renderHook(() => useGameLog());
 
     expect(result.current.entries).toEqual([]);
   });
 
-  it('reverses game log with multiple entries', () => {
-    const gameState = createGameState([
-      'Player Blue deployed a new army',
-      'Player Red upgraded to 2 attack power',
-      'Island event: gained 5 Gold',
-      'Player Blue attacked Player Red',
-    ]);
-
-    jest.mocked(useGameBoard).mockReturnValue({
-      gameState,
-    } as unknown as ReturnType<typeof useGameBoard>);
+  it('resolves player name and color for a structured entry via gameState.players', () => {
+    mockGameState(
+      createGameState([
+        {
+          kind: 'structured',
+          turn: 1,
+          category: 'economy',
+          message: 'Ada gained 5 Gold from harvesting',
+          playerId: 'p-blue',
+        },
+      ]),
+    );
 
     const { result } = renderHook(() => useGameLog());
 
-    expect(result.current.entries).toEqual([
-      'Player Blue attacked Player Red',
-      'Island event: gained 5 Gold',
-      'Player Red upgraded to 2 attack power',
-      'Player Blue deployed a new army',
+    expect(result.current.entries[0].playerName).toBe('Ada');
+    expect(result.current.entries[0].playerColorClass).toBe('text-blue-400');
+  });
+
+  it('onToggleShowRoutineActivity flips showRoutineActivity and re-filters without reordering visible entries', () => {
+    mockGameState(
+      createGameState([
+        {
+          kind: 'structured',
+          turn: 1,
+          category: 'cards',
+          message: 'Ada bought a card',
+          playerId: 'p-blue',
+        },
+        {
+          kind: 'structured',
+          turn: 1,
+          category: 'economy',
+          message: 'Ada collected resources',
+          playerId: 'p-blue',
+          isPassive: true,
+        },
+        {
+          kind: 'structured',
+          turn: 2,
+          category: 'cards',
+          message: 'Bo bought a card',
+          playerId: 'p-red',
+        },
+      ]),
+    );
+
+    const { result } = renderHook(() => useGameLog());
+
+    expect(result.current.showRoutineActivity).toBe(false);
+    expect(result.current.entries.map((entry) => entry.message)).toEqual([
+      'Bo bought a card',
+      'Ada bought a card',
+    ]);
+
+    act(() => {
+      result.current.onToggleShowRoutineActivity();
+    });
+
+    expect(result.current.showRoutineActivity).toBe(true);
+    expect(result.current.entries.map((entry) => entry.message)).toEqual([
+      'Bo bought a card',
+      'Ada collected resources',
+      'Ada bought a card',
     ]);
   });
 });

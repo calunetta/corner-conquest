@@ -1,123 +1,149 @@
-import { render, screen, within } from '@testing-library/react';
-import type { StructuredLogEntry } from '@/lib/types';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { GameLogView } from './GameLog';
+import {
+  declutterOffLog,
+  declutterOnLog,
+  emptyLog,
+  legacyOnlyLog,
+  mixedTwoTurnsLog,
+  preGameLog,
+  withMilestoneLog,
+} from './GameLog.fixtures';
 import type { GameLogViewModel } from './GameLog.types';
 
 describe('GameLogView', () => {
-  it('renders no paragraphs when entries array is empty', () => {
-    const viewModel: GameLogViewModel = { entries: [] };
-    render(<GameLogView {...viewModel} />);
-
+  it('renders nothing in the scroll area when entries is empty', () => {
+    render(<GameLogView {...emptyLog} />);
     const scrollArea = screen.getByTestId('game-log-scroll');
-    const entries = within(scrollArea).queryAllByRole('paragraph');
-    expect(entries).toHaveLength(0);
-  });
-
-  it('renders entries in order (newest first)', () => {
-    const viewModel: GameLogViewModel = {
-      entries: [
-        'Player Red attacked Player Blue',
-        'Player Blue upgraded to 2 attack power',
-        'Player Green deployed a new army',
-      ],
-    };
-    render(<GameLogView {...viewModel} />);
-
-    // Get all entries - they're rendered as paragraphs inside the scroll area
-    const scrollArea = screen.getByTestId('game-log-scroll');
-    const entries = within(scrollArea).getAllByRole('paragraph');
-
-    // Should be in the order provided (already reversed by the hook/map)
-    expect(entries[0]).toHaveTextContent('Player Red attacked Player Blue');
-    expect(entries[1]).toHaveTextContent('Player Blue upgraded to 2 attack power');
-    expect(entries[2]).toHaveTextContent('Player Green deployed a new army');
-  });
-
-  it('renders each entry as a paragraph element', () => {
-    const viewModel: GameLogViewModel = {
-      entries: ['Event 1', 'Event 2', 'Event 3'],
-    };
-    render(<GameLogView {...viewModel} />);
-
-    const scrollArea = screen.getByTestId('game-log-scroll');
-    const entries = within(scrollArea).getAllByRole('paragraph');
-    expect(entries).toHaveLength(3);
-  });
-
-  it('renders the card header with title', () => {
-    const viewModel: GameLogViewModel = { entries: [] };
-    render(<GameLogView {...viewModel} />);
-
+    expect(within(scrollArea).queryAllByRole('paragraph')).toHaveLength(0);
     expect(screen.getByText('Event Log')).toBeInTheDocument();
   });
 
-  it('renders scroll area wrapper with test id', () => {
-    const viewModel: GameLogViewModel = { entries: ['Test entry'] };
-    render(<GameLogView {...viewModel} />);
+  describe('legacy-only entries (acceptance criterion 1)', () => {
+    it('renders every entry as plain text with no icon and no turn divider', () => {
+      const { container } = render(<GameLogView {...legacyOnlyLog} />);
+      const scrollArea = screen.getByTestId('game-log-scroll');
+      const entries = within(scrollArea).getAllByRole('paragraph');
 
-    const scrollArea = screen.getByTestId('game-log-scroll');
-    expect(scrollArea).toBeInTheDocument();
+      expect(entries).toHaveLength(3);
+      // newest-first: the fixture's last input string renders first
+      expect(entries[0]).toHaveTextContent('Player Red gained 5 Food from harvesting');
+      expect(container.querySelectorAll('svg')).toHaveLength(0);
+      expect(screen.queryAllByRole('separator')).toHaveLength(0);
+    });
+
+    it('renders the message text with no color-class span (no player-color accent)', () => {
+      render(<GameLogView {...legacyOnlyLog} />);
+      const scrollArea = screen.getByTestId('game-log-scroll');
+      const entries = within(scrollArea).getAllByRole('paragraph');
+
+      entries.forEach((entry) => {
+        const spans = entry.querySelectorAll('span');
+        spans.forEach((span) => {
+          expect(span).not.toHaveAttribute('style');
+          // a legacy entry's single text segment has colorClass: null -> no class attribute at all
+          // (entryText wrapper's 'flex-1' is the only expected class anywhere in a legacy entry)
+          if (span.className !== 'flex-1') {
+            expect(span.className).toBe('');
+          }
+        });
+      });
+    });
   });
 
-  it('handles single entry', () => {
-    const viewModel: GameLogViewModel = { entries: ['Only entry'] };
-    render(<GameLogView {...viewModel} />);
+  it('renders a "Turn N" divider for each of two distinct turn values, in document order (criterion 2)', () => {
+    render(<GameLogView {...mixedTwoTurnsLog} />);
+    const dividers = screen.getAllByRole('separator');
 
-    const scrollArea = screen.getByTestId('game-log-scroll');
-    const entries = within(scrollArea).getAllByRole('paragraph');
-    expect(entries).toHaveLength(1);
-    expect(entries[0]).toHaveTextContent('Only entry');
+    // newest-first: turn 2 entry comes before the turn 1 entries, so its divider appears first
+    expect(dividers).toHaveLength(2);
+    expect(dividers[0]).toHaveTextContent('Turn 2');
+    expect(dividers[1]).toHaveTextContent('Turn 1');
   });
 
-  it('handles entries with special characters and punctuation', () => {
-    const viewModel: GameLogViewModel = {
-      entries: [
-        'Player "Blue" defeated [Monster Level 2]!',
-        'Island gained +5 Gold (Resource bonus)',
-      ],
-    };
-    render(<GameLogView {...viewModel} />);
-
+  it('colors the acting player and target player name substrings differently within one line (criterion 3)', () => {
+    render(<GameLogView {...mixedTwoTurnsLog} />);
     const scrollArea = screen.getByTestId('game-log-scroll');
-    const entries = within(scrollArea).getAllByRole('paragraph');
-    expect(entries[0]).toHaveTextContent('Player "Blue" defeated [Monster Level 2]!');
-    expect(entries[1]).toHaveTextContent('Island gained +5 Gold (Resource bonus)');
+    const line = within(scrollArea).getByText((_, element) => element?.tagName === 'P' && !!element.textContent?.includes('defeated'));
+
+    const adaSpan = within(line).getByText('Ada');
+    const boSpan = within(line).getByText('Bo');
+
+    expect(adaSpan.className).not.toBe('');
+    expect(boSpan.className).not.toBe('');
+    expect(adaSpan.className).not.toBe(boSpan.className);
   });
 
-  it('renders a structured entry by its message text, not [object Object]', () => {
-    const structured: StructuredLogEntry = {
-      kind: 'structured',
-      turn: 3,
-      category: 'cards',
-      message: 'Player Blue bought a card',
-      playerId: 'p1',
-    };
-    const viewModel: GameLogViewModel = { entries: [structured] };
-    render(<GameLogView {...viewModel} />);
+  describe('declutter toggle (criteria 4-5)', () => {
+    it('hides isPassive entries while the toggle is off, keeping isMilestone entries visible regardless', () => {
+      render(<GameLogView {...withMilestoneLog} />);
+      const scrollArea = screen.getByTestId('game-log-scroll');
 
-    const scrollArea = screen.getByTestId('game-log-scroll');
-    const entries = within(scrollArea).getAllByRole('paragraph');
-    expect(entries).toHaveLength(1);
-    expect(entries[0]).toHaveTextContent('Player Blue bought a card');
-    expect(entries[0]).not.toHaveTextContent('[object Object]');
+      expect(within(scrollArea).queryByText('Ada collected resources')).not.toBeInTheDocument();
+      const entries = within(scrollArea).getAllByRole('paragraph');
+      expect(entries).toHaveLength(1);
+      expect(entries[0]).toHaveTextContent('Ada won the game!');
+    });
+
+    it('toggle off: shows only the non-passive entry', () => {
+      render(<GameLogView {...declutterOffLog} />);
+      const scrollArea = screen.getByTestId('game-log-scroll');
+      const entries = within(scrollArea).getAllByRole('paragraph');
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0]).toHaveTextContent('Bo bought a card');
+    });
+
+    it('toggle on: reveals the passive entry without removing or reordering the already-visible one', () => {
+      render(<GameLogView {...declutterOnLog} />);
+      const scrollArea = screen.getByTestId('game-log-scroll');
+      const entries = within(scrollArea).getAllByRole('paragraph');
+
+      expect(entries).toHaveLength(2);
+      // same relative order as toggle-off: the non-passive entry ("Bo bought a card") stays first
+      expect(entries[0]).toHaveTextContent('Bo bought a card');
+      expect(entries[1]).toHaveTextContent('Ada collected resources');
+    });
+
+    it('clicking the Switch invokes onToggleShowRoutineActivity', () => {
+      const onToggle = jest.fn();
+      const viewModel: GameLogViewModel = { ...declutterOffLog, onToggleShowRoutineActivity: onToggle };
+      render(<GameLogView {...viewModel} />);
+
+      fireEvent.click(screen.getByRole('switch'));
+      expect(onToggle).toHaveBeenCalledTimes(1);
+    });
   });
 
-  it('renders a mix of legacy string and structured entries, each shown as plain text', () => {
-    const structured: StructuredLogEntry = {
-      kind: 'structured',
-      turn: 1,
-      category: 'system',
-      message: 'Player Red has joined the game.',
-    };
-    const viewModel: GameLogViewModel = {
-      entries: [structured, 'Legacy entry, unchanged'],
-    };
-    render(<GameLogView {...viewModel} />);
+  it('renders zero turn dividers for an all-turn-0 (pre-game) log', () => {
+    render(<GameLogView {...preGameLog} />);
+    expect(screen.queryAllByRole('separator')).toHaveLength(0);
+  });
 
-    const scrollArea = screen.getByTestId('game-log-scroll');
-    const entries = within(scrollArea).getAllByRole('paragraph');
-    expect(entries).toHaveLength(2);
-    expect(entries[0]).toHaveTextContent('Player Red has joined the game.');
-    expect(entries[1]).toHaveTextContent('Legacy entry, unchanged');
+  describe('declutter Switch accessibility', () => {
+    it('has a visible text label', () => {
+      render(<GameLogView {...declutterOffLog} />);
+      expect(screen.getByText('Show routine activity')).toBeInTheDocument();
+    });
+
+    it('is a native, keyboard-focusable control', () => {
+      render(<GameLogView {...declutterOffLog} />);
+      const toggle = screen.getByRole('switch');
+
+      expect(toggle.tagName).toBe('BUTTON');
+      expect(toggle).not.toBeDisabled();
+      toggle.focus();
+      expect(toggle).toHaveFocus();
+    });
+
+    it('exposes aria-checked matching showRoutineActivity, false by default and true when on', () => {
+      render(<GameLogView {...declutterOffLog} />);
+      expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
+    });
+
+    it('exposes aria-checked="true" when showRoutineActivity is true', () => {
+      render(<GameLogView {...declutterOnLog} />);
+      expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
+    });
   });
 });

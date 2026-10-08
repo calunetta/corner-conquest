@@ -142,7 +142,7 @@ describe('player-join.reducer: addPlayerToGame', () => {
       expect(game.players.length).toBe(2);
       expect(game.status).toBe(GameStatus.Playing);
       expect(game.turn).toBe(1);
-      expect(game.log.some((entry) => toLogMessage(entry).includes('Starting now'))).toBe(true);
+      expect(game.log.some((entry) => toLogMessage(entry) === 'The game is full. Starting now.')).toBe(true);
     });
 
     it('accepts a valid join and keeps game in Waiting status when seats remain', () => {

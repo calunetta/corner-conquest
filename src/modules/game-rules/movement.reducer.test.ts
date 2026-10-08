@@ -3,6 +3,7 @@ import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { addPlayerToGame } from '@/modules/game-rules';
 import { getPossibleMoves, handleMoveAction } from './movement.reducer';
+import { toLogMessage } from './log-entry';
 
 function buildGame(): GameState {
   let game = initializeGame(
@@ -156,6 +157,24 @@ describe('handleMoveAction', () => {
 
     expect(player.positions).toHaveLength(0);
     expect(oldTile.positionedBy).toEqual([]);
+  });
+
+  it('logs the exact copy-fixed message when a positioned army moves off a resource tile', () => {
+    const player = game.players[0];
+    const army = player.armies[0];
+    const possibleMoves = getPossibleMoves(game, army);
+    const targetMove = possibleMoves[0];
+    const oldTile = game.map[army.position.y * game.settings.gridSize.cols + army.position.x];
+    oldTile.positionedBy = [{ playerId: player.id, resource: ResourceType.Food }];
+    player.positions = [{ x: army.position.x, y: army.position.y, resource: ResourceType.Food, armyId: army.id }];
+    const logCountBefore = game.log.length;
+
+    const nextState = handleMoveAction(game, targetMove.x, targetMove.y, army);
+
+    const newEntries = nextState.log.slice(logCountBefore);
+    expect(newEntries.some((entry) => toLogMessage(entry) === `${player.name} moved an army off ${ResourceType.Food}.`)).toBe(
+      true,
+    );
   });
 
   it('consumes the extra move instead of marking hasActed when the player has one', () => {

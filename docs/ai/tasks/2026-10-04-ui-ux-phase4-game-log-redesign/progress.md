@@ -14,12 +14,12 @@ Tier: L · Phases: 2 (estimate, architect-a to confirm/cut)
 
 ## Phase 2: GameLog consumes structured entries (turn dividers, color, declutter toggle, copy)
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a, preview-b)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a, preview-b)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify)
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Log
