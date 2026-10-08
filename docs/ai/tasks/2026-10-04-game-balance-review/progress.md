@@ -24,9 +24,9 @@ Tier: L (re-triaged from S — see `triage.md`) · Phases: 6
 
 ## Phase 3: Docs update
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-a)
-- [ ] checks: typecheck, lint
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a)
+- [x] checks: typecheck, lint
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 4: ui-designer-b challenger pass + GameBoardHeader resource strip (Proposal 1)
