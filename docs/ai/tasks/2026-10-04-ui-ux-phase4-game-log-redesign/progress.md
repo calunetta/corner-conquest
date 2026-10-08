@@ -20,7 +20,7 @@ Tier: L · Phases: 2 (estimate, architect-a to confirm/cut)
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 59554d4
 
 ## Log
 - 2026-10-05 architect-a: DONE, 2-phase plan written (Phase 1 game-rules data migration, Phase 2 GameLog view redesign). Corrected the design doc's test-file count (12, not 11 — bot-turn.reducer.test.ts also asserts on .log indirectly).
