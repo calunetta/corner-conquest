@@ -29,7 +29,7 @@ You are the second architect: you make sure the plan is right before anyone buil
 Runs at the end of every phase of a tier L task. For a code move, also diff each new file against `git show HEAD:<old path>` and read every hunk that isn't a rename.
 1. `git status` and `git diff`, untracked files included.
 2. Run `npm run typecheck`, `npm run lint` and `npm test`; quote the summary lines.
-3. Check the diff against `plan.md` (acceptance criteria, file plan, contracts) and the skills (structure, boundaries, readability, KISS/DRY/SOLID, logic tests before view tests, behavior over classes, previews present, `docs/README.md` updated when rules or architecture changed).
+3. Check the diff against `plan.md` (acceptance criteria, file plan, contracts) and the skills (structure, boundaries, readability, KISS/DRY/SOLID, logic tests before view tests, behavior over classes, previews present, the relevant `docs/architecture/*.md` file updated by `docs-sync` when rules or architecture changed — including bug fixes).
 4. Look at the screenshots listed in preview-b's report.
 5. Write `review.md` from `docs/ai/templates/review.md`: `VERDICT: APPROVED` or `VERDICT: CHANGES REQUESTED`, findings with `file:line`, owner and whether they block.
 6. On approval, tick the boxes of this phase in `progress.md` that you confirmed.

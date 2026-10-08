@@ -30,8 +30,8 @@ Match the effort to the task: a typo never needs twelve agents, and risky game l
 | Tier | Typical scope | Pipeline |
 |---|---|---|
 | XS | Copy, typo, style or config tweak; one file, no logic | No agents and no task folder. Edit directly, run the checks. |
-| S | Small fix or tweak, 1–3 files, one layer, obvious solution | `implementer-a tester-a` (bug: `tester-a implementer-a`) |
-| M | New component, or a feature inside one module, or a bug that needs root-cause analysis | `architect-a architect-b implementer-a implementer-b tester-a tester-b preview-a preview-b architect-b:final-review` |
+| S | Small fix or tweak, 1–3 files, one layer, obvious solution | `implementer-a tester-a docs-sync` (bug: `tester-a implementer-a docs-sync`) |
+| M | New component, or a feature inside one module, or a bug that needs root-cause analysis | `architect-a architect-b implementer-a implementer-b tester-a tester-b preview-a preview-b docs-sync architect-b:final-review` |
 | L | Feature across modules, gameplay change, `GameState` or Firestore shape change | M's pipeline, run once per phase after the planning stages |
 | XL | Epic | `architect-a architect-b` only: a roadmap of L tasks. Stop for approval, then triage each one. |
 
@@ -40,6 +40,7 @@ Add or drop stages:
 - Insert `ui-designer-a ui-designer-b` before the architects when the Visible UI signal is yes, from tier M. At S, implementers follow existing patterns.
 - Drop `preview-a preview-b` when no component is created and no visual state changes.
 - Bugs from tier M: put `tester-a` right after the architects so the failing reproduction test exists before the fix.
+- **Never drop `docs-sync`** at S or above when the diff touches game rules, architecture, or fixes a bug whose old behavior is documented in `docs/README.md` or `docs/architecture/*.md` (skill `docs-sync`). Drop it only when the task is purely style/config with no documented behavior affected — at that point it's usually tier XS anyway.
 
 ## 4. Pick the models
 - Planners (`game-designer-*`, `ui-designer-*`, `architect-*`) run on claude-sonnet-5, from their files.

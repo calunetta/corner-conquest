@@ -4,6 +4,8 @@ Not implemented. Proposals for making Corner Conquest more fun, each with a conc
 
 Context this backlog was written against: `docs/README.md` §5–6, `.claude/skills/game-design/SKILL.md`, rule numbers as of 2026-10-03 (victory goal 30, deploy 6 wheat +2/army, upgrade 6 iron, ability 15 gems, card 10 gems, hand limit 7, max armies 5, max attack power 4, player dice = attack power + 1, monster dice = level, ties favor defender/monster, turn timer 120s).
 
+**2026-10-09:** `docs/README.md` was split into `docs/architecture/*.md` and a pre-existing duplicate "§6.3" heading was fixed, shifting every section from the old §6.4 onward up by one (old §6.4 Combat Flow is now §6.5, old §6.9 is now §6.10, etc.) and moving §6.6+ into separate files (`special-cards.md`, `systems-and-visuals.md`). The bare `§N` references below predate that change — verify the actual current section before trusting one.
+
 ---
 
 ## 1. Trade action between players

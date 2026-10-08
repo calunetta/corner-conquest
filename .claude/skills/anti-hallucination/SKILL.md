@@ -15,7 +15,7 @@ A wrong claim costs more than "I don't know". Verify, then state.
 | A prop or type field | Read the type (`src/lib/types/*.ts`, the component's props). |
 | An npm script | `package.json` → `scripts`. |
 | A library API | The installed version (`node_modules/<pkg>/package.json`) and its `.d.ts` files, not memory. At bootstrap: Next.js 15.3, React 18, Tailwind 3, Jest 30, Playwright 1.62. APIs from other major versions don't apply. |
-| A game rule or number | The code: `src/modules/game-rules/`, `src/modules/game-rules/game-setup.reducer.ts`, `src/modules/game-rules/card-data.ts`. `docs/README.md` explains intent; when they disagree the code wins, and you report the drift. |
+| A game rule or number | The code: `src/modules/game-rules/`, `src/modules/game-rules/game-setup.reducer.ts`, `src/modules/game-rules/card-data.ts`. `docs/architecture/*.md` (indexed from `docs/README.md`) explains intent; when they disagree the code wins, and you report the drift. |
 | A UI behavior | A test you ran, or the browser (skill `ui-verify`). |
 
 ## Never

@@ -1,7 +1,7 @@
 # Corner Conquest: instructions for Claude
 
 Multiplayer island-conquest strategy game: 2–4 players or bots, armies, resources, special cards, monsters, fog of war.
-- Game rules and architecture: `docs/README.md` (code wins if they disagree; report the drift).
+- Game rules and architecture: `docs/README.md`, an index into `docs/architecture/*.md` (code wins if they disagree; report the drift).
 - Original product brief: `docs/blueprint.md` (its style section is outdated; the implemented theme wins).
 - How this AI setup works, for humans: `docs/ai/README.md`.
 - `.agents/` is Google Antigravity config (Genkit skill, workflows). Claude Code does not use it.
@@ -45,12 +45,12 @@ Verified at bootstrap; check `package.json` before relying on a version.
 3. **Readable code**, the way an expert front-end engineer writes it: intention-revealing names, small functions, early returns, no cleverness, comments explain why. Skill `code-standards`.
 4. **Tests ship with the code.** Logic tests before view tests. Never skip or weaken a test to get green. Skill `testing`.
 5. **Check visible changes in a browser** before calling them done. Skill `ui-verify`.
-6. **Docs stay true.** A change to game rules or architecture updates `docs/README.md` in the same phase.
+6. **Docs stay true.** A change to game rules or architecture, including a bug fix that changes documented behavior, updates the relevant `docs/architecture/*.md` file in the same phase. Mandatory agent `docs-sync`, skill `docs-sync`.
 7. **Learn once.** When a review catches a non-obvious bug a future agent could repeat, it goes in `docs/ai/lessons-learned.md`, not just that task's `progress.md`. Skill `lessons-learned`.
 
 ## Workflow
 - Every feature, component, bug fix or refactor starts with skill `triage` (`/triage <request>`). It sizes the task XS–XL and picks the agent pairs and their models.
-- Skill `swarm` runs the pipeline. Agents live in `.claude/agents/`: planners (`game-designer-*`, `ui-designer-*`, `architect-*`) run on claude-sonnet-5; builders (`implementer-*`, `tester-*`, `preview-*`) run on haiku and are escalated to sonnet by triage when needed.
+- Skill `swarm` runs the pipeline. Agents live in `.claude/agents/`: planners (`game-designer-*`, `ui-designer-*`, `architect-*`) run on claude-sonnet-5; builders (`implementer-*`, `tester-*`, `preview-*`, `docs-sync`) run on haiku and are escalated to sonnet by triage when needed. `docs-sync` is mandatory, not optional, whenever game rules, architecture, or a documented bug's behavior changed.
 - Each task has a record folder `docs/ai/tasks/<YYYY-MM-DD>-<slug>/` built from `docs/ai/templates/`. It is the handoff between agents and the trail for tracing bugs later. Commit it with the code.
 - Every sub-agent ends its final message with a line that contains only `DONE` or `BLOCKER`. Wait for that line before starting the next stage. On `BLOCKER`, stop and report to the user.
 
@@ -65,5 +65,5 @@ If you reach your output limit, stop and ask me to type 'continue' to finish gen
 ## Definition of done
 - `npm run typecheck`, `npm run lint` and `npm test` pass; quote their summary lines.
 - New or changed components have a testbed preview, checked with skill `ui-verify`.
-- `progress.md` is updated; `docs/README.md` is updated if behavior changed.
+- `progress.md` is updated; the relevant `docs/architecture/*.md` file is updated if behavior changed (agent `docs-sync`, mandatory for rule/architecture changes and bug fixes).
 - One commit per phase, Conventional Commits style: `feat(combat): add dice tray [phase 1/2]`.

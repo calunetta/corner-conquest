@@ -16,7 +16,7 @@ The code is the source of truth for the look. The style section of `docs/bluepri
 - **Icons**: `lucide-react`.
 - **Primitives**: shadcn/ui in `src/components/ui/` (Dialog, Sheet, Popover, Tooltip, Button, Badge, Progress, RadioGroup, Slider, …). Reuse them.
 - **Layering**: the map is the stage; HUD sits on its edges (`z-20`, `z-30`); dialogs above.
-- **Login/lobby parity**: the login page shares the lobby's background and glass style (`docs/README.md` §2).
+- **Login/lobby parity**: the login page shares the lobby's background and glass style (`docs/architecture/structure-and-state.md` §2).
 
 ## Layout rules
 - Desktop reference 1280×720, mobile 390×844. `useIsMobile()` (`@/modules/shared`) switches below 768 px.

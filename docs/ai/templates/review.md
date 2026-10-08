@@ -16,4 +16,4 @@ VERDICT: <APPROVED | CHANGES REQUESTED>
 |---|---|---|---|---|
 
 ## Docs
-- `docs/README.md`: <updated | not needed, because ...>
+- `docs-sync`: <ran, updated <file> §<N> | not needed, because ...>

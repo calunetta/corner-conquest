@@ -34,4 +34,4 @@ Don't append:
 
 ## In the swarm pipeline
 
-The `swarm` skill's phase loop (step 5) ticks `progress.md` and updates `docs/README.md` when behavior changed. Add this at the same point: if this phase's gate review or final review caught something that qualifies per "When to append" above, append it here before moving on. This is the reviewer's responsibility (architect-b, or an implementer cross-reviewing), not the coordinator's — the coordinator only checks it happened.
+The `swarm` skill's phase loop ticks `progress.md` (step 6), after `docs-sync` (step 4) has updated the relevant `docs/architecture/*.md` file when behavior changed. Add this entry at the `progress.md` step: if this phase's gate review or final review caught something that qualifies per "When to append" above, append it here before moving on. This is the reviewer's responsibility (architect-b, or an implementer cross-reviewing), not the coordinator's — the coordinator only checks it happened.

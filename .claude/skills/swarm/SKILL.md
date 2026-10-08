@@ -16,12 +16,13 @@ You, the main session, coordinate. You route work, check results and keep `progr
 ## Stages
 | Stage | Agents | Reads | Writes |
 |---|---|---|---|
-| Game design | `game-designer-a` → `game-designer-b` | triage.md, `docs/README.md` §5–6, rule code | game-design.md |
+| Game design | `game-designer-a` → `game-designer-b` | triage.md, `docs/architecture/game-mechanics.md` & `special-cards.md` (§5–6.6), rule code | game-design.md |
 | UI design | `ui-designer-a` → `ui-designer-b` | triage.md, game-design.md, current UI | ui-design.md |
 | Plan | `architect-a` → `architect-b` | all of the above, code | plan.md (Status: APPROVED), progress.md |
 | Build | `implementer-a` ∥ `implementer-b` | plan.md, ui-design.md | logic files ∥ view files, then cross-review |
 | Tests | `tester-a` → `tester-b` | plan.md, code | tests |
 | Previews | `preview-a` → `preview-b` | plan.md, ui-design.md | `*.preview.tsx`, registry, screenshots |
+| Docs sync | `docs-sync` | plan.md, `git diff` | `docs/README.md`, `docs/architecture/*.md` |
 | Final review | `architect-b` (Mode: final-review) | plan.md, `git diff`, checks | review.md |
 
 ## Spawning an agent
@@ -50,19 +51,21 @@ All agents share one `node_modules` and `package-lock.json`. Two agents adding a
 - Final review is per phase for tier L, even if `progress.md` lists it only once. If architect-a drops a phase's final-review box, put it back; skipping it leaves that phase checked only by tests and cross-reviews.
 - An agent that dies on an API or rate-limit error (no sentinel, no report) is not a BLOCKER of the task: re-run it once from scratch and say in the prompt that no partial report exists. A second failure goes to the user.
 - `tester-a` before `tester-b` (logic first); `preview-a` before `preview-b`.
+- `docs-sync` is mandatory, not optional, whenever the phase touched game rules, architecture, or fixed a bug whose old behavior was documented (skill `docs-sync`) — run it even for a phase that looks like "just a bug fix". It runs after the builder/tester/preview stages, before the final review, so it sees the real diff.
 
 ## Phase loop
 For each phase of `plan.md`:
 1. Build, tests, previews (only the stages in the pipeline).
 2. Run `npm run typecheck`, `npm run lint`, then `npm test`. A failure goes back to the owning agent in revise mode with the output.
 3. Skill `ui-verify` on the previews and pages `plan.md` lists.
-4. Final review by `architect-b`. CHANGES REQUESTED: route each finding to its owner, then review again (two rounds at most).
-5. Tick `progress.md`, add the log lines, update `docs/README.md` if rules or architecture changed, and confirm the reviewing agent appended to `docs/ai/lessons-learned.md` (skill `lessons-learned`) if this phase's review caught a non-obvious bug.
-6. Commit code and task folder together: `<type>(<module>): <phase title> [phase n/N]`.
+4. Spawn `docs-sync` if the phase touched game rules, architecture, or fixed a doc-affecting bug (skill `docs-sync`). Not optional — don't skip it because the phase "was just a bug fix".
+5. Final review by `architect-b`. CHANGES REQUESTED: route each finding to its owner (including `docs-sync`, if the docs update was wrong or missing), then review again (two rounds at most).
+6. Tick `progress.md`, add the log lines, and confirm the reviewing agent appended to `docs/ai/lessons-learned.md` (skill `lessons-learned`) if this phase's review caught a non-obvious bug.
+7. Commit code and task folder together: `<type>(<module>): <phase title> [phase n/N]`.
    - Other sessions and tasks may be editing the same working tree. Run `git status`, then `git add` the task's files by path (never `-A` or `.`), and leave every other task's files, untracked ones included, for its own session. `git status` again before committing.
    - The hash only exists after the commit. Tick `committed: <hash>` in a small follow-up `docs(<module>): record phase n commit hash` commit, and set the task's row in `docs/ai/refactor.md` if it has one.
    - A check that cannot run here (e2e without Java 21) is written into `progress.md` as "not run: <error>", not ticked silently and not treated as a blocker. Say it in the report to the user.
-7. If phases remain, stop: "Phase n/N committed (<hash>). Type `continue` for phase n+1." Don't start it before the user does.
+8. If phases remain, stop: "Phase n/N committed (<hash>). Type `continue` for phase n+1." Don't start it before the user does.
 
 ## Escalation
 - An agent call fails with a transient infra error (rate limit / `429`, a stream stall, "no progress for Ns") rather than a reported BLOCKER: retry the same spawn once, same model and prompt, before treating it as anything else. Only escalate or treat it as a real BLOCKER if the retry also fails.

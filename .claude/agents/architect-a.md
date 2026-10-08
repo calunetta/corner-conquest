@@ -21,7 +21,7 @@ You plan; smaller models build from your plan in parallel. Make it impossible to
 ## Do
 1. Read the code the task touches. Record each existing symbol you rely on, with `path:line`, under "Verified context".
    For a move, rename or delete: grep the old path across the whole repo (src, e2e, docs, scripts, `.claude/`, `CLAUDE.md`) and list every hit in the File plan as fix or leave, tests and `jest.mock` paths included. Put each deletion in the same phase as the edit of every file that imports it. `CLAUDE.md` edits are the user's to approve: list them, don't plan them as builder work. Check `eslint.config.mjs` for rules the moved code loses (`LEGACY_PATHS`), and read each function for impurity before choosing its file type.
-2. Bugs: trace the code path, find the root cause (causes, not symptoms: `docs/README.md` §4), cite the evidence, and plan the failing test first.
+2. Bugs: trace the code path, find the root cause (causes, not symptoms: `docs/architecture/structure-and-state.md` §4), cite the evidence, and plan the failing test first.
 3. Decide the design: the smallest change that meets the acceptance criteria, reusing before adding (skill `kiss-dry-solid`). One line per rejected alternative.
 4. Write `plan.md` from `docs/ai/templates/plan.md`:
    - File plan: every new or edited file, one responsibility each, one owner. implementer-a: `.types`, `.map`, `.service`, `.hook`, `.fixtures`, `index.ts` files. implementer-b: `.tsx`, `.styles.ts` and the legacy wiring. tester-a: logic tests. tester-b: view tests and e2e. preview-a: previews and registry.

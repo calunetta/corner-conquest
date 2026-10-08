@@ -27,7 +27,7 @@ Verified at bootstrap. The code wins over this table: re-check the source before
 | Turn timer | 120 s | `src/features/game/hooks/useTurnTimer.ts` |
 | Cards | 13 kinds in a weighted deck | `src/modules/game-rules/card-data.ts` |
 
-Full flows: `docs/README.md` §5–6. Bot strategy: `src/modules/game-rules/bot-turn.reducer.ts`.
+Full flows: `docs/architecture/game-mechanics.md`, `docs/architecture/special-cards.md` and `docs/architecture/systems-and-visuals.md` (§5–6.13). Bot strategy: `src/modules/game-rules/bot-turn.reducer.ts`.
 
 ## Design pillars
 1. Every turn offers a meaningful choice: expand, exploit, fight or invest.
@@ -46,10 +46,10 @@ Name the one a proposal serves: agency, risk and reward, tension and pacing, dis
 
 ## Constraints
 - Complexity budget: a new rule replaces or simplifies something, or clearly earns its place. It must fit in one tooltip-sized sentence.
-- Firestore cost: no extra writes per action (`docs/README.md` §6.9).
+- Firestore cost: no extra writes per action (`docs/architecture/systems-and-visuals.md` §6.10).
 - Bots: every new rule states what `src/modules/game-rules/bot-turn.reducer.ts` does with it.
-- Tutorial: update the matching `TutorialBeacon` text (`docs/README.md` §6.10).
-- Docs: rule changes update `docs/README.md` §5–6 in the same phase.
+- Tutorial: update the matching `TutorialBeacon` text (`docs/architecture/systems-and-visuals.md` §6.11).
+- Docs: rule changes (features and bug fixes alike) update the relevant `docs/architecture/*.md` file in the same phase — agent `docs-sync`, skill `docs-sync`.
 
 ## Process
 - **game-designer-a**: diagnose with evidence, propose 2–3 options (one of them minimal) with exact numbers and math, recommend one. Template: `docs/ai/templates/game-design.md`.

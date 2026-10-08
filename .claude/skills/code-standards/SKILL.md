@@ -43,6 +43,6 @@ The bar: a senior front-end engineer reads the code once and understands it. Mat
 - Reuse `src/components/ui/*`. Missing primitive: add it with the shadcn CLI, don't hand-write it.
 
 ## Firestore
-- Only services touch Firestore. Keep the write economics in `docs/README.md` §6.9: human actions are buffered locally and written once per turn; never add a write per click.
+- Only services touch Firestore. Keep the write economics in `docs/architecture/systems-and-visuals.md` §6.10: human actions are buffered locally and written once per turn; never add a write per click.
 - Catch I/O errors at the service or hook boundary and tell the player through `useToast` (`@/modules/shared`); never swallow an error silently.
 - `firestore.rules` allows public read and write today. Raise it before building anything that relies on secrecy or ownership.
