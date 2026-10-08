@@ -17,7 +17,8 @@ export interface TreeSlot {
   bottom?: string;
   left?: string;
   right?: string;
-  size: number;
+  /** Percent of the tile's own side length T, e.g. '28%'. Was a px number. */
+  size: string;
   z: number;
 }
 

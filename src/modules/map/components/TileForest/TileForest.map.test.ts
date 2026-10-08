@@ -51,7 +51,9 @@ describe('toForestLayout', () => {
 
     const result = toForestLayout(island, false);
     expect(result).not.toBeNull();
-    expect(result!.layout.length).toBeGreaterThanOrEqual(2);
+    // Seed for (2,2) is even, so the grove always has exactly 2 trees.
+    expect(result!.layout.length).toBe(2);
+    expect(result!.layout.map((slot) => slot.size)).toEqual(['28%', '28%']);
   });
 
   it('returns 2-tree base layout when isBase is true', () => {
@@ -69,6 +71,7 @@ describe('toForestLayout', () => {
     expect(result!.layout.length).toBe(2);
     expect(result!.layout[0]).toHaveProperty('top', '4px');
     expect(result!.layout[1]).toHaveProperty('top', '10%');
+    expect(result!.layout.map((slot) => slot.size)).toEqual(['16%', '16%']);
   });
 
   it('returns 1-tree special layout for Special islands', () => {
@@ -85,63 +88,35 @@ describe('toForestLayout', () => {
     expect(result).not.toBeNull();
     expect(result!.layout.length).toBe(1);
     expect(result!.layout[0]).toHaveProperty('top', '4px');
+    expect(result!.layout[0].size).toBe('16%');
   });
 
-  it('returns 2 or 3 trees for Empty islands based on seed parity', () => {
-    // Test seed with even result (should be 2 trees)
-    const islandEven: Island = {
-      id: '0-0',
-      x: 0,
-      y: 0,
-      type: IslandType.Empty,
-      resources: [],
-      occupants: [],
-    };
+  it('returns a 2-tree grove for island 0-0 and a 3-tree grove for island 1-0', () => {
+    const islandTwoTrees: Island = { id: '0-0', x: 0, y: 0, type: IslandType.Empty, resources: [], occupants: [] };
+    const islandThreeTrees: Island = { id: '1-0', x: 1, y: 0, type: IslandType.Empty, resources: [], occupants: [] };
 
-    const resultEven = toForestLayout(islandEven, false);
-    const seed = Math.abs(0 * 7 + 0 * 13 + 0);
-    const expectedCountEven = seed % 2 === 0 ? 2 : 3;
-    expect(resultEven!.layout.length).toBe(expectedCountEven);
+    const twoTrees = toForestLayout(islandTwoTrees, false);
+    const threeTrees = toForestLayout(islandThreeTrees, false);
 
-    // Test seed with odd result (should be 3 trees)
-    const islandOdd: Island = {
-      id: '1-0',
-      x: 1,
-      y: 0,
-      type: IslandType.Empty,
-      resources: [],
-      occupants: [],
-    };
-
-    const resultOdd = toForestLayout(islandOdd, false);
-    const seedOdd = Math.abs(1 * 7 + 0 * 13 + 0);
-    const expectedCountOdd = seedOdd % 2 === 0 ? 2 : 3;
-    expect(resultOdd!.layout.length).toBe(expectedCountOdd);
+    expect(twoTrees!.layout).toHaveLength(2);
+    expect(twoTrees!.layout.map((slot) => slot.size)).toEqual(['28%', '28%']);
+    expect(threeTrees!.layout).toHaveLength(3);
+    expect(threeTrees!.layout.map((slot) => slot.size)).toEqual(['28%', '28%', '28%']);
   });
 
-  it('cycles through TREE_SPRITES deterministically by seed', () => {
-    const islands: Island[] = [
-      { id: '0-0', x: 0, y: 0, type: IslandType.Empty, resources: [], occupants: [] },
-      { id: '1-1', x: 1, y: 1, type: IslandType.Empty, resources: [], occupants: [] },
-      { id: '2-2', x: 2, y: 2, type: IslandType.Empty, resources: [], occupants: [] },
-      { id: '3-3', x: 3, y: 3, type: IslandType.Empty, resources: [], occupants: [] },
+  it('picks the tree sprite from the seed table for known islands', () => {
+    // Literal expectations, hand-computed from seed = x*7 + y*13 and index = seed % 4:
+    // 0-0 seed 0 -> 0; 1-1 seed 20 -> 0; 1-0 seed 7 -> 3; 0-1 seed 13 -> 1.
+    const expectations: Array<[Island, (typeof TREE_SPRITES)[number]]> = [
+      [{ id: '0-0', x: 0, y: 0, type: IslandType.Empty, resources: [], occupants: [] }, TREE_SPRITES[0]],
+      [{ id: '1-1', x: 1, y: 1, type: IslandType.Empty, resources: [], occupants: [] }, TREE_SPRITES[0]],
+      [{ id: '1-0', x: 1, y: 0, type: IslandType.Empty, resources: [], occupants: [] }, TREE_SPRITES[3]],
+      [{ id: '0-1', x: 0, y: 1, type: IslandType.Empty, resources: [], occupants: [] }, TREE_SPRITES[1]],
     ];
 
-    const sprites = islands.map((island) => {
-      const seed = Math.abs(island.x * 7 + island.y * 13 + 0);
-      return TREE_SPRITES[seed % TREE_SPRITES.length];
+    expectations.forEach(([island, expectedSprite]) => {
+      expect(toForestLayout(island, false)!.treeSprite).toBe(expectedSprite);
     });
-
-    // All should be valid sprites
-    sprites.forEach((sprite) => {
-      expect(TREE_SPRITES).toContain(sprite);
-    });
-
-    // Verify that the same (x, y) coordinates always produce the same sprite
-    const island1 = { id: '5-5', x: 5, y: 5, type: IslandType.Empty, resources: [], occupants: [] };
-    const result1a = toForestLayout(island1, false);
-    const result1b = toForestLayout(island1, false);
-    expect(result1a!.treeSprite).toBe(result1b!.treeSprite);
   });
 
   it('uses different tree sprite when isBase changes seed', () => {
@@ -199,5 +174,28 @@ describe('toForestLayout', () => {
     toForestLayout(island, false);
 
     expect(island).toEqual(originalIsland);
+  });
+
+  describe('tree size units per layout', () => {
+    // Cleared islands are Monster islands whose monsters are all gone: they take the grove layout.
+    it.each([
+      ['Monster island with monsters: []', { type: IslandType.Monster, monsters: [] }],
+      ['Monster island with monsters undefined', { type: IslandType.Monster }],
+    ])('%s uses the grove layout with 28%% trees', (_label, typeFields) => {
+      // (2,2) seed is even, so the grove has exactly 2 trees.
+      const island: Island = { id: '2-2', x: 2, y: 2, resources: [], occupants: [], ...typeFields } as Island;
+
+      const result = toForestLayout(island, false);
+
+      expect(result!.layout.map((slot) => slot.size)).toEqual(['28%', '28%']);
+    });
+
+    it('uses the 16% base layout whenever isBase is true, regardless of island type', () => {
+      const island: Island = { id: '4-4', x: 4, y: 4, type: IslandType.Empty, resources: [], occupants: [] };
+
+      const result = toForestLayout(island, true);
+
+      expect(result!.layout.map((slot) => slot.size)).toEqual(['16%', '16%']);
+    });
   });
 });

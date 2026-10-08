@@ -4,6 +4,15 @@ import { IslandType, PlayerColor, type Island, type DeathAnimation } from '@/lib
 import { useGameBoard } from '@/modules/game-board';
 import type { GameBoardContextType } from '@/modules/game-board';
 import { gameStateFixture, bluePlayer, redPlayer } from './TileOccupants.fixtures';
+import { toTileBoatsViewModel } from '../TileBoats/TileBoats.map';
+
+// Corner named by an inline style's anchors (e.g. { bottom, right } -> 'bottom-right').
+// Used for both BoatEntryViewModel.cornerStyle and OccupantSpriteViewModel.slotStyle.
+function cornerOf(style: Record<string, string>): string {
+  const vertical = 'top' in style ? 'top' : 'bottom';
+  const horizontal = 'left' in style ? 'left' : 'right';
+  return `${vertical}-${horizontal}`;
+}
 
 jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
@@ -499,5 +508,125 @@ describe('useTileOccupants', () => {
     rerender({ island: island2 });
 
     expect(result.current.occupants).toHaveLength(0);
+  });
+
+  describe('corner alignment with TileBoats', () => {
+    // Four blue armies on one base tile: each occupant gets a boat and a rider at the same index.
+    const armyIds = [0, 1, 2, 3];
+    const blueWithFourArmies = {
+      ...bluePlayer,
+      armies: armyIds.map((id) => ({ id, position: { x: 0, y: 0 }, hasActed: false })),
+    };
+    const baseIsland: Island = {
+      id: '0-0',
+      x: 0,
+      y: 0,
+      type: IslandType.Base,
+      owner: 0,
+      resources: [],
+      occupants: armyIds.map((armyId) => ({ playerId: 0, armyId })),
+      positionedBy: [],
+    };
+
+    it.each(armyIds)('rider and boat at index %i share a corner', (index) => {
+      jest.mocked(useGameBoard).mockReturnValue({
+        gameState: { ...mockGameState, players: [blueWithFourArmies] },
+        localPlayer: blueWithFourArmies,
+      } as unknown as GameBoardContextType);
+
+      const { result } = renderHook(() => useTileOccupants({ island: baseIsland }));
+      const boats = toTileBoatsViewModel(baseIsland, [blueWithFourArmies], blueWithFourArmies, false, false);
+
+      const slotStyle = result.current.occupants[index].slotStyle;
+      const boatCornerStyle = boats![index].cornerStyle;
+      expect(cornerOf(slotStyle)).toBe(cornerOf(boatCornerStyle));
+      expect(slotStyle.transform).toBe(boatCornerStyle.transform);
+    });
+  });
+
+  describe('slotStyle and isOverflow per occupant index', () => {
+    // Five blue armies on one base tile: indexes 0-3 fill the four corners, index 4 wraps to br.
+    const fiveArmyPlayer = {
+      ...bluePlayer,
+      armies: [0, 1, 2, 3, 4].map((id) => ({ id, position: { x: 0, y: 0 }, hasActed: false })),
+    };
+    const fiveOccupantIsland: Island = {
+      id: '0-0',
+      x: 0,
+      y: 0,
+      type: IslandType.Base,
+      owner: 0,
+      resources: [],
+      occupants: [0, 1, 2, 3, 4].map((armyId) => ({ playerId: 0, armyId })),
+      positionedBy: [],
+    };
+
+    beforeEach(() => {
+      jest.mocked(useGameBoard).mockReturnValue({
+        gameState: { ...mockGameState, players: [fiveArmyPlayer] },
+        localPlayer: fiveArmyPlayer,
+      } as unknown as GameBoardContextType);
+    });
+
+    // Literal expectations: a reorder of the corner table must fail this test on purpose.
+    it.each([
+      [0, { bottom: '0', right: '0', transform: 'translate(50%, 50%)' }],
+      [1, { top: '0', right: '0', transform: 'translate(50%, -50%)' }],
+      [2, { top: '0', left: '0', transform: 'translate(-50%, -50%)' }],
+      [3, { bottom: '0', left: '0', transform: 'translate(-50%, 50%)' }],
+      [4, { bottom: '0', right: '0', transform: 'translate(50%, 50%)' }],
+    ])('occupant %i has the exact slotStyle', (index, expected) => {
+      const { result } = renderHook(() => useTileOccupants({ island: fiveOccupantIsland }));
+
+      expect(result.current.occupants[index].slotStyle).toEqual(expected);
+    });
+
+    it.each([
+      [0, false],
+      [1, false],
+      [2, false],
+      [3, false],
+      [4, true],
+    ])('occupant %i has isOverflow %s', (index, expected) => {
+      const { result } = renderHook(() => useTileOccupants({ island: fiveOccupantIsland }));
+
+      expect(result.current.occupants[index].isOverflow).toBe(expected);
+    });
+  });
+
+  describe('corner wrap beyond the fifth occupant', () => {
+    // Eight blue armies: indexes 4-7 wrap back onto corners 0-3, all flagged as overflow.
+    const eightArmyPlayer = {
+      ...bluePlayer,
+      armies: [0, 1, 2, 3, 4, 5, 6, 7].map((id) => ({ id, position: { x: 0, y: 0 }, hasActed: false })),
+    };
+    const eightOccupantIsland: Island = {
+      id: '0-0',
+      x: 0,
+      y: 0,
+      type: IslandType.Base,
+      owner: 0,
+      resources: [],
+      occupants: [0, 1, 2, 3, 4, 5, 6, 7].map((armyId) => ({ playerId: 0, armyId })),
+      positionedBy: [],
+    };
+
+    beforeEach(() => {
+      jest.mocked(useGameBoard).mockReturnValue({
+        gameState: { ...mockGameState, players: [eightArmyPlayer] },
+        localPlayer: eightArmyPlayer,
+      } as unknown as GameBoardContextType);
+    });
+
+    it.each([
+      [5, { top: '0', right: '0', transform: 'translate(50%, -50%)' }],
+      [6, { top: '0', left: '0', transform: 'translate(-50%, -50%)' }],
+      [7, { bottom: '0', left: '0', transform: 'translate(-50%, 50%)' }],
+    ])('occupant %i wraps to the matching corner with isOverflow true', (index, expected) => {
+      const { result } = renderHook(() => useTileOccupants({ island: eightOccupantIsland }));
+
+      expect(result.current.occupants[index].slotStyle).toEqual(expected);
+      expect(result.current.occupants[index].isOverflow).toBe(true);
+    });
   });
 });

@@ -1,7 +1,7 @@
 import type { GameState, Island, Player, PlayerColor } from '@/lib/types';
 import { IslandType } from '@/lib/types';
 import type { BoatEntryViewModel } from './TileBoats.types';
-import { BOAT_CORNER_POSITIONS } from './TileBoats.types';
+import { BOAT_CORNER_POSITIONS, CORNER_TRANSFORMS } from './TileBoats.types';
 
 export const COLLECTOR_IDLE_SPRITES: Record<PlayerColor, string> = {
   blue: '/sprites/collector_blue_idle.gif',
@@ -106,13 +106,10 @@ export function toTileBoatsViewModel(
     const corner = getCornerPosition(index);
     const idleCollectorSprite = COLLECTOR_IDLE_SPRITES[entry.player.color];
 
-    const cornerStyle: Record<string, string> = {};
-    const style = corner.style as Record<string, string | undefined>;
-    Object.entries(style).forEach(([key, value]) => {
-      if (value !== undefined) {
-        cornerStyle[key] = value;
-      }
-    });
+    const cornerStyle: Record<string, string> = {
+      ...(corner.style as Record<string, string>),
+      transform: CORNER_TRANSFORMS[corner.id],
+    };
 
     return {
       key: entry.key,

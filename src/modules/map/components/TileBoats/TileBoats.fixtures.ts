@@ -1,6 +1,7 @@
 import type { Island, Player, GameState } from '@/lib/types';
 import { IslandType, PlayerColor } from '@/lib/types';
 import type { BoatEntryViewModel } from './TileBoats.types';
+import { CORNER_TRANSFORMS } from './TileBoats.types';
 import type { GameBoardContextType } from '@/modules/game-board';
 import { initialUIState } from '@/modules/game-board';
 import { buildPlayer, buildGameState } from '../../board-context.fixtures';
@@ -83,7 +84,7 @@ export const islandWithOccupants: Island = {
 export const boatEntryFixture: BoatEntryViewModel = {
   key: 'boat-base-0',
   color: PlayerColor.Blue,
-  cornerStyle: { bottom: '2px', right: '2px' },
+  cornerStyle: { bottom: '0', right: '0', transform: CORNER_TRANSFORMS.br },
   showIdleCollector: true,
   idleCollectorSprite: '/sprites/collector_blue_idle.gif',
 };

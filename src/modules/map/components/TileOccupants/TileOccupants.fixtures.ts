@@ -1,6 +1,7 @@
 import type { Island, Player, GameState } from '@/lib/types';
 import { IslandType, PlayerColor } from '@/lib/types';
 import type { OccupantSpriteViewModel } from './TileOccupants.types';
+import { CORNER_TRANSFORMS } from '../TileBoats/TileBoats.types';
 import { buildPlayer, buildGameState } from '../../board-context.fixtures';
 
 export const bluePlayer: Player = buildPlayer({
@@ -57,15 +58,17 @@ export const islandWithMultipleOccupants: Island = {
 export const occupantSpriteFixture: OccupantSpriteViewModel = {
   key: 'army-sprite-0-5',
   color: PlayerColor.Blue,
-  sprite: '/sprites/player_blue.gif',
-  positionClasses: 'absolute w-1/2 h-1/2 origin-bottom-left',
+  sprite: '/sprites/blue.gif',
+  slotStyle: { bottom: '0', right: '0', transform: CORNER_TRANSFORMS.br },
   isFaded: false,
+  isOverflow: false,
 };
 
 export const fadedOccupantFixture: OccupantSpriteViewModel = {
   key: 'army-sprite-1-10',
   color: PlayerColor.Red,
-  sprite: '/sprites/player_red.gif',
-  positionClasses: 'absolute w-1/2 h-1/2 origin-bottom-right',
+  sprite: '/sprites/red.gif',
+  slotStyle: { top: '0', right: '0', transform: CORNER_TRANSFORMS.tr },
   isFaded: true,
+  isOverflow: false,
 };

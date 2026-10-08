@@ -202,8 +202,8 @@ describe('toTileBoatsViewModel', () => {
     const result = toTileBoatsViewModel(baseIsland, mockPlayers, mockPlayers[0], false, false);
 
     expect(result).not.toBeNull();
-    // Entry at index 0 should be assigned to corner 0 via entryIndex % BOAT_CORNER_POSITIONS.length
-    expect(result![0].cornerStyle).toBeDefined();
+    // Entry 0 is the base owner's boat, so it takes corner index 0 (br).
+    expect(result![0].cornerStyle).toEqual({ bottom: '0', right: '0', transform: 'translate(50%, 50%)' });
   });
 
   it('assigns corners by entryIndex for non-base tiles', () => {
@@ -223,8 +223,8 @@ describe('toTileBoatsViewModel', () => {
 
     expect(result).not.toBeNull();
     expect(result!.length).toBe(2);
-    // Should have 2 different corner assignments
-    expect(result![0].cornerStyle).not.toEqual(result![1].cornerStyle);
+    expect(result![0].cornerStyle).toEqual({ bottom: '0', right: '0', transform: 'translate(50%, 50%)' });
+    expect(result![1].cornerStyle).toEqual({ top: '0', right: '0', transform: 'translate(50%, -50%)' });
   });
 
   it('provides idle collector sprite matching player color', () => {
@@ -330,10 +330,46 @@ describe('toTileBoatsViewModel', () => {
 
     expect(result).not.toBeNull();
     expect(result!.length).toBe(2);
-    // Each boat should have a defined cornerStyle
-    expect(result![0].cornerStyle).toBeDefined();
-    expect(result![1].cornerStyle).toBeDefined();
-    // The two boats should have different corner assignments
-    expect(result![0].cornerStyle).not.toEqual(result![1].cornerStyle);
+    expect(result![0].cornerStyle).toEqual({ bottom: '0', right: '0', transform: 'translate(50%, 50%)' });
+    expect(result![1].cornerStyle).toEqual({ top: '0', right: '0', transform: 'translate(50%, -50%)' });
+  });
+
+  describe('cornerStyle shape per entry index', () => {
+    // Four blue armies on one base tile, so entries 0-3 are four distinct boats.
+    const blueWithFourArmies = {
+      ...bluePlayer,
+      armies: [0, 1, 2, 3].map((id) => ({ id, position: { x: 0, y: 0 }, hasActed: false })),
+    };
+    const fourBoatsIsland: Island = {
+      id: '0-0',
+      x: 0,
+      y: 0,
+      type: IslandType.Base,
+      owner: 0,
+      resources: [],
+      occupants: [0, 1, 2, 3].map((armyId) => ({ playerId: 0, armyId })),
+    };
+
+    // Literal expectations, not derived from BOAT_CORNER_POSITIONS: a reorder of the
+    // corner table must fail this test on purpose.
+    it.each([
+      [0, { bottom: '0', right: '0', transform: 'translate(50%, 50%)' }],
+      [1, { top: '0', right: '0', transform: 'translate(50%, -50%)' }],
+      [2, { top: '0', left: '0', transform: 'translate(-50%, -50%)' }],
+      [3, { bottom: '0', left: '0', transform: 'translate(-50%, 50%)' }],
+    ])('entry %i has the exact cornerStyle for its corner', (index, expected) => {
+      const result = toTileBoatsViewModel(fourBoatsIsland, [blueWithFourArmies], blueWithFourArmies, false, false);
+
+      expect(result![index].cornerStyle).toEqual(expected);
+    });
+
+    it('never contains an undefined value (guards the removed filter loop)', () => {
+      const result = toTileBoatsViewModel(fourBoatsIsland, [blueWithFourArmies], blueWithFourArmies, false, false);
+
+      result!.forEach((entry) => {
+        expect(Object.values(entry.cornerStyle)).not.toContain(undefined);
+        expect(Object.keys(entry.cornerStyle)).toHaveLength(3);
+      });
+    });
   });
 });

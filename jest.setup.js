@@ -13,3 +13,18 @@ jest.mock('lucide-react', () => {
     }
   );
 });
+
+// jsdom has no matchMedia. Hooks such as useIsMobile call it on mount, so every test needs a stub.
+// matches: false keeps tests on the desktop branch (jsdom's default innerWidth is 1024).
+window.matchMedia =
+  window.matchMedia ||
+  ((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }));

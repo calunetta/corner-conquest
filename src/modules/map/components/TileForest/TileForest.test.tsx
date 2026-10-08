@@ -17,16 +17,12 @@ jest.mock('next/image', () => ({
 describe('TileForest Component', () => {
   it('renders a deterministic cluster of trees of the same sprite type on an empty island', () => {
     render(<TileForest island={emptyIsland} />);
-    const trees = screen.queryAllByTestId('tile-forest-tree');
-    expect(trees.length).toBeGreaterThanOrEqual(1); // At least one tree is rendered
+    const trees = screen.getAllByTestId('tile-forest-tree');
+    expect(trees).toHaveLength(2); // Empty-island grove is always two trees (see sizing tests)
 
-    // Verify all rendered trees on this island use the EXACT same sprite
-    if (trees.length > 0) {
-      const images = trees.map(t => t.querySelector('img')!.getAttribute('src'));
-      const uniqueSprites = Array.from(new Set(images));
-      expect(uniqueSprites.length).toBe(1);
-      expect(TREE_SPRITES).toContain(uniqueSprites[0]);
-    }
+    const images = trees.map((t) => t.querySelector('img')!.getAttribute('src'));
+    expect(new Set(images).size).toBe(1);
+    expect(TREE_SPRITES).toContain(images[0]);
   });
 
   it('suppresses decorative forest on Resource islands so players only see real harvestable resource nodes', () => {
@@ -37,8 +33,7 @@ describe('TileForest Component', () => {
 
   it('renders a cluster positioned for player base', () => {
     render(<TileForest island={baseIsland} isBase={true} />);
-    const trees = screen.queryAllByTestId('tile-forest-tree');
-    expect(trees.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByTestId('tile-forest-tree')).toHaveLength(2);
   });
 
   it('hides the forest completely on monster tiles with living monsters', () => {
@@ -50,14 +45,27 @@ describe('TileForest Component', () => {
   it('renders the forest once monsters are defeated (empty monsters list)', () => {
     render(<TileForest island={clearedMonsterIsland} />);
     expect(screen.getByTestId('tile-forest')).toBeInTheDocument();
-    const trees = screen.queryAllByTestId('tile-forest-tree');
-    expect(trees.length).toBeGreaterThanOrEqual(0); // Forest layout may be sparse
+    expect(screen.getAllByTestId('tile-forest-tree')).toHaveLength(2);
   });
 
   it('renders forest on special islands', () => {
     render(<TileForest island={specialIsland} />);
     expect(screen.getByTestId('tile-forest')).toBeInTheDocument();
-    const trees = screen.queryAllByTestId('tile-forest-tree');
-    expect(trees.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByTestId('tile-forest-tree')).toHaveLength(1);
+  });
+
+  describe('tree sizing (percent of the tile side)', () => {
+    it.each([
+      ['empty island grove', emptyIsland, false, 2, '28%'],
+      ['cleared monster grove', clearedMonsterIsland, false, 2, '28%'],
+      ['base accent', baseIsland, true, 2, '16%'],
+      ['special accent', specialIsland, false, 1, '16%'],
+    ])('%s renders %i trees each sized %s', (_name, island, isBase, treeCount, size) => {
+      render(<TileForest island={island} isBase={isBase} />);
+
+      const trees = screen.getAllByTestId('tile-forest-tree');
+      expect(trees).toHaveLength(treeCount);
+      trees.forEach((tree) => expect(tree).toHaveStyle({ width: size, height: size }));
+    });
   });
 });

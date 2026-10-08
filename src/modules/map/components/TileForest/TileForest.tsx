@@ -22,19 +22,12 @@ export function TileForest({ island, isBase = false }: TileForestProps) {
             bottom: (pos as { bottom?: string }).bottom,
             left: (pos as { left?: string }).left,
             right: (pos as { right?: string }).right,
-            width: `${pos.size}px`,
-            height: `${pos.size}px`,
+            width: pos.size,
+            height: pos.size,
             zIndex: pos.z,
           }}
         >
-          <Image
-            src={layout.treeSprite}
-            alt="Island Tree"
-            width={pos.size}
-            height={pos.size}
-            className={styles.image}
-            unoptimized
-          />
+          <Image src={layout.treeSprite} alt="Island Tree" fill className={styles.image} unoptimized />
         </div>
       ))}
     </div>

@@ -1,16 +1,9 @@
 import { useGameBoard } from '@/modules/game-board';
 import { PLAYER_DATA } from '@/modules/game-rules';
-import { cn } from '@/lib/utils';
 import { IslandType } from '@/lib/types';
 import { DEATH_ANIMATION_DURATION } from '../DeathEffect';
+import { BOAT_CORNER_POSITIONS, CORNER_TRANSFORMS } from '../TileBoats/TileBoats.types';
 import type { TileOccupantsProps, OccupantSpriteViewModel } from './TileOccupants.types';
-
-const positions = [
-  { bottom: '0', left: '0', origin: 'origin-bottom-left' },
-  { bottom: '0', right: '0', origin: 'origin-bottom-right' },
-  { top: '0', left: '0', origin: 'origin-top-left' },
-  { top: '0', right: '0', origin: 'origin-top-right' },
-];
 
 export function useTileOccupants(props: TileOccupantsProps): { occupants: OccupantSpriteViewModel[] } {
   const { gameState, localPlayer } = useGameBoard();
@@ -59,22 +52,22 @@ export function useTileOccupants(props: TileOccupantsProps): { occupants: Occupa
 
       return isArmyVisible;
     })
-    .map(({ player, army }, index) => {
+    .map(({ player, army }, index): OccupantSpriteViewModel => {
       const sprite = PLAYER_DATA[player.color]?.sprite;
-      const pos = positions[index % 4];
-
-      const positionClasses = cn(
-        'absolute w-1/2 h-1/2',
-        pos.origin,
-        index >= 4 ? 'scale-90 opacity-90' : '',
-      );
+      // Same lookup as TileBoats.map.ts, so occupant N and boat entry N share a corner.
+      const corner = BOAT_CORNER_POSITIONS[index % BOAT_CORNER_POSITIONS.length];
+      const slotStyle: Record<string, string> = {
+        ...(corner.style as Record<string, string>),
+        transform: CORNER_TRANSFORMS[corner.id],
+      };
 
       return {
         key: `army-sprite-${player.id}-${army.id}`,
         color: player.color,
         sprite: sprite?.idle || '',
-        positionClasses,
+        slotStyle,
         isFaded: army.hasActed,
+        isOverflow: index >= BOAT_CORNER_POSITIONS.length,
       };
     });
 

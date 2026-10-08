@@ -1,10 +1,21 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { TileBoatsView } from './TileBoats';
+import { TileBoats, TileBoatsView } from './TileBoats';
+import { useGameBoard } from '@/modules/game-board';
+import { useIsMobile } from '@/modules/shared';
 import { toTileBoatsViewModel } from './TileBoats.map';
 import { IslandType, ResourceType, PlayerColor } from '@/lib/types';
 import type { Island, Player } from '@/lib/types';
+
+// The connected TileBoats container reads the game-board context and the viewport (useIsMobile).
+jest.mock('@/modules/game-board', () => ({
+  useGameBoard: jest.fn(),
+}));
+
+jest.mock('@/modules/shared', () => ({
+  useIsMobile: jest.fn(),
+}));
 
 // Mock next/image
 jest.mock('next/image', () => ({
@@ -165,5 +176,105 @@ describe('TileBoats Component', () => {
 
     const boats = toTileBoatsViewModel(hiddenIsland, mockGameState.players, localPlayerWithoutReveal, false, true);
     expect(boats).toBeNull(); // Tile not visible due to fog of war
+  });
+
+  describe('corner placement', () => {
+    // The boat's anchor lives on its wrapper (.boatEntry), the parent of the docked-boat element.
+    const boatEntryOf = (boat: HTMLElement) => boat.parentElement as HTMLElement;
+
+    it('anchors a parked base boat to the bottom-right tile corner, centered on that corner', () => {
+      const baseIsland: Island = {
+        id: '0-0',
+        x: 0,
+        y: 0,
+        type: IslandType.Base,
+        owner: 0,
+        resources: [],
+        occupants: [],
+      };
+
+      const boats = toTileBoatsViewModel(baseIsland, mockGameState.players, mockPlayers[0] as Player, false, false);
+      render(<TileBoatsView boats={boats} />);
+
+      expect(boatEntryOf(screen.getByTestId('docked-boat'))).toHaveStyle({
+        bottom: '0',
+        right: '0',
+        transform: 'translate(50%, 50%)',
+      });
+    });
+
+    it('gives two contested boats two distinct corners, bottom-right then top-right', () => {
+      const contestedIsland: Island = {
+        id: '1-1',
+        x: 1,
+        y: 1,
+        type: IslandType.Resource,
+        resources: [],
+        occupants: [
+          { playerId: 0, armyId: 0 },
+          { playerId: 1, armyId: 1 },
+        ],
+      };
+
+      const boats = toTileBoatsViewModel(contestedIsland, mockGameState.players, mockPlayers[0] as Player, false, false);
+      render(<TileBoatsView boats={boats} />);
+      const [first, second] = screen.getAllByTestId('docked-boat').map(boatEntryOf);
+
+      expect(first).toHaveStyle({ bottom: '0', right: '0' });
+      expect(second).toHaveStyle({ top: '0', right: '0' });
+    });
+
+    it('renders the idle collector inside its own hull, not beside it', () => {
+      const baseIsland: Island = {
+        id: '0-0',
+        x: 0,
+        y: 0,
+        type: IslandType.Base,
+        owner: 0,
+        resources: [],
+        occupants: [],
+      };
+
+      const boats = toTileBoatsViewModel(baseIsland, mockGameState.players, mockPlayers[0] as Player, false, false);
+      render(<TileBoatsView boats={boats} />);
+      const hull = screen.getByTestId('docked-boat');
+
+      expect(hull).toContainElement(screen.getByTestId('collector-idle-blue'));
+    });
+  });
+
+  describe('mobile collector gating (connected TileBoats container)', () => {
+    const parkedBaseIsland: Island = {
+      id: '0-0',
+      x: 0,
+      y: 0,
+      type: IslandType.Base,
+      owner: 0,
+      resources: [],
+      occupants: [],
+    };
+
+    beforeEach(() => {
+      jest.mocked(useGameBoard).mockReturnValue({
+        gameState: { players: mockPlayers, debugMode: false, settings: { fogOfWar: false } },
+        localPlayer: mockPlayers[0],
+      } as unknown as ReturnType<typeof useGameBoard>);
+    });
+
+    it('omits the idle collector on mobile while keeping the docked boat', () => {
+      jest.mocked(useIsMobile).mockReturnValue(true);
+      render(<TileBoats island={parkedBaseIsland} />);
+
+      expect(screen.getByTestId('docked-boat')).toBeInTheDocument();
+      expect(screen.queryByTestId('collector-idle-blue')).not.toBeInTheDocument();
+    });
+
+    it('renders the idle collector inside the docked boat on desktop', () => {
+      jest.mocked(useIsMobile).mockReturnValue(false);
+      render(<TileBoats island={parkedBaseIsland} />);
+
+      expect(screen.getByTestId('collector-idle-blue')).toBeInTheDocument();
+      expect(screen.getByTestId('docked-boat')).toContainElement(screen.getByTestId('collector-idle-blue'));
+    });
   });
 });

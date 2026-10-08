@@ -18,23 +18,23 @@ export function toForestLayout(island: Island, isBase: boolean): ForestLayout | 
 
   if (isBase) {
     const layout: TreeSlot[] = [
-      { top: '4px', left: '32%', size: 18, z: 12 },
-      { top: '10%', left: '38%', size: 16, z: 14 },
+      { top: '4px', left: '32%', size: '16%', z: 12 },
+      { top: '10%', left: '38%', size: '16%', z: 14 },
     ];
     return { treeSprite, layout };
   }
 
   if (island.type === IslandType.Special) {
-    const layout: TreeSlot[] = [{ top: '4px', left: '4px', size: 16, z: 12 }];
+    const layout: TreeSlot[] = [{ top: '4px', left: '4px', size: '16%', z: 12 }];
     return { treeSprite, layout };
   }
 
   // Empty or Cleared Island: Natural lush tree grove
   const treeCount = seed % 2 === 0 ? 2 : 3;
   const emptyGrovePositions: TreeSlot[] = [
-    { top: '18%', left: '22%', size: 28, z: 12 },
-    { top: '24%', right: '22%', size: 30, z: 14 },
-    { bottom: '26%', left: '44%', size: 26, z: 13 },
+    { top: '18%', left: '22%', size: '28%', z: 12 },
+    { top: '24%', right: '22%', size: '28%', z: 14 },
+    { bottom: '26%', left: '44%', size: '28%', z: 13 },
   ];
 
   return {

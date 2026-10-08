@@ -3,8 +3,10 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { TileOccupantsView } from './TileOccupants';
 import { useTileOccupants } from './TileOccupants.hook';
+import { TileBoatsView } from '../TileBoats/TileBoats';
+import { toTileBoatsViewModel } from '../TileBoats/TileBoats.map';
 import { renderHook } from '@testing-library/react';
-import { ResourceType, IslandType, type Island } from '@/lib/types';
+import { ResourceType, IslandType, type Island, type Player } from '@/lib/types';
 
 // Mock next/image
 jest.mock('next/image', () => ({
@@ -151,7 +153,7 @@ describe('TileOccupants Component', () => {
     const { result } = renderHook(() => useTileOccupants({ island }));
     render(<TileOccupantsView occupants={result.current.occupants} />);
     const armies = screen.getAllByAltText(/army/);
-    expect(armies.length).toBeGreaterThanOrEqual(2);
+    expect(armies).toHaveLength(2);
   });
 
   it('returns empty array when no occupants on island', () => {
@@ -167,5 +169,78 @@ describe('TileOccupants Component', () => {
 
     const { result } = renderHook(() => useTileOccupants({ island }));
     expect(result.current.occupants).toHaveLength(0);
+  });
+
+  describe('rider and boat composition', () => {
+    // Anchor (corner + centering transform) of a positioned element, read from its inline style.
+    const anchorOf = (element: HTMLElement) => ({
+      top: element.style.top,
+      bottom: element.style.bottom,
+      left: element.style.left,
+      right: element.style.right,
+      transform: element.style.transform,
+    });
+
+    function renderBoatsAndRiders(armyCount: number) {
+      const armies = Array.from({ length: armyCount }, (_, i) => ({
+        id: i + 1,
+        position: { x: 1, y: 1 },
+        hasActed: false,
+      }));
+      const player = { ...basePlayer, armies } as unknown as Player;
+      const island: Island = {
+        id: '1-1',
+        x: 1,
+        y: 1,
+        type: IslandType.Resource,
+        resources: [],
+        occupants: armies.map((army) => ({ playerId: 0, armyId: army.id })),
+        positionedBy: [],
+      };
+      (useGameBoard as jest.Mock).mockReturnValue({
+        gameState: { ...baseGameState, players: [player] },
+        localPlayer: player,
+      });
+
+      const boats = toTileBoatsViewModel(island, [player], player, false, false);
+      const { result } = renderHook(() => useTileOccupants({ island }));
+      render(
+        <>
+          <TileBoatsView boats={boats} />
+          <TileOccupantsView occupants={result.current.occupants} />
+        </>,
+      );
+      const boatEntries = screen.getAllByTestId('docked-boat').map((hull) => hull.parentElement as HTMLElement);
+      const riderSlots = screen
+        .getAllByAltText('blue army')
+        .map((img) => img.parentElement as HTMLElement);
+      return { boatEntries, riderSlots };
+    }
+
+    it('places a single rider on the same corner as its boat, both centered on it', () => {
+      const { boatEntries, riderSlots } = renderBoatsAndRiders(1);
+
+      expect(boatEntries[0]).toHaveStyle({ bottom: '0', right: '0', transform: 'translate(50%, 50%)' });
+      expect(anchorOf(riderSlots[0])).toEqual(anchorOf(boatEntries[0]));
+    });
+
+    it('gives each of four riders the corner of its own boat, with four distinct corners', () => {
+      const { boatEntries, riderSlots } = renderBoatsAndRiders(4);
+
+      expect(riderSlots).toHaveLength(4);
+      riderSlots.forEach((slot, index) => {
+        expect(anchorOf(slot)).toEqual(anchorOf(boatEntries[index]));
+      });
+      const corners = new Set(riderSlots.map((slot) => JSON.stringify(anchorOf(slot))));
+      expect(corners.size).toBe(4);
+    });
+
+    it('wraps a fifth rider onto the first corner, together with its boat', () => {
+      const { boatEntries, riderSlots } = renderBoatsAndRiders(5);
+
+      expect(riderSlots).toHaveLength(5);
+      expect(anchorOf(riderSlots[4])).toEqual(anchorOf(boatEntries[4]));
+      expect(anchorOf(riderSlots[4])).toEqual(anchorOf(riderSlots[0]));
+    });
   });
 });
