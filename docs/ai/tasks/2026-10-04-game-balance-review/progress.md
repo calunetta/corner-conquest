@@ -38,7 +38,7 @@ Tier: L (re-triaged from S — see `triage.md`) · Phases: 6
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 8626858
 
 ## Phase 5: ActionsPanel contextual ring emphasis (Proposal 3)
 - [x] plan approved (architect-b)
