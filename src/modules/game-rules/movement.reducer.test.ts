@@ -190,6 +190,19 @@ describe('handleMoveAction', () => {
     expect(nextState.players[0].armies[0].hasActed).toBe(false);
   });
 
+  it('an already-acted army that uses the extra move for its bonus move stays acted', () => {
+    const player = game.players[0];
+    const army = player.armies[0];
+    army.hasActed = true;
+    player.hasExtraMove = true;
+    const targetMove = getPossibleMoves(game, army)[0];
+
+    const nextState = handleMoveAction(game, targetMove.x, targetMove.y, army);
+
+    expect(nextState.players[0].hasExtraMove).toBe(false);
+    expect(nextState.players[0].armies[0].hasActed).toBe(true);
+  });
+
   it('reveals the destination island on first arrival', () => {
     const army = game.players[0].armies[0];
     const possibleMoves = getPossibleMoves(game, army);

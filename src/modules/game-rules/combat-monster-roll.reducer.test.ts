@@ -179,4 +179,53 @@ describe('handleMonsterCombatRoll', () => {
     expect(nextState.players[0].specialCards).toContain(CardName.DecideDiceRoll); // Decide not used
     expect(nextState.discardPile).toContain(CardName.WarChief); // War Chief was used
   });
+  it('an unacted army that uses the extra move for its bonus attack stays unacted, so it keeps its normal action', () => {
+    const attacker = game.players[0];
+    attacker.hasExtraMove = true;
+    expect(attacker.armies[0].hasActed).toBe(false);
+
+    const nextState = handleMonsterCombatRoll(game, {
+      monster,
+      useDecideCard: false,
+      decidedValue: 0,
+      useOvercomeCard: false,
+      useWarChief: false,
+    });
+
+    expect(nextState.players[0].hasExtraMove).toBe(false);
+    expect(nextState.players[0].armies[0].hasActed).toBe(false);
+  });
+
+  it('an already-acted army that uses the extra move for its bonus attack stays acted', () => {
+    const attacker = game.players[0];
+    attacker.armies[0].hasActed = true;
+    attacker.hasExtraMove = true;
+
+    const nextState = handleMonsterCombatRoll(game, {
+      monster,
+      useDecideCard: false,
+      decidedValue: 0,
+      useOvercomeCard: false,
+      useWarChief: false,
+    });
+
+    expect(nextState.players[0].hasExtraMove).toBe(false);
+    expect(nextState.players[0].armies[0].hasActed).toBe(true);
+  });
+
+  it('an army attacking a monster without an extra move is marked acted by its roll', () => {
+    const attacker = game.players[0];
+    expect(attacker.hasExtraMove).toBe(false);
+    expect(attacker.armies[0].hasActed).toBe(false);
+
+    const nextState = handleMonsterCombatRoll(game, {
+      monster,
+      useDecideCard: false,
+      decidedValue: 0,
+      useOvercomeCard: false,
+      useWarChief: false,
+    });
+
+    expect(nextState.players[0].armies[0].hasActed).toBe(true);
+  });
 });

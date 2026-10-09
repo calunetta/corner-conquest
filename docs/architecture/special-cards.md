@@ -10,8 +10,9 @@ Part of the architecture & game-rules docs. Index and directives: [`docs/README.
 
 -   **Extra Move:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.
-    2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The card is consumed, the player's `hasExtraMove` flag is set to `true` in `GameState`, and **all friendly armies are reactivated (`hasActed: false`)**.
+    2.  **Resolution (Shared):** A `GameAction.UseCard` action is dispatched. The card is consumed and the player's `hasExtraMove` flag is set to `true` in `GameState`. No army's `hasActed` flag is changed.
     3.  **Effect & UI Flow:** All actions in the UI remain fully enabled. A prominent glowing banner informs the player that Extra Move is active and prompts them to select a soldier on the map to continue. Can be cancelled before moving.
+    4.  **Bonus Action (Shared):** The next Move, Position, or Attack (player or monster) by any army consumes `hasExtraMove` and is allowed even if that army has already acted. The bonus action does not change the army's `hasActed` flag: an army that had not acted keeps its normal action for the turn, and an army that had acted stays acted.
 
 -   **Teleport:**
     1.  **Trigger:** Player uses the card from the `CardsDialog`.

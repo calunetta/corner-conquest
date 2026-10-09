@@ -43,7 +43,7 @@ describe('handleSelectResourceForPosition', () => {
     expect(tile.positionedBy).toContainEqual({ playerId: player.id, resource: ResourceType.Gold });
   });
 
-  it('consumes the extra move and still marks the army as acted', () => {
+  it('consumes the extra move on an unacted army and leaves it unacted, so it keeps its normal action', () => {
     const player = game.players[0];
     const army = player.armies[0];
     player.hasExtraMove = true;
@@ -51,8 +51,34 @@ describe('handleSelectResourceForPosition', () => {
     const nextState = handleSelectResourceForPosition(game, ResourceType.Gold, army.id);
 
     expect(nextState.players[0].hasExtraMove).toBe(false);
-    expect(nextState.players[0].armies[0].hasActed).toBe(true);
+    expect(nextState.players[0].armies[0].hasActed).toBe(false);
     expect(nextState.log.some((entry) => toLogMessage(entry).includes('Extra Move'))).toBe(true);
+  });
+
+  it('consumes the extra move on an already-acted army and leaves it acted', () => {
+    const player = game.players[0];
+    const army = player.armies[0];
+    army.hasActed = true;
+    player.hasExtraMove = true;
+
+    const nextState = handleSelectResourceForPosition(game, ResourceType.Gold, army.id);
+
+    expect(nextState.players[0].positions).toContainEqual(
+      expect.objectContaining({ armyId: army.id, resource: ResourceType.Gold }),
+    );
+    expect(nextState.players[0].hasExtraMove).toBe(false);
+    expect(nextState.players[0].armies[0].hasActed).toBe(true);
+  });
+
+  it('a normal (non-extra-move) position marks the army acted, so a second position on it throws', () => {
+    const army = game.players[0].armies[0];
+
+    const nextState = handleSelectResourceForPosition(game, ResourceType.Gold, army.id);
+
+    expect(nextState.players[0].armies[0].hasActed).toBe(true);
+    expect(() => handleSelectResourceForPosition(nextState, ResourceType.Gold, army.id)).toThrow(
+      'This army has already acted this turn.',
+    );
   });
 
   it('throws when the army is not found on the player (invalid input)', () => {

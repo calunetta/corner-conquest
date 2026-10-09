@@ -53,7 +53,7 @@ A player's turn consists of a series of actions. The game automatically ends a p
 - **Multi-Army Tile Click:** Clicking a tile with multiple friendly armies opens the `ArmySelectionDialog`, which displays all armies on that tile, marks the currently selected army with an `Active` badge and primary highlight ring, and allows selecting or toggling deselection.
 - **Deselection Triggers:**
   - Clicking any unoccupied or invalid map tile deselects the active army and clears non-modal pending actions.
-  - Clicking the **"Deselect Army"** button in the `ActionsPanel` header.
+  - Clicking the **"Deselect Army"** button in the `ActionsPanel` header. If a card action is pending (a pending action, or an active Reinforce, Efficient, Master Builder or Extra Move), it is cancelled too, the same as the Cancel button (see [`special-cards.md`](special-cards.md) §6.6).
   - Pressing the **Escape** key deselects the active army and cancels any pending card actions.
 
 ## 6.3. Army Actions
@@ -64,8 +64,8 @@ A player's turn consists of a series of actions. The game automatically ends a p
 3.  **Input:** Player clicks on a resource button in the dialog.
 4.  **Resolution (Shared):** A `GameAction.SelectResourcePosition` action is dispatched.
     -   The `GameState` is updated to mark the army as positioned on that resource spot.
-    -   **The army's `hasActed` flag is set to `true`.**
-    -   This action ends the army's turn. The army collects that resource at the start of the player's next turn, and keeps collecting it every turn after that without re-clicking Position.
+    -   **The army's `hasActed` flag is set to `true`** (unless the position is an Extra Move bonus action; see [`special-cards.md`](special-cards.md) §6.6).
+    -   Without Extra Move, this action ends the army's turn. The army collects that resource at the start of the player's next turn, and keeps collecting it every turn after that without re-clicking Position.
     -   The position is removed only when the army moves (plain move or Teleport), loses a fight it was in (as attacker or defender), or is defeated. Winning a fight from its tile keeps the position.
 
 #### **Attack**
@@ -77,8 +77,8 @@ A player's turn consists of a series of actions. The game automatically ends a p
     -   If there is one monster, the shared `monsterCombatState` is set in `GameState`, and the `MonsterCombatDialog` opens for the attacker.
     -   If there are multiple monsters, a local `MonsterSelectionDialog` opens for the attacker. Upon selection, the shared `monsterCombatState` is set, and the `MonsterCombatDialog` opens.
 4.  **Resolution (Shared):** When the attacker clicks "Roll Dice" in the dialog, the `handleCombatRoll` or `handleMonsterCombatRoll` action is dispatched.
-    -   **The attacking army's `hasActed` flag is immediately set to `true` upon the dice roll.**
-    -   Combat is resolved via dice rolls, updating the `GameState` with the result. This action ends the army's turn.
+    -   **The attacking army's `hasActed` flag is immediately set to `true` upon the dice roll** (unless the attack is an Extra Move bonus action; see [`special-cards.md`](special-cards.md) §6.6).
+    -   Combat is resolved via dice rolls, updating the `GameState` with the result. Without Extra Move, this action ends the army's turn.
 
 #### **Move**
 1.  **Trigger:** Player has a valid, un-acted army selected and clicks on a highlighted tile on the map that is a valid move destination.
@@ -127,6 +127,6 @@ These actions are available once per turn each and do not set the `hasActed` fla
 - **Card Selection in Combat:** In both Player and Monster combat preparation dialogs, available combat cards are rendered as a mutually exclusive `RadioGroup` (`None`, `Overcome`, `War Chief`, `Decide Dice Roll`). When a card is selected and the combat roll is executed, the card is immediately consumed from `player.specialCards`, added to `discardPile`, and recorded in `player.actionsThisTurn`.
 - **Player vs. Player:** The player with the higher total roll wins the battle. In case of a tie, the **defender** wins.
 - **Player vs. Monster:** The player with the higher total roll wins the battle. In case of a tie, the **monster** wins.
-- **Defeated armies are not destroyed.** They are sent back to their owner's Base tile to regroup, and their `hasActed` status is **reset to `false`**, making them ready for action on their next turn.
+- **Defeated armies are not destroyed.** They are sent back to their owner's Base tile to regroup with `hasActed` set to **`true`**, so they cannot act again during the rest of the turn in which they were defeated. Their `hasActed` flag is cleared by the normal start-of-turn reset (§6.1) on their owner's next turn.
 - **Death Animations:** Upon defeat, an animated death sprite is placed on the tile with a `createdAt` timestamp. The host engine automatically removes the animation from Firestore after 1.5s using persistent timer tracking, tiles prune expired animations locally after 2s, and `handleEndTurn` prunes stale animations on turn changes.
 - **Combat Dialog Animations:** During the `rolling` phase of combat, both combatants show their `attack` sprite. In the `results` phase, the winner's sprite remains in the `attack` pose, while the loser's sprite changes to the `death` animation. All army and monster sprites are animated GIFs. To ensure combatants face each other, the sprite for the combatant on the right side of the dialog (the defender/monster) is horizontally flipped.

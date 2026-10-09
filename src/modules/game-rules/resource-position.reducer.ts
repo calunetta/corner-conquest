@@ -34,7 +34,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
   player.positions.push({ x, y, resource, armyId: selectedArmy.id });
   tile.positionedBy.push({ playerId: player.id, resource });
 
-  selectedArmy.hasActed = true;
+  // An Extra Move bonus position leaves hasActed untouched, so an army that had not acted keeps its normal action.
   if (player.hasExtraMove) {
     player.hasExtraMove = false;
     pushLogEntry(state, {
@@ -43,6 +43,7 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
       playerId: player.playerId,
     });
   } else {
+    selectedArmy.hasActed = true;
     pushLogEntry(state, {
       category: 'economy',
       message: `${player.name} positioned an army on ${resource}.`,

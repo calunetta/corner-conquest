@@ -53,7 +53,7 @@ export function handleCloseCombat(state: GameState): GameState {
       const oldPos = losingArmy.position;
       combatTile.occupants = combatTile.occupants.filter((o) => !(o.armyId === losingArmy.id && o.playerId === loserId));
       losingArmy.position = { x: baseTile.x, y: baseTile.y };
-      losingArmy.hasActed = false; // Reset status on respawn
+      losingArmy.hasActed = true;
       map[baseTile.y * settings.gridSize.cols + baseTile.x].occupants.push({ playerId: loserId, armyId: losingArmy.id });
 
       const positionIndex = loser.positions.findIndex((p) => p.armyId === losingArmy.id);
@@ -92,7 +92,7 @@ export function handleCloseCombat(state: GameState): GameState {
 
       combatTile.occupants = combatTile.occupants.filter((o) => !(o.armyId === loserArmy.id && o.playerId === loserId));
       loserArmy.position = { x: baseTile.x, y: baseTile.y };
-      loserArmy.hasActed = false; // Reset status on respawn
+      loserArmy.hasActed = true;
       map[baseTile.y * settings.gridSize.cols + baseTile.x].occupants.push({ playerId: loserId, armyId: loserArmy.id });
 
       const positionIndex = loser.positions.findIndex((p) => p.armyId === loserArmy.id);

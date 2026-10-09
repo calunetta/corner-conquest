@@ -3,6 +3,20 @@ import type { Army, CardName } from '@/lib/types';
 import { GameAction } from '@/lib/types';
 import type { LocalActionsArgs } from './game-board.hook.types';
 
+/** True while a card action is started but not completed, so cancelling it refunds the card. */
+function hasPendingCardAction(
+  pendingAction: LocalActionsArgs['uiState']['pendingAction'],
+  localPlayer: LocalActionsArgs['localPlayer'] | undefined,
+): boolean {
+  return !!(
+    pendingAction ||
+    localPlayer?.reinforceActive ||
+    localPlayer?.efficientActive ||
+    localPlayer?.masterBuilderActive ||
+    localPlayer?.hasExtraMove
+  );
+}
+
 export function useLocalActions({
   localGameState,
   gameStateForDisplay,
@@ -24,6 +38,9 @@ export function useLocalActions({
       switch (action) {
         case GameAction.local_DeselectArmy:
           dispatch({ type: 'SET_SELECTED_ARMY', armyId: null });
+          if (hasPendingCardAction(uiState.pendingAction, localPlayer)) {
+            handleCancelAction();
+          }
           break;
         case GameAction.local_CancelAction:
           handleCancelAction({ cardName: payloadObj?.cardName as CardName | undefined });
@@ -107,7 +124,18 @@ export function useLocalActions({
           console.warn('Unhandled local action:', action);
       }
     },
-    [localGameState, isMyTurn, gameStateForDisplay, localPlayer, dispatch, onAction, toast, handleCancelAction, handleUseCard]
+    [
+      localGameState,
+      isMyTurn,
+      gameStateForDisplay,
+      localPlayer,
+      uiState.pendingAction,
+      dispatch,
+      onAction,
+      toast,
+      handleCancelAction,
+      handleUseCard,
+    ]
   );
 
   // Keyboard Escape Handler
@@ -116,13 +144,7 @@ export function useLocalActions({
       if (e.key === 'Escape') {
         if (uiState.selectedArmyId !== null) {
           handleLocalAction(GameAction.local_DeselectArmy);
-        } else if (
-          uiState.pendingAction ||
-          localPlayer?.reinforceActive ||
-          localPlayer?.efficientActive ||
-          localPlayer?.masterBuilderActive ||
-          localPlayer?.hasExtraMove
-        ) {
+        } else if (hasPendingCardAction(uiState.pendingAction, localPlayer)) {
           handleLocalAction(GameAction.local_CancelAction);
         }
       }

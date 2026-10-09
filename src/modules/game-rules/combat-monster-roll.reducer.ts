@@ -27,7 +27,7 @@ export function handleMonsterCombatRoll(
   );
   if (!attackingArmy) return state;
 
-  attackingArmy.hasActed = true;
+  // An Extra Move bonus attack leaves hasActed untouched, so an army that had not acted keeps its normal action.
   if (attacker.hasExtraMove) {
     attacker.hasExtraMove = false;
     pushLogEntry(state, {
@@ -35,6 +35,8 @@ export function handleMonsterCombatRoll(
       message: `${attacker.name} used their Extra Move in monster battle.`,
       playerId: attacker.playerId,
     });
+  } else {
+    attackingArmy.hasActed = true;
   }
 
   const { monster, useDecideCard, decidedValue, useOvercomeCard, useWarChief } = payload;

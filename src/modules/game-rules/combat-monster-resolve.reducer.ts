@@ -95,7 +95,7 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
       const losingArmyTile = state.map[losingArmy.position.y * settings.gridSize.cols + losingArmy.position.x];
       losingArmyTile.occupants = losingArmyTile.occupants.filter((o) => o.armyId !== losingArmy.id);
       losingArmy.position = { x: baseTile.x, y: baseTile.y };
-      losingArmy.hasActed = false; // Reset status on respawn
+      losingArmy.hasActed = true;
       state.map[baseTile.y * settings.gridSize.cols + baseTile.x].occupants.push({
         playerId: attacker.id,
         armyId: losingArmy.id,

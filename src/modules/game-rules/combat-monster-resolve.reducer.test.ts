@@ -2,6 +2,7 @@ import { PlayerColor, IslandType, MonsterName, GameStatus, ResourceType } from '
 import type { GameState, Monster, MonsterCombatState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { handleCloseMonsterCombat } from './combat-monster-resolve.reducer';
+import { handleInitiateCombatAction } from './combat-initiate.reducer';
 import { toLogMessage } from './log-entry';
 
 function buildGame(): GameState {
@@ -130,18 +131,34 @@ describe('handleCloseMonsterCombat', () => {
     jest.spyOn(Math, 'random').mockRestore();
   });
 
-  it('loser respawns at base with hasActed false when the monster wins', () => {
+  it('loser respawns at base with hasActed true when the monster wins', () => {
     const attacker = game.players[0];
     setUpMonsterCombat(game, 2, null);
     const baseTile = game.baseTiles.find((b) => b.owner === attacker.id)!;
     const army = attacker.armies[0];
+    army.hasActed = true; // the monster attack roll already marked this army as acted
 
     const nextState = handleCloseMonsterCombat(game);
 
     expect(army.position).toEqual({ x: baseTile.x, y: baseTile.y });
-    expect(army.hasActed).toBe(false);
+    expect(army.hasActed).toBe(true);
     expect(nextState.deathAnimations).toHaveLength(1);
     expect(nextState.log.some((entry) => toLogMessage(entry).includes('was defeated by'))).toBe(true);
+  });
+
+  it('a monster-defeated army cannot attack another monster that turn without an Extra Move', () => {
+    const attacker = game.players[0];
+    setUpMonsterCombat(game, 2, null);
+    const army = attacker.armies[0];
+    army.hasActed = true;
+    handleCloseMonsterCombat(game);
+
+    expect(() =>
+      handleInitiateCombatAction(game, {
+        attackingArmyId: army.id,
+        target: { type: 'monster', monsterName: MonsterName.Bear },
+      }),
+    ).toThrow('This army has already acted this turn.');
   });
 
   it('sets state.winner and GameStatus.Finished when the victory point goal is reached', () => {
