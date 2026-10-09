@@ -34,7 +34,7 @@ Tier: L · Phases: 4
 - [x] docs-sync (`structure-and-state.md` §3.1, §2; `systems-and-visuals.md` §6.12)
 - [x] checks: typecheck clean; lint clean; `npm test` 2069/2069 passed (2 pre-existing unrelated `.agents/skills/*` suite failures); `npm run test:rules` not run — no Java 21 runtime; `npm run test:e2e -- e2e/auth-and-lobby.spec.ts` not run — same Java 21 dependency (Firebase emulator); `npm run build` succeeds
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 23e6450
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
