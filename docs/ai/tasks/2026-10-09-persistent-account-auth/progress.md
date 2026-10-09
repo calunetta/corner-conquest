@@ -28,7 +28,7 @@ Tier: L · Phases: 4
 - [x] checks: typecheck, lint, `npx jest src/modules/session src/testbed`
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: e4cb89a
 
 ## Phase 4: Docs and full verification
 - [ ] docs-sync (`structure-and-state.md` §3.1, `systems-and-visuals.md` §6.12)
