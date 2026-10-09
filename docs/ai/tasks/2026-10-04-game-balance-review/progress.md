@@ -48,7 +48,7 @@ Tier: L (re-triaged from S — see `triage.md`) · Phases: 6
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify) — ring confirmed present (selected) vs absent (not selected) on both the desktop ActionsPanel grid and the mobile row2 bar, via cropped screenshot comparison
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 15d818b
 
 ## Phase 6: LobbyGameRow VP Goal badge (Proposal 5)
 - [x] plan approved (architect-b)
