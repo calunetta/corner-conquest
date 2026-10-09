@@ -108,9 +108,9 @@ The AI behavior is defined in `src/modules/game-rules/bot-turn.reducer.ts` and `
     - Corner 2: Top-Left
     - Corner 3: Bottom-Left
   - Every player's expedition boat (`/sprites/boat.gif`) begins anchored to their home Base shoreline.
-  - When an army is occupying an island without being positioned on a resource, an idle faction collector (`/sprites/collector_${player.color}_idle.gif`) waits docked at the shoreline boat. Player Base tiles start with the owner's boat anchored in the water canal and idle collector.
+  - When an army is occupying an island without being positioned on a resource, an idle faction collector (`/sprites/collector_${player.color}_idle.gif`) waits docked at the shoreline boat. Player Base tiles start with the owner's boat anchored in the water canal and idle collector. The base boat is not a permanent fixture: it is drawn only while one of the owner's armies is physically on the Base tile (`toTileBoatsViewModel` in `TileBoats.map.ts`), so it disappears once the owner's last army leaves.
   - When an army is landed on an island, their boat docks at the first available corner on that tile. Multiple players or armies occupying the same island receive separate corners without visual collision.
 - **Perimeter Map Clouds & Atmosphere (`MapDecorations.tsx`)**:
   - Outer ocean margins surrounding the playable board are decorated with fixed atmospheric cloud formations (`/sprites/cloud_small.png`, `/sprites/cloud_medium.png`, `/sprites/cloud_big.png`) along margins and outer corners, framing uncharted waters.
 - **Rebalanced Base Tile Layout (`IslandTile.tsx`)**:
-  - Base castles (`/sprites/castle_{color}.png`) are sized to ~48–56px, creating a balanced landscape that cleanly accommodates the castle, tree forest, base resource nodes, idle collectors, and anchored shoreline boat.
+  - Base castles (`/sprites/castle_{color}.png`) are sized to ~48–56px, creating a balanced landscape that cleanly accommodates the castle, tree forest, base resource nodes, idle collectors, and, while an army of the owner is stationed there, the anchored shoreline boat.

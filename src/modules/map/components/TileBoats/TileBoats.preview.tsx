@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { TileBoatsView } from './TileBoats';
 import { toTileBoatsViewModel } from './TileBoats.map';
-import { boatEntryFixture, bluePlayer, redPlayer, contestedBaseIsland } from './TileBoats.fixtures';
+import { boatEntryFixture, bluePlayer, redPlayer, baseIsland, contestedBaseIsland } from './TileBoats.fixtures';
 import type { ComponentPreview } from '@/testbed/testbed.types';
 import type { BoatEntryViewModel } from './TileBoats.types';
 import { CORNER_TRANSFORMS } from './TileBoats.types';
@@ -66,6 +66,8 @@ const allCornersBoatsFixture: BoatEntryViewModel[] = [
 ];
 
 const contestedBaseBoats = toTileBoatsViewModel(contestedBaseIsland, [bluePlayer, redPlayer], bluePlayer, false, false);
+// Owner's army has left: the base has no occupants, so the real mapper must return no boat.
+const emptyBaseArmyAwayBoats = toTileBoatsViewModel(baseIsland, [bluePlayer, redPlayer], bluePlayer, false, false);
 
 /** Mirrors the connected container (TileBoats.tsx): idle collectors follow the real viewport
  *  via useIsMobile(), not a per-state flag, so each state matches production at the width
@@ -103,6 +105,10 @@ export const tileBoatsPreview: ComponentPreview = {
     {
       name: 'Contested base (real map function)',
       render: () => <ViewportTileBoats px={DESKTOP_TILE_PX} boats={contestedBaseBoats} />,
+    },
+    {
+      name: 'Empty base, army away (real map function)',
+      render: () => <ViewportTileBoats px={DESKTOP_TILE_PX} boats={emptyBaseArmyAwayBoats} />,
     },
     {
       name: 'Single boat, mobile size (46px tile)',

@@ -13,7 +13,7 @@ describe('toTileBoatsViewModel', () => {
       type: IslandType.Base,
       owner: 0,
       resources: [],
-      occupants: [],
+      occupants: [{ playerId: 0, armyId: 0 }],
     };
 
     const result = toTileBoatsViewModel(island, mockPlayers, mockPlayers[0], false, false);
@@ -22,6 +22,53 @@ describe('toTileBoatsViewModel', () => {
     expect(result!.length).toBe(1);
     expect(result![0].color).toBe(PlayerColor.Blue);
     expect(result![0].showIdleCollector).toBe(true);
+  });
+
+  it('renders no boat on an empty base tile once the owner army has left', () => {
+    const island: Island = {
+      id: '0-0',
+      x: 0,
+      y: 0,
+      type: IslandType.Base,
+      owner: 0,
+      resources: [],
+      occupants: [],
+    };
+    const ownerAwayPlayers = [
+      { ...bluePlayer, armies: [{ id: 0, position: { x: 1, y: 1 }, hasActed: false }] },
+      redPlayer,
+    ];
+
+    const result = toTileBoatsViewModel(island, ownerAwayPlayers, ownerAwayPlayers[0], false, false);
+
+    expect(result).toBeNull();
+  });
+
+  it('moves the owner boat to the new island when the base army departs', () => {
+    const base: Island = {
+      id: '0-0',
+      x: 0,
+      y: 0,
+      type: IslandType.Base,
+      owner: 0,
+      resources: [],
+      occupants: [],
+    };
+    const resourceIsland: Island = {
+      id: '1-1',
+      x: 1,
+      y: 1,
+      type: IslandType.Resource,
+      resources: [],
+      occupants: [{ playerId: 0, armyId: 0 }],
+    };
+
+    const baseResult = toTileBoatsViewModel(base, mockPlayers, mockPlayers[0], false, false);
+    const resourceResult = toTileBoatsViewModel(resourceIsland, mockPlayers, mockPlayers[0], false, false);
+
+    expect(baseResult).toBeNull();
+    expect(resourceResult!.length).toBe(1);
+    expect(resourceResult![0].color).toBe(PlayerColor.Blue);
   });
 
   it('renders 2 boats for 2 occupants on contested tile', () => {
@@ -102,7 +149,7 @@ describe('toTileBoatsViewModel', () => {
       type: IslandType.Base,
       owner: 0,
       resources: [],
-      occupants: [],
+      occupants: [{ playerId: 0, armyId: 0 }],
     };
 
     // Even with fogOfWar and not in revealedTiles
@@ -196,7 +243,7 @@ describe('toTileBoatsViewModel', () => {
       type: IslandType.Base,
       owner: 0,
       resources: [],
-      occupants: [],
+      occupants: [{ playerId: 0, armyId: 0 }],
     };
 
     const result = toTileBoatsViewModel(baseIsland, mockPlayers, mockPlayers[0], false, false);
@@ -235,7 +282,7 @@ describe('toTileBoatsViewModel', () => {
       type: IslandType.Base,
       owner: 0,
       resources: [],
-      occupants: [],
+      occupants: [{ playerId: 0, armyId: 0 }],
     };
 
     const result = toTileBoatsViewModel(island, mockPlayers, mockPlayers[0], false, false);

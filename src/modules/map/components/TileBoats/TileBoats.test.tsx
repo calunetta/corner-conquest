@@ -91,7 +91,7 @@ describe('TileBoats Component', () => {
       type: IslandType.Base,
       owner: 0,
       resources: [],
-      occupants: [],
+      occupants: [{ playerId: 0, armyId: 0 }],
     };
 
     const boats = toTileBoatsViewModel(baseIsland, mockGameState.players, mockPlayers[0] as Player, false, false);
@@ -100,6 +100,22 @@ describe('TileBoats Component', () => {
     expect(boat).toBeInTheDocument();
     expect(boat.querySelector('img')!.getAttribute('src')).toBe('/sprites/boat.gif');
     expect(screen.getByTestId('collector-idle-blue')).toBeInTheDocument();
+  });
+
+  it('renders no boat on a base tile whose owner army has left', () => {
+    const emptyBaseIsland: Island = {
+      id: '0-0',
+      x: 0,
+      y: 0,
+      type: IslandType.Base,
+      owner: 0,
+      resources: [],
+      occupants: [],
+    };
+
+    const boats = toTileBoatsViewModel(emptyBaseIsland, mockGameState.players, mockPlayers[0] as Player, false, false);
+    render(<TileBoatsView boats={boats} />);
+    expect(screen.queryByTestId('docked-boat')).not.toBeInTheDocument();
   });
 
   it('renders distinct non-overlapping corner boats when 2 players occupy the same island', () => {
@@ -190,7 +206,7 @@ describe('TileBoats Component', () => {
         type: IslandType.Base,
         owner: 0,
         resources: [],
-        occupants: [],
+        occupants: [{ playerId: 0, armyId: 0 }],
       };
 
       const boats = toTileBoatsViewModel(baseIsland, mockGameState.players, mockPlayers[0] as Player, false, false);
@@ -232,7 +248,7 @@ describe('TileBoats Component', () => {
         type: IslandType.Base,
         owner: 0,
         resources: [],
-        occupants: [],
+        occupants: [{ playerId: 0, armyId: 0 }],
       };
 
       const boats = toTileBoatsViewModel(baseIsland, mockGameState.players, mockPlayers[0] as Player, false, false);
@@ -251,7 +267,7 @@ describe('TileBoats Component', () => {
       type: IslandType.Base,
       owner: 0,
       resources: [],
-      occupants: [],
+      occupants: [{ playerId: 0, armyId: 0 }],
     };
 
     beforeEach(() => {

@@ -59,10 +59,6 @@ export function toTileBoatsViewModel(
       } => !!item.player && !!item.army,
     );
 
-  // If this is a player's base tile, dock the owner's boat
-  const isBase = island.type === IslandType.Base;
-  const baseOwner = isBase && island.owner !== undefined ? players.find((p) => p.id === island.owner) : null;
-
   interface BoatEntry {
     key: string;
     player: (typeof players)[0];
@@ -84,16 +80,9 @@ export function toTileBoatsViewModel(
         showIdleCollector: !isPositionedOnResource,
       });
     });
-  } else if (baseOwner) {
-    // Base tile starts with owner's boat attached
-    const isBasePositioned = (island.positionedBy || []).some((pos) => pos.playerId === baseOwner.id);
-    boatEntries.push({
-      key: `boat-base-${baseOwner.id}`,
-      player: baseOwner,
-      showIdleCollector: !isBasePositioned,
-    });
   }
 
+  // Boats follow armies: an empty Base tile shows no boat once its owner's army has left.
   if (boatEntries.length === 0) {
     return null;
   }

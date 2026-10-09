@@ -22,7 +22,7 @@ describe('useTileBoats', () => {
       type: IslandType.Base,
       owner: 0,
       resources: [],
-      occupants: [],
+      occupants: [{ playerId: 0, armyId: 0 }],
     };
 
     const { result } = renderHook(() => useTileBoats({ island }));
@@ -175,7 +175,7 @@ describe('useTileBoats', () => {
       type: IslandType.Base,
       owner: 0,
       resources: [],
-      occupants: [],
+      occupants: [{ playerId: 0, armyId: 0 }],
     };
 
     const island2: Island = {
