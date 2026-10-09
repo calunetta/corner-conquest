@@ -60,39 +60,49 @@ export const FIXED_CLOUD_LAYOUT: CloudDef[] = [
 
   // Top Perimeter Edge Clouds
   { id: 'cloud-t1', src: '/sprites/cloud_medium.png', left: '16%', top: '-6%', width: 76, height: 50, opacity: 0.82 },
-  { id: 'cloud-t2', src: '/sprites/cloud_small.png', left: '27%', top: '-4%', width: 60, height: 40, opacity: 0.78, desktopOnly: true },
+  { id: 'cloud-t2', src: '/sprites/cloud_small.png', left: '27%', top: '2%', width: 60, height: 40, opacity: 0.78 },
   { id: 'cloud-t3', src: '/sprites/cloud_medium.png', left: '38%', top: '-7%', width: 74, height: 48, opacity: 0.85 },
   { id: 'cloud-t4', src: '/sprites/cloud_small.png', left: '50%', top: '-4%', width: 64, height: 42, opacity: 0.8 },
   { id: 'cloud-t5', src: '/sprites/cloud_medium.png', left: '62%', top: '-7%', width: 74, height: 48, opacity: 0.85 },
-  { id: 'cloud-t6', src: '/sprites/cloud_small.png', left: '73%', top: '-4%', width: 60, height: 40, opacity: 0.78, desktopOnly: true },
+  { id: 'cloud-t6', src: '/sprites/cloud_small.png', left: '73%', top: '2%', width: 60, height: 40, opacity: 0.78 },
   { id: 'cloud-t7', src: '/sprites/cloud_medium.png', left: '84%', top: '-6%', width: 76, height: 50, opacity: 0.82 },
 
   // Bottom Perimeter Edge Clouds
   { id: 'cloud-b1', src: '/sprites/cloud_medium.png', left: '16%', top: '106%', width: 76, height: 50, opacity: 0.82 },
-  { id: 'cloud-b2', src: '/sprites/cloud_small.png', left: '27%', top: '104%', width: 60, height: 40, opacity: 0.78, desktopOnly: true },
+  { id: 'cloud-b2', src: '/sprites/cloud_small.png', left: '27%', top: '98%', width: 60, height: 40, opacity: 0.78 },
   { id: 'cloud-b3', src: '/sprites/cloud_medium.png', left: '38%', top: '107%', width: 74, height: 48, opacity: 0.85 },
   { id: 'cloud-b4', src: '/sprites/cloud_small.png', left: '50%', top: '104%', width: 64, height: 42, opacity: 0.8 },
   { id: 'cloud-b5', src: '/sprites/cloud_medium.png', left: '62%', top: '107%', width: 74, height: 48, opacity: 0.85 },
-  { id: 'cloud-b6', src: '/sprites/cloud_small.png', left: '73%', top: '104%', width: 60, height: 40, opacity: 0.78, desktopOnly: true },
+  { id: 'cloud-b6', src: '/sprites/cloud_small.png', left: '73%', top: '98%', width: 60, height: 40, opacity: 0.78 },
   { id: 'cloud-b7', src: '/sprites/cloud_medium.png', left: '84%', top: '106%', width: 76, height: 50, opacity: 0.82 },
 
   // Left Perimeter Edge Clouds
-  { id: 'cloud-l1', src: '/sprites/cloud_medium.png', left: '-6%', top: '16%', width: 76, height: 50, opacity: 0.82 },
-  { id: 'cloud-l2', src: '/sprites/cloud_small.png', left: '-4%', top: '27%', width: 60, height: 40, opacity: 0.78, desktopOnly: true },
-  { id: 'cloud-l3', src: '/sprites/cloud_medium.png', left: '-7%', top: '38%', width: 74, height: 48, opacity: 0.85 },
-  { id: 'cloud-l4', src: '/sprites/cloud_small.png', left: '-4%', top: '50%', width: 64, height: 42, opacity: 0.8 },
-  { id: 'cloud-l5', src: '/sprites/cloud_medium.png', left: '-7%', top: '62%', width: 74, height: 48, opacity: 0.85 },
-  { id: 'cloud-l6', src: '/sprites/cloud_small.png', left: '-4%', top: '73%', width: 60, height: 40, opacity: 0.78, desktopOnly: true },
-  { id: 'cloud-l7', src: '/sprites/cloud_medium.png', left: '-6%', top: '84%', width: 76, height: 50, opacity: 0.82 },
+  { id: 'cloud-l1', src: '/sprites/cloud_medium.png', left: '2%', top: '16%', width: 76, height: 50, opacity: 0.82 },
+  { id: 'cloud-l2', src: '/sprites/cloud_small.png', left: '2%', top: '27%', width: 60, height: 40, opacity: 0.78 },
+  { id: 'cloud-l3', src: '/sprites/cloud_medium.png', left: '2%', top: '38%', width: 74, height: 48, opacity: 0.85 },
+  { id: 'cloud-l4', src: '/sprites/cloud_small.png', left: '2%', top: '50%', width: 64, height: 42, opacity: 0.8 },
+  { id: 'cloud-l5', src: '/sprites/cloud_medium.png', left: '2%', top: '62%', width: 74, height: 48, opacity: 0.85 },
+  { id: 'cloud-l6', src: '/sprites/cloud_small.png', left: '2%', top: '73%', width: 60, height: 40, opacity: 0.78 },
+  { id: 'cloud-l7', src: '/sprites/cloud_medium.png', left: '2%', top: '84%', width: 76, height: 50, opacity: 0.82 },
 
   // Right Perimeter Edge Clouds
-  { id: 'cloud-r1', src: '/sprites/cloud_medium.png', left: '106%', top: '16%', width: 76, height: 50, opacity: 0.82 },
-  { id: 'cloud-r2', src: '/sprites/cloud_small.png', left: '104%', top: '27%', width: 60, height: 40, opacity: 0.78, desktopOnly: true },
-  { id: 'cloud-r3', src: '/sprites/cloud_medium.png', left: '107%', top: '38%', width: 74, height: 48, opacity: 0.85 },
-  { id: 'cloud-r4', src: '/sprites/cloud_small.png', left: '104%', top: '50%', width: 64, height: 42, opacity: 0.8 },
-  { id: 'cloud-r5', src: '/sprites/cloud_medium.png', left: '107%', top: '62%', width: 74, height: 48, opacity: 0.85 },
-  { id: 'cloud-r6', src: '/sprites/cloud_small.png', left: '104%', top: '73%', width: 60, height: 40, opacity: 0.78, desktopOnly: true },
-  { id: 'cloud-r7', src: '/sprites/cloud_medium.png', left: '106%', top: '84%', width: 76, height: 50, opacity: 0.82 },
+  { id: 'cloud-r1', src: '/sprites/cloud_medium.png', left: '98%', top: '16%', width: 76, height: 50, opacity: 0.82 },
+  { id: 'cloud-r2', src: '/sprites/cloud_small.png', left: '98%', top: '27%', width: 60, height: 40, opacity: 0.78 },
+  { id: 'cloud-r3', src: '/sprites/cloud_medium.png', left: '98%', top: '38%', width: 74, height: 48, opacity: 0.85 },
+  { id: 'cloud-r4', src: '/sprites/cloud_small.png', left: '98%', top: '50%', width: 64, height: 42, opacity: 0.8 },
+  { id: 'cloud-r5', src: '/sprites/cloud_medium.png', left: '98%', top: '62%', width: 74, height: 48, opacity: 0.85 },
+  { id: 'cloud-r6', src: '/sprites/cloud_small.png', left: '98%', top: '73%', width: 60, height: 40, opacity: 0.78 },
+  { id: 'cloud-r7', src: '/sprites/cloud_medium.png', left: '98%', top: '84%', width: 76, height: 50, opacity: 0.82 },
+
+  // Corner-to-Edge Gap Fillers
+  { id: 'cloud-t0', src: '/sprites/cloud_medium.png', left: '9%', top: '2%', width: 74, height: 48, opacity: 0.8 },
+  { id: 'cloud-t8', src: '/sprites/cloud_medium.png', left: '91%', top: '2%', width: 74, height: 48, opacity: 0.8 },
+  { id: 'cloud-b0', src: '/sprites/cloud_medium.png', left: '9%', top: '98%', width: 74, height: 48, opacity: 0.8 },
+  { id: 'cloud-b8', src: '/sprites/cloud_medium.png', left: '91%', top: '98%', width: 74, height: 48, opacity: 0.8 },
+  { id: 'cloud-l0', src: '/sprites/cloud_medium.png', left: '2%', top: '9%', width: 74, height: 48, opacity: 0.8 },
+  { id: 'cloud-l8', src: '/sprites/cloud_medium.png', left: '2%', top: '91%', width: 74, height: 48, opacity: 0.8 },
+  { id: 'cloud-r0', src: '/sprites/cloud_medium.png', left: '98%', top: '9%', width: 74, height: 48, opacity: 0.8 },
+  { id: 'cloud-r8', src: '/sprites/cloud_medium.png', left: '98%', top: '91%', width: 74, height: 48, opacity: 0.8 },
 ];
 
 export function toVisibleDecorations(isMobile: boolean): { rocks: RockDef[]; clouds: CloudDef[] } {
