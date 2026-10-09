@@ -167,3 +167,41 @@ No other findings. No invented paths or symbols in the diff. Import boundaries r
 
 ## Progress.md
 Phase 3 boxes for implementation, tests, previews, checks, and UI verified are confirmed by the above and ticked in `progress.md`. "final review" ticked APPROVED. "committed" left for the coordinator.
+
+---
+
+# Final review: Persistent account system (Google sign-in), phase 4 — whole-task final review
+
+VERDICT: APPROVED
+
+## Checks run (this session)
+- `npm run typecheck` → clean (`tsc --noEmit`, no output).
+- `npm run lint` → clean (`eslint . --max-warnings 0 --no-error-on-unmatched-pattern`, no output).
+- `npm test -- --maxWorkers=2` → `Test Suites: 2 failed, 182 passed, 184 total`, `Tests: 2069 passed, 2069 total`. The 2 failing suites are `.agents/skills/caveman-explore/tests/skill-file.test.mjs` and `.agents/skills/caveman-learn/tests/skill-file.test.mjs` ("must contain at least one test") — pre-existing, unrelated to this task (`.agents/` is Google Antigravity config per `CLAUDE.md`, untouched by this diff).
+- `npx jest src/modules/session` → `Test Suites: 12 passed, 12 total`, `Tests: 159 passed, 159 total`.
+- `java -version` → "Unable to locate a Java Runtime" — confirms `npm run test:rules` and `npm run test:e2e` genuinely cannot run in this environment, as claimed by every phase.
+- `npm run build` → succeeds, static pages generated, no type/lint errors.
+- Verified real commits exist for every hash `progress.md` claims: `44ae2a0` (phase 1), `b3d033d` (phase 2), `e4cb89a` (phase 3), `311a639` (phase 3 doc). Phase 4 is correctly uncommitted and both its `progress.md` boxes ("final review", "committed") were unticked before this review, matching the actual repo state — no discrepancy of the kind flagged in `docs/ai/lessons-learned.md`'s `2026-10-04-game-balance-review` entry.
+
+## 1. docs-sync accuracy (§3.1, §2, §6.12) vs. shipped code
+- `docs/architecture/structure-and-state.md` §3.1: diffed against `src/modules/session/player.hook.ts`, `guest-session.ts`, `account.service.ts`, `firestore.rules`. Every numbered bullet (5-9) matches the actual code: bullet 5's "a guest's username reservation is released on sign-in" matches `player.hook.ts:88-90` (`if (account === null) await releaseGuestReservation(username)`); bullet 6's `accounts/{authUid}` reverse lookup matches `account.service.ts:41-47`; bullet 7's `claimAccountUsername`/`bindUsernameToAccount` batch matches `account.service.ts:53-76` and `firestore.rules:13-18`; bullet 8's "signOut only, no Firestore write" matches `player.hook.ts:67-77`; bullet 9's `beforeunload` guest-only scoping matches `player.hook.ts:145-159`. No drift between doc and code.
+- `docs/architecture/structure-and-state.md` §2 (file-layout bullet): the `session/` entry now lists `account.service.ts` alongside `player-session.service.ts` — both files exist at the cited paths. Accurate.
+- `docs/architecture/systems-and-visuals.md` §6.12: "Firestore and Auth Emulators" bullet matches `playwright.config.ts:3-9,31-49` and `firebase.json:3-8` exactly (host/port values, `--only firestore,auth`, both `NEXT_PUBLIC_*` env vars). Accurate.
+- Minor pre-existing-pattern nit, non-blocking: `firestore.rules:57-60`'s comment on the `games` collection still says "the app has no Firebase Auth" — now false in general (Auth exists for identity), though still true in the narrow sense that mattered when it was written (the `games` collection itself has no per-player auth enforcement, which remains true and is this task's explicit non-goal). Not required reading for anyone touching `usernames`/`accounts`, and not a documented architecture claim (it's an inline rules comment, not `docs/architecture/*.md`). Owner: whoever next touches `firestore.rules`'s `games` block; not worth a special phase.
+
+## 2. The missing e2e spec for Google sign-in — not a blocking gap
+Confirmed by reading `e2e/auth-and-lobby.spec.ts` in full: it only exercises the guest flow (username input, Enter Lobby, Create Game dialog) and was correctly left unchanged, per `plan.md`'s Decisions (line 46) and File plan (line 77, "No change needed"). This was a plan-level decision, approved by architect-b's plan review (`plan.md:386`), not an oversight that fell through the phase step lists — the plan explicitly weighed and rejected an e2e spec for this flow, for a real technical reason: `signInWithPopup` opens a real Google OAuth consent screen, which Playwright cannot drive headlessly, and the Firebase Auth emulator's own popup flow still requires a human (or a special test harness Google provides, not wired into this repo) to pick an emulated test account — there is no way to script "click the Google account picker" without that extra infrastructure, which is out of scope for an L-tier task whose acceptance criteria don't mention emulator-UI automation.
+Coverage that does exist and is adequate given that constraint: `account.service.test.ts` (mocks `signInWithPopup`/`onAuthStateChanged` directly, covers success/failure/subscription semantics), `player.hook.test.ts` (`signInWithGoogle` success/failure/no-direct-state-set/guest-release-on-sign-in, `logout` branching, `beforeunload` scoping — all re-verified present in this session, `player.hook.test.ts:680-720`), `Login.hook.test.ts`/`Login.test.tsx` (mode derivation, `onGoogleSignIn`'s loading/error states, Google button visibility). This is the standard "mock at the Firebase SDK boundary, test the app's own logic" pattern already used for Firestore elsewhere in this codebase (`skill: testing`'s services section) — not a workaround invented for this task. Verdict: accepted as sufficient, correctly flagged as a manual-QA risk in `plan.md`'s Risks and Phase 4 step 4, not a gap that should block closing the task.
+
+## 3. "Pick once, keep forever" and "guests stay disposable" — both satisfied
+- **Pick once, keep forever:** `firestore.rules:13-18` blocks a `usernames` create with a non-null `authUid` unless `!exists(accounts/{uid})`; `firestore.rules:25-34` make `update`/`delete` unconditionally impossible once `authUid` is non-null; `accounts/{authUid}`'s own `update`/`delete` are hardcoded `false` (`firestore.rules:44-45`). Traced in the phase-1 review (re-confirmed here, no change since): the redundant enforcement (both the `!exists` check on `usernames` create and the `update: false` on the existing `accounts` doc) closes the race where two concurrent `bindUsernameToAccount` batches for the same account both observe "no account yet" — Firestore serializes writes to the same document, so the loser's atomic batch (both documents) is rejected together. No client code path exists that renames, unbinds, or reassigns a bound username — `setUsernameCallback`'s account branch (`player.hook.ts:94-102`) only ever calls `claimAccountUsername` once, and `page.tsx`'s `if (!username || !playerId) return <Login />` means Login never re-renders for an identity that already has one.
+- **Guests stay disposable:** guest behavior (bullets 1-4 of §3.1, unchanged from before this task) is untouched — `logout()`'s guest branch and `beforeunload`'s guest branch both still call `releaseGuestReservation`/`releaseGuestSession` exactly as before. The one new risk this task introduced — a guest's reservation surviving past a mid-session Google sign-in and becoming a permanently-unclaimable orphan — was caught in the phase-2 review (Finding #1), fixed (`player.hook.ts:86-90`, `guest-session.ts`), and has a regression test (`player.hook.test.ts:702-720`, re-read and confirmed present and still asserting the fix in this session).
+
+## Findings
+No blocking findings across the full 4-phase arc. One non-blocking nit (the stale `firestore.rules` comment, item 1 above) — cosmetic, doesn't affect behavior or any documented architecture claim, left for whoever next edits that rule block.
+
+## Docs
+`docs-sync`'s Phase 4 updates are accurate and complete for this task's scope (see §1 above). No further doc changes needed.
+
+## Progress.md
+Phase 4 "final review (architect-b)" ticked APPROVED. "committed: <hash>" left for the coordinator, as this role never ticks that box.

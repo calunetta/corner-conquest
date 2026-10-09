@@ -28,17 +28,25 @@ Part of the architecture & game-rules docs. Index and directives: [`docs/README.
     -   **All Special Cards & 20 Starting Resources:** The human player begins the game with one of every available Special Card and **20 Food, 20 Wood, and 20 Gold**, allowing for immediate testing of all strategic and army mechanics.
 
 ## 6.9. Bot Logic
-The AI behavior is defined in `src/modules/game-rules/bot-turn.reducer.ts` and `services/bot-turn.service.ts`. It executes as a complete, atomic turn loop to eliminate timeout debouncing, state deadlocks, or dangling combat states:
+The AI behavior is defined in `src/modules/game-rules/bot-turn.reducer.ts` and `services/bot-turn.service.ts`. `decideBotTurn` deep-clones the incoming state (lodash `cloneDeep` — pure, never mutates the caller's object) and runs the three steps below, in that fixed order, before dispatching `EndTurn`:
 
 > [!IMPORTANT]
 > **Balance Simulator:** `scripts/balance-simulator/` plays many complete bot-vs-bot matches through this real logic (Firestore stubbed, zero writes) and reports win rates, match length, resource and card economy, combat accuracy, and bot-health signals (does a seat ever leave its own Base, get stuck on Productive, etc.). See `docs/balance-simulator-guide.md` for how to run it and read its report, including its known limitations and the bot quirks it already confirmed.
 
-1.  **Strategic Pre-computation:** The bot pre-activates relevant strategic cards (`Reinforce`, `Efficient`, `MasterBuilder`), intelligently uses `Wealthy` or `Sabotage` when beneficial, and purchases affordable passive abilities, attack upgrades (up to cap 4), new armies (up to cap 5), or special cards.
-2.  **Army Action Evaluation & Execution:** Across all unacted armies on the board:
-    - **Positioning on a resource:** Very high priority (9). The bot's primary way to build its economy.
-    - **Attacking:** High priority (7–8). Attacks enemy players or monsters on the same tile, automatically rolling dice and closing combat within the turn cycle.
-    - **Movement:** Evaluates valid moves (prioritizing unexplored Fog of War islands and unoccupied resource/special islands) and executes the highest-scoring move.
-3.  **Guaranteed Turn Transition:** Upon completing all valid army actions, the bot calls `handleEndTurn` and writes the resulting state to Firestore in a single atomic update, cleanly advancing the turn to the next player.
+1.  **Strategic Pre-computation** (`bot-card-strategy.reducer.ts` → `bot-purchases.reducer.ts`):
+    - Activates `Reinforce`, `Efficient`, and `MasterBuilder` **unconditionally** whenever held and no card has been used yet this turn — with no check that the bot will actually go on to deploy or upgrade that turn. If it doesn't, the flag simply lapses at the next turn-start reset (§6.1) and the card stays in hand, having used up the turn's one card-action for nothing.
+    - `Wealthy`, when held, targets whichever resource the bot is short of, in a fixed priority order: Food (if it can't afford its next deploy and has room for more armies) → else Wood (if it can't afford its upgrade and isn't attack-capped) → else Gold (default).
+    - `Sabotage`, when held, **always targets a human opponent, never another bot** — in a multi-bot match, bots never sabotage each other.
+    - Purchases run in a fixed order — Ability → Upgrade → Deploy → Buy Card — each re-checking affordability against the state left by the previous purchase in the same turn, so an earlier buy can block a later one.
+2.  **Army Action Evaluation & Execution** (`bot-army-actions.reducer.ts`): across all unacted armies on the board, every possible action is scored and the single highest-scoring one executed, repeated until no unacted army has a move left:
+    - **Positioning on a resource:** flat priority **9** — the bot's primary way to build its economy.
+    - **Attacking a player:** priority **`8 + (bot's attackPower − target's attackPower)`** — relative, not fixed, and has no floor: a bot will pick a fight it's likely to lose if nothing else scores higher that loop.
+    - **Attacking a monster:** flat priority **7**, regardless of the monster's level.
+    - **Moving onto an unrevealed fog-of-war tile:** priority **6**. **Moving onto an unoccupied resource/Base tile:** priority **4**. **Moving onto a Special island:** priority **3**. Any other move: priority **2**.
+    - Any resulting combat (player or monster) is auto-resolved within the same loop — dice rolled with no card options (`useWarChief`/`useOvercome`/`useDecideCard` all `false`), then immediately closed.
+3.  **Guaranteed Turn Transition:** the bot calls `handleEndTurn` and the service writes the resulting state to Firestore in a single `setDoc` — **this is a plain write, not a Firestore transaction**: there is no optimistic-concurrency check against the document's current version. If a human action and a bot turn race on the same match document, the later write silently wins and the earlier one is lost; this differs from `handlePlayerExit`, which does use `runTransaction`.
+
+Bots are currently only ever created at match setup, and only for a solo-vs-bot lobby game (`maxPlayers === 1`, `game-setup.reducer.ts`) — a multiplayer lobby game can never contain a bot seat today. Nothing in the `Player`/`GameState` types prevents a human seat from becoming bot-controlled mid-match, but no code path does that yet either.
 
 ## 6.10. UI Components and Mobile Responsiveness
 - **Map Rendering & Colonist.io Mobile Strategy:**
@@ -69,7 +77,7 @@ The AI behavior is defined in `src/modules/game-rules/bot-turn.reducer.ts` and `
 - **Maintenance Rule**: Whenever core mechanics, UI layouts, or game rules are added or modified, update the matching tutorial copy or beacon description (or add a new beacon) so the new-player guidance stays accurate.
 
 ## 6.12. End-to-End (E2E) Testing & Match Cleanup Lifecycle
-- **Firestore Emulator**: E2E runs never touch the real project. `playwright.config.ts` starts the Firestore emulator (`firebase.json`, project `demo-corner-conquest`) and builds the app with `NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST`, which makes `src/lib/firebase.ts` call `connectFirestoreEmulator`. Each run starts with an empty database.
+- **Firestore and Auth Emulators**: E2E runs never touch the real project. `playwright.config.ts` starts the Firestore and Auth emulators together (`npx firebase emulators:start --only firestore,auth`, both declared in `firebase.json`, project `demo-corner-conquest`). It builds the app with `NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST` and `NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST` (`AUTH_EMULATOR_HOST` = `127.0.0.1:9099`), which makes `src/lib/firebase.ts` connect both SDKs to their emulators. Each run starts with an empty database and no Auth users.
 - **Mandatory Teardown Hook (`safeCleanupGame`)**:
   - Every Playwright test suite (`e2e/*.spec.ts`) **MUST** register `safeCleanupGame` inside `test.afterEach(async ({ page }) => { await safeCleanupGame(page); });`.
   - **Guaranteed Cleanup Regardless of Test Outcome:** Even if an assertion throws an error or times out midway through test execution, `test.afterEach` is guaranteed to execute, dismissing any open modals and clicking the GameBoard exit button to dismantle the match.
