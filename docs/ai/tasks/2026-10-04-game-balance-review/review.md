@@ -354,3 +354,83 @@ ring in both screenshots above.
 - No `docs/README.md` or `docs/architecture/*.md` change required or made for this phase — a pure visual
   emphasis token with no new game rule or documented behavior change. Consistent with Phase 4's docs
   note and `plan.md`'s File plan, which lists no docs row for Phase 5.
+
+## Phase 6/6 (LobbyGameRow VP Goal badge)
+
+VERDICT: APPROVED
+
+### Checks run
+- `npm run typecheck`: exit 0, no errors (`tsc --noEmit`), full repo.
+- `npm run lint`: exit 0, `eslint . --max-warnings 0 --no-error-on-unmatched-pattern`, full repo.
+- `npx jest src/modules/lobby/components/LobbyGameRow`: `Test Suites: 2 passed, 2 total` /
+  `Tests: 21 passed, 21 total`.
+- `npm test` (full repo): `Test Suites: 2 failed, 179 passed, 181 total` / `Tests: 1979 passed, 1979 total`.
+  The 2 failed suites are `.agents/skills/caveman-explore/tests/skill-file.test.mjs` and
+  `.agents/skills/caveman-learn/tests/skill-file.test.mjs` ("must contain at least one test") —
+  pre-existing (same two suites flagged in every prior phase since Phase 1; committed in `374721a`,
+  outside `src/`, untouched by this phase's diff). All 1979 real tests pass, 0 failed.
+- ui-verify: `node .claude/skills/ui-verify/scripts/snapshot.mjs http://localhost:9002/testbed/lobby-game-row`
+  → `PASS desktop`, `PASS mobile`, `0 failing`. Then screenshotted the "Open room" (30 VP) and "Custom VP
+  goal (45 VP)" states directly (`?state=` query param) to confirm the rendered text: both show an
+  outline `Badge` reading `"30 VP"` / `"45 VP"` respectively, positioned in `infoGroup` right after the
+  player-count chip (`2 / 4`) and before the info icon button — matches the screenshots at
+  `test-results/ui-verify/testbed-lobby-game-row-state-Open-20room--desktop.png` and
+  `...-Custom-20VP-20goal-20-45-20VP--desktop.png`.
+
+### Plan adherence / Final spec adherence
+- `LobbyGameRow.tsx:100`: `<Badge variant="outline">{game.settings.victoryPointGoal} VP</Badge>` inside
+  `infoGroup`, immediately after the existing `playersInfo` chip — matches `ui-design.md:392-394`'s
+  Final spec text and position exactly (byte-for-byte, including the `"{N} VP"` format, not a separate
+  "VP Goal" label). `game: GameState` already carried `settings.victoryPointGoal`
+  (`LobbyGameRow.types.ts:3-8`); no type change made, matching Finding 10 in `ui-design.md:313-321`. Met.
+- `LobbyGameRow.styles.ts`: no diff (`git diff -- .../LobbyGameRow.styles.ts` empty). Final spec marks
+  the `vpGoalBadge` token "optional... only if the default `Badge` sizing needs trimming... otherwise no
+  new token required" (`ui-design.md:395-396`). Default `Badge` renders at a size consistent with the
+  row (confirmed in the screenshots above, sits inline with the other chips at the same height); the
+  file's own existing `Badge` usages elsewhere (`LobbyGameRow.tsx:39-41`, `:48-51`) also pass no extra
+  className. Correct call, not a gap.
+- Tests (`LobbyGameRow.test.tsx:25-57`): two new cases, both exact-text assertions (`screen.getByText('30 VP')`
+  / `'45 VP'`) plus a negative assertion that the other value is absent (`queryByText('30 VP')).not.toBeInTheDocument()`
+  when the custom-goal fixture is rendered) — matches the `testing` skill's "assert the exact observable
+  outcome" rule, not a loose "badge exists" check. One test additionally confirms the badge is visible
+  without opening the settings popover (`queryByText('Match Settings')).not.toBeInTheDocument()`),
+  directly verifying the Final spec's acceptance criterion ("without needing to open the info popover",
+  `ui-design.md:397-398`). An unrelated existing test was renamed (`'shows loading spinner when joining
+  this game'` → `'disables the join button while this game is being joined'`) with no assertion change —
+  cosmetic, harmless, not flagged as a finding.
+- Fixtures/preview (`LobbyGameRow.fixtures.ts`, `.preview.tsx`): new `customGoalGame` fixture
+  (`victoryPointGoal: 45`, distinct from `defaultGameSettings`'s 30) and a matching "Custom VP goal
+  (45 VP)" preview state — satisfies `plan.md`'s Preview states note ("if every fixture uses the same
+  value, add one with a different VP goal so the preview demonstrates the badge is live data, not a
+  hardcoded string"). Confirmed live in the screenshots above (30 vs. 45 render correctly from two
+  different fixtures). Met.
+
+### Builder's question: was keeping the already-present badge correct?
+Confirmed yes. The badge found already in the working tree matches `ui-design.md`'s Final spec
+(`ui-design.md:391-398`) exactly in text format, placement, and scope (`.tsx` only, no type or styles
+change). `plan.md`'s File plan row (`LobbyGameRow.tsx`, "add a `VP Goal` `Badge`... reading
+`game.settings.victoryPointGoal`") is shorthand describing the feature, not a literal UI-copy spec — the
+plan's own Phase 6 step 2 defers the exact rendering to "per ui-designer-b's Final spec," and Phase 4
+step 1's charter is specifically to produce that Final spec for Proposals 1, 3, and 5. No reconciliation
+needed: there is no live conflict, only a coordinator-facing wording gap in `plan.md`'s prose, which the
+plan's own structure (Contracts/Phases pointing to the Final spec) already resolves. Nothing to edit.
+
+### Docs
+- `docs-sync` not required for this phase, confirmed. Grepped `docs/architecture/*.md` for
+  `LobbyGameRow`/`victoryPointGoal`/"VP Goal": `structure-and-state.md:29` describes `LobbyGameRow` only
+  as "room preview with settings popover" — a structural/inventory sentence that doesn't enumerate the
+  row's child elements (it also doesn't mention the existing host-name or player-count chips), so adding
+  a third inline badge doesn't make that sentence inaccurate. `game-mechanics.md:10` documents
+  `victoryPointGoal` as a game rule (default 30, win condition) — unchanged by this phase, which only
+  adds a read-only UI display of a value that already existed and was already readable via the row's
+  settings popover (`SettingsDisplay`, `toSettingsSummaryRows` → "Victory Point Goal" row,
+  `LobbyGameRow.map.ts:9`). This is a pure lobby UI addition: no game rule, no documented architecture
+  behavior, and no bug fix changed. CLAUDE.md's docs-sync trigger ("A change to game rules or
+  architecture, including a bug fix that changes documented behavior") does not apply. No edit made or
+  needed.
+
+### Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+
+No findings.

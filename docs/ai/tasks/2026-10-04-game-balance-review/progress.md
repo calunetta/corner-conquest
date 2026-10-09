@@ -52,13 +52,13 @@ Tier: L (re-triaged from S — see `triage.md`) · Phases: 6
 
 ## Phase 6: LobbyGameRow VP Goal badge (Proposal 5)
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-b)
-- [ ] tests (tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
-- [ ] committed: <hash>
+- [x] implementation (implementer-b)
+- [x] tests (tester-b) — filled two gaps (full-room row coverage, DOM-order assertion after player-count chip); 21/21 passing
+- [x] previews (preview-a) — "Custom VP goal (45 VP)" state already added during implementation; preview-a confirmed all 4 states plus Lobby.preview.tsx's "With open games" state satisfy the acceptance criteria
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify) — badge confirmed on every room row (Open/Joining/Full/Custom) and in the real Lobby preview, at desktop and mobile, no hydration issues on re-check
+- [x] final review (architect-b)
+- [x] committed: 01e7ef0
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
@@ -70,3 +70,6 @@ Tier: L (re-triaged from S — see `triage.md`) · Phases: 6
 2026-10-09 implementer-a (Phase 3): DONE, updated docs/README.md §5.3/§6.3/§6.5 to match Phases 1-2 (collecting persists, War Chief is a flat +2 to combat score). Flagged out-of-scope drift: two in-app combat-dialog strings still say "+2 Attack Dice", TutorialBeacon copy omits the removal-rule clause.
 2026-10-09 architect-b (final-review): DONE, APPROVED. Independently verified every cited reducer line and found one more drift (docs/balance-simulator-guide.md still describes the pre-fix deck-composition bug) — recommends a follow-up task for that plus the two stale UI strings.
 2026-10-09 coordinator: DONE, committed Phase 3 (302c2e6). Caught and fixed a review.md overwrite — architect-b's Phase 3 review replaced Phase 1/2's content instead of appending (same failure mode logged 2026-10-05); restored from git history (ee13424) and merged all three phases into one file before amending the commit.
+2026-10-09 implementer-b/tester-b/preview-a (Phase 6): DONE, VP goal badge ("{victoryPointGoal} VP") added to LobbyGameRow after the player-count chip, matching ui-design.md's Final spec byte-for-byte. Badge was found already present (uncommitted) in the shared working tree when implementer-b started; verified against spec and kept.
+2026-10-09 architect-b (final-review): DONE, APPROVED. Confirmed plan.md's "VP Goal badge" wording was shorthand (not a literal copy spec) so no doc reconciliation needed, and confirmed no docs-sync required (pure lobby UI addition, no rule/architecture change).
+2026-10-09 coordinator: DONE, committed Phase 6 (01e7ef0), scoped to the 4 LobbyGameRow files only. All 6 phases of this task are now complete.
