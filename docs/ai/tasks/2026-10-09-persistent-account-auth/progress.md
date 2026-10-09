@@ -15,10 +15,10 @@ Tier: L · Phases: 4
 - [x] committed: 44ae2a0
 
 ## Phase 2: Account service + identity hook
-- [ ] implementation (implementer-a)
-- [ ] tests (tester-a)
-- [ ] checks: typecheck, lint, `npx jest src/modules/session`
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a)
+- [x] tests (tester-a)
+- [x] checks: typecheck, lint, `npx jest src/modules/session`
+- [x] final review (architect-b) — APPROVED on re-review, see review.md
 - [ ] committed: <hash>
 
 ## Phase 3: Login UI

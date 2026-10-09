@@ -32,7 +32,10 @@ describe('PlayerProvider and usePlayer', () => {
       const mockContextValue: PlayerContextType = {
         playerId: 'player_123',
         username: 'testuser',
+        isGuest: true,
+        isAuthLoading: false,
         setUsername: jest.fn(),
+        signInWithGoogle: jest.fn(),
         logout: jest.fn(),
       };
 
@@ -52,7 +55,10 @@ describe('PlayerProvider and usePlayer', () => {
       const mockContextValue: PlayerContextType = {
         playerId: 'player_456',
         username: 'anotheruser',
+        isGuest: true,
+        isAuthLoading: false,
         setUsername: jest.fn(),
+        signInWithGoogle: jest.fn(),
         logout: jest.fn(),
       };
 
@@ -82,7 +88,10 @@ describe('PlayerProvider and usePlayer', () => {
       const mockContextValue: PlayerContextType = {
         playerId: null,
         username: null,
+        isGuest: true,
+        isAuthLoading: false,
         setUsername: jest.fn(),
+        signInWithGoogle: jest.fn(),
         logout: jest.fn(),
       };
 

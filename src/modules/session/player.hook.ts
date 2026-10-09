@@ -1,24 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { findUsernameOwner, reserveUsername, releaseUsername } from './services/player-session.service';
+import {
+  claimAccountUsername,
+  findAccountUsername,
+  signInWithGoogle as signInWithGoogleAccount,
+  signOutOfAccount,
+  subscribeToAuthState,
+  type AuthAccount,
+} from './services/account.service';
+import { readOrCreateGuestPlayerId, releaseGuestReservation } from './guest-session';
 import type { PlayerContextType } from './player.types';
 
-function createPlayerId(): string {
-  return `player_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
-
 export function usePlayerProvider(): PlayerContextType {
-  const [playerId, setPlayerId] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      let stored = localStorage.getItem('playerId');
-      if (!stored) {
-        stored = createPlayerId();
-        localStorage.setItem('playerId', stored);
-      }
-      return stored;
-    }
-    return null;
-  });
+  const [guestPlayerId, setGuestPlayerId] = useState<string | null>(() => (typeof window !== 'undefined' ? readOrCreateGuestPlayerId() : null));
+  const [account, setAccount] = useState<AuthAccount | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [username, setUsernameState] = useState<string | null>(null);
+
+  const playerId = account ? account.uid : guestPlayerId;
+  const isGuest = !isAuthLoading && account === null;
 
   const validateSession = useCallback(async (pid: string, uname: string) => {
     try {
@@ -37,42 +37,74 @@ export function usePlayerProvider(): PlayerContextType {
     }
   }, []);
 
+  const restoreAccountUsername = useCallback(async (authUid: string) => {
+    try {
+      setUsernameState(await findAccountUsername(authUid));
+    } catch (error) {
+      console.error('Error loading account username:', error);
+    }
+  }, []);
+
   useEffect(() => {
-    let storedPlayerId = localStorage.getItem('playerId');
-    if (!storedPlayerId) {
-      storedPlayerId = createPlayerId();
-      localStorage.setItem('playerId', storedPlayerId);
-    }
-    setPlayerId(storedPlayerId);
-
-    const storedUsername = localStorage.getItem('username');
-    if (storedUsername && storedPlayerId) {
-      validateSession(storedPlayerId, storedUsername);
-    }
-  }, [validateSession]);
-
-  const logout = useCallback(async () => {
-    if (username) {
-      try {
-        await releaseUsername(username);
-      } catch (error) {
-        console.error('Error removing username on logout:', error);
+    return subscribeToAuthState(async (nextAccount) => {
+      setAccount(nextAccount);
+      setUsernameState(null);
+      if (nextAccount) {
+        await restoreAccountUsername(nextAccount.uid);
+      } else if (guestPlayerId) {
+        const storedUsername = localStorage.getItem('username');
+        if (storedUsername) await validateSession(guestPlayerId, storedUsername);
       }
-    }
-    localStorage.removeItem('username');
+      setIsAuthLoading(false);
+    });
+  }, [guestPlayerId, restoreAccountUsername, validateSession]);
+
+  const releaseGuestSession = useCallback(async () => {
+    await releaseGuestReservation(username);
     setUsernameState(null);
   }, [username]);
 
+  const logout = useCallback(async () => {
+    if (account) {
+      try {
+        await signOutOfAccount();
+      } catch (error) {
+        console.error('Error signing out:', error);
+      }
+      return;
+    }
+    await releaseGuestSession();
+  }, [account, releaseGuestSession]);
+
+  const signInWithGoogle = useCallback(async (): Promise<boolean> => {
+    try {
+      await signInWithGoogleAccount();
+    } catch (error) {
+      console.error('Error signing in with Google:', error);
+      return false;
+    }
+    // Without this, a guest who signs in mid-session leaves an orphaned usernames/<name> doc
+    // that no one can claim again. Only a guest's reservation is released, never an account's.
+    if (account === null) {
+      await releaseGuestReservation(username);
+    }
+    return true;
+  }, [account, username]);
+
   const setUsernameCallback = useCallback(
     async (name: string): Promise<boolean> => {
-      let currentPid = playerId;
-      if (!currentPid && typeof window !== 'undefined') {
-        currentPid = localStorage.getItem('playerId');
-        if (!currentPid) {
-          currentPid = createPlayerId();
-          localStorage.setItem('playerId', currentPid);
+      if (account) {
+        const isClaimed = await claimAccountUsername(name, account.uid);
+        if (isClaimed) {
+          setUsernameState(name);
         }
-        setPlayerId(currentPid);
+        return isClaimed;
+      }
+
+      let currentPid = guestPlayerId;
+      if (!currentPid && typeof window !== 'undefined') {
+        currentPid = readOrCreateGuestPlayerId();
+        setGuestPlayerId(currentPid);
       }
 
       if (!currentPid) {
@@ -107,15 +139,15 @@ export function usePlayerProvider(): PlayerContextType {
         return false;
       }
     },
-    [playerId, username],
+    [account, guestPlayerId, username],
   );
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // This is not guaranteed to run, but it's a best-effort attempt.
-      // A more robust solution would involve server-side heartbeats.
-      if (localStorage.getItem('username')) {
-        logout();
+      // Best-effort guest cleanup. A signed-in account must survive tab close: Firebase Auth
+      // persists its session, so only guest reservations are released here.
+      if (account === null && localStorage.getItem('username')) {
+        releaseGuestSession();
       }
     };
 
@@ -124,7 +156,7 @@ export function usePlayerProvider(): PlayerContextType {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [logout]);
+  }, [account, releaseGuestSession]);
 
-  return { playerId, username, setUsername: setUsernameCallback, logout };
+  return { playerId, username, isGuest, isAuthLoading, setUsername: setUsernameCallback, signInWithGoogle, logout };
 }

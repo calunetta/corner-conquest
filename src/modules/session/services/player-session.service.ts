@@ -12,7 +12,7 @@ export async function findUsernameOwner(username: string): Promise<string | null
 
 export async function reserveUsername(username: string, playerId: string): Promise<void> {
   const usernameDocRef = doc(db, 'usernames', username);
-  await setDoc(usernameDocRef, { playerId });
+  await setDoc(usernameDocRef, { playerId, authUid: null });
 }
 
 export async function releaseUsername(username: string): Promise<void> {

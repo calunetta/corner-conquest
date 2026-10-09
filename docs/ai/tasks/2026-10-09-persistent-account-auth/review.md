@@ -38,3 +38,87 @@ No other findings. No invented paths or symbols in the diff.
 
 ## Docs
 - `docs-sync`: not needed yet — this phase changes config and rules enforcement only; no documented game rule or architecture behavior changed (the `logout`/`beforeunload` behavior change that needs `structure-and-state.md` §3.1 is Phase 2). Scheduled correctly for Phase 4 per `plan.md:338-340`.
+
+---
+
+# Final review: Persistent account system (Google sign-in), phase 2
+
+VERDICT: CHANGES REQUESTED
+
+## Checks run
+- `npm run typecheck` → clean (`tsc --noEmit`, no output).
+- `npm run lint` → clean (`eslint . --max-warnings 0 --no-error-on-unmatched-pattern`, no output).
+- `npx jest src/modules/session` → `Test Suites: 11 passed, 11 total`, `Tests: 144 passed, 144 total`.
+- `npm test` (full suite, `--maxWorkers=2` after one run hit an unrelated jest-worker SIGSEGV) → `Test Suites: 2 failed, 181 passed, 183 total`, `Tests: 2051 passed, 2051 total`. The 2 failing suites are both `.agents/skills/caveman-explore/tests/*` ("must contain at least one test"), pre-existing and unrelated to this diff — matches the addendum's claim in `plan.md:81`.
+
+## Plan adherence
+Diffed every Phase 2 file against `plan.md`'s Contracts (lines 177-270) and File plan (lines 57-63):
+
+- `src/modules/session/services/account.service.ts` (new): matches the contract's shape for `signInWithGoogle`, `signOutOfAccount`, `subscribeToAuthState`, `findAccountUsername`, `bindUsernameToAccount` exactly (`account.service.ts:24-58`). `claimAccountUsername` (`:64-76`) is an addition not named in the Contracts block, but it's a thin, well-scoped wrapper matching the behavior contract's prose for `setUsername(name)`'s account branch (`plan.md:261-263`: "check `findUsernameOwner`... bind... return") — reasonable to centralize in the service rather than duplicate the try/catch in the hook. No `firebase/*` import outside a `.service.ts` file; boundary respected.
+- `src/modules/session/services/player-session.service.ts`: one-line `reserveUsername` change, `{ playerId, authUid: null }` exactly as `plan.md:220` specifies.
+- `src/modules/session/player.types.ts`: `isGuest`, `isAuthLoading`, `signInWithGoogle` added to `PlayerContextType`, matching `plan.md:225-236` field-for-field (including the two doc comments, verbatim).
+- `src/modules/session/player.hook.ts`: matches the behavior contract (`plan.md:238-270`) — guest-id init unchanged (`:17-24` vs. old `:10-20`), `subscribeToAuthState` callback sets account/username and `isAuthLoading` as specified (`:60-72`), `signInWithGoogle` returns true/false without touching state directly (`:98-106`, confirmed by `player.hook.test.ts:688-700`'s "auth listener is the source of truth" case), `setUsername`'s account branch calls `claimAccountUsername` and never touches `localStorage` (`:110-116`), `logout`'s account branch calls only `signOutOfAccount` (`:86-96`), `beforeunload` only releases when `account === null` (`:159-173`).
+- `src/modules/session/player-session.service.test.ts`, `account.service.test.ts`, `player.hook.test.ts`: cover every case in the Test plan's Phase 2 bullets (`plan.md:354-356`) that I checked by reading the test bodies, including the "ignores a guest username in localStorage while an account is signed in" case (`player.hook.test.ts:467-477`) and the `beforeunload`-while-signed-in no-op (`player.hook.test.ts:638-654`).
+- `src/modules/session/player.provider.test.tsx`: fixed per the addendum (`plan.md:79`) — all three mock `PlayerContextType` literals now carry `isGuest`, `isAuthLoading`, `signInWithGoogle`.
+- `jest.setup.js`: the coordinator's addendum fix (`plan.md:81`) is present and matches the description — a `jest.mock('firebase/auth', ...)` block ahead of the existing `lucide-react` mock, covering every export `account.service.ts`/`src/lib/firebase.ts` need.
+
+## Findings
+
+### 1. Guest → account identity transition leaks the guest's username reservation — BLOCKING, owner implementer-a (+ tester-a for the regression test)
+
+Traced the scenario: a guest reserves a name (`localStorage['playerId']`, `localStorage['username']`, and a Firestore `usernames/<name>` doc with `authUid: null`), then clicks "Sign in with Google" without logging out first.
+
+- `signInWithGoogle` (`player.hook.ts:98-106`) only calls `signInWithGoogleAccount()`; it never reads or clears the guest's `localStorage` or Firestore reservation.
+- The resulting `subscribeToAuthState` callback (`player.hook.ts:60-72`) sets `account`, wipes the *in-memory* `username` state, and looks up `findAccountUsername(uid)` — it never calls `releaseUsername` for the guest name, and never touches `localStorage['username']`.
+- `setUsernameCallback`'s account branch (`:108-116`) binds the account's chosen name but still does nothing about the stale guest reservation sitting under the old `playerId`.
+
+Two confirmed consequences, both present in the current code:
+1. **Silent reappearance on sign-out.** If the account later signs out, `subscribeToAuthState`'s guest branch (`:66-69`) reads `localStorage.getItem('username')` — still the old guest name — and `validateSession` (`:35-50`) finds `findUsernameOwner(name) === guestPlayerId` (the reservation was never released) and restores it. A player who "left" their guest name behind by signing into an account gets it back unasked on the next sign-out, contradicting the "released on explicit logout" guest behavior `plan.md:9` (AC3) describes as otherwise unchanged.
+2. **Permanent orphaned reservation.** If that account is never signed out of again (the common case, since persistence is the whole point of this feature), the `usernames/<name>` doc stays forever with `authUid: null`, owned by a `playerId` (a `localStorage`-generated guest id) nobody will ever present again from that browser. Because `claimAccountUsername`/`setUsernameCallback`'s availability check both reuse `findUsernameOwner` across guest and account reservations (`plan.md:41`, Decisions), that name is now permanently unclaimable by anyone — guest or Google account — with no code path that ever revisits it. This directly undermines the "pick once, keep forever" scarcity model (triage Q3) the rest of this task is built around: a name can be squatted forever by accident, not just by design.
+
+Neither case is explicitly covered by an acceptance criterion or a Decision in `plan.md`, but both are real, observable regressions of guest-reservation hygiene, triggered by a mainstream flow (try the app as a guest, then decide to sign in) — not an exotic edge case. The fix is small and stays inside files Phase 2 already owns: `player.hook.ts`'s existing `releaseGuestSession` (`:74-84`) already does exactly the cleanup needed (release the Firestore doc if a username is set, clear `localStorage['username']`); it only needs to run once, before or after a successful `signInWithGoogle`, when a guest username was present. `tester-a` already identified and flagged this gap (per the task context handed to this review) but no test or fix exists in the diff for it — confirmed by grep: no test in `player.hook.test.ts`'s `signInWithGoogle` or `auth state (account)` blocks sets a pre-existing guest `localStorage['username']` before triggering sign-in.
+
+Required fix: in `player.hook.ts`, when `signInWithGoogle` succeeds (or in the auth-state effect's account branch, on first transition from a null-account/non-null-username state), call the guest release path (reuse `releaseGuestSession`) for whatever guest username was active, then proceed with the account flow. Add a `player.hook.test.ts` case: guest has a reserved username, calls `signInWithGoogle`, the auth listener reports the new account — assert `releaseUsername` was called with the old guest name and `localStorage.getItem('username')` is cleared (or holds only the new account's state), before the account naming step is checked.
+
+### 2. No other findings
+No invented paths or symbols in the diff. Import boundaries respected (`firebase/*` only in `account.service.ts`). File sizes and function lengths are within the `code-standards` limits for every file read. No dead code, no `any`, no commented-out code.
+
+## Docs
+- `docs-sync` for the `logout`/`beforeunload` scoping behavior change (`structure-and-state.md` §3.1) is correctly deferred to Phase 4 per `plan.md:343` — not required in this phase's diff.
+
+## Progress.md
+Phase 2 boxes for implementation, tests, and checks are confirmed by the above and ticked in `progress.md`. "final review" is left unticked pending the fix above; "committed" is never ticked by this role.
+
+---
+
+# Final review: Persistent account system (Google sign-in), phase 2 — re-review
+
+VERDICT: APPROVED
+
+## Checks run
+- `npm run typecheck` → clean (`tsc --noEmit`, no output).
+- `npm run lint` → clean (`eslint . --max-warnings 0 --no-error-on-unmatched-pattern`, no output).
+- `npx jest src/modules/session` → `Test Suites: 11 passed, 11 total`, `Tests: 145 passed, 145 total` (+1 vs. last round: the new `signInWithGoogle` regression test).
+- `npm test` → `Test Suites: 2 failed, 181 passed, 183 total`, `Tests: 2052 passed, 2052 total`. The 2 failing suites are the same pre-existing, unrelated `.agents/skills/caveman-*` suites ("must contain at least one test").
+
+## Fix verification (Finding #1 from the previous round)
+
+**Extraction (`src/modules/session/guest-session.ts`, new, 29 lines):** clean single-responsibility split — `readOrCreateGuestPlayerId`, the private `createPlayerId`, and `releaseGuestReservation` (releases the Firestore `usernames/<name>` doc via `releaseUsername` and clears `localStorage['username']`). No Firestore import outside a `.service.ts` file (it imports `releaseUsername` from `./services/player-session.service`, not `@/lib/firebase` directly) — boundary respected. `player.hook.ts` dropped from over-150-lines back to 162 total lines (150 excluding blank/comment lines per the lint rule, confirmed by the clean lint run). Addendum in `plan.md:83` documents the missed File plan entry and names the owner — consistent with how the two earlier Phase 2 addenda (`plan.md:79`, `:81`) are recorded.
+
+**`signInWithGoogle` fix (`player.hook.ts:79-92`):** now calls `releaseGuestReservation(username)` after a successful popup, gated on `account === null`. Traced both call sites now share the one helper (`player.hook.ts:63` in `releaseGuestSession`, `:89` in `signInWithGoogle`) — no duplicated release logic.
+
+**Ordering concern (does it clobber the auth listener's restored account username?) — confirmed safe:**
+- `account` and `username` inside `signInWithGoogle`'s closure are bound at the render when the callback was created, i.e. before the user clicked "Sign in with Google" — at that point the user is necessarily a guest, so `account === null` and `username` is whatever guest name (or `null`) was active. This value doesn't change mid-flight even if `subscribeToAuthState`'s listener fires and triggers a re-render while the popup is open; the already-running function keeps its own closure.
+- `releaseGuestReservation` (`guest-session.ts:20-29`) never calls `setUsernameState` or touches `account` — it only does a Firestore delete and `localStorage.removeItem('username')`. The auth listener's account branch (`player.hook.ts:52-58`) sets `username` state only via `restoreAccountUsername`, which reads `accounts/{authUid}.username` — a different document, never the just-deleted `usernames/<guestName>` doc. The two code paths touch disjoint state regardless of which runs first, so there is no race to clobber.
+- Confirmed by `player.hook.test.ts:688-700` ("the auth listener is the source of truth") still passing unchanged — `signInWithGoogle` never sets identity state directly.
+
+**Regression test (`player.hook.test.ts:702-720`):** sets `localStorage['playerId']`/`localStorage['username']` before mount, mocks `findUsernameOwner` to return the same guest id so the mount-time `validateSession` restores `username: 'testuser'` (confirmed at line 712), then calls `signInWithGoogle()` and asserts `releaseUsername` was called with `'testuser'` and `localStorage.getItem('username')` is now `null`. This exercises the exact root cause from the previous finding — the guest's Firestore reservation and its `localStorage` copy are both cleared on sign-in — which is what prevents both named consequences (silent reappearance on sign-out, permanent orphaned reservation): with the doc released and the key cleared, a later sign-out finds no stored username to resurrect, and the name becomes claimable again by anyone.
+
+## Findings
+None blocking. No invented paths or symbols. Import boundaries respected.
+
+## Docs
+- `docs-sync` for `logout`/`beforeunload` scoping (`structure-and-state.md` §3.1) remains correctly deferred to Phase 4 per `plan.md:343`.
+
+## Progress.md
+Phase 2 "final review" ticked APPROVED in `progress.md`. "committed" left for the coordinator.

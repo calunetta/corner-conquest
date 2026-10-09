@@ -58,13 +58,13 @@ describe('player-session.service', () => {
   });
 
   describe('reserveUsername', () => {
-    it('calls setDoc with the username and playerId', async () => {
+    it('calls setDoc with the username, playerId and a null authUid (guest reservation)', async () => {
       mockSetDoc.mockResolvedValue(undefined);
 
       await reserveUsername('myusername', 'player_456');
 
       expect(mockDoc).toHaveBeenCalledWith(db, 'usernames', 'myusername');
-      expect(mockSetDoc).toHaveBeenCalledWith({}, { playerId: 'player_456' });
+      expect(mockSetDoc).toHaveBeenCalledWith({}, { playerId: 'player_456', authUid: null });
     });
 
     it('writes to the usernames collection', async () => {

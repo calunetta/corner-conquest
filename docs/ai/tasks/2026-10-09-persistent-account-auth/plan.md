@@ -76,6 +76,12 @@ Inputs: triage.md
 
 No change needed: `src/modules/session/player.provider.tsx` (passthrough, type-driven), `src/app/page.tsx`, `src/features/game/components/GameBoard.tsx`, `src/modules/lobby/components/Lobby/*` (all destructure a subset of `PlayerContextType`, unaffected by added fields), `e2e/auth-and-lobby.spec.ts` (guest flow unchanged), `src/modules/game-rules/**` (confirmed no format assumption on `playerId`).
 
+**Addendum (found during Phase 2 build, implementer-a):** `src/modules/session/player.provider.test.tsx` was missed by the File plan. It constructs literal mock `PlayerContextType` values, so adding `isGuest`/`isAuthLoading`/`signInWithGoogle` to the type breaks its typecheck (`TS2739`, three call sites). Owner: tester-a, Phase 2 — add the three missing fields to each mock context value.
+
+**Addendum (found during Phase 2 build, fixed by coordinator):** `firebase/auth`'s Node build throws `fetch is not defined` under the jsdom Jest environment, since Jest doesn't honor the package's "browser" export condition — this broke ~100 unrelated test suites that transitively import `@/lib/firebase` (introduced in Phase 1, not caught by Phase 1's checks since it only ran typecheck/lint, not `npm test`). Fixed by adding a global `jest.mock('firebase/auth', ...)` to `jest.setup.js`, mirroring the existing `lucide-react` mock pattern there. `npm test` now at 1 known-expected failure (the `reserveUsername` assertion, Phase 2 step 4) plus 2 pre-existing unrelated `.agents/skills/*` failures.
+
+**Addendum (found during Phase 2 review fix, implementer-a):** `src/modules/session/guest-session.ts` (new) was missed by the File plan. `player.hook.ts` exceeded the 150-line ESLint `max-lines` cap once guest-release-on-sign-in was added, so `readOrCreateGuestPlayerId` (guest `playerId` from localStorage), `releaseGuestReservation` (releases a guest's `usernames/<name>` doc and clears `localStorage['username']`) and the private `createPlayerId` moved there. Owner: implementer-a, Phase 2. Covered by the regression case in `player.hook.test.ts` (`signInWithGoogle` block) for the review's Finding #1.
+
 ## Contracts
 ```ts
 // ---------- src/lib/firebase.ts (additions only; existing exports unchanged) ----------
