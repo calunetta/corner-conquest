@@ -88,7 +88,12 @@ export function MobileActionsBar({
         </div>
 
         {/* Row 2: main actions grid (Position, Attack, Deploy, and optionally End Turn). */}
-        <div className={styles.row2({ columnCount: rowCount })}>
+        <div
+          className={cn(
+            styles.row2({ columnCount: rowCount }),
+            hasSelectedArmy && styles.row2Active,
+          )}
+        >
           {mainActions.map((action) => (
             <ActionButton
               key={action.id}

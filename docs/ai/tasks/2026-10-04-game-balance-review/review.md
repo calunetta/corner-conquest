@@ -270,3 +270,87 @@ Final spec's explicit "reuse X" instruction, not its own preceding draft paraphr
   `docs/architecture/` sitting alongside it in `git status`), not something Phase 4's implementers or
   testers touched. None of Phase 4's own files (`GameBoardHeader.*`, `PlayerInfo/index.ts`,
   `PlayerInfo.map.ts`) appear in that other diff.
+
+## Phase 5/6 (ActionsPanel contextual ring emphasis)
+
+VERDICT: APPROVED
+
+### Checks run
+- `npm run typecheck`: exit 0, no errors (`tsc --noEmit`), full repo.
+- `npm run lint`: exit 0, `eslint . --max-warnings 0 --no-error-on-unmatched-pattern`, full repo.
+- `npm test`: `Test Suites: 2 failed, 179 passed, 181 total` / `Tests: 1975 passed, 1975 total`. Same two
+  pre-existing failures as every prior phase (`.agents/skills/caveman-explore/tests/skill-file.test.mjs`,
+  `.agents/skills/caveman-learn/tests/skill-file.test.mjs`, "must contain at least one test") — outside
+  `src/`, not touched by this phase's diff. All 1975 real tests pass, 0 failed. Test count unchanged from
+  Phase 4 (1975 both times), consistent with tester-b's own report of adding no new assertions for this
+  phase.
+- ui-verify: ran myself. Screenshotted both preview states at both testbed slugs:
+  `hud-actions-panel` (`ActionsPanel.preview.tsx`, desktop view) and `hud-mobile-actions-bar`
+  (`MobileActionsBar.preview.tsx`, mobile bar). Cropped and visually diffed the main-grid region pixel
+  for pixel: "Army selected, can attack" shows a visible `ring-1 ring-primary/40` outline around the
+  entire 3-button main grid (Position/Attack/Deploy) on both the desktop card layout and the mobile row2
+  bar; "My turn, no selection" shows plain per-button borders with no surrounding ring, on both. Crops
+  compared at 3x zoom confirm the ring is present/absent exactly as `hasSelectedArmy` dictates, on both
+  breakpoints.
+
+### Plan adherence / Final spec adherence
+- `ActionsPanel.styles.ts`: `mainGridActive: 'rounded-lg ring-1 ring-primary/40'`
+  (`ActionsPanel.styles.ts:24`, diff) applied via `cn(styles.mainGrid, hasSelectedArmy &&
+  styles.mainGridActive)` at `ActionsPanel.tsx:102`. The Final spec's own text
+  (`ui-design.md:375`) wrote the Contracts sketch as `mainGridActive: cn(mainGrid, 'ring-1
+  ring-primary/40 rounded-lg')` — a self-reference inside the same object literal, which is not valid
+  JavaScript (an object literal can't read a sibling key while being constructed) — and the spec itself
+  says "exact merge mechanism... left to the implementer; either is consistent with existing patterns in
+  this file" (`ui-design.md:376-377`). implementer-b's actual approach (standalone token, merged with
+  `cn()` at the call site) produces the identical class string and ring, and is the only one of the two
+  that's syntactically possible. Functionally equivalent, explicitly permitted by the spec's own
+  escape hatch. Not a deviation. Confirmed by reading the rendered class in the screenshots above.
+- Mobile parity (Finding 7, required): `MobileActionsBar.styles.ts:29` adds `row2Active: 'rounded-lg
+  ring-1 ring-primary/40'`; `MobileActionsBar.tsx:91-96` applies it via `cn(styles.row2({ columnCount:
+  rowCount }), hasSelectedArmy && styles.row2Active)` to the `row2` wrapper — matches the Final spec's
+  required file list (`ActionsPanel.tsx`, `ActionsPanel.styles.ts`, `MobileActionsBar.tsx`,
+  `MobileActionsBar.styles.ts`, `ui-design.md:384`) exactly, same `hasSelectedArmy` condition, same
+  `ring-1 ring-primary/40 rounded-lg` token value (order of utility classes differs —
+  `rounded-lg ring-1 ring-primary/40` vs. the spec's `ring-1 ring-primary/40 rounded-lg` — Tailwind class
+  order has no effect on the generated CSS or the cascade; not a finding). Confirmed via the mobile
+  screenshots above: the ring renders identically on `hud-mobile-actions-bar` to `hud-actions-panel`.
+  `secondaryActions`'s "quieter row" treatment is untouched (desktop-only, as specified) — no diff in
+  `secondaryGrid` usage.
+- Finding 8 (the `isPendingMatch` per-button treatment is a narrower, different signal than
+  `hasSelectedArmy`, and the two layers coexist) was explicitly a "note, not a fix" in `ui-design.md:293-303`
+  — i.e., nothing to change, only something not to accidentally undo. Confirmed it was not "fixed away":
+  `git diff --stat -- src/modules/hud/components/ActionsPanel/ActionButton.tsx` shows no changes, and the
+  full diff (`git status --porcelain`) touches exactly the four files the File plan/Final spec name —
+  `ActionsPanel.styles.ts`, `ActionsPanel.tsx`, `MobileActionsBar.styles.ts`, `MobileActionsBar.tsx`. The
+  per-button `isPendingMatch` → `buttonVariant({ isPendingMatch: true })` solid-fill treatment
+  (`ActionButton.tsx:37,40`, `ActionsPanel.styles.ts:36`, both unread-but-unchanged this phase) is
+  untouched and still independent of the new container-level ring. Met.
+- No logic layer exists for this component pair and none was created — matches the coordinator's note
+  that this is "pure styling, no logic layer," consistent with `component-architecture`'s guidance to
+  create only the files a component needs.
+- Tests (tester-b): deliberately no new DOM assertions added to `ActionsPanel.test.tsx` (confirmed by
+  reading the full file — no ring-related `toHaveClass`/`className` assertion present). Correct per the
+  `testing` skill ("Assert behavior and ARIA... never Tailwind classes") — a `ring-1 ring-primary/40`
+  utility has no queryable role, label, or ARIA attribute to assert, and the plan's own Phase 5 step 5
+  designates `ui-verify` screenshots as this feature's verification method, not a DOM assertion. Correct
+  call, not a gap.
+- Previews (preview-a): both "Army selected, can attack" and "My turn, no selection" states already
+  existed in `ActionsPanel.preview.tsx:11-12` and `MobileActionsBar.preview.tsx:16-17` before this phase
+  (confirmed: both fixtures are `armySelectedCanAttack`/`myTurnNoSelection`, pre-existing names, not new
+  additions) — no new preview state was needed, matching preview-a's report and the Preview states section
+  of `plan.md` (`ActionsPanel`: "existing states plus one new... state" — the state already existed, so
+  nothing to add). Met.
+
+### Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+
+No findings. implementer-b's `mainGridActive` standalone-token implementation (vs. the Contracts block's
+literal, syntactically-invalid self-reference) is not a deviation — it is the only valid reading of a
+spec that explicitly left the merge mechanism to the implementer's discretion, and it produces the exact
+ring in both screenshots above.
+
+### Docs
+- No `docs/README.md` or `docs/architecture/*.md` change required or made for this phase — a pure visual
+  emphasis token with no new game rule or documented behavior change. Consistent with Phase 4's docs
+  note and `plan.md`'s File plan, which lists no docs row for Phase 5.

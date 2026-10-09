@@ -99,7 +99,7 @@ export function ActionsPanelView({
         )}
       </CardHeader>
       <CardContent className={styles.content}>
-        <div className={styles.mainGrid}>
+        <div className={cn(styles.mainGrid, hasSelectedArmy && styles.mainGridActive)}>
           {mainActions.map((action) => (
             <ActionButton key={action.id} action={action} isMain onActionClick={onActionClick} />
           ))}

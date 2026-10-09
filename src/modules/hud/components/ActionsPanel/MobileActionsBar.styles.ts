@@ -26,6 +26,9 @@ export const styles = {
     },
   }),
 
+  /** Ring merged onto row2 while an army is selected, matching the desktop mainGrid emphasis. */
+  row2Active: 'rounded-lg ring-1 ring-primary/40',
+
   /** Cancel button (Row 1, conditional). */
   cancelButton: 'h-7 text-xs px-2',
 

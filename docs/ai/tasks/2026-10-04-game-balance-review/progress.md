@@ -42,12 +42,12 @@ Tier: L (re-triaged from S — see `triage.md`) · Phases: 6
 
 ## Phase 5: ActionsPanel contextual ring emphasis (Proposal 3)
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-b)
-- [ ] tests (tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
+- [x] implementation (implementer-b)
+- [x] tests (tester-b) — no new DOM assertions added; the ring is a Tailwind-class-only visual change with no queryable role/attribute, verified instead by ui-verify screenshots per plan.md's own step 5
+- [x] previews (preview-a) — "Army selected, can attack" vs "My turn, no selection" states already existed in both ActionsPanel.preview.tsx and MobileActionsBar.preview.tsx, no new state needed
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify) — ring confirmed present (selected) vs absent (not selected) on both the desktop ActionsPanel grid and the mobile row2 bar, via cropped screenshot comparison
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 6: LobbyGameRow VP Goal badge (Proposal 5)

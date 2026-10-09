@@ -21,6 +21,8 @@ export const styles = {
     'bg-amber-500/20 border border-amber-500/40 rounded-lg p-2 text-xs font-semibold text-amber-200 flex items-center gap-2 animate-pulse mt-1',
   content: 'p-3 pt-0',
   mainGrid: 'grid grid-cols-3 gap-1.5',
+  /** Ring merged onto mainGrid while an army is selected: the actions that apply to it stand out. */
+  mainGridActive: 'rounded-lg ring-1 ring-primary/40',
   separator: 'my-2 bg-white/10',
   secondaryGrid: 'grid grid-cols-2 gap-1.5',
   disabledReasonCaption: 'mt-1 block w-full truncate text-[10px] text-destructive/90',
