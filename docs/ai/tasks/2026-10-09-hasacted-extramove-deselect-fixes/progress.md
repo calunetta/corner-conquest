@@ -9,7 +9,7 @@ Tier: S · Phases: 1
 - [x] checks: typecheck, lint, unit tests
 - [x] docs-sync (if behavior documented elsewhere changed)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: dcdb213
 
 ## Log
 - 2026-10-09 architect-a: DONE, plan.md drafted.
