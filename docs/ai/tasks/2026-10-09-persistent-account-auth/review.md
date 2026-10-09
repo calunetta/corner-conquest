@@ -122,3 +122,48 @@ None blocking. No invented paths or symbols. Import boundaries respected.
 
 ## Progress.md
 Phase 2 "final review" ticked APPROVED in `progress.md`. "committed" left for the coordinator.
+
+---
+
+# Final review: Persistent account system (Google sign-in), phase 3
+
+VERDICT: APPROVED
+
+## Checks run
+- `npm run typecheck` → clean (`tsc --noEmit`, no output).
+- `npx eslint src/modules/session src/testbed --max-warnings 0` → clean, no output.
+- `npx jest src/modules/session src/testbed` → `Test Suites: 20 passed, 20 total`, `Tests: 219 passed, 219 total`.
+- ui-verify: read `test-results/ui-verify/testbed-session-login-state-{Loading,Guest,Account}--desktop.png`. Loading: spinner + title visible, no form, matches `Login.tsx:59-63`. Guest: Google button, "or" divider, name form all present, card clipped at the bottom (submit button out of frame) — matches the documented risk. Account: "Choose your permanent commander name — this cannot be changed later" copy, name form, Enter Lobby button, no Google button, card fully visible (fits within viewport unlike Guest/Loading). No console errors reported in the preview-b hand-off.
+
+## Plan adherence
+Diffed every Phase 3 file against `plan.md`'s Contracts (`LoginViewProps` lines 283-294, `Login.hook.ts` behavior contract lines 296-302) and File plan (lines 64-73):
+
+- `Login.types.ts`: `LoginMode`, `LoginErrorDialogState`, `LoginViewProps` match the contract field-for-field, same order.
+- `Login.fixtures.ts` (new): one `LoginViewProps` per `LoginMode`, no `jest.fn()` (plain `noop`), shared by the preview and `Login.test.tsx` — matches Phase 3 step 2 exactly.
+- `Login.hook.ts`: `toLoginMode(isAuthLoading, isGuest)` matches the contract's `mode = isAuthLoading ? 'loading' : isGuest ? 'guest' : 'account'` precisely (`Login.hook.ts:17-20`). `onSubmit` keeps its existing body, now sets `USERNAME_TAKEN_DIALOG` on failure/throw (`:44-55`) — unchanged behavior, new shape. `onGoogleSignIn` sets `isLoading` true, calls `signInWithGoogle()`, sets `SIGN_IN_FAILED_DIALOG` on a `false` result, resets `isLoading` in `finally` (`:57-67`) — matches the contract verbatim.
+- `Login.styles.ts`: `googleButton`, `divider`, `dividerLine`, `dividerText`, `loadingWrap`, `spinner` added; all reuse existing theme tokens (`border-white/10`, `bg-black/40`, `text-muted-foreground`, `text-foreground`) — no new raw colors, matches Phase 3 step 4. `root`'s `w-screen` → `w-full` fix is in scope (harmless); `h-screen` kept (see Risk discussion below).
+- `Login.tsx`: `mode === 'loading'` renders a centered spinner (`role="status" aria-label="Loading"`) inside the `Card`, no form, no footer — matches step 5. `mode === 'guest'` renders the Google button + divider above the existing name form. `mode === 'account'` renders the name form with the permanent-name copy, no Google button. `errorDialog.title`/`.description` replace the hardcoded strings. All matches the contract.
+- `Login.hook.test.ts`, `Login.test.tsx`: cover mode derivation (`it.each`, all four loading/guest/account/stale-context cases) and `onGoogleSignIn` success/failure/pending states; view test covers each mode's controls and copy, Google button presence/absence, error-dialog prop-driven title/description. Matches the Test plan bullets (`plan.md:358,360`).
+- `Login.preview.tsx`, `Login.preview.test.tsx` (new): three states (Loading, Guest, Account) rendering `LoginView` with the shared fixtures, one assertion per state — matches Phase 3 steps 8-9 and the `Preview states` section (`plan.md:365`).
+- `src/testbed/registry.ts`: `loginPreview` imported and registered — matches step 10.
+
+No invented paths or symbols: grepped the full repo for `showErrorDialog` (the old prop name) — zero remaining references, confirming every call site was migrated, not just the owned files.
+
+## Scoping decision: `h-screen` left unfixed (Risks section)
+Confirmed via `git show e22eca0:src/modules/session/components/Login/Login.styles.ts` that `h-screen w-screen` predates this task (commit `e22eca0`, an unrelated prior fix) — not introduced by this phase. The `w-screen` → `w-full` fix is in the diff and is harmless. Screenshots confirm the described cosmetic effect: the testbed's Guest and Loading states clip the card at the bottom (submit button/footer out of frame); Account fits because it has one less child (no Google button/divider) and is shorter overall. The real route is unaffected per the plan's claim (not independently re-verified here, since `/` isn't rendered by the testbed harness — this was preview-b's and the coordinator's job, already recorded in Risks). Fixing `h-screen` → `h-full` requires giving the app shell (`globals.css`'s `html`/`body`, or `layout.tsx`) a sized-height chain, which touches more than `Login` and is out of this task's acceptance criteria. Scoping decision is correct: smallest correct change, documented risk, no silent regression. No task folder for the follow-up exists yet under `docs/ai/tasks/` — the "spun off" fix is only recorded as a note in `plan.md`'s Risks section, not a separate task record. Non-blocking: the risk is written down either way and nothing here is lost, but the coordinator should actually create `docs/ai/tasks/<date>-app-shell-height-fix/` (or similar) if "spun off" is meant literally, so it isn't forgotten.
+
+## Loading-state title question (tester-b/preview-b)
+Current behavior: `CardTitle` ("Welcome to Corner Conquest") stays visible in `mode === 'loading'`; only `CardDescription` is hidden (`Login.tsx:51-56`). Accepted as-is: the title is static branding, not identity- or mode-specific copy, so there's no correctness reason to hide it during the brief auth-resolution window, and hiding it would add an extra layout shift (title popping in) on top of the existing spinner-to-form transition. `Login.test.tsx`'s `mode: loading` describe block (`shows the title but neither mode description`) locks this in as an explicit, intentional assertion, not an oversight. No fix needed.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | `Login.test.tsx` (diff, removed `describe('root stacking context (z-index regression)', …)`) | The rewrite dropped the two pre-existing assertions on `styles.root` containing `z-\d+` and `relative` (a regression guard for a past stacking-context bug, unrelated to this phase's `mode` changes). Not reintroduced elsewhere in the diff. | tester-b | No — the underlying CSS (`styles.root`) still carries `relative z-0`, unchanged in this diff (`Login.styles.ts:2`), so there's no live regression; only test coverage for a past bug was lost. Flagging so tester-b can decide whether to restore it in a follow-up pass rather than losing that guard silently. |
+
+No other findings. No invented paths or symbols in the diff. Import boundaries respected (no `firebase/*`, no `@/features/*` in `.tsx`/`.styles.ts`/`.types.ts`/`.fixtures.ts`/`.preview.tsx`). File sizes within `code-standards` limits (`Login.tsx` 134 lines, `Login.hook.ts` well under 150).
+
+## Docs
+- `docs-sync`: not needed this phase — Phase 3 is UI-only (Login rendering, no identity/rule behavior change); the `logout`/`beforeunload` docs update is already scheduled for Phase 4 per `plan.md:345`.
+
+## Progress.md
+Phase 3 boxes for implementation, tests, previews, checks, and UI verified are confirmed by the above and ticked in `progress.md`. "final review" ticked APPROVED. "committed" left for the coordinator.

@@ -1,5 +1,5 @@
 export const styles = {
-  root: 'relative z-0 flex h-screen w-screen items-center justify-center p-4 overflow-hidden',
+  root: 'relative z-0 flex h-screen w-full items-center justify-center p-4 overflow-hidden',
   card: 'z-10 w-full max-w-md bg-background/55 backdrop-blur-2xl border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden',
   header: 'text-center pb-2',
   iconWrap: 'mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-primary/20 border border-amber-500/30 shadow-inner',
@@ -13,4 +13,10 @@ export const styles = {
   submitButton: 'w-full font-bold bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-all duration-300 hover:scale-[1.02] py-5',
   loadingIcon: 'mr-2 h-4 w-4 animate-spin',
   submitIcon: 'mr-2 h-4 w-4',
+  loadingWrap: 'flex justify-center py-6',
+  spinner: 'h-8 w-8 animate-spin text-amber-400',
+  googleButton: 'w-full border-white/10 bg-black/40 text-foreground hover:bg-white/10 py-5',
+  divider: 'flex items-center gap-3',
+  dividerLine: 'h-px flex-1 bg-white/10',
+  dividerText: 'text-xs uppercase tracking-widest text-muted-foreground',
 } as const;

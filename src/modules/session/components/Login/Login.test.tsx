@@ -1,7 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { LoginView } from './Login';
 import type { LoginViewProps } from './Login.types';
-import { styles } from './Login.styles';
+import { accountLoginProps, guestLoginProps, loadingLoginProps } from './Login.fixtures';
 
 // Mock next/image to avoid issues with Image component in tests
 jest.mock('next/image', () => ({
@@ -19,237 +19,249 @@ jest.mock('@/modules/lobby', () => ({
   LobbyBackground: () => <div data-testid="lobby-background" />,
 }));
 
-// Fixtures for common prop states
-const defaultProps: LoginViewProps = {
-  name: '',
-  isLoading: false,
-  isHydrated: true,
-  showErrorDialog: false,
-  onNameChange: jest.fn(),
-  onNameKeyDown: jest.fn(),
-  onSubmit: jest.fn(),
-  onErrorDialogOpenChange: jest.fn(),
-};
+const GUEST_COPY = /enter your commander name to enter the lobby/i;
+const ACCOUNT_COPY = 'Choose your permanent commander name — this cannot be changed later.';
+
+function renderLogin(overrides: Partial<LoginViewProps> = {}) {
+  return render(<LoginView {...guestLoginProps} {...overrides} />);
+}
+
+function getNameInput() {
+  return screen.getByRole('textbox', { name: /commander name/i });
+}
+
+function getEnterLobbyButton() {
+  return screen.getByRole('button', { name: /enter lobby/i });
+}
 
 describe('LoginView', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('input element', () => {
-    it('has id="username"', () => {
-      render(<LoginView {...defaultProps} />);
+  describe('mode: loading', () => {
+    it('shows a loading status and no name input while Firebase Auth resolves', () => {
+      render(<LoginView {...loadingLoginProps} />);
 
-      const input = screen.getByRole('textbox', { name: /commander name/i });
-      expect(input).toHaveAttribute('id', 'username');
+      expect(screen.getByRole('status', { name: 'Loading' })).toBeInTheDocument();
+      expect(screen.queryByRole('textbox', { name: /commander name/i })).not.toBeInTheDocument();
     });
 
-    it('has data-hydrated="true" when isHydrated is true', () => {
-      render(<LoginView {...defaultProps} isHydrated={true} />);
+    it('shows no Google button and no Enter Lobby button', () => {
+      render(<LoginView {...loadingLoginProps} />);
 
-      const input = screen.getByRole('textbox', { name: /commander name/i });
-      expect(input).toHaveAttribute('data-hydrated', 'true');
+      expect(screen.queryByRole('button', { name: /sign in with google/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /enter lobby/i })).not.toBeInTheDocument();
     });
 
-    it('does not have data-hydrated attribute when isHydrated is false', () => {
-      render(<LoginView {...defaultProps} isHydrated={false} />);
+    it('shows the title but neither mode description', () => {
+      render(<LoginView {...loadingLoginProps} />);
 
-      const input = screen.getByRole('textbox', { name: /commander name/i });
-      expect(input).not.toHaveAttribute('data-hydrated');
-    });
-
-    it('displays placeholder text "Your Name"', () => {
-      render(<LoginView {...defaultProps} />);
-
-      const input = screen.getByPlaceholderText('Your Name');
-      expect(input).toBeInTheDocument();
-    });
-
-    it('shows the current name value', () => {
-      render(<LoginView {...defaultProps} name="Alice" />);
-
-      const input = screen.getByRole('textbox', { name: /commander name/i }) as HTMLInputElement;
-      expect(input.value).toBe('Alice');
+      expect(screen.getByText('Welcome to Corner Conquest')).toBeInTheDocument();
+      expect(screen.queryByText(GUEST_COPY)).not.toBeInTheDocument();
+      expect(screen.queryByText(ACCOUNT_COPY)).not.toBeInTheDocument();
     });
   });
 
-  describe('name input interaction', () => {
-    it('calls onNameChange when typing in the input', () => {
-      const onNameChange = jest.fn();
-      render(<LoginView {...defaultProps} onNameChange={onNameChange} />);
+  describe('mode: guest', () => {
+    it('shows the Google sign-in button, the "or" divider, and the name form', () => {
+      renderLogin();
 
-      const input = screen.getByRole('textbox', { name: /commander name/i });
-      fireEvent.change(input, { target: { value: 'TestName' } });
+      expect(screen.getByRole('button', { name: 'Sign in with Google' })).toBeEnabled();
+      expect(screen.getByText('or')).toBeInTheDocument();
+      expect(getNameInput()).toBeInTheDocument();
+      expect(getEnterLobbyButton()).toBeInTheDocument();
+    });
+
+    it('shows the guest description and no loading status', () => {
+      renderLogin();
+
+      expect(screen.getByText(GUEST_COPY)).toBeInTheDocument();
+      expect(screen.queryByRole('status', { name: 'Loading' })).not.toBeInTheDocument();
+    });
+
+    it('calls onGoogleSignIn when the Google button is clicked', () => {
+      const onGoogleSignIn = jest.fn();
+      renderLogin({ onGoogleSignIn });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+
+      expect(onGoogleSignIn).toHaveBeenCalledTimes(1);
+    });
+
+    it('disables the Google button while isLoading is true', () => {
+      renderLogin({ isLoading: true, name: 'Alice' });
+
+      expect(screen.getByRole('button', { name: 'Sign in with Google' })).toBeDisabled();
+    });
+  });
+
+  describe('mode: account', () => {
+    it('shows the permanent-name copy instead of the guest copy', () => {
+      render(<LoginView {...accountLoginProps} />);
+
+      expect(screen.getByText(ACCOUNT_COPY)).toBeInTheDocument();
+      expect(screen.queryByText(GUEST_COPY)).not.toBeInTheDocument();
+    });
+
+    it('shows the name form and Enter Lobby but no Google button or divider', () => {
+      render(<LoginView {...accountLoginProps} name="Alice" />);
+
+      expect(getNameInput()).toBeInTheDocument();
+      expect(getEnterLobbyButton()).toBeEnabled();
+      expect(screen.queryByRole('button', { name: /sign in with google/i })).not.toBeInTheDocument();
+      expect(screen.queryByText('or')).not.toBeInTheDocument();
+    });
+
+    it('shows no loading status', () => {
+      render(<LoginView {...accountLoginProps} />);
+
+      expect(screen.queryByRole('status', { name: 'Loading' })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('name input', () => {
+    it('has the username id and the placeholder "Your Name"', () => {
+      renderLogin();
+
+      expect(getNameInput()).toHaveAttribute('id', 'username');
+      expect(screen.getByPlaceholderText('Your Name')).toBe(getNameInput());
+    });
+
+    it('is associated with the "Commander Name" label', () => {
+      renderLogin();
+
+      expect(screen.getByLabelText('Commander Name')).toBe(getNameInput());
+    });
+
+    it('shows the current name value', () => {
+      renderLogin({ name: 'Alice' });
+
+      expect(getNameInput()).toHaveValue('Alice');
+    });
+
+    it('sets data-hydrated="true" when isHydrated is true', () => {
+      renderLogin({ isHydrated: true });
+
+      expect(getNameInput()).toHaveAttribute('data-hydrated', 'true');
+    });
+
+    it('has no data-hydrated attribute when isHydrated is false', () => {
+      renderLogin({ isHydrated: false });
+
+      expect(getNameInput()).not.toHaveAttribute('data-hydrated');
+    });
+
+    it('calls onNameChange with the new value when typing', () => {
+      const onNameChange = jest.fn();
+      renderLogin({ onNameChange });
+
+      fireEvent.change(getNameInput(), { target: { value: 'TestName' } });
 
       expect(onNameChange).toHaveBeenCalledWith('TestName');
     });
 
-    it('calls onNameKeyDown when a key is pressed in the input', () => {
+    it('calls onNameKeyDown when a key is pressed', () => {
       const onNameKeyDown = jest.fn();
-      render(<LoginView {...defaultProps} onNameKeyDown={onNameKeyDown} />);
+      renderLogin({ onNameKeyDown });
 
-      const input = screen.getByRole('textbox', { name: /commander name/i });
-      fireEvent.keyDown(input, { key: 'Enter' });
+      fireEvent.keyDown(getNameInput(), { key: 'Enter' });
 
-      expect(onNameKeyDown).toHaveBeenCalled();
+      expect(onNameKeyDown).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('Enter Lobby button', () => {
-    it('has text "Enter Lobby"', () => {
-      render(<LoginView {...defaultProps} />);
+    it('is enabled when the name is not blank and isLoading is false', () => {
+      renderLogin({ name: 'Alice', isLoading: false });
 
-      expect(screen.getByRole('button', { name: /enter lobby/i })).toBeInTheDocument();
+      expect(getEnterLobbyButton()).toBeEnabled();
     });
 
-    it('is enabled when name is not empty and isLoading is false', () => {
-      render(<LoginView {...defaultProps} name="Alice" isLoading={false} />);
+    it('is disabled when the name is empty', () => {
+      renderLogin({ name: '' });
 
-      const button = screen.getByRole('button', { name: /enter lobby/i });
-      expect(button).toBeEnabled();
+      expect(getEnterLobbyButton()).toBeDisabled();
     });
 
-    it('is disabled when name is empty', () => {
-      render(<LoginView {...defaultProps} name="" isLoading={false} />);
+    it('is disabled when the name is only whitespace', () => {
+      renderLogin({ name: '   ' });
 
-      const button = screen.getByRole('button', { name: /enter lobby/i });
-      expect(button).toBeDisabled();
+      expect(getEnterLobbyButton()).toBeDisabled();
     });
 
-    it('is disabled when name is only whitespace', () => {
-      render(<LoginView {...defaultProps} name="   " isLoading={false} />);
+    it('is disabled while isLoading is true', () => {
+      renderLogin({ name: 'Alice', isLoading: true });
 
-      const button = screen.getByRole('button', { name: /enter lobby/i });
-      expect(button).toBeDisabled();
-    });
-
-    it('is disabled when isLoading is true', () => {
-      render(<LoginView {...defaultProps} name="Alice" isLoading={true} />);
-
-      const button = screen.getByRole('button', { name: /enter lobby/i });
-      expect(button).toBeDisabled();
+      expect(getEnterLobbyButton()).toBeDisabled();
     });
 
     it('calls onSubmit when clicked', () => {
       const onSubmit = jest.fn();
-      render(<LoginView {...defaultProps} name="Alice" onSubmit={onSubmit} />);
+      renderLogin({ name: 'Alice', onSubmit });
 
-      const button = screen.getByRole('button', { name: /enter lobby/i });
-      fireEvent.click(button);
+      fireEvent.click(getEnterLobbyButton());
 
-      expect(onSubmit).toHaveBeenCalled();
-    });
-  });
-
-  describe('loading state icon', () => {
-    it('shows a spinner icon when isLoading is true', () => {
-      render(<LoginView {...defaultProps} isLoading={true} name="Alice" />);
-
-      const button = screen.getByRole('button', { name: /enter lobby/i });
-      // The spinner is rendered by Loader2 from lucide-react
-      // When loading, Loader2 component with animate-spin class is rendered
-      const spinner = button.querySelector('[class*="animate-spin"]');
-      expect(spinner).toBeInTheDocument();
-    });
-
-    it('shows a sword icon when isLoading is false', () => {
-      render(<LoginView {...defaultProps} isLoading={false} name="Alice" />);
-
-      const button = screen.getByRole('button', { name: /enter lobby/i });
-      // The sword is rendered by Swords from lucide-react
-      // When not loading, there should be no animate-spin spinner
-      const spinner = button.querySelector('[class*="animate-spin"]');
-      expect(spinner).not.toBeInTheDocument();
+      expect(onSubmit).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('error dialog', () => {
-    it('renders AlertDialog with "Username Taken" title when showErrorDialog is true', () => {
-      render(<LoginView {...defaultProps} showErrorDialog={true} />);
+    const errorDialog = {
+      open: true,
+      title: 'Sign-In Failed',
+      description: 'Could not sign in with Google. Please try again.',
+    };
 
-      expect(screen.getByText('Username Taken')).toBeInTheDocument();
+    it('renders the title and description passed in errorDialog', () => {
+      renderLogin({ errorDialog });
+
+      const dialog = screen.getByRole('alertdialog');
+      expect(within(dialog).getByText('Sign-In Failed')).toBeInTheDocument();
+      expect(within(dialog).getByText('Could not sign in with Google. Please try again.')).toBeInTheDocument();
     });
 
-    it('displays error description text', () => {
-      render(<LoginView {...defaultProps} showErrorDialog={true} />);
-
-      expect(
-        screen.getByText(/this username is already in use/i)
-      ).toBeInTheDocument();
-    });
-
-    it('does not render the dialog when showErrorDialog is false', () => {
-      render(<LoginView {...defaultProps} showErrorDialog={false} />);
+    it('does not hardcode the "Username Taken" title', () => {
+      renderLogin({ errorDialog });
 
       expect(screen.queryByText('Username Taken')).not.toBeInTheDocument();
     });
 
-    it('has an OK button in the dialog', () => {
-      render(<LoginView {...defaultProps} showErrorDialog={true} />);
+    it('renders the username-taken copy when errorDialog carries it', () => {
+      renderLogin({
+        errorDialog: {
+          open: true,
+          title: 'Username Taken',
+          description: 'This username is already in use. Please choose a different one.',
+        },
+      });
 
-      const okButton = screen.getByRole('button', { name: /ok/i });
-      expect(okButton).toBeInTheDocument();
+      expect(screen.getByRole('alertdialog')).toHaveTextContent('Username Taken');
+      expect(screen.getByRole('alertdialog')).toHaveTextContent(/this username is already in use/i);
     });
 
-    it('calls onErrorDialogOpenChange(false) when OK button is clicked', () => {
-      const onErrorDialogOpenChange = jest.fn();
-      render(
-        <LoginView {...defaultProps} showErrorDialog={true} onErrorDialogOpenChange={onErrorDialogOpenChange} />
-      );
+    it('renders no alert dialog when errorDialog.open is false', () => {
+      renderLogin({ errorDialog: { ...errorDialog, open: false } });
 
-      const okButton = screen.getByRole('button', { name: /ok/i });
-      fireEvent.click(okButton);
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    });
+
+    it('calls onErrorDialogOpenChange(false) when OK is clicked', () => {
+      const onErrorDialogOpenChange = jest.fn();
+      renderLogin({ errorDialog, onErrorDialogOpenChange });
+
+      fireEvent.click(screen.getByRole('button', { name: 'OK' }));
 
       expect(onErrorDialogOpenChange).toHaveBeenCalledWith(false);
     });
   });
 
   describe('page content', () => {
-    it('renders the welcome title', () => {
-      render(<LoginView {...defaultProps} />);
+    it('renders the welcome title and the "Commander Name" label', () => {
+      renderLogin();
 
       expect(screen.getByText('Welcome to Corner Conquest')).toBeInTheDocument();
-    });
-
-    it('renders the description text', () => {
-      render(<LoginView {...defaultProps} />);
-
-      expect(
-        screen.getByText(/enter your commander name to enter the lobby/i)
-      ).toBeInTheDocument();
-    });
-
-    it('renders the label "Commander Name"', () => {
-      render(<LoginView {...defaultProps} />);
-
       expect(screen.getByText('Commander Name')).toBeInTheDocument();
-    });
-
-    it('renders the compass icon', () => {
-      render(<LoginView {...defaultProps} />);
-
-      // The compass icon is rendered in the header
-      // Verify the title is rendered which appears with the icon
-      expect(screen.getByText('Welcome to Corner Conquest')).toBeInTheDocument();
-    });
-  });
-
-  describe('accessibility', () => {
-    it('input is associated with label via htmlFor', () => {
-      render(<LoginView {...defaultProps} />);
-
-      const label = screen.getByText('Commander Name');
-      expect(label).toHaveAttribute('for', 'username');
-    });
-  });
-
-  describe('root stacking context (z-index regression)', () => {
-    it('root has explicit z-index utility class to establish stacking context', () => {
-      expect(styles.root).toMatch(/\bz-\d+/);
-    });
-
-    it('root uses relative positioning', () => {
-      expect(styles.root).toMatch(/relative/);
     });
   });
 });

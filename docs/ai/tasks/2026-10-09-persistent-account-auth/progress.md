@@ -22,12 +22,12 @@ Tier: L · Phases: 4
 - [x] committed: b3d033d
 
 ## Phase 3: Login UI
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, `npx jest src/modules/session src/testbed`
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a)
+- [x] checks: typecheck, lint, `npx jest src/modules/session src/testbed`
+- [x] UI verified (ui-verify)
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 4: Docs and full verification
