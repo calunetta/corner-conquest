@@ -97,6 +97,7 @@ export function LobbyGameRow({
             {game.players.length} / {game.maxPlayers}
           </span>
         </div>
+        <Badge variant="outline">{game.settings.victoryPointGoal} VP</Badge>
       </div>
 
       <div className={styles.actionsGroup}>

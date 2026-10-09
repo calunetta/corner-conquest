@@ -21,3 +21,11 @@ export const fullGame: GameState = {
   players: [createRowPlayer('p3', 'Rex', PlayerColor.Purple), createRowPlayer('p4', 'Mira', PlayerColor.Yellow)],
   settings: defaultGameSettings,
 } as GameState;
+
+/** Non-default victory point goal, so the VP badge shows the game's own value rather than the 30 VP default. */
+export const customGoalGame: GameState = {
+  ...openGame,
+  id: 'game-custom-goal',
+  name: "Mira's Long War",
+  settings: { ...defaultGameSettings, victoryPointGoal: 45 },
+} as GameState;
