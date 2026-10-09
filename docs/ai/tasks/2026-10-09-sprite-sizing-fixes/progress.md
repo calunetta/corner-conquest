@@ -9,7 +9,7 @@ Tier: S · Phases: 1
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 11db124
 
 ## Log
 - 2026-10-09 architect-b: CHANGES REQUESTED, 3 wrong citations (file path + 2 doc section refs)
