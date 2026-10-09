@@ -12,7 +12,7 @@ Tier: M · Phases: 2
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: f30ad4a
 
 ## Phase 2: TileResources + IslandTile base layout rework
 - [ ] plan approved (architect-a, architect-b)
