@@ -12,7 +12,7 @@ Tier: L · Phases: 4
 - [x] tests (tester-a)
 - [x] checks: typecheck, lint pass; `npm run test:rules` not run — no Java 21 runtime in this environment; rules logic verified by hand (see review.md)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 44ae2a0
 
 ## Phase 2: Account service + identity hook
 - [ ] implementation (implementer-a)
