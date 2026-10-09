@@ -7,21 +7,42 @@ service cloud.firestore {
       // Allow reading to check availability (src/hooks/use-player.tsx line 20-21)
       allow read;
 
-      // Allow creating new username reservations (src/hooks/use-player.tsx line 79)
-      // A username reservation is just {playerId: "some_player_id"}
-      allow create: if request.resource.data.playerId is string;
+      // A guest reservation has authUid == null; an account reservation has authUid == the
+      // owning Firebase Auth uid and additionally requires that account not already own a
+      // username ("pick once, keep forever" — src/modules/session/services/account.service.ts).
+      allow create: if request.resource.data.playerId is string &&
+        (request.resource.data.authUid == null ||
+         (request.resource.data.authUid is string &&
+          request.auth != null &&
+          request.resource.data.authUid == request.auth.uid &&
+          !exists(/databases/$(database)/documents/accounts/$(request.auth.uid))));
 
-      // Allow updating only if playerId doesn't change.
-      // This prevents a different playerId from overwriting an existing reservation.
-      // The app checks client-side that it's the same player (line 73-76) and updates
-      // or creates the username (line 79).
+      // Guest reservations can be re-claimed with the same playerId, exactly as before.
+      // Account reservations (authUid != null) are permanent: no update, ever.
+      // get(..., null) because guest reservations written before authUid existed have no such
+      // field; a plain resource.data.authUid read would error and lock those reservations.
+      // The merged request.resource.data also lacks authUid for a legacy doc, so it gets the same treatment.
       allow update: if
+        resource.data.get('authUid', null) == null &&
+        request.resource.data.get('authUid', null) == null &&
         resource.data.playerId is string &&
         request.resource.data.playerId is string &&
         resource.data.playerId == request.resource.data.playerId;
 
-      // Allow deletes for logout (src/hooks/use-player.tsx line 54)
-      allow delete;
+      // Guest reservations can be released on logout/beforeunload, exactly as before.
+      // Account reservations are permanent: no delete, ever.
+      allow delete: if resource.data.get('authUid', null) == null;
+    }
+
+    // Reverse lookup: which username does this Firebase Auth account own. Written once,
+    // atomically with the usernames/{username} doc, by account.service.ts's bindUsernameToAccount.
+    match /accounts/{authUid} {
+      allow read;
+      allow create: if request.auth != null &&
+        request.auth.uid == authUid &&
+        request.resource.data.username is string;
+      allow update: if false; // picking a username is a one-time action
+      allow delete: if false; // never released, by design
     }
 
     // Games collection: games created by players

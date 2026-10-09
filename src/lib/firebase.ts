@@ -17,6 +17,14 @@ import {
     arrayUnion,
     connectFirestoreEmulator,
 } from 'firebase/firestore';
+import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut,
+    onAuthStateChanged,
+    connectAuthEmulator,
+} from 'firebase/auth';
 
 const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -38,9 +46,22 @@ if (firestoreEmulatorHost) {
   connectFirestoreEmulator(db, host, Number(port));
 }
 
-export { 
-    app, 
+const auth = getAuth(app);
+
+// Set by playwright.config.ts, mirroring NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST.
+const authEmulatorHost = process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST; // "host:port"
+if (authEmulatorHost) {
+  connectAuthEmulator(auth, `http://${authEmulatorHost}`);
+}
+
+export {
+    app,
     db,
+    auth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut,
+    onAuthStateChanged,
     doc,
     getDoc,
     setDoc,

@@ -6,6 +6,11 @@ import * as fs from 'fs';
 
 interface UsernameDoc {
   playerId: string;
+  authUid?: string | null;
+}
+
+interface AccountDoc {
+  username: string;
 }
 
 interface GameStateDoc {
@@ -17,6 +22,13 @@ interface GameStateDoc {
 }
 
 let testEnv: RulesTestEnvironment;
+
+/** Writes a document bypassing the rules, to set up states the client can no longer produce. */
+async function seedWithRulesDisabled(path: string, data: Record<string, unknown>): Promise<void> {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await context.firestore().doc(path).set(data);
+  });
+}
 
 beforeAll(async () => {
   // Load the firestore.rules file and pass it to the test environment
@@ -47,40 +59,92 @@ describe('Firestore Rules: usernames collection', () => {
 
       // Set up: create a username doc
       const admin = testEnv.authenticatedContext('admin', { isAdmin: true });
-      await admin.firestore().doc('usernames/alice').set({ playerId: 'player_1' });
+      await admin.firestore().doc('usernames/alice').set({ playerId: 'player_1', authUid: null });
 
       // Test: unauthenticated read should work
       await expect(db.doc('usernames/alice').get()).resolves.toBeDefined();
     });
   });
 
-  describe('Create', () => {
-    it('should allow creating a new username reservation', async () => {
+  describe('Create: guest reservation', () => {
+    it('should allow creating a new guest username reservation (authUid null)', async () => {
       const db = testEnv.unauthenticatedContext().firestore();
 
-      // Test: create a new username doc with playerId
+      // Test: create a new username doc with playerId and an explicit null authUid
       await expect(
-        db.doc('usernames/bob').set({ playerId: 'player_2' })
+        db.doc('usernames/bob').set({ playerId: 'player_2', authUid: null })
       ).resolves.toBeUndefined();
     });
 
-    it('should reject creating with invalid data structure', async () => {
+    it('should reject a guest reservation that omits the authUid field', async () => {
       const db = testEnv.unauthenticatedContext().firestore();
 
-      // Test: create without playerId field
+      // Test: every usernames doc carries an explicit authUid (see firestore.rules create rule)
       await expect(
-        db.doc('usernames/charlie').set({ username: 'charlie' })
+        db.doc('usernames/bob').set({ playerId: 'player_2' })
+      ).rejects.toThrow();
+    });
+
+    it('should reject creating with invalid data structure (missing playerId)', async () => {
+      const db = testEnv.unauthenticatedContext().firestore();
+
+      // Test: create without playerId, so authUid is the only valid field
+      await expect(
+        db.doc('usernames/charlie').set({ username: 'charlie', authUid: null })
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('Create: permanent account binding', () => {
+    it('should allow the signed-in account to bind a username when it owns none yet', async () => {
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        db.doc('usernames/alice_perm').set({ playerId: 'uid_alice', authUid: 'uid_alice' })
+      ).resolves.toBeUndefined();
+    });
+
+    it('should reject binding with an authUid that is not the signed-in uid', async () => {
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        db.doc('usernames/impostor').set({ playerId: 'uid_bob', authUid: 'uid_bob' })
+      ).rejects.toThrow();
+    });
+
+    it('should reject a permanent binding when unauthenticated, even with a matching authUid', async () => {
+      const db = testEnv.unauthenticatedContext().firestore();
+
+      await expect(
+        db.doc('usernames/anon_perm').set({ playerId: 'uid_x', authUid: 'uid_x' })
+      ).rejects.toThrow();
+    });
+
+    it('should reject a second binding when the account already owns a username ("pick once")', async () => {
+      await seedWithRulesDisabled('accounts/uid_alice', { username: 'first_name' });
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        db.doc('usernames/second_name').set({ playerId: 'uid_alice', authUid: 'uid_alice' })
+      ).rejects.toThrow();
+    });
+
+    it('should reject a permanent binding whose playerId is not a string', async () => {
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        db.doc('usernames/numeric_id').set({ playerId: 123, authUid: 'uid_alice' })
       ).rejects.toThrow();
     });
   });
 
   describe('Update', () => {
-    it('should allow updating username with same playerId', async () => {
+    it('should allow updating a guest username with the same playerId', async () => {
       const db = testEnv.unauthenticatedContext().firestore();
       const playerId = 'player_same_123';
 
-      // Setup: create a username
-      await db.doc('usernames/diana').set({ playerId });
+      // Setup: create a guest username
+      await db.doc('usernames/diana').set({ playerId, authUid: null });
 
       // Test: update with same playerId should succeed
       await expect(
@@ -88,11 +152,11 @@ describe('Firestore Rules: usernames collection', () => {
       ).resolves.toBeUndefined();
     });
 
-    it('should reject updating username with different playerId (prevent name stealing)', async () => {
+    it('should reject updating a guest username with a different playerId (prevent name stealing)', async () => {
       const db = testEnv.unauthenticatedContext().firestore();
 
       // Setup: create a username owned by player_1
-      await db.doc('usernames/eve').set({ playerId: 'player_1' });
+      await db.doc('usernames/eve').set({ playerId: 'player_1', authUid: null });
 
       // Test: update to assign to player_2 should fail
       await expect(
@@ -100,7 +164,7 @@ describe('Firestore Rules: usernames collection', () => {
       ).rejects.toThrow();
     });
 
-    it('should reject updating non-existent username', async () => {
+    it('should reject updating a non-existent username', async () => {
       const db = testEnv.unauthenticatedContext().firestore();
 
       // Test: updating a non-existent doc should fail
@@ -108,19 +172,235 @@ describe('Firestore Rules: usernames collection', () => {
         db.doc('usernames/frank').update({ playerId: 'player_3' })
       ).rejects.toThrow();
     });
+
+    it('should reject promoting a guest reservation to an account binding, even by its owner', async () => {
+      const db = testEnv.authenticatedContext('player_5').firestore();
+
+      await db.doc('usernames/promote_me').set({ playerId: 'player_5', authUid: null });
+
+      await expect(
+        db.doc('usernames/promote_me').update({ authUid: 'player_5' })
+      ).rejects.toThrow();
+    });
+
+    it('should reject updating a permanent binding, even by its owner with the same playerId', async () => {
+      await seedWithRulesDisabled('usernames/locked_name', {
+        playerId: 'uid_alice',
+        authUid: 'uid_alice',
+      });
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        db.doc('usernames/locked_name').update({ playerId: 'uid_alice' })
+      ).rejects.toThrow();
+    });
+
+    // REPRODUCTION (unverified in this environment: no Java 21, so the emulator cannot run).
+    // Legacy guest docs written before authUid existed have no authUid field. The update rule
+    // reads request.resource.data.authUid directly, which errors on a missing key and denies.
+    // Expected to fail until the rule reads it with request.resource.data.get('authUid', null).
+    it('should allow updating a legacy guest username that has no authUid field', async () => {
+      await seedWithRulesDisabled('usernames/legacy_guest', { playerId: 'player_legacy' });
+      const db = testEnv.unauthenticatedContext().firestore();
+
+      await expect(
+        db.doc('usernames/legacy_guest').update({ playerId: 'player_legacy' })
+      ).resolves.toBeUndefined();
+    });
   });
 
   describe('Delete', () => {
-    it('should allow deleting a username (logout)', async () => {
+    it('should allow deleting a guest username (logout)', async () => {
       const db = testEnv.unauthenticatedContext().firestore();
 
-      // Setup: create a username
-      await db.doc('usernames/grace').set({ playerId: 'player_4' });
+      // Setup: create a guest username
+      await db.doc('usernames/grace').set({ playerId: 'player_4', authUid: null });
 
       // Test: delete should succeed
       await expect(
         db.doc('usernames/grace').delete()
       ).resolves.toBeUndefined();
+    });
+
+    it('should allow deleting a legacy guest username that has no authUid field', async () => {
+      await seedWithRulesDisabled('usernames/legacy_delete', { playerId: 'player_legacy' });
+      const db = testEnv.unauthenticatedContext().firestore();
+
+      await expect(
+        db.doc('usernames/legacy_delete').delete()
+      ).resolves.toBeUndefined();
+    });
+
+    it('should reject deleting a permanent binding, even by its owner', async () => {
+      await seedWithRulesDisabled('usernames/keep_forever', {
+        playerId: 'uid_alice',
+        authUid: 'uid_alice',
+      });
+      const testDb = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        testDb.doc('usernames/keep_forever').delete()
+      ).rejects.toThrow();
+
+      const remaining = await testDb.doc('usernames/keep_forever').get();
+      expect(remaining.data()).toEqual({ playerId: 'uid_alice', authUid: 'uid_alice' });
+    });
+  });
+
+  describe('Atomic bind: bindUsernameToAccount batch', () => {
+    it('should commit the username and accounts docs together for a new account', async () => {
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      const batch = db.batch();
+      batch.set(db.doc('usernames/alice_batch'), { playerId: 'uid_alice', authUid: 'uid_alice' });
+      batch.set(db.doc('accounts/uid_alice'), { username: 'alice_batch' });
+
+      await expect(batch.commit()).resolves.toBeUndefined();
+
+      const accountSnap = await db.doc('accounts/uid_alice').get();
+      expect(accountSnap.data()).toEqual({ username: 'alice_batch' });
+    });
+
+    it('should reject a second bind batch for an account that already owns a username', async () => {
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+      await seedWithRulesDisabled('accounts/uid_alice', { username: 'alice_batch' });
+
+      const batch = db.batch();
+      batch.set(db.doc('usernames/alice_second'), { playerId: 'uid_alice', authUid: 'uid_alice' });
+      batch.set(db.doc('accounts/uid_alice'), { username: 'alice_second' });
+
+      await expect(batch.commit()).rejects.toThrow();
+
+      const secondSnap = await db.doc('usernames/alice_second').get();
+      expect(secondSnap.exists).toBe(false);
+    });
+
+    it('should reject binding a name that a guest currently holds, leaving no accounts doc behind', async () => {
+      await seedWithRulesDisabled('usernames/taken_by_guest', { playerId: 'guest_1', authUid: null });
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      const batch = db.batch();
+      batch.set(db.doc('usernames/taken_by_guest'), { playerId: 'uid_alice', authUid: 'uid_alice' });
+      batch.set(db.doc('accounts/uid_alice'), { username: 'taken_by_guest' });
+
+      await expect(batch.commit()).rejects.toThrow();
+
+      const accountSnap = await db.doc('accounts/uid_alice').get();
+      expect(accountSnap.exists).toBe(false);
+      const guestSnap = await db.doc('usernames/taken_by_guest').get();
+      expect((guestSnap.data() as UsernameDoc).playerId).toBe('guest_1');
+    });
+  });
+
+  describe('Security: cross-player attacks blocked', () => {
+    it('should prevent one player from stealing another player\'s username', async () => {
+      const db = testEnv.unauthenticatedContext().firestore();
+
+      // Setup: alice reserves username
+      const aliceId = 'alice_000';
+      await db.doc('usernames/reserved').set({ playerId: aliceId, authUid: null });
+
+      // Test: bob tries to steal alice's username
+      const bobId = 'bob_111';
+      await expect(
+        db.doc('usernames/reserved').update({ playerId: bobId })
+      ).rejects.toThrow();
+
+      // Verify username still belongs to alice
+      const snap = await db.doc('usernames/reserved').get();
+      expect(snap.data()?.playerId).toBe(aliceId);
+    });
+
+    it('should prevent overwriting a guest reservation with setDoc from another player', async () => {
+      const db = testEnv.unauthenticatedContext().firestore();
+
+      // Setup: alice reserves a username
+      await db.doc('usernames/alice_name').set({ playerId: 'alice_001', authUid: null });
+
+      // Test: bob's setDoc on the existing doc is evaluated as an update, so it is rejected
+      await expect(
+        db.doc('usernames/alice_name').set({ playerId: 'bob_002', authUid: null })
+      ).rejects.toThrow();
+
+      // Verify the document still has alice's playerId
+      const snap = await db.doc('usernames/alice_name').get();
+      expect(snap.data()?.playerId).toBe('alice_001');
+    });
+  });
+});
+
+describe('Firestore Rules: accounts collection', () => {
+  describe('Read', () => {
+    it('should allow anyone to read an accounts doc (reverse lookup on sign-in)', async () => {
+      await seedWithRulesDisabled('accounts/uid_alice', { username: 'alice_perm' });
+      const db = testEnv.unauthenticatedContext().firestore();
+
+      const snap = await db.doc('accounts/uid_alice').get();
+      expect((snap.data() as AccountDoc).username).toBe('alice_perm');
+    });
+  });
+
+  describe('Create', () => {
+    it('should allow the owning uid to create its own accounts doc', async () => {
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').set({ username: 'alice_perm' })
+      ).resolves.toBeUndefined();
+    });
+
+    it('should reject creating another account\'s accounts doc', async () => {
+      const db = testEnv.authenticatedContext('uid_bob').firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').set({ username: 'alice_perm' })
+      ).rejects.toThrow();
+    });
+
+    it('should reject creating an accounts doc when unauthenticated', async () => {
+      const db = testEnv.unauthenticatedContext().firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').set({ username: 'alice_perm' })
+      ).rejects.toThrow();
+    });
+
+    it.each([
+      ['no username field', {}],
+      ['a non-string username', { username: 42 }],
+      ['a null username', { username: null }],
+    ])('should reject creating an accounts doc with %s', async (_label, data) => {
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').set(data)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('Update and delete', () => {
+    it('should reject updating an accounts doc, even by its owner', async () => {
+      await seedWithRulesDisabled('accounts/uid_alice', { username: 'alice_perm' });
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').update({ username: 'renamed' })
+      ).rejects.toThrow();
+
+      const snap = await db.doc('accounts/uid_alice').get();
+      expect((snap.data() as AccountDoc).username).toBe('alice_perm');
+    });
+
+    it('should reject deleting an accounts doc, even by its owner', async () => {
+      await seedWithRulesDisabled('accounts/uid_alice', { username: 'alice_perm' });
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').delete()
+      ).rejects.toThrow();
+
+      const snap = await db.doc('accounts/uid_alice').get();
+      expect(snap.exists).toBe(true);
     });
   });
 });
@@ -308,9 +588,9 @@ describe('Firestore Rules: games collection', () => {
       const existingSnap = await db.doc(`usernames/${username}`).get();
       expect(existingSnap.data()).toBeUndefined();
 
-      // 2. Create username reservation
+      // 2. Create username reservation (the shape reserveUsername writes)
       await expect(
-        db.doc(`usernames/${username}`).set({ playerId })
+        db.doc(`usernames/${username}`).set({ playerId, authUid: null })
       ).resolves.toBeUndefined();
 
       // 3. Read to verify reservation
@@ -330,41 +610,6 @@ describe('Firestore Rules: games collection', () => {
       // 6. Verify deletion
       const deletedSnap = await db.doc(`usernames/${username}`).get();
       expect(deletedSnap.data()).toBeUndefined();
-    });
-  });
-
-  describe('Security: cross-player attacks blocked', () => {
-    it('should prevent one player from stealing another player\'s username', async () => {
-      const db = testEnv.unauthenticatedContext().firestore();
-
-      // Setup: alice reserves username
-      const aliceId = 'alice_000';
-      await db.doc('usernames/reserved').set({ playerId: aliceId });
-
-      // Test: bob tries to steal alice's username
-      const bobId = 'bob_111';
-      await expect(
-        db.doc('usernames/reserved').update({ playerId: bobId })
-      ).rejects.toThrow();
-
-      // Verify username still belongs to alice
-      const snap = await db.doc('usernames/reserved').get();
-      expect(snap.data()?.playerId).toBe(aliceId);
-    });
-
-    it('should prevent creating non-existent username with setDoc (setDoc overwrites)', async () => {
-      const db = testEnv.unauthenticatedContext().firestore();
-
-      // Setup: alice reserves a username
-      await db.doc('usernames/alice_name').set({ playerId: 'alice_001' });
-
-      // Test: bob tries to overwrite with setDoc (which includes merge: false by default)
-      // This should fail because setDoc replaces the doc entirely
-      // However, our rules allow it since we only check the update operation.
-      // But in practice, the app uses setDoc with checking client-side logic.
-      // Let's verify the document still has alice's playerId.
-      const snap = await db.doc('usernames/alice_name').get();
-      expect(snap.data()?.playerId).toBe('alice_001');
     });
   });
 });

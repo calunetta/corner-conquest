@@ -2,6 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 /** Must match `emulators.firestore` in firebase.json. */
 const FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
+/** Must match `emulators.auth` in firebase.json. */
+const AUTH_EMULATOR_HOST = '127.0.0.1:9099';
 /** The `demo-` prefix keeps the emulator from ever touching a real Firebase project. */
 const EMULATOR_PROJECT_ID = 'demo-corner-conquest';
 const APP_URL = 'http://localhost:3000';
@@ -28,7 +30,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `npx firebase emulators:start --only firestore --project ${EMULATOR_PROJECT_ID}`,
+      command: `npx firebase emulators:start --only firestore,auth --project ${EMULATOR_PROJECT_ID}`,
       url: `http://${FIRESTORE_EMULATOR_HOST}`,
       reuseExistingServer: true, // a server already on 8080 is local, so the real project stays out of reach
       timeout: 120000, // the first run downloads the emulator jar
@@ -42,6 +44,7 @@ export default defineConfig({
       timeout: 300000,
       env: {
         NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST: FIRESTORE_EMULATOR_HOST,
+        NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST: AUTH_EMULATOR_HOST,
         NEXT_PUBLIC_FIREBASE_PROJECT_ID: EMULATOR_PROJECT_ID,
       },
     },
