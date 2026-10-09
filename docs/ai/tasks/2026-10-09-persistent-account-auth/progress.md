@@ -19,7 +19,7 @@ Tier: L · Phases: 4
 - [x] tests (tester-a)
 - [x] checks: typecheck, lint, `npx jest src/modules/session`
 - [x] final review (architect-b) — APPROVED on re-review, see review.md
-- [ ] committed: <hash>
+- [x] committed: b3d033d
 
 ## Phase 3: Login UI
 - [ ] implementation (implementer-a, implementer-b)
