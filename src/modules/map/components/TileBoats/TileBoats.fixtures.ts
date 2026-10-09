@@ -61,6 +61,26 @@ export const baseIslandWithOccupants: Island = {
   positionedBy: [],
 };
 
+/** Blue player with one army standing on an Empty island at 1-1, not positioned on a resource.
+ * Drives the "army idle on island" preview state, where the collector is docked at the boat. */
+export const idleArmyPlayer: Player = buildPlayer({
+  id: 0,
+  playerId: 'p0',
+  color: PlayerColor.Blue,
+  armies: [{ id: 0, position: { x: 1, y: 1 }, hasActed: false }],
+  revealedTiles: ['1-1'],
+});
+
+export const idleArmyIsland: Island = {
+  id: '1-1',
+  x: 1,
+  y: 1,
+  type: IslandType.Empty,
+  resources: [],
+  occupants: [{ playerId: 0, armyId: 0 }],
+  positionedBy: [],
+};
+
 export const emptyIsland: Island = {
   id: 'empty-1',
   x: 2,

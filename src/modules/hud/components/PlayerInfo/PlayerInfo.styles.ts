@@ -47,7 +47,8 @@ export const styles = {
   vpFill: 'h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 transition-all duration-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)]',
   statsGrid: 'grid grid-cols-3 gap-1.5 pt-0.5',
   statChip: 'flex items-center justify-center gap-1 rounded-md bg-black/40 px-1.5 py-1 border border-white/10 text-[11px] font-semibold cursor-default',
-  statIcon: 'shrink-0',
+  // Matches the 24px lucide icons (Zap, Album) beside it in the same chip grid.
+  statIcon: 'h-6 w-6 shrink-0',
   statValue: 'font-mono text-foreground font-bold',
   positionedIndicator: 'text-[10px] text-amber-400 flex items-center',
   resourcesGrid: 'grid grid-cols-3 gap-1.5',
