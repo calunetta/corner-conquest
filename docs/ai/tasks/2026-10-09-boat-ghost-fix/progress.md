@@ -10,7 +10,7 @@ Tier: S · Phases: 1
 - [x] UI verified (ui-verify)
 - [x] docs sync (docs-sync)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 7c789ea
 
 ## Log
 2026-10-09 architect-a: DONE, drafted plan.md
