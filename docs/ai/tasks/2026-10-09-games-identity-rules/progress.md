@@ -12,7 +12,7 @@ Tier: L · Phases: 2
 - [x] tests (tester-a)
 - [x] checks: typecheck, lint, unit tests
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 3108210
 
 ## Phase 2: Firestore rules + docs
 - [ ] implementation (implementer-a)
