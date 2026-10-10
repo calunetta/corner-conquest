@@ -69,9 +69,9 @@ describe('toForestLayout', () => {
     const result = toForestLayout(island, true);
     expect(result).not.toBeNull();
     expect(result!.layout.length).toBe(2);
-    expect(result!.layout[0]).toHaveProperty('top', '4px');
-    expect(result!.layout[1]).toHaveProperty('top', '10%');
-    expect(result!.layout.map((slot) => slot.size)).toEqual(['16%', '16%']);
+    expect(result!.layout[0]).toHaveProperty('top', '2%');
+    expect(result!.layout[1]).toHaveProperty('top', '11%');
+    expect(result!.layout.map((slot) => slot.size)).toEqual(['15%', '15%']);
   });
 
   it('returns 1-tree special layout for Special islands', () => {
@@ -195,7 +195,7 @@ describe('toForestLayout', () => {
 
       const result = toForestLayout(island, true);
 
-      expect(result!.layout.map((slot) => slot.size)).toEqual(['16%', '16%']);
+      expect(result!.layout.map((slot) => slot.size)).toEqual(['15%', '15%']);
     });
   });
 });

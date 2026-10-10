@@ -89,7 +89,7 @@ Bots are currently only ever created at match setup, and only for a solo-vs-bot 
 
 ## 6.13. Island Tile Visual Layout & Animated Sprite Architecture
 - **Deterministic Tree Forests (`TileForest.tsx`)**:
-  - Small forests of 2–3 trees of **strictly identical type** (`pine_tree.gif`, `spring_tree.gif`, `autmn_tree.gif`, `tree.gif`) are rendered on Base islands (top-right cluster) and empty islands (dedicated natural clearing).
+  - Small forests of 2–3 trees of **strictly identical type** (`pine_tree.gif`, `spring_tree.gif`, `autmn_tree.gif`, `tree.gif`) are rendered on Base islands (upper-left cluster, kept clear of the boat's top-left corner anchor and the top base resource slot) and empty islands (dedicated natural clearing).
   - The tree type is deterministically hashed from island coordinates (`island.x * 7 + island.y * 13 + (isBase ? 3 : 0)`), ensuring 100% visual consistency across clients.
   - **Resource Island Forest Suppression Rule:** On `IslandType.Resource` islands, decorative trees are completely suppressed so commanders only see genuine resource nodes and never confuse background trees with wood nodes.
 - **Animated Resource Representations (`TileResources.tsx`)**:
