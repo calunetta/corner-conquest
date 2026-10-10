@@ -8,6 +8,7 @@ import { toIslandTileViewModel } from './IslandTile.map';
 import {
   localPlayerFixture,
   baseIslandOwnedByLocalPlayer,
+  baseIslandWithThreeResources,
   resourceIsland,
   monsterIslandWithLivingMonster,
   specialIsland,
@@ -211,6 +212,41 @@ describe('IslandTile Component', () => {
       const button = screen.getByTestId('island-tile-2-2');
       // Border images are rendered inside the tile
       expect(button).toBeInTheDocument();
+    });
+  });
+
+  describe('IslandTileView Base layout', () => {
+    const renderBaseTile = (island: typeof baseIslandWithThreeResources) => {
+      const context: IslandTileContext = {
+        gameState: gameStateFixture,
+        localPlayer: localPlayerFixture,
+        uiState: makeUIState(),
+        selectedArmy: null,
+      };
+      const viewModel = toIslandTileViewModel(island, context);
+      render(
+        <IslandTileView
+          {...viewModel}
+          island={island}
+          deathAnimationOnTile={undefined}
+          borderImageSequence={['', '', '']}
+          onClick={jest.fn()}
+        />,
+      );
+    };
+
+    it('shows the castle crest and all three base resource nodes at the same time', () => {
+      renderBaseTile(baseIslandWithThreeResources);
+      expect(screen.getByRole('img', { name: 'blue base' })).toBeInTheDocument();
+      expect(screen.getByTestId('resource-node-food')).toBeInTheDocument();
+      expect(screen.getByTestId('resource-node-wood')).toBeInTheDocument();
+      expect(screen.getByTestId('resource-node-gold')).toBeInTheDocument();
+    });
+
+    it('shows the castle crest and no resource nodes on a base without resources', () => {
+      renderBaseTile(baseIslandOwnedByLocalPlayer);
+      expect(screen.getByRole('img', { name: 'blue base' })).toBeInTheDocument();
+      expect(screen.queryByTestId(/^resource-node-/)).not.toBeInTheDocument();
     });
   });
 

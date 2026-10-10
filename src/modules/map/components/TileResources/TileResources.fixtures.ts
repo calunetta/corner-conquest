@@ -25,6 +25,19 @@ export const resourceIslandWithDualResources: Island = {
   positionedBy: [],
 };
 
+export const resourceIslandWithTwoDistinctResources: Island = {
+  id: 'resource-two-1',
+  x: 2,
+  y: 3,
+  type: IslandType.Resource,
+  resources: [
+    { type: ResourceTypeEnum.Gold, amount: 1 },
+    { type: ResourceTypeEnum.Wood, amount: 1 },
+  ],
+  occupants: [],
+  positionedBy: [],
+};
+
 export const baseIslandWithResources: Island = {
   id: 'base-1',
   x: 0,
@@ -54,6 +67,6 @@ export const singleNodeFixture: ResourceNodeViewModel = {
   key: 'resource-node-food-0',
   spriteSrc: '/sprites/sheep.gif',
   nodeSize: 67,
-  slotStyle: { top: '20%', left: '50%', transform: 'translateX(-50%)' },
+  slotStyle: { top: '46%', left: '50%', transform: 'translateX(-50%)' },
   farmingCollector: null,
 };

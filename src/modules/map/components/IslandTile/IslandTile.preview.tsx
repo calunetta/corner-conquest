@@ -1,14 +1,18 @@
 'use client';
 
+import type { Player } from '@/lib/types';
 import { IslandTileView } from './IslandTile';
 import {
   baseIslandOwnedByLocalPlayer,
   baseIslandOwnedByOpponent,
+  baseIslandWithThreeResources,
+  baseIslandWithResourcesAndOccupants,
   resourceIsland,
   monsterIslandWithLivingMonster,
   specialIsland,
   emptyIsland,
   localPlayerFixture,
+  opponentPlayerFixture,
   gameStateFixture,
   occupiedResourceIsland,
 } from './IslandTile.fixtures';
@@ -45,6 +49,10 @@ const createViewModelWithState = (
   ...overrides,
 });
 
+/** A Base tile whose crest renders: `baseOwner` is what selects castle_<color>.png over the Home fallback. */
+const createBaseViewModel = (island: IslandTileViewModel['island'], baseOwner: Player): IslandTileViewModel =>
+  createViewModelWithState(island, { isBase: true, baseOwner });
+
 /** Wrapper that provides GameBoardProvider context. */
 function WithGameBoardContext({ viewModel }: { viewModel: IslandTileViewModel }) {
   return (
@@ -74,21 +82,19 @@ export const islandTilePreview: ComponentPreview = {
     },
     {
       name: 'Base island owned by local player',
-      render: () =>
-        <WithGameBoardContext
-          viewModel={createViewModelWithState(baseIslandOwnedByLocalPlayer, {
-            isBase: true,
-          })}
-        />,
+      render: () => <WithGameBoardContext viewModel={createBaseViewModel(baseIslandOwnedByLocalPlayer, localPlayerFixture)} />,
     },
     {
       name: 'Base island owned by opponent',
-      render: () =>
-        <WithGameBoardContext
-          viewModel={createViewModelWithState(baseIslandOwnedByOpponent, {
-            isBase: true,
-          })}
-        />,
+      render: () => <WithGameBoardContext viewModel={createBaseViewModel(baseIslandOwnedByOpponent, opponentPlayerFixture)} />,
+    },
+    {
+      name: 'Base island with resources',
+      render: () => <WithGameBoardContext viewModel={createBaseViewModel(baseIslandWithThreeResources, localPlayerFixture)} />,
+    },
+    {
+      name: 'Base island with resources and occupants',
+      render: () => <WithGameBoardContext viewModel={createBaseViewModel(baseIslandWithResourcesAndOccupants, localPlayerFixture)} />,
     },
     {
       name: 'Resource island',

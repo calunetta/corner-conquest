@@ -97,9 +97,9 @@ Bots are currently only ever created at match setup, and only for a solo-vs-bot 
     - **Wheat / Food:** Grazing livestock pasture (`/sprites/sheep.gif`, dialog/HUD icons: `/sprites/icon_meat.png` / `/sprites/meat.png`).
     - **Iron / Wood:** Timber forest (`/sprites/tree.gif`, dialog/HUD icons: `/sprites/icon_wood.png` / `/sprites/wood.png`).
     - **Gems / Gold:** Gold mine (`/sprites/mine.png` idle, `/sprites/mine_active.png` when farmed, dialog/HUD icons: `/sprites/icon_gold.png` / `/sprites/gold.gif`).
-  - **Organic Island Clearings:** Resources are distributed organically across island clearings (non-linear 2D scatter) for a natural, rich RPG aesthetic.
+  - **Deterministic Node Placement (`TileResources.map.ts`):** Resource nodes sit in three vertical bands (top 20%, middle 46%, bottom 70%). A single node is centred in the middle band; two nodes take the top-left and bottom-right slots; three nodes take the top-left, middle-right and bottom-left slots. The layout is a pure function of the node index, so it is identical on every client.
   - **Individual Multi-Sprite Rendering (No x2 Badges):** Islands with multiple resources of the same type render distinct individual animated sprites side-by-side (e.g. 2 sheep, 2 trees, 2 mines) instead of number badges.
-- **Active Collector Farming:** Stationed collectors (`/sprites/farm_${player.color}.gif`) harvest directly on top of the specific resource node they are assigned to. When an army is positioned to harvest a resource, the active farming collector harvests directly at that specific resource node while the soldier remains stationed on the island.
+- **Active Collector Farming:** A collector (`/sprites/farm_${player.color}.gif`) assigned to a resource node is drawn as a badge beside that node, not on top of it. The badge is 55% of the node's reference size, floored at 22px, and sits to the right of the node, or to its left when the node is anchored to the right edge (`FarmingCollectorViewModel.side`/`offset`, set in `toTileResourcesViewModel` in `TileResources.map.ts`). The soldier remains stationed on the island.
 - **Persistent Soldier / Knight Visibility (`TileOccupants.tsx`)**:
   - Army soldiers / knights remain **persistently visible** on island tiles at all times, ensuring commanders and opponents always have complete situational awareness of garrisoned forces.
 - **Extra Move Card Mechanics & Balance (Nerfed to 1 Bonus Action)**:
@@ -121,4 +121,4 @@ Bots are currently only ever created at match setup, and only for a solo-vs-bot 
 - **Perimeter Map Clouds & Atmosphere (`MapDecorations.tsx`)**:
   - Outer ocean margins surrounding the playable board are decorated with fixed atmospheric cloud formations (`/sprites/cloud_small.png`, `/sprites/cloud_medium.png`, `/sprites/cloud_big.png`) along margins and outer corners, framing uncharted waters.
 - **Rebalanced Base Tile Layout (`IslandTile.tsx`)**:
-  - Base castles (`/sprites/castle_{color}.png`) are sized to ~48–56px, creating a balanced landscape that cleanly accommodates the castle, tree forest, base resource nodes, idle collectors, and, while an army of the owner is stationed there, the anchored shoreline boat.
+  - Base castles (`/sprites/castle_{color}.png`) are sized to 44% of the base content box, floored at 18px (`IslandTile.tsx`), creating a balanced landscape that cleanly accommodates the castle, tree forest, base resource nodes, idle collectors, and, while an army of the owner is stationed there, the anchored shoreline boat.

@@ -16,9 +16,9 @@ export function TileResourcesView({ nodes }: { nodes: ResourceNodeViewModel[] | 
           data-testid={`resource-node-${node.type}`}
           className={styles.nodeSlot}
           style={{
-            ...node.slotStyle,
             width: `${node.nodeSize}px`,
             height: `${node.nodeSize}px`,
+            ...node.slotStyle,
           }}
         >
           <div data-testid={`resource-sprite-${node.type}`} className={styles.resourceSprite}>
@@ -33,12 +33,22 @@ export function TileResourcesView({ nodes }: { nodes: ResourceNodeViewModel[] | 
           </div>
 
           {node.farmingCollector && (
-            <div data-testid={`collector-farm-${node.farmingCollector.color}`} className={styles.collectorOverlay}>
+            <div
+              data-testid={`collector-farm-${node.farmingCollector.color}`}
+              className={styles.collectorOverlay}
+              style={{
+                width: `${node.farmingCollector.size}px`,
+                height: `${node.farmingCollector.size}px`,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                [node.farmingCollector.side]: `${node.farmingCollector.offset}px`,
+              }}
+            >
               <Image
                 src={node.farmingCollector.sprite}
                 alt={`${node.farmingCollector.color} collector farming`}
-                width={32}
-                height={32}
+                width={node.farmingCollector.size}
+                height={node.farmingCollector.size}
                 className={styles.collectorImage}
                 unoptimized
               />

@@ -30,11 +30,15 @@ interface SlotDef {
   left?: string;
   right?: string;
   transform?: string;
-  size: number;
+  size: number; // px; reference size for the node box and the collector-badge formula
+  width?: string; // percent; Base slots only, overrides the node box's px size
+  height?: string; // percent; Base slots only
 }
 
+// Resource nodes sit in three vertical bands (top 20% / middle 46% / bottom 70%) so a
+// one-, two- or three-node island spans the tile instead of clustering in the top 40%.
 const SINGLE_RESOURCE_SLOT: SlotDef = {
-  top: '20%',
+  top: '46%',
   left: '50%',
   transform: 'translateX(-50%)',
   size: 46,
@@ -42,20 +46,25 @@ const SINGLE_RESOURCE_SLOT: SlotDef = {
 
 const DUAL_RESOURCE_SLOTS: SlotDef[] = [
   { top: '20%', left: '14%', size: 38 },
-  { top: '20%', right: '14%', size: 38 },
+  { top: '70%', right: '14%', size: 38 },
 ];
 
 const TRIPLE_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '10%', left: '12%', size: 32 },
-  { top: '10%', right: '12%', size: 32 },
-  { top: '38%', left: '50%', transform: 'translateX(-50%)', size: 32 },
+  { top: '20%', left: '12%', size: 32 },
+  { top: '46%', right: '12%', size: 32 },
+  { top: '70%', left: '12%', size: 32 },
 ];
 
+// Edge-midpoint slots keep clear of the boat and occupant corner anchors.
 const BASE_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '6px', left: '6px', size: 28 },
-  { top: '6px', right: '6px', size: 28 },
-  { top: '38%', right: '6px', size: 28 },
+  { top: '4%', left: '50%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
+  { bottom: '4%', left: '35%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
+  { bottom: '4%', left: '65%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
 ];
+
+// The farming badge is ~55% of the node's reference size, never smaller than 22px.
+const BADGE_SIZE_RATIO = 0.55;
+const BADGE_MIN_SIZE = 22;
 
 function getSlot(idx: number, total: number, isBase: boolean): SlotDef {
   if (isBase) {
@@ -124,7 +133,16 @@ export function toTileResourcesViewModel(
     if (slot.left) slotStyleEntries.push(['left', slot.left]);
     if (slot.right) slotStyleEntries.push(['right', slot.right]);
     if (slot.transform) slotStyleEntries.push(['transform', slot.transform]);
+    if (slot.width) slotStyleEntries.push(['width', slot.width]);
+    if (slot.height) slotStyleEntries.push(['height', slot.height]);
     const slotStyle = Object.fromEntries(slotStyleEntries);
+
+    // Badge geometry uses the pre-Food-scale slot size so every resource type gets the same badge.
+    const uninflatedSize = slot.size;
+    const badgeSize = Math.max(BADGE_MIN_SIZE, Math.round(uninflatedSize * BADGE_SIZE_RATIO));
+    const badgeSide: 'left' | 'right' =
+      slot.right !== undefined && slot.left === undefined ? 'left' : 'right';
+    const badgeOffset = Math.round((nodeSize - uninflatedSize) / 2 - badgeSize / 2);
 
     return {
       type: node.type,
@@ -136,6 +154,9 @@ export function toTileResourcesViewModel(
         ? {
             color: positionedPlayer.color,
             sprite: FARM_SPRITES[positionedPlayer.color],
+            size: badgeSize,
+            side: badgeSide,
+            offset: badgeOffset,
           }
         : null,
     };

@@ -1,30 +1,19 @@
 'use client';
 
 import { TileResourcesView } from './TileResources';
-import { singleNodeFixture } from './TileResources.fixtures';
+import { resourceIslandWithTwoDistinctResources, singleNodeFixture } from './TileResources.fixtures';
+import { toTileResourcesViewModel } from './TileResources.map';
 import type { ComponentPreview } from '@/testbed/testbed.types';
 import type { ResourceNodeViewModel } from './TileResources.types';
 import { ResourceType } from '@/lib/types';
 
-const multipleResourceNodes: ResourceNodeViewModel[] = [
-  singleNodeFixture,
-  {
-    type: ResourceType.Gold,
-    key: 'resource-node-gold-0',
-    spriteSrc: '/sprites/gold.gif',
-    nodeSize: 67,
-    slotStyle: { bottom: '20%', right: '50%', transform: 'translateX(50%)' },
-    farmingCollector: null,
-  },
-  {
-    type: ResourceType.Wood,
-    key: 'resource-node-wood-0',
-    spriteSrc: '/sprites/wood.gif',
-    nodeSize: 67,
-    slotStyle: { bottom: '40%', left: '20%' },
-    farmingCollector: null,
-  },
-];
+// Built through the real map so the preview shows the same DUAL_RESOURCE_SLOTS placement
+// (top 20% / top 70%) the game renders, instead of hand-written slot literals.
+const multipleResourceNodes: ResourceNodeViewModel[] = toTileResourcesViewModel(
+  resourceIslandWithTwoDistinctResources,
+  false,
+  [],
+) ?? [];
 
 const withCollectorNode: ResourceNodeViewModel[] = [
   {
@@ -32,10 +21,13 @@ const withCollectorNode: ResourceNodeViewModel[] = [
     key: 'resource-node-food-collector',
     spriteSrc: '/sprites/sheep.gif',
     nodeSize: 67,
-    slotStyle: { top: '20%', left: '50%', transform: 'translateX(-50%)' },
+    slotStyle: { top: '46%', left: '50%', transform: 'translateX(-50%)' },
     farmingCollector: {
       color: 'blue',
-      sprite: '/sprites/collector_blue_idle.gif',
+      sprite: '/sprites/farm_blue.gif',
+      size: 25,
+      side: 'right',
+      offset: -2,
     },
   },
 ];

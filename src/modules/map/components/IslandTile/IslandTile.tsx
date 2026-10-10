@@ -43,7 +43,10 @@ function getTileCenterContent(viewModel: IslandTileViewModel) {
       return (
         <div className={styles.baseContent}>
           {baseOwner?.color ? (
-            <div className={styles.baseImageWrapper}>
+            <div
+              className={styles.baseImageWrapper}
+              style={{ width: 'max(18px, 44%)', height: 'max(18px, 44%)' }}
+            >
               <Image
                 src={PLAYER_DATA[baseOwner.color].base}
                 alt={`${baseOwner.color} base`}

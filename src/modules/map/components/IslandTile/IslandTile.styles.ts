@@ -47,8 +47,11 @@ export const styles = {
   terrain: 'absolute inset-0 z-10 rounded-lg bg-terrain bg-cover bg-center bg-no-repeat',
   centerContent: 'z-20 h-full w-full p-1',
   fogIcon: 'h-full w-full text-muted-foreground/50',
-  baseContent: 'relative flex h-full w-full items-center justify-center',
-  baseImageWrapper: 'relative h-12 w-12 drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)] sm:h-14 sm:w-14',
+  // Absolute so its box is the tile's padding box, not the p-1 centerContent inset: TileResources'
+  // percent slot sizes resolve against this box, and the inset shrank them to ~6px at T=46.
+  baseContent: 'absolute inset-0 flex items-center justify-center',
+  // Size is set inline as percent-of-tile (see IslandTile.tsx), not by fixed px classes tied to the window breakpoint.
+  baseImageWrapper: 'relative drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)]',
   baseImage: 'object-contain',
   baseFallbackIcon: 'h-full w-full p-2 text-muted-foreground',
   specialIcon: 'h-full w-full p-2 text-yellow-400 drop-shadow-[0_0_12px_rgba(250,204,21,0.8)]',

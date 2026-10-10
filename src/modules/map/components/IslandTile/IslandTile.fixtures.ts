@@ -41,6 +41,31 @@ export const baseIslandOwnedByOpponent: Island = {
   id: '1-1', x: 1, y: 1, type: IslandType.Base, owner: opponentPlayerFixture.id, resources: [], occupants: [], positionedBy: [],
 };
 
+export const baseIslandWithThreeResources: Island = {
+  id: '0-0-resources', x: 0, y: 0, type: IslandType.Base, owner: localPlayerFixture.id,
+  resources: [
+    { type: ResourceType.Food, amount: 1 },
+    { type: ResourceType.Wood, amount: 1 },
+    { type: ResourceType.Gold, amount: 1 },
+  ],
+  occupants: [], positionedBy: [],
+};
+
+/** Base with three resource nodes and two armies on it (local + opponent), so boats sit on corners beside the nodes. */
+export const baseIslandWithResourcesAndOccupants: Island = {
+  id: '0-0-occupants', x: 0, y: 0, type: IslandType.Base, owner: localPlayerFixture.id,
+  resources: [
+    { type: ResourceType.Food, amount: 1 },
+    { type: ResourceType.Wood, amount: 1 },
+    { type: ResourceType.Gold, amount: 1 },
+  ],
+  occupants: [
+    { playerId: localPlayerFixture.id, armyId: armyFixture.id },
+    { playerId: opponentPlayerFixture.id, armyId: opponentPlayerFixture.armies[0].id },
+  ],
+  positionedBy: [],
+};
+
 export const resourceIsland: Island = {
   id: '2-2', x: 2, y: 2, type: IslandType.Resource, resources: [{ type: ResourceType.Food, amount: 1 }], occupants: [], positionedBy: [],
 };

@@ -3,7 +3,13 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { TileResourcesView } from './TileResources';
 import { toTileResourcesViewModel } from './TileResources.map';
-import { resourceIslandWithDualResources, baseIslandWithResources, monsterIslandWithLivingMonsters } from './TileResources.fixtures';
+import {
+  resourceIslandWithDualResources,
+  resourceIslandWithFood,
+  resourceIslandWithTwoDistinctResources,
+  baseIslandWithResources,
+  monsterIslandWithLivingMonsters,
+} from './TileResources.fixtures';
 import { PlayerColor, IslandType, ResourceType as ResourceTypeEnum } from '@/lib/types';
 import type { Island, Player } from '@/lib/types';
 
@@ -149,5 +155,73 @@ describe('TileResources Component', () => {
     };
     const nodes = toTileResourcesViewModel(emptyResourceIsland, false, mockPlayers);
     expect(nodes).toBeNull();
+  });
+});
+
+describe('TileResourcesView placement and sizing', () => {
+  const players = [
+    { id: 0, color: PlayerColor.Blue },
+    { id: 1, color: PlayerColor.Red },
+  ] as unknown as Player[];
+
+  it('places a single resource node in the middle band of the tile', () => {
+    const nodes = toTileResourcesViewModel(resourceIslandWithFood, false, players);
+    render(<TileResourcesView nodes={nodes} />);
+    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '46%', left: '50%' });
+  });
+
+  it('keeps the px box size on a non-Base node', () => {
+    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players);
+    render(<TileResourcesView nodes={nodes} />);
+    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ width: '38px', height: '38px' });
+  });
+
+  it('sizes a Base node with percent width and height, not px', () => {
+    const nodes = toTileResourcesViewModel(baseIslandWithResources, true, players);
+    render(<TileResourcesView nodes={nodes} />);
+    for (const type of ['food', 'gold']) {
+      expect(screen.getByTestId(`resource-node-${type}`)).toHaveStyle({ width: '22%', height: '22%' });
+    }
+  });
+
+  it('places the Base food node at the top edge midpoint and the Base gold node at the bottom-left edge', () => {
+    const nodes = toTileResourcesViewModel(baseIslandWithResources, true, players);
+    render(<TileResourcesView nodes={nodes} />);
+    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '4%', left: '50%' });
+    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ bottom: '4%', left: '35%' });
+  });
+
+  it('gives a farmed Gold node a collector badge of 22px on the right, offset -11px', () => {
+    const island = {
+      ...resourceIslandWithTwoDistinctResources,
+      positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Gold }],
+    };
+    const nodes = toTileResourcesViewModel(island, false, players);
+    render(<TileResourcesView nodes={nodes} />);
+    expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({
+      width: '22px',
+      height: '22px',
+      right: '-11px',
+    });
+  });
+
+  it('puts the collector badge on the left side of a right-anchored node', () => {
+    const island = {
+      ...resourceIslandWithTwoDistinctResources,
+      positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Wood }],
+    };
+    const nodes = toTileResourcesViewModel(island, false, players);
+    render(<TileResourcesView nodes={nodes} />);
+    expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({
+      width: '22px',
+      height: '22px',
+      left: '-11px',
+    });
+  });
+
+  it('renders no collector badge on an unfarmed node', () => {
+    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players);
+    render(<TileResourcesView nodes={nodes} />);
+    expect(screen.queryByTestId(/^collector-farm-/)).not.toBeInTheDocument();
   });
 });
