@@ -21,7 +21,7 @@ Tier: L · Phases: 2
 - [x] checks: typecheck, lint, unit tests
 - [ ] checks: e2e (`e2e/auth-and-lobby.spec.ts`) — not run, no Java runtime in this environment; run before deploy
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 4dd74ae
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
