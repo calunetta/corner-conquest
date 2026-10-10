@@ -410,9 +410,10 @@ describe('Firestore Rules: games collection', () => {
     it('should allow anyone to read game documents', async () => {
       const db = testEnv.unauthenticatedContext().firestore();
 
-      // Setup: create a game doc
-      const admin = testEnv.authenticatedContext('admin', { isAdmin: true });
-      await admin.firestore().doc('games/game_1').set({
+      // Setup: seed a game doc bypassing rules — this test is about the read rule, not
+      // about which uid may create a game (create now requires a seated participant,
+      // see the Create describe block below).
+      await seedWithRulesDisabled('games/game_1', {
         players: [{ playerId: 'player_1', id: 0 }],
         currentPlayerIndex: 0,
         status: 'playing',
@@ -424,10 +425,10 @@ describe('Firestore Rules: games collection', () => {
   });
 
   describe('Create', () => {
-    it('should allow creating a new game', async () => {
-      const db = testEnv.unauthenticatedContext().firestore();
+    it('should allow the creator (uid matches players[0]) to create a new game', async () => {
+      const db = testEnv.authenticatedContext('player_1').firestore();
 
-      // Test: create a new game with players array
+      // Test: create a new game with players array; creator seated at players[0]
       const gameState = {
         players: [
           { playerId: 'player_1', id: 0, username: 'alice' },
@@ -444,21 +445,42 @@ describe('Firestore Rules: games collection', () => {
       ).resolves.toBeUndefined();
     });
 
-    it('should allow creating a game with minimal valid structure', async () => {
-      const db = testEnv.unauthenticatedContext().firestore();
+    it('should allow creating a game with minimal valid structure when the creator is seated', async () => {
+      const db = testEnv.authenticatedContext('player_1').firestore();
 
-      // Test: create with minimum required fields
+      // Test: create with minimum required fields, creator seated at players[0]
       await expect(
         db.doc('games/minimal_game').set({ players: [{ playerId: 'player_1' }] })
       ).resolves.toBeUndefined();
     });
+
+    it('should reject creating a game when unauthenticated', async () => {
+      const db = testEnv.unauthenticatedContext().firestore();
+
+      await expect(
+        db.doc('games/unauth_create').set({ players: [{ playerId: 'player_1' }] })
+      ).rejects.toThrow();
+    });
+
+    it('should reject creating a game whose uid matches none of the listed players', async () => {
+      const db = testEnv.authenticatedContext('impostor').firestore();
+
+      await expect(
+        db.doc('games/impostor_create').set({
+          players: [
+            { playerId: 'player_1', id: 0 },
+            { playerId: 'player_2', id: 1 },
+          ],
+        })
+      ).rejects.toThrow();
+    });
   });
 
   describe('Update', () => {
-    it('should allow updating existing game (host updates game logic)', async () => {
-      const db = testEnv.unauthenticatedContext().firestore();
+    it('should allow a stored participant to update an existing game (host updates game logic)', async () => {
+      const db = testEnv.authenticatedContext('player_1').firestore();
 
-      // Setup: create a game
+      // Setup: create a game (player_1 is a participant of the stored doc)
       const initialState = {
         players: [
           { playerId: 'player_1', id: 0 },
@@ -480,8 +502,28 @@ describe('Firestore Rules: games collection', () => {
       ).resolves.toBeUndefined();
     });
 
-    it('should allow updateDoc to modify death animations', async () => {
-      const db = testEnv.unauthenticatedContext().firestore();
+    it('should allow a bot-turn write made by a seated human participant', async () => {
+      const humanDb = testEnv.authenticatedContext('player_1').firestore();
+
+      // Setup: a game with a human (player_1) and a bot (bot_1), created by the human.
+      await humanDb.doc('games/game_bot_turn').set({
+        players: [
+          { playerId: 'player_1', id: 0 },
+          { playerId: 'bot_1', id: 1 },
+        ],
+        currentPlayerIndex: 1,
+        status: 'playing',
+      });
+
+      // Test: the human client writes the bot's turn; the writer's own uid (player_1) is a
+      // stored participant, even though the turn belongs to bot_1.
+      await expect(
+        humanDb.doc('games/game_bot_turn').update({ currentPlayerIndex: 0 })
+      ).resolves.toBeUndefined();
+    });
+
+    it('should allow a stored participant to use updateDoc to modify death animations', async () => {
+      const db = testEnv.authenticatedContext('player_1').firestore();
 
       // Setup: create a game with death animations
       const initialState = {
@@ -496,8 +538,35 @@ describe('Firestore Rules: games collection', () => {
       ).resolves.toBeUndefined();
     });
 
-    it('should reject update that removes players array (structural corruption)', async () => {
+    it('should reject updating when unauthenticated', async () => {
+      const setupDb = testEnv.authenticatedContext('player_1').firestore();
+      await setupDb.doc('games/game_unauth_update').set({
+        players: [{ playerId: 'player_1', id: 0 }],
+      });
+
       const db = testEnv.unauthenticatedContext().firestore();
+      await expect(
+        db.doc('games/game_unauth_update').update({ currentPlayerIndex: 1 })
+      ).rejects.toThrow();
+    });
+
+    it('should reject updating for a uid that is a participant of neither the stored nor incoming doc', async () => {
+      const setupDb = testEnv.authenticatedContext('player_1').firestore();
+      await setupDb.doc('games/game_wrong_uid').set({
+        players: [{ playerId: 'player_1', id: 0 }],
+      });
+
+      const db = testEnv.authenticatedContext('impostor').firestore();
+      await expect(
+        db.doc('games/game_wrong_uid').set({
+          players: [{ playerId: 'player_1', id: 0 }],
+          currentPlayerIndex: 1,
+        })
+      ).rejects.toThrow();
+    });
+
+    it('should reject update that removes players array (structural corruption)', async () => {
+      const db = testEnv.authenticatedContext('player_1').firestore();
 
       // Setup: create a game
       await db.doc('games/game_4').set({
@@ -511,7 +580,7 @@ describe('Firestore Rules: games collection', () => {
     });
 
     it('should reject update that empties players array', async () => {
-      const db = testEnv.unauthenticatedContext().firestore();
+      const db = testEnv.authenticatedContext('player_1').firestore();
 
       // Setup: create a game with players
       await db.doc('games/game_5').set({
@@ -525,7 +594,7 @@ describe('Firestore Rules: games collection', () => {
     });
 
     it('should reject write without players array for existing game', async () => {
-      const db = testEnv.unauthenticatedContext().firestore();
+      const db = testEnv.authenticatedContext('player_1').firestore();
 
       // Setup: create a game
       await db.doc('games/game_6').set({
@@ -537,18 +606,80 @@ describe('Firestore Rules: games collection', () => {
         db.doc('games/game_6').set({ status: 'ended' })
       ).rejects.toThrow();
     });
+
+    it('should allow the join case: uid not in the stored doc but present in the incoming players array', async () => {
+      const hostDb = testEnv.authenticatedContext('host_1').firestore();
+
+      // Setup: host_1 creates a 1-player open game (simulating a lobby waiting for a join).
+      await hostDb.doc('games/game_join').set({
+        players: [{ playerId: 'host_1', id: 0 }],
+        status: 'waiting',
+      });
+
+      // Test: joiner's own uid is not yet a stored participant, but it is present in the
+      // incoming players array it is writing (simulating joinOpenGame).
+      const joinerDb = testEnv.authenticatedContext('joiner_1').firestore();
+      await expect(
+        joinerDb.doc('games/game_join').set({
+          players: [
+            { playerId: 'host_1', id: 0 },
+            { playerId: 'joiner_1', id: 1 },
+          ],
+          status: 'playing',
+        })
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('Delete', () => {
+    it('should allow a stored participant to delete the game', async () => {
+      const db = testEnv.authenticatedContext('player_1').firestore();
+      await db.doc('games/game_delete_ok').set({
+        players: [{ playerId: 'player_1', id: 0 }],
+      });
+
+      await expect(
+        db.doc('games/game_delete_ok').delete()
+      ).resolves.toBeUndefined();
+    });
+
+    it('should reject deleting when unauthenticated', async () => {
+      const setupDb = testEnv.authenticatedContext('player_1').firestore();
+      await setupDb.doc('games/game_delete_unauth').set({
+        players: [{ playerId: 'player_1', id: 0 }],
+      });
+
+      const db = testEnv.unauthenticatedContext().firestore();
+      await expect(
+        db.doc('games/game_delete_unauth').delete()
+      ).rejects.toThrow();
+    });
+
+    it('should reject deleting for a uid that is a participant of none of the stored players', async () => {
+      const setupDb = testEnv.authenticatedContext('player_1').firestore();
+      await setupDb.doc('games/game_delete_wrong_uid').set({
+        players: [{ playerId: 'player_1', id: 0 }],
+      });
+
+      const db = testEnv.authenticatedContext('impostor').firestore();
+      await expect(
+        db.doc('games/game_delete_wrong_uid').delete()
+      ).rejects.toThrow();
+    });
   });
 
   describe('Integration: app read/write patterns', () => {
     it('should allow full game lifecycle: create, read, update', async () => {
-      const db = testEnv.unauthenticatedContext().firestore();
-
       // 1. Create game (someone starts a game)
       const gameId = 'integration_game_1';
       const initialPlayers = [
         { playerId: 'alice_123', id: 0, username: 'alice' },
         { playerId: 'bob_456', id: 1, username: 'bob' },
       ];
+
+      // The writer authenticates as the match's seated creator (initialPlayers[0]), since
+      // create/update now require request.auth.uid to be a participant.
+      const db = testEnv.authenticatedContext(initialPlayers[0].playerId).firestore();
 
       await expect(
         db.doc(`games/${gameId}`).set({

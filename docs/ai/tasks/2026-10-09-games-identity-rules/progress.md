@@ -15,11 +15,12 @@ Tier: L · Phases: 2
 - [x] committed: 3108210
 
 ## Phase 2: Firestore rules + docs
-- [ ] implementation (implementer-a)
-- [ ] tests (tester-a)
-- [ ] docs synced (docs-sync)
-- [ ] checks: typecheck, lint, unit tests, e2e (`e2e/auth-and-lobby.spec.ts`)
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a)
+- [x] tests (tester-a)
+- [x] docs synced (docs-sync)
+- [x] checks: typecheck, lint, unit tests
+- [ ] checks: e2e (`e2e/auth-and-lobby.spec.ts`) — not run, no Java runtime in this environment; run before deploy
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Log

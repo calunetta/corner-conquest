@@ -96,6 +96,7 @@ The player's session (their identity) is held by Firebase Auth, with the chosen 
 -   **Definition File:** `src/lib/types/game.ts` (import it from the `@/lib/types` barrel)
 -   **What It Is:** The `GameState` object is the single, authoritative state of the match. It contains only the data that **must** be synchronized across all players.
 -   **Synchronization:** It is stored as a single document in Firestore. The `useGameEngine` hook subscribes to this document, and any change to it is automatically pushed to all connected clients, causing a UI re-render.
+-   **Write Access (`games/{gameId}` in `firestore.rules`):** Reads are open to any client. A write requires `request.auth.uid` to equal the `playerId` of one of the match's seats `players[0]` to `players[3]` (a match has at most 4 seats, the size of `PlayerColor`). `create` checks the players being written, `delete` checks the stored players, and `update` accepts a writer seated in either the stored or the incoming players, so a joining player (`joinOpenGame`) can write the join. The rules only decide who may write; whether a move is legal is still enforced by the game-rule reducers on the client.
 -   **Key `GameState` Variables:**
     -   `players: Player[]`: The array of all player objects, including their resources, victory points, army positions, and status effects.
     -   `map: Island[]`: The array representing the game board, including island types, resources, and occupants.

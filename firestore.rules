@@ -45,27 +45,48 @@ service cloud.firestore {
       allow delete: if false; // never released, by design
     }
 
+    // True when request.auth is a seated participant of the given players list
+    // (players[].playerId). PlayerColor has exactly 4 members, which hard-caps
+    // players.length at 4 (src/lib/types/player.ts), so each seat is checked individually:
+    // the rules language has no list.map()/comprehension to extract playerId out of a
+    // list of maps.
+    function isGameParticipant(players) {
+      return request.auth != null &&
+        players is list &&
+        (
+          (players.size() > 0 && players[0].playerId == request.auth.uid) ||
+          (players.size() > 1 && players[1].playerId == request.auth.uid) ||
+          (players.size() > 2 && players[2].playerId == request.auth.uid) ||
+          (players.size() > 3 && players[3].playerId == request.auth.uid)
+        );
+    }
+
     // Games collection: games created by players
     // Allow all players to read game state (src/hooks/use-game-engine.ts line 41-54)
-    // Allow writes to new games (anyone can start) and existing games (host updates game logic)
+    // Writes require the writer's Firebase Auth uid to be one of the match's seated
+    // players (src/lib/types/player.ts Player.playerId), now that every client (guest or
+    // signed-in) has a Firebase Auth uid via Anonymous Auth. The app's game logic
+    // (src/lib/actions) still validates that moves are legal per player; this only
+    // enforces who may write at all.
     match /games/{gameId} {
       allow read;
 
-      // Allow creating new games (someone must start the game)
-      allow create;
+      // Allow creating new games: the creator must be a participant of the players array
+      // being written (initializeGame seats the creator at players[0]).
+      allow create: if isGameParticipant(request.resource.data.players);
 
-      // Allow updating existing games. Since the app has no Firebase Auth and identity
-      // is client-side only (playerId in localStorage), we cannot enforce per-player
-      // write restrictions at the Firestore level without including playerId in the write.
-      // The app's game logic (src/lib/actions) validates moves are legal per player.
-      // We do require that writes maintain a non-empty players array to prevent
-      // structural corruption. See src/hooks/use-game-engine.ts line 26 (setDoc with
-      // GameState) and line 130 (updateDoc for deathAnimations).
+      // Allow updating existing games. The writer must be a participant of either the
+      // stored doc or the incoming one: a joining player (joinOpenGame) is not yet in the
+      // stored doc but is in the incoming players array. We still require a non-empty
+      // players array to prevent structural corruption. See src/hooks/use-game-engine.ts
+      // line 26 (setDoc with GameState) and line 130 (updateDoc for deathAnimations).
       allow update: if
         request.resource.data.players is list &&
-        request.resource.data.players.size() > 0;
+        request.resource.data.players.size() > 0 &&
+        (isGameParticipant(resource.data.players) || isGameParticipant(request.resource.data.players));
 
-      allow delete;
+      // Allow deleting only a match a player is seated in.
+      allow delete: if isGameParticipant(resource.data.players);
     }
   }
 }
