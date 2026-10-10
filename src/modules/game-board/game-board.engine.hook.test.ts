@@ -10,6 +10,7 @@ jest.mock('./services/game-board.engine.service', () => ({
   subscribeToGameState: jest.fn(),
   saveGameState: jest.fn(),
   clearDeathAnimations: jest.fn(),
+  writeHeartbeat: jest.fn(),
 }));
 
 jest.mock('@/modules/shared', () => ({
@@ -18,6 +19,7 @@ jest.mock('@/modules/shared', () => ({
 
 jest.mock('@/modules/game-rules', () => ({
   takeBotTurn: jest.fn(),
+  handlePlayerExit: jest.fn(),
 }));
 
 jest.mock('next/navigation', () => ({
@@ -527,5 +529,93 @@ describe('useGameEngine', () => {
     renderHook(() => useGameEngine('', 'player_1'));
 
     expect(mockSubscribeToGameState).not.toHaveBeenCalled();
+  });
+
+  describe('session driver (lowest seat that is still human)', () => {
+    // Seat 0 is a bot, so the lowest human seat is 1. The bot at seat 0 has the turn.
+    const createSeatWithBotHost = (): GameState =>
+      createGameState({
+        currentPlayerIndex: 0,
+        players: [
+          { ...createGameState().players[0], id: 0, playerId: 'bot_0', isBot: true },
+          { ...createGameState().players[0], id: 1, playerId: 'player_2', isBot: false },
+          { ...createGameState().players[0], id: 2, playerId: 'player_3', isBot: false },
+        ],
+      });
+
+    const renderEngineAs = (playerId: string, state: GameState) => {
+      let onDataCallback: ((state: GameState) => void) | null = null;
+
+      mockSubscribeToGameState.mockImplementation(
+        (gameId: string, callbacks: { onData: (state: GameState) => void; onMissing: () => void; onError: (error: unknown) => void }) => {
+          onDataCallback = callbacks.onData;
+          return jest.fn();
+        }
+      );
+
+      const hook = renderHook(() => useGameEngine('game_123', playerId));
+
+      act(() => {
+        onDataCallback?.(state);
+      });
+
+      return hook;
+    };
+
+    it('the lowest human seat triggers bot turns when seat 0 is already a bot', () => {
+      mockTakeBotTurn.mockResolvedValue(undefined);
+      const state = createSeatWithBotHost();
+
+      const { result } = renderEngineAs('player_2', state);
+
+      expect(result.current.isHost).toBe(false);
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(mockTakeBotTurn).toHaveBeenCalledWith(state);
+    });
+
+    it('a higher human seat does not trigger bot turns', () => {
+      mockTakeBotTurn.mockResolvedValue(undefined);
+
+      renderEngineAs('player_3', createSeatWithBotHost());
+
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(mockTakeBotTurn).not.toHaveBeenCalled();
+    });
+
+    it('a bot seat never triggers bot turns, even when it is the lowest seat', () => {
+      mockTakeBotTurn.mockResolvedValue(undefined);
+
+      renderEngineAs('bot_0', createSeatWithBotHost());
+
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(mockTakeBotTurn).not.toHaveBeenCalled();
+    });
+
+    it('the lowest human seat clears death animations, and a higher human seat does not', () => {
+      mockClearDeathAnimations.mockResolvedValue(undefined);
+      const deathAnimation: DeathAnimation = { id: 'anim_1', x: 5, y: 5, sprite: 'death_sprite', createdAt: Date.now() };
+      const state = { ...createSeatWithBotHost(), deathAnimations: [deathAnimation] };
+
+      renderEngineAs('player_3', state);
+      act(() => {
+        jest.advanceTimersByTime(1300);
+      });
+      expect(mockClearDeathAnimations).not.toHaveBeenCalled();
+
+      renderEngineAs('player_2', state);
+      act(() => {
+        jest.advanceTimersByTime(1300);
+      });
+      expect(mockClearDeathAnimations).toHaveBeenCalledWith('game_123', []);
+    });
   });
 });

@@ -5,6 +5,8 @@ import { useToast } from '@/modules/shared';
 import { handleGameAction, takeBotTurn } from '@/modules/game-rules';
 import { subscribeToGameState, saveGameState, clearDeathAnimations } from './services/game-board.engine.service';
 import type { UseGameEngineResult } from './game-board.engine.types';
+import { useHeartbeat } from './game-board.heartbeat.hook';
+import { useStalenessCheck } from './game-board.staleness.hook';
 
 export function useGameEngine(gameId: string, playerId: string | null): UseGameEngineResult {
   const [gameState, setInternalGameState] = useState<GameState | null>(null);
@@ -88,6 +90,18 @@ export function useGameEngine(gameId: string, playerId: string | null): UseGameE
     return localPlayer.id === 0;
   }, [gameState, localPlayer]);
 
+  // Whoever holds the lowest seat that is still human. Unlike `isHost`, this survives seat 0 becoming a bot.
+  // Only the single-driver effects below use it: their writes are not transactional, so two drivers would race.
+  const isSessionDriver = useMemo(() => {
+    if (!gameState || !localPlayer) return false;
+    const humanSeatIds = gameState.players.filter((p) => !p.isBot).map((p) => p.id);
+    if (humanSeatIds.length === 0) return false;
+    return Math.min(...humanSeatIds) === localPlayer.id;
+  }, [gameState, localPlayer]);
+
+  useHeartbeat({ gameId, localPlayer, status: gameState?.status });
+  useStalenessCheck({ gameId, gameState, localPlayerId: playerId });
+
   useEffect(() => {
     if (!isLoading && !localPlayer) {
       toast({ title: 'Not in Game', description: 'You are not a player in this game. Returning to lobby.' });
@@ -104,9 +118,9 @@ export function useGameEngine(gameId: string, playerId: string | null): UseGameE
 
   const scheduledDeathAnimations = useRef<Set<string>>(new Set());
 
-  // Host is responsible for clearing death animations from database
+  // The session driver clears death animations from the database
   useEffect(() => {
-    if (!isHost || !gameState || !gameState.deathAnimations || gameState.deathAnimations.length === 0) {
+    if (!isSessionDriver || !gameState || !gameState.deathAnimations || gameState.deathAnimations.length === 0) {
       return;
     }
 
@@ -130,11 +144,11 @@ export function useGameEngine(gameId: string, playerId: string | null): UseGameE
     // Depends on the derived `gameState?.deathAnimations` reference, not the whole `gameState` object, so
     // this doesn't reschedule on unrelated state changes (docs/ai/lessons-learned.md "Hooks & effects").
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState?.deathAnimations, isHost, gameId]);
+  }, [gameState?.deathAnimations, isSessionDriver, gameId]);
 
-  // Host is responsible for triggering bot turns
+  // The session driver triggers bot turns
   useEffect(() => {
-    if (isHost && gameState && gameState.status === 'playing' && gameState.players[gameState.currentPlayerIndex]?.isBot) {
+    if (isSessionDriver && gameState && gameState.status === 'playing' && gameState.players[gameState.currentPlayerIndex]?.isBot) {
       const botTurnTimeout = setTimeout(() => {
         takeBotTurn(gameState).catch((err) => {
           console.error('Error during bot turn execution:', err);
@@ -143,7 +157,7 @@ export function useGameEngine(gameId: string, playerId: string | null): UseGameE
 
       return () => clearTimeout(botTurnTimeout);
     }
-  }, [gameState, isHost]);
+  }, [gameState, isSessionDriver]);
 
   return { gameState, setGameState, isMyTurn, localPlayer, isHost, isLoading, globallyRevealedTiles };
 }
