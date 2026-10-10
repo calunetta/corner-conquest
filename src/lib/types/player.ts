@@ -22,6 +22,15 @@ export type Player = {
   name: string;
   color: PlayerColor;
   isBot: boolean;
+  /** True only when `isBot` became true because a human's seat was converted (exit or
+   *  staleness timeout), not because it was a bot from match setup. Governs reclaim eligibility. */
+  isVacant: boolean;
+  /** Epoch ms of this seat's last heartbeat write. Null for bot seats and for a human who
+   *  hasn't sent one yet. */
+  lastSeenAt: number | null;
+  /** True while a reclaim is pending because it's currently this seat's (bot) turn. Applied,
+   *  and cleared, by handleEndTurn the moment that turn ends. */
+  reclaimRequested: boolean;
   armies: Army[];
   resources: Record<ResourceType, number>;
   armyCount: number;

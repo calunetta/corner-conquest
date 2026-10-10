@@ -46,7 +46,7 @@ The AI behavior is defined in `src/modules/game-rules/bot-turn.reducer.ts` and `
     - Any resulting combat (player or monster) is auto-resolved within the same loop — dice rolled with no card options (`useWarChief`/`useOvercome`/`useDecideCard` all `false`), then immediately closed.
 3.  **Guaranteed Turn Transition:** the bot calls `handleEndTurn` and the service writes the resulting state to Firestore in a single `setDoc` — **this is a plain write, not a Firestore transaction**: there is no optimistic-concurrency check against the document's current version. If a human action and a bot turn race on the same match document, the later write silently wins and the earlier one is lost; this differs from `handlePlayerExit`, which does use `runTransaction`.
 
-Bots are currently only ever created at match setup, and only for a solo-vs-bot lobby game (`maxPlayers === 1`, `game-setup.reducer.ts`) — a multiplayer lobby game can never contain a bot seat today. Nothing in the `Player`/`GameState` types prevents a human seat from becoming bot-controlled mid-match, but no code path does that yet either.
+Bots are created at match setup only for a solo-vs-bot lobby game (`maxPlayers === 1`, `game-setup.reducer.ts`). A human seat can also become a bot mid-match when that player leaves a playing match: `handlePlayerExit` sets `isBot: true` and `isVacant: true` on the seat (see §6.12 Match Dismantling Rules), and the host's bot-turn effect (`game-board.engine.hook.ts`) drives it from then on like any other bot seat.
 
 ## 6.10. UI Components and Mobile Responsiveness
 - **Map Rendering & Colonist.io Mobile Strategy:**
@@ -82,9 +82,11 @@ Bots are currently only ever created at match setup, and only for a solo-vs-bot 
   - Every Playwright test suite (`e2e/*.spec.ts`) **MUST** register `safeCleanupGame` inside `test.afterEach(async ({ page }) => { await safeCleanupGame(page); });`.
   - **Guaranteed Cleanup Regardless of Test Outcome:** Even if an assertion throws an error or times out midway through test execution, `test.afterEach` is guaranteed to execute, dismissing any open modals and clicking the GameBoard exit button to dismantle the match.
 - **Match Dismantling Rules (`handlePlayerExit` in `src/modules/game-rules/services/player-exit.service.ts`)**:
-  - **Host Departure During Active Match:** When a host leaves a game in progress (`status === 'playing'`), the Firestore room document is deleted (`transaction.delete(gameDocRef)`), preventing orphaned games.
-  - **No Human Players Remaining:** If the last human player exits a match (leaving only AI bots), the game room is deleted immediately.
-  - **Single/Solo Player Departure:** If total remaining players are `<= 1` when the host leaves, the game document is dismantled from Firestore.
+  - **Leaving a Match In Progress (`status === 'playing'`):** The leaving player's seat is never removed. It is converted in place to a bot (`isBot: true`, `isVacant: true`), keeping its index, armies, resources and board state. A log entry records the takeover, and if it was that seat's turn, `handleEndTurn` runs. Player indices, `baseTiles`, `map` references and `combatState`/`monsterCombatState` are not renumbered.
+  - **Already-Bot Seat:** Calling `handlePlayerExit` for a seat that is already a bot is a no-op, so a repeated exit cannot convert the same seat twice.
+  - **No Human Players Remaining:** If no real (non-bot) players remain in a match in progress, the game room is deleted immediately (`transaction.delete(gameDocRef)`), so no all-bot match is left behind.
+  - **Leaving a Pre-Game Lobby (`status === 'waiting'`):** The room is deleted if no real players remain, or if the host leaves while they are the only player. Otherwise the player is removed: the seat is spliced out, the remaining `players` ids are renumbered 0..n-1, and `baseTiles`, map occupants/`positionedBy`, `combatState` and `monsterCombatState` references are shifted to match. If the leaving player was the current player, the turn ends.
+  - **Writes:** Both paths run in one `runTransaction` on the match document.
 - **Lobby Hygiene:** Adhering to these rules prevents test runs and player abandonments from cluttering Firestore and ensures the game lobby only ever lists active, joinable rooms.
 
 ## 6.13. Island Tile Visual Layout & Animated Sprite Architecture

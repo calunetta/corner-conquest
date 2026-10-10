@@ -5,10 +5,33 @@ import { handleEndTurn } from '../player-turn.reducer';
 import { pushLogEntry } from '../log-entry';
 
 /**
- * Removes a player from an in-progress match, in one Firestore transaction. Deletes the match
- * document outright if the host leaves mid-game, if no real players remain, or if the host
- * leaves a match with no other players. Otherwise reindexes players/baseTiles/map references and
- * ends the exiting player's turn if it was theirs, then writes the updated document back.
+ * Hands a seat in an in-progress match to a bot instead of removing it, so seat indices and
+ * every reference to them stay valid. Ends the seat's turn if it was theirs.
+ */
+function convertSeatToBot(state: GameState, playerIndex: number): void {
+  const seat = state.players[playerIndex];
+  pushLogEntry(state, {
+    category: 'system',
+    message: `${seat.name} has left the game. A bot is taking over their seat.`,
+    playerId: seat.playerId,
+  });
+  seat.isBot = true;
+  seat.isVacant = true;
+  seat.lastSeenAt = null;
+
+  if (state.currentPlayerIndex === playerIndex) {
+    handleEndTurn(state);
+  }
+}
+
+/**
+ * Removes a player from a match, in one Firestore transaction.
+ * - In progress: the seat becomes a bot (see `convertSeatToBot`) and is never removed; the match
+ *   is deleted only when no real players remain. An already-bot seat is a no-op, so racing
+ *   staleness checks and a doubled exit click cannot convert the same seat twice.
+ * - Pre-game: the match is deleted if no real players remain, or if the host leaves a one-player
+ *   lobby. Otherwise the player is removed, players/baseTiles/map references are reindexed, and
+ *   the exiting player's turn ends if it was theirs.
  */
 export async function handlePlayerExit(gameId: string, playerId: string): Promise<void> {
   try {
@@ -25,14 +48,23 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
         return;
       }
 
-      const isHost = playerIndex === 0;
       const remainingRealPlayers = currentState.players.filter((p) => !p.isBot && p.playerId !== playerId);
 
-      if (
-        (isHost && currentState.status === GameStatus.Playing) ||
-        remainingRealPlayers.length === 0 ||
-        (isHost && currentState.players.length <= 1)
-      ) {
+      if (currentState.status === GameStatus.Playing) {
+        if (currentState.players[playerIndex].isBot) {
+          return;
+        }
+        if (remainingRealPlayers.length === 0) {
+          transaction.delete(gameDocRef);
+          return;
+        }
+        convertSeatToBot(currentState, playerIndex);
+        transaction.set(gameDocRef, currentState);
+        return;
+      }
+
+      const isHost = playerIndex === 0;
+      if (remainingRealPlayers.length === 0 || (isHost && currentState.players.length <= 1)) {
         transaction.delete(gameDocRef);
         return;
       }
