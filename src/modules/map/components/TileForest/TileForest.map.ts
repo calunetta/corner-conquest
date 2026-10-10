@@ -17,9 +17,11 @@ export function toForestLayout(island: Island, isBase: boolean): ForestLayout | 
   const treeSprite = TREE_SPRITES[seed % TREE_SPRITES.length];
 
   if (isBase) {
+    // Kept inside the gap between the top-left boat corner (0-21% of T) and the base crest/top
+    // resource slot (from 28%/39% of T): clears both so trees never sit under the resource icons.
     const layout: TreeSlot[] = [
-      { top: '4px', left: '32%', size: '16%', z: 12 },
-      { top: '10%', left: '38%', size: '16%', z: 14 },
+      { top: '2%', left: '23%', size: '15%', z: 12 },
+      { top: '11%', left: '23%', size: '15%', z: 14 },
     ];
     return { treeSprite, layout };
   }

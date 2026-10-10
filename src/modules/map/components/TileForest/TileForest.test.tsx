@@ -58,7 +58,7 @@ describe('TileForest Component', () => {
     it.each([
       ['empty island grove', emptyIsland, false, 2, '28%'],
       ['cleared monster grove', clearedMonsterIsland, false, 2, '28%'],
-      ['base accent', baseIsland, true, 2, '16%'],
+      ['base accent', baseIsland, true, 2, '15%'],
       ['special accent', specialIsland, false, 1, '16%'],
     ])('%s renders %i trees each sized %s', (_name, island, isBase, treeCount, size) => {
       render(<TileForest island={island} isBase={isBase} />);
