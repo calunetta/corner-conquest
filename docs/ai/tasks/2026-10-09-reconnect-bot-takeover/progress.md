@@ -15,11 +15,11 @@ Tier: L · Phases: 3
 - [x] committed: 6cc1b05
 
 ## Phase 2: heartbeat and staleness detection
-- [ ] implementation (implementer-a)
-- [ ] tests (tester-a)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] final review (architect-b)
-- [ ] committed: <hash>
+- [x] implementation (implementer-a)
+- [x] tests (tester-a)
+- [x] checks: typecheck, lint, unit tests
+- [x] final review (architect-b)
+- [x] committed: 1849e8d
 
 ## Phase 3: reconnect-and-reclaim
 - [ ] implementation (implementer-a, implementer-b)
@@ -43,3 +43,10 @@ Tier: L · Phases: 3
 2026-10-10 docs-sync: DONE, updated docs/architecture/systems-and-visuals.md §6.9/§6.12 and docs/README.md's index row. Flagged stale unindexed src/docs/README.md (describes old pre-takeover behavior) — not touched, out of scope.
 2026-10-10 architect-b: APPROVED (final review). Flagged two stray unrelated uncommitted files (e2e/e2e-cleanup.ts, Login.styles.ts) to exclude from the commit, and a leftover .claude/worktrees/inspiring-kare-ee7f7f duplicate checkout that breaks repo-root npm run lint/test (pre-existing, not from this task).
 2026-10-10 coordinator: committed 6cc1b05, excluding the two stray files and all other tasks' pre-existing uncommitted changes.
+2026-10-10 implementer-a: DONE, Phase 2 — writeHeartbeat (runTransaction whole-array read-modify-write), useHeartbeat (15s cadence), useStalenessCheck (20s tick, 45s threshold, broadcast), isSessionDriver replacing isHost in the bot-turn-trigger/death-animation-clearing effects only.
+2026-10-10 tester-a: DONE, 13+17 new hook tests plus writeHeartbeat/session-driver cases; found and the fix was routed back to implementer-a: staleness hook's fire-and-forget handlePlayerExit call had no .catch (unhandled rejection) — fixed with an async wrapper + .catch.
+2026-10-10 coordinator: checks — typecheck clean, eslint clean, npx jest src (excluding .claude/.agents) 2054/2054 passed (same pre-existing unrelated failure as Phase 1).
+2026-10-10 docs-sync: DONE, added systems-and-visuals.md §6.14, updated §6.9/§6.12 cross-refs, docs/README.md index row, structure-and-state.md §2.
+2026-10-10 architect-b: CHANGES REQUESTED — §6.14 was inserted physically before the pre-existing §6.13, confusing reading order. Coordinator fixed directly (pure relocation, no content change) and resubmitted.
+2026-10-10 architect-b: APPROVED (round 2, final review).
+2026-10-10 coordinator: committed 1849e8d, excluding the same stray files plus the unrelated new docs/ai/tasks/2026-10-10-link-google-account/ folder.
