@@ -1,7 +1,7 @@
 export interface PlayerContextType {
   playerId: string | null;
   username: string | null;
-  /** True once Firebase Auth has reported no signed-in account (never true at the same time as a signed-in account). */
+  /** True for a guest's anonymous Firebase session; false for a Google account. */
   isGuest: boolean;
   /** True until the first onAuthStateChanged callback fires; Login shows a spinner during this window. */
   isAuthLoading: boolean;

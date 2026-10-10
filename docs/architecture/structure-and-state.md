@@ -47,33 +47,33 @@ Understanding the project's structure is key to making changes efficiently and c
 The application's architecture is built on a strict separation between **Shared State** (the game's source of truth) and **Local State** (a single player's UI status). Understanding this distinction is critical.
 
 ### 3.1. Player Session Management (`usePlayer` Hook)
-The player's session (their identity) is managed through browser `localStorage`, Firestore and Firebase Auth, orchestrated by the `usePlayer` hook. A player is either a **guest** (no sign-in, disposable identity, bullets 1-4 below) or a **signed-in account** (Google sign-in, stable identity, bullets 5-9 below). `isGuest` is true only when Firebase Auth has finished loading and reports no account.
+The player's session (their identity) is held by Firebase Auth, with the chosen username kept in browser `localStorage` and Firestore. It is orchestrated by the `usePlayer` hook (`usePlayerProvider` in `src/modules/session/player.hook.ts`). Every client has a Firebase Auth `uid` before it does anything else, and that `uid` is its `playerId`. A player is either a **guest** (an anonymous Firebase Auth session, no sign-in, disposable identity, bullets 1-4 below) or a **signed-in account** (Google sign-in, stable identity, bullets 5-9 below). `isGuest` is true only when Firebase Auth has finished loading and the current user is anonymous (`AuthAccount.isAnonymous`, `src/modules/session/services/account.service.ts`).
 
 **Guest path:**
 
 1.  **First Visit:**
-    *   The `usePlayer` hook generates a unique `playerId` (e.g., `player_1678886400000_abcdef`).
-    *   This `playerId` is immediately stored in `localStorage`. This ID persists across page reloads and browser sessions, uniquely identifying the user's browser.
+    *   The `usePlayer` auth listener sees no Firebase session and calls `signInAnonymously()`. Firebase creates an anonymous user; its `uid` becomes the guest's `playerId`.
+    *   No `playerId` is generated or stored in `localStorage`. Firebase Auth persists the anonymous session in the browser, so the same `uid` returns on page reloads.
 
 2.  **Login (`setUsername`):**
     *   When a user enters a username, the `setUsername` function creates a document in a Firestore collection named `usernames`. The document's ID is the chosen username (e.g., `usernames/Alice`).
-    *   The content of this document is the user's unique `playerId`. This acts as a "lock," ensuring no one else with a different `playerId` can claim the username "Alice".
+    *   The content of this document is the guest's Firebase `uid`. This acts as a "lock," ensuring no one else with a different `uid` can claim the username "Alice".
     *   The chosen username is also saved to `localStorage`.
 
 3.  **Session Persistence (Page Reload):**
-    *   When the page is reloaded, `usePlayer` loads both the `playerId` and `username` from `localStorage`.
-    *   **Crucially, it then re-validates this session with Firestore.** It checks if the `usernames/Alice` document still exists and if the `playerId` inside it matches the one stored in the browser.
+    *   When the page is reloaded, Firebase Auth restores the anonymous session, so the `uid` is available again without a new sign-in. `usePlayer` loads only the `username` from `localStorage`.
+    *   **Crucially, it then re-validates this session with Firestore.** It checks if the `usernames/Alice` document still exists and if the `playerId` inside it matches the restored `uid`.
     *   If it matches, the session is restored. If it doesn't match (e.g., the document was deleted or taken by another player), the local session is cleared, and the user is returned to the login screen.
 
 4.  **Logout / Tab Close (`logout`, guest):**
     *   When a guest logs out or closes the tab, a cleanup function is triggered.
     *   It deletes the `usernames/Alice` document from Firestore, freeing up the username for others.
-    *   It also clears the `username` from `localStorage`.
+    *   It also clears the `username` from `localStorage`. The anonymous Firebase session is not signed out, so the guest keeps the same `uid` after logout.
 
 **Signed-in account path:**
 
 5.  **Sign-in (`signInWithGoogle`):**
-    *   The Login screen's Google button opens a Firebase Auth Google popup (`signInWithGoogle` in `src/modules/session/services/account.service.ts`). The account's Firebase Auth `uid` becomes the player's `playerId` for the rest of the session.
+    *   The Login screen's Google button opens a Firebase Auth Google popup (`signInWithGoogle` in `src/modules/session/services/account.service.ts`). The popup signs in as the Google user rather than linking it to the guest's anonymous `uid`, so the account's Firebase Auth `uid` becomes the player's `playerId` for the rest of the session and the guest's `uid` is dropped.
     *   Once sign-in succeeds, a guest's username reservation (if one was made) is released, so it isn't orphaned. An account's reservation is never released by this path.
 
 6.  **Account Username Restore:**
@@ -86,9 +86,10 @@ The player's session (their identity) is managed through browser `localStorage`,
 
 8.  **Logout (`logout` while signed in):**
     *   Calls Firebase `signOut` only. The username reservation and the `accounts` document are kept, so signing back in restores the same username.
+    *   The auth listener then sees no session and signs a new anonymous guest in, so the client is a guest with a new `uid` again.
 
 9.  **Tab Close:**
-    *   The `beforeunload` handler releases a reservation only while `account === null` (a guest). A signed-in account survives tab close, because Firebase Auth persists its session in the browser.
+    *   The `beforeunload` handler releases a reservation only while the current user is anonymous (`account?.isAnonymous`, a guest). A signed-in account survives tab close, because Firebase Auth persists its session in the browser.
 
 ### 3.2. Shared Game State: The `GameState` Object
 

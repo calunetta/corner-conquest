@@ -6,6 +6,7 @@ import {
   writeBatch,
   GoogleAuthProvider,
   signInWithPopup,
+  signInAnonymously as signInAnonymouslyWithFirebase,
   signOut,
   onAuthStateChanged,
 } from '@/lib/firebase';
@@ -14,15 +15,26 @@ import { findUsernameOwner } from './player-session.service';
 export interface AuthAccount {
   uid: string;
   displayName: string | null;
+  /** True for a guest's Firebase Anonymous Auth user; false for a Google-signed-in account. */
+  isAnonymous: boolean;
 }
 
-function toAuthAccount(user: { uid: string; displayName: string | null }): AuthAccount {
-  return { uid: user.uid, displayName: user.displayName };
+function toAuthAccount(user: { uid: string; displayName: string | null; isAnonymous: boolean }): AuthAccount {
+  return { uid: user.uid, displayName: user.displayName, isAnonymous: user.isAnonymous };
 }
 
 /** Opens the Google OAuth popup. Throws on failure or if the user closes the popup. */
 export async function signInWithGoogle(): Promise<AuthAccount> {
   const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+  return toAuthAccount(credential.user);
+}
+
+/**
+ * Signs this client in anonymously, giving it a Firebase Auth uid Firestore rules can trust.
+ * Throws on failure (network, or Anonymous Auth disabled on the project).
+ */
+export async function signInAnonymously(): Promise<AuthAccount> {
+  const credential = await signInAnonymouslyWithFirebase(auth);
   return toAuthAccount(credential.user);
 }
 

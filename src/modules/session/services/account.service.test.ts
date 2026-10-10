@@ -9,16 +9,29 @@ jest.mock('@/lib/firebase', () => {
     writeBatch: jest.fn(),
     GoogleAuthProvider: jest.fn(() => mockProvider),
     signInWithPopup: jest.fn(),
+    signInAnonymously: jest.fn(),
     signOut: jest.fn(),
     onAuthStateChanged: jest.fn(),
   };
 });
 
-import { auth, db, doc, getDoc, writeBatch, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from '@/lib/firebase';
+import {
+  auth,
+  db,
+  doc,
+  getDoc,
+  writeBatch,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInAnonymously as signInAnonymouslyWithFirebase,
+  signOut,
+  onAuthStateChanged,
+} from '@/lib/firebase';
 import {
   bindUsernameToAccount,
   claimAccountUsername,
   findAccountUsername,
+  signInAnonymously,
   signInWithGoogle,
   signOutOfAccount,
   subscribeToAuthState,
@@ -29,6 +42,7 @@ const mockGetDoc = getDoc as jest.Mock;
 const mockWriteBatch = writeBatch as jest.Mock;
 const mockGoogleAuthProvider = GoogleAuthProvider as unknown as jest.Mock;
 const mockSignInWithPopup = signInWithPopup as jest.Mock;
+const mockSignInAnonymouslyWithFirebase = signInAnonymouslyWithFirebase as jest.Mock;
 const mockSignOut = signOut as jest.Mock;
 const mockOnAuthStateChanged = onAuthStateChanged as jest.Mock;
 
@@ -66,22 +80,22 @@ describe('account.service', () => {
       expect(mockSignInWithPopup).toHaveBeenCalledWith(auth, { name: 'google-provider' });
     });
 
-    it('resolves to exactly { uid, displayName } from the credential user', async () => {
+    it('resolves to exactly { uid, displayName, isAnonymous } from the credential user', async () => {
       mockSignInWithPopup.mockResolvedValue({
-        user: { uid: 'uid_1', displayName: 'Alice', email: 'alice@example.com', photoURL: 'x' },
+        user: { uid: 'uid_1', displayName: 'Alice', email: 'alice@example.com', photoURL: 'x', isAnonymous: false },
       });
 
       const account = await signInWithGoogle();
 
-      expect(account).toEqual({ uid: 'uid_1', displayName: 'Alice' });
+      expect(account).toEqual({ uid: 'uid_1', displayName: 'Alice', isAnonymous: false });
     });
 
     it('keeps a null displayName as null', async () => {
-      mockSignInWithPopup.mockResolvedValue({ user: { uid: 'uid_2', displayName: null } });
+      mockSignInWithPopup.mockResolvedValue({ user: { uid: 'uid_2', displayName: null, isAnonymous: false } });
 
       const account = await signInWithGoogle();
 
-      expect(account).toEqual({ uid: 'uid_2', displayName: null });
+      expect(account).toEqual({ uid: 'uid_2', displayName: null, isAnonymous: false });
     });
 
     it('rejects with the popup error when the user closes the popup', async () => {
@@ -94,6 +108,39 @@ describe('account.service', () => {
       mockSignInWithPopup.mockResolvedValue({ user: { uid: 'uid_1', displayName: 'Alice' } });
 
       await signInWithGoogle();
+
+      expect(mockGetDoc).not.toHaveBeenCalled();
+      expect(mockWriteBatch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('signInAnonymously', () => {
+    it('opens an anonymous session with the Firebase auth instance', async () => {
+      mockSignInAnonymouslyWithFirebase.mockResolvedValue({ user: { uid: 'uid_guest', displayName: null, isAnonymous: true } });
+
+      await signInAnonymously();
+
+      expect(mockSignInAnonymouslyWithFirebase).toHaveBeenCalledWith(auth);
+    });
+
+    it('resolves to exactly { uid, displayName, isAnonymous: true } from the credential user', async () => {
+      mockSignInAnonymouslyWithFirebase.mockResolvedValue({ user: { uid: 'uid_guest', displayName: null, isAnonymous: true } });
+
+      const account = await signInAnonymously();
+
+      expect(account).toEqual({ uid: 'uid_guest', displayName: null, isAnonymous: true });
+    });
+
+    it('rejects with the Firebase error on failure (network, or Anonymous Auth disabled)', async () => {
+      mockSignInAnonymouslyWithFirebase.mockRejectedValue(new Error('auth/operation-not-allowed'));
+
+      await expect(signInAnonymously()).rejects.toThrow('auth/operation-not-allowed');
+    });
+
+    it('does not read or write Firestore', async () => {
+      mockSignInAnonymouslyWithFirebase.mockResolvedValue({ user: { uid: 'uid_guest', displayName: null, isAnonymous: true } });
+
+      await signInAnonymously();
 
       expect(mockGetDoc).not.toHaveBeenCalled();
       expect(mockWriteBatch).not.toHaveBeenCalled();
@@ -138,7 +185,7 @@ describe('account.service', () => {
 
     it('reports the current signed-in user as an AuthAccount', () => {
       mockOnAuthStateChanged.mockImplementation((_auth, listener: (user: unknown) => void) => {
-        listener({ uid: 'uid_1', displayName: 'Alice', email: 'alice@example.com' });
+        listener({ uid: 'uid_1', displayName: 'Alice', email: 'alice@example.com', isAnonymous: false });
         return () => {};
       });
       const onChange = jest.fn();
@@ -146,7 +193,19 @@ describe('account.service', () => {
       subscribeToAuthState(onChange);
 
       expect(onChange).toHaveBeenCalledTimes(1);
-      expect(onChange).toHaveBeenCalledWith({ uid: 'uid_1', displayName: 'Alice' });
+      expect(onChange).toHaveBeenCalledWith({ uid: 'uid_1', displayName: 'Alice', isAnonymous: false });
+    });
+
+    it('reports a guest Firebase session with isAnonymous true', () => {
+      mockOnAuthStateChanged.mockImplementation((_auth, listener: (user: unknown) => void) => {
+        listener({ uid: 'uid_guest', displayName: null, isAnonymous: true });
+        return () => {};
+      });
+      const onChange = jest.fn();
+
+      subscribeToAuthState(onChange);
+
+      expect(onChange).toHaveBeenCalledWith({ uid: 'uid_guest', displayName: null, isAnonymous: true });
     });
 
     it('reports null when no account is signed in', () => {
@@ -170,10 +229,10 @@ describe('account.service', () => {
       const onChange = jest.fn();
 
       subscribeToAuthState(onChange);
-      fireAuthChange({ uid: 'uid_1', displayName: 'Alice' });
+      fireAuthChange({ uid: 'uid_1', displayName: 'Alice', isAnonymous: false });
       fireAuthChange(null);
 
-      expect(onChange.mock.calls).toEqual([[{ uid: 'uid_1', displayName: 'Alice' }], [null]]);
+      expect(onChange.mock.calls).toEqual([[{ uid: 'uid_1', displayName: 'Alice', isAnonymous: false }], [null]]);
     });
 
     it('returns the unsubscribe function from onAuthStateChanged', () => {

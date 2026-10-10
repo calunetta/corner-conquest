@@ -10,6 +10,7 @@ jest.mock('./services/player-session.service', () => ({
 jest.mock('./services/account.service', () => ({
   claimAccountUsername: jest.fn(),
   findAccountUsername: jest.fn(),
+  signInAnonymously: jest.fn(),
   signInWithGoogle: jest.fn(),
   signOutOfAccount: jest.fn(),
   subscribeToAuthState: jest.fn(),
@@ -24,12 +25,15 @@ const mockReserveUsername = playerSession.reserveUsername as jest.Mock;
 const mockReleaseUsername = playerSession.releaseUsername as jest.Mock;
 const mockClaimAccountUsername = account.claimAccountUsername as jest.Mock;
 const mockFindAccountUsername = account.findAccountUsername as jest.Mock;
+const mockSignInAnonymously = account.signInAnonymously as jest.Mock;
 const mockSignInWithGoogle = account.signInWithGoogle as jest.Mock;
 const mockSignOutOfAccount = account.signOutOfAccount as jest.Mock;
 const mockSubscribeToAuthState = account.subscribeToAuthState as jest.Mock;
 
-const ALICE: AuthAccount = { uid: 'uid_alice', displayName: 'Alice Google' };
-const BOB: AuthAccount = { uid: 'uid_bob', displayName: 'Bob Google' };
+const ALICE: AuthAccount = { uid: 'uid_alice', displayName: 'Alice Google', isAnonymous: false };
+const BOB: AuthAccount = { uid: 'uid_bob', displayName: 'Bob Google', isAnonymous: false };
+const GUEST: AuthAccount = { uid: 'uid_guest_1', displayName: null, isAnonymous: true };
+const GUEST_2: AuthAccount = { uid: 'uid_guest_2', displayName: null, isAnonymous: true };
 
 /** The auth listener the hook registered, so a test can simulate Firebase Auth changes. */
 let emitAuthChange: (account: AuthAccount | null) => void;
@@ -43,7 +47,7 @@ async function flushAuthCallback(change: () => void) {
   });
 }
 
-/** Firebase Auth reports asynchronously after mount; account cases emit their own change later. */
+/** Registers the listener without firing it, so a test can emit its own first callback. */
 function deferInitialAuthReport() {
   mockSubscribeToAuthState.mockImplementation((listener: (value: AuthAccount | null) => void) => {
     emitAuthChange = listener;
@@ -63,7 +67,12 @@ describe('usePlayerProvider', () => {
     localStorage.clear();
     jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    // Default: Firebase reports no signed-in account on mount (a guest session).
+    // Default: fresh visit. Firebase reports no session; the listener signs the guest in
+    // anonymously, which resolves to GUEST and re-enters the same listener.
+    mockSignInAnonymously.mockImplementation(async () => {
+      emitAuthChange(GUEST);
+      return GUEST;
+    });
     mockSubscribeToAuthState.mockImplementation((listener: (value: AuthAccount | null) => void) => {
       emitAuthChange = listener;
       listener(null);
@@ -75,38 +84,56 @@ describe('usePlayerProvider', () => {
     jest.restoreAllMocks();
   });
 
-  describe('playerId initialization', () => {
-    it('loads playerId from localStorage if it exists', async () => {
-      localStorage.setItem('playerId', 'stored_player_id');
-
+  describe('identity: fresh visit', () => {
+    it('signs in anonymously when the listener first reports no session', async () => {
       const { result } = renderHook(() => usePlayerProvider());
       await settle();
 
-      expect(result.current.playerId).toBe('stored_player_id');
+      expect(mockSignInAnonymously).toHaveBeenCalledTimes(1);
+      expect(result.current.playerId).toBe('uid_guest_1');
+      expect(result.current.isGuest).toBe(true);
+      expect(result.current.isAuthLoading).toBe(false);
     });
 
-    it('creates a new playerId if localStorage is empty', async () => {
+    it('logs and leaves playerId null when the anonymous sign-in fails', async () => {
+      mockSignInAnonymously.mockRejectedValue(new Error('auth/operation-not-allowed'));
+
       const { result } = renderHook(() => usePlayerProvider());
       await settle();
 
-      expect(result.current.playerId).toBeTruthy();
-      expect(result.current.playerId).toMatch(/^player_\d+_[a-z0-9]+$/);
+      expect(console.error).toHaveBeenCalledWith('Error signing in anonymously:', expect.any(Error));
+      expect(result.current.playerId).toBeNull();
+      expect(result.current.isAuthLoading).toBe(false);
+    });
+  });
+
+  describe('identity: returning guest', () => {
+    beforeEach(() => {
+      // Firebase itself restores a prior anonymous session; the listener's first callback is
+      // already the guest account, so no signInAnonymously call is needed.
+      mockSubscribeToAuthState.mockImplementation((listener: (value: AuthAccount | null) => void) => {
+        emitAuthChange = listener;
+        listener(GUEST);
+        return mockUnsubscribe;
+      });
     });
 
-    it('stores the created playerId in localStorage', async () => {
+    it('populates playerId and isGuest directly, without calling signInAnonymously', async () => {
       const { result } = renderHook(() => usePlayerProvider());
       await settle();
 
-      expect(localStorage.getItem('playerId')).toBe(result.current.playerId);
+      expect(mockSignInAnonymously).not.toHaveBeenCalled();
+      expect(result.current.playerId).toBe('uid_guest_1');
+      expect(result.current.isGuest).toBe(true);
+      expect(result.current.isAuthLoading).toBe(false);
     });
   });
 
   describe('validateSession (guest)', () => {
-    it('sets username when the stored username ownership matches the playerId', async () => {
-      localStorage.setItem('playerId', 'player_123');
+    it('sets username when the stored username ownership matches the account uid', async () => {
       localStorage.setItem('username', 'testuser');
 
-      mockFindUsernameOwner.mockResolvedValue('player_123');
+      mockFindUsernameOwner.mockResolvedValue('uid_guest_1');
 
       const { result } = renderHook(() => usePlayerProvider());
       await settle();
@@ -114,11 +141,10 @@ describe('usePlayerProvider', () => {
       expect(result.current.username).toBe('testuser');
     });
 
-    it('clears username when the stored username ownership does not match the playerId', async () => {
-      localStorage.setItem('playerId', 'player_123');
+    it('clears username when the stored username ownership does not match the account uid', async () => {
       localStorage.setItem('username', 'othersuser');
 
-      mockFindUsernameOwner.mockResolvedValue('other_player_id');
+      mockFindUsernameOwner.mockResolvedValue('other_uid');
 
       const { result } = renderHook(() => usePlayerProvider());
       await settle();
@@ -128,7 +154,6 @@ describe('usePlayerProvider', () => {
     });
 
     it('clears username when the username does not exist in the database', async () => {
-      localStorage.setItem('playerId', 'player_123');
       localStorage.setItem('username', 'deleted_user');
 
       mockFindUsernameOwner.mockResolvedValue(null);
@@ -141,7 +166,6 @@ describe('usePlayerProvider', () => {
     });
 
     it('clears username on service error', async () => {
-      localStorage.setItem('playerId', 'player_123');
       localStorage.setItem('username', 'testuser');
 
       mockFindUsernameOwner.mockRejectedValue(new Error('Firestore error'));
@@ -152,12 +176,18 @@ describe('usePlayerProvider', () => {
       expect(result.current.username).toBeNull();
       expect(localStorage.getItem('username')).toBeNull();
     });
+
+    it('leaves username null with no local reservation to restore', async () => {
+      const { result } = renderHook(() => usePlayerProvider());
+      await settle();
+
+      expect(mockFindUsernameOwner).not.toHaveBeenCalled();
+      expect(result.current.username).toBeNull();
+    });
   });
 
   describe('setUsername (guest)', () => {
     it('returns true and reserves the username when it is available', async () => {
-      localStorage.setItem('playerId', 'player_123');
-
       mockFindUsernameOwner.mockResolvedValue(null);
       mockReserveUsername.mockResolvedValue(undefined);
 
@@ -171,13 +201,11 @@ describe('usePlayerProvider', () => {
 
       expect(setUsernameResult).toBe(true);
       expect(result.current.username).toBe('newuser');
-      expect(mockReserveUsername).toHaveBeenCalledWith('newuser', 'player_123');
+      expect(mockReserveUsername).toHaveBeenCalledWith('newuser', 'uid_guest_1');
     });
 
-    it('returns false when the username is taken by another playerId', async () => {
-      localStorage.setItem('playerId', 'player_123');
-
-      mockFindUsernameOwner.mockResolvedValue('other_player_id');
+    it('returns false when the username is taken by another uid', async () => {
+      mockFindUsernameOwner.mockResolvedValue('other_uid');
 
       const { result } = renderHook(() => usePlayerProvider());
       await settle();
@@ -193,9 +221,7 @@ describe('usePlayerProvider', () => {
     });
 
     it('returns true when re-reserving the same username', async () => {
-      localStorage.setItem('playerId', 'player_123');
-
-      mockFindUsernameOwner.mockResolvedValue('player_123');
+      mockFindUsernameOwner.mockResolvedValue('uid_guest_1');
       mockReserveUsername.mockResolvedValue(undefined);
 
       const { result } = renderHook(() => usePlayerProvider());
@@ -211,11 +237,10 @@ describe('usePlayerProvider', () => {
     });
 
     it('releases the old username when changing to a new one', async () => {
-      localStorage.setItem('playerId', 'player_123');
       localStorage.setItem('username', 'olduser');
 
       mockFindUsernameOwner
-        .mockResolvedValueOnce('player_123') // for olduser validation
+        .mockResolvedValueOnce('uid_guest_1') // for olduser validation
         .mockResolvedValueOnce(null); // for newuser availability check
       mockReserveUsername.mockResolvedValue(undefined);
       mockReleaseUsername.mockResolvedValue(undefined);
@@ -234,10 +259,9 @@ describe('usePlayerProvider', () => {
     });
 
     it('does not release the old username when setting the same username', async () => {
-      localStorage.setItem('playerId', 'player_123');
       localStorage.setItem('username', 'sameuser');
 
-      mockFindUsernameOwner.mockResolvedValue('player_123');
+      mockFindUsernameOwner.mockResolvedValue('uid_guest_1');
       mockReserveUsername.mockResolvedValue(undefined);
 
       const { result } = renderHook(() => usePlayerProvider());
@@ -251,8 +275,6 @@ describe('usePlayerProvider', () => {
     });
 
     it('persists the username to localStorage on success', async () => {
-      localStorage.setItem('playerId', 'player_123');
-
       mockFindUsernameOwner.mockResolvedValue(null);
       mockReserveUsername.mockResolvedValue(undefined);
 
@@ -267,8 +289,6 @@ describe('usePlayerProvider', () => {
     });
 
     it('returns false on service error', async () => {
-      localStorage.setItem('playerId', 'player_123');
-
       mockFindUsernameOwner.mockRejectedValue(new Error('Firestore error'));
 
       const { result } = renderHook(() => usePlayerProvider());
@@ -283,12 +303,27 @@ describe('usePlayerProvider', () => {
     });
   });
 
+  describe('setUsername before an account exists', () => {
+    it('logs and returns false when called before the auth listener has set an account', async () => {
+      deferInitialAuthReport();
+      const { result } = renderHook(() => usePlayerProvider());
+      // No settle(): emitAuthChange was registered but never invoked, so account stays null.
+
+      let setUsernameResult = true;
+      await act(async () => {
+        setUsernameResult = await result.current.setUsername('newuser');
+      });
+
+      expect(setUsernameResult).toBe(false);
+      expect(console.error).toHaveBeenCalledWith('Player ID not initialized yet.');
+    });
+  });
+
   describe('logout (guest)', () => {
     it('releases the username when logged in', async () => {
-      localStorage.setItem('playerId', 'player_123');
       localStorage.setItem('username', 'testuser');
 
-      mockFindUsernameOwner.mockResolvedValue('player_123');
+      mockFindUsernameOwner.mockResolvedValue('uid_guest_1');
       mockReleaseUsername.mockResolvedValue(undefined);
 
       const { result } = renderHook(() => usePlayerProvider());
@@ -306,8 +341,6 @@ describe('usePlayerProvider', () => {
     });
 
     it('does nothing if no username is set', async () => {
-      localStorage.setItem('playerId', 'player_123');
-
       const { result } = renderHook(() => usePlayerProvider());
       await settle();
 
@@ -319,10 +352,9 @@ describe('usePlayerProvider', () => {
     });
 
     it('clears username from state and localStorage', async () => {
-      localStorage.setItem('playerId', 'player_123');
       localStorage.setItem('username', 'testuser');
 
-      mockFindUsernameOwner.mockResolvedValue('player_123');
+      mockFindUsernameOwner.mockResolvedValue('uid_guest_1');
       mockReleaseUsername.mockResolvedValue(undefined);
 
       const { result } = renderHook(() => usePlayerProvider());
@@ -337,10 +369,9 @@ describe('usePlayerProvider', () => {
     });
 
     it('handles errors from releaseUsername gracefully', async () => {
-      localStorage.setItem('playerId', 'player_123');
       localStorage.setItem('username', 'testuser');
 
-      mockFindUsernameOwner.mockResolvedValue('player_123');
+      mockFindUsernameOwner.mockResolvedValue('uid_guest_1');
       mockReleaseUsername.mockRejectedValue(new Error('Firestore error'));
 
       const { result } = renderHook(() => usePlayerProvider());
@@ -355,10 +386,9 @@ describe('usePlayerProvider', () => {
     });
 
     it('does not call Firebase signOut for a guest', async () => {
-      localStorage.setItem('playerId', 'player_123');
       localStorage.setItem('username', 'testuser');
 
-      mockFindUsernameOwner.mockResolvedValue('player_123');
+      mockFindUsernameOwner.mockResolvedValue('uid_guest_1');
       mockReleaseUsername.mockResolvedValue(undefined);
 
       const { result } = renderHook(() => usePlayerProvider());
@@ -377,8 +407,6 @@ describe('usePlayerProvider', () => {
       const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
       const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
 
-      localStorage.setItem('playerId', 'player_123');
-
       const { unmount } = renderHook(() => usePlayerProvider());
       await settle();
 
@@ -390,10 +418,9 @@ describe('usePlayerProvider', () => {
     });
 
     it('releases the guest username when beforeunload fires', async () => {
-      localStorage.setItem('playerId', 'player_123');
       localStorage.setItem('username', 'testuser');
 
-      mockFindUsernameOwner.mockResolvedValue('player_123');
+      mockFindUsernameOwner.mockResolvedValue('uid_guest_1');
       mockReleaseUsername.mockResolvedValue(undefined);
 
       const { result } = renderHook(() => usePlayerProvider());
@@ -417,21 +444,20 @@ describe('usePlayerProvider', () => {
       deferInitialAuthReport();
     });
 
-    it('reports isAuthLoading and isGuest false until Firebase Auth has answered', async () => {
+    it('reports isAuthLoading true and isGuest false until Firebase Auth has answered', async () => {
       const { result } = renderHook(() => usePlayerProvider());
       await settle();
 
       expect(result.current.isAuthLoading).toBe(true);
       expect(result.current.isGuest).toBe(false);
 
-      await flushAuthCallback(() => emitAuthChange(null));
+      await flushAuthCallback(() => emitAuthChange(GUEST));
 
       expect(result.current.isAuthLoading).toBe(false);
       expect(result.current.isGuest).toBe(true);
     });
 
     it('uses the Firebase uid as playerId while an account is signed in', async () => {
-      localStorage.setItem('playerId', 'player_123');
       mockFindAccountUsername.mockResolvedValue('Alice');
 
       const { result } = renderHook(() => usePlayerProvider());
@@ -465,7 +491,6 @@ describe('usePlayerProvider', () => {
     });
 
     it('ignores a guest username in localStorage while an account is signed in', async () => {
-      localStorage.setItem('playerId', 'player_123');
       localStorage.setItem('username', 'guestname');
       mockFindAccountUsername.mockResolvedValue(null);
 
@@ -508,6 +533,24 @@ describe('usePlayerProvider', () => {
       unmount();
 
       expect(mockUnsubscribe).toHaveBeenCalledTimes(1);
+    });
+
+    it('signs a new guest in when the listener reports null again after a Google sign-out', async () => {
+      mockFindAccountUsername.mockResolvedValue('Alice');
+      mockSignInAnonymously.mockResolvedValueOnce(GUEST_2);
+
+      const { result } = renderHook(() => usePlayerProvider());
+      await flushAuthCallback(() => emitAuthChange(ALICE));
+      expect(result.current.isGuest).toBe(false);
+
+      // Google sign-out: the listener's own null branch re-triggers anonymous sign-in.
+      await flushAuthCallback(() => emitAuthChange(null));
+      expect(mockSignInAnonymously).toHaveBeenCalledTimes(1);
+
+      await flushAuthCallback(() => emitAuthChange(GUEST_2));
+
+      expect(result.current.playerId).toBe('uid_guest_2');
+      expect(result.current.isGuest).toBe(true);
     });
   });
 
@@ -700,10 +743,9 @@ describe('usePlayerProvider', () => {
     });
 
     it('releases the guest reservation and clears localStorage when a guest with a username signs in', async () => {
-      localStorage.setItem('playerId', 'player_123');
       localStorage.setItem('username', 'testuser');
 
-      mockFindUsernameOwner.mockResolvedValue('player_123');
+      mockFindUsernameOwner.mockResolvedValue('uid_guest_1');
       mockReleaseUsername.mockResolvedValue(undefined);
       mockSignInWithGoogle.mockResolvedValue(ALICE);
 
