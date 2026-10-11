@@ -11,7 +11,7 @@ export const styles = {
   headerTitle: 'text-2xl sm:text-3xl font-black tracking-wide bg-gradient-to-r from-amber-300 via-yellow-400 to-primary bg-clip-text text-transparent',
   headerBadge: 'bg-black/40 border-amber-400/30 text-amber-300 text-xs hidden sm:inline-flex items-center gap-1 font-bold',
   headerDescription: 'text-xs sm:text-sm text-muted-foreground mt-0.5',
-  headerRight: 'flex items-center gap-3 self-end sm:self-center',
+  headerRight: 'flex flex-wrap items-center justify-end gap-3 self-end sm:self-center',
   playerInfo: 'text-right',
   playerLabel: 'text-xs text-muted-foreground block',
   playerGreeting: 'text-sm font-bold text-foreground',

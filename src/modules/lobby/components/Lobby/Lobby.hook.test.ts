@@ -2,7 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { PlayerColor } from '@/lib/types';
 import type { GameSettings, GameState } from '@/lib/types';
 import { defaultGameSettings, handleSeatReclaim } from '@/modules/game-rules';
-import { usePlayer } from '@/modules/session';
+import { usePlayer, useLinkGoogleAccountButton } from '@/modules/session';
 
 const mockToast = jest.fn();
 jest.mock('@/modules/shared', () => ({ useToast: () => ({ toast: mockToast }) }));
@@ -37,6 +37,14 @@ const mockSaveGame = saveGame as jest.Mock;
 const mockJoinOpenGame = joinOpenGame as jest.Mock;
 const mockHandleSeatReclaim = handleSeatReclaim as jest.Mock;
 const mockUsePlayer = usePlayer as jest.Mock;
+const mockUseLinkGoogleAccountButton = useLinkGoogleAccountButton as jest.Mock;
+
+const idleLinkGoogleAccountButton = {
+  isLinking: false,
+  errorDialog: { open: false, title: '', description: '' },
+  onLink: jest.fn(),
+  onErrorDialogOpenChange: jest.fn(),
+};
 
 const games: GameState[] = [];
 
@@ -55,8 +63,10 @@ describe('useLobby', () => {
     mockUsePlayer.mockReset().mockReturnValue({
       playerId: 'player-1',
       username: 'Ada',
+      isGuest: false,
       logout: jest.fn(),
     });
+    mockUseLinkGoogleAccountButton.mockReset().mockReturnValue(idleLinkGoogleAccountButton);
   });
 
   it('subscribes to open games on mount', () => {
@@ -349,6 +359,29 @@ describe('useLobby', () => {
     });
   });
 
+  describe('Google account link (guest header)', () => {
+    it('forwards isGuest=true from usePlayer() into the view model', () => {
+      mockUsePlayer.mockReturnValue({ playerId: 'player-1', username: 'Ada', isGuest: true, logout: jest.fn() });
+      const { result } = renderHook(() => useLobby({ onJoinGame: jest.fn() }));
+
+      expect(result.current.isGuest).toBe(true);
+    });
+
+    it('forwards isGuest=false from usePlayer() into the view model', () => {
+      const { result } = renderHook(() => useLobby({ onJoinGame: jest.fn() }));
+
+      expect(result.current.isGuest).toBe(false);
+    });
+
+    it('forwards the useLinkGoogleAccountButton() state unchanged under linkGoogleAccountButton', () => {
+      const linkState = { ...idleLinkGoogleAccountButton, isLinking: true };
+      mockUseLinkGoogleAccountButton.mockReturnValue(linkState);
+      const { result } = renderHook(() => useLobby({ onJoinGame: jest.fn() }));
+
+      expect(result.current.linkGoogleAccountButton).toBe(linkState);
+    });
+  });
+
   describe('dialog state and logout', () => {
     it('onOpenCreateDialog opens the dialog', () => {
       const { result } = renderHook(() => useLobby({ onJoinGame: jest.fn() }));
@@ -376,7 +409,7 @@ describe('useLobby', () => {
 
     it('onLogout forwards to usePlayer().logout', () => {
       const logout = jest.fn();
-      mockUsePlayer.mockReturnValue({ playerId: 'player-1', username: 'Ada', logout });
+      mockUsePlayer.mockReturnValue({ playerId: 'player-1', username: 'Ada', isGuest: false, logout });
       const { result } = renderHook(() => useLobby({ onJoinGame: jest.fn() }));
 
       result.current.onLogout();

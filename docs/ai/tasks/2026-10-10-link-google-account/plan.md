@@ -3,6 +3,11 @@
 Status: APPROVED
 Inputs: triage.md, ui-design.md (Final spec)
 
+Revision note: Phase 1 was already APPROVED and built/committed under the previous version of
+this plan. This revision only adds `firestore.rules` + `firestore.rules.test.ts` to Phase 2, in
+response to a BLOCKER raised during Phase 2's docs-sync (see Decisions, "Firestore rules"). Phase
+1's code is untouched and correct as committed; only Phase 2 needs re-approval before continuing.
+
 ## Goal and acceptance criteria
 (Verbatim from `ui-design.md` Final spec "Acceptance criteria"; copied here so builders don't
 need to re-open that file to know what "done" means.)
@@ -40,6 +45,11 @@ need to re-open that file to know what "done" means.)
 | `firebase/auth` SDK internals (`_updateTokensIfNecessary`, `_notifyListenersIfCurrent`) | `node_modules/firebase/node_modules/@firebase/auth/dist/browser-cjs/index-d8380d90.js:1819-1832,5561-5562` | Confirms `onAuthStateChanged` listeners fire *inside* the awaited chain of `linkWithPopup`/`UserCredentialImpl._forOperation`, i.e. before our code resumes after `await linkGoogleAccount()`. A write that only happens after that `await` races the listener's own Firestore read and can lose — see Decisions. |
 | `eslint.config.mjs` restricted imports | `eslint.config.mjs:43,47` | `@/lib/firebase`/`firebase/*` importable only from `*.service.ts`; `@/features/*` only from `*.hook.ts`. Confirms `linkGoogleAccount()` must live in `account.service.ts`, not in `player.hook.ts` or the button's hook. |
 | `src/testbed/registry.ts` | `src/testbed/registry.ts:1-85` | Flat array of `ComponentPreview`; new previews are one import + one array entry each. |
+| `usernames/{username}` update rule | `firestore.rules:25-30` | Requires BOTH `resource.data.get('authUid', null) == null` AND `request.resource.data.get('authUid', null) == null` — only allows guest-to-guest reservation updates. `bindUsernameToAccount`'s pre-popup write (`batch.set` on an *existing* guest doc, i.e. an update) sets `authUid` to a non-null value, so it is rejected by this rule as written: `permission-denied`, in production, not caught by unit tests (which mock Firestore). |
+| `usernames/{username}` create rule | `firestore.rules:13-18` | The "pick once, keep forever" guard (`!exists(accounts/{uid})`) already exists for brand-new reservations; the new update-rule clause mirrors it rather than inventing a new invariant. |
+| `'should reject promoting a guest reservation to an account binding, even by its owner'` | `firestore.rules.test.ts:176-184` | This is exactly the write `linkWithGoogle`'s pre-popup bind performs (same uid, same playerId, guest → account). Must flip from "reject" to "allow" — it was written before this feature existed and is now describing behavior the feature requires. |
+| `'should reject binding a name that a guest currently holds, leaving no accounts doc behind'` | `firestore.rules.test.ts:278-292` | Confirms the *different-uid* theft case (an account trying to take over a DIFFERENT guest's still-active reservation) must stay rejected — the new rule clause's `resource.data.playerId == request.auth.uid` check preserves this untouched. |
+| `claimAccountUsername` | `src/modules/session/services/account.service.ts:91-101` | The other caller of `bindUsernameToAccount`; reviewed to confirm the new rule clause can't be reached by it for a different uid (its own `findUsernameOwner` ownership check in app code already blocks that before any Firestore write is attempted), so no new abuse surface beyond the linking flow. |
 
 ## Decisions
 - New service fn `linkGoogleAccount()` throws the raw Firebase error untouched (not swallowed to `boolean`, unlike `signInWithGoogle`), because `LinkGoogleAccountButton.hook.ts` must distinguish `auth/credential-already-in-use` from every other failure to pick the right dialog. Rejected: mirroring `signInWithGoogle`'s swallow-to-boolean (loses the error code the UI spec requires).
@@ -50,6 +60,7 @@ need to re-open that file to know what "done" means.)
 - `GoogleIcon` is always internally `aria-hidden="true"` (no prop to toggle it) — the UI spec's own accessibility section says it is `aria-hidden` in both places it's used (paired with visible text, or paired with the button's own `aria-label`), so a toggle prop would be dead code.
 - Mobile icon-only collapse is two sibling `<Button>` elements (`hidden sm:inline-flex` for the desktop/labeled one, `sm:hidden` for the icon-only one), both wired to the same `onLink`/`isLinking` props — not a `useIsMobile()` JS check. Matches the codebase's existing CSS-only responsive convention (`Lobby.styles.ts:12` `headerBadge`, `:38` `roomsHint`, both `hidden sm:inline(-flex)`), avoids a hydration-mismatch class of bugs a JS viewport hook can introduce, and needs no new import.
 - Icon-only mobile button is `size="icon"` (`src/components/ui/button.tsx:27`, `h-10 w-10` = 40×40) with an explicit `h-11 w-11` (44×44) override in `mobileButton`'s class string; `cn()` (`src/lib/utils.ts:5-7`, `clsx` + `twMerge`) dedupes the conflicting height/width utilities and keeps the later one, so the override reliably wins over the variant default.
+- **Firestore rules (added in this revision):** loosen `usernames/{username}`'s `allow update` rule with a new OR'd clause that permits a one-time guest-to-account transition — current doc has no `authUid`, caller is authenticated as the exact `playerId` already on the doc (proves it's their own still-anonymous reservation, not someone else's — Google-account linking never changes the uid, so this is always true for a genuine link and never true for a different guest's reservation), the write keeps `playerId` the same and sets `authUid` to the caller's own uid, and the caller does not already own an `accounts/{uid}` doc (mirrors the create rule's "pick once" guard). Chosen over changing `bindUsernameToAccount`'s batch semantics (e.g. delete+recreate) because Phase 1 is already built and committed under the current `account.service.ts`/`player.hook.ts` contract; reopening that file now to change a shared function's write shape (also used by `claimAccountUsername`) risks a second regression for no benefit, when the rules-only fix requires zero application-code changes and is strictly additive (only loosens one previously-too-strict case, verified against every existing `firestore.rules.test.ts` case in Verified context). Rejected: Option 2 (delete+recreate in `bindUsernameToAccount`) — touches a function with a second caller (`claimAccountUsername`) for no reason once Option 1 is available and simpler.
 
 ## File plan
 ### Phase 1 — session auth logic (linking + username continuity)
@@ -66,6 +77,8 @@ need to re-open that file to know what "done" means.)
 ### Phase 2 — Google icon, Link button, Login/Lobby wiring, previews, docs
 | File | New / Edit | Responsibility | Owner |
 |---|---|---|---|
+| `firestore.rules` | edit | Loosen `usernames/{username}`'s `allow update` rule to permit the one-time guest→account transition `bindUsernameToAccount`'s pre-popup bind performs (see Decisions) | implementer-a |
+| `firestore.rules.test.ts` | edit | Flip `'should reject promoting a guest reservation to an account binding, even by its owner'` (`:176-184`) to assert it's now allowed; add a positive batch-level test matching `bindUsernameToAccount`'s actual write shape, and a negative test for "already owns an account" | tester-a |
 | `src/modules/session/components/GoogleIcon/GoogleIcon.tsx` | new | Inline-SVG Google "G" mark, `aria-hidden="true"` always, `className` prop | implementer-b |
 | `src/modules/session/components/GoogleIcon/index.ts` | new | Component-local public API | implementer-a |
 | `src/modules/session/components/GoogleIcon/GoogleIcon.test.tsx` | new | Renders an `svg`; has no accessible name of its own (`aria-hidden`) | tester-b |
@@ -95,6 +108,78 @@ need to re-open that file to know what "done" means.)
 | `docs/architecture/structure-and-state.md` | edit | §3.1: update bullet 5 (`:76-77`, currently says Google sign-in never links to the guest uid) to describe the new linking flow; add the username-continuity pre-bind and the `credential-already-in-use` handling | docs-sync (mandatory) |
 
 ## Contracts
+```
+// --- firestore.rules (edit) ---
+// Replace the `usernames/{username}` `allow update` rule (currently lines 25-30) with:
+      allow update: if
+        (
+          // Existing behavior, unchanged: a guest reservation may be re-saved with the same
+          // playerId (reserveUsername's re-claim path).
+          resource.data.get('authUid', null) == null &&
+          request.resource.data.get('authUid', null) == null &&
+          resource.data.playerId is string &&
+          request.resource.data.playerId is string &&
+          resource.data.playerId == request.resource.data.playerId
+        ) ||
+        (
+          // New: linking. A guest may bind their own still-anonymous reservation to their own
+          // account, once. `resource.data.playerId == request.auth.uid` proves the caller is the
+          // exact uid the reservation was made under — Google-account linking never changes the
+          // uid (account.service.ts's linkGoogleAccount) — so this can never hand a DIFFERENT
+          // guest's still-active reservation to someone else. Mirrors the create rule's "pick
+          // once, keep forever" guard above.
+          resource.data.get('authUid', null) == null &&
+          resource.data.playerId is string &&
+          request.auth != null &&
+          resource.data.playerId == request.auth.uid &&
+          request.resource.data.playerId == request.auth.uid &&
+          request.resource.data.authUid == request.auth.uid &&
+          !exists(/databases/$(database)/documents/accounts/$(request.auth.uid))
+        );
+// No other change to firestore.rules: the create/delete rules on usernames/{username} and every
+// rule on accounts/{authUid} and games/{gameId} are untouched.
+
+// --- firestore.rules.test.ts (edit) ---
+// 1. Rename and flip the existing test at :176-184 from reject to allow:
+it('should allow linking a guest reservation to an account binding, by its own owner', async () => {
+  const db = testEnv.authenticatedContext('player_5').firestore();
+  await db.doc('usernames/promote_me').set({ playerId: 'player_5', authUid: null });
+
+  await expect(
+    db.doc('usernames/promote_me').update({ authUid: 'player_5' })
+  ).resolves.toBeUndefined();
+});
+// 2. New test in the existing "Atomic bind: bindUsernameToAccount batch" describe block
+//    (around :250-293), covering the actual production write shape (batch.set on a pre-existing
+//    guest doc, not a bare .update()):
+it('should allow linking a guest\'s own active reservation to their own account via batch', async () => {
+  await seedWithRulesDisabled('usernames/alice_guest', { playerId: 'uid_alice', authUid: null });
+  const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+  const batch = db.batch();
+  batch.set(db.doc('usernames/alice_guest'), { playerId: 'uid_alice', authUid: 'uid_alice' });
+  batch.set(db.doc('accounts/uid_alice'), { username: 'alice_guest' });
+
+  await expect(batch.commit()).resolves.toBeUndefined();
+  expect((await db.doc('accounts/uid_alice').get()).data()).toEqual({ username: 'alice_guest' });
+});
+// 3. New negative test, same describe block: a uid that already owns an account cannot use this
+//    path to bind a second (still-guest) reservation to itself.
+it('should reject linking a guest reservation for a uid that already owns an account', async () => {
+  await seedWithRulesDisabled('accounts/uid_alice', { username: 'alice_first' });
+  await seedWithRulesDisabled('usernames/alice_guest2', { playerId: 'uid_alice', authUid: null });
+  const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+  await expect(
+    db.doc('usernames/alice_guest2').update({ authUid: 'uid_alice' })
+  ).rejects.toThrow();
+});
+// Every other existing test in this file (guest-to-guest update, cross-player theft, permanent
+// binding immutability, legacy no-authUid-field docs, the two existing "Atomic bind" tests) keeps
+// its current expectation unchanged — see Verified context for the per-test check against the
+// new rule clause.
+```
+
 ```ts
 // --- src/lib/firebase.ts (edit) ---
 // Add to the existing `firebase/auth` import block and export list, no other change:
@@ -232,23 +317,27 @@ import { LinkGoogleAccountButtonView } from '@/modules/session';
 Model escalation: steps 1-7 (service/hook layer — Firebase Auth error-code handling, the write-before-popup ordering fix) per triage's `implementer-a=sonnet, tester-a=sonnet` override.
 
 ### Phase 2: Google icon, Link button, Login/Lobby wiring, previews, docs
-1. `GoogleIcon` (`.tsx`, `index.ts`, `.test.tsx`, `.preview.tsx`) per Contracts. (implementer-b, implementer-a, tester-b, preview-a)
-2. `LinkGoogleAccountButton` logic files (`.types.ts`, `.hook.ts`, `.fixtures.ts`, `.hook.test.ts`, `index.ts`) per Contracts. (implementer-a, tester-a)
-3. `LinkGoogleAccountButton` view files (`.tsx`, `.styles.ts`, `.test.tsx`, `.preview.tsx`) per Contracts and the ui-design tokens/copy. (implementer-b, tester-b, preview-a)
-4. `src/modules/session/index.ts`: export the new view + hook + props type. (implementer-a)
-5. `Login.tsx` + `Login.styles.ts`: add the icon and `gap-2`; `Login.test.tsx`: add the svg-presence assertion. (implementer-b, tester-b)
-6. `Lobby.types.ts`, `Lobby.hook.ts`, `Lobby.fixtures.ts`: add `isGuest`/`linkGoogleAccountButton`; `Lobby.hook.test.ts`: mock and assert them. (implementer-a, tester-a)
-7. `Lobby.tsx` + `Lobby.styles.ts`: render the button, add `flex-wrap justify-end`; `Lobby.test.tsx`: guest-present / non-guest-absent assertions; `Lobby.preview.tsx`: add the guest state. (implementer-b, tester-b, preview-a)
-8. `src/testbed/registry.ts`: register the two new previews. (preview-a)
-9. `docs/architecture/structure-and-state.md` §3.1: update per the File plan row. (docs-sync, mandatory)
-10. Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`; fix until clean.
-11. `ui-verify` on the testbed: Login (both breakpoints), the new `LinkGoogleAccountButton` preview (all 4 states), the Lobby "Guest (can link)" state at 1280×720 and 390×844 — confirm no horizontal scroll and a ≥44×44 px mobile touch target.
-12. Commit: `feat(session,lobby): add Google logo to sign-in buttons, link-account button in the lobby [phase 2/2]`.
+1. `firestore.rules`: loosen the `usernames/{username}` update rule per Contracts, so `linkWithGoogle`'s pre-popup `bindUsernameToAccount` write (built in Phase 1, already committed) actually succeeds in production. (implementer-a, **sonnet**)
+2. `firestore.rules.test.ts`: flip the one existing test, add the two new ones, per Contracts. (tester-a, **sonnet**)
+3. Run `npm run test:rules` (starts the Firestore emulator; needs Java 21 per `CLAUDE.md`'s commands table) and confirm every case in Verified context, not just the new ones, still passes.
+4. `GoogleIcon` (`.tsx`, `index.ts`, `.test.tsx`, `.preview.tsx`) per Contracts. (implementer-b, implementer-a, tester-b, preview-a)
+5. `LinkGoogleAccountButton` logic files (`.types.ts`, `.hook.ts`, `.fixtures.ts`, `.hook.test.ts`, `index.ts`) per Contracts. (implementer-a, tester-a)
+6. `LinkGoogleAccountButton` view files (`.tsx`, `.styles.ts`, `.test.tsx`, `.preview.tsx`) per Contracts and the ui-design tokens/copy. (implementer-b, tester-b, preview-a)
+7. `src/modules/session/index.ts`: export the new view + hook + props type. (implementer-a)
+8. `Login.tsx` + `Login.styles.ts`: add the icon and `gap-2`; `Login.test.tsx`: add the svg-presence assertion. (implementer-b, tester-b)
+9. `Lobby.types.ts`, `Lobby.hook.ts`, `Lobby.fixtures.ts`: add `isGuest`/`linkGoogleAccountButton`; `Lobby.hook.test.ts`: mock and assert them. (implementer-a, tester-a)
+10. `Lobby.tsx` + `Lobby.styles.ts`: render the button, add `flex-wrap justify-end`; `Lobby.test.tsx`: guest-present / non-guest-absent assertions; `Lobby.preview.tsx`: add the guest state. (implementer-b, tester-b, preview-a)
+11. `src/testbed/registry.ts`: register the two new previews. (preview-a)
+12. `docs/architecture/structure-and-state.md` §3.1: update per the File plan row, and mention the rules change (guest reservations may now transition to an account binding once, via linking). (docs-sync, mandatory)
+13. Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`; fix until clean.
+14. `ui-verify` on the testbed: Login (both breakpoints), the new `LinkGoogleAccountButton` preview (all 4 states), the Lobby "Guest (can link)" state at 1280×720 and 390×844 — confirm no horizontal scroll and a ≥44×44 px mobile touch target.
+15. Commit: `feat(session,lobby): add Google logo to sign-in buttons, link-account button in the lobby [phase 2/2]`.
 
-Model escalation: none for Phase 2 — mechanical view wiring, stays on haiku per triage.
+Model escalation: steps 1-2 (`firestore.rules`/`.test.ts` — security-rule logic, same sonnet-worthy class of risk as Phase 1) per the same reasoning as triage's `implementer-a=sonnet, tester-a=sonnet` override. The rest of Phase 2 stays on haiku — mechanical view wiring.
 
 ## Test plan
 - tester-a (logic, first):
+  - `firestore.rules.test.ts`: the flipped test (guest promotes their own reservation, allowed), the new positive batch test (matches `bindUsernameToAccount`'s actual write shape), the new negative test (already owns an account), and a re-run of every pre-existing case in that file (guest-to-guest update, cross-player theft rejected, permanent-binding immutability, legacy no-`authUid`-field docs, the two original "Atomic bind" tests) to confirm none regressed. Requires `npm run test:rules` (Firestore emulator, Java 21) — not part of the default `npm test` run, so this must be run explicitly and its summary line quoted.
   - `account.service.test.ts`: `linkGoogleAccount()` calls `linkWithPopup` with `auth.currentUser` and a `GoogleAuthProvider` instance; resolves to `{ uid, displayName, isAnonymous }` from `credential.user`; throws `'No active session to link.'` when `auth.currentUser` is null; rejects with the original error (incl. a `{ code: 'auth/credential-already-in-use' }`-shaped error) without wrapping it.
   - `player.hook.test.ts`: `linkWithGoogle()` calls `bindUsernameToAccount(username, playerId)` before `linkGoogleAccount()` (assert call order); skips the bind when `username` is null or `playerId` is null; propagates a rejection from either call untouched (test at least one `credential-already-in-use`-shaped rejection end to end).
   - `LinkGoogleAccountButton.hook.test.ts`: idle → click → `isLinking` true during the pending promise, false after; a `popup-closed-by-user`/`cancelled-popup-request` rejection leaves `errorDialog.open` false (silent); a `credential-already-in-use` rejection opens the dialog titled "Account Already Linked" with the exact body text from ui-design.md; any other rejection opens "Linking Failed" with its exact body text; `onErrorDialogOpenChange(false)` closes whichever dialog is open.
@@ -269,9 +358,21 @@ Model escalation: none for Phase 2 — mechanical view wiring, stays on haiku pe
 - The `GoogleIcon` SVG path data is unverified (no existing asset to copy, per triage) — mitigated by flagging it explicitly in Contracts and requiring a ui-verify screenshot before Phase 2 is called done, not just a DOM presence check.
 - Firebase Auth's exact listener-ordering behavior was read from the installed SDK's bundled source (`node_modules/firebase/node_modules/@firebase/auth/dist/browser-cjs/index-d8380d90.js`) rather than official docs, to justify the bind-before-popup ordering decision; if a future SDK upgrade changes that internal ordering, the mitigation (writing before the popup, not after) remains correct regardless, since it no longer depends on winning any race.
 - `bindUsernameToAccount` runs on every click including a cancelled popup; this is a small extra Firestore write with no functional downside (see Decisions), but it does mean a guest who clicks the button and cancels repeatedly performs repeated no-op writes. Not worth guarding given KISS; flagging so a future reviewer doesn't mistake it for a bug.
+- `npm run test:rules` requires the Firestore emulator and Java 21 (`CLAUDE.md`'s commands table); if that isn't available in the environment running Phase 2, the rules change can't be verified by its own test suite before commit — `npm run typecheck`/`lint`/`test`/`build` do not exercise `firestore.rules` at all. Mitigation: the Contracts block's rule diff was hand-traced against every existing test case in `firestore.rules.test.ts` in this revision (see Verified context), so a reviewer without the emulator can still verify correctness by re-reading that trace against the diff.
 
 ## Review (architect-b)
-VERDICT: APPROVED
+VERDICT: APPROVED (both the original pass and this revision's delta)
+
+Revision delta re-reviewed (`firestore.rules`, `firestore.rules.test.ts`, the new Decisions/Verified-context/Contracts rows, Phase 2 steps 1-3, the new Test plan row, the new Risk):
+- Read `firestore.rules:25-30` directly: the existing `usernames/{username}` update rule requires both `resource.data.get('authUid', null) == null` AND `request.resource.data.get('authUid', null) == null`. `bindUsernameToAccount`'s pre-popup write sets `authUid` to the caller's uid (non-null) on an *existing* guest doc, so `request.resource.data.get('authUid', null) == null` is false and the write is rejected in production. The BLOCKER is real, not a false alarm — confirmed independently, not just taken on the docs-sync agent's word.
+- Hand-traced the new OR'd clause (plan's Contracts) against every existing test in `firestore.rules.test.ts`'s `usernames` describe blocks (verified each cited line number is real: `:142` same-playerId update still allowed by the *first*, unchanged clause; `:155` cross-player playerId steal still rejected — fails both clauses, the second because `request.auth` is null in that unauthenticated test; `:167` nonexistent doc still rejected; `:186` permanent-binding update by its own owner still rejected — `resource.data.get('authUid', null) == null` is false since it's already `'uid_alice'`, so neither clause fires; `:202` legacy no-`authUid`-field doc still allowed by the unchanged first clause; `:296` and `:314` the two "cross-player attacks blocked" tests still rejected, same reasoning as `:155`). No existing case flips unintentionally; only the single targeted case (`:176-184`) and the two new tests change behavior.
+- Verified `firestore.rules:10-18`'s create-rule "pick once, keep forever" guard is the real precedent the new update clause mirrors (`!exists(accounts/{uid})`), not an invented analogy.
+- Verified `package.json:14` — `test:rules` really does run `firebase emulators:exec --only firestore ... jest --config jest.rules.config.js`, confirming the plan's claim that it needs the emulator (Java 21) and is not part of plain `npm test`.
+- Verified `seedWithRulesDisabled` (`firestore.rules.test.ts:27`) exists and is used exactly as the two new Contracts tests assume.
+- Design judgment: tightening scope to a rules-only fix (reject touching `bindUsernameToAccount`'s write shape, which Phase 1 already committed and which `claimAccountUsername` also calls) is the smaller, correct change — reopening a shared, already-reviewed function for a problem that's purely a rules gap would be the wrong trade.
+- No regression to Phase 1's already-approved and committed code; this delta is additive to Phase 2 only, as the revision note states.
+
+Original pass's findings (unchanged, still apply):
 - Verified every "Verified context" row against the actual files: `src/lib/firebase.ts:58-79` (no `linkWithPopup` export today), `account.service.ts:15-30,65-70,76-88`, `player.hook.ts:15-21,73-75,97-110`, `player.types.ts:1-12`, `player-session.service.ts:13-16`, `player.hook.test.ts:493-502` (`'ignores a guest username in localStorage while an account is signed in'`, confirmed it would break if the non-anonymous branch grew a `localStorage`/`usernames/` fallback), `player.provider.test.tsx` (3 `PlayerContextType` literals at lines 32-40/55-63/88-96, all missing `linkWithGoogle`), `Login.tsx:66-74`/`Login.styles.ts:18`, `Login.test.tsx:70,87,95` (accessible-name queries unaffected by a leading `aria-hidden` icon), `RejoinMatchPanel.tsx` (genuinely has no `.hook.ts`, single function, no `View`/connected split — correctly cited as the "pure child driven by the parent's hook" precedent), `Lobby.tsx:39-47`/`Lobby.styles.ts:14` (`headerRight` class verbatim), `Lobby.hook.ts`/`.types.ts`/`.fixtures.ts`/`.hook.test.ts` (all line citations correct, `isGuest` not yet destructured, `usePlayer()` mock at lines 55-59 needs it), `src/testbed/registry.ts` (flat array, confirmed insertion pattern), `eslint.config.mjs:43,47` (restricted-imports groups confirmed verbatim), `button.tsx:23-28` (`icon` size is `h-10 w-10`, confirms the plan's 44×44 override math and that `cn()`/`twMerge` will let the later class win).
 - Verified the one claim resting on SDK internals rather than public docs: `_forOperation` (`node_modules/firebase/node_modules/@firebase/auth/dist/browser-cjs/index-d8380d90.js:5561-5562`) awaits `_updateTokensIfNecessary`, which calls `this.auth._notifyListenersIfCurrent(this)` at line 1831 — i.e. `onAuthStateChanged` fires before `_forOperation` returns the credential, which is before `linkWithPopup`'s own caller resumes after `await`. This genuinely supports the plan's "bind the username before opening the popup, not after" ordering decision; the plan isn't overclaiming here.
 - Verified the Firebase error codes the hook keys off: `credential-already-in-use`, `popup-closed-by-user`, `cancelled-popup-request` all exist in the installed SDK (same file, lines 141/156/240/332/341/395), confirming the `isCredentialAlreadyInUse`/`isCancelledPopup` helpers in the Contracts reference real codes, not invented ones.

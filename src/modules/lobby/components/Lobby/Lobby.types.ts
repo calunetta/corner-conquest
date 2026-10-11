@@ -1,4 +1,5 @@
 import type { GameSettings, GameState, PlayerColor } from '@/lib/types';
+import type { LinkGoogleAccountButtonViewProps } from '@/modules/session';
 
 export type LobbyProps = {
   onJoinGame: (gameId: string) => void;
@@ -6,6 +7,8 @@ export type LobbyProps = {
 
 export type LobbyViewModel = {
   username: string | null;
+  isGuest: boolean;
+  linkGoogleAccountButton: LinkGoogleAccountButtonViewProps;
   games: GameState[];
   isGamesLoading: boolean;
   isCreateDialogOpen: boolean;

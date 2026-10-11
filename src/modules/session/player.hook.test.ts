@@ -806,12 +806,22 @@ describe('usePlayerProvider', () => {
       expect(mockLinkGoogleAccount).toHaveBeenCalledTimes(1);
     });
 
-    it('skips the bind when there is no playerId yet', async () => {
+    it('skips the bind when there is no playerId yet, even with a username still in state', async () => {
+      // A username can only be in state while an account is set, so the only way to reach
+      // "username set, playerId null" is: the guest account validates a stored name, then a null
+      // auth report whose anonymous re-sign-in fails clears the account but keeps the name.
       deferInitialAuthReport();
+      localStorage.setItem('username', 'testuser');
+      mockFindUsernameOwner.mockResolvedValue(GUEST.uid);
+      mockSignInAnonymously.mockRejectedValueOnce(new Error('auth/operation-not-allowed'));
       mockLinkGoogleAccount.mockResolvedValue(ALICE);
 
       const { result } = renderHook(() => usePlayerProvider());
-      // No settle(): emitAuthChange was registered but never invoked, so playerId stays null.
+      await flushAuthCallback(() => emitAuthChange(GUEST));
+      await flushAuthCallback(() => emitAuthChange(null));
+
+      expect(result.current.username).toBe('testuser');
+      expect(result.current.playerId).toBeNull();
 
       await act(async () => {
         await result.current.linkWithGoogle();

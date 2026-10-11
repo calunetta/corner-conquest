@@ -15,7 +15,7 @@ export const styles = {
   submitIcon: 'mr-2 h-4 w-4',
   loadingWrap: 'flex justify-center py-6',
   spinner: 'h-8 w-8 animate-spin text-amber-400',
-  googleButton: 'w-full border-white/10 bg-black/40 text-foreground hover:bg-white/10 py-5',
+  googleButton: 'w-full gap-2 border-white/10 bg-black/40 text-foreground hover:bg-white/10 py-5',
   divider: 'flex items-center gap-3',
   dividerLine: 'h-px flex-1 bg-white/10',
   dividerText: 'text-xs uppercase tracking-widest text-muted-foreground',

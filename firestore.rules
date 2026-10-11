@@ -23,11 +23,30 @@ service cloud.firestore {
       // field; a plain resource.data.authUid read would error and lock those reservations.
       // The merged request.resource.data also lacks authUid for a legacy doc, so it gets the same treatment.
       allow update: if
-        resource.data.get('authUid', null) == null &&
-        request.resource.data.get('authUid', null) == null &&
-        resource.data.playerId is string &&
-        request.resource.data.playerId is string &&
-        resource.data.playerId == request.resource.data.playerId;
+        (
+          // Existing behavior, unchanged: a guest reservation may be re-saved with the same
+          // playerId (reserveUsername's re-claim path).
+          resource.data.get('authUid', null) == null &&
+          request.resource.data.get('authUid', null) == null &&
+          resource.data.playerId is string &&
+          request.resource.data.playerId is string &&
+          resource.data.playerId == request.resource.data.playerId
+        ) ||
+        (
+          // New: linking. A guest may bind their own still-anonymous reservation to their own
+          // account, once. `resource.data.playerId == request.auth.uid` proves the caller is the
+          // exact uid the reservation was made under — Google-account linking never changes the
+          // uid (account.service.ts's linkGoogleAccount) — so this can never hand a DIFFERENT
+          // guest's still-active reservation to someone else. Mirrors the create rule's "pick
+          // once, keep forever" guard above.
+          resource.data.get('authUid', null) == null &&
+          resource.data.playerId is string &&
+          request.auth != null &&
+          resource.data.playerId == request.auth.uid &&
+          request.resource.data.playerId == request.auth.uid &&
+          request.resource.data.authUid == request.auth.uid &&
+          !exists(/databases/$(database)/documents/accounts/$(request.auth.uid))
+        );
 
       // Guest reservations can be released on logout/beforeunload, exactly as before.
       // Account reservations are permanent: no delete, ever.

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { usePlayer } from '@/modules/session';
+import { usePlayer, useLinkGoogleAccountButton } from '@/modules/session';
 import { useToast } from '@/modules/shared';
 import { handleSeatReclaim, initializeGame, startGame } from '@/modules/game-rules';
 import type { GameSettings, GameState, PlayerColor } from '@/lib/types';
@@ -20,7 +20,8 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
   const [isJoiningGame, setIsJoiningGame] = useState<string | null>(null);
   const [vacantMatch, setVacantMatch] = useState<GameState | null>(null);
   const [isReclaiming, setIsReclaiming] = useState(false);
-  const { playerId, username, logout } = usePlayer();
+  const { playerId, username, isGuest, logout } = usePlayer();
+  const linkGoogleAccountButton = useLinkGoogleAccountButton();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -149,6 +150,8 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
 
   return {
     username,
+    isGuest,
+    linkGoogleAccountButton,
     games,
     isGamesLoading,
     isCreateDialogOpen,

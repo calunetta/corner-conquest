@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Compass, Loader2, Swords, Trophy, Shield, BookOpen, Sparkles, Power } from 'lucide-react';
+import { LinkGoogleAccountButtonView } from '@/modules/session';
 import { LobbyBackground } from '../LobbyBackground';
 import { CreateGameDialog } from '../CreateGameDialog';
 import { RejoinMatchPanel } from '../RejoinMatchPanel';
@@ -41,6 +42,7 @@ export function LobbyView(model: LobbyViewModel) {
                 <span className={styles.playerLabel}>Commander</span>
                 <span className={styles.playerGreeting}>Welcome, {model.username}!</span>
               </div>
+              {model.isGuest && <LinkGoogleAccountButtonView {...model.linkGoogleAccountButton} />}
               <Button variant="ghost" size="sm" onClick={model.onLogout} className={styles.logoutButton}>
                 <Power className="h-4 w-4 mr-1.5" /> Logout
               </Button>

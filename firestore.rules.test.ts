@@ -173,14 +173,27 @@ describe('Firestore Rules: usernames collection', () => {
       ).rejects.toThrow();
     });
 
-    it('should reject promoting a guest reservation to an account binding, even by its owner', async () => {
+    it('should allow promoting a guest reservation to an account binding, by its owner, once', async () => {
       const db = testEnv.authenticatedContext('player_5').firestore();
 
       await db.doc('usernames/promote_me').set({ playerId: 'player_5', authUid: null });
 
       await expect(
         db.doc('usernames/promote_me').update({ authUid: 'player_5' })
+      ).resolves.toBeUndefined();
+    });
+
+    it('should reject promoting a guest reservation when the owner already has an accounts doc ("pick once")', async () => {
+      await seedWithRulesDisabled('accounts/player_6', { username: 'first_name' });
+      await seedWithRulesDisabled('usernames/second_promote', { playerId: 'player_6', authUid: null });
+      const db = testEnv.authenticatedContext('player_6').firestore();
+
+      await expect(
+        db.doc('usernames/second_promote').update({ authUid: 'player_6' })
       ).rejects.toThrow();
+
+      const snap = await db.doc('usernames/second_promote').get();
+      expect(snap.data()).toEqual({ playerId: 'player_6', authUid: null });
     });
 
     it('should reject updating a permanent binding, even by its owner with the same playerId', async () => {
@@ -289,6 +302,43 @@ describe('Firestore Rules: usernames collection', () => {
       expect(accountSnap.exists).toBe(false);
       const guestSnap = await db.doc('usernames/taken_by_guest').get();
       expect((guestSnap.data() as UsernameDoc).playerId).toBe('guest_1');
+    });
+  });
+
+  describe('Atomic bind: guest reservation promoted in the same batch', () => {
+    // bindUsernameToAccount (account.service.ts) batches batch.set on the caller's existing guest
+    // usernames doc (a rules update) with batch.set on accounts/{uid} (a rules create).
+    it('should commit the guest-to-account promotion and accounts doc together', async () => {
+      const db = testEnv.authenticatedContext('uid_carol').firestore();
+      await db.doc('usernames/carol_name').set({ playerId: 'uid_carol', authUid: null });
+
+      const batch = db.batch();
+      batch.set(db.doc('usernames/carol_name'), { playerId: 'uid_carol', authUid: 'uid_carol' });
+      batch.set(db.doc('accounts/uid_carol'), { username: 'carol_name' });
+
+      await expect(batch.commit()).resolves.toBeUndefined();
+
+      const usernameSnap = await db.doc('usernames/carol_name').get();
+      expect(usernameSnap.data()).toEqual({ playerId: 'uid_carol', authUid: 'uid_carol' });
+      const accountSnap = await db.doc('accounts/uid_carol').get();
+      expect(accountSnap.data()).toEqual({ username: 'carol_name' });
+    });
+
+    it('should reject the promotion batch when the caller already owns an accounts doc, leaving both docs unchanged', async () => {
+      await seedWithRulesDisabled('accounts/uid_dave', { username: 'dave_first' });
+      await seedWithRulesDisabled('usernames/dave_second', { playerId: 'uid_dave', authUid: null });
+      const db = testEnv.authenticatedContext('uid_dave').firestore();
+
+      const batch = db.batch();
+      batch.set(db.doc('usernames/dave_second'), { playerId: 'uid_dave', authUid: 'uid_dave' });
+      batch.set(db.doc('accounts/uid_dave'), { username: 'dave_second' });
+
+      await expect(batch.commit()).rejects.toThrow();
+
+      const usernameSnap = await db.doc('usernames/dave_second').get();
+      expect(usernameSnap.data()).toEqual({ playerId: 'uid_dave', authUid: null });
+      const accountSnap = await db.doc('accounts/uid_dave').get();
+      expect(accountSnap.data()).toEqual({ username: 'dave_first' });
     });
   });
 

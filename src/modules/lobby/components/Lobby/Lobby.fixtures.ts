@@ -1,6 +1,7 @@
 import { defaultGameSettings } from '@/modules/game-rules';
 import { PlayerColor } from '@/lib/types';
 import type { GameState, Player } from '@/lib/types';
+import type { LinkGoogleAccountButtonViewProps } from '@/modules/session';
 import type { LobbyViewModel } from './Lobby.types';
 
 const noop = (): void => undefined;
@@ -23,8 +24,17 @@ const openGames: GameState[] = [
   createOpenGame('game-2', "Rex's Grand Conquest", 2, [createLobbyPlayer('p3', 'Rex', PlayerColor.Purple)]),
 ];
 
+const idleLinkGoogleAccountButton: LinkGoogleAccountButtonViewProps = {
+  isLinking: false,
+  errorDialog: { open: false, title: '', description: '' },
+  onLink: noop,
+  onErrorDialogOpenChange: noop,
+};
+
 const baseViewModel: LobbyViewModel = {
   username: 'Ada',
+  isGuest: false,
+  linkGoogleAccountButton: idleLinkGoogleAccountButton,
   games: [],
   isGamesLoading: false,
   isCreateDialogOpen: false,
@@ -44,6 +54,9 @@ export const loadingLobby: LobbyViewModel = { ...baseViewModel, isGamesLoading: 
 export const emptyLobby: LobbyViewModel = { ...baseViewModel, games: [] };
 
 export const lobbyWithOpenGames: LobbyViewModel = { ...baseViewModel, games: openGames };
+
+/** A guest's anonymous session: the header offers the Link Google Account button. */
+export const guestLobby: LobbyViewModel = { ...lobbyWithOpenGames, isGuest: true };
 
 const vacantGame: GameState = createOpenGame('game-vacant', 'Hollow Shoals', 2, [
   createLobbyPlayer('p4', 'Ada', PlayerColor.Blue),

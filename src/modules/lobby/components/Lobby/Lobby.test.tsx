@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { LobbyView } from './Lobby';
-import { emptyLobby, loadingLobby, lobbyWithOpenGames, lobbyWithVacantSeat } from './Lobby.fixtures';
+import { emptyLobby, guestLobby, loadingLobby, lobbyWithOpenGames, lobbyWithVacantSeat } from './Lobby.fixtures';
 import { styles } from './Lobby.styles';
 
 describe('LobbyView', () => {
@@ -59,6 +59,49 @@ describe('LobbyView', () => {
     logoutButton.click();
 
     expect(onLogout).toHaveBeenCalledTimes(1);
+  });
+
+  describe('Link Google Account button in the header', () => {
+    it('shows the desktop label and the mobile icon-only button for a guest', () => {
+      render(<LobbyView {...guestLobby} />);
+
+      expect(screen.getByRole('button', { name: 'Link Google Account' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'Link your Google account' })).toBeEnabled();
+    });
+
+    it('places the link button between the commander greeting and Logout for a guest', () => {
+      render(<LobbyView {...guestLobby} />);
+
+      const linkButton = screen.getByRole('button', { name: 'Link Google Account' });
+      const logoutButton = screen.getByRole('button', { name: /logout/i });
+      const greeting = screen.getByText('Welcome, Ada!');
+      expect(greeting.compareDocumentPosition(linkButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(linkButton.compareDocumentPosition(logoutButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('calls the link handler when the guest clicks the desktop button', () => {
+      const onLink = jest.fn();
+      const model = { ...guestLobby, linkGoogleAccountButton: { ...guestLobby.linkGoogleAccountButton, onLink } };
+      render(<LobbyView {...model} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Link Google Account' }));
+
+      expect(onLink).toHaveBeenCalledTimes(1);
+    });
+
+    it('is absent from the DOM for a non-guest (already-linked) account', () => {
+      render(<LobbyView {...emptyLobby} />);
+
+      expect(screen.queryByRole('button', { name: /link google account/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /link your google account/i })).not.toBeInTheDocument();
+    });
+
+    it('keeps the greeting and Logout for a non-guest account', () => {
+      render(<LobbyView {...emptyLobby} />);
+
+      expect(screen.getByText('Welcome, Ada!')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
+    });
   });
 
   it('renders create game button', () => {

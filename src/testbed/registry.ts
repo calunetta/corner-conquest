@@ -29,6 +29,8 @@ import { wealthyDialogPreview } from '@/modules/cards/components/WealthyDialog/W
 import { stealResourceDialogPreview } from '@/modules/cards/components/StealResourceDialog/StealResourceDialog.preview';
 import { confirmExitDialogPreview } from '@/modules/session/components/ConfirmExitDialog/ConfirmExitDialog.preview';
 import { hostLeaveDialogPreview } from '@/modules/session/components/HostLeaveDialog/HostLeaveDialog.preview';
+import { googleIconPreview } from '@/modules/session/components/GoogleIcon/GoogleIcon.preview';
+import { linkGoogleAccountButtonPreview } from '@/modules/session/components/LinkGoogleAccountButton/LinkGoogleAccountButton.preview';
 import { loginPreview } from '@/modules/session/components/Login/Login.preview';
 import { lobbyPreview } from '@/modules/lobby/components/Lobby/Lobby.preview';
 import { lobbyBackgroundPreview } from '@/modules/lobby/components/LobbyBackground/LobbyBackground.preview';
@@ -71,6 +73,8 @@ export const previews: ComponentPreview[] = [
   stealResourceDialogPreview,
   confirmExitDialogPreview,
   hostLeaveDialogPreview,
+  googleIconPreview,
+  linkGoogleAccountButtonPreview,
   loginPreview,
   lobbyPreview,
   lobbyBackgroundPreview,

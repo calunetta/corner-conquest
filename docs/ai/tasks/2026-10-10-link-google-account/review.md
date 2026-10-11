@@ -27,3 +27,36 @@ VERDICT: APPROVED
 
 ## Docs
 - `docs-sync`: not needed this phase — the `structure-and-state.md` §3.1 update is explicitly scheduled for Phase 2 (plan.md:95, plan.md:243), after the full linking flow including the UI is wired up.
+
+# Final review: Link Google account from guest, phase 2/2
+
+VERDICT: APPROVED
+
+## Checks run
+- `npm run typecheck`: clean, no output.
+- `npx eslint` on every touched/new file in Phase 2 (`GoogleIcon`, `LinkGoogleAccountButton`, `Login.tsx`/`.styles.ts`/`.test.tsx`, `src/modules/session/index.ts`, `Lobby.types/.hook/.fixtures/.tsx/.styles/.test/.preview.ts(x)`, `src/testbed/registry.ts`, `firestore.rules.test.ts`): zero errors/warnings.
+- `npm test -- src/modules/session src/modules/lobby --testPathIgnorePatterns='/\.claude/'`: `Test Suites: 29 passed, 29 total`, `Tests: 394 passed, 394 total`.
+- `npm run build`: compiles successfully, generates all 6 static pages, no type or lint errors.
+- Firestore rules, re-run independently against the real emulator (installed Java 21 at `/opt/homebrew/opt/openjdk@21`, not on `PATH` by default in this shell): `npx firebase emulators:exec --only firestore --project demo-corner-conquest "npx jest --config jest.rules.config.js --testPathIgnorePatterns /node_modules/ /.claude/"` → `Test Suites: 1 passed, 1 total`, `Tests: 54 passed, 54 total`.
+- ui-verify: not re-run by me; relying on preview-b's confirmed pass per the coordinator's context (Google icon renders as a real four-color G, all 4 `LinkGoogleAccountButton` states correct, no mobile overflow, 44×44 touch target, visible focus rings on Tab for all 3 relevant buttons, all routes 200 after the `'use client'` fix). Read the fixed file myself: `src/modules/session/components/LinkGoogleAccountButton/LinkGoogleAccountButton.hook.ts:1` has `'use client';` as its first line.
+
+## Plan adherence
+- `firestore.rules` diff matches Contracts (`plan.md:114-138`) verbatim — same OR'd clause, same comments, same field checks. `firestore.rules.test.ts` flips the one specified test and adds the two specified new tests (`:176-196`, `:308-343` in the new file), plus an extra pair of batch-level tests in a new `describe` block — all additive, nothing in the existing suite changed in a way that would flip an unintended case. 54/54 against the real emulator confirms this, not just a hand-trace.
+- `GoogleIcon.tsx`: contract's `viewBox="0 0 18 18"` placeholder was explicitly flagged in Contracts as unverified ("implementer-b must source the real official Google G path data... rather than inventing coordinates"). Implementer-b instead copied real path data + its native `viewBox="0 0 48 48"` from `react-icons`' `FcGoogle`, with a code comment naming the exact source (npm package, version, file). This is the correct resolution of that flagged risk, not a deviation — `className`-driven Tailwind sizing (`h-4 w-4` / `h-5 w-5`) overrides the hardcoded `width`/`height` attributes via CSS specificity, confirmed by preview-b's screenshot of the icon at the intended size.
+- `LinkGoogleAccountButton.types.ts`, `.hook.ts`, `.tsx`, `.styles.ts`: match Contracts (`plan.md:231-271`) field-for-field — `LinkGoogleAccountButtonErrorDialog`/`ViewProps` shapes, the `isCredentialAlreadyInUse`/`isCancelledPopup` error-code helpers reading `(error as {code?:string})?.code` without importing a Firebase type, the exact dialog copy, `onLink`'s try/catch/finally shape, two sibling `Button`s (`hidden sm:inline-flex` / `sm:hidden`) sharing `onClick`/`disabled`, one shared `AlertDialog`.
+- `Login.tsx`/`.styles.ts`, `Lobby.types/.hook/.tsx/.styles.ts`, `src/modules/session/index.ts`: match Contracts exactly (`plan.md:283-301`) — `isGuest`/`linkGoogleAccountButton` added to `LobbyViewModel`, destructured and forwarded in `Lobby.hook.ts`, rendered conditionally between `playerInfo` and `Logout` in `Lobby.tsx`, `flex-wrap justify-end` added to `headerRight`.
+- Test coverage matches the Test plan (`plan.md:338-350`): hook tests cover all 3 outcomes (cancelled-silent, already-in-use dialog, generic-failure dialog) plus loading toggling and re-linkability after dismissal; view tests assert both buttons present/enabled/disabled, click wiring, dialog content, and `Lobby.test.tsx` asserts guest-present / non-guest-absent by role and accessible name, not by CSS visibility.
+- Preview states match the Preview-states section (`plan.md:352-355`): `GoogleIcon` Default; `LinkGoogleAccountButton` Idle/Linking/Error-Already-Linked/Error-Generic (the preview also adds a "Reopen dialog" button so the dialog can be re-triggered interactively — a reasonable testbed-only affordance, not in the original 4-state list but doesn't replace or hide any of them); `Lobby` gains "Guest (can link)".
+- `src/testbed/registry.ts`: both new previews imported and registered, matching the File plan row.
+- Phase 1's already-approved `player.hook.ts` linking logic (`:114-122`) is unchanged this phase; `player.hook.test.ts`'s edit in this diff only strengthens the existing "skips the bind when there is no playerId yet" test to actually reach that state via the real auth-listener/localStorage path instead of relying on an unobserved `renderHook` + no `settle()`, which is a correctness improvement to an existing test, not new scope creep — no new assertion about a *different* behavior.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| — | — | None (see Resolution below — the one blocking finding from the first pass was fixed and re-verified). | — | — |
+
+## Docs
+- `docs-sync`: ran, updated `structure-and-state.md` §3.1 (bullet 5's sign-in note + the new "Linking a guest to Google" subsection). The subsection now includes the previously-missing bullet at `structure-and-state.md:100`: "`firestore.rules` allows one guest-to-account update of `usernames/{username}`: while the doc has no `authUid`, the caller may set `authUid` to their own `uid` (which must equal the doc's `playerId`), provided `accounts/{uid}` does not exist yet. This is distinct from the 'permanent once account-owned' rule. After `authUid` is set, the reservation can no longer be updated or deleted." Checked verbatim against the live rule (`firestore.rules:38-45`, the "New: linking" clause): no existing `authUid` ✓, caller's own uid equals `playerId` ✓, `accounts/{uid}` must not exist ✓, "distinct from permanent once account-owned" correctly describes the separate first OR-clause / `allow update`'s immutability once `authUid` is non-null ✓. Accurate, no further gap.
+
+## Resolution
+Finding #1 from the first pass (missing mention of the `firestore.rules` loosening) is fixed at `structure-and-state.md:100` and verified accurate against `firestore.rules:38-45` in this follow-up pass. No other findings. Phase 2 is APPROVED: implementation, tests (394/394 unit + 54/54 rules against the real emulator), previews, docs-sync, checks (typecheck/lint/test/build all clean), and UI verification (preview-b's confirmed pass, per the coordinator) are all complete and correct.

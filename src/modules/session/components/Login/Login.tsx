@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LobbyBackground } from '@/modules/lobby';
+import { GoogleIcon } from '../GoogleIcon';
 import { useLogin } from './Login.hook';
 import { styles } from './Login.styles';
 import type { LoginViewProps } from './Login.types';
@@ -70,6 +71,7 @@ export function LoginView({
                   onClick={onGoogleSignIn}
                   disabled={isLoading}
                 >
+                  <GoogleIcon className="h-4 w-4" />
                   Sign in with Google
                 </Button>
                 <div className={styles.divider} aria-hidden>

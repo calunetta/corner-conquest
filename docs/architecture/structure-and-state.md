@@ -73,7 +73,7 @@ The player's session (their identity) is held by Firebase Auth, with the chosen 
 **Signed-in account path:**
 
 5.  **Sign-in (`signInWithGoogle`):**
-    *   The Login screen's Google button opens a Firebase Auth Google popup (`signInWithGoogle` in `src/modules/session/services/account.service.ts`). The popup signs in as the Google user rather than linking it to the guest's anonymous `uid`, so the account's Firebase Auth `uid` becomes the player's `playerId` for the rest of the session and the guest's `uid` is dropped.
+    *   The Login screen's Google button opens a Firebase Auth Google popup (`signInWithGoogle` in `src/modules/session/services/account.service.ts`). The popup signs in as the Google user rather than linking it to the guest's anonymous `uid`, so the account's Firebase Auth `uid` becomes the player's `playerId` for the rest of the session and the guest's `uid` is dropped. A guest who wants to keep their `uid` uses the link flow described after step 9 instead.
     *   Once sign-in succeeds, a guest's username reservation (if one was made) is released, so it isn't orphaned. An account's reservation is never released by this path.
 
 6.  **Account Username Restore:**
@@ -90,6 +90,20 @@ The player's session (their identity) is held by Firebase Auth, with the chosen 
 
 9.  **Tab Close:**
     *   The `beforeunload` handler releases a reservation only while the current user is anonymous (`account?.isAnonymous`, a guest). A signed-in account survives tab close, because Firebase Auth persists its session in the browser.
+
+**Linking a guest to Google (`linkWithGoogle`):**
+
+The Lobby shows a "Link Google Account" button only while `isGuest` is true. It keeps the guest's `uid`, so the `usernames/{name}` reservation and every document keyed by that `uid` stay valid.
+
+*   `usePlayer().linkWithGoogle` (`src/modules/session/player.hook.ts`) first calls `bindUsernameToAccount(username, playerId)` when both are set. That writes `accounts/{uid}` and sets `authUid` on `usernames/{name}`. It then calls `linkGoogleAccount()` (`src/modules/session/services/account.service.ts`), which runs Firebase `linkWithPopup` on the current anonymous user with a `GoogleAuthProvider`.
+*   The bind runs before the popup opens. Firebase fires the auth listener from inside the link call, and the listener's non-anonymous branch reads only `accounts/{uid}`. Writing after the popup resolves could race that read and leave the username blank. The bind runs on every click, including when the user later closes the popup. It is idempotent for the same `uid` and name.
+*   `firestore.rules` allows one guest-to-account update of `usernames/{username}`: while the doc has no `authUid`, the caller may set `authUid` to their own `uid` (which must equal the doc's `playerId`), provided `accounts/{uid}` does not exist yet. This is distinct from the "permanent once account-owned" rule. After `authUid` is set, the reservation can no longer be updated or deleted.
+*   On success the `uid` is unchanged, the auth listener sees a non-anonymous user, and `isGuest` becomes false. The button is removed and the username stays visible.
+*   Errors are re-thrown unchanged. `useLinkGoogleAccountButton` (`src/modules/session/components/LinkGoogleAccountButton/LinkGoogleAccountButton.hook.ts`) maps them to dialogs:
+    *   `auth/popup-closed-by-user` and `auth/cancelled-popup-request` show nothing. Cancelling is a choice.
+    *   `auth/credential-already-in-use` (the Google account already belongs to another Firebase user) opens the "Account Already Linked" dialog.
+    *   Any other error opens the "Linking Failed" dialog.
+*   While the link is running the button is disabled and shows a spinner. The button's loading state clears when the call settles, whatever the outcome.
 
 ### 3.2. Shared Game State: The `GameState` Object
 

@@ -89,6 +89,16 @@ describe('LoginView', () => {
       expect(onGoogleSignIn).toHaveBeenCalledTimes(1);
     });
 
+    it('shows the Google icon immediately before the "Sign in with Google" text', () => {
+      renderLogin();
+
+      const button = screen.getByRole('button', { name: 'Sign in with Google' });
+      const icon = button.querySelector('svg');
+      expect(icon).not.toBeNull();
+      expect(button.firstElementChild).toBe(icon);
+      expect(button).toHaveTextContent('Sign in with Google');
+    });
+
     it('disables the Google button while isLoading is true', () => {
       renderLogin({ isLoading: true, name: 'Alice' });
 
