@@ -9,6 +9,7 @@ import {
   signInAnonymously as signInAnonymouslyWithFirebase,
   signOut,
   onAuthStateChanged,
+  linkWithPopup,
 } from '@/lib/firebase';
 import { findUsernameOwner } from './player-session.service';
 
@@ -26,6 +27,22 @@ function toAuthAccount(user: { uid: string; displayName: string | null; isAnonym
 /** Opens the Google OAuth popup. Throws on failure or if the user closes the popup. */
 export async function signInWithGoogle(): Promise<AuthAccount> {
   const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+  return toAuthAccount(credential.user);
+}
+
+/**
+ * Links the current anonymous guest's Firebase user to a Google account, keeping the same uid
+ * (every doc already keyed by that uid stays valid, no migration). Throws the Firebase error
+ * untouched on failure — e.g. code `auth/credential-already-in-use` when that Google account is
+ * already linked to a different Firebase user, or `auth/popup-closed-by-user` /
+ * `auth/cancelled-popup-request` when the user cancels — so callers can tell reasons apart.
+ * Throws a plain `Error` if there is no signed-in session to link.
+ */
+export async function linkGoogleAccount(): Promise<AuthAccount> {
+  if (!auth.currentUser) {
+    throw new Error('No active session to link.');
+  }
+  const credential = await linkWithPopup(auth.currentUser, new GoogleAuthProvider());
   return toAuthAccount(credential.user);
 }
 

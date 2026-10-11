@@ -12,6 +12,7 @@ jest.mock('@/lib/firebase', () => {
     signInAnonymously: jest.fn(),
     signOut: jest.fn(),
     onAuthStateChanged: jest.fn(),
+    linkWithPopup: jest.fn(),
   };
 });
 
@@ -26,11 +27,13 @@ import {
   signInAnonymously as signInAnonymouslyWithFirebase,
   signOut,
   onAuthStateChanged,
+  linkWithPopup,
 } from '@/lib/firebase';
 import {
   bindUsernameToAccount,
   claimAccountUsername,
   findAccountUsername,
+  linkGoogleAccount,
   signInAnonymously,
   signInWithGoogle,
   signOutOfAccount,
@@ -45,6 +48,7 @@ const mockSignInWithPopup = signInWithPopup as jest.Mock;
 const mockSignInAnonymouslyWithFirebase = signInAnonymouslyWithFirebase as jest.Mock;
 const mockSignOut = signOut as jest.Mock;
 const mockOnAuthStateChanged = onAuthStateChanged as jest.Mock;
+const mockLinkWithPopup = linkWithPopup as jest.Mock;
 
 const existingSnapshot = (data: Record<string, unknown>) => ({ exists: () => true, data: () => data });
 const missingSnapshot = () => ({ exists: () => false, data: () => undefined });
@@ -108,6 +112,65 @@ describe('account.service', () => {
       mockSignInWithPopup.mockResolvedValue({ user: { uid: 'uid_1', displayName: 'Alice' } });
 
       await signInWithGoogle();
+
+      expect(mockGetDoc).not.toHaveBeenCalled();
+      expect(mockWriteBatch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('linkGoogleAccount', () => {
+    beforeEach(() => {
+      (auth as { currentUser: unknown }).currentUser = { uid: 'uid_guest_1' };
+    });
+
+    afterEach(() => {
+      (auth as { currentUser: unknown }).currentUser = undefined;
+    });
+
+    it('opens the Google popup on the current user with a GoogleAuthProvider', async () => {
+      mockLinkWithPopup.mockResolvedValue({ user: { uid: 'uid_guest_1', displayName: null, isAnonymous: false } });
+
+      await linkGoogleAccount();
+
+      expect(mockGoogleAuthProvider).toHaveBeenCalledTimes(1);
+      expect(mockLinkWithPopup).toHaveBeenCalledWith({ uid: 'uid_guest_1' }, { name: 'google-provider' });
+    });
+
+    it('resolves to exactly { uid, displayName, isAnonymous } from the credential user, keeping the same uid', async () => {
+      mockLinkWithPopup.mockResolvedValue({
+        user: { uid: 'uid_guest_1', displayName: 'Alice', email: 'alice@example.com', isAnonymous: false },
+      });
+
+      const account = await linkGoogleAccount();
+
+      expect(account).toEqual({ uid: 'uid_guest_1', displayName: 'Alice', isAnonymous: false });
+    });
+
+    it('throws "No active session to link." when there is no signed-in user', async () => {
+      (auth as { currentUser: unknown }).currentUser = null;
+
+      await expect(linkGoogleAccount()).rejects.toThrow('No active session to link.');
+      expect(mockLinkWithPopup).not.toHaveBeenCalled();
+    });
+
+    it('rejects with the original error, untouched, when the Google account is already linked elsewhere', async () => {
+      const error = Object.assign(new Error('already in use'), { code: 'auth/credential-already-in-use' });
+      mockLinkWithPopup.mockRejectedValue(error);
+
+      await expect(linkGoogleAccount()).rejects.toBe(error);
+    });
+
+    it('rejects with the original error when the user cancels the popup', async () => {
+      const error = Object.assign(new Error('popup closed'), { code: 'auth/popup-closed-by-user' });
+      mockLinkWithPopup.mockRejectedValue(error);
+
+      await expect(linkGoogleAccount()).rejects.toBe(error);
+    });
+
+    it('does not read or write Firestore', async () => {
+      mockLinkWithPopup.mockResolvedValue({ user: { uid: 'uid_guest_1', displayName: null, isAnonymous: false } });
+
+      await linkGoogleAccount();
 
       expect(mockGetDoc).not.toHaveBeenCalled();
       expect(mockWriteBatch).not.toHaveBeenCalled();

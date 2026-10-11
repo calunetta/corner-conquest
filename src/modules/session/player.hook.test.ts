@@ -8,8 +8,10 @@ jest.mock('./services/player-session.service', () => ({
 }));
 
 jest.mock('./services/account.service', () => ({
+  bindUsernameToAccount: jest.fn(),
   claimAccountUsername: jest.fn(),
   findAccountUsername: jest.fn(),
+  linkGoogleAccount: jest.fn(),
   signInAnonymously: jest.fn(),
   signInWithGoogle: jest.fn(),
   signOutOfAccount: jest.fn(),
@@ -23,8 +25,10 @@ import type { AuthAccount } from './services/account.service';
 const mockFindUsernameOwner = playerSession.findUsernameOwner as jest.Mock;
 const mockReserveUsername = playerSession.reserveUsername as jest.Mock;
 const mockReleaseUsername = playerSession.releaseUsername as jest.Mock;
+const mockBindUsernameToAccount = account.bindUsernameToAccount as jest.Mock;
 const mockClaimAccountUsername = account.claimAccountUsername as jest.Mock;
 const mockFindAccountUsername = account.findAccountUsername as jest.Mock;
+const mockLinkGoogleAccount = account.linkGoogleAccount as jest.Mock;
 const mockSignInAnonymously = account.signInAnonymously as jest.Mock;
 const mockSignInWithGoogle = account.signInWithGoogle as jest.Mock;
 const mockSignOutOfAccount = account.signOutOfAccount as jest.Mock;
@@ -759,6 +763,88 @@ describe('usePlayerProvider', () => {
 
       expect(mockReleaseUsername).toHaveBeenCalledWith('testuser');
       expect(localStorage.getItem('username')).toBeNull();
+    });
+  });
+
+  describe('linkWithGoogle', () => {
+    it('binds the username to the account before opening the popup, in that order', async () => {
+      localStorage.setItem('username', 'testuser');
+      mockFindUsernameOwner.mockResolvedValue('uid_guest_1');
+      const order: string[] = [];
+      mockBindUsernameToAccount.mockImplementation(async () => {
+        order.push('bind');
+      });
+      mockLinkGoogleAccount.mockImplementation(async () => {
+        order.push('link');
+        return ALICE;
+      });
+
+      const { result } = renderHook(() => usePlayerProvider());
+      await settle();
+      expect(result.current.username).toBe('testuser');
+
+      await act(async () => {
+        await result.current.linkWithGoogle();
+      });
+
+      expect(mockBindUsernameToAccount).toHaveBeenCalledWith('testuser', 'uid_guest_1');
+      expect(order).toEqual(['bind', 'link']);
+    });
+
+    it('skips the bind when there is no username yet', async () => {
+      mockLinkGoogleAccount.mockResolvedValue(ALICE);
+
+      const { result } = renderHook(() => usePlayerProvider());
+      await settle();
+      expect(result.current.username).toBeNull();
+
+      await act(async () => {
+        await result.current.linkWithGoogle();
+      });
+
+      expect(mockBindUsernameToAccount).not.toHaveBeenCalled();
+      expect(mockLinkGoogleAccount).toHaveBeenCalledTimes(1);
+    });
+
+    it('skips the bind when there is no playerId yet', async () => {
+      deferInitialAuthReport();
+      mockLinkGoogleAccount.mockResolvedValue(ALICE);
+
+      const { result } = renderHook(() => usePlayerProvider());
+      // No settle(): emitAuthChange was registered but never invoked, so playerId stays null.
+
+      await act(async () => {
+        await result.current.linkWithGoogle();
+      });
+
+      expect(mockBindUsernameToAccount).not.toHaveBeenCalled();
+      expect(mockLinkGoogleAccount).toHaveBeenCalledTimes(1);
+    });
+
+    it('propagates a credential-already-in-use rejection from linkGoogleAccount untouched', async () => {
+      localStorage.setItem('username', 'testuser');
+      mockFindUsernameOwner.mockResolvedValue('uid_guest_1');
+      mockBindUsernameToAccount.mockResolvedValue(undefined);
+      const error = Object.assign(new Error('already in use'), { code: 'auth/credential-already-in-use' });
+      mockLinkGoogleAccount.mockRejectedValue(error);
+
+      const { result } = renderHook(() => usePlayerProvider());
+      await settle();
+
+      await expect(result.current.linkWithGoogle()).rejects.toBe(error);
+    });
+
+    it('propagates a rejection from bindUsernameToAccount untouched, without calling linkGoogleAccount', async () => {
+      localStorage.setItem('username', 'testuser');
+      mockFindUsernameOwner.mockResolvedValue('uid_guest_1');
+      const error = new Error('permission-denied');
+      mockBindUsernameToAccount.mockRejectedValue(error);
+
+      const { result } = renderHook(() => usePlayerProvider());
+      await settle();
+
+      await expect(result.current.linkWithGoogle()).rejects.toBe(error);
+      expect(mockLinkGoogleAccount).not.toHaveBeenCalled();
     });
   });
 });

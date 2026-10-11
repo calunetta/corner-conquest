@@ -36,6 +36,7 @@ describe('PlayerProvider and usePlayer', () => {
         isAuthLoading: false,
         setUsername: jest.fn(),
         signInWithGoogle: jest.fn(),
+        linkWithGoogle: jest.fn(),
         logout: jest.fn(),
       };
 
@@ -59,6 +60,7 @@ describe('PlayerProvider and usePlayer', () => {
         isAuthLoading: false,
         setUsername: jest.fn(),
         signInWithGoogle: jest.fn(),
+        linkWithGoogle: jest.fn(),
         logout: jest.fn(),
       };
 
@@ -92,6 +94,7 @@ describe('PlayerProvider and usePlayer', () => {
         isAuthLoading: false,
         setUsername: jest.fn(),
         signInWithGoogle: jest.fn(),
+        linkWithGoogle: jest.fn(),
         logout: jest.fn(),
       };
 

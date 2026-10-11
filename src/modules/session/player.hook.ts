@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { findUsernameOwner, reserveUsername, releaseUsername } from './services/player-session.service';
 import {
+  bindUsernameToAccount,
   claimAccountUsername,
   findAccountUsername,
+  linkGoogleAccount as linkGoogleAccountOnFirebase,
   signInAnonymously,
   signInWithGoogle as signInWithGoogleAccount,
   signOutOfAccount,
@@ -109,6 +111,16 @@ export function usePlayerProvider(): PlayerContextType {
     return true;
   }, [account, username]);
 
+  const linkWithGoogle = useCallback(async (): Promise<void> => {
+    // The guest's `usernames/{username}` reservation already points at this uid. Bind it into
+    // `accounts/{uid}` BEFORE opening the popup: the account-lookup branch of the auth listener
+    // above reads only `accounts/`, and Firebase fires that listener from inside `linkWithPopup`'s
+    // own awaited chain — before this function's `await` below resumes — so writing after the
+    // popup resolves races that listener's read and can lose the username.
+    if (username && playerId) await bindUsernameToAccount(username, playerId);
+    await linkGoogleAccountOnFirebase();
+  }, [username, playerId]);
+
   const setUsernameCallback = useCallback(
     async (name: string): Promise<boolean> => {
       if (!account) {
@@ -170,5 +182,5 @@ export function usePlayerProvider(): PlayerContextType {
     };
   }, [account, releaseGuestSession]);
 
-  return { playerId, username, isGuest, isAuthLoading, setUsername: setUsernameCallback, signInWithGoogle, logout };
+  return { playerId, username, isGuest, isAuthLoading, setUsername: setUsernameCallback, signInWithGoogle, linkWithGoogle, logout };
 }
