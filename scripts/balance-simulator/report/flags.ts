@@ -38,6 +38,13 @@ export function collectFlags(m: ConfigMetrics): Flag[] {
   if (Math.abs(m.m9.pooledZ.z) > 3) {
     flags.push({ severity: 'breach', text: `${label}: M9 combat accuracy — |z|=${Math.abs(m.m9.pooledZ.z).toFixed(2)} (simulator or dice-math bug suspected)` });
   }
+  if (m.anomalies.totalAnomalies > 0) {
+    const singular = m.anomalies.totalAnomalies === 1;
+    flags.push({
+      severity: 'breach',
+      text: `${label}: ${m.anomalies.totalAnomalies} anomal${singular ? 'y' : 'ies'} across ${m.anomalies.matchesWithAnomalies}/${m.anomalies.totalMatches} matches`,
+    });
+  }
 
   if (m.m10.neverLeftBasePct > 10) {
     flags.push({ severity: 'health', text: `${label}: ${m.m10.neverLeftBasePct.toFixed(1)}% of seats never left their own Base` });

@@ -1,4 +1,5 @@
 import type { MatchResult } from '../engine';
+import { computeAnomalies, type AnomalyMetrics } from './anomalies';
 import { computeActivity, type ActivityMetrics } from './activity';
 import { computeM10, type BotHealthMetrics } from './bot-health';
 import { computeM9, type CombatMetrics } from './combat';
@@ -24,6 +25,7 @@ export interface ConfigMetrics {
   /** True when any M10 health flag fired; per the Final spec, M5-M7 flags are then suppressed
    *  in the report (the numbers are still shown) because a sick bot makes balance numbers noise. */
   gatedByBotHealth: boolean;
+  anomalies: AnomalyMetrics;
 }
 
 const M10_NEVER_LEFT_THRESHOLD = 10;
@@ -55,5 +57,6 @@ export function computeConfigMetrics(
     m9: computeM9(results),
     m10,
     gatedByBotHealth,
+    anomalies: computeAnomalies(results),
   };
 }

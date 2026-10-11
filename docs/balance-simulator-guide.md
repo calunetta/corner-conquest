@@ -46,10 +46,22 @@ severity* changes, never the data.
 | M8 | Card economy: acquired vs. consumed vs. held, per card, with an integrity check |
 | M9 | Combat accuracy: observed vs. expected win rate for monster fights; PvP is observed-only |
 | M10 | Bot health: does a seat ever leave its own Base, get stuck on Productive, or never play a card it holds |
+| Anomalies | Every `console.warn`/`console.error` the root dispatcher made during a bot turn — never silently swallowed |
 
 \* Explorer's own VP amount isn't in its log line, so M5 can't attribute it to a source — it's
 excluded from both the per-seat Explorer total and the integrity check, not silently folded into
 another category.
+
+### Anomalies
+
+`handleGameAction` (`src/modules/game-rules/game-rules.reducer.ts:33-142`), the single root
+dispatcher every bot action goes through, has two silent failure paths: an unrecognized/unhandled
+action logs a `console.warn` and returns the state unchanged (line 133), and a caught reducer
+error logs a `console.error` and does the same (lines 136-140). The simulator used to silence both
+along with `console.log`; it now records every `warn`/`error` call made during each bot's turn and
+attaches them to that turn as `Anomaly` entries (`unhandledAction` or `reducerError`), aggregated
+per run into counted, deduplicated rows. Any anomaly fires an unsuppressed "breach" flag — a bot
+turn that silently did nothing it meant to do is a real bug regardless of win-rate noise.
 
 ## Known limitations
 

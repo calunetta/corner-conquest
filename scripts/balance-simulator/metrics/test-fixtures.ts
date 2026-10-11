@@ -11,6 +11,7 @@ export function turn(overrides: Partial<TurnSnapshot> & { seat: number }): TurnS
     heldPositions: 0,
     heldPositionsOnOwnBase: 0,
     attackPower: 0,
+    anomalies: [],
     ...overrides,
   };
 }

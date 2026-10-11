@@ -40,6 +40,45 @@ describe('toMarkdown', () => {
   it('says so when no config triggers any flag', () => {
     expect(toMarkdown(buildReport())).toContain('No M1, M10 or integrity flags fired');
   });
+
+  it('renders an empty Anomalies table when no turn has an anomaly', () => {
+    const markdown = toMarkdown(buildReport());
+
+    expect(markdown).toContain('Anomalies');
+    expect(markdown).toContain('_No anomalies._');
+  });
+
+  it('renders the Anomalies table with kind, message, count, example seat and round when present', () => {
+    const results = [
+      match({
+        winnerSeat: 0,
+        rounds: 12,
+        turns: [
+          turn({ seat: 0, hasArmyOffOwnBase: true }),
+          turn({ seat: 1, round: 4, hasArmyOffOwnBase: true, anomalies: [{ kind: 'reducerError', message: 'boom' }] }),
+        ],
+        finalState: [seatFinal({ victoryPoints: 30 }), seatFinal({ victoryPoints: 18 })],
+      }),
+    ];
+    const report: RunReport = {
+      header: {
+        seed: 1,
+        gamesPerConfig: 1,
+        maxRounds: 150,
+        gitCommit: 'abc1234',
+        settingsSnapshot: { fogOfWar: true },
+        generatedAt: '2026-01-01T00:00:00.000Z',
+      },
+      configs: [computeConfigMetrics(results, 2, true, 30)],
+    };
+
+    const markdown = toMarkdown(report);
+
+    expect(markdown).not.toContain('_No anomalies._');
+    expect(markdown).toContain('reducerError');
+    expect(markdown).toContain('boom');
+    expect(markdown).toContain('1 across 1/1 matches');
+  });
 });
 
 describe('toJson', () => {

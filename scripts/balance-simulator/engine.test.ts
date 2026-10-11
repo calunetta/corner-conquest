@@ -62,4 +62,20 @@ describe('runMatch', () => {
       expect(turn.round).toBeGreaterThanOrEqual(1);
     });
   });
+
+  it('gives every turn an anomalies array, empty for an ordinary bot-vs-bot match', async () => {
+    const seeds = deriveMatchSeeds(3, 2, true, 0);
+    const result = await runMatch({ players: 2, fog: true, maxRounds: 10, ...seeds });
+
+    result.turns.forEach((turn) => {
+      expect(turn.anomalies).toEqual([]);
+    });
+  });
+
+  // No bot-reachable path exists that drives `handleGameAction` into its default case or its
+  // catch block (plan.md's "Verified context": `decideBotTurn`'s three steps only ever dispatch
+  // handled GameAction values). The capture mechanism itself — formatting console.warn/error args
+  // into the correct `Anomaly` kind/message, and clearing between turns — is unit-tested directly
+  // in anomaly-capture.test.ts, which exercises the exact code `runMatch` wires in via
+  // `silenceConsoleAndCaptureAnomalies`.
 });

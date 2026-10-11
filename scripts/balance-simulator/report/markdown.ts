@@ -36,6 +36,14 @@ function configSection(m: ConfigMetrics): string {
     pct(c.expectedWinPct),
   ]);
 
+  const anomalyRows = m.anomalies.byMessage.map((a) => [
+    a.kind,
+    a.message,
+    String(a.count),
+    String(a.exampleSeat),
+    String(a.exampleRound),
+  ]);
+
   const health = m.m10.bySeat.map((h) => [
     String(h.seat),
     h.firstRoundOffOwnBase === null ? 'never' : String(h.firstRoundOffOwnBase),
@@ -64,6 +72,9 @@ PvP: ${m.m9.pvpObserved.attempts} attempts, ${pct(m.m9.pvpObserved.attackerWinPc
 
 **M10 bot health** (seat, first round off own Base, % positions on own Base, trapped, unused cards):
 ${table(['Seat', 'First off Base', '% on own Base', 'Trapped', 'Never-used cards'], health)}
+
+**Anomalies** (console.warn/console.error the dispatcher made during a bot turn — never silently swallowed; ${m.anomalies.totalAnomalies} across ${m.anomalies.matchesWithAnomalies}/${m.anomalies.totalMatches} matches):
+${anomalyRows.length > 0 ? table(['Kind', 'Message', 'Count', 'Example seat', 'Example round'], anomalyRows) : '_No anomalies._'}
 `;
 }
 

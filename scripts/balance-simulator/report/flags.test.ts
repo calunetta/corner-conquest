@@ -49,4 +49,56 @@ describe('collectFlags', () => {
 
     expect(collectFlags(metrics)).toEqual([]);
   });
+
+  it('does not report an anomalies flag when totalAnomalies is 0', () => {
+    const results = [
+      match({
+        outcome: 'capped',
+        turns: [turn({ seat: 0, hasArmyOffOwnBase: true })],
+        finalState: [seatFinal()],
+      }),
+    ];
+    const metrics = computeConfigMetrics(results, 1, true, 30);
+
+    expect(collectFlags(metrics).some((f) => f.text.includes('anomal'))).toBe(false);
+  });
+
+  it('reports an anomalies flag as "breach" with the exact count and match ratio when totalAnomalies > 0', () => {
+    const results = [
+      match({
+        outcome: 'capped',
+        turns: [turn({ seat: 0, hasArmyOffOwnBase: true, anomalies: [{ kind: 'reducerError', message: 'boom' }] })],
+        finalState: [seatFinal()],
+      }),
+    ];
+    const metrics = computeConfigMetrics(results, 1, true, 30);
+
+    expect(collectFlags(metrics)).toContainEqual({
+      severity: 'breach',
+      text: '1p, fog on: 1 anomaly across 1/1 matches',
+    });
+  });
+
+  it('keeps the anomalies flag at "breach" even when gatedByBotHealth is true', () => {
+    // Seat 0 never leaves base across every match (an M10 health flag) and also has a recorded
+    // anomaly; the anomalies flag must stay "breach", never downgraded to "suppressed".
+    const results = Array.from({ length: 20 }, (_, i) =>
+      match({
+        outcome: 'capped', // gating only depends on M10 inputs, not the match outcome
+        turns: [
+          turn({
+            seat: 0,
+            hasArmyOffOwnBase: false,
+            anomalies: i === 0 ? [{ kind: 'unhandledAction', message: 'bad action' }] : [],
+          }),
+        ],
+        finalState: [seatFinal()],
+      }),
+    );
+    const metrics = computeConfigMetrics(results, 1, true, 30);
+
+    expect(metrics.gatedByBotHealth).toBe(true);
+    const anomalyFlag = collectFlags(metrics).find((f) => f.text.includes('anomal'));
+    expect(anomalyFlag?.severity).toBe('breach');
+  });
 });

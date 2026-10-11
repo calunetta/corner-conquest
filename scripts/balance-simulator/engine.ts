@@ -1,8 +1,10 @@
 import { initializeGame, startGame, defaultGameSettings } from '../../src/modules/game-rules';
 import { PlayerColor, GameStatus } from '../../src/lib/types';
-import type { GameState, Player } from '../../src/lib/types';
+import type { GameState } from '../../src/lib/types';
 import type { takeBotTurn as TakeBotTurn } from '../../src/modules/game-rules';
+import { silenceConsoleAndCaptureAnomalies } from './anomaly-capture';
 import { parseLogLine, type LogEvent } from './log-parsers';
+import { createFirestoreCapture, snapshotSeat, toFinalState } from './match-snapshot';
 import { deriveSeed, withSeededRandom } from './rng';
 
 const SEAT_COLORS = [PlayerColor.Blue, PlayerColor.Red, PlayerColor.Purple, PlayerColor.Yellow];
@@ -16,6 +18,14 @@ export interface MatchConfig {
   maxRounds: number;
 }
 
+/** One console.warn/console.error call the dispatcher made during a single bot turn — its own
+ *  "something unexpected happened" signal (game-rules.reducer.ts:133 and :136-140). */
+export interface Anomaly {
+  kind: 'unhandledAction' | 'reducerError';
+  /** console args joined to one string; an Error argument contributes its .message. */
+  message: string;
+}
+
 /** What one seat looked like right after its own turn — the raw material M6/M10 are built from. */
 export interface TurnSnapshot {
   seat: number;
@@ -26,6 +36,7 @@ export interface TurnSnapshot {
   heldPositions: number; // count of this seat's resource-collection spots after the turn
   heldPositionsOnOwnBase: number;
   attackPower: number;
+  anomalies: Anomaly[];
 }
 
 export interface SeatFinalState {
@@ -45,60 +56,6 @@ export interface MatchResult {
   winnerSeat: number | null;
   turns: TurnSnapshot[];
   finalState: SeatFinalState[];
-}
-
-/** `src/modules/game-rules/services/bot-turn.service.ts`'s `setDoc` is the only way to read the
- *  state it produces each turn: it deep-clones its argument internally and never mutates it
- *  (see plan.md's "Verified context"). */
-function createFirestoreCapture() {
-  let lastWrittenState: GameState | null = null;
-  const stub = {
-    db: {},
-    doc: () => ({}),
-    setDoc: async (_ref: unknown, state: GameState) => {
-      lastWrittenState = state;
-    },
-    updateDoc: async () => {},
-    // Only `handlePlayerExit` (src/lib/actions/player.ts:272) uses this, and bot turns never call
-    // it. A clear failure here is better than the simulator silently producing a wrong state.
-    runTransaction: async () => {
-      throw new Error('Unexpected runTransaction call: handlePlayerExit should be unreachable from takeBotTurn.');
-    },
-  };
-  return { stub, readCapturedState: () => lastWrittenState };
-}
-
-function isOwnBase(seat: number, position: { x: number; y: number }, state: GameState): boolean {
-  const base = state.baseTiles.find((b) => b.owner === seat);
-  return base !== undefined && base.x === position.x && base.y === position.y;
-}
-
-function snapshotSeat(seat: number, round: number, events: LogEvent[], state: GameState): TurnSnapshot {
-  const player = state.players.find((p) => p.id === seat) as Player;
-  const armyPositions = player.armies.map((army) => ({ x: army.position.x, y: army.position.y }));
-  const heldPositionsOnOwnBase = player.positions.filter((position) => isOwnBase(seat, position, state)).length;
-
-  return {
-    seat,
-    round,
-    events,
-    armyPositions,
-    hasArmyOffOwnBase: armyPositions.some((position) => !isOwnBase(seat, position, state)),
-    heldPositions: player.positions.length,
-    heldPositionsOnOwnBase,
-    attackPower: player.attackPower,
-  };
-}
-
-function toFinalState(player: Player): SeatFinalState {
-  return {
-    victoryPoints: player.victoryPoints,
-    attackPower: player.attackPower,
-    armyCount: player.armies.length,
-    heldCards: [...player.specialCards],
-    hasProductiveInHand: player.specialCards.includes('Productive'),
-    hasHeldPositions: player.positions.length > 0,
-  };
 }
 
 /**
@@ -121,14 +78,10 @@ export async function runMatch(config: MatchConfig): Promise<MatchResult> {
     '../../src/modules/game-rules'
   );
 
-  // Per the Final spec, silence every console.* during the run — the reducers log a caught
-  // error instead of throwing
-  // (src/lib/actions/index.ts:94), which happens on real, confirmed bot-logic bugs (see
-  // docs/ai/tasks/2026-10-02-bot-balance-simulator/progress.md) and would otherwise spam a run's
-  // output without being a simulator problem.
-  const silencedMethods = (['log', 'warn', 'error'] as const).map((method) =>
-    jest.spyOn(console, method).mockImplementation(() => {}),
-  );
+  // Also records every warn/error call — the dispatcher's only two anomaly signals
+  // (game-rules.reducer.ts:133 and :136-140) — into `recordedAnomalies`, drained once per bot turn
+  // below. See anomaly-capture.ts for why console.* is silenced during the run at all.
+  const { recordedAnomalies, restore: restoreConsole } = silenceConsoleAndCaptureAnomalies();
 
   try {
     let state: GameState = withSeededRandom(config.mapSeed, () => {
@@ -150,6 +103,7 @@ export async function runMatch(config: MatchConfig): Promise<MatchResult> {
         const actingSeat = state.currentPlayerIndex;
         const round = state.turn;
         const logLengthBeforeTurn = state.log.length;
+        recordedAnomalies.length = 0;
 
         await takeBotTurnWithStub(state);
         const nextState = readCapturedState();
@@ -160,7 +114,7 @@ export async function runMatch(config: MatchConfig): Promise<MatchResult> {
           .map((entry) => (typeof entry === 'string' ? entry : entry.message));
         const events = newLogLines.flatMap((line) => parseLogLine(line));
 
-        turns.push(snapshotSeat(actingSeat, round, events, nextState));
+        turns.push(snapshotSeat(actingSeat, round, events, nextState, [...recordedAnomalies]));
         botTurns += 1;
         state = nextState;
       }
@@ -176,7 +130,7 @@ export async function runMatch(config: MatchConfig): Promise<MatchResult> {
       finalState: state.players.map(toFinalState),
     };
   } finally {
-    silencedMethods.forEach((spy) => spy.mockRestore());
+    restoreConsole();
     jest.dontMock('../../src/lib/firebase');
     jest.dontMock('@/lib/firebase');
   }

@@ -12,6 +12,31 @@ describe('computeConfigMetrics', () => {
     expect(metrics.m1.totalMatches).toBe(1);
     expect(metrics.m3.bySeat).toHaveLength(2);
     expect(metrics.m10.bySeat).toHaveLength(2);
+    expect(metrics.anomalies).toEqual({
+      totalAnomalies: 0,
+      matchesWithAnomalies: 0,
+      totalMatches: 1,
+      byMessage: [],
+    });
+  });
+
+  it('surfaces a seeded anomaly from computeAnomalies unchanged', () => {
+    const anomaly = { kind: 'reducerError' as const, message: 'Error handling action Deploy: boom' };
+    const results = [
+      match({
+        outcome: 'capped', // anomaly surfacing does not depend on the match having a winner
+        turns: [turn({ seat: 0, round: 3, anomalies: [anomaly] })],
+        finalState: [seatFinal(), seatFinal()],
+      }),
+    ];
+
+    const metrics = computeConfigMetrics(results, 2, true, 30);
+
+    expect(metrics.anomalies.totalAnomalies).toBe(1);
+    expect(metrics.anomalies.matchesWithAnomalies).toBe(1);
+    expect(metrics.anomalies.byMessage).toEqual([
+      { kind: 'reducerError', message: anomaly.message, count: 1, exampleSeat: 0, exampleRound: 3 },
+    ]);
   });
 
   it('is not gated by bot health when no M10 threshold is crossed', () => {
