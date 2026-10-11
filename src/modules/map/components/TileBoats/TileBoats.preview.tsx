@@ -14,7 +14,7 @@ import {
 } from './TileBoats.fixtures';
 import type { ComponentPreview } from '@/testbed/testbed.types';
 import type { BoatEntryViewModel } from './TileBoats.types';
-import { CORNER_TRANSFORMS } from './TileBoats.types';
+import { CORNER_TRANSFORMS } from '../../island-tile-slots.types';
 import { PlayerColor } from '@/lib/types';
 import { useIsMobile } from '@/modules/shared';
 

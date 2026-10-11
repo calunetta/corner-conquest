@@ -15,10 +15,15 @@ import {
   opponentPlayerFixture,
   gameStateFixture,
   occupiedResourceIsland,
+  resourceIslandWithTwoNodesAndThreeOccupants,
+  resourceIslandWithThreeNodesAndThreeOccupants,
+  emptyIslandWithThreeOccupants,
+  emptyIslandWithTwoOccupants,
 } from './IslandTile.fixtures';
 import { GameBoardProvider } from '@/modules/game-board';
 import type { ComponentPreview } from '@/testbed/testbed.types';
 import type { IslandTileViewModel } from './IslandTile.types';
+import type { Island } from '@/lib/types';
 
 const noop = () => undefined;
 
@@ -71,15 +76,24 @@ function WithGameBoardContext({ viewModel }: { viewModel: IslandTileViewModel })
   );
 }
 
+/** One state rendering `island` with default view-model flags. */
+const islandState = (name: string, island: Island) => ({
+  name,
+  render: () => <WithGameBoardContext viewModel={createViewModel(island)} />,
+});
+
+/** One state rendering `island` with per-state flags (selected, fogged, ...). */
+const flaggedIslandState = (name: string, island: Island, overrides: Partial<IslandTileViewModel>) => ({
+  name,
+  render: () => <WithGameBoardContext viewModel={createViewModelWithState(island, overrides)} />,
+});
+
 export const islandTilePreview: ComponentPreview = {
   slug: 'island-tile',
   title: 'Island Tile',
   group: 'Game map',
   states: [
-    {
-      name: 'Empty island',
-      render: () => <WithGameBoardContext viewModel={createViewModel(emptyIsland)} />,
-    },
+    islandState('Empty island', emptyIsland),
     {
       name: 'Base island owned by local player',
       render: () => <WithGameBoardContext viewModel={createBaseViewModel(baseIslandOwnedByLocalPlayer, localPlayerFixture)} />,
@@ -96,62 +110,17 @@ export const islandTilePreview: ComponentPreview = {
       name: 'Base island with resources and occupants',
       render: () => <WithGameBoardContext viewModel={createBaseViewModel(baseIslandWithResourcesAndOccupants, localPlayerFixture)} />,
     },
-    {
-      name: 'Resource island',
-      render: () => <WithGameBoardContext viewModel={createViewModel(resourceIsland)} />,
-    },
-    {
-      name: 'Monster island',
-      render: () => <WithGameBoardContext viewModel={createViewModel(monsterIslandWithLivingMonster)} />,
-    },
-    {
-      name: 'Special island',
-      render: () => <WithGameBoardContext viewModel={createViewModel(specialIsland)} />,
-    },
-    {
-      name: 'Selected tile',
-      render: () =>
-        <WithGameBoardContext
-          viewModel={createViewModelWithState(emptyIsland, {
-            isSelected: true,
-            isClickable: true,
-          })}
-        />,
-    },
-    {
-      name: 'Possible move',
-      render: () =>
-        <WithGameBoardContext
-          viewModel={createViewModelWithState(emptyIsland, {
-            isPossibleMove: true,
-            isClickable: true,
-          })}
-        />,
-    },
-    {
-      name: 'Teleport target',
-      render: () =>
-        <WithGameBoardContext
-          viewModel={createViewModelWithState(emptyIsland, {
-            isTeleportTarget: true,
-            isClickable: true,
-          })}
-        />,
-    },
-    {
-      name: 'Scout target (fogged)',
-      render: () =>
-        <WithGameBoardContext
-          viewModel={createViewModelWithState(emptyIsland, {
-            isScoutTarget: true,
-            isTileVisible: false,
-            isClickable: true,
-          })}
-        />,
-    },
-    {
-      name: 'Occupied resource island (collector overlay test)',
-      render: () => <WithGameBoardContext viewModel={createViewModel(occupiedResourceIsland)} />,
-    },
+    islandState('Resource island', resourceIsland),
+    islandState('Monster island', monsterIslandWithLivingMonster),
+    islandState('Special island', specialIsland),
+    flaggedIslandState('Selected tile', emptyIsland, { isSelected: true, isClickable: true }),
+    flaggedIslandState('Possible move', emptyIsland, { isPossibleMove: true, isClickable: true }),
+    flaggedIslandState('Teleport target', emptyIsland, { isTeleportTarget: true, isClickable: true }),
+    flaggedIslandState('Scout target (fogged)', emptyIsland, { isScoutTarget: true, isTileVisible: false, isClickable: true }),
+    islandState('Occupied resource island (collector overlay test)', occupiedResourceIsland),
+    islandState('Resource island, 2 nodes + occupants on all corners', resourceIslandWithTwoNodesAndThreeOccupants),
+    islandState('Resource island, 3 nodes + occupants on all corners', resourceIslandWithThreeNodesAndThreeOccupants),
+    islandState('Empty island, 3-tree grove + 3 occupants (br/tr/tl)', emptyIslandWithThreeOccupants),
+    islandState('Empty island, 3-tree grove + 2 occupants (br/tr)', emptyIslandWithTwoOccupants),
   ],
 };

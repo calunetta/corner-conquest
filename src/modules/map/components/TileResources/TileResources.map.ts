@@ -1,6 +1,13 @@
 import type { Island, Player, ResourceType } from '@/lib/types';
 import { IslandType, ResourceType as ResourceTypeEnum } from '@/lib/types';
 import type { ResourceNodeViewModel } from './TileResources.types';
+import {
+  SINGLE_RESOURCE_SLOT,
+  DUAL_RESOURCE_SLOTS,
+  TRIPLE_RESOURCE_SLOTS,
+  BASE_RESOURCE_SLOTS,
+} from '../../island-tile-slots.types';
+import type { SlotDef } from '../../island-tile-slots.types';
 
 export const FARM_SPRITES = {
   blue: '/sprites/farm_blue.gif',
@@ -23,44 +30,6 @@ export const RESOURCE_SPRITES = {
     activeSprite: '/sprites/mine_active.png',
   },
 } as const;
-
-interface SlotDef {
-  top?: string;
-  bottom?: string;
-  left?: string;
-  right?: string;
-  transform?: string;
-  size: number; // px; reference size for the node box and the collector-badge formula
-  width?: string; // percent; Base slots only, overrides the node box's px size
-  height?: string; // percent; Base slots only
-}
-
-// Resource nodes sit in three vertical bands (top 20% / middle 46% / bottom 70%) so a
-// one-, two- or three-node island spans the tile instead of clustering in the top 40%.
-const SINGLE_RESOURCE_SLOT: SlotDef = {
-  top: '46%',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  size: 46,
-};
-
-const DUAL_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '20%', left: '14%', size: 38 },
-  { top: '70%', right: '14%', size: 38 },
-];
-
-const TRIPLE_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '20%', left: '12%', size: 32 },
-  { top: '46%', right: '12%', size: 32 },
-  { top: '70%', left: '12%', size: 32 },
-];
-
-// Edge-midpoint slots keep clear of the boat and occupant corner anchors.
-const BASE_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '4%', left: '50%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
-  { bottom: '4%', left: '35%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
-  { bottom: '4%', left: '65%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
-];
 
 // The farming badge is ~55% of the node's reference size, never smaller than 22px.
 const BADGE_SIZE_RATIO = 0.55;

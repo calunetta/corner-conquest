@@ -198,4 +198,30 @@ describe('toForestLayout', () => {
       expect(result!.layout.map((slot) => slot.size)).toEqual(['15%', '15%']);
     });
   });
+
+  describe('grove clearance from the boat corners', () => {
+    // Island 0-0 (seed 0, even) gives 2 trees; island 1-0 (seed 7, odd) gives 3 trees.
+    it('places the 2-tree grove tree 1 at left 24% and tree 2 at right 24%', () => {
+      const island: Island = { id: '0-0', x: 0, y: 0, type: IslandType.Empty, resources: [], occupants: [] };
+
+      const result = toForestLayout(island, false);
+
+      expect(result!.layout).toEqual([
+        { top: '18%', left: '24%', size: '28%', z: 12 },
+        { top: '24%', right: '24%', size: '28%', z: 14 },
+      ]);
+    });
+
+    it('places the 3-tree grove tree 3 unchanged at bottom 26% and left 44%', () => {
+      const island: Island = { id: '1-0', x: 1, y: 0, type: IslandType.Empty, resources: [], occupants: [] };
+
+      const result = toForestLayout(island, false);
+
+      expect(result!.layout).toEqual([
+        { top: '18%', left: '24%', size: '28%', z: 12 },
+        { top: '24%', right: '24%', size: '28%', z: 14 },
+        { bottom: '26%', left: '44%', size: '28%', z: 13 },
+      ]);
+    });
+  });
 });

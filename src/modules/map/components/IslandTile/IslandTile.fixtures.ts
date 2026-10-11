@@ -14,14 +14,18 @@ const BASE_SETTINGS = {
 } as GameState['settings'];
 
 export const armyFixture: Army = { id: 0, position: { x: 1, y: 1 }, hasActed: false };
+export const secondArmyFixture: Army = { id: 2, position: { x: 1, y: 1 }, hasActed: false };
 
 export const localPlayerFixture: Player = buildPlayer({
   id: 0,
   playerId: 'p0',
   name: 'Ada',
   color: PlayerColor.Blue,
-  revealedTiles: ['0-0'],
-  armies: [armyFixture],
+  revealedTiles: [
+    '0-0', 'resource-two-three-occ', 'resource-three-three-occ',
+    'empty-three-occ', 'empty-two-occ',
+  ],
+  armies: [armyFixture, secondArmyFixture],
 });
 
 export const opponentPlayerFixture: Player = buildPlayer({
@@ -92,11 +96,43 @@ export const occupiedResourceIsland: Island = {
   id: '2-2-occupied', x: 2, y: 2, type: IslandType.Resource, resources: [{ type: ResourceType.Food, amount: 1 }], occupants: [{ playerId: 0, armyId: 0 }], positionedBy: [],
 };
 
+const cornerOccupants = [
+  { playerId: localPlayerFixture.id, armyId: armyFixture.id },
+  { playerId: opponentPlayerFixture.id, armyId: opponentPlayerFixture.armies[0].id },
+  { playerId: localPlayerFixture.id, armyId: secondArmyFixture.id },
+];
+
+export const resourceIslandWithTwoNodesAndThreeOccupants: Island = {
+  id: 'resource-two-three-occ', x: 3, y: 0, type: IslandType.Resource,
+  resources: [{ type: ResourceType.Food, amount: 1 }, { type: ResourceType.Wood, amount: 1 }],
+  occupants: cornerOccupants, positionedBy: [],
+};
+
+export const resourceIslandWithThreeNodesAndThreeOccupants: Island = {
+  id: 'resource-three-three-occ', x: 3, y: 1, type: IslandType.Resource,
+  resources: [
+    { type: ResourceType.Food, amount: 1 }, { type: ResourceType.Wood, amount: 1 }, { type: ResourceType.Gold, amount: 1 },
+  ],
+  occupants: cornerOccupants, positionedBy: [],
+};
+
+export const emptyIslandWithThreeOccupants: Island = {
+  id: 'empty-three-occ', x: 3, y: 2, type: IslandType.Empty,
+  resources: [], occupants: cornerOccupants, positionedBy: [],
+};
+
+export const emptyIslandWithTwoOccupants: Island = {
+  id: 'empty-two-occ', x: 3, y: 4, type: IslandType.Empty,
+  resources: [], occupants: cornerOccupants.slice(0, 2), positionedBy: [],
+};
+
 export const gameStateFixture: GameState = buildGameState({
   players: [localPlayerFixture, opponentPlayerFixture],
   map: [
     baseIslandOwnedByLocalPlayer, baseIslandOwnedByOpponent, resourceIsland,
     monsterIslandWithLivingMonster, specialIsland, emptyIsland, hiddenFogIsland, occupiedResourceIsland,
+    resourceIslandWithTwoNodesAndThreeOccupants, resourceIslandWithThreeNodesAndThreeOccupants,
+    emptyIslandWithThreeOccupants, emptyIslandWithTwoOccupants,
   ],
   settings: BASE_SETTINGS,
 });

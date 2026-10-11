@@ -1,7 +1,7 @@
 import type { Island, Player, GameState } from '@/lib/types';
 import { IslandType, PlayerColor } from '@/lib/types';
 import type { BoatEntryViewModel } from './TileBoats.types';
-import { CORNER_TRANSFORMS } from './TileBoats.types';
+import { CORNER_TRANSFORMS } from '../../island-tile-slots.types';
 import type { GameBoardContextType } from '@/modules/game-board';
 import { initialUIState } from '@/modules/game-board';
 import { buildPlayer, buildGameState } from '../../board-context.fixtures';

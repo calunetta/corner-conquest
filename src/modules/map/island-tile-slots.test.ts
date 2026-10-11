@@ -1,0 +1,96 @@
+import {
+  BASE_FOREST_SLOTS,
+  BASE_RESOURCE_SLOTS,
+  BOAT_CORNER_POSITIONS,
+  CORNER_TRANSFORMS,
+  DUAL_RESOURCE_SLOTS,
+  EMPTY_GROVE_SLOTS,
+  SINGLE_RESOURCE_SLOT,
+  SPECIAL_FOREST_SLOT,
+  TRIPLE_RESOURCE_SLOTS,
+} from './island-tile-slots.types';
+
+// Literal expectations, copied from the approved spec (ui-design.md Final spec). Do not derive
+// them from the table under test: a silent change to a constant must fail here.
+
+describe('BOAT_CORNER_POSITIONS', () => {
+  it('lists corners in the load-bearing order br, tr, tl, bl', () => {
+    expect(BOAT_CORNER_POSITIONS.map((corner) => corner.id)).toEqual(['br', 'tr', 'tl', 'bl']);
+  });
+
+  it.each([
+    ['br', { bottom: '0', right: '0' }],
+    ['tr', { top: '0', right: '0' }],
+    ['tl', { top: '0', left: '0' }],
+    ['bl', { bottom: '0', left: '0' }],
+  ])('pins the anchor style for corner %s', (id, expectedStyle) => {
+    const corner = BOAT_CORNER_POSITIONS.find((entry) => entry.id === id);
+    expect(corner?.style).toEqual(expectedStyle);
+  });
+});
+
+describe('CORNER_TRANSFORMS', () => {
+  it.each([
+    ['br', 'translate(50%, 50%)'],
+    ['tr', 'translate(50%, -50%)'],
+    ['tl', 'translate(-50%, -50%)'],
+    ['bl', 'translate(-50%, 50%)'],
+  ])('pins the centering transform for corner %s', (id, expectedTransform) => {
+    expect(CORNER_TRANSFORMS[id as keyof typeof CORNER_TRANSFORMS]).toBe(expectedTransform);
+  });
+});
+
+describe('resource slot tables', () => {
+  it('pins the single-node slot in the middle band', () => {
+    expect(SINGLE_RESOURCE_SLOT).toEqual({
+      top: '46%',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      size: 46,
+    });
+  });
+
+  it('pins the two-node slots with left and right at 24%', () => {
+    expect(DUAL_RESOURCE_SLOTS).toEqual([
+      { top: '20%', left: '24%', size: 38 },
+      { top: '70%', right: '24%', size: 38 },
+    ]);
+  });
+
+  it('pins the three-node slots: slot 1 left at 24%, slots 2-3 unchanged at 12%', () => {
+    expect(TRIPLE_RESOURCE_SLOTS).toEqual([
+      { top: '20%', left: '24%', size: 32 },
+      { top: '46%', right: '12%', size: 32 },
+      { top: '70%', left: '12%', size: 32 },
+    ]);
+  });
+
+  it('pins the three Base edge-midpoint slots', () => {
+    expect(BASE_RESOURCE_SLOTS).toEqual([
+      { top: '4%', left: '50%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
+      { bottom: '4%', left: '35%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
+      { bottom: '4%', left: '65%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
+    ]);
+  });
+});
+
+describe('forest slot tables', () => {
+  it('pins the two Base trees', () => {
+    expect(BASE_FOREST_SLOTS).toEqual([
+      { top: '2%', left: '23%', size: '15%', z: 12 },
+      { top: '11%', left: '23%', size: '15%', z: 14 },
+    ]);
+  });
+
+  it('pins the single Special tree', () => {
+    expect(SPECIAL_FOREST_SLOT).toEqual([{ top: '4px', left: '4px', size: '16%', z: 12 }]);
+  });
+
+  it('pins the grove: trees 1 and 2 at 24% from their side, tree 3 unchanged at left 44%', () => {
+    expect(EMPTY_GROVE_SLOTS).toEqual([
+      { top: '18%', left: '24%', size: '28%', z: 12 },
+      { top: '24%', right: '24%', size: '28%', z: 14 },
+      { bottom: '26%', left: '44%', size: '28%', z: 13 },
+    ]);
+  });
+});

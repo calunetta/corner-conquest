@@ -1,7 +1,7 @@
 import type { Island, Player, GameState } from '@/lib/types';
 import { IslandType, PlayerColor } from '@/lib/types';
 import type { OccupantSpriteViewModel } from './TileOccupants.types';
-import { CORNER_TRANSFORMS } from '../TileBoats/TileBoats.types';
+import { CORNER_TRANSFORMS } from '../../island-tile-slots.types';
 import { buildPlayer, buildGameState } from '../../board-context.fixtures';
 
 export const bluePlayer: Player = buildPlayer({

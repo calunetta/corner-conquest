@@ -5,7 +5,7 @@ import { TileOccupantsView } from './TileOccupants';
 import { occupantSpriteFixture, fadedOccupantFixture } from './TileOccupants.fixtures';
 import { TileBoatsView } from '../TileBoats/TileBoats';
 import { boatEntryFixture } from '../TileBoats/TileBoats.fixtures';
-import { CORNER_TRANSFORMS } from '../TileBoats/TileBoats.types';
+import { CORNER_TRANSFORMS } from '../../island-tile-slots.types';
 import type { ComponentPreview } from '@/testbed/testbed.types';
 import type { OccupantSpriteViewModel } from './TileOccupants.types';
 import { PlayerColor } from '@/lib/types';

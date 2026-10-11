@@ -2,7 +2,7 @@ import { useGameBoard } from '@/modules/game-board';
 import { PLAYER_DATA } from '@/modules/game-rules';
 import { IslandType } from '@/lib/types';
 import { DEATH_ANIMATION_DURATION } from '../DeathEffect';
-import { BOAT_CORNER_POSITIONS, CORNER_TRANSFORMS } from '../TileBoats/TileBoats.types';
+import { BOAT_CORNER_POSITIONS, CORNER_TRANSFORMS } from '../../island-tile-slots.types';
 import type { TileOccupantsProps, OccupantSpriteViewModel } from './TileOccupants.types';
 
 export function useTileOccupants(props: TileOccupantsProps): { occupants: OccupantSpriteViewModel[] } {

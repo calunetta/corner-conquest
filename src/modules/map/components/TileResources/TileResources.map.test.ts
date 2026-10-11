@@ -393,16 +393,16 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
     const result = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, mockPlayers);
     expect(result).toHaveLength(2);
     expect(result![0].type).toBe(ResourceType.Gold);
-    expect(result![0].slotStyle).toEqual({ top: '20%', left: '14%' });
+    expect(result![0].slotStyle).toEqual({ top: '20%', left: '24%' });
     expect(result![1].type).toBe(ResourceType.Wood);
-    expect(result![1].slotStyle).toEqual({ top: '70%', right: '14%' });
+    expect(result![1].slotStyle).toEqual({ top: '70%', right: '24%' });
   });
 
   it('places a three-node island at top 20%, 46%, 70% with alternating left/right/left', () => {
     const result = toTileResourcesViewModel(resourceIslandWithDualResources, false, mockPlayers);
     expect(result).toHaveLength(3);
     expect(result!.map((n) => n.slotStyle)).toEqual([
-      { top: '20%', left: '12%' },
+      { top: '20%', left: '24%' },
       { top: '46%', right: '12%' },
       { top: '70%', left: '12%' },
     ]);

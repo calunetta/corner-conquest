@@ -1,7 +1,12 @@
 import type { Island } from '@/lib/types';
 import { IslandType } from '@/lib/types';
 import { TREE_SPRITES } from './TileForest.types';
-import type { ForestLayout, TreeSlot } from './TileForest.types';
+import type { ForestLayout } from './TileForest.types';
+import {
+  BASE_FOREST_SLOTS,
+  SPECIAL_FOREST_SLOT,
+  EMPTY_GROVE_SLOTS,
+} from '../../island-tile-slots.types';
 
 export function toForestLayout(island: Island, isBase: boolean): ForestLayout | null {
   // Suppress decorative forests on Resource islands and on living Monster islands
@@ -17,30 +22,18 @@ export function toForestLayout(island: Island, isBase: boolean): ForestLayout | 
   const treeSprite = TREE_SPRITES[seed % TREE_SPRITES.length];
 
   if (isBase) {
-    // Kept inside the gap between the top-left boat corner (0-21% of T) and the base crest/top
-    // resource slot (from 28%/39% of T): clears both so trees never sit under the resource icons.
-    const layout: TreeSlot[] = [
-      { top: '2%', left: '23%', size: '15%', z: 12 },
-      { top: '11%', left: '23%', size: '15%', z: 14 },
-    ];
-    return { treeSprite, layout };
+    return { treeSprite, layout: BASE_FOREST_SLOTS };
   }
 
   if (island.type === IslandType.Special) {
-    const layout: TreeSlot[] = [{ top: '4px', left: '4px', size: '16%', z: 12 }];
-    return { treeSprite, layout };
+    return { treeSprite, layout: SPECIAL_FOREST_SLOT };
   }
 
   // Empty or Cleared Island: Natural lush tree grove
   const treeCount = seed % 2 === 0 ? 2 : 3;
-  const emptyGrovePositions: TreeSlot[] = [
-    { top: '18%', left: '22%', size: '28%', z: 12 },
-    { top: '24%', right: '22%', size: '28%', z: 14 },
-    { bottom: '26%', left: '44%', size: '28%', z: 13 },
-  ];
 
   return {
     treeSprite,
-    layout: emptyGrovePositions.slice(0, treeCount),
+    layout: EMPTY_GROVE_SLOTS.slice(0, treeCount),
   };
 }
