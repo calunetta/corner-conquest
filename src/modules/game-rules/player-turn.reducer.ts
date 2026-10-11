@@ -30,6 +30,25 @@ function applyAutomaticCollection(state: GameState, player: Player): GameState {
   return state;
 }
 
+/**
+ * Applies a reclaim that was deferred because it arrived mid-turn: if the outgoing player's seat
+ * is vacant and has a pending reclaim request, hands it back to the human now that their turn is over.
+ */
+function applyDeferredReclaim(state: GameState): void {
+  const outgoing = state.players[state.currentPlayerIndex];
+  if (!outgoing.isVacant || !outgoing.reclaimRequested) return;
+
+  outgoing.isBot = false;
+  outgoing.isVacant = false;
+  outgoing.reclaimRequested = false;
+  pushLogEntry(state, {
+    category: 'system',
+    message: `${outgoing.name} has reclaimed their seat.`,
+    playerId: outgoing.playerId,
+    isPassive: true,
+  });
+}
+
 /** Rotates to the next non-sabotaged player, applies their passive abilities and auto-collection, checks for a win. */
 export function handleEndTurn(state: GameState): GameState {
   if (state.players.length === 0) return state;
@@ -37,6 +56,8 @@ export function handleEndTurn(state: GameState): GameState {
   if (state.currentPlayerIndex >= state.players.length) {
     state.currentPlayerIndex = 0;
   }
+
+  applyDeferredReclaim(state);
 
   let attempts = 0;
   let nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;

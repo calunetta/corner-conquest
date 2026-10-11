@@ -35,6 +35,7 @@ import { lobbyBackgroundPreview } from '@/modules/lobby/components/LobbyBackgrou
 import { lobbyGameRowPreview } from '@/modules/lobby/components/LobbyGameRow/LobbyGameRow.preview';
 import { createGameDialogPreview } from '@/modules/lobby/components/CreateGameDialog/CreateGameDialog.preview';
 import { customSettingsSheetPreview } from '@/modules/lobby/components/CustomSettingsSheet/CustomSettingsSheet.preview';
+import { rejoinMatchPanelPreview } from '@/modules/lobby/components/RejoinMatchPanel/RejoinMatchPanel.preview';
 import type { ComponentPreview } from './testbed.types';
 
 /** Every preview shown in the testbed. Register new previews here (skill: testbed-preview). */
@@ -76,6 +77,7 @@ export const previews: ComponentPreview[] = [
   lobbyGameRowPreview,
   createGameDialogPreview,
   customSettingsSheetPreview,
+  rejoinMatchPanelPreview,
 ];
 
 export function findPreview(slug: string): ComponentPreview | undefined {

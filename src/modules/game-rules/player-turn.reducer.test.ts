@@ -226,3 +226,76 @@ describe('handleEndTurn', () => {
     expect(nextState.currentPlayerIndex).toBe(1);
   });
 });
+
+describe('handleEndTurn deferred seat reclaim', () => {
+  const RECLAIM_MESSAGE = 'Player 1 has reclaimed their seat.';
+  let game: GameState;
+
+  /** Player 1's seat as a bot that a human has asked to reclaim during Player 1's own turn. */
+  function markPlayer1SeatPendingReclaim(state: GameState): void {
+    const seat = state.players[0];
+    seat.isBot = true;
+    seat.isVacant = true;
+    seat.reclaimRequested = true;
+  }
+
+  beforeEach(() => {
+    game = buildGame();
+  });
+
+  it("applies a pending reclaim exactly when that player's turn ends", () => {
+    markPlayer1SeatPendingReclaim(game);
+    game.currentPlayerIndex = 0;
+
+    const nextState = handleEndTurn(game);
+
+    expect(nextState.players[0]).toMatchObject({ isBot: false, isVacant: false, reclaimRequested: false });
+    expect(nextState.log.map(toLogMessage)).toContain(RECLAIM_MESSAGE);
+    expect(nextState.currentPlayerIndex).toBe(1);
+  });
+
+  it('does not apply a pending reclaim while another player\'s turn is ending', () => {
+    markPlayer1SeatPendingReclaim(game);
+    game.currentPlayerIndex = 1;
+
+    const nextState = handleEndTurn(game);
+
+    expect(nextState.players[0]).toMatchObject({ isBot: true, isVacant: true, reclaimRequested: true });
+    expect(nextState.log.map(toLogMessage)).not.toContain(RECLAIM_MESSAGE);
+    expect(nextState.currentPlayerIndex).toBe(0);
+  });
+
+  it("keeps the seat converted through the whole other player's turn, then applies it when player 1's turn ends", () => {
+    markPlayer1SeatPendingReclaim(game);
+    game.currentPlayerIndex = 1;
+
+    const afterPlayer2Turn = handleEndTurn(game);
+    expect(afterPlayer2Turn.players[0]).toMatchObject({ isBot: true, isVacant: true, reclaimRequested: true });
+
+    const afterPlayer1Turn = handleEndTurn(afterPlayer2Turn);
+    expect(afterPlayer1Turn.players[0]).toMatchObject({ isBot: false, isVacant: false, reclaimRequested: false });
+    expect(afterPlayer1Turn.log.map(toLogMessage)).toContain(RECLAIM_MESSAGE);
+    expect(afterPlayer1Turn.currentPlayerIndex).toBe(1);
+  });
+
+  it('ignores a reclaimRequested flag on a seat that is not vacant (boundary)', () => {
+    game.players[0].reclaimRequested = true;
+    game.currentPlayerIndex = 0;
+
+    const nextState = handleEndTurn(game);
+
+    expect(nextState.players[0]).toMatchObject({ isBot: false, isVacant: false });
+    expect(nextState.log.map(toLogMessage)).not.toContain(RECLAIM_MESSAGE);
+  });
+
+  it('leaves the seat converted when reclaim was not requested (no pending reclaim)', () => {
+    game.players[0].isBot = true;
+    game.players[0].isVacant = true;
+    game.currentPlayerIndex = 0;
+
+    const nextState = handleEndTurn(game);
+
+    expect(nextState.players[0]).toMatchObject({ isBot: true, isVacant: true, reclaimRequested: false });
+    expect(nextState.log.map(toLogMessage)).not.toContain(RECLAIM_MESSAGE);
+  });
+});

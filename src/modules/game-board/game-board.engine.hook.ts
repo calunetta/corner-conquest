@@ -82,7 +82,9 @@ export function useGameEngine(gameId: string, playerId: string | null): UseGameE
 
   const isMyTurn = useMemo(() => {
     if (!currentPlayer || !localPlayer) return false;
-    return currentPlayer.id === localPlayer.id;
+    // During a deferred reclaim (reclaimRequested: true), the seat is still isBot until
+    // handleEndTurn applies the flip at the turn boundary — must not show live controls until then.
+    return currentPlayer.id === localPlayer.id && !currentPlayer.isBot;
   }, [currentPlayer, localPlayer]);
 
   const isHost = useMemo(() => {

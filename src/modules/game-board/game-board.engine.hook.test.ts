@@ -309,6 +309,40 @@ describe('useGameEngine', () => {
     expect(result.current.isMyTurn).toBe(false);
   });
 
+  it('is false during a deferred reclaim, even though currentPlayerIndex matches localPlayer.id', () => {
+    let onDataCallback: ((state: GameState) => void) | null = null;
+
+    mockSubscribeToGameState.mockImplementation(
+      (gameId: string, callbacks: { onData: (state: GameState) => void; onMissing: () => void; onError: (error: unknown) => void }) => {
+        onDataCallback = callbacks.onData;
+        return jest.fn();
+      }
+    );
+
+    const { result } = renderHook(() => useGameEngine('game_123', 'player_1'));
+
+    // The reclaiming player's own seat: currentPlayerIndex points at it, but isBot is still true
+    // until handleEndTurn applies the deferred flip at the turn boundary.
+    const gameState = createGameState({
+      currentPlayerIndex: 0,
+      players: [
+        {
+          ...createGameState().players[0],
+          isBot: true,
+          isVacant: true,
+          reclaimRequested: true,
+        },
+        createGameState().players[1],
+      ],
+    });
+
+    act(() => {
+      onDataCallback?.(gameState);
+    });
+
+    expect(result.current.isMyTurn).toBe(false);
+  });
+
   it('calculates isHost correctly (player with id=0)', () => {
     let onDataCallback: ((state: GameState) => void) | null = null;
 

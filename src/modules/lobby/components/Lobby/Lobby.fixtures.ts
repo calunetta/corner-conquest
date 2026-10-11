@@ -5,6 +5,7 @@ import type { LobbyViewModel } from './Lobby.types';
 
 const noop = (): void => undefined;
 const noopJoin = async (): Promise<boolean> => true;
+const noopReclaim = async (): Promise<void> => undefined;
 
 /** Minimal, deterministic player shaped object; only the fields the lobby views read matter. */
 const createLobbyPlayer = (playerId: string, name: string, color: PlayerColor): Player =>
@@ -33,6 +34,9 @@ const baseViewModel: LobbyViewModel = {
   onJoinGame: noop,
   onCreateGame: noopJoin,
   onLogout: noop,
+  vacantMatch: null,
+  isReclaiming: false,
+  onReclaimSeat: noopReclaim,
 };
 
 export const loadingLobby: LobbyViewModel = { ...baseViewModel, isGamesLoading: true };
@@ -40,3 +44,15 @@ export const loadingLobby: LobbyViewModel = { ...baseViewModel, isGamesLoading: 
 export const emptyLobby: LobbyViewModel = { ...baseViewModel, games: [] };
 
 export const lobbyWithOpenGames: LobbyViewModel = { ...baseViewModel, games: openGames };
+
+const vacantGame: GameState = createOpenGame('game-vacant', 'Hollow Shoals', 2, [
+  createLobbyPlayer('p4', 'Ada', PlayerColor.Blue),
+  createLobbyPlayer('p5', 'Bo', PlayerColor.Red),
+]);
+
+/** The player's seat is still held in a match they can rejoin, so the general lobby is hidden. */
+export const lobbyWithVacantSeat: LobbyViewModel = {
+  ...lobbyWithOpenGames,
+  isCreateDialogOpen: true,
+  vacantMatch: vacantGame,
+};

@@ -31,6 +31,35 @@ export function subscribeToOpenGames(
   );
 }
 
+/**
+ * Subscribes to in-progress matches and calls `onMatch` with the one holding a vacant seat that
+ * belongs to `playerId` (a player can only ever hold one vacant seat), or `null` if there is none.
+ */
+export function subscribeToVacantSeat(
+  playerId: string,
+  onMatch: (match: GameState | null) => void,
+  onError: (error: Error) => void,
+): () => void {
+  const playingGamesQuery = query(collection(db, 'games'), where('status', '==', GameStatus.Playing));
+
+  return onSnapshot(
+    playingGamesQuery,
+    (querySnapshot) => {
+      let vacantMatch: GameState | null = null;
+      querySnapshot.forEach((docSnap) => {
+        if (vacantMatch) return;
+        const firestoreState = docSnap.data() as GameState;
+        const holdsVacantSeat = firestoreState.players.some((p) => p.playerId === playerId && p.isVacant);
+        if (holdsVacantSeat) {
+          vacantMatch = { ...firestoreState, id: docSnap.id };
+        }
+      });
+      onMatch(vacantMatch);
+    },
+    onError,
+  );
+}
+
 /** Reserves a new match document id without writing anything. */
 export function createGameId(): string {
   return doc(collection(db, 'games')).id;

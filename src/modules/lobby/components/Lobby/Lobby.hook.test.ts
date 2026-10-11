@@ -1,15 +1,21 @@
 import { renderHook, act } from '@testing-library/react';
 import { PlayerColor } from '@/lib/types';
 import type { GameSettings, GameState } from '@/lib/types';
-import { defaultGameSettings } from '@/modules/game-rules';
+import { defaultGameSettings, handleSeatReclaim } from '@/modules/game-rules';
 import { usePlayer } from '@/modules/session';
 
 const mockToast = jest.fn();
 jest.mock('@/modules/shared', () => ({ useToast: () => ({ toast: mockToast }) }));
 jest.mock('@/modules/session');
 
+jest.mock('@/modules/game-rules', () => ({
+  ...jest.requireActual('@/modules/game-rules'),
+  handleSeatReclaim: jest.fn(),
+}));
+
 jest.mock('../../services/lobby.service', () => ({
   subscribeToOpenGames: jest.fn(),
+  subscribeToVacantSeat: jest.fn(() => jest.fn()),
   createGameId: jest.fn(),
   saveGame: jest.fn(),
   joinOpenGame: jest.fn(),
@@ -17,6 +23,7 @@ jest.mock('../../services/lobby.service', () => ({
 
 import {
   subscribeToOpenGames,
+  subscribeToVacantSeat,
   createGameId,
   saveGame,
   joinOpenGame,
@@ -24,9 +31,11 @@ import {
 import { useLobby } from './Lobby.hook';
 
 const mockSubscribeToOpenGames = subscribeToOpenGames as jest.Mock;
+const mockSubscribeToVacantSeat = subscribeToVacantSeat as jest.Mock;
 const mockCreateGameId = createGameId as jest.Mock;
 const mockSaveGame = saveGame as jest.Mock;
 const mockJoinOpenGame = joinOpenGame as jest.Mock;
+const mockHandleSeatReclaim = handleSeatReclaim as jest.Mock;
 const mockUsePlayer = usePlayer as jest.Mock;
 
 const games: GameState[] = [];
@@ -41,6 +50,8 @@ describe('useLobby', () => {
     mockCreateGameId.mockReset().mockReturnValue('new-game-id');
     mockSaveGame.mockReset().mockResolvedValue(undefined);
     mockJoinOpenGame.mockReset().mockResolvedValue(undefined);
+    mockSubscribeToVacantSeat.mockReset().mockReturnValue(jest.fn());
+    mockHandleSeatReclaim.mockReset().mockResolvedValue(true);
     mockUsePlayer.mockReset().mockReturnValue({
       playerId: 'player-1',
       username: 'Ada',
@@ -268,6 +279,73 @@ describe('useLobby', () => {
       });
 
       expect(mockJoinOpenGame).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('onReclaimSeat (rejoining a converted seat)', () => {
+    const vacantMatch = { id: 'match-1', name: 'Rejoin Me' } as unknown as GameState;
+
+    /** Delivers a vacant match through the subscription, the way Firestore would after the seat is converted. */
+    function deliverVacantMatch(match: GameState | null): void {
+      const onMatch = mockSubscribeToVacantSeat.mock.calls[0][1] as (m: GameState | null) => void;
+      act(() => {
+        onMatch(match);
+      });
+    }
+
+    it('calls handleSeatReclaim with the vacant match id and the current playerId, then joins it', async () => {
+      const onJoinGame = jest.fn();
+      const { result } = renderHook(() => useLobby({ onJoinGame }));
+      deliverVacantMatch(vacantMatch);
+
+      await act(async () => {
+        await result.current.onReclaimSeat();
+      });
+
+      expect(mockHandleSeatReclaim).toHaveBeenCalledWith('match-1', 'player-1');
+      expect(onJoinGame).toHaveBeenCalledWith('match-1');
+    });
+
+    it('does NOT call onJoinGame when handleSeatReclaim resolves false, and toasts Could Not Rejoin', async () => {
+      mockHandleSeatReclaim.mockResolvedValue(false);
+      const onJoinGame = jest.fn();
+      const { result } = renderHook(() => useLobby({ onJoinGame }));
+      deliverVacantMatch(vacantMatch);
+
+      await act(async () => {
+        await result.current.onReclaimSeat();
+      });
+
+      expect(onJoinGame).not.toHaveBeenCalled();
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Could Not Rejoin' }));
+    });
+
+    it('does NOT call onJoinGame when handleSeatReclaim throws, and toasts the error message', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      mockHandleSeatReclaim.mockRejectedValue(new Error('network down'));
+      const onJoinGame = jest.fn();
+      const { result } = renderHook(() => useLobby({ onJoinGame }));
+      deliverVacantMatch(vacantMatch);
+
+      await act(async () => {
+        await result.current.onReclaimSeat();
+      });
+
+      expect(onJoinGame).not.toHaveBeenCalled();
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ description: 'network down' }));
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('no-ops when there is no vacant match (invalid input)', async () => {
+      const onJoinGame = jest.fn();
+      const { result } = renderHook(() => useLobby({ onJoinGame }));
+
+      await act(async () => {
+        await result.current.onReclaimSeat();
+      });
+
+      expect(mockHandleSeatReclaim).not.toHaveBeenCalled();
+      expect(onJoinGame).not.toHaveBeenCalled();
     });
   });
 

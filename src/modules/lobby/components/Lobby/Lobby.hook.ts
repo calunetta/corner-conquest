@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { usePlayer } from '@/modules/session';
 import { useToast } from '@/modules/shared';
-import { initializeGame, startGame } from '@/modules/game-rules';
+import { handleSeatReclaim, initializeGame, startGame } from '@/modules/game-rules';
 import type { GameSettings, GameState, PlayerColor } from '@/lib/types';
-import { createGameId, joinOpenGame, saveGame, subscribeToOpenGames } from '../../services/lobby.service';
+import {
+  createGameId,
+  joinOpenGame,
+  saveGame,
+  subscribeToOpenGames,
+  subscribeToVacantSeat,
+} from '../../services/lobby.service';
 import type { LobbyProps, LobbyViewModel } from './Lobby.types';
 
 /** Subscribes to open matches and adapts the create/join flows into the view model. */
@@ -12,6 +18,8 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
   const [isGamesLoading, setIsGamesLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isJoiningGame, setIsJoiningGame] = useState<string | null>(null);
+  const [vacantMatch, setVacantMatch] = useState<GameState | null>(null);
+  const [isReclaiming, setIsReclaiming] = useState(false);
   const { playerId, username, logout } = usePlayer();
   const { toast } = useToast();
 
@@ -30,6 +38,27 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
 
     return () => unsubscribe();
   }, [toast]);
+
+  useEffect(() => {
+    if (!playerId) return;
+
+    const unsubscribe = subscribeToVacantSeat(
+      playerId,
+      (match) => setVacantMatch(match),
+      (error) => {
+        console.error('Vacant seat snapshot error:', error);
+        toast({ title: 'Lobby Error', description: 'Could not check for a match to rejoin.', variant: 'destructive' });
+      },
+    );
+
+    return () => unsubscribe();
+  }, [playerId, toast]);
+
+  useEffect(() => {
+    if (vacantMatch) {
+      setIsCreateDialogOpen(false);
+    }
+  }, [vacantMatch]);
 
   const handleCreateGame = useCallback(
     async (
@@ -91,6 +120,33 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
     [playerId, username, onJoinGame, toast],
   );
 
+  const handleReclaimSeat = useCallback(async () => {
+    if (!playerId || !vacantMatch) return;
+    setIsReclaiming(true);
+
+    try {
+      const didReclaim = await handleSeatReclaim(vacantMatch.id, playerId);
+      if (didReclaim) {
+        onJoinGame(vacantMatch.id);
+      } else {
+        toast({
+          title: 'Could Not Rejoin',
+          description: 'That seat is no longer yours to reclaim.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error reclaiming seat: ', error);
+      toast({
+        title: 'Could Not Rejoin',
+        description: error instanceof Error ? error.message : 'An unknown error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsReclaiming(false);
+    }
+  }, [playerId, vacantMatch, onJoinGame, toast]);
+
   return {
     username,
     games,
@@ -102,5 +158,8 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
     onJoinGame: handleJoinGame,
     onCreateGame: handleCreateGame,
     onLogout: logout,
+    vacantMatch,
+    isReclaiming,
+    onReclaimSeat: handleReclaimSeat,
   };
 }

@@ -22,4 +22,7 @@ export type LobbyViewModel = {
     settings: GameSettings,
   ) => Promise<boolean>;
   onLogout: () => void;
+  vacantMatch: GameState | null;
+  isReclaiming: boolean;
+  onReclaimSeat: () => Promise<void>;
 };

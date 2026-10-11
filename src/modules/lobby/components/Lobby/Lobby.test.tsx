@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { LobbyView } from './Lobby';
-import { emptyLobby, loadingLobby, lobbyWithOpenGames } from './Lobby.fixtures';
+import { emptyLobby, loadingLobby, lobbyWithOpenGames, lobbyWithVacantSeat } from './Lobby.fixtures';
 import { styles } from './Lobby.styles';
 
 describe('LobbyView', () => {
@@ -65,6 +65,38 @@ describe('LobbyView', () => {
     render(<LobbyView {...emptyLobby} />);
 
     expect(screen.getByRole('button', { name: /create new game/i })).toBeInTheDocument();
+  });
+
+  describe('when the player still holds a seat in a match', () => {
+    it('shows the rejoin panel with the match name', () => {
+      render(<LobbyView {...lobbyWithVacantSeat} />);
+
+      expect(screen.getByRole('heading', { name: 'Hollow Shoals' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Resume Command' })).toBeEnabled();
+    });
+
+    it('hides the create/join UI and the list of open games', () => {
+      render(<LobbyView {...lobbyWithVacantSeat} />);
+
+      expect(screen.queryByRole('button', { name: /create new game/i })).not.toBeInTheDocument();
+      expect(screen.queryByText('Active Conquest Rooms')).not.toBeInTheDocument();
+      expect(screen.queryByText("Ada's Archipelago")).not.toBeInTheDocument();
+    });
+
+    it('keeps the Create Game dialog closed even when it was requested open', () => {
+      render(<LobbyView {...lobbyWithVacantSeat} />);
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('calls onReclaimSeat once when Resume Command is clicked', () => {
+      const onReclaimSeat = jest.fn().mockResolvedValue(undefined);
+      render(<LobbyView {...lobbyWithVacantSeat} onReclaimSeat={onReclaimSeat} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Command' }));
+
+      expect(onReclaimSeat).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('root stacking context (z-index regression)', () => {

@@ -22,5 +22,6 @@ export { handleCancelAction, handleDeployAction, handleUpgradeAction } from './p
 export { handleEndTurn } from './player-turn.reducer';
 export { handleSelectResourceForPosition } from './resource-position.reducer';
 export { handlePlayerExit } from './services/player-exit.service';
+export { handleSeatReclaim } from './services/player-reclaim.service';
 export { handleGameAction, type HandleActionParams } from './game-rules.reducer';
 export { takeBotTurn } from './services/bot-turn.service';
