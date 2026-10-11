@@ -44,6 +44,10 @@ next-env.d.ts
 firebase-debug.log
 firestore-debug.log
 
+# service account / credential keys
+*-key.json
+*service-account*.json
+
 # playwright output
 /test-results/
 /playwright-report/
