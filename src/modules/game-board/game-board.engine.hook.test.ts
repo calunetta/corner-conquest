@@ -343,6 +343,73 @@ describe('useGameEngine', () => {
     expect(result.current.isMyTurn).toBe(false);
   });
 
+  // Bug: the host (seat 0, non-bot) was reported as "my turn" while the match was still waiting for players,
+  // which froze the host's displayed state and hid joined players from the Start Game check.
+  it('is false for the host while the match is waiting, even though seat 0 is the current, non-bot seat', () => {
+    let onDataCallback: ((state: GameState) => void) | null = null;
+
+    mockSubscribeToGameState.mockImplementation(
+      (gameId: string, callbacks: { onData: (state: GameState) => void; onMissing: () => void; onError: (error: unknown) => void }) => {
+        onDataCallback = callbacks.onData;
+        return jest.fn();
+      }
+    );
+
+    const { result } = renderHook(() => useGameEngine('game_123', 'player_1'));
+
+    const gameState = createGameState({ status: 'waiting', currentPlayerIndex: 0 });
+
+    act(() => {
+      onDataCallback?.(gameState);
+    });
+
+    expect(result.current.localPlayer?.id).toBe(0);
+    expect(result.current.isMyTurn).toBe(false);
+  });
+
+  it('is false for the host once the match is finished', () => {
+    let onDataCallback: ((state: GameState) => void) | null = null;
+
+    mockSubscribeToGameState.mockImplementation(
+      (gameId: string, callbacks: { onData: (state: GameState) => void; onMissing: () => void; onError: (error: unknown) => void }) => {
+        onDataCallback = callbacks.onData;
+        return jest.fn();
+      }
+    );
+
+    const { result } = renderHook(() => useGameEngine('game_123', 'player_1'));
+
+    act(() => {
+      onDataCallback?.(createGameState({ status: 'finished', currentPlayerIndex: 0 }));
+    });
+
+    expect(result.current.localPlayer?.id).toBe(0);
+    expect(result.current.isMyTurn).toBe(false);
+  });
+
+  it('becomes true for the host when the match moves from waiting to playing on seat 0', () => {
+    let onDataCallback: ((state: GameState) => void) | null = null;
+
+    mockSubscribeToGameState.mockImplementation(
+      (gameId: string, callbacks: { onData: (state: GameState) => void; onMissing: () => void; onError: (error: unknown) => void }) => {
+        onDataCallback = callbacks.onData;
+        return jest.fn();
+      }
+    );
+
+    const { result } = renderHook(() => useGameEngine('game_123', 'player_1'));
+
+    act(() => {
+      onDataCallback?.(createGameState({ status: 'waiting', currentPlayerIndex: 0 }));
+    });
+    expect(result.current.isMyTurn).toBe(false);
+
+    act(() => {
+      onDataCallback?.(createGameState({ status: 'playing', currentPlayerIndex: 0 }));
+    });
+    expect(result.current.isMyTurn).toBe(true);
+  });
+
   it('calculates isHost correctly (player with id=0)', () => {
     let onDataCallback: ((state: GameState) => void) | null = null;
 

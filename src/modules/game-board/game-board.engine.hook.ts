@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { GameStatus } from '@/lib/types';
 import type { DeathAnimation, GameAction, GameState } from '@/lib/types';
 import { useToast } from '@/modules/shared';
 import { handleGameAction, takeBotTurn } from '@/modules/game-rules';
@@ -81,11 +82,12 @@ export function useGameEngine(gameId: string, playerId: string | null): UseGameE
   }, [gameState]);
 
   const isMyTurn = useMemo(() => {
-    if (!currentPlayer || !localPlayer) return false;
+    if (!gameState || !currentPlayer || !localPlayer) return false;
+    if (gameState.status !== GameStatus.Playing) return false;
     // During a deferred reclaim (reclaimRequested: true), the seat is still isBot until
     // handleEndTurn applies the flip at the turn boundary — must not show live controls until then.
     return currentPlayer.id === localPlayer.id && !currentPlayer.isBot;
-  }, [currentPlayer, localPlayer]);
+  }, [gameState, currentPlayer, localPlayer]);
 
   const isHost = useMemo(() => {
     if (!gameState || !localPlayer) return false;
