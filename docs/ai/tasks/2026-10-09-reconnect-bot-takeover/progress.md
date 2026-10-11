@@ -22,13 +22,13 @@ Tier: L · Phases: 3
 - [x] committed: 1849e8d
 
 ## Phase 3: reconnect-and-reclaim
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
-- [ ] committed: <hash>
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify)
+- [x] final review (architect-b)
+- [x] committed: a6f87c5
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
@@ -50,3 +50,16 @@ Tier: L · Phases: 3
 2026-10-10 architect-b: CHANGES REQUESTED — §6.14 was inserted physically before the pre-existing §6.13, confusing reading order. Coordinator fixed directly (pure relocation, no content change) and resubmitted.
 2026-10-10 architect-b: APPROVED (round 2, final review).
 2026-10-10 coordinator: committed 1849e8d, excluding the same stray files plus the unrelated new docs/ai/tasks/2026-10-10-link-google-account/ folder.
+2026-10-11 implementer-a (sonnet) + implementer-b: DONE, Phase 3 — handleSeatReclaim (service, Promise<boolean>), applyDeferredReclaim in handleEndTurn, subscribeToVacantSeat, Lobby.hook.ts wiring, RejoinMatchPanel (view+styles+types+fixtures). Cross-review round 1 found and fixed two bugs: handleSeatReclaim originally swallowed errors so a failed reclaim still navigated the player in (now returns Promise<boolean>, errors propagate); isCreateDialogOpen wasn't reset when vacantMatch was set (now useEffect-reset). Also one style-boundary fix (raw Tailwind class moved to .styles.ts).
+2026-10-11 tester-a: DONE, player-reclaim.service.test.ts (10) + handleEndTurn deferred-reclaim block (5) + Lobby.hook.test.ts fixes/additions (subscribeToVacantSeat mock, onReclaimSeat-false case).
+2026-10-11 tester-b: DONE (retried once after a session rate-limit failure on the first attempt, not a reported blocker), RejoinMatchPanel.test.tsx (6), Lobby.test.tsx additions (4), new e2e/reconnect-bot-takeover.spec.ts (not run: no Java 21 locally, same documented limitation as prior phases). VERDICT APPROVED with non-blocking notes.
+2026-10-11 preview-a: DONE, RejoinMatchPanel.preview.tsx (Default, Reclaiming/disabled), registered in testbed, self-verified via snapshot script.
+2026-10-11 coordinator: added data-testid to the reclaim spinner (trivial a11y/testability fix, not worth a revise round).
+2026-10-11 preview-b: DONE, VERDICT APPROVED. One non-blocking cosmetic nit (reclaim button stretched full-width at desktop) — coordinator fixed directly and re-verified in the browser pane at desktop and mobile.
+2026-10-11 coordinator: checks — typecheck clean, npx jest src (excluding .claude/.agents) 2083/2083 passed (same pre-existing unrelated failure as Phases 1-2).
+2026-10-11 docs-sync: DONE, extended systems-and-visuals.md §6.14 with Seat Reclaim / Deferred Reclaim / Lobby Restriction bullets, updated docs/README.md index row.
+2026-10-11 architect-b: CHANGES REQUESTED (final review) — two blocking findings: (1) real bug, isMyTurn in game-board.engine.hook.ts had no isBot check, so reclaiming during your own seat's bot turn would route you into GameBoard with live controls rendering while the bot's turn effect could still independently fire, racing a non-transactional write; (2) docs-sync missed structure-and-state.md's Firestore-exceptions count and lobby component list for Phase 3's new files.
+2026-10-11 implementer-a: DONE, fixed isMyTurn to also require !currentPlayer.isBot, added a regression test for the deferred-reclaim window.
+2026-10-11 docs-sync: DONE, fixed both structure-and-state.md gaps.
+2026-10-11 architect-b: APPROVED (round 2, final review). Task complete pending commit.
+2026-10-11 coordinator: committed a6f87c5, excluding the same stray files, the unrelated link-google-account task folder, and a newly-noticed untracked github-actions-key.json (looks like a credential file — left untouched, flagged to the user, never staged).
