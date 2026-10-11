@@ -12,7 +12,7 @@ Tier: M · Phases: 2
 - [x] tests (tester-a)
 - [x] checks: typecheck, lint, unit tests
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: b3d607b
 
 ## Phase 2: Google icon, Link button, Login/Lobby wiring, previews, docs
 - [ ] implementation (implementer-a, implementer-b)
@@ -26,3 +26,10 @@ Tier: M · Phases: 2
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
+2026-10-10 ui-designer-a/b: DONE, lobby placement + GoogleIcon + states, APPROVED
+2026-10-10 architect-a: DONE, plan.md drafted, bind-before-popup ordering decision
+2026-10-10 architect-b: DONE, plan APPROVED
+2026-10-10 implementer-a: DONE, linkGoogleAccount + linkWithGoogle implemented
+2026-10-10 tester-a: DONE, 173/173 tests passing
+2026-10-10 architect-b (final-review): DONE, Phase 1 APPROVED
+2026-10-10 phase 1 committed: b3d607b
