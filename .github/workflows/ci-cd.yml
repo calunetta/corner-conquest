@@ -83,10 +83,49 @@ jobs:
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
 
+  deploy-firestore-rules:
+    name: Deploy Firestore rules (only if changed)
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so the diff can reach the previous tip of main (github.event.before).
+          fetch-depth: 0
+      - name: Detect firestore.rules changes in this push
+        id: rules
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          # A brand-new branch sends an all-zero "before" SHA; deploy rules then to be safe.
+          if [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
+            changed=true
+          elif git diff --quiet "$BEFORE_SHA" "$AFTER_SHA" -- firestore.rules; then
+            changed=false
+          else
+            changed=true
+          fi
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        if: steps.rules.outputs.changed == 'true'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - if: steps.rules.outputs.changed == 'true'
+        run: npm ci
+      - if: steps.rules.outputs.changed == 'true'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - if: steps.rules.outputs.changed == 'true'
+        run: npx firebase deploy --only firestore:rules --project studio-7086354571-8fddd
+
   deploy:
     name: Deploy to Firebase App Hosting
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, deploy-firestore-rules]
     environment: production
     steps:
       - uses: actions/checkout@v4
