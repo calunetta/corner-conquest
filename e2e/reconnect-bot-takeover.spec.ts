@@ -48,6 +48,9 @@ test.describe('Reconnect takes over a departed seat with a bot', () => {
   });
 
   test('a departed player sees only the rejoin option, and reclaiming hands the seat back', async ({ browser }: { browser: Browser }) => {
+    // Two browser contexts, two full lobby flows, and a bot-turn wait add up to more
+    // than the suite's default 30s on a slower CI runner.
+    test.setTimeout(60000);
     const stamp = Date.now();
     const hostName = `Host_${stamp}`;
     const guestName = `Guest_${stamp}`;

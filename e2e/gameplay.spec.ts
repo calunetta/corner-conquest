@@ -27,13 +27,10 @@ test.describe('Gameplay & Debug Mechanics', () => {
     await expect(dialog).toBeVisible();
     await page.getByLabel(/game name/i).fill(matchName);
 
-    // Select 1 player capacity (Solo vs Bot)
-    const combobox = dialog.getByRole('combobox');
-    await expect(combobox).toBeVisible();
-    await combobox.click();
-    const soloOption = page.getByRole('option', { name: /solo vs\. bot/i });
-    await expect(soloOption).toBeVisible();
-    await soloOption.click();
+    // Select 1 player capacity (Solo vs Bot AI format card)
+    const soloFormatButton = dialog.getByRole('button', { name: /solo vs\.? bot ai/i });
+    await expect(soloFormatButton).toBeVisible();
+    await soloFormatButton.click();
 
     await dialog.getByRole('button', { name: /create game/i }).click();
 
