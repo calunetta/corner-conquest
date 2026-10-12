@@ -7,7 +7,7 @@ Tier: S · Phases: 1
 - [x] fix implemented (implementer-a)
 - [x] checks: typecheck, lint, unit tests
 - [x] docs sync (docs-sync — confirmed no doc change needed)
-- [ ] committed: <hash>
+- [x] committed: 0ef28d7
 
 ## Log
 - 2026-10-12 tester-a: DONE, added failing repro + regression-guard tests to bot-purchases.reducer.test.ts; confirmed failure against unfixed code (`Not enough wood. Cost: 6`)
