@@ -23,8 +23,16 @@ describe('parseLogLine', () => {
     ]);
   });
 
-  it('parses the PvP victory-point line (attack.ts:129 and :160, identical text)', () => {
-    expect(parseLogLine('Bot 0 receives 5 VP for defeating Bot 1!')).toEqual([{ kind: 'pvpVictoryPoints' }]);
+  it('parses the PvP victory-point line (attack.ts:129 and :160, identical text), carrying the winner\'s playerId through from the structured log entry', () => {
+    expect(parseLogLine('Bot 0 receives 5 VP for defeating Bot 1!', 'bot_0')).toEqual([
+      { kind: 'pvpVictoryPoints', winnerPlayerId: 'bot_0' },
+    ]);
+  });
+
+  it('parses the PvP victory-point line with no playerId (bare-string log entry) as unattributable', () => {
+    expect(parseLogLine('Bot 0 receives 5 VP for defeating Bot 1!')).toEqual([
+      { kind: 'pvpVictoryPoints', winnerPlayerId: undefined },
+    ]);
   });
 
   it('parses the PvP result line, attributed to the acting seat (attack.ts:187)', () => {

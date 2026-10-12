@@ -48,8 +48,13 @@ export function computeM5(results: MatchResult[], seatCount: number): VictoryPoi
           bySeat[turn.seat].monsterBylevel[MONSTER_LEVEL[event.monsterName]] += event.vp;
           perMatchVP[turn.seat] += event.vp;
         } else if (event.kind === 'pvpVictoryPoints') {
-          bySeat[turn.seat].pvp += 5; // the reducer always awards exactly 5 (attack.ts:129, :160)
-          perMatchVP[turn.seat] += 5;
+          // The winner, not the acting seat: PvP combat can be won by the defender on the attacker's
+          // turn. An unresolvable winner is left uncredited, like explorerVP below.
+          const winnerSeat = event.winnerPlayerId === undefined ? -1 : result.seatPlayerIds.indexOf(event.winnerPlayerId);
+          if (winnerSeat !== -1) {
+            bySeat[winnerSeat].pvp += 5; // the reducer always awards exactly 5 (attack.ts:129, :160)
+            perMatchVP[winnerSeat] += 5;
+          }
         } else if (event.kind === 'explorerVP') {
           // The log line only confirms the ability fired; the VP amount isn't in the text, so it
           // can't be attributed here without re-deriving it from game state. Left at 0 per seat

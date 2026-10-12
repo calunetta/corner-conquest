@@ -27,9 +27,12 @@ export function applyBotPurchases(state: GameState): GameState {
   }
   activeBot = currentState.players[currentState.currentPlayerIndex];
 
-  const deployCost = activeBot.efficientActive
-    ? Math.ceil(activeBot.nextArmyCost / 2)
-    : (activeBot.reinforceActive ? 0 : activeBot.nextArmyCost);
+  const canUseCard = !activeBot.actionsThisTurn.includes(GameAction.UseCard);
+  const deployCost = activeBot.reinforceActive && canUseCard
+    ? 0
+    : activeBot.efficientActive && canUseCard
+      ? Math.ceil(activeBot.nextArmyCost / 2)
+      : activeBot.nextArmyCost;
   if (canAfford(activeBot, deployCost, ResourceEnum.Food) && activeBot.armies.length < 5 && !activeBot.actionsThisTurn.includes(GameAction.Deploy)) {
     const temp = handleGameAction({ action: GameAction.Deploy, gameState: currentState });
     if (temp.state) currentState = temp.state;

@@ -14,7 +14,10 @@ export type LogEvent =
   | { kind: 'discoveryVP' }
   | { kind: 'monsterWin'; monsterName: MonsterName; vp: number }
   | { kind: 'monsterLoss'; monsterName: MonsterName }
-  | { kind: 'pvpVictoryPoints' }
+  // winnerPlayerId is the winning Player's `playerId`, read from the structured log entry's own
+  // `playerId` (combat-player-resolve.reducer.ts pushes `playerId: winner.playerId`). Undefined only
+  // for a bare-string log entry, which no current reducer produces.
+  | { kind: 'pvpVictoryPoints'; winnerPlayerId?: string }
   | { kind: 'pvpResult' }
   | { kind: 'explorerVP' }
   | { kind: 'collectorGather' }
@@ -53,8 +56,12 @@ function findAbilityName(line: string): AbilityName | undefined {
 }
 
 /** One (pattern, builder) pair. A line can match more than one matcher (e.g. a successful steal is
- *  both a granted-resource event for M6 and a card-consumption event for M8). */
-const MATCHERS: ReadonlyArray<{ test: (line: string) => boolean; build: (line: string) => LogEvent }> = [
+ *  both a granted-resource event for M6 and a card-consumption event for M8). `playerId` is the
+ *  structured log entry's `playerId`; only the builders that need it read it. */
+const MATCHERS: ReadonlyArray<{
+  test: (line: string) => boolean;
+  build: (line: string, playerId?: string) => LogEvent;
+}> = [
   { test: (l) => l.includes('discovered a new island and gains'), build: () => ({ kind: 'discoveryVP' }) },
   {
     test: (l) => l.includes('defeated the') && l.includes('for') && l.endsWith('VP!'),
@@ -67,7 +74,10 @@ const MATCHERS: ReadonlyArray<{ test: (line: string) => boolean; build: (line: s
     test: (l) => l.includes('was defeated by the'),
     build: (l) => ({ kind: 'monsterLoss', monsterName: findMonsterName(l)! }),
   },
-  { test: (l) => l.includes('receives 5 VP for defeating'), build: () => ({ kind: 'pvpVictoryPoints' }) },
+  {
+    test: (l) => l.includes('receives 5 VP for defeating'),
+    build: (_line, playerId) => ({ kind: 'pvpVictoryPoints', winnerPlayerId: playerId }),
+  },
   { test: (l) => l.includes('defeated') && l.includes('in battle!'), build: () => ({ kind: 'pvpResult' }) },
   { test: (l) => l.includes("Explorer ability generated"), build: () => ({ kind: 'explorerVP' }) },
   { test: (l) => l.includes("Collector ability gathered"), build: () => ({ kind: 'collectorGather' }) },
@@ -151,7 +161,8 @@ const MATCHERS: ReadonlyArray<{ test: (line: string) => boolean; build: (line: s
 ];
 
 /** Returns every event a log line represents; empty for lines the simulator doesn't need
- *  (turn announcements, errors, flavor text). A line can produce more than one event. */
-export function parseLogLine(line: string): LogEvent[] {
-  return MATCHERS.filter(({ test }) => test(line)).map(({ build }) => build(line));
+ *  (turn announcements, errors, flavor text). A line can produce more than one event.
+ *  `playerId` is the structured log entry's `playerId`, omitted for bare-string entries. */
+export function parseLogLine(line: string, playerId?: string): LogEvent[] {
+  return MATCHERS.filter(({ test }) => test(line)).map(({ build }) => build(line, playerId));
 }

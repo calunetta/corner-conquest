@@ -37,6 +37,7 @@ export function match(overrides: Partial<MatchResult> & { finalState: SeatFinalS
     botTurns: overrides.turns?.length ?? 0,
     winnerSeat: null,
     turns: [],
+    seatPlayerIds: [],
     ...overrides,
   };
 }

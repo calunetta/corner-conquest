@@ -87,26 +87,29 @@ out entirely:
 ## A bug the simulator found on its first real run
 
 Running the acceptance tests (`scripts/balance-simulator/acceptance.test.ts`) surfaced a genuine
-inconsistency between `bot-logic.ts`'s own cost pre-check and the real `handleDeployAction`
-reducer, not a simulator bug:
+inconsistency between `bot-purchases.reducer.ts`'s own cost pre-check and the real
+`handleDeployAction` reducer, not a simulator bug.
 
-- `handleDeployAction` (`src/lib/actions/player.ts:48-50`) only applies the Reinforce/Efficient
-  Deploy discount when the player hasn't already used their one card-use action this turn
-  (`canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard)`).
-- `bot-logic.ts`'s own pre-check before attempting Deploy (`bot-logic.ts:96`) computes the same
-  discount from the raw `efficientActive`/`reinforceActive` flags, **without** that same
-  `canUseCard` check.
-- A bot that activates Reinforce or Efficient earlier in the same turn (bot-logic.ts:37-47, which
-  does consume the turn's one card-use action) then reaches the Deploy check still believing the
-  discount applies. `handleDeployAction` correctly denies it, throws `"Not enough wheat"`, and
-  `src/lib/actions/index.ts:94` silently swallows the error and returns the unchanged state — so
-  the bot just loses that Deploy opportunity for the turn, with no crash and no log line a player
-  would ever see.
+- `handleDeployAction` (`src/modules/game-rules/player-actions.reducer.ts:21-29`) only applies the
+  Reinforce/Efficient Deploy discount when the player hasn't already used their one card-use action
+  this turn (`canUseCard = !player.actionsThisTurn.includes(GameAction.UseCard)`), checking
+  Reinforce before Efficient.
+- `bot-purchases.reducer.ts`'s own pre-check before attempting Deploy computed the same discount
+  from the raw `efficientActive`/`reinforceActive` flags, without that same `canUseCard` check, and
+  checked Efficient before Reinforce — the opposite precedence.
+- A bot that activates Reinforce or Efficient earlier in the same turn (which does consume the
+  turn's one card-use action) then reached the Deploy check still believing the discount applied.
+  `handleDeployAction` correctly denied it and threw `` `Not enough food. Cost: ${cost}` `` at the
+  full, undiscounted cost. That error was caught and logged by the dispatcher
+  (`game-rules.reducer.ts`'s `handleGameAction`, via `console.error('Error handling action deploy:',
+  error)`), not silently swallowed — but the bot still lost that Deploy opportunity for the turn,
+  and every simulator run logged one `console.error` anomaly per occurrence.
 
-Not fixed here (out of this task's scope — see `docs/ai/tasks/2026-10-02-bot-balance-simulator/progress.md`).
-A fix would make `bot-logic.ts`'s pre-check call the same `canUseCard` logic `handleDeployAction`
-uses, or simpler, just try the action and check `GameAction.Deploy` actually landed in
-`actionsThisTurn` afterward instead of pre-computing the cost twice.
+Fixed: `bot-purchases.reducer.ts`'s Deploy pre-check now gates the discount on `canUseCard` and
+checks Reinforce before Efficient, matching `handleDeployAction`'s own gate and precedence exactly.
+A bot that already used its card-use action this turn now correctly computes the full, undiscounted
+cost before deciding whether to attempt Deploy, so it never proposes a Deploy it can't afford for
+this reason. See `src/modules/game-rules/bot-purchases.reducer.test.ts` for the regression tests.
 
 ## Known bot facts (confirmed by two independent design-review passes, `game-design.md`)
 

@@ -56,6 +56,10 @@ export interface MatchResult {
   winnerSeat: number | null;
   turns: TurnSnapshot[];
   finalState: SeatFinalState[];
+  /** seatPlayerIds[seat] is that seat's stable Player.playerId. Index equals seat because
+   *  Player.id is the array index for every seat this simulator creates (game-setup.reducer.ts).
+   *  Lets metrics map a log entry's playerId back to a seat. */
+  seatPlayerIds: string[];
 }
 
 /**
@@ -95,6 +99,7 @@ export async function runMatch(config: MatchConfig): Promise<MatchResult> {
       return startGame(initialized, 'Bot 0');
     });
 
+    const seatPlayerIds = state.players.map((player) => player.playerId);
     const turns: TurnSnapshot[] = [];
     let botTurns = 0;
 
@@ -109,10 +114,13 @@ export async function runMatch(config: MatchConfig): Promise<MatchResult> {
         const nextState = readCapturedState();
         if (!nextState) throw new Error(`takeBotTurn for seat ${actingSeat} never wrote a state (setDoc not called).`);
 
-        const newLogLines = nextState.log
+        // Structured entries keep their playerId: a PvP VP line is credited to the winner, who can be
+        // the defender rather than the acting seat.
+        const events = nextState.log
           .slice(logLengthBeforeTurn)
-          .map((entry) => (typeof entry === 'string' ? entry : entry.message));
-        const events = newLogLines.flatMap((line) => parseLogLine(line));
+          .flatMap((entry) =>
+            typeof entry === 'string' ? parseLogLine(entry) : parseLogLine(entry.message, entry.playerId),
+          );
 
         turns.push(snapshotSeat(actingSeat, round, events, nextState, [...recordedAnomalies]));
         botTurns += 1;
@@ -128,6 +136,7 @@ export async function runMatch(config: MatchConfig): Promise<MatchResult> {
       winnerSeat: finished && state.winner ? state.winner.id : null,
       turns,
       finalState: state.players.map(toFinalState),
+      seatPlayerIds,
     };
   } finally {
     restoreConsole();
