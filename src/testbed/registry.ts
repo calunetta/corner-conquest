@@ -19,6 +19,7 @@ import { gameStatusBadgePreview } from '@/modules/hud/components/GameStatusBadge
 import { connectionWarningDialogPreview } from '@/modules/game-board/components/ConnectionWarningDialog/ConnectionWarningDialog.preview';
 import { gameLogPreview } from '@/modules/hud/components/GameLog/GameLog.preview';
 import { playerInfoPreview } from '@/modules/hud/components/PlayerInfo/PlayerInfo.preview';
+import { tutorialBeaconPreview } from '@/modules/hud/components/TutorialBeacon/TutorialBeacon.preview';
 import { actionsPanelPreview } from '@/modules/hud/components/ActionsPanel/ActionsPanel.preview';
 import { mobileActionsBarPreview } from '@/modules/hud/components/ActionsPanel/MobileActionsBar.preview';
 import { cardsDialogPreview } from '@/modules/cards/components/CardsDialog/CardsDialog.preview';
@@ -64,6 +65,7 @@ export const previews: ComponentPreview[] = [
   connectionWarningDialogPreview,
   gameLogPreview,
   playerInfoPreview,
+  tutorialBeaconPreview,
   actionsPanelPreview,
   mobileActionsBarPreview,
   cardsDialogPreview,

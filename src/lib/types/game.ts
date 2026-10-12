@@ -1,4 +1,4 @@
-import { CardName, AbilityName } from './cards';
+import { CardName, AbilityName, ResourceType } from './cards';
 import { Player } from './player';
 import { Island, BaseTileInfo } from './map';
 import { CombatState, MonsterCombatState, DeathAnimation } from './combat';
@@ -36,6 +36,9 @@ export type StructuredLogEntry = {
   targetPlayerId?: string; // second player referenced (sabotage, steal, combat winner/loser)
   isMilestone?: boolean; // true only for the 4 game-won lines; always shown, ignores the declutter toggle
   isPassive?: boolean; // true for routine/automatic entries; hidden by the declutter toggle by default
+  /** Set only on the two collection log entries (automatic + Productive-card); lets a client
+   *  derive a toast without re-parsing `message`. Never read by GameLog rendering. */
+  resourcesCollected?: Partial<Record<ResourceType, number>>;
 };
 
 export type LogEntry = string | StructuredLogEntry;

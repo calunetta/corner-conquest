@@ -103,11 +103,47 @@ describe('toTileBoatsViewModel', () => {
       occupants: [{ playerId: 0, armyId: 0 }],
       positionedBy: [{ playerId: 0, resource: ResourceType.Food }],
     };
+    const positionedBluePlayer = {
+      ...bluePlayer,
+      positions: [{ x: 1, y: 1, resource: ResourceType.Food, armyId: 0 }],
+    };
 
-    const result = toTileBoatsViewModel(island, mockPlayers, mockPlayers[0], false, false);
+    const result = toTileBoatsViewModel(island, [positionedBluePlayer, redPlayer], positionedBluePlayer, false, false);
 
     expect(result).not.toBeNull();
     expect(result![0].showIdleCollector).toBe(false);
+  });
+
+  it('only hides the idle collector for the specific army that is positioned, not every army of the same player on the same island (regression: boat fix keys off player.positions, not island.positionedBy)', () => {
+    const twoArmyBlue = {
+      ...bluePlayer,
+      armies: [
+        { id: 0, position: { x: 1, y: 1 }, hasActed: false },
+        { id: 1, position: { x: 1, y: 1 }, hasActed: false },
+      ],
+      positions: [{ x: 1, y: 1, resource: ResourceType.Food, armyId: 0 }],
+    };
+    const island: Island = {
+      id: '1-1',
+      x: 1,
+      y: 1,
+      type: IslandType.Resource,
+      resources: [{ type: ResourceType.Food, amount: 1 }],
+      occupants: [
+        { playerId: 0, armyId: 0 },
+        { playerId: 0, armyId: 1 },
+      ],
+      positionedBy: [{ playerId: 0, resource: ResourceType.Food }],
+    };
+
+    const result = toTileBoatsViewModel(island, [twoArmyBlue, redPlayer], twoArmyBlue, false, false);
+
+    expect(result).not.toBeNull();
+    expect(result).toHaveLength(2);
+    const armyZeroEntry = result!.find((entry) => entry.key === 'boat-0-0');
+    const armyOneEntry = result!.find((entry) => entry.key === 'boat-0-1');
+    expect(armyZeroEntry?.showIdleCollector).toBe(false);
+    expect(armyOneEntry?.showIdleCollector).toBe(true);
   });
 
   it('returns null for empty tile with no occupants and no base owner', () => {

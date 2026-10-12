@@ -70,8 +70,10 @@ export function toTileBoatsViewModel(
 
   if (occupants.length > 0) {
     occupants.forEach(({ player, armyId }) => {
-      // Check if this army is actively positioned on a resource
-      const isPositionedOnResource = (island.positionedBy || []).some((pos) => pos.playerId === player.id);
+      // Check if this specific army is actively positioned on a resource (keyed by armyId, not just
+      // playerId, so a second army of the same player on this island isn't affected by the first
+      // one's position clearing).
+      const isPositionedOnResource = player.positions.some((pos) => pos.armyId === armyId);
 
       boatEntries.push({
         key: `boat-${player.id}-${armyId}`,

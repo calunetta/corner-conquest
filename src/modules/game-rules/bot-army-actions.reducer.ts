@@ -1,8 +1,11 @@
 import type { Army, GameState } from '@/lib/types';
 import { GameAction, IslandType } from '@/lib/types';
 import type { BotAction } from './bot-helpers';
+import { findAvailableResourceSpot, isArmyEligibleToPosition } from './army-position-eligibility';
 import { getPossibleMoves } from './movement.reducer';
 import { handleGameAction } from './game-rules.reducer';
+
+const POSITION_PRIORITY = 6;
 
 /**
  * Iterates through the active bot's unacted armies, scoring every possible action (attack,
@@ -51,13 +54,12 @@ export function applyBotArmyActions(state: GameState): GameState {
         });
       }
 
-      const isAlreadyPositioned = activeBot.positions.some((p) => p.armyId === army.id);
-      if (!isAlreadyPositioned && (currentTile.type === IslandType.Resource || currentTile.type === IslandType.Base) && currentTile.resources.length > 0 && !monsterOnTile) {
-        const availableResource = currentTile.resources.find((res) => !(currentTile.positionedBy || []).some((p) => p.resource === res.type));
+      if (isArmyEligibleToPosition(currentTile, activeBot, army.id)) {
+        const availableResource = findAvailableResourceSpot(currentTile);
         if (availableResource) {
           possibleActions.push({
             name: `position-${army.id}`,
-            priority: 9,
+            priority: POSITION_PRIORITY,
             action: GameAction.SelectResourcePosition,
             payload: { resource: availableResource.type, armyId: army.id },
           });

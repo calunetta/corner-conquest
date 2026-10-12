@@ -8,6 +8,7 @@ import { subscribeToGameState, saveGameState, clearDeathAnimations } from './ser
 import type { UseGameEngineResult } from './game-board.engine.types';
 import { useHeartbeat } from './game-board.heartbeat.hook';
 import { useStalenessCheck } from './game-board.staleness.hook';
+import { useResourceCollectionFeedback } from './resource-collection-feedback.hook';
 
 export function useGameEngine(gameId: string, playerId: string | null): UseGameEngineResult {
   const [gameState, setInternalGameState] = useState<GameState | null>(null);
@@ -105,6 +106,7 @@ export function useGameEngine(gameId: string, playerId: string | null): UseGameE
 
   useHeartbeat({ gameId, localPlayer, status: gameState?.status });
   useStalenessCheck({ gameId, gameState, localPlayerId: playerId });
+  useResourceCollectionFeedback({ gameState, localPlayer, isMyTurn, toast });
 
   useEffect(() => {
     if (!isLoading && !localPlayer) {

@@ -160,6 +160,15 @@ describe('useTileBoats', () => {
       occupants: [{ playerId: 0, armyId: 0 }],
       positionedBy: [{ playerId: 0, resource: ResourceType.Food }],
     };
+    const positionedBluePlayer = {
+      ...bluePlayer,
+      positions: [{ x: 1, y: 1, resource: ResourceType.Food, armyId: 0 }],
+    };
+    jest.mocked(useGameBoard).mockReturnValue({
+      ...gameBoardContextFixture,
+      localPlayer: positionedBluePlayer,
+      gameState: { ...gameStateFixture, players: [positionedBluePlayer, gameStateFixture.players[1]] },
+    });
 
     const { result } = renderHook(() => useTileBoats({ island }));
 

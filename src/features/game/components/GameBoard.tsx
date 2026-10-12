@@ -39,7 +39,7 @@ function GameBoardContent() {
                   description={
                     <ul className="list-disc pl-4 space-y-1">
                       <li>Click an army to select it, then click an adjacent island to move.</li>
-                      <li>Move onto Resource Islands and click "Position" to gather resources automatically every turn.</li>
+                      <li>Move onto Resource Islands and click "Position" to gather resources — re-position each turn to keep collecting.</li>
                       <li>Move onto occupied islands or monsters to initiate Combat!</li>
                     </ul>
                   }

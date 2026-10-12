@@ -1,4 +1,5 @@
 import { PlayerColor, CardName, ResourceType, GameAction } from '@/lib/types';
+import { toLogMessage } from './log-entry';
 import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { addPlayerToGame } from '@/modules/game-rules';
@@ -103,11 +104,13 @@ describe('handleUseProductiveCard', () => {
     game = buildGame();
   });
 
-  it('doubles the harvest on the selected resource where the player is positioned', () => {
+  it('doubles the harvest on the selected resource where the player is positioned, then clears the position', () => {
     const player = game.players[0];
     player.specialCards = [CardName.Productive];
     player.resources = { food: 0, wood: 0, gold: 0 };
     player.positions = [{ x: 0, y: 0, resource: ResourceType.Food, armyId: 0 }];
+    const tile = game.map[0 * game.settings.gridSize.cols + 0];
+    tile.positionedBy = [{ playerId: player.id, resource: ResourceType.Food }];
 
     const nextState = handleUseProductiveCard(game, ResourceType.Food);
 
@@ -115,9 +118,14 @@ describe('handleUseProductiveCard', () => {
     expect(nextState.players[0].specialCards).not.toContain(CardName.Productive);
     expect(nextState.discardPile).toContain(CardName.Productive);
     expect(nextState.players[0].actionsThisTurn).toContain(GameAction.UseCard);
-    // Positions persist after Productive card collection (same rule as automatic collection)
-    expect(nextState.players[0].positions).toHaveLength(1);
+    // Clear-on-collect: the position and its tile's positionedBy entry clear the instant they're collected.
+    expect(nextState.players[0].positions).toHaveLength(0);
+    expect(nextState.map[0 * nextState.settings.gridSize.cols + 0].positionedBy).toEqual([]);
     expect(nextState.productiveDialogState).toBeNull();
+    const collectionEntry = nextState.log.find(
+      (entry) => typeof entry !== 'string' && entry.resourcesCollected !== undefined,
+    );
+    expect(collectionEntry).toMatchObject({ resourcesCollected: { [ResourceType.Food]: 2 } });
   });
 
   it('does not double a resource where the player is not positioned', () => {
@@ -132,7 +140,7 @@ describe('handleUseProductiveCard', () => {
     expect(nextState.players[0].resources.gold).toBe(0);
   });
 
-  it('a null selection (dismissed dialog) collects all positioned resources without doubling (empty input)', () => {
+  it('a null selection (dismissed dialog) collects all positioned resources without doubling, then clears the position (empty input)', () => {
     const player = game.players[0];
     player.specialCards = [CardName.Productive];
     player.resources = { food: 0, wood: 0, gold: 0 };
@@ -143,11 +151,11 @@ describe('handleUseProductiveCard', () => {
     expect(nextState.players[0].resources.food).toBe(1);
     expect(nextState.players[0].specialCards).toContain(CardName.Productive); // no card consumed
     expect(nextState.players[0].actionsThisTurn).not.toContain(GameAction.UseCard);
-    // Positions persist regardless of whether doubling was used
-    expect(nextState.players[0].positions).toHaveLength(1);
+    // Clear-on-collect applies regardless of whether doubling was used
+    expect(nextState.players[0].positions).toHaveLength(0);
   });
 
-  it('does not clear the positioned tile\'s positionedBy entry after collecting (positions persist)', () => {
+  it("clears the positioned tile's positionedBy entry after collecting (clear-on-collect)", () => {
     const player = game.players[0];
     player.specialCards = [CardName.Productive];
     player.positions = [{ x: 0, y: 0, resource: ResourceType.Food, armyId: 0 }];
@@ -156,10 +164,9 @@ describe('handleUseProductiveCard', () => {
 
     const nextState = handleUseProductiveCard(game, ResourceType.Food);
 
-    // positionedBy persists after collection; only cleared when army moves, loses, or dies
-    expect(nextState.map[0 * nextState.settings.gridSize.cols + 0].positionedBy).toEqual([
-      { playerId: player.id, resource: ResourceType.Food },
-    ]);
+    // positionedBy is cleared the instant it's collected; the army must be re-positioned to collect again.
+    expect(nextState.map[0 * nextState.settings.gridSize.cols + 0].positionedBy).toEqual([]);
+    expect(nextState.log.map(toLogMessage)).toContain(`${player.name} collected 2 food (doubled food).`);
   });
 
   it('is a no-op on resources when the player has no positions at all (boundary)', () => {

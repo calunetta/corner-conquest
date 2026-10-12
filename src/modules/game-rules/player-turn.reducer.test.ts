@@ -63,55 +63,61 @@ describe('handleEndTurn', () => {
     expect(stateAfterP1.currentPlayerIndex).toBe(0); // wraps back to player 1 since player 2 was skipped
   });
 
-  it('generates resources from positioned armies for the incoming player', () => {
+  it('generates resources from a positioned army, then clears its position and positionedBy entry (clear-on-collect)', () => {
     const player2 = game.players[1];
     player2.armies[0].hasActed = true;
+    const armyPos = player2.armies[0].position;
     player2.positions.push({
       armyId: player2.armies[0].id,
       resource: ResourceType.Gold,
-      x: player2.armies[0].position.x,
-      y: player2.armies[0].position.y,
+      x: armyPos.x,
+      y: armyPos.y,
     });
+    const baseTile = game.map[armyPos.y * game.settings.gridSize.cols + armyPos.x];
+    baseTile.positionedBy = [{ playerId: player2.id, resource: ResourceType.Gold }];
     const initialGold = player2.resources.gold;
-    const baseTile = game.map[player2.armies[0].position.y * game.settings.gridSize.cols + player2.armies[0].position.x];
     const goldYield = baseTile.resources.find((r) => r.type === ResourceType.Gold)!.amount;
     expect(goldYield).toBe(game.settings.baseResourceAmount); // base tiles yield baseResourceAmount (1) of each resource
 
     const nextState = handleEndTurn(game);
 
     expect(nextState.players[1].resources.gold).toBe(initialGold + goldYield);
-    // Position persists after collection; only cleared when the army moves, loses, or dies
-    expect(nextState.players[1].positions).toHaveLength(1);
-    expect(nextState.players[1].positions[0].armyId).toBe(player2.armies[0].id);
+    // The position and its tile's positionedBy entry are cleared the instant they're collected.
+    expect(nextState.players[1].positions).toHaveLength(0);
+    expect(nextState.map[armyPos.y * nextState.settings.gridSize.cols + armyPos.x].positionedBy).toEqual([]);
     expect(nextState.log.map(toLogMessage)).toContain(`${player2.name} automatically collected ${goldYield} gold.`);
+    const collectionEntry = nextState.log.find(
+      (entry) => typeof entry !== 'string' && entry.resourcesCollected !== undefined,
+    );
+    expect(collectionEntry).toMatchObject({ resourcesCollected: { [ResourceType.Gold]: goldYield } });
   });
 
-  it('positions persist across two consecutive turns (new behavior: armies continue generating resources)', () => {
+  it('a cleared position collects nothing on the next turn until the army is re-positioned (new rule: no auto-renew)', () => {
     const player2 = game.players[1];
     player2.armies[0].hasActed = true;
+    const armyPos = player2.armies[0].position;
     player2.positions.push({
       armyId: player2.armies[0].id,
       resource: ResourceType.Gold,
-      x: player2.armies[0].position.x,
-      y: player2.armies[0].position.y,
+      x: armyPos.x,
+      y: armyPos.y,
     });
-    const baseTile = game.map[player2.armies[0].position.y * game.settings.gridSize.cols + player2.armies[0].position.x];
-    const goldYield = baseTile.resources.find((r) => r.type === ResourceType.Gold)!.amount;
+    const baseTile = game.map[armyPos.y * game.settings.gridSize.cols + armyPos.x];
+    baseTile.positionedBy = [{ playerId: player2.id, resource: ResourceType.Gold }];
 
-    // First turn: end of player 1, into player 2
+    // First turn: end of player 1, into player 2 — collects and clears the position.
     let nextState = handleEndTurn(game);
     const goldAfterFirstCollection = nextState.players[1].resources.gold;
-    expect(nextState.players[1].positions).toHaveLength(1);
+    expect(nextState.players[1].positions).toHaveLength(0);
 
-    // Second turn: end of player 2 (back to player 1), then reset for player 2 again
+    // Second turn: end of player 2 (back to player 1), then reset for player 2 again — no
+    // position was re-added in between, so there is nothing left to collect.
     nextState = handleEndTurn(nextState);
     nextState = handleEndTurn(nextState); // Now back to player 2's turn
     const goldAfterSecondCollection = nextState.players[1].resources.gold;
 
-    // Gold should have increased again (second automatic collection)
-    expect(goldAfterSecondCollection).toBe(goldAfterFirstCollection + goldYield);
-    // Position should still be there
-    expect(nextState.players[1].positions).toHaveLength(1);
+    expect(goldAfterSecondCollection).toBe(goldAfterFirstCollection);
+    expect(nextState.players[1].positions).toHaveLength(0);
   });
 
   it('opens the Productive dialog instead of auto-collecting when the incoming player holds a Productive card', () => {

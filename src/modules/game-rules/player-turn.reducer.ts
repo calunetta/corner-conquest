@@ -1,12 +1,18 @@
-import type { Army, GameState, Player } from '@/lib/types';
-import { CardName, GameStatus, IslandType } from '@/lib/types';
+import type { Army, GameState, Player, ResourceType } from '@/lib/types';
+import { CardName, GameStatus } from '@/lib/types';
 import { pushLogEntry } from './log-entry';
+import { clearCollectedPositions } from './resource-collection';
+import { applyCollectorAbility, applyDeferredReclaim, applyExplorerAbility } from './turn-start-passives.reducer';
 
 const DEATH_ANIMATION_DURATION_MS = 2000;
 
-/** Collects resources from all of a player's positioned armies. Positions persist until the army moves, loses a fight, or dies. */
+/**
+ * Collects resources from all of a player's positioned armies, then clears each collected spot's
+ * position so the army must be re-positioned to collect again next turn (it does not auto-renew).
+ */
 function applyAutomaticCollection(state: GameState, player: Player): GameState {
-  const collectedResources: Record<string, number> = {};
+  const collectedResources: Partial<Record<ResourceType, number>> = {};
+  const collectedPositions: typeof player.positions = [];
 
   player.positions.forEach((pos) => {
     const tile = state.map[pos.y * state.settings.gridSize.cols + pos.x];
@@ -14,8 +20,11 @@ function applyAutomaticCollection(state: GameState, player: Player): GameState {
     if (resourceSpot) {
       player.resources[resourceSpot.type] += resourceSpot.amount;
       collectedResources[resourceSpot.type] = (collectedResources[resourceSpot.type] || 0) + resourceSpot.amount;
+      collectedPositions.push(pos);
     }
   });
+
+  clearCollectedPositions(state, player, collectedPositions);
 
   const collectedStrings = Object.entries(collectedResources).map(([type, amount]) => `${amount} ${type}`);
   if (collectedStrings.length > 0) {
@@ -24,29 +33,11 @@ function applyAutomaticCollection(state: GameState, player: Player): GameState {
       message: `${player.name} automatically collected ${collectedStrings.join(', ')}.`,
       playerId: player.playerId,
       isPassive: true,
+      resourcesCollected: collectedResources,
     });
   }
 
   return state;
-}
-
-/**
- * Applies a reclaim that was deferred because it arrived mid-turn: if the outgoing player's seat
- * is vacant and has a pending reclaim request, hands it back to the human now that their turn is over.
- */
-function applyDeferredReclaim(state: GameState): void {
-  const outgoing = state.players[state.currentPlayerIndex];
-  if (!outgoing.isVacant || !outgoing.reclaimRequested) return;
-
-  outgoing.isBot = false;
-  outgoing.isVacant = false;
-  outgoing.reclaimRequested = false;
-  pushLogEntry(state, {
-    category: 'system',
-    message: `${outgoing.name} has reclaimed their seat.`,
-    playerId: outgoing.playerId,
-    isPassive: true,
-  });
 }
 
 /** Rotates to the next non-sabotaged player, applies their passive abilities and auto-collection, checks for a win. */
@@ -92,53 +83,8 @@ export function handleEndTurn(state: GameState): GameState {
     state.turn += 1;
   }
 
-  if (nextPlayer.passiveAbilities.explorer) {
-    const occupiedIslands = new Set<string>();
-    nextPlayer.armies.forEach((army: Army) => {
-      const tile = state.map[army.position.y * state.settings.gridSize.cols + army.position.x];
-      if (tile && tile.type !== IslandType.Base) {
-        occupiedIslands.add(tile.id);
-      }
-    });
-    const vpGained = occupiedIslands.size;
-    if (vpGained > 0) {
-      nextPlayer.victoryPoints += vpGained;
-      pushLogEntry(state, {
-        category: 'economy',
-        message: `${nextPlayer.name}'s Explorer ability generated ${vpGained} VP.`,
-        playerId: nextPlayer.playerId,
-        isPassive: true,
-      });
-    }
-  }
-
-  if (nextPlayer.passiveAbilities.collector) {
-    const resourcesCollected: Partial<Record<string, number>> = {};
-    const occupiedIslands = new Set<string>();
-
-    nextPlayer.armies.forEach((army: Army) => {
-      const tile = state.map[army.position.y * state.settings.gridSize.cols + army.position.x];
-      if (!tile || occupiedIslands.has(tile.id)) return;
-
-      if (tile.type === IslandType.Resource && Array.isArray(tile.resources) && tile.resources.length > 0) {
-        occupiedIslands.add(tile.id);
-        tile.resources.forEach((resource) => {
-          nextPlayer.resources[resource.type] += 1;
-          resourcesCollected[resource.type] = (resourcesCollected[resource.type] || 0) + 1;
-        });
-      }
-    });
-
-    const collectedStrings = Object.entries(resourcesCollected).map(([type, amount]) => `${amount} ${type}`);
-    if (collectedStrings.length > 0) {
-      pushLogEntry(state, {
-        category: 'economy',
-        message: `${nextPlayer.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`,
-        playerId: nextPlayer.playerId,
-        isPassive: true,
-      });
-    }
-  }
+  applyExplorerAbility(state, nextPlayer);
+  applyCollectorAbility(state, nextPlayer);
 
   const positionedArmies = nextPlayer.positions;
 

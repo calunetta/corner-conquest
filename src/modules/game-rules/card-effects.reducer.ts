@@ -1,6 +1,7 @@
 import type { GameState, ResourceType } from '@/lib/types';
 import { CardName, GameAction } from '@/lib/types';
 import { pushLogEntry } from './log-entry';
+import { clearCollectedPositions } from './resource-collection';
 
 const IMMEDIATE_EFFECT_CARDS: CardName[] = [CardName.Reinforce, CardName.Efficient, CardName.MasterBuilder];
 
@@ -44,10 +45,15 @@ export function handleUseCard(state: GameState, payload: { cardName: CardName; i
   return state;
 }
 
-/** Resolves the Productive card's resource-doubling dialog, collecting from all of the player's positioned armies. */
+/**
+ * Resolves the Productive card's resource-doubling dialog, collecting from all of the player's
+ * positioned armies, then clears each collected spot's position (same clear-on-collect rule as
+ * automatic collection).
+ */
 export function handleUseProductiveCard(state: GameState, selectedResource: ResourceType | null): GameState {
   const player = state.players[state.currentPlayerIndex];
-  const collectedResources: Record<string, number> = {};
+  const collectedResources: Partial<Record<ResourceType, number>> = {};
+  const collectedPositions: typeof player.positions = [];
   let doubledResourceString = '';
 
   // Only allow doubling a resource type where the player is actually positioned
@@ -74,8 +80,11 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
       }
       player.resources[resourceSpot.type] += amount;
       collectedResources[resourceSpot.type] = (collectedResources[resourceSpot.type] || 0) + amount;
+      collectedPositions.push(pos);
     }
   });
+
+  clearCollectedPositions(state, player, collectedPositions);
 
   const collectedStrings = Object.entries(collectedResources).map(([type, amount]) => `${amount} ${type}`);
   if (collectedStrings.length > 0) {
@@ -83,10 +92,10 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
       category: 'cards',
       message: `${player.name} collected ${collectedStrings.join(', ')}${doubledResourceString}.`,
       playerId: player.playerId,
+      resourcesCollected: collectedResources,
     });
   }
 
-  // Positions persist until the army moves, loses a fight, or dies (same rule as automatic collection).
   state.productiveDialogState = null;
   return state;
 }

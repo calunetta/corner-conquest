@@ -157,8 +157,14 @@ describe('TileBoats Component', () => {
       occupants: [{ playerId: 0, armyId: 0 }],
       positionedBy: [{ playerId: 0, resource: ResourceType.Food }],
     };
+    // The boat keys off player.positions (armyId-matched), so the positioned army must be recorded there.
+    const positionedBlue: Player = {
+      ...mockPlayers[0],
+      positions: [{ x: 1, y: 1, resource: ResourceType.Food, armyId: 0 }],
+    };
+    const players = [positionedBlue, mockPlayers[1]];
 
-    const boats = toTileBoatsViewModel(positionedIsland, mockGameState.players, mockPlayers[0] as Player, false, false);
+    const boats = toTileBoatsViewModel(positionedIsland, players, positionedBlue, false, false);
     render(<TileBoatsView boats={boats} />);
     const boat = screen.getByTestId('docked-boat');
     expect(boat).toBeInTheDocument();
