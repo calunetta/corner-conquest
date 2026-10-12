@@ -16,7 +16,7 @@ Tier: M · Phases: 1
 - [x] UI verified (ui-verify)
 - [x] docs sync (docs-sync)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: a030e17
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
