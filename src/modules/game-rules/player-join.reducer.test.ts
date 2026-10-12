@@ -24,9 +24,9 @@ describe('player-join.reducer: addPlayerToGame', () => {
       const added = addPlayerToGame(game, { playerId: 'p2', name: 'Player 2' });
       const fullGame = added.newGameState!;
 
-      // Now game is full (2/2 players)
+      // Now game is full (2/2 players) but waiting for the host to start
       expect(fullGame.players.length).toBe(2);
-      expect(fullGame.status).toBe(GameStatus.Playing);
+      expect(fullGame.status).toBe(GameStatus.Waiting);
 
       // Try to add third player — should be rejected
       const result = addPlayerToGame(fullGame, { playerId: 'p3', name: 'Player 3' });
@@ -116,7 +116,7 @@ describe('player-join.reducer: addPlayerToGame', () => {
   });
 
   describe('successful join', () => {
-    it('accepts a valid join and transitions game status to Playing when last seat is filled', () => {
+it('accepts a valid join and stays in Waiting status when last seat is filled, awaiting host start', () => {
       let game = initializeGame(
         'game_test',
         'Last Seat Test',
@@ -138,11 +138,10 @@ describe('player-join.reducer: addPlayerToGame', () => {
 
       game = result.newGameState!;
 
-      // Game should now be full and playing
+      // Game should now be full but still waiting for the host to start it
       expect(game.players.length).toBe(2);
-      expect(game.status).toBe(GameStatus.Playing);
-      expect(game.turn).toBe(1);
-      expect(game.log.some((entry) => toLogMessage(entry) === 'The game is full. Starting now.')).toBe(true);
+      expect(game.status).toBe(GameStatus.Waiting);
+      expect(game.log.some((entry) => toLogMessage(entry).includes('the host can start the game'))).toBe(true);
     });
 
     it('accepts a valid join and keeps game in Waiting status when seats remain', () => {

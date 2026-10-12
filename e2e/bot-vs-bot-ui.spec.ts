@@ -272,9 +272,13 @@ test.describe('Bot-vs-bot self-play through the real UI', () => {
     await joinOpenMatchInLobby(guestPage, matchName);
     await expect(guestPage.getByRole('heading', { name: matchName })).toBeVisible({ timeout: SYNC_TIMEOUT_MS });
 
+    // A full room still waits for the host to start it (player-join.reducer.ts).
+    await expect(hostPage.getByRole('button', { name: 'Start Game' })).toBeVisible({ timeout: SYNC_TIMEOUT_MS });
+    await hostPage.getByRole('button', { name: 'Start Game' }).click();
+
     const gameId = await findGameIdByName(matchName);
-    let state = await readGameState(gameId);
-    expect(state.status).toBe(GameStatus.Playing);
+    let state = await waitForGameState(gameId, (s) => s.status === GameStatus.Playing, SYNC_TIMEOUT_MS);
+    if (!state) throw new Error('Game never transitioned to Playing after Start Game was clicked.');
 
     const flaggedTurns: FlaggedTurn[] = [];
     let turnNumber = 0;

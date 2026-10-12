@@ -23,7 +23,11 @@ export function useGameBoardState({
   }, [gameStateForDisplay, playerId, localPlayerFromServer]);
 
   useEffect(() => {
-    if (isMyTurn && serverGameState && !localGameState) {
+    // Gated on `status === 'playing'`, not just `isMyTurn`: the match creator is always seated at
+    // index 0, so `isMyTurn` is already true while solo and still `waiting` for other players. Without
+    // this gate, the buffer would seed then (a 1-player, waiting snapshot) and never re-seed once the
+    // match starts, since `isMyTurn` stays true across that transition - live joins would never appear.
+    if (isMyTurn && serverGameState?.status === 'playing' && !localGameState) {
       setLocalGameState(cloneDeep(serverGameState));
     } else if (!isMyTurn && localGameState) {
       setLocalGameState(null);

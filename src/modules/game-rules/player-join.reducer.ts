@@ -75,14 +75,10 @@ export function addPlayerToGame(
     newGameState.baseTiles.push(newBaseTile);
 
     if (newGameState.players.length === newGameState.maxPlayers) {
-        pushLogEntry(newGameState, { category: 'system', message: 'The game is full. Starting now.' });
-        newGameState.status = GameStatus.Playing;
-        newGameState.turn = 1;
         pushLogEntry(newGameState, {
-            category: 'turn',
-            message: `It's now ${newGameState.players[0].name}'s turn.`,
-            playerId: newGameState.players[0].playerId,
-            isPassive: true,
+            category: 'system',
+            message: `${playerInfo.name} has joined the game! The lobby is full — the host can start the game.`,
+            playerId: newPlayer.playerId,
         });
     } else {
         pushLogEntry(newGameState, {

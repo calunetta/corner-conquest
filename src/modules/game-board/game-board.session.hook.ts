@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { handlePlayerExit, startGame } from '@/modules/game-rules';
+import { saveGameState } from './services/game-board.engine.service';
 import type { SessionHandlers, SessionHandlersArgs } from './game-board.hook.types';
 
 export function useSessionHandlers({
@@ -9,7 +10,6 @@ export function useSessionHandlers({
   localPlayerName,
   isHost,
   dispatch,
-  setGameState,
   onExit,
   toast,
 }: SessionHandlersArgs): SessionHandlers {
@@ -17,8 +17,15 @@ export function useSessionHandlers({
     if (!serverGameState || !isHost) return;
     toast({ title: 'Game Started!', description: 'Let the conquest begin!' });
     const startedGame = startGame(serverGameState, localPlayerName || 'The host');
-    setGameState(startedGame, 'end-turn', {});
-  }, [serverGameState, isHost, localPlayerName, setGameState, toast]);
+    // Direct save, not setGameState/handleGameAction: startGame() already produced the final
+    // state (status, turn, host's turn). Routing it through the EndTurn action would advance
+    // currentPlayerIndex again, skipping straight past the host's first turn to the guest's.
+    try {
+      await saveGameState(gameId, startedGame);
+    } catch (error) {
+      console.error('Error starting game:', error);
+    }
+  }, [gameId, serverGameState, isHost, localPlayerName, toast]);
 
   const handleConfirmExit = useCallback(async () => {
     dispatch({ type: 'SET_CONFIRM_EXIT_DIALOG', open: false });

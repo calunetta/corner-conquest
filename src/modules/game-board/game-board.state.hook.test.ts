@@ -71,6 +71,27 @@ describe('useGameBoardState', () => {
     });
   });
 
+  describe('when the local player is seated at index 0 but the match has not started', () => {
+    it('does not buffer while solo and waiting, so a joining player becomes visible', () => {
+      // The match creator always owns seat 0, so isMyTurn is already true while solo and
+      // still 'waiting' for the room to fill - this must not trigger the turn buffer.
+      const soloWaitingState = createGameState([hostPlayer]);
+      const { result, rerender } = renderHook((args: GameBoardStateArgs) => useGameBoardState(args), {
+        initialProps: createArgs(soloWaitingState, true),
+      });
+
+      expect(result.current.localGameState).toBeNull();
+      expect(result.current.gameStateForDisplay).toBe(soloWaitingState);
+
+      const twoPlayerWaitingState = createGameState([hostPlayer, joinedPlayer]);
+      rerender(createArgs(twoPlayerWaitingState, true));
+
+      expect(result.current.localGameState).toBeNull();
+      expect(result.current.gameStateForDisplay).toBe(twoPlayerWaitingState);
+      expect(result.current.gameStateForDisplay.players).toHaveLength(2);
+    });
+  });
+
   describe('when it is the local player turn', () => {
     it('buffers a clone of serverGameState and displays that clone', () => {
       const serverState = createGameState([hostPlayer, joinedPlayer], { status: 'playing' });

@@ -48,9 +48,9 @@ test.describe('Reconnect takes over a departed seat with a bot', () => {
   });
 
   test('a departed player sees only the rejoin option, and reclaiming hands the seat back', async ({ browser }: { browser: Browser }) => {
-    // Two browser contexts, two full lobby flows, and a bot-turn wait add up to more
-    // than the suite's default 30s on a slower CI runner; 60s still wasn't enough headroom.
-    test.setTimeout(120000);
+    // Two browser contexts and two full lobby flows add up to more than the suite's
+    // default 30s on a slower CI runner.
+    test.setTimeout(60000);
     const stamp = Date.now();
     const hostName = `Host_${stamp}`;
     const guestName = `Guest_${stamp}`;
@@ -70,6 +70,7 @@ test.describe('Reconnect takes over a departed seat with a bot', () => {
     await joinOpenMatchInLobby(guestPage, matchName);
     await expect(guestPage.getByRole('heading', { name: matchName })).toBeVisible({ timeout: SYNC_TIMEOUT_MS });
 
+    await expect(hostPage.getByRole('button', { name: 'Start Game' })).toBeVisible({ timeout: SYNC_TIMEOUT_MS });
     await hostPage.getByRole('button', { name: 'Start Game' }).click();
     const hostEndTurn = hostPage.getByTestId('actions-panel-end-turn');
     await expect(hostPage.getByText('Your Turn')).toBeVisible({ timeout: SYNC_TIMEOUT_MS });
