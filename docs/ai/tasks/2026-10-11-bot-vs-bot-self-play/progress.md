@@ -20,7 +20,7 @@ Tier: L · Phases: 2
 - [x] tests (tester-a: `e2e/bot-ui-actions.test.ts`; tester-b: e2e run)
 - [x] checks: typecheck, lint, unit tests — not run: one real `test:e2e` run of the new spec, no Java runtime in this environment; run before deploy
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 0cc3f45
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
