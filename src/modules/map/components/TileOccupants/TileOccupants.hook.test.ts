@@ -528,7 +528,7 @@ describe('useTileOccupants', () => {
       positionedBy: [],
     };
 
-    it.each(armyIds)('rider and boat at index %i share a corner', (index) => {
+    it.each(armyIds)('occupant at index %i is on the same corner as its boat', (index) => {
       jest.mocked(useGameBoard).mockReturnValue({
         gameState: { ...mockGameState, players: [blueWithFourArmies] },
         localPlayer: blueWithFourArmies,
@@ -540,7 +540,6 @@ describe('useTileOccupants', () => {
       const slotStyle = result.current.occupants[index].slotStyle;
       const boatCornerStyle = boats![index].cornerStyle;
       expect(cornerOf(slotStyle)).toBe(cornerOf(boatCornerStyle));
-      expect(slotStyle.transform).toBe(boatCornerStyle.transform);
     });
   });
 
@@ -568,14 +567,14 @@ describe('useTileOccupants', () => {
       } as unknown as GameBoardContextType);
     });
 
-    // Literal expectations: a reorder of the corner table must fail this test on purpose.
+    // Literal expectations: a reorder of the offset table must fail this test on purpose.
     it.each([
-      [0, { bottom: '0', right: '0', transform: 'translate(50%, 50%)' }],
-      [1, { top: '0', right: '0', transform: 'translate(50%, -50%)' }],
-      [2, { top: '0', left: '0', transform: 'translate(-50%, -50%)' }],
-      [3, { bottom: '0', left: '0', transform: 'translate(-50%, 50%)' }],
-      [4, { bottom: '0', right: '0', transform: 'translate(50%, 50%)' }],
-    ])('occupant %i has the exact slotStyle', (index, expected) => {
+      [0, { bottom: '24%', right: '24%' }],
+      [1, { top: '24%', right: '24%' }],
+      [2, { top: '24%', left: '24%' }],
+      [3, { bottom: '24%', left: '24%' }],
+      [4, { bottom: '24%', right: '24%' }],
+    ])('occupant %i has the exact offset slotStyle with no transform', (index, expected) => {
       const { result } = renderHook(() => useTileOccupants({ island: fiveOccupantIsland }));
 
       expect(result.current.occupants[index].slotStyle).toEqual(expected);
@@ -619,10 +618,10 @@ describe('useTileOccupants', () => {
     });
 
     it.each([
-      [5, { top: '0', right: '0', transform: 'translate(50%, -50%)' }],
-      [6, { top: '0', left: '0', transform: 'translate(-50%, -50%)' }],
-      [7, { bottom: '0', left: '0', transform: 'translate(-50%, 50%)' }],
-    ])('occupant %i wraps to the matching corner with isOverflow true', (index, expected) => {
+      [5, { top: '24%', right: '24%' }],
+      [6, { top: '24%', left: '24%' }],
+      [7, { bottom: '24%', left: '24%' }],
+    ])('occupant %i wraps to the matching offset corner with isOverflow true', (index, expected) => {
       const { result } = renderHook(() => useTileOccupants({ island: eightOccupantIsland }));
 
       expect(result.current.occupants[index].slotStyle).toEqual(expected);

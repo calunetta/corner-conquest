@@ -5,6 +5,7 @@ import {
   CORNER_TRANSFORMS,
   DUAL_RESOURCE_SLOTS,
   EMPTY_GROVE_SLOTS,
+  OCCUPANT_CORNER_SLOTS,
   SINGLE_RESOURCE_SLOT,
   SPECIAL_FOREST_SLOT,
   TRIPLE_RESOURCE_SLOTS,
@@ -37,6 +38,28 @@ describe('CORNER_TRANSFORMS', () => {
     ['bl', 'translate(-50%, 50%)'],
   ])('pins the centering transform for corner %s', (id, expectedTransform) => {
     expect(CORNER_TRANSFORMS[id as keyof typeof CORNER_TRANSFORMS]).toBe(expectedTransform);
+  });
+});
+
+describe('OCCUPANT_CORNER_SLOTS', () => {
+  it('lists corners in the same load-bearing order as BOAT_CORNER_POSITIONS: br, tr, tl, bl', () => {
+    expect(OCCUPANT_CORNER_SLOTS.map((corner) => corner.id)).toEqual(['br', 'tr', 'tl', 'bl']);
+  });
+
+  it.each([
+    ['br', { bottom: '24%', right: '24%' }],
+    ['tr', { top: '24%', right: '24%' }],
+    ['tl', { top: '24%', left: '24%' }],
+    ['bl', { bottom: '24%', left: '24%' }],
+  ])('pins the offset knight anchor for corner %s', (id, expectedStyle) => {
+    const corner = OCCUPANT_CORNER_SLOTS.find((entry) => entry.id === id);
+    expect(corner?.style).toEqual(expectedStyle);
+  });
+
+  it('never carries a transform: each knight is flush-anchored by its own offset edges', () => {
+    OCCUPANT_CORNER_SLOTS.forEach((corner) => {
+      expect(corner.style).not.toHaveProperty('transform');
+    });
   });
 });
 

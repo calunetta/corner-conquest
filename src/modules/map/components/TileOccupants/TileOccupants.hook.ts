@@ -2,7 +2,7 @@ import { useGameBoard } from '@/modules/game-board';
 import { PLAYER_DATA } from '@/modules/game-rules';
 import { IslandType } from '@/lib/types';
 import { DEATH_ANIMATION_DURATION } from '../DeathEffect';
-import { BOAT_CORNER_POSITIONS, CORNER_TRANSFORMS } from '../../island-tile-slots.types';
+import { OCCUPANT_CORNER_SLOTS } from '../../island-tile-slots.types';
 import type { TileOccupantsProps, OccupantSpriteViewModel } from './TileOccupants.types';
 
 export function useTileOccupants(props: TileOccupantsProps): { occupants: OccupantSpriteViewModel[] } {
@@ -54,12 +54,9 @@ export function useTileOccupants(props: TileOccupantsProps): { occupants: Occupa
     })
     .map(({ player, army }, index): OccupantSpriteViewModel => {
       const sprite = PLAYER_DATA[player.color]?.sprite;
-      // Same lookup as TileBoats.map.ts, so occupant N and boat entry N share a corner.
-      const corner = BOAT_CORNER_POSITIONS[index % BOAT_CORNER_POSITIONS.length];
-      const slotStyle: Record<string, string> = {
-        ...(corner.style as Record<string, string>),
-        transform: CORNER_TRANSFORMS[corner.id],
-      };
+      // Same corner index as the boat entry at this index (TileBoats.map.ts), but offset onto land.
+      const slot = OCCUPANT_CORNER_SLOTS[index % OCCUPANT_CORNER_SLOTS.length];
+      const slotStyle: Record<string, string> = { ...(slot.style as Record<string, string>) };
 
       return {
         key: `army-sprite-${player.id}-${army.id}`,
@@ -67,7 +64,7 @@ export function useTileOccupants(props: TileOccupantsProps): { occupants: Occupa
         sprite: sprite?.idle || '',
         slotStyle,
         isFaded: army.hasActed,
-        isOverflow: index >= BOAT_CORNER_POSITIONS.length,
+        isOverflow: index >= OCCUPANT_CORNER_SLOTS.length,
       };
     });
 

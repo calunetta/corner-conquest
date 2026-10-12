@@ -217,30 +217,41 @@ describe('TileOccupants Component', () => {
       return { boatEntries, riderSlots };
     }
 
-    it('places a single rider on the same corner as its boat, both centered on it', () => {
+    // Literal rider anchors per corner, in boat order (br, tr, tl, bl). Each rider is inset 24%
+    // from the two tile edges of its corner and has no transform, unlike its boat (centered on the corner).
+    const RIDER_ANCHOR_BR = { top: '', bottom: '24%', left: '', right: '24%', transform: '' };
+    const RIDER_ANCHOR_TR = { top: '24%', bottom: '', left: '', right: '24%', transform: '' };
+    const RIDER_ANCHOR_TL = { top: '24%', bottom: '', left: '24%', right: '', transform: '' };
+    const RIDER_ANCHOR_BL = { top: '', bottom: '24%', left: '24%', right: '', transform: '' };
+
+    it('places a single rider beside its boat on land, not centered on the boat', () => {
       const { boatEntries, riderSlots } = renderBoatsAndRiders(1);
 
       expect(boatEntries[0]).toHaveStyle({ bottom: '0', right: '0', transform: 'translate(50%, 50%)' });
-      expect(anchorOf(riderSlots[0])).toEqual(anchorOf(boatEntries[0]));
+      expect(anchorOf(riderSlots[0])).toEqual(RIDER_ANCHOR_BR);
+      expect(anchorOf(riderSlots[0])).not.toEqual(anchorOf(boatEntries[0]));
     });
 
-    it('gives each of four riders the corner of its own boat, with four distinct corners', () => {
+    it('places each of four riders at its own corner offset, never sharing its boat anchor', () => {
       const { boatEntries, riderSlots } = renderBoatsAndRiders(4);
 
       expect(riderSlots).toHaveLength(4);
+      expect(anchorOf(riderSlots[0])).toEqual(RIDER_ANCHOR_BR);
+      expect(anchorOf(riderSlots[1])).toEqual(RIDER_ANCHOR_TR);
+      expect(anchorOf(riderSlots[2])).toEqual(RIDER_ANCHOR_TL);
+      expect(anchorOf(riderSlots[3])).toEqual(RIDER_ANCHOR_BL);
       riderSlots.forEach((slot, index) => {
-        expect(anchorOf(slot)).toEqual(anchorOf(boatEntries[index]));
+        expect(anchorOf(slot)).not.toEqual(anchorOf(boatEntries[index]));
       });
-      const corners = new Set(riderSlots.map((slot) => JSON.stringify(anchorOf(slot))));
-      expect(corners.size).toBe(4);
     });
 
-    it('wraps a fifth rider onto the first corner, together with its boat', () => {
+    it('wraps a fifth rider onto the first corner offset, not onto its boat anchor', () => {
       const { boatEntries, riderSlots } = renderBoatsAndRiders(5);
 
       expect(riderSlots).toHaveLength(5);
-      expect(anchorOf(riderSlots[4])).toEqual(anchorOf(boatEntries[4]));
+      expect(anchorOf(riderSlots[4])).toEqual(RIDER_ANCHOR_BR);
       expect(anchorOf(riderSlots[4])).toEqual(anchorOf(riderSlots[0]));
+      expect(anchorOf(riderSlots[4])).not.toEqual(anchorOf(boatEntries[4]));
     });
   });
 });

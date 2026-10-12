@@ -2,10 +2,10 @@ import { cva } from 'class-variance-authority';
 
 export const styles = {
   container: 'absolute inset-0 z-30 pointer-events-none',
-  // 29% of T (about 70% of the boat's 42%). Centered on the same corner as the boat via
-  // slotStyle, so the rider's box always sits inside the boat's box.
+  // 27% of T. Flush-anchored by slotStyle's two 24% offset edges (OCCUPANT_CORNER_SLOTS), so the
+  // knight stands beside its boat's corner on land and never shares the boat's center point.
   // Transform stays off the slot: slotStyle sets an inline transform that would override scale-90.
-  slot: cva('absolute w-[29%] h-[29%]', {
+  slot: cva('absolute w-[27%] h-[27%]', {
     variants: {
       isOverflow: {
         true: 'opacity-90',

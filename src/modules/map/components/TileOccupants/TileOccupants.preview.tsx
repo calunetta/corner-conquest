@@ -5,7 +5,6 @@ import { TileOccupantsView } from './TileOccupants';
 import { occupantSpriteFixture, fadedOccupantFixture } from './TileOccupants.fixtures';
 import { TileBoatsView } from '../TileBoats/TileBoats';
 import { boatEntryFixture } from '../TileBoats/TileBoats.fixtures';
-import { CORNER_TRANSFORMS } from '../../island-tile-slots.types';
 import type { ComponentPreview } from '@/testbed/testbed.types';
 import type { OccupantSpriteViewModel } from './TileOccupants.types';
 import { PlayerColor } from '@/lib/types';
@@ -31,7 +30,7 @@ const threeOccupantsFixture: OccupantSpriteViewModel[] = [
     key: 'army-sprite-2-15',
     color: PlayerColor.Purple,
     sprite: '/sprites/purple.gif',
-    slotStyle: { top: '0', left: '0', transform: CORNER_TRANSFORMS.tl },
+    slotStyle: { top: '24%', left: '24%' },
     isFaded: false,
     isOverflow: false,
   },
@@ -42,7 +41,7 @@ const allFadedFixture: OccupantSpriteViewModel[] = [
     key: 'army-sprite-0-1',
     color: PlayerColor.Blue,
     sprite: '/sprites/blue.gif',
-    slotStyle: { bottom: '0', left: '0', transform: CORNER_TRANSFORMS.bl },
+    slotStyle: { bottom: '24%', left: '24%' },
     isFaded: true,
     isOverflow: false,
   },
@@ -50,13 +49,13 @@ const allFadedFixture: OccupantSpriteViewModel[] = [
     key: 'army-sprite-1-2',
     color: PlayerColor.Red,
     sprite: '/sprites/red.gif',
-    slotStyle: { bottom: '0', right: '0', transform: CORNER_TRANSFORMS.br },
+    slotStyle: { bottom: '24%', right: '24%' },
     isFaded: true,
     isOverflow: false,
   },
 ];
 
-/** Boat and rider on one corner. Idle collectors follow the real viewport via useIsMobile(),
+/** Boat and knight on one corner: the knight sits on land beside the hull, not on it. Idle collectors follow the real viewport via useIsMobile(),
  *  the same gating as the connected TileBoats container, not a per-state flag. */
 function ViewportBoatAndRider({ px }: { px: number }) {
   const isMobile = useIsMobile();
@@ -115,13 +114,13 @@ export const tileOccupantsPreview: ComponentPreview = {
       render: () => desktopOccupants([occupantSpriteFixture]),
     },
     {
-      // Same corner index as boatEntryFixture: the rider's slotStyle and the boat's cornerStyle
-      // come from the same BOAT_CORNER_POSITIONS entry, so the rider must sit on the hull.
-      name: 'Boat + rider, same corner (136px tile)',
+      // Same corner index as boatEntryFixture, but the knight is offset onto land (OCCUPANT_CORNER_SLOTS),
+      // so it must not overlap the hull or share the boat's centre point.
+      name: 'Boat + knight beside it (136px tile)',
       render: () => <ViewportBoatAndRider px={DESKTOP_TILE_PX} />,
     },
     {
-      name: 'Boat + rider, same corner (46px tile)',
+      name: 'Boat + knight beside it (46px tile)',
       render: () => <ViewportBoatAndRider px={MOBILE_TILE_PX} />,
     },
   ],

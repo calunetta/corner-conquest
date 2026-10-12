@@ -7,12 +7,12 @@ export type CornerId = 'br' | 'tr' | 'tl' | 'bl';
 
 export interface CornerPosition {
   id: CornerId;
-  /** Always exactly two of these four keys, each '0'. */
+  /** Always exactly two of these four keys set. */
   style: Partial<Record<'top' | 'bottom' | 'left' | 'right', string>>;
 }
 
-/** Order is load-bearing: TileOccupants.hook.ts reads this directly so occupant index N
- *  always lands on the same corner as boat entry index N. Do not reorder. */
+/** Order is load-bearing: OCCUPANT_CORNER_SLOTS must keep the same order, so occupant index N
+ *  lands on the same corner as boat entry index N. Do not reorder. */
 export const BOAT_CORNER_POSITIONS: CornerPosition[] = [
   { id: 'br', style: { bottom: '0', right: '0' } },
   { id: 'tr', style: { top: '0', right: '0' } },
@@ -20,8 +20,18 @@ export const BOAT_CORNER_POSITIONS: CornerPosition[] = [
   { id: 'bl', style: { bottom: '0', left: '0' } },
 ];
 
+/** Knight (occupant) anchors, same order as BOAT_CORNER_POSITIONS. Each knight is offset 24%
+ *  in from its boat's corner and flush-anchored by its two edges, so it sits beside its boat
+ *  without overlapping the boat's hull box. No transform: nothing is centered on the corner. */
+export const OCCUPANT_CORNER_SLOTS: CornerPosition[] = [
+  { id: 'br', style: { bottom: '24%', right: '24%' } },
+  { id: 'tr', style: { top: '24%', right: '24%' } },
+  { id: 'tl', style: { top: '24%', left: '24%' } },
+  { id: 'bl', style: { bottom: '24%', left: '24%' } },
+];
+
 /** Centers an element on its tile corner point: half of its own box overhangs past the
- *  tile edge regardless of the element's size (boat 42% of T, rider 29% of T). */
+ *  tile edge regardless of the element's size (boat 42% of T). */
 export const CORNER_TRANSFORMS: Record<CornerId, string> = {
   br: 'translate(50%, 50%)',
   tr: 'translate(50%, -50%)',
