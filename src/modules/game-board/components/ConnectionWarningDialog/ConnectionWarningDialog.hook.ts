@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useToast } from '@/modules/shared';
 import { useGameBoard } from '../../game-board.provider';
 import { STALE_THRESHOLD_MS } from '../../game-board.staleness.hook';
+import { writeHeartbeat } from '../../services/game-board.engine.service';
 import { toConnectionWarningViewModel } from './ConnectionWarningDialog.map';
 import type { ConnectionWarningViewModel } from './ConnectionWarningDialog.types';
 
@@ -51,5 +53,29 @@ export function useConnectionWarning(): ConnectionWarningViewModel {
     if (viewModel.isOpen) playConnectionWarningTone();
   }, [viewModel.isOpen]);
 
-  return viewModel;
+  const { toast } = useToast();
+  const [isDismissing, setIsDismissing] = useState(false);
+
+  // Updated every render (not in an effect) so the ref is current by the time the async write's
+  // .catch reads it — this is the race guard for the stale-toast gap: a forced write can fail
+  // after the dialog already closed via the normal recovery/takeover path.
+  const isOpenRef = useRef(viewModel.isOpen);
+  isOpenRef.current = viewModel.isOpen;
+
+  const onDismiss = useCallback(() => {
+    setIsDismissing(true);
+    writeHeartbeat(gameState.id, localPlayer.id)
+      .catch((error) => {
+        console.error('Error forcing heartbeat:', error);
+        if (!isOpenRef.current) return; // dialog already closed via another path — no stale toast
+        toast({
+          title: "Still can't reach you",
+          description: 'Check your connection and try again.',
+          variant: 'destructive',
+        });
+      })
+      .finally(() => setIsDismissing(false));
+  }, [gameState.id, localPlayer.id, toast]);
+
+  return { ...viewModel, isDismissing, onDismiss };
 }

@@ -1,13 +1,15 @@
 'use client';
 
-import { WifiOff } from 'lucide-react';
+import { Loader2, RefreshCw, WifiOff } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { useConnectionWarning } from './ConnectionWarningDialog.hook';
 import { styles } from './ConnectionWarningDialog.styles';
 import type { ConnectionWarningViewModel } from './ConnectionWarningDialog.types';
@@ -26,6 +28,8 @@ export function ConnectionWarningDialogView({
   isOpen,
   isExpiring,
   countdownLabel,
+  isDismissing,
+  onDismiss,
 }: ConnectionWarningViewModel): JSX.Element {
   return (
     <AlertDialog open={isOpen}>
@@ -40,6 +44,16 @@ export function ConnectionWarningDialogView({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <p className={styles.countdown({ isExpiring })}>{countdownLabel}</p>
+        <AlertDialogFooter>
+          <Button onClick={onDismiss} disabled={isDismissing} className={styles.dismissButton}>
+            {isDismissing ? (
+              <Loader2 className={styles.dismissIcon({ isPending: true })} aria-hidden="true" />
+            ) : (
+              <RefreshCw className={styles.dismissIcon({ isPending: false })} aria-hidden="true" />
+            )}
+            {isDismissing ? 'Checking…' : "I'm back"}
+          </Button>
+        </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );

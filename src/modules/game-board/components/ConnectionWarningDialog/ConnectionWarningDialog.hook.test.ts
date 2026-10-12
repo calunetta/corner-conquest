@@ -1,5 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useGameBoard } from '../../game-board.provider';
+import { useToast } from '@/modules/shared';
+import { writeHeartbeat } from '../../services/game-board.engine.service';
 import { GameStatus } from '@/lib/types';
 import type { GameState, Player } from '@/lib/types';
 import {
@@ -9,6 +11,8 @@ import {
 } from './ConnectionWarningDialog.hook';
 
 jest.mock('../../game-board.provider', () => ({ useGameBoard: jest.fn() }));
+jest.mock('../../services/game-board.engine.service', () => ({ writeHeartbeat: jest.fn() }));
+jest.mock('@/modules/shared', () => ({ useToast: jest.fn() }));
 
 const START_TIME = new Date('2026-10-12T12:00:00Z').getTime();
 
@@ -36,6 +40,12 @@ const mockUseGameBoard = (localPlayer: Player, status: GameStatus = GameStatus.P
 };
 
 describe('useConnectionWarning', () => {
+  const mockToast = jest.fn();
+
+  beforeEach(() => {
+    jest.mocked(useToast).mockReturnValue({ toast: mockToast } as unknown as ReturnType<typeof useToast>);
+  });
+
   let mockOscillator: {
     frequency: { value: number };
     connect: jest.Mock;
@@ -237,6 +247,121 @@ describe('useConnectionWarning', () => {
     mockOscillator.onended?.();
 
     expect(mockAudioContext.close).toHaveBeenCalledTimes(1);
+  });
+
+  describe('onDismiss', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('sets isDismissing to true synchronously and calls writeHeartbeat with gameState.id and localPlayer.id', () => {
+      jest.mocked(writeHeartbeat).mockReturnValue(new Promise(() => {}));
+      mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME }));
+
+      const { result } = renderHook(() => useConnectionWarning());
+
+      act(() => {
+        result.current.onDismiss();
+      });
+
+      expect(result.current.isDismissing).toBe(true);
+      expect(writeHeartbeat).toHaveBeenCalledWith('game_1', 0);
+    });
+
+    it('resolving writeHeartbeat resets isDismissing to false and does not call toast', async () => {
+      jest.mocked(writeHeartbeat).mockResolvedValue(undefined);
+      mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME }));
+
+      const { result } = renderHook(() => useConnectionWarning());
+
+      await act(async () => {
+        result.current.onDismiss();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(result.current.isDismissing).toBe(false);
+      expect(mockToast).not.toHaveBeenCalled();
+    });
+
+    it('rejecting writeHeartbeat resets isDismissing to false and shows the destructive toast', async () => {
+      jest.mocked(writeHeartbeat).mockRejectedValue(new Error('offline'));
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS - 1 }));
+
+      const { result } = renderHook(() => useConnectionWarning());
+      expect(result.current.isOpen).toBe(true);
+
+      await act(async () => {
+        result.current.onDismiss();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(result.current.isDismissing).toBe(false);
+      expect(mockToast).toHaveBeenCalledWith({
+        title: "Still can't reach you",
+        description: 'Check your connection and try again.',
+        variant: 'destructive',
+      });
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error forcing heartbeat:', expect.any(Error));
+    });
+
+    it('does not show the toast when the dialog already closed via another path before the write rejects', async () => {
+      let rejectWrite: (error: Error) => void = () => {};
+      jest.mocked(writeHeartbeat).mockReturnValue(
+        new Promise((_resolve, reject) => {
+          rejectWrite = reject;
+        }),
+      );
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+      mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS }));
+
+      const { result, rerender } = renderHook(() => useConnectionWarning());
+
+      act(() => {
+        jest.advanceTimersByTime(1_000);
+      });
+      expect(result.current.isOpen).toBe(true);
+
+      act(() => {
+        result.current.onDismiss();
+      });
+      expect(result.current.isDismissing).toBe(true);
+
+      // Dialog closes through the normal recovery path (a fresh heartbeat lands through the
+      // Firestore subscription) while the forced write from onDismiss is still in flight.
+      mockUseGameBoard(createPlayer({ lastSeenAt: Date.now() }));
+      rerender();
+      expect(result.current.isOpen).toBe(false);
+
+      await act(async () => {
+        rejectWrite(new Error('offline'));
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(mockToast).not.toHaveBeenCalled();
+    });
+
+    it('keeps the countdown ticking while isDismissing is true', () => {
+      jest.mocked(writeHeartbeat).mockReturnValue(new Promise(() => {}));
+      mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - 24_000 }));
+
+      const { result } = renderHook(() => useConnectionWarning());
+
+      act(() => {
+        result.current.onDismiss();
+      });
+      expect(result.current.isDismissing).toBe(true);
+
+      act(() => {
+        jest.advanceTimersByTime(1_000);
+      });
+
+      expect(result.current.countdownLabel).toBe('Taking over in 0:20');
+      expect(result.current.isDismissing).toBe(true);
+    });
   });
 });
 

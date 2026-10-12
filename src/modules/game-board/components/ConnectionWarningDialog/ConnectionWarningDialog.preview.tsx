@@ -5,12 +5,16 @@ import type { ComponentPreview } from '@/testbed';
 import { Button } from '@/components/ui/button';
 import { ConnectionWarningDialogView } from './ConnectionWarningDialog';
 import type { ConnectionWarningViewModel } from './ConnectionWarningDialog.types';
-import { openWarningViewModel, openExpiringViewModel } from './ConnectionWarningDialog.fixtures';
+import {
+  openWarningViewModel,
+  openExpiringViewModel,
+  dismissingViewModel,
+} from './ConnectionWarningDialog.fixtures';
 
 /**
- * The warning has no close control by design (non-interactive, Escape suppressed), so the
- * preview wrapper supplies the only exit: a "Close preview" button outside the dialog,
- * and a "Reopen dialog" button once closed.
+ * The dialog's only in-app close is the "I'm back" button, which needs a live write, so the
+ * preview cannot exercise it. Escape is suppressed by design, so the preview wrapper supplies
+ * the exit: a "Close preview" button outside the dialog, and a "Reopen dialog" button once closed.
  */
 function InteractiveConnectionWarningDialog(viewModel: ConnectionWarningViewModel) {
   const [isOpen, setIsOpen] = useState(true);
@@ -43,5 +47,6 @@ export const connectionWarningDialogPreview: ComponentPreview = {
   states: [
     { name: 'Warning', render: () => <InteractiveConnectionWarningDialog {...openWarningViewModel} /> },
     { name: 'Expiring', render: () => <InteractiveConnectionWarningDialog {...openExpiringViewModel} /> },
+    { name: 'Dismissing', render: () => <InteractiveConnectionWarningDialog {...dismissingViewModel} /> },
   ],
 };

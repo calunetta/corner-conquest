@@ -22,7 +22,7 @@ export function toConnectionWarningViewModel(
   isBot: boolean,
   warningThresholdMs: number,
   staleThresholdMs: number,
-): ConnectionWarningViewModel {
+): Omit<ConnectionWarningViewModel, 'isDismissing' | 'onDismiss'> {
   const elapsedMs = lastSeenAt === null ? 0 : now - lastSeenAt;
   const isOpen =
     status === GameStatus.Playing && !isBot && lastSeenAt !== null && elapsedMs > warningThresholdMs;
