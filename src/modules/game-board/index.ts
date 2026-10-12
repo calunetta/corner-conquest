@@ -8,3 +8,4 @@ export type {
 } from './game-board.types';
 export { GameBoardProvider, useGameBoard } from './game-board.provider';
 export { useGameEngine } from './game-board.engine.hook';
+export { ConnectionWarningDialog } from './components/ConnectionWarningDialog';

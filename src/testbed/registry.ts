@@ -16,6 +16,7 @@ import { monsterSelectionDialogPreview } from '@/modules/combat/components/Monst
 import { positionDialogPreview } from '@/modules/combat/components/PositionDialog/PositionDialog.preview';
 import { gameBoardHeaderPreview } from '@/modules/hud/components/GameBoardHeader/GameBoardHeader.preview';
 import { gameStatusBadgePreview } from '@/modules/hud/components/GameStatusBadge/GameStatusBadge.preview';
+import { connectionWarningDialogPreview } from '@/modules/game-board/components/ConnectionWarningDialog/ConnectionWarningDialog.preview';
 import { gameLogPreview } from '@/modules/hud/components/GameLog/GameLog.preview';
 import { playerInfoPreview } from '@/modules/hud/components/PlayerInfo/PlayerInfo.preview';
 import { actionsPanelPreview } from '@/modules/hud/components/ActionsPanel/ActionsPanel.preview';
@@ -60,6 +61,7 @@ export const previews: ComponentPreview[] = [
   positionDialogPreview,
   gameBoardHeaderPreview,
   gameStatusBadgePreview,
+  connectionWarningDialogPreview,
   gameLogPreview,
   playerInfoPreview,
   actionsPanelPreview,

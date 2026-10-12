@@ -23,6 +23,7 @@ import {
   WealthyDialog,
 } from '@/modules/cards';
 import { ConfirmExitDialog, HostLeaveDialog } from '@/modules/session';
+import { ConnectionWarningDialog } from '@/modules/game-board';
 
 export function GameDialogManager() {
   const {
@@ -69,6 +70,8 @@ export function GameDialogManager() {
           onClose={() => dispatch({ type: 'SET_CONFIRM_EXIT_DIALOG', open: false })}
         />
       )}
+
+      <ConnectionWarningDialog />
 
       <HostLeaveDialog
         open={dialogs.hostLeave}
