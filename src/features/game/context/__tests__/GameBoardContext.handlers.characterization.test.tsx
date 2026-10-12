@@ -22,8 +22,14 @@ jest.mock('@/modules/game-rules', () => ({
   handlePlayerExit: jest.fn().mockResolvedValue(undefined),
   hasPlayerRemainingActions: jest.fn(() => true),
 }));
+// handleStartGame saves directly through this service now, bypassing the setGameState prop
+// (game-board.session.hook.ts) - mocked so it never reaches the real Firestore SDK under jsdom.
+jest.mock('@/modules/game-board/services/game-board.engine.service', () => ({
+  saveGameState: jest.fn().mockResolvedValue(undefined),
+}));
 
 const { handleGameAction, handlePlayerExit, startGame, hasPlayerRemainingActions } = require('@/modules/game-rules');
+const { saveGameState } = require('@/modules/game-board/services/game-board.engine.service');
 
 describe('GameBoardContext: Handler Characterization Tests', () => {
   beforeEach(() => {
@@ -31,6 +37,7 @@ describe('GameBoardContext: Handler Characterization Tests', () => {
     handleGameAction.mockClear();
     handlePlayerExit.mockClear();
     startGame.mockClear();
+    saveGameState.mockClear();
     hasPlayerRemainingActions.mockReturnValue(true);
   });
 
@@ -668,7 +675,7 @@ describe('GameBoardContext: Handler Characterization Tests', () => {
 
   // --- handleStartGame ---
   describe('handleStartGame', () => {
-    it('host: calls startGame and setGameState', async () => {
+    it('host: calls startGame and saves the result directly (not through setGameState/EndTurn)', async () => {
       const player = buildPlayer({ id: 0, playerId: 'p0', name: 'TestPlayer' });
       const gameState = buildGameState({ players: [player], status: 'waiting' });
 
@@ -683,7 +690,10 @@ describe('GameBoardContext: Handler Characterization Tests', () => {
       });
 
       expect(startGame).toHaveBeenCalledWith(gameState, 'TestPlayer');
-      expect(setGameStateMock).toHaveBeenCalled();
+      // Direct save: routing through setGameState/EndTurn would advance past the host's own
+      // first turn (see game-board.state.hook.ts fix and its lessons-learned entry).
+      expect(saveGameState).toHaveBeenCalledWith('game_test', gameState);
+      expect(setGameStateMock).not.toHaveBeenCalled();
       expect(mockToast).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Game Started!' })
       );
@@ -703,6 +713,7 @@ describe('GameBoardContext: Handler Characterization Tests', () => {
       });
 
       expect(startGame).not.toHaveBeenCalled();
+      expect(saveGameState).not.toHaveBeenCalled();
       expect(setGameStateMock).not.toHaveBeenCalled();
     });
   });
