@@ -24,10 +24,8 @@ export interface ResourceNodeViewModel {
 export interface FarmingCollectorViewModel {
   color: PlayerColor;
   sprite: string;
-  /** CSS percent of the node's own rendered box; the badge is square. '55%' for Wood/Gold,
-   *  '37.9%' for Food (55% divided by the Food sprite scale, rounded to one decimal). */
+  /** CSS percent of the node's own rendered box; the badge is square. '65%' for Wood/Gold,
+   *  '44.8%' for Food (65% divided by the Food sprite scale, rounded to one decimal).
+   *  The badge always sits on the node's left edge, so there is no side field. */
   size: string;
-  /** Which side of the resource sprite the badge sits on: 'left' when the node's own slot
-   *  is right-anchored (avoids pushing the badge off-tile), 'right' otherwise. */
-  side: 'left' | 'right';
 }

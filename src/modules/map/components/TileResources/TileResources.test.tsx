@@ -211,7 +211,7 @@ describe('TileResourcesView placement and sizing', () => {
     expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ bottom: '4%', left: '35%' });
   });
 
-  it('gives a farmed Gold node a 55% collector badge on the right edge, centered on that edge', () => {
+  it('gives a farmed Gold node a 65% collector badge centered on the node\'s left edge', () => {
     const island = {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Gold }],
@@ -219,37 +219,44 @@ describe('TileResourcesView placement and sizing', () => {
     const nodes = toTileResourcesViewModel(island, false, players);
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({
-      width: '55%',
-      height: '55%',
+      width: '65%',
+      height: '65%',
       top: '50%',
-      left: '100%',
-      transform: 'translate(-50%, -50%)',
+      right: '100%',
+      transform: 'translate(50%, -50%)',
     });
   });
 
-  it('gives a farmed Food node a 37.9% collector badge, so it matches the 55% badge on other resources', () => {
+  it('gives a farmed Food node a 44.8% collector badge, so it matches the 65% badge on other resources', () => {
     const island = {
       ...resourceIslandWithFood,
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Food }],
     };
     const nodes = toTileResourcesViewModel(island, false, players);
     render(<TileResourcesView nodes={nodes} />);
-    expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({ width: '37.9%', height: '37.9%' });
+    expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({ width: '44.8%', height: '44.8%' });
   });
 
-  it('puts the collector badge on the left edge of a right-anchored node, centered on that edge', () => {
+  it('keeps every farmed badge on its node\'s left edge, whichever slot the node occupies', () => {
     const island = {
-      ...resourceIslandWithTwoDistinctResources,
-      positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Wood }],
+      ...resourceIslandWithDualResources,
+      positionedBy: [
+        { playerId: 0, resource: ResourceTypeEnum.Gold },
+        { playerId: 0, resource: ResourceTypeEnum.Wood },
+      ],
     };
     const nodes = toTileResourcesViewModel(island, false, players);
     render(<TileResourcesView nodes={nodes} />);
-    expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({
-      width: '55%',
-      height: '55%',
-      top: '50%',
-      right: '100%',
-      transform: 'translate(50%, -50%)',
+    const badges = screen.getAllByTestId('collector-farm-blue');
+    expect(badges).toHaveLength(3);
+    badges.forEach((badge) => {
+      expect(badge).toHaveStyle({
+        width: '65%',
+        height: '65%',
+        top: '50%',
+        right: '100%',
+        transform: 'translate(50%, -50%)',
+      });
     });
   });
 

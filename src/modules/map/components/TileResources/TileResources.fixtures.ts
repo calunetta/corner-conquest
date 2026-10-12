@@ -49,7 +49,7 @@ export const baseIslandWithResources: Island = {
     { type: ResourceTypeEnum.Gold, amount: 1 },
   ],
   occupants: [],
-  positionedBy: [],
+  positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Food }],
 };
 
 export const monsterIslandWithLivingMonsters: Island = {

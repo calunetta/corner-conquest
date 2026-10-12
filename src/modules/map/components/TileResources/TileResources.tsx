@@ -18,13 +18,10 @@ interface TileResourcesViewProps {
 }
 
 /**
- * Anchors the badge on the node's edge midpoint. The transform's percentages resolve against the
- * badge's own box, so the badge centers on that edge whatever its size.
+ * Anchors the badge on the node's left-edge midpoint, always. The transform's percentages resolve
+ * against the badge's own box, so the badge centers on that edge whatever its size.
  */
-function toCollectorBadgeStyle({ side, size }: FarmingCollectorViewModel): CSSProperties {
-  if (side === 'right') {
-    return { width: size, height: size, top: '50%', left: '100%', transform: 'translate(-50%, -50%)' };
-  }
+function toCollectorBadgeStyle({ size }: Pick<FarmingCollectorViewModel, 'size'>): CSSProperties {
   return { width: size, height: size, top: '50%', right: '100%', transform: 'translate(50%, -50%)' };
 }
 

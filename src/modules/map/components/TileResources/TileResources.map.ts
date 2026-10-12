@@ -34,12 +34,12 @@ export const RESOURCE_SPRITES = {
 // sheep.gif has large transparent canvas padding, so its node box is scaled up to keep the
 // visible sprite the same size as the other resources.
 const FOOD_SCALE = 1.45;
-// The farming badge is ~55% of the node's own (uninflated) box. No px floor: a floor makes
+// The farming badge is ~65% of the node's own (uninflated) box. No px floor: a floor makes
 // the badge bigger than its node at small tile sizes, so mobile hides the badge instead.
-const BADGE_SIZE_RATIO = 0.55;
+const BADGE_SIZE_RATIO = 0.65;
 
-// Float math leaks into the CSS percent strings unless rounded: 0.55 * 100 = 55.00000000000001,
-// and (39 * 1.45).toFixed(1) gives '56.5' where the spec needs 56.6, so Math.round is used instead.
+// Float math leaks into the CSS percent strings unless rounded: 65 / 1.45 = 44.827586206896555
+// (Food badge), and (39 * 1.45).toFixed(1) gives '56.5' where the spec needs 56.6, so Math.round is used instead.
 function roundToOneDecimal(value: number): number {
   return Math.round(value * 10) / 10;
 }
@@ -123,9 +123,6 @@ export function toTileResourcesViewModel(
     if (slot.transform) slotStyleEntries.push(['transform', slot.transform]);
     const slotStyle = Object.fromEntries(slotStyleEntries);
 
-    const badgeSide: 'left' | 'right' =
-      slot.right !== undefined && slot.left === undefined ? 'left' : 'right';
-
     return {
       type: node.type,
       key: `resource-node-${node.type}-${idx}`,
@@ -137,7 +134,6 @@ export function toTileResourcesViewModel(
             color: positionedPlayer.color,
             sprite: FARM_SPRITES[positionedPlayer.color],
             size: toBadgeSize(node.type),
-            side: badgeSide,
           }
         : null,
     };

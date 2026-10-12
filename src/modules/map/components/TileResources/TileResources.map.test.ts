@@ -478,18 +478,18 @@ describe('toTileResourcesViewModel percent sizing by slot tier', () => {
   });
 
   it.each([
-    [ResourceType.Food, 1, false, '37.9%'],
-    [ResourceType.Food, 2, false, '37.9%'],
-    [ResourceType.Food, 3, false, '37.9%'],
-    [ResourceType.Food, 1, true, '37.9%'],
-    [ResourceType.Wood, 1, false, '55%'],
-    [ResourceType.Wood, 2, false, '55%'],
-    [ResourceType.Wood, 3, false, '55%'],
-    [ResourceType.Wood, 1, true, '55%'],
-    [ResourceType.Gold, 1, false, '55%'],
-    [ResourceType.Gold, 2, false, '55%'],
-    [ResourceType.Gold, 3, false, '55%'],
-    [ResourceType.Gold, 1, true, '55%'],
+    [ResourceType.Food, 1, false, '44.8%'],
+    [ResourceType.Food, 2, false, '44.8%'],
+    [ResourceType.Food, 3, false, '44.8%'],
+    [ResourceType.Food, 1, true, '44.8%'],
+    [ResourceType.Wood, 1, false, '65%'],
+    [ResourceType.Wood, 2, false, '65%'],
+    [ResourceType.Wood, 3, false, '65%'],
+    [ResourceType.Wood, 1, true, '65%'],
+    [ResourceType.Gold, 1, false, '65%'],
+    [ResourceType.Gold, 2, false, '65%'],
+    [ResourceType.Gold, 3, false, '65%'],
+    [ResourceType.Gold, 1, true, '65%'],
   ])('sizes a farmed %s badge in the tier of amount %i (base: %s) as %s', (type, amount, isBase, expected) => {
     const island: Island = { ...islandWith(type, amount, isBase), positionedBy: [{ playerId: 0, resource: type }] };
     const result = toTileResourcesViewModel(island, isBase, mockPlayers);
@@ -505,7 +505,7 @@ describe('toTileResourcesViewModel percent sizing by slot tier', () => {
 });
 
 describe('toTileResourcesViewModel farming collector badge', () => {
-  it('sizes a Food badge at 37.9% of its node, on the right side of a single slot, with no offset', () => {
+  it('sizes a Food badge at 44.8% of its node, with no offset', () => {
     const island: Island = {
       ...resourceIslandWithFood,
       positionedBy: [{ playerId: 0, resource: ResourceType.Food }],
@@ -515,13 +515,12 @@ describe('toTileResourcesViewModel farming collector badge', () => {
     expect(node.farmingCollector).toEqual({
       color: PlayerColor.Blue,
       sprite: FARM_SPRITES[PlayerColor.Blue],
-      size: '37.9%',
-      side: 'right',
+      size: '44.8%',
     });
     expect(node.farmingCollector).not.toHaveProperty('offset');
   });
 
-  it('sizes a dual-slot Gold badge at 55% with no px floor, on the right side for the top slot', () => {
+  it('sizes a dual-slot Gold badge at 65% with no px floor, for the top slot', () => {
     const island: Island = {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Gold }],
@@ -532,12 +531,11 @@ describe('toTileResourcesViewModel farming collector badge', () => {
     expect(goldNode.farmingCollector).toEqual({
       color: PlayerColor.Blue,
       sprite: FARM_SPRITES[PlayerColor.Blue],
-      size: '55%',
-      side: 'right',
+      size: '65%',
     });
   });
 
-  it('flips the badge to the left side for a right-anchored bottom slot', () => {
+  it('sizes a dual-slot Wood badge at 65% for the right-anchored bottom slot', () => {
     const island: Island = {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Wood }],
@@ -547,12 +545,11 @@ describe('toTileResourcesViewModel farming collector badge', () => {
     expect(woodNode.farmingCollector).toEqual({
       color: PlayerColor.Blue,
       sprite: FARM_SPRITES[PlayerColor.Blue],
-      size: '55%',
-      side: 'left',
+      size: '65%',
     });
   });
 
-  it('sizes a triple-slot Wood badge at 55% on the right side for the left-anchored bottom slot', () => {
+  it('sizes a triple-slot Wood badge at 65% for the left-anchored bottom slot', () => {
     const island: Island = {
       ...resourceIslandWithDualResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Wood }],
@@ -562,12 +559,11 @@ describe('toTileResourcesViewModel farming collector badge', () => {
     expect(woodNode.farmingCollector).toEqual({
       color: PlayerColor.Blue,
       sprite: FARM_SPRITES[PlayerColor.Blue],
-      size: '55%',
-      side: 'right',
+      size: '65%',
     });
   });
 
-  it('places the Base Food badge beside the 31.9% node: size 37.9%, right side', () => {
+  it('sizes the Base Food badge at 44.8% beside its 31.9% node', () => {
     const island: Island = {
       ...baseIslandWithResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Food }],
@@ -578,12 +574,11 @@ describe('toTileResourcesViewModel farming collector badge', () => {
     expect(foodNode.farmingCollector).toEqual({
       color: PlayerColor.Blue,
       sprite: FARM_SPRITES[PlayerColor.Blue],
-      size: '37.9%',
-      side: 'right',
+      size: '44.8%',
     });
   });
 
-  it('places the Base Wood badge beside the 22% node: size 55%, right side', () => {
+  it('sizes the Base Wood badge at 65% beside its 22% node', () => {
     const island: Island = {
       ...baseIslandWithThreeResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Wood }],
@@ -594,8 +589,23 @@ describe('toTileResourcesViewModel farming collector badge', () => {
     expect(woodNode.farmingCollector).toEqual({
       color: PlayerColor.Blue,
       sprite: FARM_SPRITES[PlayerColor.Blue],
-      size: '55%',
-      side: 'right',
+      size: '65%',
+    });
+  });
+
+  it('omits a side field from every farmed badge, since the badge is always on the left edge', () => {
+    const island: Island = {
+      ...resourceIslandWithDualResources,
+      positionedBy: [
+        { playerId: 0, resource: ResourceType.Gold },
+        { playerId: 0, resource: ResourceType.Wood },
+      ],
+    };
+    const badges = toTileResourcesViewModel(island, false, mockPlayers)!.map((n) => n.farmingCollector);
+    expect(badges).toHaveLength(3);
+    badges.forEach((badge) => {
+      expect(badge).not.toBeNull();
+      expect(badge).not.toHaveProperty('side');
     });
   });
 
