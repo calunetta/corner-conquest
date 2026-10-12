@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { TileResourcesView } from './TileResources';
+import { TileResources, TileResourcesView } from './TileResources';
 import { toTileResourcesViewModel } from './TileResources.map';
 import {
   resourceIslandWithDualResources,
@@ -10,8 +10,19 @@ import {
   baseIslandWithResources,
   monsterIslandWithLivingMonsters,
 } from './TileResources.fixtures';
+import { useGameBoard } from '@/modules/game-board';
+import { useIsMobile } from '@/modules/shared';
 import { PlayerColor, IslandType, ResourceType as ResourceTypeEnum } from '@/lib/types';
 import type { Island, Player } from '@/lib/types';
+
+// The connected TileResources container reads the game-board context and the viewport (useIsMobile).
+jest.mock('@/modules/game-board', () => ({
+  useGameBoard: jest.fn(),
+}));
+
+jest.mock('@/modules/shared', () => ({
+  useIsMobile: jest.fn(),
+}));
 
 // Mock next/image
 jest.mock('next/image', () => ({
@@ -173,18 +184,24 @@ describe('TileResourcesView placement and sizing', () => {
     expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '46%', left: '50%' });
   });
 
-  it('keeps the px box size on a non-Base node', () => {
-    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players);
+  it('sizes a single Food node as a percent of the tile, scaled up for the sheep canvas padding', () => {
+    const nodes = toTileResourcesViewModel(resourceIslandWithFood, false, players);
     render(<TileResourcesView nodes={nodes} />);
-    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ width: '38px', height: '38px' });
+    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ width: '56.6%', height: '56.6%' });
   });
 
-  it('sizes a Base node with percent width and height, not px', () => {
+  it('sizes a non-Food node of a two-resource tile as a percent of the tile, not px', () => {
+    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players);
+    render(<TileResourcesView nodes={nodes} />);
+    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ width: '32%', height: '32%' });
+    expect(screen.getByTestId('resource-node-wood')).toHaveStyle({ width: '32%', height: '32%' });
+  });
+
+  it('sizes a Base gold node as a percent of the tile and a Base food node with the Food scale', () => {
     const nodes = toTileResourcesViewModel(baseIslandWithResources, true, players);
     render(<TileResourcesView nodes={nodes} />);
-    for (const type of ['food', 'gold']) {
-      expect(screen.getByTestId(`resource-node-${type}`)).toHaveStyle({ width: '22%', height: '22%' });
-    }
+    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ width: '22%', height: '22%' });
+    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ width: '31.9%', height: '31.9%' });
   });
 
   it('places the Base food node at the top edge midpoint and the Base gold node at the bottom-left edge', () => {
@@ -194,7 +211,7 @@ describe('TileResourcesView placement and sizing', () => {
     expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ bottom: '4%', left: '35%' });
   });
 
-  it('gives a farmed Gold node a collector badge of 22px on the right, offset -11px', () => {
+  it('gives a farmed Gold node a 55% collector badge on the right edge, centered on that edge', () => {
     const island = {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Gold }],
@@ -202,13 +219,25 @@ describe('TileResourcesView placement and sizing', () => {
     const nodes = toTileResourcesViewModel(island, false, players);
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({
-      width: '22px',
-      height: '22px',
-      right: '-11px',
+      width: '55%',
+      height: '55%',
+      top: '50%',
+      left: '100%',
+      transform: 'translate(-50%, -50%)',
     });
   });
 
-  it('puts the collector badge on the left side of a right-anchored node', () => {
+  it('gives a farmed Food node a 37.9% collector badge, so it matches the 55% badge on other resources', () => {
+    const island = {
+      ...resourceIslandWithFood,
+      positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Food }],
+    };
+    const nodes = toTileResourcesViewModel(island, false, players);
+    render(<TileResourcesView nodes={nodes} />);
+    expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({ width: '37.9%', height: '37.9%' });
+  });
+
+  it('puts the collector badge on the left edge of a right-anchored node, centered on that edge', () => {
     const island = {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Wood }],
@@ -216,15 +245,86 @@ describe('TileResourcesView placement and sizing', () => {
     const nodes = toTileResourcesViewModel(island, false, players);
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({
-      width: '22px',
-      height: '22px',
-      left: '-11px',
+      width: '55%',
+      height: '55%',
+      top: '50%',
+      right: '100%',
+      transform: 'translate(50%, -50%)',
     });
+  });
+
+  it('sizes the collector badge with no px value, so it scales with the node instead of the tile', () => {
+    const island = {
+      ...resourceIslandWithTwoDistinctResources,
+      positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Gold }],
+    };
+    const nodes = toTileResourcesViewModel(island, false, players);
+    render(<TileResourcesView nodes={nodes} />);
+    expect(screen.getByTestId('collector-farm-blue').getAttribute('style')).not.toMatch(/px/);
   });
 
   it('renders no collector badge on an unfarmed node', () => {
     const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players);
     render(<TileResourcesView nodes={nodes} />);
+    expect(screen.queryByTestId(/^collector-farm-/)).not.toBeInTheDocument();
+  });
+
+  it('renders resource and collector sprites without numeric width or height attributes', () => {
+    const island = {
+      ...resourceIslandWithFood,
+      positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Food }],
+    };
+    const nodes = toTileResourcesViewModel(island, false, players);
+    render(<TileResourcesView nodes={nodes} />);
+    for (const img of [
+      screen.getByRole('img', { name: 'food resource' }),
+      screen.getByRole('img', { name: 'blue collector farming' }),
+    ]) {
+      expect(img).not.toHaveAttribute('width');
+      expect(img).not.toHaveAttribute('height');
+    }
+  });
+
+  it('hides the farming collector badge but keeps the resource node when showFarmingCollector is false', () => {
+    const island = {
+      ...resourceIslandWithFood,
+      positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Food }],
+    };
+    const nodes = toTileResourcesViewModel(island, false, players);
+    render(<TileResourcesView nodes={nodes} showFarmingCollector={false} />);
+    expect(screen.getByTestId('resource-node-food')).toBeInTheDocument();
+    expect(screen.queryByTestId(/^collector-farm-/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: /collector farming/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('TileResources connected component', () => {
+  const players = [
+    { id: 0, color: PlayerColor.Blue },
+    { id: 1, color: PlayerColor.Red },
+  ] as unknown as Player[];
+
+  const farmedFoodIsland = {
+    ...resourceIslandWithFood,
+    positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Food }],
+  };
+
+  beforeEach(() => {
+    jest.mocked(useGameBoard).mockReturnValue({
+      gameState: { players },
+    } as unknown as ReturnType<typeof useGameBoard>);
+  });
+
+  it('shows the farming collector badge on a desktop viewport', () => {
+    jest.mocked(useIsMobile).mockReturnValue(false);
+    render(<TileResources island={farmedFoodIsland} />);
+    expect(screen.getByTestId('collector-farm-blue')).toBeInTheDocument();
+  });
+
+  it('hides the farming collector badge on a mobile viewport but keeps the resource node', () => {
+    jest.mocked(useIsMobile).mockReturnValue(true);
+    render(<TileResources island={farmedFoodIsland} />);
+    expect(screen.getByTestId('resource-node-food')).toBeInTheDocument();
     expect(screen.queryByTestId(/^collector-farm-/)).not.toBeInTheDocument();
   });
 });

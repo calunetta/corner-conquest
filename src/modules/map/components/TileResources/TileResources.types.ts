@@ -9,15 +9,14 @@ export interface ResourceNodeViewModel {
   type: ResourceType;
   key: string;
   spriteSrc: string;
-  nodeSize: number;
+  /** CSS percent length of the node's own box, e.g. '39%' or '56.6%'. */
+  nodeSize: string;
   slotStyle: {
     top?: string;
     bottom?: string;
     left?: string;
     right?: string;
     transform?: string;
-    width?: string; // percent, Base slots only
-    height?: string; // percent, Base slots only
   };
   farmingCollector: FarmingCollectorViewModel | null;
 }
@@ -25,13 +24,10 @@ export interface ResourceNodeViewModel {
 export interface FarmingCollectorViewModel {
   color: PlayerColor;
   sprite: string;
-  /** px; badge is square. ~55% of the node's pre-Food-scale slot size, floored at 22px. */
-  size: number;
+  /** CSS percent of the node's own rendered box; the badge is square. '55%' for Wood/Gold,
+   *  '37.9%' for Food (55% divided by the Food sprite scale, rounded to one decimal). */
+  size: string;
   /** Which side of the resource sprite the badge sits on: 'left' when the node's own slot
    *  is right-anchored (avoids pushing the badge off-tile), 'right' otherwise. */
   side: 'left' | 'right';
-  /** px offset from the node box's `side` edge to the badge's center. Negative = the badge
-   *  overhangs past the node box (same half-overhang convention as TileBoats/TileOccupants'
-   *  corner anchors). Applied as the CSS property named by `side`. */
-  offset: number;
 }

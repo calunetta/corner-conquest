@@ -35,38 +35,38 @@ export interface SlotDef {
   left?: string;
   right?: string;
   transform?: string;
-  size: number; // px; reference size for the node box and the collector-badge formula
-  width?: string; // percent; Base slots only, overrides the node box's px size
-  height?: string; // percent; Base slots only
+  /** Percent of the tile's own side length T; reference size for the node box and the
+   *  collector-badge formula. */
+  size: number;
 }
 
 export const SINGLE_RESOURCE_SLOT: SlotDef = {
   top: '46%',
   left: '50%',
   transform: 'translateX(-50%)',
-  size: 46,
+  size: 39,
 };
 
 // left/right corrected 14% -> 24% to clear the boat corner band (was the one coordination
 // gap the triage flagged: these slots were never checked against the boat corners).
 export const DUAL_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '20%', left: '24%', size: 38 },
-  { top: '70%', right: '24%', size: 38 },
+  { top: '20%', left: '24%', size: 32 },
+  { top: '70%', right: '24%', size: 32 },
 ];
 
 // Slot 1's left corrected 12% -> 24% (same gap as above); slots 2-3 already clear by their
 // vertical offset (46%/70% fall outside the 0-22%/78-100% bands) and are unchanged.
 export const TRIPLE_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '20%', left: '24%', size: 32 },
-  { top: '46%', right: '12%', size: 32 },
-  { top: '70%', left: '12%', size: 32 },
+  { top: '20%', left: '24%', size: 27 },
+  { top: '46%', right: '12%', size: 27 },
+  { top: '70%', left: '12%', size: 27 },
 ];
 
 // Edge-midpoint slots keep clear of the boat and occupant corner anchors. Unchanged.
 export const BASE_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '4%', left: '50%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
-  { bottom: '4%', left: '35%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
-  { bottom: '4%', left: '65%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
+  { top: '4%', left: '50%', transform: 'translateX(-50%)', size: 22 },
+  { bottom: '4%', left: '35%', transform: 'translateX(-50%)', size: 22 },
+  { bottom: '4%', left: '65%', transform: 'translateX(-50%)', size: 22 },
 ];
 
 export interface TreeSlot {

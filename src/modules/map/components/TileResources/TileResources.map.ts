@@ -31,9 +31,30 @@ export const RESOURCE_SPRITES = {
   },
 } as const;
 
-// The farming badge is ~55% of the node's reference size, never smaller than 22px.
+// sheep.gif has large transparent canvas padding, so its node box is scaled up to keep the
+// visible sprite the same size as the other resources.
+const FOOD_SCALE = 1.45;
+// The farming badge is ~55% of the node's own (uninflated) box. No px floor: a floor makes
+// the badge bigger than its node at small tile sizes, so mobile hides the badge instead.
 const BADGE_SIZE_RATIO = 0.55;
-const BADGE_MIN_SIZE = 22;
+
+// Float math leaks into the CSS percent strings unless rounded: 0.55 * 100 = 55.00000000000001,
+// and (39 * 1.45).toFixed(1) gives '56.5' where the spec needs 56.6, so Math.round is used instead.
+function roundToOneDecimal(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function toNodeSize(type: ResourceType, slotSize: number): string {
+  const isFood = type === ResourceTypeEnum.Food;
+  return `${roundToOneDecimal(isFood ? slotSize * FOOD_SCALE : slotSize)}%`;
+}
+
+// Badge size depends only on the node's type, so every slot tier of one resource shows the same badge.
+function toBadgeSize(type: ResourceType): string {
+  const badgePercent = roundToOneDecimal(BADGE_SIZE_RATIO * 100);
+  const isFood = type === ResourceTypeEnum.Food;
+  return `${isFood ? roundToOneDecimal(badgePercent / FOOD_SCALE) : badgePercent}%`;
+}
 
 function getSlot(idx: number, total: number, isBase: boolean): SlotDef {
   if (isBase) {
@@ -92,9 +113,7 @@ export function toTileResourcesViewModel(
     const spriteConfig = RESOURCE_SPRITES[node.type];
     const spriteSrc = isFarmedNode ? spriteConfig.activeSprite : spriteConfig.sprite;
 
-    // Food sprite (sheep.gif) has large transparent canvas padding, so scale its bounding box by 1.45x
-    const nodeSize =
-      node.type === ResourceTypeEnum.Food ? Math.round(slot.size * 1.45) : slot.size;
+    const nodeSize = toNodeSize(node.type, slot.size);
 
     const slotStyleEntries: Array<[string, string]> = [];
     if (slot.top) slotStyleEntries.push(['top', slot.top]);
@@ -102,16 +121,10 @@ export function toTileResourcesViewModel(
     if (slot.left) slotStyleEntries.push(['left', slot.left]);
     if (slot.right) slotStyleEntries.push(['right', slot.right]);
     if (slot.transform) slotStyleEntries.push(['transform', slot.transform]);
-    if (slot.width) slotStyleEntries.push(['width', slot.width]);
-    if (slot.height) slotStyleEntries.push(['height', slot.height]);
     const slotStyle = Object.fromEntries(slotStyleEntries);
 
-    // Badge geometry uses the pre-Food-scale slot size so every resource type gets the same badge.
-    const uninflatedSize = slot.size;
-    const badgeSize = Math.max(BADGE_MIN_SIZE, Math.round(uninflatedSize * BADGE_SIZE_RATIO));
     const badgeSide: 'left' | 'right' =
       slot.right !== undefined && slot.left === undefined ? 'left' : 'right';
-    const badgeOffset = Math.round((nodeSize - uninflatedSize) / 2 - badgeSize / 2);
 
     return {
       type: node.type,
@@ -123,9 +136,8 @@ export function toTileResourcesViewModel(
         ? {
             color: positionedPlayer.color,
             sprite: FARM_SPRITES[positionedPlayer.color],
-            size: badgeSize,
+            size: toBadgeSize(node.type),
             side: badgeSide,
-            offset: badgeOffset,
           }
         : null,
     };

@@ -1,11 +1,35 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import Image from 'next/image';
+import { useIsMobile } from '@/modules/shared';
 import { useTileResources } from './TileResources.hook';
 import { styles } from './TileResources.styles';
-import type { TileResourcesProps, ResourceNodeViewModel } from './TileResources.types';
+import type {
+  FarmingCollectorViewModel,
+  ResourceNodeViewModel,
+  TileResourcesProps,
+} from './TileResources.types';
 
-export function TileResourcesView({ nodes }: { nodes: ResourceNodeViewModel[] | null }) {
+interface TileResourcesViewProps {
+  nodes: ResourceNodeViewModel[] | null;
+  /** False on mobile: the badge is a sub-legible speck at mobile tile sizes, so it is not rendered at all. */
+  showFarmingCollector?: boolean;
+}
+
+/**
+ * Anchors the badge on the node's edge midpoint. The transform's percentages resolve against the
+ * badge's own box, so the badge centers on that edge whatever its size.
+ */
+function toCollectorBadgeStyle({ side, size }: FarmingCollectorViewModel): CSSProperties {
+  if (side === 'right') {
+    return { width: size, height: size, top: '50%', left: '100%', transform: 'translate(-50%, -50%)' };
+  }
+  return { width: size, height: size, top: '50%', right: '100%', transform: 'translate(50%, -50%)' };
+}
+
+/** Pure view: everything comes from props, so tests and previews need no providers. */
+export function TileResourcesView({ nodes, showFarmingCollector = true }: TileResourcesViewProps) {
   if (!nodes) return null;
 
   return (
@@ -16,8 +40,8 @@ export function TileResourcesView({ nodes }: { nodes: ResourceNodeViewModel[] | 
           data-testid={`resource-node-${node.type}`}
           className={styles.nodeSlot}
           style={{
-            width: `${node.nodeSize}px`,
-            height: `${node.nodeSize}px`,
+            width: node.nodeSize,
+            height: node.nodeSize,
             ...node.slotStyle,
           }}
         >
@@ -25,30 +49,22 @@ export function TileResourcesView({ nodes }: { nodes: ResourceNodeViewModel[] | 
             <Image
               src={node.spriteSrc}
               alt={`${node.type} resource`}
-              width={node.nodeSize}
-              height={node.nodeSize}
+              fill
               className={styles.image}
               unoptimized
             />
           </div>
 
-          {node.farmingCollector && (
+          {showFarmingCollector && node.farmingCollector && (
             <div
               data-testid={`collector-farm-${node.farmingCollector.color}`}
               className={styles.collectorOverlay}
-              style={{
-                width: `${node.farmingCollector.size}px`,
-                height: `${node.farmingCollector.size}px`,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                [node.farmingCollector.side]: `${node.farmingCollector.offset}px`,
-              }}
+              style={toCollectorBadgeStyle(node.farmingCollector)}
             >
               <Image
                 src={node.farmingCollector.sprite}
                 alt={`${node.farmingCollector.color} collector farming`}
-                width={node.farmingCollector.size}
-                height={node.farmingCollector.size}
+                fill
                 className={styles.collectorImage}
                 unoptimized
               />
@@ -60,8 +76,10 @@ export function TileResourcesView({ nodes }: { nodes: ResourceNodeViewModel[] | 
   );
 }
 
+/** Connected component for the island tile: reads the tile through its hook. */
 export function TileResources(props: TileResourcesProps) {
   const { nodes } = useTileResources(props);
+  const isMobile = useIsMobile();
 
-  return <TileResourcesView nodes={nodes} />;
+  return <TileResourcesView nodes={nodes} showFarmingCollector={!isMobile} />;
 }

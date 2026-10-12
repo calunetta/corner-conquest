@@ -46,30 +46,30 @@ describe('resource slot tables', () => {
       top: '46%',
       left: '50%',
       transform: 'translateX(-50%)',
-      size: 46,
+      size: 39,
     });
   });
 
   it('pins the two-node slots with left and right at 24%', () => {
     expect(DUAL_RESOURCE_SLOTS).toEqual([
-      { top: '20%', left: '24%', size: 38 },
-      { top: '70%', right: '24%', size: 38 },
+      { top: '20%', left: '24%', size: 32 },
+      { top: '70%', right: '24%', size: 32 },
     ]);
   });
 
   it('pins the three-node slots: slot 1 left at 24%, slots 2-3 unchanged at 12%', () => {
     expect(TRIPLE_RESOURCE_SLOTS).toEqual([
-      { top: '20%', left: '24%', size: 32 },
-      { top: '46%', right: '12%', size: 32 },
-      { top: '70%', left: '12%', size: 32 },
+      { top: '20%', left: '24%', size: 27 },
+      { top: '46%', right: '12%', size: 27 },
+      { top: '70%', left: '12%', size: 27 },
     ]);
   });
 
   it('pins the three Base edge-midpoint slots', () => {
     expect(BASE_RESOURCE_SLOTS).toEqual([
-      { top: '4%', left: '50%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
-      { bottom: '4%', left: '35%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
-      { bottom: '4%', left: '65%', transform: 'translateX(-50%)', size: 26, width: '22%', height: '22%' },
+      { top: '4%', left: '50%', transform: 'translateX(-50%)', size: 22 },
+      { bottom: '4%', left: '35%', transform: 'translateX(-50%)', size: 22 },
+      { bottom: '4%', left: '65%', transform: 'translateX(-50%)', size: 22 },
     ]);
   });
 });
