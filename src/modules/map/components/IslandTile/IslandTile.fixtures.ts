@@ -3,6 +3,7 @@ import { IslandType, PlayerColor, ResourceType } from '@/lib/types';
 import { initialUIState } from '@/modules/game-board';
 import type { GameBoardUIState } from '@/modules/game-board';
 import { buildPlayer, buildGameState } from '../../board-context.fixtures';
+import { buildSlotTuningFixtures } from './IslandTile.fixtures.slot-tuning';
 import type { IslandTileContext } from './IslandTile.types';
 
 const GRID_SIZE = 5;
@@ -24,6 +25,8 @@ export const localPlayerFixture: Player = buildPlayer({
   revealedTiles: [
     '0-0', 'resource-two-three-occ', 'resource-three-three-occ',
     'empty-three-occ', 'empty-two-occ',
+    'slot-tuning-resource-1', 'slot-tuning-resource-2', 'slot-tuning-resource-3', 'slot-tuning-resource-4',
+    'slot-tuning-grove-2', 'slot-tuning-grove-3', 'slot-tuning-base',
   ],
   armies: [armyFixture, secondArmyFixture],
 });
@@ -35,6 +38,25 @@ export const opponentPlayerFixture: Player = buildPlayer({
   color: PlayerColor.Red,
   revealedTiles: ['1-1'],
   armies: [{ id: 1, position: { x: 2, y: 2 }, hasActed: false }],
+});
+
+/** Third and fourth players exist only to give the all-corners slot-tuning states four
+ *  visually distinct colors, one per corner, so a corner-specific overlap is easy to spot.
+ *  Visibility for their armies comes from localPlayerFixture.revealedTiles, not from these. */
+export const thirdPlayerFixture: Player = buildPlayer({
+  id: 2,
+  playerId: 'p2',
+  name: 'Cy',
+  color: PlayerColor.Purple,
+  armies: [{ id: 3, position: { x: 3, y: 3 }, hasActed: false }],
+});
+
+export const fourthPlayerFixture: Player = buildPlayer({
+  id: 3,
+  playerId: 'p3',
+  name: 'Di',
+  color: PlayerColor.Yellow,
+  armies: [{ id: 4, position: { x: 4, y: 4 }, hasActed: false }],
 });
 
 export const baseIslandOwnedByLocalPlayer: Island = {
@@ -96,43 +118,30 @@ export const occupiedResourceIsland: Island = {
   id: '2-2-occupied', x: 2, y: 2, type: IslandType.Resource, resources: [{ type: ResourceType.Food, amount: 1 }], occupants: [{ playerId: 0, armyId: 0 }], positionedBy: [],
 };
 
-const cornerOccupants = [
-  { playerId: localPlayerFixture.id, armyId: armyFixture.id },
-  { playerId: opponentPlayerFixture.id, armyId: opponentPlayerFixture.armies[0].id },
-  { playerId: localPlayerFixture.id, armyId: secondArmyFixture.id },
-];
-
-export const resourceIslandWithTwoNodesAndThreeOccupants: Island = {
-  id: 'resource-two-three-occ', x: 3, y: 0, type: IslandType.Resource,
-  resources: [{ type: ResourceType.Food, amount: 1 }, { type: ResourceType.Wood, amount: 1 }],
-  occupants: cornerOccupants, positionedBy: [],
-};
-
-export const resourceIslandWithThreeNodesAndThreeOccupants: Island = {
-  id: 'resource-three-three-occ', x: 3, y: 1, type: IslandType.Resource,
-  resources: [
-    { type: ResourceType.Food, amount: 1 }, { type: ResourceType.Wood, amount: 1 }, { type: ResourceType.Gold, amount: 1 },
-  ],
-  occupants: cornerOccupants, positionedBy: [],
-};
-
-export const emptyIslandWithThreeOccupants: Island = {
-  id: 'empty-three-occ', x: 3, y: 2, type: IslandType.Empty,
-  resources: [], occupants: cornerOccupants, positionedBy: [],
-};
-
-export const emptyIslandWithTwoOccupants: Island = {
-  id: 'empty-two-occ', x: 3, y: 4, type: IslandType.Empty,
-  resources: [], occupants: cornerOccupants.slice(0, 2), positionedBy: [],
-};
+export const {
+  resourceIslandWithTwoNodesAndThreeOccupants,
+  resourceIslandWithThreeNodesAndThreeOccupants,
+  emptyIslandWithThreeOccupants,
+  emptyIslandWithTwoOccupants,
+  resourceIslandSlotTuningSingle,
+  resourceIslandSlotTuningDual,
+  resourceIslandSlotTuningTriple,
+  resourceIslandSlotTuningQuad,
+  emptyIslandSlotTuningGrove2,
+  emptyIslandSlotTuningGrove3,
+  baseIslandSlotTuningAll,
+} = buildSlotTuningFixtures(localPlayerFixture, opponentPlayerFixture, thirdPlayerFixture, fourthPlayerFixture);
 
 export const gameStateFixture: GameState = buildGameState({
-  players: [localPlayerFixture, opponentPlayerFixture],
+  players: [localPlayerFixture, opponentPlayerFixture, thirdPlayerFixture, fourthPlayerFixture],
   map: [
     baseIslandOwnedByLocalPlayer, baseIslandOwnedByOpponent, resourceIsland,
     monsterIslandWithLivingMonster, specialIsland, emptyIsland, hiddenFogIsland, occupiedResourceIsland,
     resourceIslandWithTwoNodesAndThreeOccupants, resourceIslandWithThreeNodesAndThreeOccupants,
     emptyIslandWithThreeOccupants, emptyIslandWithTwoOccupants,
+    resourceIslandSlotTuningSingle, resourceIslandSlotTuningDual, resourceIslandSlotTuningTriple,
+    resourceIslandSlotTuningQuad,
+    emptyIslandSlotTuningGrove2, emptyIslandSlotTuningGrove3, baseIslandSlotTuningAll,
   ],
   settings: BASE_SETTINGS,
 });
