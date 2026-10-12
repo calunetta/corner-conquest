@@ -10,6 +10,7 @@ const APP_URL = 'http://localhost:3000';
 
 export default defineConfig({
   testDir: './e2e',
+  testMatch: '**/*.spec.ts',
   fullyParallel: false,
   workers: 1,
   retries: 0,

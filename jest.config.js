@@ -15,7 +15,7 @@ const customJestConfig = {
   // firestore.rules.test.ts needs jest.rules.config.js (node env, a running emulator):
   // run it with `npm run test:rules`, not through this jsdom config.
   // .agents/ is Google Antigravity config; its *.test.mjs files run under node:test, not Jest.
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/e2e/', '<rootDir>/firestore.rules.test.ts', '<rootDir>/src/features/game/context/__tests__/test-utils/', '<rootDir>/.agents/'],
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/e2e/.*\\.spec\\.ts$', '<rootDir>/firestore.rules.test.ts', '<rootDir>/src/features/game/context/__tests__/test-utils/', '<rootDir>/.agents/'],
 };
 
 module.exports = createJestConfig(customJestConfig);

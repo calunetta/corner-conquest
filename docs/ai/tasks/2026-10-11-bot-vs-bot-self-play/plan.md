@@ -29,7 +29,8 @@ Inputs: triage.md
 | `takeBotTurn` | `src/modules/game-rules/services/bot-turn.service.ts:9-16` | The only I/O wrapper; `runMatch` already stubs its `setDoc`. Not touched by Phase 1. |
 | `applyBotCardStrategy`, `applyBotPurchases`, `applyBotArmyActions` | `src/modules/game-rules/bot-card-strategy.reducer.ts:11`, `bot-purchases.reducer.ts:7`, `bot-army-actions.reducer.ts:12` | Already individually exported from their own files (not re-exported from `index.ts`). Phase 2's spec deep-imports them directly — allowed under `e2e/**/*.ts`'s `no-restricted-imports` exemption (`eslint.config.mjs:116-121`); no new public export needed. |
 | `parseLogLine`, `LogEvent` | `scripts/balance-simulator/log-parsers.ts:155-157`, `13-33` | Converts a `state.log` tail into structured events by exact string match. Phase 1 reuses it unchanged for metrics; Phase 2's e2e helper deep-imports it the same way (also under the e2e exemption) for every bot action that *does* push a log line — but not for plain moves (see next row). |
-| `handleMoveAction` | `src/modules/game-rules/movement.reducer.ts:45-123` | Pushes a log entry only for an extra-move (`:106-112`) or for leaving a resource position (`:85-98`, when the army it moves had one). An ordinary move onto any other tile — the common case, and also how a PvP/monster attack is initiated (moving onto an occupied tile) — pushes **no log entry at all**, and `LogEvent`'s union (`log-parsers.ts:13-33`) has no "moved" kind. Phase 2 therefore cannot rely on `parseLogLine` to know a move happened; it must diff `Army.position` (`src/lib/types/player.ts:13-17`, `id: number`) for the acting seat's armies before/after each `applyBotArmyActions` step. |
+| `handleMoveAction` | `src/modules/game-rules/movement.reducer.ts:45-123` | Pushes a log entry only for an extra-move (`:106-112`) or for leaving a resource position (`:85-98`, when the army it moves had one). An ordinary move onto any other tile — the common case — pushes **no log entry at all**, and `LogEvent`'s union (`log-parsers.ts:13-33`) has no "moved" kind. Phase 2 therefore cannot rely on `parseLogLine` to know a move happened; it must diff `Army.position` (`src/lib/types/player.ts:13-17`, `id: number`) for the acting seat's armies before/after each `applyBotArmyActions` step. **Corrected 2026-10-11:** a PvP/monster attack is *not* initiated by moving onto an occupied tile — `applyBotArmyActions` (`bot-army-actions.reducer.ts:30-52`) dispatches the separate `GameAction.InitiateCombat` action instead of (never together with) `GameAction.Move`; see the Phase 2 contract-deviation sign-off below. |
+| `applyBotArmyActions`'s action menu | `src/modules/game-rules/bot-army-actions.reducer.ts:30-63` | Per turn, each unacted army gets at most one of three mutually exclusive possible actions: `GameAction.InitiateCombat` (enemy or monster already on the army's own tile, `:28-52`), `GameAction.SelectResourcePosition` (unpositioned on an unclaimed resource tile, `:53-63`), or `GameAction.Move` (`:65-80`). `SelectResourcePosition` mutates `player.positions` (via `resource-position.reducer.ts:49`'s `pushLogEntry` — message `"positioned an army on <resource>."`, which matches none of `log-parsers.ts`'s `MATCHERS`), not `Army.position`, so neither `events` nor the `moves` position diff sees it. |
 | `NEVER_CONSUMED_BY_BOTS` | `scripts/balance-simulator/acceptance.test.ts:26-36` | Already enumerates, and asserts, every card bot logic has no code path to play. Bounds the `LogEvent` kinds Phase 2's UI-action mapping must actually cover — no card outside this gap needs a click handler. |
 | `isSessionDriver` bot-turn effect | `src/modules/game-board/game-board.engine.hook.ts:97-102, 151-162` | `isSessionDriver` is `false` whenever `humanSeatIds.length === 0` (line 100). An all-bot match therefore has **no client that will ever call `takeBotTurn`** — the existing auto-driver mechanism cannot run a bot-vs-bot match through the real UI. This is why Phase 2 must compute each bot action in the test and perform it with real clicks, not just open two bot-seat browser tabs and watch. |
 | `ConfigMetrics`, `computeConfigMetrics` | `scripts/balance-simulator/metrics/index.ts:12-59` | Phase 1 adds one more field (`anomalies`) alongside `m1`...`m10`, following the exact pattern of every existing metric. |
@@ -48,10 +49,11 @@ Inputs: triage.md
 - Treat "invalid/no-op bot action" and "caught reducer error" as the same two anomaly kinds already named by the dispatcher's own code (`unhandledAction` = the `console.warn` default case at `game-rules.reducer.ts:133`; `reducerError` = the `console.error` catch at line 137) — because no other code path in a bot's turn produces an unexplained no-op; a separate full-state-diff no-op detector would risk false positives on a legitimate "nothing to do this turn" bot pass. Rejected: deep-diffing state before/after each granular bot step to detect silent no-ops (speculative, no evidence it finds anything the two log points don't already cover).
 - Report anomalies as an always-`breach` flag (never suppressed by `gatedByBotHealth`), matching the M5/M8 integrity-check precedent in `report/flags.ts:30-35` — because a swallowed exception or an unhandled action during bot-only play is a real bug regardless of win-rate noise.
 - Phase 2's e2e spec computes each bot step with the real reducers in Node (`applyBotCardStrategy`/`applyBotPurchases`/`applyBotArmyActions`, deep-imported) and translates the result into one Playwright interaction per action, re-reading the live state between steps — because `isSessionDriver` (`game-board.engine.hook.ts:100`) never fires for an all-bot match, so nothing else will ever turn a bot decision into a UI action. Rejected: giving both e2e seats `isBot: true` and waiting for the existing driver effect (silently never fires, zero human seats); rejected: calling `decideBotTurn` once per turn and diffing only the final state (loses which action produced which change, so one click target can't be told apart from another when a turn does several things).
-- `planNextStep` reports two kinds of signal, not one: `events: LogEvent[]` (from `parseLogLine`, for every bot action that pushes a log line — Deploy, Upgrade, Buy Card, Use Card, card-funded actions) and `moves: Array<{ armyId: number; to: { x: number; y: number } }>` (an explicit position diff of the acting seat's armies before/after the step, independent of the log). Because `handleMoveAction` pushes no log entry for an ordinary move or for an attack-initiating move onto an occupied tile (see "Verified context"), `LogEvent` alone can't tell `performUiAction` a move happened at all; without the diff, every plain move and every attack would compute correctly in the oracle state but never be clicked, so the live UI state would silently stop matching the oracle after the first such move. Rejected: adding a "moved"/"attacked" `LogEvent` kind to `log-parsers.ts` (that file matches exact strings the reducers already log; inventing a case for a string that is never actually logged doesn't fit its contract and nothing else would ever produce it).
+- `planNextStep` reports four kinds of signal, not one: `events: LogEvent[]` (from `parseLogLine`, for every bot action that pushes a log line — Upgrade, Buy Card, Use Card, card-funded actions), `moves: BotMove[]` (an explicit `from`/`to` position diff for plain moves, independent of the log), `positions: BotPosition[]` (a `player.positions` diff for `SelectResourcePosition`, which `handleMoveAction` never touches and whose own log line matches no `log-parsers.ts` matcher), and `attacks: BotAttack[]` (armies whose `hasActed` flipped without moving or positioning, inferred by elimination since `GameAction.InitiateCombat` carries no event or position signal at all). **Revised 2026-10-11** (originally this plan assumed moving onto an occupied tile auto-drives combat, and `moves` lacked `from`): `bot-army-actions.reducer.ts:30-63` dispatches `GameAction.InitiateCombat` as a separate, mutually exclusive action from `GameAction.Move` — never as a side effect of one — so `attacks` is required, and `tile-click.hook.ts:74-104` selects an army by clicking the tile it currently occupies, so `BotMove` needs `from` to be clickable at all. See implementer-b's deviation note at `e2e/bot-ui-actions.ts:38-55` and this review's sign-off. Rejected (unchanged): adding a "moved"/"attacked" `LogEvent` kind to `log-parsers.ts` (that file matches exact strings the reducers already log; inventing a case for a string that is never actually logged doesn't fit its contract).
 - Keep `applyBotCardStrategy`/`applyBotPurchases`/`applyBotArmyActions`/`parseLogLine` as deep imports from `e2e/bot-ui-actions.ts`, not new exports from `src/modules/game-rules/index.ts` — because `e2e/**/*.ts` is already exempted from the deep-import lint rule (`eslint.config.mjs:116-121`), so widening the module's public API would add surface no non-test caller needs (YAGNI).
 - The two new `.claude/agents/*.md` files are not application code, so they don't fit implementer-a's (`.types`/`.map`/`.service`/`.hook`/`.fixtures`) or implementer-b's (`.tsx`/`.styles.ts`) usual scope. Assign `balance-rule-reviewer.md` to implementer-b in Phase 1 (implementer-a is already fully loaded with `engine.ts`/`metrics/`/`report/`, giving implementer-b real work this phase) and `ui-bug-reviewer.md` to tester-b in Phase 2 (tester-b is the one defining what counts as "flagged," so is best placed to write the reviewer's reading instructions). Rejected: one implementer owning both agent files across both phases (uneven workload within each phase).
 - No `game-designer-*`/`ui-designer-*` stage: no rule, number, or player-facing UI changes (triage's "Gameplay signal"/"Visible UI signal": no). No `docs-sync` stage: nothing under `docs/architecture/*.md` changes; the one doc touched (`docs/balance-simulator-guide.md`) is outside that folder and is edited inline by implementer-a, same as its existing M1-M10 sections were.
+- **Added 2026-10-11:** `jest.config.js`'s `testPathIgnorePatterns` excludes all of `<rootDir>/e2e/` unconditionally (`jest.config.js:18`), so `e2e/bot-ui-actions.test.ts` — a plain Jest unit test, no Playwright — would silently never run under `npm test`/CI despite passing locally with a CLI override. Narrowing the ignore pattern to `<rootDir>/e2e/.*\.spec\.ts$` fixes this while still keeping every Playwright `.spec.ts` file out of Jest's run (confirmed: every other file in `e2e/` today is a `.spec.ts`). The mirror-image bug also exists and was previously undetected: Playwright's own default `testMatch` (`**/*.@(spec|test).?(c|m)[jt]s?(x)`, confirmed in `node_modules/playwright/lib/common/index.js:639`) also matches `.test.ts`, so without an explicit `testMatch: '**/*.spec.ts'` in `playwright.config.ts`, `npx playwright test --list` throws `ReferenceError: describe is not defined` trying to load `bot-ui-actions.test.ts` as a spec (reproduced). Both files are one line each; assigned to tester-a (who found the gap and needs it to prove the 8 tests actually run) rather than leaving them unowned or deferring to a separate task — this directly blocks Phase 2's own "checks: typecheck, lint, unit tests" and the one real `test:e2e` run, so it cannot ship broken in this phase. Rejected: changing plan.md's Phase 2 step 5 command to run with a permanent ad-hoc CLI override instead (the override isn't on `npm test`/CI's actual command line, so the test would stay invisible to every future run except this one manual one — doesn't fix the root cause, just hides it once).
 
 ## File plan
 ### Phase 1 (headless rule-bug track)
@@ -74,10 +76,12 @@ Inputs: triage.md
 ### Phase 2 (UI-bug track)
 | File | New / Edit | Responsibility | Owner |
 |---|---|---|---|
-| `e2e/bot-ui-actions.ts` | new | `planNextStep(state, seat, step)` — runs one of `applyBotCardStrategy`/`applyBotPurchases`/`applyBotArmyActions` against a state snapshot and returns a `BotStepResult`: the new `LogEvent[]` tail (via `parseLogLine`, for log-producing actions) **and** a `moves` position diff (for plain moves and attack-initiating moves, which `handleMoveAction` never logs) plus the resulting state; `performUiAction(page, result, seat)` — performs every UI interaction a `BotStepResult` implies (move/attack clicks first from `moves`, then Deploy/Upgrade/Buy Card/Use Card/End Turn etc. from `events`), scoped to the `LogEvent` kinds `NEVER_CONSUMED_BY_BOTS` (`acceptance.test.ts:26-36`) says bots can actually reach. | implementer-b |
-| `e2e/bot-ui-actions.test.ts` | new | Unit tests for `planNextStep`'s pure diffing (no Playwright, no browser): a step that changes nothing returns `{ events: [], moves: [] }`; a step that deploys returns `{ events: [{ kind: 'deployed' }], moves: [] }`; a step that only repositions an army returns `{ events: [], moves: [{ armyId, to }] }` with no event; a step that both moves and logs (e.g. moves off a resource position) returns both populated. | tester-a |
+| `e2e/bot-ui-actions.ts` | new | `planNextStep(state, seat, step)` — runs one of `applyBotCardStrategy`/`applyBotPurchases`/`applyBotArmyActions` against a state snapshot and returns a `BotStepResult`: the new `LogEvent[]` tail (via `parseLogLine`, for log-producing actions), a `moves` position diff (plain moves only — attacks are `GameAction.InitiateCombat`, not a move), a `positions` diff (`SelectResourcePosition`, invisible to both log and position), an `attacks` list (inferred by elimination), `wealthyResource` (extracted from the Wealthy log line), plus the resulting state; `performUiAction(page, result, seat)` — performs every UI interaction a `BotStepResult` implies (moves, then positions, then attacks, then Deploy/Upgrade/Buy Card/Use Card/Buy Ability from `events`), scoped to the `LogEvent` kinds `NEVER_CONSUMED_BY_BOTS` (`acceptance.test.ts:26-36`) says bots can actually reach. See Contracts for the exact shape, superseded 2026-10-11 per implementer-b's deviation note and this review's sign-off. | implementer-b |
+| `e2e/bot-ui-actions.test.ts` | new | Unit tests for `planNextStep`'s pure diffing (no Playwright, no browser): a step that changes nothing returns all-empty arrays; a step that deploys returns `{ events: [{ kind: 'deployed' }], moves: [], positions: [], attacks: [] }`; a step that only repositions an army returns a populated `moves` with `from`/`to` and no event; a step that selects a resource position returns a populated `positions` with no event and no `moves` entry; a step whose only change is an army's `hasActed` flipping without a position/positions change returns a populated `attacks`; a step that both moves and logs (e.g. moves off a resource position) returns both populated. | tester-a |
 | `e2e/bot-vs-bot-ui.spec.ts` | new | Orchestrates one full match between two UI-driven seats: for each seat's turn, reads live state, calls `planNextStep` for each of the three bot phases in order, calls `performUiAction` with the full `BotStepResult` (so moves are clicked even when a step has no `LogEvent`), then clicks End Turn; captures a screenshot and buffers `page.on('console')`/`page.on('pageerror')`/`page.on('requestfailed')` per turn; after the match, keeps only turns with a captured console/page error, a failed request, or an action (a `moves` entry or an `events` entry) whose expected effect never showed up in the live state/log within the sync timeout, and writes the filtered subset to `e2e/.bot-self-play-captures/<run-id>/`. | tester-b |
 | `.claude/agents/ui-bug-reviewer.md` | new | New agent definition: reads only the filtered capture folder (screenshots + buffered console/network logs) and reports broken interactions with evidence. See Contracts for required content. | tester-b |
+| `jest.config.js` | edit | Narrow `testPathIgnorePatterns`' blanket `<rootDir>/e2e/` entry to `<rootDir>/e2e/.*\.spec\.ts$`, so Jest keeps ignoring the Playwright specs in `e2e/` but now picks up `e2e/bot-ui-actions.test.ts` (and any future plain `.test.ts` file there) under `npm test`. Added 2026-10-11, see Decisions/Review below. | tester-a |
+| `playwright.config.ts` | edit | Add `testMatch: '**/*.spec.ts'` so Playwright's own default glob (`**/*.@(spec\|test).?(c\|m)[jt]s?(x)`) stops trying to load `e2e/bot-ui-actions.test.ts` as a Playwright spec — confirmed today it currently throws `ReferenceError: describe is not defined` under `npx playwright test --list`. Added 2026-10-11, see Decisions/Review below. | tester-a |
 
 ## Contracts
 ```ts
@@ -123,18 +127,56 @@ export interface ConfigMetrics {
 ```ts
 // e2e/bot-ui-actions.ts — Phase 2, new file. Types only; selectors are implementer-b's to resolve
 // against the live DOM following the existing e2e locator conventions (gameplay.spec.ts, reconnect-bot-takeover.spec.ts).
-import type { GameState } from '@/lib/types';
+//
+// Superseded 2026-10-11 by implementer-b's in-file deviation note (bot-ui-actions.ts:38-55),
+// architect-b sign-off below ("Phase 2 contract deviation sign-off"): `GameAction.InitiateCombat`
+// and `GameAction.SelectResourcePosition` are separate dispatched actions bot-army-actions.reducer.ts
+// chooses instead of a move (bot-army-actions.reducer.ts:30-63) — moving onto an occupied tile does
+// not auto-drive combat, contrary to this block's original comment. `BotStepResult` gains `positions`,
+// `attacks`, `wealthyResource`, and `moves` gains `from`, for the reasons in that note.
+import type { AbilityName, GameState, ResourceType } from '@/lib/types';
 import type { LogEvent } from '../scripts/balance-simulator/log-parsers'; // deep import, e2e exemption
 
 export type BotStep = 'cardStrategy' | 'purchases' | 'armyActions';
 
+export interface BotMove {
+  armyId: number;
+  /** The army's tile before this step — tile-click.hook.ts selects an army by clicking the tile
+   *  it currently occupies (game-board.tile-click.hook.ts:74-104), so `to` alone can't drive a click. */
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}
+
+export interface BotPosition {
+  armyId: number;
+  at: { x: number; y: number };
+  resource: ResourceType;
+}
+
+/** An army that acted this step without moving or positioning did so via `GameAction.InitiateCombat`
+ *  — a separate dispatched action (bot-army-actions.reducer.ts:30-52), not an automatic consequence
+ *  of a move onto an occupied tile. No `LogEvent` or position diff carries the army id, so this is
+ *  inferred by elimination. */
+export interface BotAttack {
+  armyId: number;
+  at: { x: number; y: number };
+}
+
 export interface BotStepResult {
-  /** Every log-producing action this step took (Deploy, Upgrade, Buy Card, Use Card, etc.). */
+  /** Every log-producing action this step took (Upgrade, Buy Card, Use Card, etc.). */
   events: LogEvent[];
-  /** Every army belonging to `seat` whose position changed this step, diffed from `state.players`
-   *  before vs. after — the only signal for a plain move or an attack-initiating move onto an
-   *  occupied tile, since `handleMoveAction` (movement.reducer.ts:45-123) logs neither. */
-  moves: Array<{ armyId: number; to: { x: number; y: number } }>;
+  /** Every army belonging to the acting seat whose position changed this step — the only signal
+   *  for a plain move, since `handleMoveAction` (movement.reducer.ts:45-123) logs neither it nor
+   *  the attack-initiating case (that's `GameAction.InitiateCombat`, see `attacks`). */
+  moves: BotMove[];
+  /** `GameAction.SelectResourcePosition` mutates `player.positions`, not `Army.position`, and its
+   *  own log line matches no `log-parsers.ts` matcher — invisible to both `events` and `moves`. */
+  positions: BotPosition[];
+  attacks: BotAttack[];
+  /** The resource `Wealthy` granted this step, if any — `wealthyGranted`/`cardConsumed(Wealthy)`
+   *  carry no payload, but the UI's `WealthyDialog` needs a resource to click. Extracted from the
+   *  exact "used 'Wealthy' to gain N <resource>." log line. */
+  wealthyResource: ResourceType | null;
   /** The state after this step, purely as the oracle for the next step — never written anywhere. */
   state: GameState;
 }
@@ -142,11 +184,13 @@ export interface BotStepResult {
 /** Runs one bot phase against `state` purely in Node; used only to decide what to click next. */
 export function planNextStep(state: GameState, seat: number, step: BotStep): BotStepResult;
 
-/** Performs every UI interaction `result` implies for `seat` on `page`: each `moves` entry first
- *  (select the army, click its destination tile — this also drives an attack, since combat starts
- *  by moving onto an occupied tile), then each `events` entry (Deploy/Upgrade/Buy Card/Use
- *  Card/End Turn, etc.). Throws if an action's `data-testid`/role locator isn't found (a real UI
- *  bug the spec should surface, not swallow). */
+/** Performs every UI interaction `result` implies for the acting seat on `page`: each `moves` entry
+ *  (select the army at `from`, click `to`), then each `positions` entry (select the army, open
+ *  Position, pick the resource), then each `attacks` entry (select the army, open Attack, resolve
+ *  the combat dialog), then each `events` entry (Deploy/Upgrade/Buy Card/Use Card/Buy Ability).
+ *  Throws if an expected locator never appears — a real UI bug the spec should surface, not
+ *  swallow. `seat` kept in the signature though every coordinate in `result` was already computed
+ *  for that seat by `planNextStep`. */
 export function performUiAction(page: import('@playwright/test').Page, result: BotStepResult, seat: number): Promise<void>;
 ```
 
@@ -164,10 +208,10 @@ Model escalation: all of 1-6 (per triage's blanket L-tier escalation).
 
 ### Phase 2: UI-bug track
 1. implementer-b: `e2e/bot-ui-actions.ts` (`planNextStep`, `performUiAction`) covering every `LogEvent` kind reachable per `NEVER_CONSUMED_BY_BOTS`. (sonnet)
-2. tester-a: `e2e/bot-ui-actions.test.ts` for `planNextStep`'s pure diffing logic. (sonnet)
+2. tester-a: `e2e/bot-ui-actions.test.ts` for `planNextStep`'s pure diffing logic; narrow `jest.config.js`'s `e2e/` ignore to `.spec.ts` only and add `playwright.config.ts`'s `testMatch: '**/*.spec.ts'` so the new file runs exactly once, under Jest, and not at all under Playwright. (sonnet)
 3. tester-b: `e2e/bot-vs-bot-ui.spec.ts` — two-context orchestration, per-turn capture, post-match filtering, written capture folder. (sonnet)
 4. tester-b: `.claude/agents/ui-bug-reviewer.md` per the Contracts' required content. (sonnet)
-5. Run `npm run typecheck`, `npx eslint e2e`, `npx jest e2e/bot-ui-actions.test.ts`, then one real `npm run test:e2e -- e2e/bot-vs-bot-ui.spec.ts` run to confirm the spec completes and produces a capture folder.
+5. Run `npm run typecheck`, `npx eslint e2e`, `npx jest e2e/bot-ui-actions.test.ts` (must now find and run the 8 tests with no CLI override), `npx playwright test --list` (must list `bot-vs-bot-ui.spec.ts` and must *not* error on `bot-ui-actions.test.ts`), then one real `npm run test:e2e -- e2e/bot-vs-bot-ui.spec.ts` run to confirm the spec completes and produces a capture folder.
 
 Model escalation: all of 1-4 (per triage's blanket L-tier escalation).
 
@@ -182,7 +226,7 @@ Both follow the frontmatter shape of `.claude/agents/docs-sync.md:1-13` (`name`,
   - `metrics/anomalies.test.ts`: zero matches → `totalAnomalies: 0`; one match with two anomalous turns bearing the same message → `byMessage` has one row with `count: 2`; two matches with different messages → two separate rows; `matchesWithAnomalies` counts a match once regardless of how many anomalous turns it had.
   - `metrics/index.test.ts`: `computeConfigMetrics` surfaces the fixture's anomaly count unchanged.
   - `report/flags.test.ts`: the new flag fires only when `totalAnomalies > 0`; its severity is `'breach'` even when `gatedByBotHealth` is `true` (never suppressed).
-  - `e2e/bot-ui-actions.test.ts` (Phase 2): `planNextStep` returns `{ events: [], moves: [], state }` unchanged when a bot phase does nothing; returns the exact `LogEvent[]` tail `parseLogLine` would produce for a seeded state that deploys/buys a card; returns a populated `moves` diff and an empty `events` for a seeded state where the only change is a plain army reposition (no log line), proving `moves` is not derived from the log.
+  - `e2e/bot-ui-actions.test.ts` (Phase 2): `planNextStep` returns all-empty arrays unchanged when a bot phase does nothing; returns the exact `LogEvent[]` tail `parseLogLine` would produce for a seeded state that deploys/buys a card; returns a populated `moves` (with `from` and `to`) and an empty `events` for a seeded state where the only change is a plain army reposition (no log line); returns a populated `positions` and empty `events`/`moves` for a seeded `SelectResourcePosition` step; returns a populated `attacks` for a seeded `InitiateCombat` step; returns a non-null `wealthyResource` for a seeded Wealthy play, proving none of `moves`/`positions`/`attacks`/`wealthyResource` is derived from the log.
 - tester-b (view and e2e):
   - `e2e/bot-vs-bot-ui.spec.ts`: a full 2-seat bot-vs-bot match completes (reaches `Finished` or a round cap) purely through real clicks; at least one capture folder is written; a deliberately broken selector (temporarily renamed in a local run, not committed) produces a flagged turn, confirming the filter actually catches a broken interaction rather than only passing silently.
 
@@ -203,7 +247,51 @@ The earlier non-blocking signature mismatch is also resolved — File plan (line
 
 No other changes needed. Plan is otherwise unchanged from the prior fully-verified pass (all other "Verified context" rows, Decisions, and Phase 1 content stand as previously confirmed).
 
+### Phase 2 re-check after Phase 1 commit (d71b5b8)
+VERDICT: APPROVED (Phase 2 unchanged and still sound)
+
+`git show --stat d71b5b8` touches only `scripts/balance-simulator/**`, `docs/balance-simulator-guide.md` and `.claude/agents/balance-rule-reviewer.md` — nothing under `src/modules/game-rules/**` or `e2e/**`, so none of Phase 2's dependencies moved. Re-verified directly against current code:
+- `applyBotCardStrategy` (`bot-card-strategy.reducer.ts:11`), `applyBotPurchases` (`bot-purchases.reducer.ts:7`), `applyBotArmyActions` (`bot-army-actions.reducer.ts:12`): same exports, same lines.
+- `decideBotTurn` (`bot-turn.reducer.ts:14-27`): identical body — `applyBotCardStrategy` → `applyBotPurchases` → `applyBotArmyActions` → `handleGameAction(EndTurn)`, still unexported for direct Phase-2 use beyond the three sub-functions (unchanged from the original plan's decision to deep-import the sub-functions, not `decideBotTurn` itself).
+- `LogEvent` (`log-parsers.ts:13`) and `parseLogLine` (`log-parsers.ts:155`): same lines, same shape.
+- `NEVER_CONSUMED_BY_BOTS` (`acceptance.test.ts:26-42`): still present, unchanged.
+- `movement.reducer.ts` (the `handleMoveAction` log-gap `moves`-diff relies on): not touched by Phase 1 and not in the working tree's modified-file list — still exactly the three `pushLogEntry` calls verified in the prior pass.
+- `e2e/e2e-cleanup.ts`'s working-tree diff (unrelated to this task, from a concurrent change) only adds explicit `{ timeout: 2000 }` to a few `.click()` calls in `safeCleanupGame` — doesn't change its signature or behavior Phase 2 relies on.
+
+Phase 2's file plan, Contracts (`BotStepResult`, `planNextStep`, `performUiAction`), and Test plan in this document are unchanged since the approved revision; no edit needed.
+
 ### Revision note (architect-a)
 Addressed both review points:
 - Blocking: `planNextStep` now returns `BotStepResult` (`events: LogEvent[]` plus `moves: Array<{ armyId: number; to: { x: number; y: number } }>`, the latter diffed from `Army.position` before/after the step, since `handleMoveAction` logs neither a plain move nor an attack-initiating move — see "Verified context"'s `handleMoveAction` row and the new Decisions bullet). `performUiAction(page, result, seat)` now consumes the full `BotStepResult`, clicking every `moves` entry (which also drives attacks, since combat starts by moving onto an occupied tile) before the `events`-derived actions. File plan, Contracts, Phase 2 steps and the test plan were all updated to match.
 - Non-blocking: `performUiAction`'s signature is now `(page, result, seat)` everywhere — File plan row and Contracts block agree.
+
+### Phase 2 contract deviation sign-off (architect-b)
+VERDICT: APPROVED
+
+implementer-b's four deviations, each independently re-verified against the live code it cites:
+1. **`BotMove` needs `from`.** `game-board.tile-click.hook.ts:85` selects an army by filtering `localPlayer.armies` for `a.position.x === x && a.position.y === y` — i.e. by the tile it currently sits on. Confirmed. `to` alone gives `performUiAction` nowhere to click to select the army before moving it.
+2. **`SelectResourcePosition` needs its own `positions` diff.** `bot-army-actions.reducer.ts:53-63` dispatches `GameAction.SelectResourcePosition` with `{ resource, armyId }`, never touching `Army.position`. `resource-position.reducer.ts:49`'s log line (`"${player.name} positioned an army on ${resource}."`) was grepped against every entry in `log-parsers.ts`'s `MATCHERS` array (`:57-154`): no matcher's string fragment matches "positioned an army on" — confirmed invisible to `events`. Confirmed real gap, confirmed fix.
+3. **`InitiateCombat` needs `attacks`, inferred by elimination.** `bot-army-actions.reducer.ts:30-52` dispatches `GameAction.InitiateCombat` with `{ attackingArmyId, target }` — no `LogEvent` kind carries an army id for a combat result (`monsterWin`/`monsterLoss`/`pvpVictoryPoints`/`pvpResult` in `log-parsers.ts:14-19` are all army-id-less), and combat doesn't move or position the attacker. `diffAttacks`'s elimination logic (`bot-ui-actions.ts:98-108`: army `hasActed` flipped true, and not already accounted for by `moves` or `positions`) is sound given `applyBotArmyActions`'s invariant that an army resolves at most one of attack/position/move per loop (`:30-80`, each a separate `possibleActions` entry, one chosen and executed before the next army is considered).
+4. **`wealthyResource` needs extraction from the log line, not a payload.** `log-parsers.ts:23` (`wealthyGranted`) and `:117` (`cardConsumed(Wealthy)`) both build with no arguments — confirmed no resource payload. `card-targeted-effects.reducer.ts:43`'s exact string (`` `${player.name} used 'Wealthy' to gain ${WEALTHY_GAIN_AMOUNT} ${resource}.` ``) matches `extractWealthyResource`'s regex (`bot-ui-actions.ts:78`) exactly. Confirmed.
+5. **Combat is not auto-driven by a move onto an occupied tile.** Re-read `bot-army-actions.reducer.ts:28-80` directly: `InitiateCombat` (enemy/monster already on the army's *own* tile) and `Move` (to a reachable tile from `getPossibleMoves`) are two separate, mutually-exclusive entries in the same `possibleActions` array for the same army in the same loop — never one triggering the other. The plan's original Decisions/Contracts text (pre-revision) was wrong on this point; now corrected in "Verified context", Decisions, and the Contracts block above.
+
+Every `data-testid`/`GameAction` member implementer-b's file uses is real, not invented: grepped `island-tile-${x}-${y}` (`IslandTile.tsx:91`), `action-button-${id}` (`ActionButton.tsx:41`), `position-resource-btn-${type}` (`PositionDialog.tsx:44`), `wealthy-resource-${type}` (`WealthyDialog.test.tsx` confirms the pattern rendered by `WealthyDialog.tsx`), and every `GameAction.*` member used (`Deploy`, `Upgrade`, `BuyCard`, `InitiateCombat`, `SelectResourcePosition`, `local_Position`, `local_Attack`, `local_ShowCards`, `local_OpenAbilitiesShop`) against `src/lib/types/actions.ts:5-40` — all present with the exact spelling used.
+
+plan.md's Contracts block, File plan row, and Decisions bullet for `e2e/bot-ui-actions.ts` are now updated to match the implemented `BotStepResult`. No further plan edit needed; implementer-b's file matches the (now-corrected) contract.
+
+**Ownership question — resolved:** `plan.md` is authoritative and consistent: `.claude/agents/ui-bug-reviewer.md` is assigned to **tester-b**, stated four times (Decisions, line 54; File plan, line 81; Phase 2 steps, line 210; implied in Required content, line 218) — all written before this session and unchanged by this revision. `progress.md`'s Phase 2 implementation line, which attributes it to implementer-b, is the error; it should be corrected to tester-b (not done here — editing `progress.md`'s prose beyond ticking boxes is the coordinator's job, per this skill's scope rule).
+
+### Jest/Playwright test-match scope decision (architect-b)
+VERDICT: IN SCOPE — fix required this phase, owned by tester-a
+
+tester-a's finding reproduced directly: `npx jest e2e/bot-ui-actions.test.ts` → `No tests found, exiting with code 1` under today's `jest.config.js:18` (`testPathIgnorePatterns` includes the whole `<rootDir>/e2e/`). This blocks Phase 2 step 5's own check command, so it must be fixed in this phase — deferring it to a separate task would ship a phase whose Definition of Done it can't actually run.
+
+A second, previously undetected half of the same problem: Playwright's own default `testMatch` is `**/*.@(spec|test).?(c|m)[jt]s?(x)` (confirmed in `node_modules/playwright/lib/common/index.js:639`), which also matches `.test.ts`. Reproduced: `npx playwright test --list` throws `ReferenceError: describe is not defined` at `e2e/bot-ui-actions.test.ts:60` right now, because Playwright tries to load it as a spec (no global `describe`, that's a Jest/Jasmine global). A fix that only touches `jest.config.js` leaves `npm run test:e2e` broken.
+
+Prototyped and verified both halves of the fix in this session (applied, tested, then reverted — not committed, `tester-a` owns actually landing this):
+1. `jest.config.js:18`: change `'<rootDir>/e2e/'` to `'<rootDir>/e2e/.*\\.spec\\.ts$'`. Verified: `npx jest e2e/bot-ui-actions.test.ts` → `Tests: 8 passed, 8 total` with no CLI override.
+2. `playwright.config.ts:12`: add `testMatch: '**/*.spec.ts',` right after `testDir: './e2e',`. Verified: `npx playwright test --list` → lists exactly the 7 existing `.spec.ts` tests in 5 files, no error on `bot-ui-actions.test.ts`.
+3. Full-suite regression check with both changes applied: `npm test` → `Test Suites: 59 failed, 355 passed, 414 total` / `Tests: 620 failed, 4293 passed, 4913 total`. Reverted both files and re-ran: `Test Suites: 59 failed, 354 passed, 413 total` / `Tests: 620 failed, 4285 passed, 4905 total` — **identical** 59 failed suites / 620 failed tests before and after; the only delta is the new suite (+1) and its 8 tests (+8), both passing. The 59 pre-existing failures come from an unrelated concurrent worktree (`.claude/worktrees/inspiring-kare-ee7f7f/`, a parallel agent's copy of this repo that Jest's default config doesn't exclude) — confirmed pre-existing and out of scope for this task; not touched.
+4. `npm run typecheck` → clean before and after (neither config file is type-checked by `tsc`, but confirmed no fallout elsewhere).
+
+plan.md's File plan (two new rows under `e2e/bot-ui-actions.test.ts`), Decisions, and Phase 2 steps 2 and 5 are updated above to assign this to tester-a and make it part of this phase's checks. Rejected: leaving Phase 2 step 5's command as a permanent CLI override (hides the gap instead of fixing it — `npm test`/CI never run with that override); rejected: assigning to implementer-b (owns `e2e/bot-ui-actions.ts`'s logic, not test-runner config; tester-a is the one who found the gap and whose own check needs it to pass for real).

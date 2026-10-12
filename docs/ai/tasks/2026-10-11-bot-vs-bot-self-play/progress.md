@@ -15,11 +15,11 @@ Tier: L · Phases: 2
 - [x] committed: d71b5b8
 
 ## Phase 2: UI-bug track
-- [ ] plan approved (architect-b)
-- [ ] implementation (implementer-b: `e2e/bot-ui-actions.ts`, `.claude/agents/ui-bug-reviewer.md`; tester-b: `e2e/bot-vs-bot-ui.spec.ts`)
-- [ ] tests (tester-a: `e2e/bot-ui-actions.test.ts`; tester-b: e2e run)
-- [ ] checks: typecheck, lint, unit tests, one real `test:e2e` run of the new spec
-- [ ] final review (architect-b)
+- [x] plan approved (architect-b)
+- [x] implementation (implementer-b: `e2e/bot-ui-actions.ts`; tester-b: `e2e/bot-vs-bot-ui.spec.ts`, `.claude/agents/ui-bug-reviewer.md`)
+- [x] tests (tester-a: `e2e/bot-ui-actions.test.ts`; tester-b: e2e run)
+- [x] checks: typecheck, lint, unit tests — not run: one real `test:e2e` run of the new spec, no Java runtime in this environment; run before deploy
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Log
