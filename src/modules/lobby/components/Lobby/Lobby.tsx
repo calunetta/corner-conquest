@@ -83,7 +83,7 @@ export function LobbyView(model: LobbyViewModel) {
                     </div>
                     <div className={styles.tacticalItem}>
                       <Shield className={`${styles.tacticalItemIcon} text-blue-400`} />
-                      <p><strong className="text-foreground">Positioning:</strong> Position armies on resource islands to gather food, wood, and gold every turn.</p>
+                      <p><strong className="text-foreground">Positioning:</strong> Position armies on resource islands to gather food, wood, and gold — re-position each turn to keep collecting.</p>
                     </div>
                     <div className={styles.tacticalItem}>
                       <Sparkles className={`${styles.tacticalItemIcon} text-purple-400`} />
