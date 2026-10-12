@@ -6,7 +6,9 @@ import { pushLogEntry } from '../log-entry';
 
 /**
  * Hands a seat in an in-progress match to a bot instead of removing it, so seat indices and
- * every reference to them stay valid. Ends the seat's turn if it was theirs.
+ * every reference to them stay valid. Does not end the seat's turn: if it was that seat's turn,
+ * it stays the current player as a bot, and the session driver's bot-turn effect
+ * (`game-board.engine.hook.ts`) plays it out and ends it from there.
  */
 function convertSeatToBot(state: GameState, playerIndex: number): void {
   const seat = state.players[playerIndex];
@@ -18,10 +20,6 @@ function convertSeatToBot(state: GameState, playerIndex: number): void {
   seat.isBot = true;
   seat.isVacant = true;
   seat.lastSeenAt = null;
-
-  if (state.currentPlayerIndex === playerIndex) {
-    handleEndTurn(state);
-  }
 }
 
 /**

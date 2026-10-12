@@ -188,35 +188,56 @@ describe('handlePlayerExit', () => {
       );
     });
 
-    it("passes the turn to the next seat when the converted seat was the current player's turn", async () => {
+    it("keeps the turn on the converted seat when it was the current player's turn (3-player match, middle seat)", async () => {
       const game = buildStartedGame(['p2', 'p3']);
       game.currentPlayerIndex = 1; // Player 2's turn
       const turnBefore = game.turn;
+      const logLengthBefore = game.log.length;
       const transaction = stubTransaction(game);
 
       await handlePlayerExit('game_test', 'p2');
 
       const written = writtenStateOf(transaction);
       expect(written.players[1].isBot).toBe(true);
-      expect(written.currentPlayerIndex).toBe(2);
+      expect(written.currentPlayerIndex).toBe(1);
       expect(written.players[2].name).toBe('Player 3');
       expect(written.turn).toBe(turnBefore);
-      expect(written.log.map(toLogMessage)).toContain("It's now Player 3's turn.");
+      const newLogMessages = written.log.slice(logLengthBefore).map(toLogMessage);
+      expect(newLogMessages).toEqual(['Player 2 has left the game. A bot is taking over their seat.']);
     });
 
-    it('wraps the turn back to the host when the converted seat was the last seat and the current player', async () => {
+    it('keeps the turn on the converted seat when it was the current player turn (2-player match)', async () => {
+      const game = buildStartedGame(['p2']);
+      game.currentPlayerIndex = 1; // Player 2 (guest) is mid-turn
+      const turnBefore = game.turn;
+      const logLengthBefore = game.log.length;
+      const transaction = stubTransaction(game);
+
+      await handlePlayerExit('game_test', 'p2');
+
+      const written = writtenStateOf(transaction);
+      expect(written.players[1]).toMatchObject({ isBot: true, isVacant: true, lastSeenAt: null });
+      expect(written.currentPlayerIndex).toBe(1);
+      expect(written.turn).toBe(turnBefore);
+      const newLogMessages = written.log.slice(logLengthBefore).map(toLogMessage);
+      expect(newLogMessages).toEqual(['Player 2 has left the game. A bot is taking over their seat.']);
+    });
+
+    it('keeps the turn on the last seat (no wrap to the host) when the converted seat was the last seat and the current player', async () => {
       const game = buildStartedGame(['p2', 'p3']);
       game.currentPlayerIndex = 2; // Player 3's turn, the last seat
       const turnBefore = game.turn;
+      const logLengthBefore = game.log.length;
       const transaction = stubTransaction(game);
 
       await handlePlayerExit('game_test', 'p3');
 
       const written = writtenStateOf(transaction);
       expect(written.players[2].isBot).toBe(true);
-      expect(written.currentPlayerIndex).toBe(0);
-      expect(written.turn).toBe(turnBefore + 1);
-      expect(written.log.map(toLogMessage)).toContain("It's now Host's turn.");
+      expect(written.currentPlayerIndex).toBe(2);
+      expect(written.turn).toBe(turnBefore);
+      const newLogMessages = written.log.slice(logLengthBefore).map(toLogMessage);
+      expect(newLogMessages).toEqual(['Player 3 has left the game. A bot is taking over their seat.']);
     });
 
     it('does not move currentPlayerIndex when a seat other than the current one is converted', async () => {
