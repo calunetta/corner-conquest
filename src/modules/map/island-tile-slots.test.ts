@@ -41,35 +41,34 @@ describe('CORNER_TRANSFORMS', () => {
 });
 
 describe('resource slot tables', () => {
-  it('pins the single-node slot in the middle band', () => {
+  it('pins the single-node slot center in the middle band', () => {
     expect(SINGLE_RESOURCE_SLOT).toEqual({
-      top: '46%',
+      top: '65.5%',
       left: '50%',
-      transform: 'translateX(-50%)',
       size: 39,
     });
   });
 
-  it('pins the two-node slots with left and right at 24%', () => {
+  it('pins the two-node slot centers', () => {
     expect(DUAL_RESOURCE_SLOTS).toEqual([
-      { top: '20%', left: '24%', size: 32 },
-      { top: '70%', right: '24%', size: 32 },
+      { top: '36%', left: '40%', size: 32 },
+      { top: '86%', left: '60%', size: 32 },
     ]);
   });
 
-  it('pins the three-node slots: slot 1 left at 24%, slots 2-3 unchanged at 12%', () => {
+  it('pins the three-node slot centers', () => {
     expect(TRIPLE_RESOURCE_SLOTS).toEqual([
-      { top: '20%', left: '24%', size: 27 },
-      { top: '46%', right: '12%', size: 27 },
-      { top: '70%', left: '12%', size: 27 },
+      { top: '33.5%', left: '37.5%', size: 27 },
+      { top: '59.5%', left: '74.5%', size: 27 },
+      { top: '83.5%', left: '25.5%', size: 27 },
     ]);
   });
 
-  it('pins the three Base edge-midpoint slots', () => {
+  it('pins the three Base resource slot centers', () => {
     expect(BASE_RESOURCE_SLOTS).toEqual([
-      { top: '4%', left: '50%', transform: 'translateX(-50%)', size: 22 },
-      { bottom: '4%', left: '35%', transform: 'translateX(-50%)', size: 22 },
-      { bottom: '4%', left: '65%', transform: 'translateX(-50%)', size: 22 },
+      { top: '15%', left: '50%', size: 22 },
+      { top: '85%', left: '35%', size: 22 },
+      { top: '85%', left: '65%', size: 22 },
     ]);
   });
 });

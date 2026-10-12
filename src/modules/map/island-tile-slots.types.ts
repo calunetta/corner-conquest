@@ -40,33 +40,40 @@ export interface SlotDef {
   size: number;
 }
 
+// top/left are always the node's CENTER point, not a corner: TileResourcesView centers every
+// node on it with transform: translate(-50%, -50%). This is load-bearing, not cosmetic — the
+// Food sprite's box is inflated 1.45x (FOOD_SCALE, TileResources.map.ts) to compensate its
+// transparent canvas padding, and a corner-anchored box grows only away from its anchor, so a
+// slot anchored near an edge (e.g. the old `top: '70%'`) pushed an inflated Food node's visible
+// center most of the way off the tile. Centering keeps growth symmetric around the same point
+// in every direction, which is also why these are the exact centers the old edge-anchored
+// values resolved to (top' = top + size/2, etc.) — unscaled (Wood/Gold) placement is unchanged.
 export const SINGLE_RESOURCE_SLOT: SlotDef = {
-  top: '46%',
+  top: '65.5%',
   left: '50%',
-  transform: 'translateX(-50%)',
   size: 39,
 };
 
 // left/right corrected 14% -> 24% to clear the boat corner band (was the one coordination
 // gap the triage flagged: these slots were never checked against the boat corners).
 export const DUAL_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '20%', left: '24%', size: 32 },
-  { top: '70%', right: '24%', size: 32 },
+  { top: '36%', left: '40%', size: 32 },
+  { top: '86%', left: '60%', size: 32 },
 ];
 
 // Slot 1's left corrected 12% -> 24% (same gap as above); slots 2-3 already clear by their
 // vertical offset (46%/70% fall outside the 0-22%/78-100% bands) and are unchanged.
 export const TRIPLE_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '20%', left: '24%', size: 27 },
-  { top: '46%', right: '12%', size: 27 },
-  { top: '70%', left: '12%', size: 27 },
+  { top: '33.5%', left: '37.5%', size: 27 },
+  { top: '59.5%', left: '74.5%', size: 27 },
+  { top: '83.5%', left: '25.5%', size: 27 },
 ];
 
 // Edge-midpoint slots keep clear of the boat and occupant corner anchors. Unchanged.
 export const BASE_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '4%', left: '50%', transform: 'translateX(-50%)', size: 22 },
-  { bottom: '4%', left: '35%', transform: 'translateX(-50%)', size: 22 },
-  { bottom: '4%', left: '65%', transform: 'translateX(-50%)', size: 22 },
+  { top: '15%', left: '50%', size: 22 },
+  { top: '85%', left: '35%', size: 22 },
+  { top: '85%', left: '65%', size: 22 },
 ];
 
 export interface TreeSlot {

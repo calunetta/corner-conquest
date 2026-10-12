@@ -181,7 +181,7 @@ describe('TileResourcesView placement and sizing', () => {
   it('places a single resource node in the middle band of the tile', () => {
     const nodes = toTileResourcesViewModel(resourceIslandWithFood, false, players);
     render(<TileResourcesView nodes={nodes} />);
-    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '46%', left: '50%' });
+    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '65.5%', left: '50%' });
   });
 
   it('sizes a single Food node as a percent of the tile, scaled up for the sheep canvas padding', () => {
@@ -204,11 +204,11 @@ describe('TileResourcesView placement and sizing', () => {
     expect(screen.getByTestId('resource-node-food')).toHaveStyle({ width: '31.9%', height: '31.9%' });
   });
 
-  it('places the Base food node at the top edge midpoint and the Base gold node at the bottom-left edge', () => {
+  it('places the Base food node at the top-center slot and the Base gold node at the bottom-left slot', () => {
     const nodes = toTileResourcesViewModel(baseIslandWithResources, true, players);
     render(<TileResourcesView nodes={nodes} />);
-    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '4%', left: '50%' });
-    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ bottom: '4%', left: '35%' });
+    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '15%', left: '50%' });
+    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ top: '85%', left: '35%' });
   });
 
   it('gives a farmed Gold node a 65% collector badge centered on the node\'s left edge', () => {

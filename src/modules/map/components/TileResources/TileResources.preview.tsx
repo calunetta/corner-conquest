@@ -46,7 +46,7 @@ const withCollectorNode: ResourceNodeViewModel[] = [
     key: 'resource-node-food-collector',
     spriteSrc: '/sprites/sheep.gif',
     nodeSize: '56.6%',
-    slotStyle: { top: '46%', left: '50%', transform: 'translateX(-50%)' },
+    slotStyle: { top: '65.5%', left: '50%' },
     farmingCollector: {
       color: 'blue',
       sprite: '/sprites/farm_blue.gif',

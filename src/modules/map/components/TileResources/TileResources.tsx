@@ -40,6 +40,10 @@ export function TileResourcesView({ nodes, showFarmingCollector = true }: TileRe
             width: node.nodeSize,
             height: node.nodeSize,
             ...node.slotStyle,
+            // slot.top/left is the node's center; centering here (not baked into the slot
+            // table) keeps FOOD_SCALE's size inflation growing symmetrically around that
+            // point instead of overflowing past the tile in one direction.
+            transform: 'translate(-50%, -50%)',
           }}
         >
           <div data-testid={`resource-sprite-${node.type}`} className={styles.resourceSprite}>

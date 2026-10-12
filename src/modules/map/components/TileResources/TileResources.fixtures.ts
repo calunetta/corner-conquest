@@ -67,6 +67,6 @@ export const singleNodeFixture: ResourceNodeViewModel = {
   key: 'resource-node-food-0',
   spriteSrc: '/sprites/sheep.gif',
   nodeSize: '56.6%',
-  slotStyle: { top: '46%', left: '50%', transform: 'translateX(-50%)' },
+  slotStyle: { top: '65.5%', left: '50%' },
   farmingCollector: null,
 };

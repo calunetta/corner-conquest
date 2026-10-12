@@ -384,27 +384,27 @@ describe('toTileResourcesViewModel', () => {
 });
 
 describe('toTileResourcesViewModel band and Base slot positions', () => {
-  it('places a single resource node in the middle band (top 46%)', () => {
+  it('places a single resource node centered in the middle band', () => {
     const result = toTileResourcesViewModel(resourceIslandWithFood, false, mockPlayers);
-    expect(result![0].slotStyle).toEqual({ top: '46%', left: '50%', transform: 'translateX(-50%)' });
+    expect(result![0].slotStyle).toEqual({ top: '65.5%', left: '50%' });
   });
 
-  it('places a two-node island at top 20% and top 70%, not both in the top band', () => {
+  it('places a two-node island at distinct centers, not both in the top band', () => {
     const result = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, mockPlayers);
     expect(result).toHaveLength(2);
     expect(result![0].type).toBe(ResourceType.Gold);
-    expect(result![0].slotStyle).toEqual({ top: '20%', left: '24%' });
+    expect(result![0].slotStyle).toEqual({ top: '36%', left: '40%' });
     expect(result![1].type).toBe(ResourceType.Wood);
-    expect(result![1].slotStyle).toEqual({ top: '70%', right: '24%' });
+    expect(result![1].slotStyle).toEqual({ top: '86%', left: '60%' });
   });
 
-  it('places a three-node island at top 20%, 46%, 70% with alternating left/right/left', () => {
+  it('places a three-node island at three distinct centers', () => {
     const result = toTileResourcesViewModel(resourceIslandWithDualResources, false, mockPlayers);
     expect(result).toHaveLength(3);
     expect(result!.map((n) => n.slotStyle)).toEqual([
-      { top: '20%', left: '24%' },
-      { top: '46%', right: '12%' },
-      { top: '70%', left: '12%' },
+      { top: '33.5%', left: '37.5%' },
+      { top: '59.5%', left: '74.5%' },
+      { top: '83.5%', left: '25.5%' },
     ]);
   });
 
@@ -417,11 +417,11 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
     });
   });
 
-  it('gives each Base node its edge-midpoint slot position, with no explicit width or height', () => {
+  it('gives each Base node its resource slot center, with no explicit width or height', () => {
     const result = toTileResourcesViewModel(baseIslandWithResources, true, mockPlayers);
     expect(result!.map((n) => n.slotStyle)).toEqual([
-      { top: '4%', left: '50%', transform: 'translateX(-50%)' },
-      { bottom: '4%', left: '35%', transform: 'translateX(-50%)' },
+      { top: '15%', left: '50%' },
+      { top: '85%', left: '35%' },
     ]);
   });
 
@@ -429,9 +429,9 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
     const result = toTileResourcesViewModel(baseIslandWithThreeResources, true, mockPlayers);
     expect(result!.map((n) => n.type)).toEqual([ResourceType.Food, ResourceType.Wood, ResourceType.Gold]);
     expect(result!.map((n) => n.slotStyle)).toEqual([
-      { top: '4%', left: '50%', transform: 'translateX(-50%)' },
-      { bottom: '4%', left: '35%', transform: 'translateX(-50%)' },
-      { bottom: '4%', left: '65%', transform: 'translateX(-50%)' },
+      { top: '15%', left: '50%' },
+      { top: '85%', left: '35%' },
+      { top: '85%', left: '65%' },
     ]);
   });
 
