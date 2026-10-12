@@ -3,10 +3,14 @@ import { CardName, GameAction, ResourceType as ResourceEnum } from '@/lib/types'
 import { canAfford } from './bot-helpers';
 import { handleGameAction } from './game-rules.reducer';
 
+/** Resource priority a bot uses to pick which positioned resource to double with Productive. */
+const PRODUCTIVE_RESOURCE_PRIORITY: ResourceType[] = [ResourceEnum.Food, ResourceEnum.Wood, ResourceEnum.Gold];
+
 /**
  * Pre-turn strategic card activations: Reinforce, Efficient and MasterBuilder (unconditional),
- * then Wealthy (picks the resource the bot needs most) and Sabotage (targets the first human
- * opponent found).
+ * then Wealthy (picks the resource the bot needs most), Sabotage (targets the first human
+ * opponent found) and Productive (resolves a pending dialog for the bot's own seat, same resource
+ * priority as Wealthy, or clears the dialog with no selection if the bot has no positioned army).
  */
 export function applyBotCardStrategy(state: GameState): GameState {
   let currentState = state;
@@ -53,6 +57,19 @@ export function applyBotCardStrategy(state: GameState): GameState {
       const temp = handleGameAction({ action: GameAction.SabotagePlayer, gameState: currentState, payload: { targetPlayerId: opponent.id } });
       if (temp.state) currentState = temp.state;
     }
+  }
+
+  activeBot = currentState.players[currentState.currentPlayerIndex];
+
+  if (currentState.productiveDialogState?.playerId === activeBot.id) {
+    const positionedResources = activeBot.positions.map((position) => position.resource);
+    const selectedResource = PRODUCTIVE_RESOURCE_PRIORITY.find((resource) => positionedResources.includes(resource)) ?? null;
+    const temp = handleGameAction({
+      action: GameAction.UseProductiveCard,
+      gameState: currentState,
+      payload: { selectedResource },
+    });
+    if (temp.state) currentState = temp.state;
   }
 
   return currentState;

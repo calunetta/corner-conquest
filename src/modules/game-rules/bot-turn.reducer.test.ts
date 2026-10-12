@@ -1,4 +1,4 @@
-import { PlayerColor, CardName, IslandType, MonsterName } from '@/lib/types';
+import { PlayerColor, CardName, IslandType, MonsterName, ResourceType } from '@/lib/types';
 import type { GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from './game-setup.reducer';
 import { decideBotTurn } from './bot-turn.reducer';
@@ -127,6 +127,30 @@ describe('decideBotTurn', () => {
     expect(finalState.log.map(toLogMessage)).toContain("It's now Player 1's turn.");
     // The army never got a chance to act (no move, attack or position had a candidate).
     expect(finalState.players[1].armies[0].hasActed).toBe(false);
+  });
+
+  it('a bot holding Productive with a pending dialog resolves it instead of leaving resource collection stalled for the rest of the match (reproduces stalled auto-collection bug)', () => {
+    const game = buildBotTurnGame();
+    const bot = game.players[1];
+    bot.specialCards = [CardName.Productive];
+    const armyPos = bot.armies[0].position;
+    bot.positions.push({
+      armyId: bot.armies[0].id,
+      resource: ResourceType.Gold,
+      x: armyPos.x,
+      y: armyPos.y,
+    });
+    const tile = game.map[armyPos.y * game.settings.gridSize.cols + armyPos.x];
+    tile.positionedBy = [{ playerId: bot.id, resource: ResourceType.Gold }];
+    // Mirrors what handleEndTurn arms on rotation into a Productive-holding player
+    // (player-turn.reducer.ts:92-93) instead of auto-collecting.
+    game.productiveDialogState = { playerId: bot.id };
+    const goldBefore = bot.resources.gold;
+
+    const finalState = decideBotTurn(game);
+
+    expect(finalState.productiveDialogState).toBeNull();
+    expect(finalState.players[1].resources.gold).toBeGreaterThan(goldBefore);
   });
 
   it('does not mutate the state passed in (pure reducer)', () => {
