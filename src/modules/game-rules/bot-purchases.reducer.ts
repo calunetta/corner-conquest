@@ -18,7 +18,8 @@ export function applyBotPurchases(state: GameState): GameState {
   }
   activeBot = currentState.players[currentState.currentPlayerIndex];
 
-  const upgradeCost = activeBot.masterBuilderActive
+  const canUseCard = !activeBot.actionsThisTurn.includes(GameAction.UseCard);
+  const upgradeCost = activeBot.masterBuilderActive && canUseCard
     ? Math.ceil(currentState.settings.upgradeCost / 2)
     : currentState.settings.upgradeCost;
   if (canAfford(activeBot, upgradeCost, ResourceEnum.Wood) && activeBot.attackPower < 4 && !activeBot.actionsThisTurn.includes(GameAction.Upgrade)) {
@@ -27,7 +28,6 @@ export function applyBotPurchases(state: GameState): GameState {
   }
   activeBot = currentState.players[currentState.currentPlayerIndex];
 
-  const canUseCard = !activeBot.actionsThisTurn.includes(GameAction.UseCard);
   const deployCost = activeBot.reinforceActive && canUseCard
     ? 0
     : activeBot.efficientActive && canUseCard

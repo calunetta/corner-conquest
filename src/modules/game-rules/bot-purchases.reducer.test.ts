@@ -125,3 +125,53 @@ describe('applyBotPurchases — Deploy pre-check', () => {
     expect(finalState.players[1].resources[ResourceType.Food]).toBe(0); // nothing was spent
   });
 });
+
+describe('applyBotPurchases — Upgrade pre-check', () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
+  // Same bug shape as the Deploy repro above (plan.md's Bug 1): bot-purchases.reducer.ts:21-23
+  // computes upgradeCost from masterBuilderActive alone, with no canUseCard gate, unlike
+  // handleUpgradeAction (player-actions.reducer.ts:89-93), which additionally requires
+  // canUseCard = !actionsThisTurn.includes(GameAction.UseCard) before applying the discount. If the
+  // bot already used a card this turn, the pre-check still assumes the half-price discount, wrongly
+  // believes Upgrade is affordable, dispatches it, and handleUpgradeAction (full cost, since
+  // canUseCard is false) throws "Not enough wood." — a reducerError anomaly, surfaced here as the
+  // bot's attackPower/wood being left unchanged after applyBotPurchases runs.
+  it('does not propose Upgrade when the bot already used its card this turn and the Master Builder discount no longer applies', () => {
+    const game = buildBotTurnGame();
+    const bot = game.players[1];
+    bot.resources[ResourceType.Wood] = 3; // affordable at the discounted (half) cost of 3, not at the full cost of 6
+    bot.masterBuilderActive = true;
+    bot.actionsThisTurn = [GameAction.UseCard]; // the bot already used its one card-use action this turn
+
+    const finalState = applyBotPurchases(game);
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+    expect(finalState.players[1].attackPower).toBe(0); // no Upgrade was attempted or applied
+    expect(finalState.players[1].resources[ResourceType.Wood]).toBe(3); // nothing was spent
+  });
+
+  // Regression guard: the legitimate case (no card used yet this turn) must keep working once the
+  // canUseCard gate is added — the discount still applies and Upgrade still succeeds.
+  it('still upgrades at the discounted cost when the bot has not used a card yet this turn', () => {
+    const game = buildBotTurnGame();
+    const bot = game.players[1];
+    bot.resources[ResourceType.Wood] = 3; // affordable only at the discounted (half) cost
+    bot.masterBuilderActive = true;
+    bot.actionsThisTurn = [];
+
+    const finalState = applyBotPurchases(game);
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+    expect(finalState.players[1].attackPower).toBe(1); // Upgrade succeeded
+    expect(finalState.players[1].resources[ResourceType.Wood]).toBe(0); // full 3-wood discounted cost spent
+  });
+});
