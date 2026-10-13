@@ -18,7 +18,7 @@ Tier: L · Phases: 2
 - [x] UI verified (ui-verify)
 - [x] docs-sync (docs/architecture/game-mechanics.md:35)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 5e4ddff
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
