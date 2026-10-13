@@ -3,7 +3,7 @@ import { IslandType, PlayerColor, ResourceType } from '@/lib/types';
 import { initialUIState } from '@/modules/game-board';
 import type { GameBoardUIState } from '@/modules/game-board';
 import { buildPlayer, buildGameState } from '../../board-context.fixtures';
-import { buildSlotTuningFixtures } from './IslandTile.fixtures.slot-tuning';
+import { buildSlotTuningFixtures, buildCornerOccupants4 } from './IslandTile.fixtures.slot-tuning';
 import type { IslandTileContext } from './IslandTile.types';
 
 const GRID_SIZE = 5;
@@ -118,6 +118,10 @@ export const occupiedResourceIsland: Island = {
   id: '2-2-occupied', x: 2, y: 2, type: IslandType.Resource, resources: [{ type: ResourceType.Food, amount: 1 }], occupants: [{ playerId: 0, armyId: 0 }], positionedBy: [],
 };
 
+export const cornerOccupants4 = buildCornerOccupants4(
+  localPlayerFixture, opponentPlayerFixture, thirdPlayerFixture, fourthPlayerFixture,
+);
+
 export const {
   resourceIslandWithTwoNodesAndThreeOccupants,
   resourceIslandWithThreeNodesAndThreeOccupants,
@@ -144,6 +148,16 @@ export const gameStateFixture: GameState = buildGameState({
     emptyIslandSlotTuningGrove2, emptyIslandSlotTuningGrove3, baseIslandSlotTuningAll,
   ],
   settings: BASE_SETTINGS,
+});
+
+/** debugMode bypasses fog-of-war entirely (see TileOccupants.hook.ts / TileBoats.map.ts), so
+ *  the interactive slot lab can hand IslandTileView any arbitrary island id/x/y it builds on
+ *  the fly, with no need to pre-register it in anyone's revealedTiles or in `map` above. */
+export const labGameStateFixture: GameState = buildGameState({
+  players: [localPlayerFixture, opponentPlayerFixture, thirdPlayerFixture, fourthPlayerFixture],
+  map: [],
+  settings: BASE_SETTINGS,
+  debugMode: true,
 });
 
 export const uiStateFixture: GameBoardUIState = initialUIState;

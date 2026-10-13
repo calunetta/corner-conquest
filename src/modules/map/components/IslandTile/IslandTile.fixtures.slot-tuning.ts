@@ -1,6 +1,19 @@
 import type { Island, Player } from '@/lib/types';
 import { IslandType, ResourceType } from '@/lib/types';
 
+/** One army per corner (br, tr, tl, bl — BOAT_CORNER_POSITIONS order), each a different
+ *  player color, so every corner's knight-vs-resource/forest overlap is visible at once.
+ *  Exported standalone so the interactive slot lab (IslandTile.preview.tsx) can build its
+ *  own islands with the same occupant set without going through buildSlotTuningFixtures. */
+export function buildCornerOccupants4(localPlayer: Player, opponentPlayer: Player, thirdPlayer: Player, fourthPlayer: Player) {
+  return [
+    { playerId: localPlayer.id, armyId: localPlayer.armies[0].id },
+    { playerId: opponentPlayer.id, armyId: opponentPlayer.armies[0].id },
+    { playerId: thirdPlayer.id, armyId: thirdPlayer.armies[0].id },
+    { playerId: fourthPlayer.id, armyId: fourthPlayer.armies[0].id },
+  ];
+}
+
 /** Corner-occupant fixtures, split out of IslandTile.fixtures.ts to stay under max-lines: every
  *  occupant-vs-node/tree collision shape in one set of states. Edit OCCUPANT_CORNER_SLOTS /
  *  TileOccupants.styles.ts and reload the matching testbed state (group "Game map" > "Island
