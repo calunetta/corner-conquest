@@ -1,133 +1,169 @@
-# Plan: Host never sees the bot playing a departed guest's seat
+# Plan: Host doesn't see a reclaimed seat flip from bot back to human (Phase 2)
 
 Status: APPROVED
-Inputs: triage.md
+Inputs: triage.md, progress.md's Log (tester-b's Phase 1 e2e blocker)
 
 ## Goal and acceptance criteria
-- [ ] After a guest leaves mid-match during their own turn, the host's client shows `"<guest name>'s Turn"` while the bot plays that seat's remaining turn, then shows `"Your Turn"` once the bot ends it.
-- [ ] `e2e/reconnect-bot-takeover.spec.ts` passes against the Firestore emulator (`npm run test:e2e -- e2e/reconnect-bot-takeover.spec.ts`).
-- [ ] No regression to the staleness-triggered conversion path (same service, same code path).
+- [ ] After a guest reclaims their seat while it is the host's turn, the host's client reflects the seat's `isBot: false` within one Firestore round trip (no 15s wait, no requiring the host to end their turn first).
+- [ ] After the host then ends their turn, the reclaimed guest's client shows `"Your Turn"` (today the host's `EndTurn` write silently reverts the reclaim — see Root cause).
+- [ ] `e2e/reconnect-bot-takeover.spec.ts` passes end to end against the Firestore emulator (`npm run test:e2e -- e2e/reconnect-bot-takeover.spec.ts`), including line 104's `guestPage.getByText('Your Turn')` assertion, which is where it fails today.
+- [ ] No regression to the existing turn-buffer behavior: a human's own in-progress actions during their turn (`Move`, combat, `Deploy`, etc.) are still held in `localGameState` and not visible to or overwritten by other clients until the turn ends.
 
 ## Verified context
 | Symbol or file | Location | Why it matters |
 |---|---|---|
-| `convertSeatToBot` | `src/modules/game-rules/services/player-exit.service.ts:11-25` | Converts a seat to a bot; today it also force-ends the seat's turn when that seat was the current player (lines 22-24). This is the bug. Its docstring at line 9 ("Ends the seat's turn if it was theirs.") also describes this and must be corrected in the same edit. |
-| `handlePlayerExit` | `src/modules/game-rules/services/player-exit.service.ts:36` | Calls `convertSeatToBot` inside a `runTransaction` whenever `status === Playing`; used by both an explicit exit (`game-board.session.hook.ts:35`) and the staleness check (`game-board.staleness.hook.ts:25`). |
-| `handleEndTurn` | `src/modules/game-rules/player-turn.reducer.ts:44` | Advances `currentPlayerIndex` to the next seat (skips `isBot` seats are NOT skipped — only `isSabotaged` seats are) and appends an `"It's now <name>'s turn."` log entry at `player-turn.reducer.ts:112`. Called both by `convertSeatToBot` (the bug) and later by `decideBotTurn` when the bot actually finishes its turn. |
-| `decideBotTurn` | `src/modules/game-rules/bot-turn.reducer.ts:14-27` | Clones state, runs bot card/purchase/army logic, then calls `handleGameAction({ action: EndTurn })` itself (line 21) — the turn-ending step already happens here once the bot has acted. |
-| `takeBotTurn` | `src/modules/game-rules/services/bot-turn.service.ts:10-15` | Returns early unless `players[currentPlayerIndex]` is a bot in a `playing` match. Only fires when `currentPlayerIndex` actually points at the bot seat. |
-| session-driver bot-turn effect | `src/modules/game-board/game-board.engine.hook.ts:155-163` | `useEffect` that calls `takeBotTurn(gameState)` after a 1s delay, gated on `gameState.players[gameState.currentPlayerIndex]?.isBot`. Never fires for the converted seat today because `currentPlayerIndex` has already moved past it by the time any client observes the write. |
-| `isMyTurn` | `src/modules/game-board/game-board.engine.hook.ts:85-91` | `currentPlayer.id === localPlayer.id && !currentPlayer.isBot`. |
-| `toGameStatusBadgeViewModel` | `src/modules/hud/components/GameStatusBadge/GameStatusBadge.map.ts:13` | `turnLabel = isMyTurn ? 'Your Turn' : `${players[currentPlayerIndex]?.name}'s Turn`` — this is the text the e2e spec asserts on (`e2e/reconnect-bot-takeover.spec.ts:93`). Not edited by this plan; cited only to show the fix is sufficient to make it render correctly once `currentPlayerIndex` rests on the converted seat. |
-| existing unit tests encoding the bug | `src/modules/game-rules/services/player-exit.service.test.ts:191-220` | Two tests assert that converting the current player's seat immediately advances `currentPlayerIndex` past it. These assert the behavior being removed and must be rewritten (see Test plan). |
-| docs describing the bug as intended behavior | `docs/architecture/systems-and-visuals.md:86` | "...and if it was that seat's turn, `handleEndTurn` runs." Contradicts `docs/architecture/systems-and-visuals.md:49`, which already correctly describes the fixed behavior ("...the session driver's bot-turn effect...drives it from then on"). Line 86 must be corrected (docs-sync). |
+| `useGameBoardState` / `gameStateForDisplay` | `src/modules/game-board/game-board.state.hook.ts:9-18` | `gameStateForDisplay = isMyTurn && localGameState ? localGameState : serverGameState`. While it's the host's turn, the host's UI renders exclusively from `localGameState`, a buffer seeded once at turn start (line 31, `cloneDeep(serverGameState)`) and never otherwise re-synced from later `serverGameState` snapshots. |
+| turn-buffer seeding effect | `src/modules/game-board/game-board.state.hook.ts:25-35` | Seeds `localGameState` once (`!localGameState` guard, line 30) and clears it when the turn ends (`!isMyTurn && localGameState`, line 32). Has no branch that reconciles `localGameState` against a newer `serverGameState` while still mid-turn — this is the root cause. |
+| `handleSeatReclaim` | `src/modules/game-rules/services/player-reclaim.service.ts:11-37` | When the reclaiming seat is not the current player (this bug's scenario — it's the host's turn), it flips `isBot`/`isVacant` to `false` immediately in a Firestore transaction (lines 30-31). Confirmed correct and immediate by the triage's direct REST read; not touched by this plan. |
+| `useGameBoardActions` EndTurn branch | `src/modules/game-board/game-board.actions.hook.ts:25-30` | `GameAction.EndTurn` calls `await setGameState(localGameState, action, payload)` — using the same stale buffer, not `serverGameState`. |
+| `setGameState` | `src/modules/game-board/game-board.engine.hook.ts:19-32` | Runs `handleGameAction({ action, gameState: currentState })` on whatever `currentState` it's given (here, the stale `localGameState`), then `saveGameState(gameId, result.state)` — a plain overwrite. |
+| `saveGameState` | `src/modules/game-board/services/game-board.engine.service.ts:29-32` | `await setDoc(gameDocRef, state)` — a plain `setDoc`, not a transaction (also documented at `docs/architecture/game-mechanics.md` and `docs/architecture/systems-and-visuals.md:70`, "Atomic Turn Writes"). Whatever `state` it's handed fully replaces the document, including any seat fields it doesn't know changed concurrently. |
+| `handleEndTurn` | `src/modules/game-rules/player-turn.reducer.ts:44-127` | Runs on the stale state handed to it. `applyDeferredReclaim` (line 51) only touches the *outgoing* player (the host here, not vacant, so a no-op); the newly-current seat (the guest, next in line) is copied straight from the stale `nextPlayer = state.players[nextPlayerIndex]` (line 56) with its pre-reclaim `isBot: true` intact. |
+| fields only ever written outside normal gameplay | grep confirmed: `Player.isBot`, `.isVacant` and `.reclaimRequested` are assigned only in `src/modules/game-rules/services/player-exit.service.ts`, `src/modules/game-rules/services/player-reclaim.service.ts` and `src/modules/game-rules/turn-start-passives.reducer.ts`. `.lastSeenAt` is also assigned by `writeHeartbeat` in `src/modules/game-board/services/game-board.engine.service.ts:55` — a periodic heartbeat, not a gameplay action, and each client only ever writes it for its *own* seat (`game-board.heartbeat.hook.ts:26`), so it can never collide with the buffer-holder's own optimistic change to another seat. | No normal gameplay reducer (combat, move, deploy, cards) touches these four fields, so syncing them from `serverGameState` into `localGameState` for every seat except the local player's own cannot clobber an in-progress optimistic gameplay change to another seat (e.g. combat results on an opponent's army). |
+| `Player` type | `src/lib/types/player.ts:19-40` | `id: number` (seat index, stable for the match), `playerId: string` (session id, used to find the local player at `game-board.state.hook.ts:22`), `isBot`, `isVacant`, `lastSeenAt`, `reclaimRequested` — exact fields to sync. |
+| `GameBoardStateArgs` / `GameBoardState` | `src/modules/game-board/game-board.hook.types.ts:30-44` | Existing hook contract; `playerId: string \| null` is already passed in and is what identifies the local player's own seat to exclude from the sync. |
+| existing hook tests | `src/modules/game-board/game-board.state.hook.test.ts:95-121` | `describe('when it is the local player turn', ...)` — the cases this plan must not break: buffering still clones on seed, buffer still drops at turn end. New cases are added alongside, not replacing these. |
+| `game-board.map.ts` | `src/modules/game-board/game-board.map.ts:1-17` | Existing precedent for a small, pure `.map.ts` file in this flat (no-`components/`) module layout — this plan's new pure merge function follows the same pattern but in its own file (see Decisions). |
+| lesson already recorded for Phase 1's bug class | `docs/ai/lessons-learned.md:135` | Same family of bug ("client reads stale state") as this one; this plan's fix is a distinct root cause (a display/write buffer, not a turn-advance ordering bug) and does not duplicate that entry. |
 
 ## Root cause (bugs only)
-- Reproduction: `JAVA_HOME=/opt/homebrew/opt/openjdk@21 npm run test:e2e -- e2e/reconnect-bot-takeover.spec.ts` — fails at `e2e/reconnect-bot-takeover.spec.ts:93`, 15s timeout waiting for `hostPage.getByText(`${guestName}'s Turn`)`.
-- Cause: `convertSeatToBot` (`src/modules/game-rules/services/player-exit.service.ts:11-25`) calls `handleEndTurn(state)` whenever the exiting seat was the current player (lines 22-24), in the same transaction that flips the seat to `isBot: true`. `handleEndTurn` immediately advances `currentPlayerIndex` to the *next* seat (`player-turn.reducer.ts:54-55`) — it does not stop on the just-converted bot seat; only `isSabotaged` seats are skipped, not bot seats. So by the time any client's Firestore snapshot updates, `currentPlayerIndex` already points past the bot seat to the next human (the host in a 2-player match). The session-driver bot-turn effect (`game-board.engine.hook.ts:155-163`) only fires `takeBotTurn` when `currentPlayerIndex` points at a bot seat — which never happens here, because the write that created the bot seat already moved the turn off it in the same transaction. The bot's seat is skipped entirely: it never gets a turn, and the host's `GameStatusBadge` (`GameStatusBadge.map.ts:13`) never renders `"<guest name>'s Turn"` because `currentPlayerIndex` never points at that seat while `isBot` is true.
+- Reproduction: Phase 1's e2e run (`JAVA_HOME=/opt/homebrew/opt/openjdk@21 npm run test:e2e -- e2e/reconnect-bot-takeover.spec.ts`) now gets past the Phase 1 assertions and fails at `e2e/reconnect-bot-takeover.spec.ts:104` (`guestPage.getByText('Your Turn')` after the host ends its turn following the guest's reclaim). `review.md:9` records the same failure line for the Phase 1 final review's e2e run.
+- Cause: `localGameState` (`game-board.state.hook.ts:16`) is the host's authoritative in-memory turn buffer, seeded once from `serverGameState` when the host's turn starts and never reconciled against later `serverGameState` snapshots while that turn continues (`game-board.state.hook.ts:25-35` has no such branch). The guest's `handleSeatReclaim` (`player-reclaim.service.ts:30-31`) writes `isBot: false, isVacant: false` straight to Firestore mid-host-turn — correctly and immediately, per the triage's direct REST read — but the host's `gameStateForDisplay` keeps rendering the pre-reclaim buffer for the rest of the host's turn (the display symptom: BOT shown for 15s+ despite a correct document). When the host then clicks "End Turn", `useGameBoardActions` (`game-board.actions.hook.ts:26-27`) hands that same stale buffer to `setGameState` → `handleEndTurn` (`player-turn.reducer.ts:44`), which advances `currentPlayerIndex` to the guest's seat using the stale `players` array — still `isBot: true` — and `saveGameState` (`game-board.engine.service.ts:31`) plain-`setDoc`s that stale `result.state` over the correct document, reverting the guest's seat back to `isBot: true` in Firestore. The guest's client then never sees `isMyTurn` become true (`game-board.engine.hook.ts:90` requires `!currentPlayer.isBot`), so `"Your Turn"` never renders — the line 104 failure.
+- Both symptoms (the 15s+ stale display and the EndTurn-time revert) share one root cause: the turn buffer is never updated from live `serverGameState` changes to seats other than the buffer-holder's own, for the whole duration of the turn.
 
 ## Decisions
-- Remove the `if (state.currentPlayerIndex === playerIndex) { handleEndTurn(state); }` block from `convertSeatToBot` (and correct its now-wrong docstring line, "Ends the seat's turn if it was theirs."), leaving `currentPlayerIndex` unchanged on conversion. The seat becomes a bot in place; if it was the current player's turn, that bot seat is now what the session driver's existing bot-turn effect (`game-board.engine.hook.ts:155-163`) detects and drives via `takeBotTurn` → `decideBotTurn`, which already ends the turn itself (`bot-turn.reducer.ts:21`) once it has acted. This is the smallest change: no new state field, no new effect, reuses the bot-turn machinery that already exists for setup-time bots. Rejected: adding a new "pending bot turn" flag or a dedicated effect (unnecessary — the existing `isBot`-gated effect already covers this once `currentPlayerIndex` is left alone).
-- Rejected: skipping the bot seat's turn immediately (keep today's `handleEndTurn` call) and only fixing the UI label — that keeps the game and the spec's expected behavior (host sees the bot visibly take a turn) out of sync; the spec is the recorded intended behavior, not a selector bug (per triage.md, already confirmed live).
-- Rejected: guarding the session-driver effect to also "look back" one seat for a just-converted bot — more complex than leaving `currentPlayerIndex` untouched, and would require detecting "just converted" as new state.
+- Reconcile only four out-of-band seat-management fields (`isBot`, `isVacant`, `lastSeenAt`, `reclaimRequested`) from each new `serverGameState` into `localGameState`, for every seat except the local player's own, inside the existing seeding effect in `game-board.state.hook.ts`. These fields are confirmed (by grep, see Verified context) to be written only by `player-exit.service.ts`, `player-reclaim.service.ts` and `turn-start-passives.reducer.ts` — never by a normal gameplay action — so this cannot clobber an in-progress optimistic change the turn-holder made to another seat (e.g. combat). This fixes both symptoms: the display catches up within one snapshot round trip (no more 15s+ stale BOT), and by the time the host clicks "End Turn" the buffer already carries the guest's corrected flags, so `handleEndTurn` advances onto a seat that is actually a human, not a stale bot — no more revert.
+- Put the merge in a new, separate pure function `withSyncedSeatManagement` in a new `game-board.state.map.ts`, not inside `game-board.map.ts` (which holds an unrelated UI-dialog-state check) or inline in the hook — matches `component-architecture`'s one-responsibility-per-file rule and the `.map.ts` constraint (pure, no React/I/O). Rejected: adding the four fields to the existing `game-board.map.ts` (unrelated responsibility — dialog-state checking vs. state-buffer reconciliation — would mix two reasons to change in one file).
+- Rejected: always display `serverGameState` instead of the buffer (i.e. remove `isMyTurn && localGameState` from `gameStateForDisplay`). This would also "fix" the display, but would revert the host's own in-progress, not-yet-written turn actions (moves, combat, purchases) every time a new snapshot arrives — the entire point of `localGameState`, documented at `docs/architecture/systems-and-visuals.md:69` ("zero Firestore writes until turn completion"). Far more invasive than needed.
+- Rejected: making `handlePlayerExit`/`handleSeatReclaim`'s writes transactional against a check of `currentPlayerIndex`'s owner's pending write — the documents are already correct immediately (confirmed by the triage's REST read); the bug is entirely client-side (stale buffer), not a Firestore write-ordering race. Fixing Firestore write ordering would not fix the display lag and is unnecessary complexity.
+- Rejected: syncing the entire `players` array (not just the four fields) from `serverGameState` into `localGameState` on every snapshot — broader than needed, and risks a timing window where a stale `serverGameState` snapshot (arriving just before a local real-time action's own write round-trips) could revert data the turn-holder's own local action just applied to another seat (e.g. a monster/combat result). Scoping to the four seat-management fields avoids that: grep confirms no gameplay reducer ever writes them, so there's no such window for those fields specifically.
 
 ## File plan
 | File | New / Edit | Responsibility | Owner |
 |---|---|---|---|
-| `src/modules/game-rules/services/player-exit.service.ts` | edit | Remove the premature `handleEndTurn` call from `convertSeatToBot` (lines 22-24) and fix its docstring (line 9); keep everything else (log entry, `isBot`/`isVacant`/`lastSeenAt` flips) unchanged. | implementer-a |
-| `src/modules/game-rules/services/player-exit.service.test.ts` | edit | Rewrite the two tests that assert the old behavior (`:191-205`, `:207-220`) to assert the fixed behavior; add one new test for the exact bug scenario (2-player match, current player's seat converts, stays current, is now a bot). No other test in this file changes (verified: all others leave `currentPlayerIndex` unmoved — the exiting seat was never the current player in them). | tester-a |
-| `docs/architecture/systems-and-visuals.md` | edit | §6.12 line 86: remove "...and if it was that seat's turn, `handleEndTurn` runs", replace with a sentence matching §6.14's already-correct description (the seat keeps the turn as a bot; the session driver's bot-turn effect drives it from there). | docs-sync |
+| `src/modules/game-board/game-board.state.map.ts` | new | Pure function `withSyncedSeatManagement(localGameState, serverGameState, localPlayerId)`: returns `localGameState` with `isBot`/`isVacant`/`lastSeenAt`/`reclaimRequested` copied from the matching seat in `serverGameState`, for every seat except `localPlayerId`'s own; returns the same `localGameState` reference untouched if nothing differs. | implementer-a |
+| `src/modules/game-board/game-board.state.map.test.ts` | new | Unit tests for `withSyncedSeatManagement` (see Test plan). | tester-a |
+| `src/modules/game-board/game-board.state.hook.ts` | edit | Call `withSyncedSeatManagement` from the existing seeding effect (lines 25-35) on every `serverGameState` change while `isMyTurn && localGameState` is already set, and `setLocalGameState` only if the result differs by reference. No other change to the file. | implementer-a |
+| `src/modules/game-board/game-board.state.hook.test.ts` | edit | Add cases to the existing `describe('when it is the local player turn', ...)` block (after line 106, 121) covering the reconciliation; leave the two existing tests in that block and the other two `describe` blocks unmodified. | tester-a |
+| `docs/architecture/systems-and-visuals.md` | edit | §"In-Memory Turn Buffering" (line 69): add one sentence noting the exception — seat-management fields (`isBot`, `isVacant`, `lastSeenAt`, `reclaimRequested`) for *other* seats are still synced live into the buffer from `serverGameState`, because they're never written by gameplay actions, so an exit/reclaim/staleness change to another seat is visible without waiting for the turn to end. | docs-sync |
 
-No `.tsx`, `.styles.ts` or other view file changes: this is a pure logic fix in `game-rules`. implementer-b has no files on this task — note this explicitly to the coordinator rather than inventing wiring work.
+No `.tsx`, `.styles.ts` or other view file changes — implementer-b has no files on this task. No new e2e spec: `e2e/reconnect-bot-takeover.spec.ts` already exercises this exact scenario (reclaim mid-host-turn, then host ends turn, then assert the guest's turn) and is the regression test.
 
 ## Contracts
-No type, prop or signature changes. `handlePlayerExit(gameId: string, playerId: string): Promise<void>` (unchanged signature, `player-exit.service.ts:36`). `convertSeatToBot(state: GameState, playerIndex: number): void` (unchanged signature; only its body loses the `handleEndTurn` branch):
-
 ```ts
-// src/modules/game-rules/services/player-exit.service.ts
-// Before (current, buggy):
-/**
- * Hands a seat in an in-progress match to a bot instead of removing it, so seat indices and
- * every reference to them stay valid. Ends the seat's turn if it was theirs.
- */
-function convertSeatToBot(state: GameState, playerIndex: number): void {
-  const seat = state.players[playerIndex];
-  pushLogEntry(state, {
-    category: 'system',
-    message: `${seat.name} has left the game. A bot is taking over their seat.`,
-    playerId: seat.playerId,
-  });
-  seat.isBot = true;
-  seat.isVacant = true;
-  seat.lastSeenAt = null;
+// src/modules/game-board/game-board.state.map.ts (new)
+import type { GameState } from '@/lib/types';
 
-  if (state.currentPlayerIndex === playerIndex) {
-    handleEndTurn(state);
-  }
-}
-
-// After (fix): delete the trailing `if` block and correct the docstring. The seat becomes a
-// bot in place; currentPlayerIndex is left untouched whether or not it was that seat's turn —
-// if it was, the session driver's existing bot-turn effect now picks it up and plays it out.
 /**
- * Hands a seat in an in-progress match to a bot instead of removing it, so seat indices and
- * every reference to them stay valid. Does not end the seat's turn: if it was that seat's turn,
- * it stays the current player as a bot, and the session driver's bot-turn effect
- * (`game-board.engine.hook.ts`) plays it out and ends it from there.
+ * Carries forward out-of-band seat-management fields from the latest `serverGameState` into the
+ * turn-holder's local buffer, for every seat except `localPlayerId`'s own. These four fields
+ * (isBot, isVacant, lastSeenAt, reclaimRequested) are only ever written by handlePlayerExit,
+ * handleSeatReclaim, applyDeferredReclaim (src/modules/game-rules/services/player-exit.service.ts,
+ * player-reclaim.service.ts, turn-start-passives.reducer.ts) and the per-seat heartbeat write
+ * (writeHeartbeat in src/modules/game-board/services/game-board.engine.service.ts, always for the
+ * writing client's own seat) — never by a normal gameplay action — so this cannot clobber the
+ * turn-holder's own in-progress optimistic changes to another seat.
+ * Returns `localGameState` unchanged (same reference) if nothing differs, so callers can skip
+ * `setLocalGameState` and avoid an unnecessary re-render.
  */
-function convertSeatToBot(state: GameState, playerIndex: number): void {
-  const seat = state.players[playerIndex];
-  pushLogEntry(state, {
-    category: 'system',
-    message: `${seat.name} has left the game. A bot is taking over their seat.`,
-    playerId: seat.playerId,
+export function withSyncedSeatManagement(
+  localGameState: GameState,
+  serverGameState: GameState,
+  localPlayerId: string | null,
+): GameState {
+  let changed = false;
+
+  const players = localGameState.players.map((seat, index) => {
+    if (seat.playerId === localPlayerId) return seat;
+
+    const serverSeat = serverGameState.players[index];
+    if (!serverSeat || serverSeat.playerId !== seat.playerId) return seat;
+
+    if (
+      seat.isBot === serverSeat.isBot &&
+      seat.isVacant === serverSeat.isVacant &&
+      seat.lastSeenAt === serverSeat.lastSeenAt &&
+      seat.reclaimRequested === serverSeat.reclaimRequested
+    ) {
+      return seat;
+    }
+
+    changed = true;
+    return {
+      ...seat,
+      isBot: serverSeat.isBot,
+      isVacant: serverSeat.isVacant,
+      lastSeenAt: serverSeat.lastSeenAt,
+      reclaimRequested: serverSeat.reclaimRequested,
+    };
   });
-  seat.isBot = true;
-  seat.isVacant = true;
-  seat.lastSeenAt = null;
+
+  return changed ? { ...localGameState, players } : localGameState;
 }
 ```
 
-`handleEndTurn` stays imported in `player-exit.service.ts` — it is still used later in the same file for the pre-game (lobby) exit path (`player-exit.service.ts:136`). Do not remove the import.
+```ts
+// src/modules/game-board/game-board.state.hook.ts — edit inside the existing effect (lines 25-35)
+// Before:
+useEffect(() => {
+  if (isMyTurn && serverGameState?.status === 'playing' && !localGameState) {
+    setLocalGameState(cloneDeep(serverGameState));
+  } else if (!isMyTurn && localGameState) {
+    setLocalGameState(null);
+  }
+}, [isMyTurn, serverGameState, localGameState]);
+
+// After: add a third branch; the first two branches are unchanged.
+useEffect(() => {
+  if (isMyTurn && serverGameState?.status === 'playing' && !localGameState) {
+    setLocalGameState(cloneDeep(serverGameState));
+  } else if (!isMyTurn && localGameState) {
+    setLocalGameState(null);
+  } else if (isMyTurn && localGameState && serverGameState) {
+    const synced = withSyncedSeatManagement(localGameState, serverGameState, playerId);
+    if (synced !== localGameState) {
+      setLocalGameState(synced);
+    }
+  }
+}, [isMyTurn, serverGameState, localGameState, playerId]);
+```
+`playerId` is already destructured from `GameBoardStateArgs` at `game-board.state.hook.ts:9-14` — no signature change to `useGameBoardState` itself. Add `import { withSyncedSeatManagement } from './game-board.state.map';` at the top of the file.
 
 ## Phases
-### Phase 1: Root-cause and fix
-1. tester-a: confirm the live repro still fails as described (`JAVA_HOME=/opt/homebrew/opt/openjdk@21 npm run test:e2e -- e2e/reconnect-bot-takeover.spec.ts`), then write the failing unit test first in `player-exit.service.test.ts` — a new case: 2-player started game, `currentPlayerIndex = 1` (guest's turn), guest exits; assert `written.currentPlayerIndex` stays `1`, `written.players[1].isBot` is `true`, `written.turn` is unchanged, and the log has no `"It's now ...'s turn."` entry yet. Run it and confirm it fails against today's code (sonnet — this is the characterizing test for the actual root cause, get the assertions exactly right).
-2. implementer-a (sonnet): apply the Contracts-block edit to `convertSeatToBot` in `player-exit.service.ts`. Nothing else in the file changes.
-3. tester-a: update the two now-invalid tests at `player-exit.service.test.ts:191-205` and `:207-220`:
-   - `"passes the turn to the next seat..."` → rename and rewrite to assert the seat stays current and becomes a bot (this duplicates step 1's new test loosely; keep both only if they cover different player counts, otherwise fold step 1's case into this rewrite and don't add a separate near-duplicate).
-   - `"wraps the turn back to the host..."` → rewrite the same way for the last-seat wraparound case, asserting `currentPlayerIndex` stays on the last seat (now a bot) instead of wrapping to `0`.
-   Re-run the full file (`npx jest src/modules/game-rules/services/player-exit.service.test.ts`) and confirm all cases pass.
-4. tester-b: run the real e2e spec against the emulator (`JAVA_HOME=/opt/homebrew/opt/openjdk@21 npm run test:e2e -- e2e/reconnect-bot-takeover.spec.ts`) and confirm it now passes end to end, including the later "reclaim while it's the host's turn" and "match continues" assertions at the end of the spec (unaffected by this fix, but must still pass). No new test file needed — the existing spec is the regression test for this bug.
-5. docs-sync: apply the `docs/architecture/systems-and-visuals.md:86` correction from the File plan.
+### Phase 2: Sync out-of-band seat fields into the turn buffer
+1. tester-a: confirm the live repro still fails as described (`JAVA_HOME=/opt/homebrew/opt/openjdk@21 npm run test:e2e -- e2e/reconnect-bot-takeover.spec.ts`, failing at line 104), then write failing unit tests first in a new `game-board.state.map.test.ts` for `withSyncedSeatManagement` (see Test plan) and new cases in `game-board.state.hook.test.ts`. Run them and confirm they fail against today's code (no `game-board.state.map.ts` exists yet / the hook has no third branch).
+2. implementer-a: create `game-board.state.map.ts` and apply the Contracts-block edit to `game-board.state.hook.ts`. Nothing else in either file changes.
+3. tester-a: re-run `npx jest src/modules/game-board/game-board.state.map.test.ts src/modules/game-board/game-board.state.hook.test.ts` and confirm all cases pass, including the two pre-existing tests in the "when it is the local player turn" block (`game-board.state.hook.test.ts:96-106`, `:108-120`), unmodified by this change and still green.
+4. tester-b: run the real e2e spec against the emulator (`JAVA_HOME=/opt/homebrew/opt/openjdk@21 npm run test:e2e -- e2e/reconnect-bot-takeover.spec.ts`) and confirm it now passes end to end, including line 93-94 (Phase 1's assertions, must still pass) and line 104 (this phase's target).
+5. docs-sync: apply the `docs/architecture/systems-and-visuals.md:69` addition from the File plan.
 
-Model escalation: steps 1 and 3 (tester-a) per `triage.md` override; step 2 (implementer-a) per `triage.md` override.
+Model escalation: none requested by triage.md for Phase 2; all steps run on the default model unless a builder hits a blocker that needs escalation.
 
 ## Test plan
-- tester-a (`player-exit.service.test.ts`):
-  - New/rewritten: current player's seat converts mid-turn (2-player match) → `currentPlayerIndex` unchanged, seat is now `isBot: true`, `isVacant: true`, `lastSeenAt: null`, no turn-advance log entry yet.
-  - Rewritten: last-seat-is-current-player case (3-player match, last seat converts) → `currentPlayerIndex` stays on that (now-bot) seat, not wrapped to `0`; `turn` unchanged.
-  - Unchanged (verify still pass, do not rewrite): all other existing cases in the file — none of them have the exiting seat as the current player, so none depend on the removed branch.
-- tester-b (e2e): one real run of `e2e/reconnect-bot-takeover.spec.ts` against the Firestore emulator; no new spec file. Confirms the host sees `"<guest name>'s Turn"` then `"Your Turn"`, and that the rest of the existing spec (reclaim, continued play) still passes.
+- tester-a (`game-board.state.map.test.ts`, new):
+  - Two seats, reclaiming seat (not local player, not current player) differs on all four fields between `localGameState` and `serverGameState` → returned state is a new object, that seat's four fields match `serverGameState`, all other fields on that seat (e.g. `name`, `armies`) are untouched, the local player's own seat is byte-identical (same reference) even if its own four fields somehow differ.
+  - No seat differs → returns the exact same `localGameState` reference (identity check), so the hook can skip `setLocalGameState`.
+  - `serverGameState` has a seat at an index whose `playerId` doesn't match the corresponding `localGameState` seat (defensive: shouldn't happen mid-match, seat order is stable) → that seat is left unchanged, not merged.
+- tester-a (`game-board.state.hook.test.ts`, new cases in the existing "when it is the local player turn" `describe` block):
+  - Buffer already seeded (host's turn); rerender with a new `serverGameState` where the *other* seat's `isBot` flipped from `true` to `false` (simulating the guest's reclaim) → `result.current.localGameState.players[1].isBot` becomes `false`, `result.current.gameStateForDisplay` still `toBe(result.current.localGameState)` (still mid-turn, still the buffer, just synced), and the local player's own buffered seat (`players[0]`) is unaffected.
+  - Same setup, but the new `serverGameState` has no seat-management difference → `result.current.localGameState` is reference-equal to the pre-rerender value (no unnecessary `setLocalGameState` / re-render).
+- tester-b (e2e): one real run of `e2e/reconnect-bot-takeover.spec.ts` against the Firestore emulator; no new spec file. Confirms the host's display catches the reclaim and, critically, that ending the host's turn afterward correctly hands control to the guest (line 104).
 
 ## Preview states
 None — no view component changes.
 
 ## Risks
-- Leaving `currentPlayerIndex` on the converted seat means the bot resumes the turn with whatever `hasActed`/`actionsThisTurn` state the human player left mid-turn, rather than a fresh turn. This matches existing bot-turn-mid-game semantics (`decideBotTurn` already runs against whatever state it's given) and is the correct behavior for "the bot finishes the turn in progress," not a fresh risk introduced here — confirmed by reading `decideBotTurn` (`bot-turn.reducer.ts:14-27`), which has no guard requiring a turn-start state.
-- The staleness-check path (`game-board.staleness.hook.ts`) shares the same `convertStalePeer` → `handlePlayerExit` → `convertSeatToBot` call chain, so this fix applies there too without a separate code path to change. No separate test needed for that path beyond what already exists, since the fix is inside the shared function both paths call.
+- The merge compares seats by array index, not by searching for a matching `playerId` (`withSyncedSeatManagement`'s `serverGameState.players[index]` lookup). This relies on seat order staying stable for the whole match, which is already relied on elsewhere (`convertSeatToBot`'s docstring, `player-exit.service.ts:9-10`: "so seat indices and every reference to them stay valid"); the function defensively no-ops a seat if the indices' `playerId`s don't match, rather than merging the wrong seat.
+- This sync effect adds one more dependency (`playerId`) to the existing seeding `useEffect`; `playerId` is already a stable prop (`GameBoardStateArgs.playerId`, unchanged for the life of a session), so this does not introduce a new re-run trigger in practice.
+- Scoped to four fields deliberately (see Decisions) to avoid widening this fix into a general "always reconcile everything" change, which would need a much larger audit of every reducer for safety.
 
 ## Review (architect-b)
 VERDICT: APPROVED
 
-Verified against the actual code, not just the plan's prose:
-- `convertSeatToBot` body and docstring (`src/modules/game-rules/services/player-exit.service.ts:9-25`) match the Before block in Contracts exactly.
-- `handleEndTurn` (`src/modules/game-rules/player-turn.reducer.ts:44-120`) advances `currentPlayerIndex` unconditionally except for `isSabotaged` seats; confirmed no bot-seat skip exists.
-- `decideBotTurn` (`src/modules/game-rules/bot-turn.reducer.ts:14-27`) ends the turn itself via `handleGameAction({ action: EndTurn })` → `game-rules.reducer.ts:44-45` → `handleEndTurn`, confirming the fix doesn't orphan the bot's turn.
-- `takeBotTurn` (`src/modules/game-rules/services/bot-turn.service.ts:9-15`) and the session-driver effect (`src/modules/game-board/game-board.engine.hook.ts:155-166`) gate purely on `players[currentPlayerIndex].isBot`, so leaving `currentPlayerIndex` on the converted seat is sufficient to make the effect fire — no new wiring needed.
-- The two tests slated for rewrite (`player-exit.service.test.ts:191`, `:207`) are the only two in the "Playing" describe block with the exiting seat as current player; grepped all `currentPlayerIndex` assertions in the file to confirm no other in-progress-path test depends on the removed branch. The pre-game lobby tests at `:459`, `:475` exercise a separate `currentPlayerIndex` adjustment block (`player-exit.service.ts:131-139`), correctly left alone.
-- `docs/architecture/systems-and-visuals.md:86` is the only doc line asserting the old (buggy) behavior as intended; `:49` and `:141` already describe/reference the fixed behavior or an unrelated fact and need no edit. Repo-wide grep for `convertSeatToBot`, `Ends the seat's turn`, and `if it was that seat's turn` found no other production, test or doc hit outside this file and `.claude/worktrees/*` (other agents' isolated worktrees, out of scope).
-- Deferred-reclaim path (`turn-start-passives.reducer.ts:9-22`, `player-reclaim.service.ts:11-37`) is orthogonal to this fix — confirmed by reading both — and is correctly left out of the File plan.
-- Design: smallest correct change, reuses the existing bot-turn effect instead of adding state or a new effect; rejected alternatives are reasonable and explained.
+Verified every path/symbol in Verified context and File plan against the real files: `game-board.state.hook.ts:9-18,25-35` (effect and `gameStateForDisplay` match the plan's "Before" quote exactly), `player-reclaim.service.ts:11-37`, `game-board.actions.hook.ts:25-30`, `game-board.engine.hook.ts:19-32,90`, `game-board.engine.service.ts:29-32`, `player-turn.reducer.ts:44-127` (`applyDeferredReclaim` call at line 51 confirmed), `player.ts:19-40`, `game-board.hook.types.ts:30-44`, `game-board.state.hook.test.ts:96-106,108-120`, `game-board.map.ts:1-17`, `systems-and-visuals.md`'s "In-Memory Turn Buffering" bullet. All match.
 
-No changes requested.
+One factual gap found and fixed in place (trivial wording, folded in per protocol): the Verified-context row and the `withSyncedSeatManagement` docstring claimed `isBot`/`isVacant`/`lastSeenAt`/`reclaimRequested` are written only by `player-exit.service.ts`, `player-reclaim.service.ts` and `turn-start-passives.reducer.ts`. Grep (`grep -rn "\.isBot\s*=\|\.isVacant\s*=\|\.reclaimRequested\s*=" src/`) confirms that for three of the four fields, but `lastSeenAt` is also written by `writeHeartbeat` (`game-board.engine.service.ts:55`). This doesn't weaken the safety argument — `writeHeartbeat` is a periodic write, not a gameplay reducer, and each client only ever stamps its *own* seat (`game-board.heartbeat.hook.ts:26`: `seatIndex = localPlayer?.id`), so it can't collide with the turn-holder's optimistic change to another seat — but the claim as written was incomplete, and the comment would have shipped verbatim into the new file's docstring. Updated both spots to name `writeHeartbeat` and explain why it's still safe.
+
+Design: the merge-four-fields approach is the simplest fix that doesn't regress turn buffering (the Decisions section's three rejected alternatives are each a real alternative with a correct reason to reject, not padding). Scoping by field rather than always trusting `serverGameState` wholesale is justified by the same grep. The new pure function belongs in its own `.map.ts` file per `component-architecture`'s one-responsibility rule, correctly kept separate from the existing unrelated `game-board.map.ts`. Contracts are concrete and complete enough for implementer-a to build directly; no implementer-b work exists on this phase, consistent with the File plan and `progress.md`. Test plan covers the identity-skip case (avoids unnecessary re-render), the defensive index-mismatch case, and both the map-level and hook-level reconciliation behavior, plus doesn't touch the two existing hook tests it must not break (confirmed unmodified at `game-board.state.hook.test.ts:96-121`).
+
+No invented paths found; no better existing helper to reuse (confirmed via grep there's no existing seat-field-merge utility).

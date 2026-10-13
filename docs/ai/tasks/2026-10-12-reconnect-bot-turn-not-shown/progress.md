@@ -16,16 +16,17 @@ Tier: M · Phases: 2
       separate, later bug (Phase 2), not on anything this phase touches.
 - [x] docs updated (docs-sync: systems-and-visuals.md §6.12 corrected)
 - [x] final review (architect-b): APPROVED, see `review.md`
-- [ ] committed: <hash>
+- [x] committed: a5fbddf
 
 ## Phase 2: Host doesn't see a reclaimed seat flip from bot back to human
-- [ ] plan approved (architect-b)
-- [ ] failing reproduction test (tester-a)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-b)
-- [ ] checks: typecheck, lint, unit tests, one real `test:e2e` run of `e2e/reconnect-bot-takeover.spec.ts` (full pass)
-- [ ] docs updated (docs-sync, if needed)
-- [ ] final review (architect-b)
+- [x] plan approved (architect-b)
+- [x] failing reproduction test (tester-a)
+- [x] implementation (implementer-a; implementer-b had no files on this plan)
+- [x] tests (tester-a repro + unit tests done; tester-b e2e run confirmed passing)
+- [x] checks: typecheck, lint, unit tests all pass (implementer-a). Real `test:e2e` run (tester-b):
+      `e2e/reconnect-bot-takeover.spec.ts` passes fully end to end - `1 passed (28.2s)`.
+- [x] docs updated (docs-sync: systems-and-visuals.md §6.10 turn-buffering exception noted)
+- [x] final review (architect-b): APPROVED, see `review.md`
 - [ ] committed: <hash>
 
 ## Log

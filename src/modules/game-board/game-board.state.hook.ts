@@ -4,6 +4,7 @@ import { getPossibleMoves } from '@/modules/game-rules';
 import type { GameState } from '@/lib/types';
 import { gameBoardReducer } from './game-board.reducer';
 import { initialUIState } from './game-board.types';
+import { withSyncedSeatManagement } from './game-board.state.map';
 import type { GameBoardStateArgs, GameBoardState } from './game-board.hook.types';
 
 export function useGameBoardState({
@@ -31,8 +32,15 @@ export function useGameBoardState({
       setLocalGameState(cloneDeep(serverGameState));
     } else if (!isMyTurn && localGameState) {
       setLocalGameState(null);
+    } else if (isMyTurn && localGameState && serverGameState) {
+      // Mid-turn, other seats can change on the server (a guest reclaiming a bot seat). Carry those
+      // seat-management fields into the buffer so the display and the EndTurn write see them.
+      const synced = withSyncedSeatManagement(localGameState, serverGameState, playerId);
+      if (synced !== localGameState) {
+        setLocalGameState(synced);
+      }
     }
-  }, [isMyTurn, serverGameState, localGameState]);
+  }, [isMyTurn, serverGameState, localGameState, playerId]);
 
   const selectedArmy = useMemo(() => {
     if (!gameStateForDisplay || uiState.selectedArmyId === null || !localPlayer) return null;

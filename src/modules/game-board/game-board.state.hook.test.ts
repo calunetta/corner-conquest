@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { useGameBoardState } from './game-board.state.hook';
 import type { GameBoardStateArgs } from './game-board.hook.types';
 import type { GameState, Player } from '@/lib/types';
@@ -117,6 +117,75 @@ describe('useGameBoardState', () => {
 
       expect(result.current.localGameState).toBeNull();
       expect(result.current.gameStateForDisplay).toBe(latestServerState);
+    });
+
+    it('shows a guest reclaiming their bot-held seat mid-turn, without waiting for the turn to end', () => {
+      const botHeldState = createGameState(
+        [hostPlayer, createPlayer({ id: 1, playerId: 'player_2', name: 'Joiner', isBot: true, isVacant: true })],
+        { status: 'playing' },
+      );
+      const { result, rerender } = renderHook((args: GameBoardStateArgs) => useGameBoardState(args), {
+        initialProps: createArgs(botHeldState, true),
+      });
+      const hostBufferBefore = result.current.localGameState?.players[0];
+
+      const reclaimedState = createGameState(
+        [
+          hostPlayer,
+          createPlayer({ id: 1, playerId: 'player_2', name: 'Joiner', isBot: false, isVacant: false, lastSeenAt: 1000 }),
+        ],
+        { status: 'playing' },
+      );
+      rerender(createArgs(reclaimedState, true));
+
+      expect(result.current.localGameState?.players[1].isBot).toBe(false);
+      expect(result.current.localGameState?.players[1].isVacant).toBe(false);
+      expect(result.current.localGameState?.players[1].lastSeenAt).toBe(1000);
+      expect(result.current.gameStateForDisplay).toBe(result.current.localGameState);
+      expect(result.current.localGameState?.players[0]).toBe(hostBufferBefore);
+    });
+
+    it('keeps the local turn-holder optimistic change to another seat when a new serverGameState arrives', () => {
+      const botHeldState = createGameState(
+        [hostPlayer, createPlayer({ id: 1, playerId: 'player_2', name: 'Joiner', isBot: true, isVacant: true })],
+        { status: 'playing' },
+      );
+      const { result, rerender } = renderHook((args: GameBoardStateArgs) => useGameBoardState(args), {
+        initialProps: createArgs(botHeldState, true),
+      });
+      const buffered = result.current.localGameState;
+      expect(buffered).not.toBeNull();
+      const optimisticGold = 777;
+      act(() => {
+        result.current.setLocalGameState({
+          ...buffered!,
+          players: [buffered!.players[0], { ...buffered!.players[1], resources: { gold: optimisticGold, wood: 0, food: 0 } }],
+        } as GameState);
+      });
+
+      const reclaimedState = createGameState(
+        [
+          hostPlayer,
+          createPlayer({ id: 1, playerId: 'player_2', name: 'Joiner', isBot: false, isVacant: false, lastSeenAt: 1000 }),
+        ],
+        { status: 'playing' },
+      );
+      rerender(createArgs(reclaimedState, true));
+
+      expect(result.current.localGameState?.players[1].isBot).toBe(false);
+      expect(result.current.localGameState?.players[1].resources.gold).toBe(optimisticGold);
+    });
+
+    it('does not replace the buffer when the new serverGameState has no seat-management change', () => {
+      const serverState = createGameState([hostPlayer, joinedPlayer], { status: 'playing' });
+      const { result, rerender } = renderHook((args: GameBoardStateArgs) => useGameBoardState(args), {
+        initialProps: createArgs(serverState, true),
+      });
+      const bufferBefore = result.current.localGameState;
+
+      rerender(createArgs(createGameState([hostPlayer, joinedPlayer], { status: 'playing' }), true));
+
+      expect(result.current.localGameState).toBe(bufferBefore);
     });
   });
 });
