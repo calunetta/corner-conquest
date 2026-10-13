@@ -8,7 +8,7 @@ Tier: L · Phases: 2
 - [x] tests (tester-a)
 - [x] checks: typecheck, lint, unit tests
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 8c91371
 
 ## Phase 2: IslandTile rendering, CardRevealEffect component, previews, docs
 - [ ] implementation (implementer-a, implementer-b)
