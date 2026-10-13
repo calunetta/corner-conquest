@@ -17,6 +17,7 @@ import { positionDialogPreview } from '@/modules/combat/components/PositionDialo
 import { gameBoardHeaderPreview } from '@/modules/hud/components/GameBoardHeader/GameBoardHeader.preview';
 import { gameStatusBadgePreview } from '@/modules/hud/components/GameStatusBadge/GameStatusBadge.preview';
 import { connectionWarningDialogPreview } from '@/modules/game-board/components/ConnectionWarningDialog/ConnectionWarningDialog.preview';
+import { resourceCollectionFeedbackDemoPreview } from '@/modules/game-board/ResourceCollectionFeedbackDemo.preview';
 import { gameLogPreview } from '@/modules/hud/components/GameLog/GameLog.preview';
 import { playerInfoPreview } from '@/modules/hud/components/PlayerInfo/PlayerInfo.preview';
 import { tutorialBeaconPreview } from '@/modules/hud/components/TutorialBeacon/TutorialBeacon.preview';
@@ -31,6 +32,7 @@ import { wealthyDialogPreview } from '@/modules/cards/components/WealthyDialog/W
 import { stealResourceDialogPreview } from '@/modules/cards/components/StealResourceDialog/StealResourceDialog.preview';
 import { confirmExitDialogPreview } from '@/modules/session/components/ConfirmExitDialog/ConfirmExitDialog.preview';
 import { hostLeaveDialogPreview } from '@/modules/session/components/HostLeaveDialog/HostLeaveDialog.preview';
+import { victoryDialogPreview } from '@/modules/session/components/VictoryDialog/VictoryDialog.preview';
 import { googleIconPreview } from '@/modules/session/components/GoogleIcon/GoogleIcon.preview';
 import { linkGoogleAccountButtonPreview } from '@/modules/session/components/LinkGoogleAccountButton/LinkGoogleAccountButton.preview';
 import { loginPreview } from '@/modules/session/components/Login/Login.preview';
@@ -63,6 +65,7 @@ export const previews: ComponentPreview[] = [
   gameBoardHeaderPreview,
   gameStatusBadgePreview,
   connectionWarningDialogPreview,
+  resourceCollectionFeedbackDemoPreview,
   gameLogPreview,
   playerInfoPreview,
   tutorialBeaconPreview,
@@ -77,6 +80,7 @@ export const previews: ComponentPreview[] = [
   stealResourceDialogPreview,
   confirmExitDialogPreview,
   hostLeaveDialogPreview,
+  victoryDialogPreview,
   googleIconPreview,
   linkGoogleAccountButtonPreview,
   loginPreview,

@@ -4,3 +4,4 @@ export { GameLog } from './components/GameLog';
 export { PlayerInfo } from './components/PlayerInfo';
 export { ActionsPanel } from './components/ActionsPanel';
 export { TutorialBeacon } from './components/TutorialBeacon';
+export { playerRingColors } from './components/PlayerInfo/PlayerInfo.styles';

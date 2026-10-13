@@ -2,7 +2,7 @@
 
 import React from 'react';
 import type { CardName } from '@/lib/types';
-import { GameAction, ResourceType } from '@/lib/types';
+import { GameAction, GameStatus, ResourceType } from '@/lib/types';
 import { useGameBoard } from '../context/GameBoardContext';
 
 import {
@@ -22,7 +22,7 @@ import {
   StealResourceDialog,
   WealthyDialog,
 } from '@/modules/cards';
-import { ConfirmExitDialog, HostLeaveDialog } from '@/modules/session';
+import { ConfirmExitDialog, HostLeaveDialog, VictoryDialog } from '@/modules/session';
 import { ConnectionWarningDialog } from '@/modules/game-board';
 
 export function GameDialogManager() {
@@ -64,6 +64,15 @@ export function GameDialogManager() {
 
   return (
     <>
+      {gameState.status === GameStatus.Finished && gameState.winner && (
+        <VictoryDialog
+          winner={gameState.winner}
+          isLocalWinner={gameState.winner.playerId === localPlayer.playerId}
+          isExiting={uiState.isExiting}
+          onReturnToLobby={handleConfirmExit}
+        />
+      )}
+
       {dialogs.confirmExit && (
         <ConfirmExitDialog
           onConfirm={handleConfirmExit}

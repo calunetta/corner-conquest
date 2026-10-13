@@ -1,4 +1,4 @@
-import { PlayerColor } from '@/lib/types';
+import { GameStatus, PlayerColor } from '@/lib/types';
 import type { GameState, Monster } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import { addPlayerToGame } from '@/modules/game-rules';
@@ -368,6 +368,58 @@ describe('handlePlayerExit', () => {
 
         expect(writtenStateOf(transaction).monsterCombatState).toMatchObject({ attackerId: 1 });
       });
+    });
+  });
+
+  describe('finished (status Finished): no pre-game mutation', () => {
+    /** A match that ended: the host won, so the status is Finished and the winner is set. */
+    function buildFinishedGame(extraPlayerIds: string[]): GameState {
+      const game = buildStartedGame(extraPlayerIds);
+      game.status = GameStatus.Finished;
+      game.winner = game.players[0];
+      return game;
+    }
+
+    it('deletes the match when no real players remain', async () => {
+      const game = buildFinishedGame([]);
+      const transaction = stubTransaction(game);
+
+      await handlePlayerExit('game_test', 'host');
+
+      expect(transaction.delete).toHaveBeenCalledTimes(1);
+      expect(transaction.set).not.toHaveBeenCalled();
+    });
+
+    it('deletes the match when the last real player leaves and the other seats are bots', async () => {
+      const game = buildFinishedGame(['p2']);
+      convertSeatFixture(game, 'host');
+      const transaction = stubTransaction(game);
+
+      await handlePlayerExit('game_test', 'p2');
+
+      expect(transaction.delete).toHaveBeenCalledTimes(1);
+      expect(transaction.set).not.toHaveBeenCalled();
+    });
+
+    it('writes nothing when other real players remain (no-op)', async () => {
+      const game = buildFinishedGame(['p2', 'p3']);
+      const transaction = stubTransaction(game);
+
+      await handlePlayerExit('game_test', 'p2');
+
+      expect(transaction.delete).not.toHaveBeenCalled();
+      expect(transaction.set).not.toHaveBeenCalled();
+    });
+
+    it('does not splice the departing player out of the finished match', async () => {
+      const game = buildFinishedGame(['p2', 'p3']);
+      const playersBefore = snapshotOf(game.players);
+      const transaction = stubTransaction(game);
+
+      await handlePlayerExit('game_test', 'p2');
+
+      expect(transaction.set).not.toHaveBeenCalled();
+      expect(game.players).toEqual(playersBefore);
     });
   });
 

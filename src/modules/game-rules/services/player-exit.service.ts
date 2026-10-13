@@ -27,6 +27,8 @@ function convertSeatToBot(state: GameState, playerIndex: number): void {
  * - In progress: the seat becomes a bot (see `convertSeatToBot`) and is never removed; the match
  *   is deleted only when no real players remain. An already-bot seat is a no-op, so racing
  *   staleness checks and a doubled exit click cannot convert the same seat twice.
+ * - Finished: the match is deleted only when no real players remain; otherwise nothing is written,
+ *   so the other clients' victory screens are not disturbed.
  * - Pre-game: the match is deleted if no real players remain, or if the host leaves a one-player
  *   lobby. Otherwise the player is removed, players/baseTiles/map references are reindexed, and
  *   the exiting player's turn ends if it was theirs.
@@ -58,6 +60,15 @@ export async function handlePlayerExit(gameId: string, playerId: string): Promis
         }
         convertSeatToBot(currentState, playerIndex);
         transaction.set(gameDocRef, currentState);
+        return;
+      }
+
+      // The victory screen is already showing on the remaining clients; the match is over, so
+      // pre-game removal (splice, renumber, handleEndTurn) must not mutate it.
+      if (currentState.status === GameStatus.Finished) {
+        if (remainingRealPlayers.length === 0) {
+          transaction.delete(gameDocRef);
+        }
         return;
       }
 
