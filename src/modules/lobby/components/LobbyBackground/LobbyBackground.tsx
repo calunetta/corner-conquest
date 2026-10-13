@@ -1,68 +1,60 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import Image from 'next/image';
-import { LOBBY_ISLANDS, LOBBY_BOATS } from './LobbyBackground.map';
+import { PLAYER_DATA } from '@/modules/game-rules';
+import { AnimatedMonster } from '@/modules/map';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { PlayerColor } from '@/lib/types';
+import { cn } from '@/lib/utils';
+import { ISLAND_POSITIONS, ISLAND_WIDTH_PERCENT } from './LobbyBackground.layout';
+import { createMonsterIslandMonster, createResourceIslandNodes, toCloudStyle } from './LobbyBackground.map';
 import { styles } from './LobbyBackground.styles';
+import { useLobbyBackground } from './LobbyBackground.hook';
 
+// Built once at module load: the monster object must keep its identity across renders so AnimatedMonster's wander state survives.
+const RESOURCE_NODES = createResourceIslandNodes();
+const MONSTER = createMonsterIslandMonster();
+const BASE_CASTLE_SRC = PLAYER_DATA[PlayerColor.Blue].base;
+
+function islandStyle(position: { top: string; left: string }): CSSProperties {
+  return { top: position.top, left: position.left, width: `${ISLAND_WIDTH_PERCENT}%` };
+}
+
+/** Decorative layer behind the login and lobby screens. Hidden from assistive tech and pointer-transparent. */
 export function LobbyBackground() {
+  const { clouds } = useLobbyBackground();
+
   return (
-    <div className={styles.root}>
-      {/* Deep Ocean Gradient */}
-      <div className={styles.gradientBg} />
+    <div className={styles.root} aria-hidden>
+      <div className={styles.sky} />
+      <div className={styles.sea} />
 
-      {/* Ambient Radial Bioluminescent Glows */}
-      <div className={styles.glowCyan} />
-      <div className={styles.glowPurple} />
-      <div className={styles.glowAmber} />
-      <div className={styles.glowEmerald} />
+      {clouds.map((cloud) => (
+        <div key={cloud.id} className={styles.cloud} style={toCloudStyle(cloud)}>
+          <Image src={cloud.sprite} alt="" fill className={styles.sprite} unoptimized />
+        </div>
+      ))}
 
-      {/* Subtle Grid Water Texture */}
-      <div className={styles.waterPattern} />
+      <div className={styles.island} style={islandStyle(ISLAND_POSITIONS.base)}>
+        <div className={styles.islandSprite}>
+          <Image src={BASE_CASTLE_SRC} alt="" fill className={styles.sprite} unoptimized />
+        </div>
+      </div>
 
-      {/* Floating Tactical Islands */}
-      {LOBBY_ISLANDS.map((island) => (
-        <div key={island.id} className={island.wrapperClassName}>
-          <div className={island.cardClassName}>
-            <Image
-              src={island.mainSprite.src}
-              alt={island.mainSprite.alt}
-              width={island.mainSprite.width}
-              height={island.mainSprite.height}
-              className={island.mainSprite.imageClassName}
-              unoptimized
-            />
-            {island.decorations.map((decoration, idx) => (
-              <div key={idx} className={decoration.positionClassName}>
-                <Image
-                  src={decoration.src}
-                  alt={decoration.alt}
-                  width={decoration.width}
-                  height={decoration.height}
-                  className={decoration.imageClassName}
-                  unoptimized
-                />
-              </div>
-            ))}
+      <div className={styles.island} style={islandStyle(ISLAND_POSITIONS.resource)}>
+        {RESOURCE_NODES.map((node) => (
+          <div key={node.key} className={styles.resourceNode} style={node.style}>
+            <Image src={node.src} alt="" fill className={styles.sprite} unoptimized />
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
-      {/* Naval Patrol Fleet */}
-      {LOBBY_BOATS.map((boat) => (
-        <div key={boat.id} className={boat.wrapperClassName}>
-          <Image
-            src={boat.sprite.src}
-            alt={boat.sprite.alt}
-            width={boat.sprite.width}
-            height={boat.sprite.height}
-            className={boat.sprite.imageClassName}
-            unoptimized
-          />
-        </div>
-      ))}
-
-      {/* Subtle Fog & Lighting Particle Highlights */}
-      <div className={styles.fogOverlay} />
+      <div className={cn(styles.island, styles.monsterIsland)} style={islandStyle(ISLAND_POSITIONS.monster)}>
+        <TooltipProvider>
+          <AnimatedMonster monster={MONSTER} />
+        </TooltipProvider>
+      </div>
     </div>
   );
 }

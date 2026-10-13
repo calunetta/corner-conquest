@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Compass, Loader2, Swords, Trophy, Shield, BookOpen, Sparkles, Power } from 'lucide-react';
 import { LinkGoogleAccountButtonView } from '@/modules/session';
-import { LobbyBackground } from '../LobbyBackground';
 import { CreateGameDialog } from '../CreateGameDialog';
 import { RejoinMatchPanel } from '../RejoinMatchPanel';
 import { LobbyGameRow } from '../LobbyGameRow';
@@ -17,7 +16,6 @@ import type { LobbyProps, LobbyViewModel } from './Lobby.types';
 export function LobbyView(model: LobbyViewModel) {
   return (
     <div className={styles.root}>
-      <LobbyBackground />
       <Card className={styles.card}>
         <CardHeader className={styles.header}>
           <div className={styles.headerContent}>

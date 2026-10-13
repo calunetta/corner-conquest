@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LobbyBackground } from '@/modules/lobby';
 import { GoogleIcon } from '../GoogleIcon';
 import { useLogin } from './Login.hook';
 import { styles } from './Login.styles';
@@ -42,8 +41,6 @@ export function LoginView({
   return (
     <>
       <div className={styles.root}>
-        <LobbyBackground />
-
         <Card className={styles.card}>
           <CardHeader className={styles.header}>
             <div className={styles.iconWrap}>

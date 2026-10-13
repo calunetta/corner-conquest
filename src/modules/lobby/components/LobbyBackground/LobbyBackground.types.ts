@@ -1,27 +1,17 @@
-export type Sprite = {
-  src: string;
-  alt: string;
-  width: number;
-  height: number;
-  imageClassName: string;
-};
-
-export type SpriteDecoration = Sprite & {
-  positionClassName: string;
-};
-
-export type LobbyIsland = {
+export interface CloudViewModel {
   id: string;
-  /** Position + visibility + hover + animation-duration/delay classes. */
-  wrapperClassName: string;
-  /** Size + border-color + rotate classes. */
-  cardClassName: string;
-  mainSprite: Sprite;
-  decorations: SpriteDecoration[];
-};
+  /** % from left edge of the viewport, 0-100 */
+  left: number;
+  /** % from top edge of the viewport, 0-100 */
+  top: number;
+  /** full spawn->drift->fade lifetime, in seconds */
+  durationSeconds: number;
+  /** 0-1, final drifted opacity/scale multiplier for depth */
+  scale: number;
+  /** Public path of one of the real cloud sprites. */
+  sprite: string;
+}
 
-export type LobbyBoat = {
-  id: string;
-  wrapperClassName: string;
-  sprite: Sprite;
-};
+export interface LobbyBackgroundViewModel {
+  clouds: CloudViewModel[];
+}

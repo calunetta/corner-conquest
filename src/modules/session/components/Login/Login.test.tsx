@@ -14,11 +14,6 @@ jest.mock('next/image', () => ({
   },
 }));
 
-// Mock LobbyBackground to avoid rendering the full background
-jest.mock('@/modules/lobby', () => ({
-  LobbyBackground: () => <div data-testid="lobby-background" />,
-}));
-
 const GUEST_COPY = /enter your commander name to enter the lobby/i;
 const ACCOUNT_COPY = 'Choose your permanent commander name — this cannot be changed later.';
 

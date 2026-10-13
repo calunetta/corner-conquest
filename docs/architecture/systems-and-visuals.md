@@ -15,6 +15,13 @@ Part of the architecture & game-rules docs. Index and directives: [`docs/README.
     1.  Clicking the "Deselect Army" button. This is a "hard reset" that clears the selected army and any pending card action.
     2.  Clicking on any tile that is not a valid move for the currently selected army.
 
+#### **Home Islands Login & Lobby Background (`LobbyBackground`, `src/modules/lobby/components/LobbyBackground/`)**
+- **Single Mount:** `src/app/page.tsx` renders one `<LobbyBackground />` for the Login screen and the Lobby. It is shown only while `activeGameId` is null, so a game board has no decorative background. `Login.tsx` and `Lobby.tsx` do not render it.
+- **Layers (bottom to top):** a dusk sky gradient, a sea strip covering the bottom 30% of the screen (`bg-water-pattern`), the clouds, then the three islands. The whole layer is `fixed`, `aria-hidden`, and pointer-transparent.
+- **Islands:** base (castle from `PLAYER_DATA`, blue), resource (Food, Wood and Gold nodes from `RESOURCE_SPRITES`), and monster (level 4, Minotaur, via `AnimatedMonster`). All three are `ISLAND_WIDTH_PERCENT` (26%) of the container width and square, placed at `top: 40%` with lefts 4%, 37% and 70%. The monster island clips its contents (`overflow-hidden`). Below the `md` breakpoint the islands are hidden (`hidden md:block`).
+- **Clouds (`useLobbyBackground`, `LobbyBackground.hook.ts`):** one cloud spawns every 2500 ms, with at most 5 alive at once. Each cloud picks one of `cloud_small.png`, `cloud_medium.png` or `cloud_big.png` at random, lives 18–28 s, then is removed. Its drift and fade come from the `cloud-drift` keyframe in `tailwind.config.ts`.
+- **Literal Isolation:** every position, size and timing value for this background lives in `LobbyBackground.layout.ts`. No `LobbyBackground` source file imports `island-tile-slots.types.ts`, and `LobbyBackground.map.test.ts` fails if one does. The real board's locked slot values are not shared with this background.
+
 ## 6.8. Fog of War & Debug Mode
 
 -   **Fog of War (Enabled):** This is the default, tactical experience.
@@ -133,6 +140,13 @@ Bots are created at match setup only for a solo-vs-bot lobby game (`maxPlayers =
   - Outer ocean margins surrounding the playable board are decorated with fixed atmospheric cloud formations (`/sprites/cloud_small.png`, `/sprites/cloud_medium.png`, `/sprites/cloud_big.png`) along margins and outer corners, framing uncharted waters.
 - **Rebalanced Base Tile Layout (`IslandTile.tsx`)**:
   - Base castles (`/sprites/castle_{color}.png`) are sized to 44% of the base content box, floored at 18px (`IslandTile.tsx`), creating a balanced landscape that cleanly accommodates the castle, tree forest, base resource nodes, idle collectors, and, while an army of the owner is stationed there, the anchored shoreline boat.
+
+- **Special Island Art & Card-Reveal Animation (`IslandTile.tsx`, `IslandTile.hook.ts`, `CardRevealEffect/`)**:
+  - An `IslandType.Special` tile shows `special_island_idle.png` (`fill`, `object-contain`) in its center content. While `cardRevealAnimationOnTile` is set and reduced motion is not preferred, `IslandTile.tsx` renders `<CardRevealEffect>` (`special_island_reveal.gif`) in its place.
+  - `cardRevealAnimationOnTile` is the first `gameState.cardRevealAnimations` entry on the tile whose `createdAt` is within `REVEAL_ANIMATION_DURATION` (1400 ms) and whose `id` is not in the tile's locally-hidden set. When `CardRevealEffect`'s own timer ends, it calls `onHidden`, and the tile falls back to the idle art at once instead of waiting for the Firestore entry to be removed.
+  - `prefersReducedMotion` is read once per tile from `(prefers-reduced-motion: reduce)` in `IslandTile.hook.ts`. When it is true, the GIF is never mounted and the idle art shows for the whole window.
+  - Fog (`HelpCircle`) is checked first and wins over both the idle art and the reveal.
+  - Clearing: the session driver's `useAnimationCleanup` (`src/modules/game-board/game-board.animation-cleanup.hook.ts`) schedules `clearCardRevealAnimations` for each entry 1400 ms after its `createdAt` (minimum 100 ms). `handleEndTurn` also drops entries older than 1400 ms (`REVEAL_ANIMATION_DURATION_MS` in `player-turn.reducer.ts`).
 
 ## 6.14. Disconnect Detection & Seat Takeover
 - **Heartbeat (`useHeartbeat`, `game-board.heartbeat.hook.ts`)**: While a match is `playing`, each client whose local player is a human (not a bot) writes `players[seat].lastSeenAt = Date.now()` immediately on start and then every **15 s** (`HEARTBEAT_INTERVAL_MS`). The write is `writeHeartbeat` in `services/game-board.engine.service.ts`: a `runTransaction` that re-reads the match document, stamps the one seat, and writes the document back, so a concurrent heartbeat from another seat is not lost. A failed heartbeat is logged to the console and retried on the next tick; it shows no toast.

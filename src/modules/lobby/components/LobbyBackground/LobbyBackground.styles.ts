@@ -1,14 +1,16 @@
 export const styles = {
   root: 'fixed inset-0 z-0 overflow-hidden pointer-events-none select-none',
-  gradientBg: 'absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950/80 via-background to-black',
-  glowCyan: 'absolute -top-32 -left-32 w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] animate-pulse',
-  glowPurple: 'absolute -bottom-32 -right-32 w-[550px] h-[550px] bg-purple-600/15 rounded-full blur-[140px] animate-pulse [animation-delay:3s]',
-  glowAmber: 'absolute top-1/3 right-1/4 w-[450px] h-[450px] bg-amber-500/10 rounded-full blur-[120px] animate-pulse [animation-delay:1.5s]',
-  glowEmerald: 'absolute top-2/3 left-1/4 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[120px] animate-pulse [animation-delay:2.5s]',
-  waterPattern: 'absolute inset-0 bg-water-pattern opacity-20 mix-blend-overlay',
-  islandWrapper: 'absolute rounded-2xl bg-terrain bg-cover bg-center shadow-2xl p-2 flex flex-col items-center justify-center',
-  islandImage: 'drop-shadow-lg object-contain',
-  decorationWrapper: 'absolute',
-  boatWrapper: 'absolute',
-  fogOverlay: 'absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/50',
+  sky: 'absolute inset-x-0 top-0 h-full bg-[linear-gradient(180deg,#2a1b3d_0%,#5c2f3a_42%,#a85a3b_70%,#d98b4c_100%)]',
+  // Tiled water.png sprite (the bg-water-pattern utility) covering the bottom ~30% of the stage.
+  sea: 'absolute inset-x-0 bottom-0 h-[30%] bg-water-pattern bg-repeat bg-[length:48px_48px]',
+  // Keyframes `animate-cloud-drift` (tailwind.config.ts) drift and fade the cloud once; duration is inline.
+  cloud: 'absolute animate-cloud-drift',
+  // Same terrain surface as a real board tile (IslandTile.styles.ts `terrain`), without its z-index layering.
+  // Hidden below md: at phone width the 26%-wide islands sit entirely behind the login card.
+  island: 'absolute hidden md:block aspect-square rounded-lg border-2 border-black/50 bg-terrain bg-cover bg-center bg-no-repeat shadow-2xl',
+  // Clips the monster's wander (AnimatedMonster translates the sprite inside its own box) to this tile.
+  monsterIsland: 'overflow-hidden',
+  islandSprite: 'absolute inset-[15%] drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)]',
+  resourceNode: 'absolute',
+  sprite: 'object-contain',
 } as const;

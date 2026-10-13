@@ -99,12 +99,18 @@ export default {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-10px)' },
         },
+        'cloud-drift': {
+          '0%': { transform: 'translateX(0)', opacity: '0' },
+          '15%, 85%': { opacity: '1' },
+          '100%': { transform: 'translateX(60px)', opacity: '0' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'gradient-shift': 'gradient-shift 15s ease infinite',
         'float': 'float 6s ease-in-out infinite',
+        'cloud-drift': 'cloud-drift linear forwards',
       },
     },
   },
