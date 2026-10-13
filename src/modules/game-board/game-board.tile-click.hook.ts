@@ -72,6 +72,8 @@ export function useTileClick({
       }
 
       const isPossibleMove = uiState.possibleMoves.some((p) => p.x === x && p.y === y);
+      // TEMP DEBUG — remove before handoff.
+      console.error('[DEBUG tileClick]', JSON.stringify({ x, y, armyId: selectedArmy?.id ?? null, armyPos: selectedArmy?.position ?? null, isPossibleMove, possibleMoves: uiState.possibleMoves }));
       if (selectedArmy && isPossibleMove) {
         const targetTile = gameStateForDisplay.map[y * gameStateForDisplay.settings.gridSize.cols + x];
         const isRevealedSpecial =
@@ -79,7 +81,7 @@ export function useTileClick({
         await onAction(GameAction.Move, { army: selectedArmy, x, y });
         dispatch({ type: 'SET_SELECTED_ARMY', armyId: null });
         if (isRevealedSpecial) {
-          dispatch({ type: 'SET_SPECIAL_ISLAND_ROLL_DIALOG', state: { isOpen: true, roll: null, cardDrawn: null } });
+          dispatch({ type: 'SET_SPECIAL_ISLAND_ROLL_DIALOG', state: { isOpen: true, roll: null, cardDrawn: null, x, y } });
         }
       } else {
         const armiesOnTile = localPlayer.armies.filter((a) => a.position.x === x && a.position.y === y) ?? [];

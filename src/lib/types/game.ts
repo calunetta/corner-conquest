@@ -1,4 +1,4 @@
-import { CardName, AbilityName, ResourceType } from './cards';
+import { CardName, AbilityName, ResourceType, CardRevealAnimation } from './cards';
 import { Player } from './player';
 import { Island, BaseTileInfo } from './map';
 import { CombatState, MonsterCombatState, DeathAnimation } from './combat';
@@ -61,6 +61,7 @@ export type GameState = {
   specialCardsDeck: CardName[];
   discardPile: CardName[];
   deathAnimations: DeathAnimation[];
+  cardRevealAnimations: CardRevealAnimation[];
 
   // SHARED DIALOG STATES (Only those that require all players to see or interact)
   combatState: CombatState | null;

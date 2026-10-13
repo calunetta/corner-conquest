@@ -91,6 +91,18 @@ describe('revealIsland', () => {
     expect(game.log.some((entry) => toLogMessage(entry).includes('found a card'))).toBe(true);
   });
 
+  it('pushes a CardRevealAnimation with the tile coordinates when a card is drawn', () => {
+    const tile = forcedTile(game, IslandType.Special);
+    expect(game.cardRevealAnimations).toHaveLength(0);
+
+    const nextState = revealIsland(game, tile.x, tile.y);
+
+    expect(nextState.cardRevealAnimations).toHaveLength(1);
+    expect(nextState.cardRevealAnimations[0]).toMatchObject({ x: tile.x, y: tile.y });
+    expect(nextState.cardRevealAnimations[0].id).toContain(`card-${tile.x}-${tile.y}-`);
+    expect(typeof nextState.cardRevealAnimations[0].createdAt).toBe('number');
+  });
+
   it('isScout suppresses the special-card draw on a Special island', () => {
     const player = game.players[0];
     const tile = forcedTile(game, IslandType.Special);
@@ -99,6 +111,14 @@ describe('revealIsland', () => {
     revealIsland(game, tile.x, tile.y, true);
 
     expect(player.specialCards.length).toBe(handSizeBefore);
+  });
+
+  it('isScout pushes no CardRevealAnimation even though the tile is Special', () => {
+    const tile = forcedTile(game, IslandType.Special);
+
+    const nextState = revealIsland(game, tile.x, tile.y, true);
+
+    expect(nextState.cardRevealAnimations).toHaveLength(0);
   });
 
   it('does not draw a card when the hand is already full (boundary: HAND_LIMIT)', () => {
@@ -112,6 +132,15 @@ describe('revealIsland', () => {
     expect(game.log.some((entry) => toLogMessage(entry).includes('hand is full'))).toBe(true);
   });
 
+  it('pushes no CardRevealAnimation when the hand is full (boundary: HAND_LIMIT)', () => {
+    game.players[0].specialCards = Array.from({ length: HAND_LIMIT }, () => CardName.Scout);
+    const tile = forcedTile(game, IslandType.Special);
+
+    const nextState = revealIsland(game, tile.x, tile.y);
+
+    expect(nextState.cardRevealAnimations).toHaveLength(0);
+  });
+
   it('logs that the deck is empty when both the deck and discard pile are empty (empty-input boundary)', () => {
     const player = game.players[0];
     game.specialCardsDeck = [];
@@ -123,6 +152,16 @@ describe('revealIsland', () => {
 
     expect(player.specialCards).toHaveLength(handSizeBefore);
     expect(game.log.some((entry) => toLogMessage(entry).includes('deck is empty!'))).toBe(true);
+  });
+
+  it('pushes no CardRevealAnimation when the deck and discard pile are both empty (empty-input boundary)', () => {
+    game.specialCardsDeck = [];
+    game.discardPile = [];
+    const tile = forcedTile(game, IslandType.Special);
+
+    const nextState = revealIsland(game, tile.x, tile.y);
+
+    expect(nextState.cardRevealAnimations).toHaveLength(0);
   });
 
   it('reshuffles the discard pile into the deck when the deck is empty but the discard pile is not', () => {

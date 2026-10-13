@@ -210,6 +210,18 @@ describe('handleEndTurn', () => {
     expect(nextState.deathAnimations.map((a) => a.id)).toEqual(['fresh']);
   });
 
+  it('filters out card-reveal animations older than the 1.4-second display window', () => {
+    const now = Date.now();
+    game.cardRevealAnimations = [
+      { id: 'old', x: 0, y: 0, createdAt: now - 5000 },
+      { id: 'fresh', x: 0, y: 0, createdAt: now },
+    ];
+
+    const nextState = handleEndTurn(game);
+
+    expect(nextState.cardRevealAnimations.map((a) => a.id)).toEqual(['fresh']);
+  });
+
   it('is a no-op when there are no players at all (empty input boundary)', () => {
     game.players = [];
     const nextState = handleEndTurn(game);

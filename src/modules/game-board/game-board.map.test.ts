@@ -83,7 +83,7 @@ describe('hasActiveDialogOrPendingAction', () => {
       ...initialUIState,
       dialogs: {
         ...initialUIState.dialogs,
-        specialIslandRoll: { isOpen: true, roll: null, cardDrawn: null },
+        specialIslandRoll: { isOpen: true, roll: null, cardDrawn: null, x: 2, y: 3 },
       },
     };
     expect(hasActiveDialogOrPendingAction(state)).toBe(true);
@@ -149,7 +149,7 @@ describe('hasActiveDialogOrPendingAction', () => {
       ...initialUIState,
       dialogs: {
         ...initialUIState.dialogs,
-        specialIslandRoll: { isOpen: false, roll: null, cardDrawn: null },
+        specialIslandRoll: { isOpen: false, roll: null, cardDrawn: null, x: 2, y: 3 },
       },
     };
     expect(hasActiveDialogOrPendingAction(state)).toBe(false);

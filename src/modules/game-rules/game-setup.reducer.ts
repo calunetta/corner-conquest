@@ -123,6 +123,7 @@ export function initializeGame(
     specialCardsDeck: initialDeck,
     discardPile: [],
     deathAnimations: [],
+    cardRevealAnimations: [],
     combatState: null,
     monsterCombatState: null,
     productiveDialogState: null,

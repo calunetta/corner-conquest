@@ -268,9 +268,9 @@ describe('handleGameAction routing table', () => {
     {
       name: 'RollOnSpecialIsland with a forced roll',
       action: GameAction.RollOnSpecialIsland,
-      payload: { roll: 3 },
+      payload: { roll: 3, x: 2, y: 3 },
       setup: () => {},
-      direct: (s) => handleRollOnSpecialIsland(s, { roll: 3 }),
+      direct: (s) => handleRollOnSpecialIsland(s, { roll: 3, x: 2, y: 3 }),
       changesState: true,
     },
     {
@@ -327,6 +327,8 @@ describe('handleGameAction routing table', () => {
   beforeEach(() => {
     // Fixed dice and shuffles so the dispatcher and the direct call draw identical "random" values.
     jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    // Fixed clock so animation entries (createdAt: Date.now()) match between the direct call and the dispatcher.
+    jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 

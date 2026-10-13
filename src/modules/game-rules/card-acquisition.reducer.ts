@@ -87,7 +87,10 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ga
 }
 
 /** Rolls for a bonus card on a special island tile; a 3 or 6 draws, reshuffling the discard pile if needed. */
-export function handleRollOnSpecialIsland(state: GameState, payload?: { roll?: number }): GameState {
+export function handleRollOnSpecialIsland(
+  state: GameState,
+  payload?: { roll?: number; x: number; y: number },
+): GameState {
   const player = state.players[state.currentPlayerIndex];
 
   const roll = payload?.roll ?? Math.floor(Math.random() * 6) + 1;
@@ -120,6 +123,15 @@ export function handleRollOnSpecialIsland(state: GameState, payload?: { roll?: n
         const drawnCardResult = state.specialCardsDeck.splice(cardIndex, 1)[0];
         player.specialCards.push(drawnCardResult);
         cardDrawn = drawnCardResult;
+        if (payload) {
+          const createdAt = Date.now();
+          state.cardRevealAnimations.push({
+            id: `card-${payload.x}-${payload.y}-${createdAt}`,
+            x: payload.x,
+            y: payload.y,
+            createdAt,
+          });
+        }
         pushLogEntry(state, {
           category: 'cards',
           message: `${player.name} rolled a ${roll} and found a card: "${cardDrawn}"!`,

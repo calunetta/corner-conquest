@@ -48,6 +48,7 @@ export const buildGameState = (overrides: Partial<GameState> = {}): GameState =>
     discardPile: [],
     specialCardsDeck: [],
     deathAnimations: [],
+    cardRevealAnimations: [],
     winner: null,
     combatState: null,
     monsterCombatState: null,

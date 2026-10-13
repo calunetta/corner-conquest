@@ -15,6 +15,8 @@ export type SpecialIslandRollDialogState = {
   isOpen: boolean;
   roll: number | null;
   cardDrawn: CardName | null;
+  x: number;
+  y: number;
 } | null;
 
 export type ArmySelectionDialogState = {

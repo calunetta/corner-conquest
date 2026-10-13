@@ -1,14 +1,15 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { GameStatus } from '@/lib/types';
-import type { DeathAnimation, GameAction, GameState } from '@/lib/types';
+import type { GameAction, GameState } from '@/lib/types';
 import { useToast } from '@/modules/shared';
 import { handleGameAction, takeBotTurn } from '@/modules/game-rules';
-import { subscribeToGameState, saveGameState, clearDeathAnimations } from './services/game-board.engine.service';
+import { subscribeToGameState, saveGameState } from './services/game-board.engine.service';
 import type { UseGameEngineResult } from './game-board.engine.types';
 import { useHeartbeat } from './game-board.heartbeat.hook';
 import { useStalenessCheck } from './game-board.staleness.hook';
 import { useResourceCollectionFeedback } from './resource-collection-feedback.hook';
+import { useAnimationCleanup } from './game-board.animation-cleanup.hook';
 
 export function useGameEngine(gameId: string, playerId: string | null): UseGameEngineResult {
   const [gameState, setInternalGameState] = useState<GameState | null>(null);
@@ -122,35 +123,8 @@ export function useGameEngine(gameId: string, playerId: string | null): UseGameE
     gameStateRef.current = gameState;
   }, [gameState]);
 
-  const scheduledDeathAnimations = useRef<Set<string>>(new Set());
-
-  // The session driver clears death animations from the database
-  useEffect(() => {
-    if (!isSessionDriver || !gameState || !gameState.deathAnimations || gameState.deathAnimations.length === 0) {
-      return;
-    }
-
-    gameState.deathAnimations.forEach((anim) => {
-      if (!scheduledDeathAnimations.current.has(anim.id)) {
-        scheduledDeathAnimations.current.add(anim.id);
-        const remainingTime = Math.max(100, anim.createdAt ? anim.createdAt + 1250 - Date.now() : 1250);
-
-        setTimeout(() => {
-          scheduledDeathAnimations.current.delete(anim.id);
-          const currentAnims = gameStateRef.current?.deathAnimations || [];
-          const newAnims = currentAnims.filter((a: DeathAnimation) => a.id !== anim.id);
-          if (newAnims.length !== currentAnims.length) {
-            clearDeathAnimations(gameId, newAnims).catch((err) => {
-              console.error('Error updating death animations:', err);
-            });
-          }
-        }, remainingTime);
-      }
-    });
-    // Depends on the derived `gameState?.deathAnimations` reference, not the whole `gameState` object, so
-    // this doesn't reschedule on unrelated state changes (docs/ai/lessons-learned.md "Hooks & effects").
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState?.deathAnimations, isSessionDriver, gameId]);
+  // The session driver clears death and card-reveal animations from the database once they expire
+  useAnimationCleanup({ gameState, isSessionDriver, gameId, gameStateRef });
 
   // The session driver triggers bot turns
   useEffect(() => {

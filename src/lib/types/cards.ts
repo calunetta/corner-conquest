@@ -31,3 +31,10 @@ export type ResourceType = (typeof ResourceType)[keyof typeof ResourceType];
 export type PassiveAbilities = {
   [key in AbilityName]?: boolean;
 };
+
+export type CardRevealAnimation = {
+  id: string; // `card-${x}-${y}-${createdAt}`
+  x: number;
+  y: number;
+  createdAt?: number;
+};

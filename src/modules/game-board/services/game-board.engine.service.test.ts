@@ -9,8 +9,8 @@ jest.mock('@/lib/firebase', () => ({
 
 import { onSnapshot, runTransaction, setDoc, updateDoc, doc, db } from '@/lib/firebase';
 // Imported after the mock so the service picks up the mocked `@/lib/firebase` module.
-import { subscribeToGameState, saveGameState, clearDeathAnimations, writeHeartbeat } from './game-board.engine.service';
-import type { GameState, DeathAnimation, Player } from '@/lib/types';
+import { subscribeToGameState, saveGameState, clearDeathAnimations, clearCardRevealAnimations, writeHeartbeat } from './game-board.engine.service';
+import type { GameState, DeathAnimation, CardRevealAnimation, Player } from '@/lib/types';
 
 const mockOnSnapshot = onSnapshot as jest.Mock;
 const mockRunTransaction = runTransaction as jest.Mock;
@@ -43,6 +43,7 @@ const createGameState = (overrides?: Partial<GameState>): GameState => ({
   map: [],
   baseTiles: [],
   deathAnimations: [],
+  cardRevealAnimations: [],
   turn: 1,
   log: [],
   winner: null,
@@ -231,6 +232,51 @@ describe('game-board.engine.service', () => {
       await clearDeathAnimations('game_xyz', remaining);
 
       expect(mockUpdateDoc).toHaveBeenCalledWith({}, { deathAnimations: remaining });
+    });
+  });
+
+  describe('clearCardRevealAnimations', () => {
+    it('calls updateDoc with the remaining card-reveal animations', async () => {
+      mockUpdateDoc.mockResolvedValue(undefined);
+      const remaining: CardRevealAnimation[] = [{ id: 'card_1', x: 5, y: 5, createdAt: Date.now() }];
+
+      await clearCardRevealAnimations('game_123', remaining);
+
+      expect(mockDoc).toHaveBeenCalledWith(db, 'games', 'game_123');
+      expect(mockUpdateDoc).toHaveBeenCalledWith({}, { cardRevealAnimations: remaining });
+    });
+
+    it('clears all card-reveal animations when the array is empty', async () => {
+      mockUpdateDoc.mockResolvedValue(undefined);
+
+      await clearCardRevealAnimations('game_123', []);
+
+      expect(mockUpdateDoc).toHaveBeenCalledWith({}, { cardRevealAnimations: [] });
+    });
+
+    it('resolves without throwing when updateDoc succeeds', async () => {
+      mockUpdateDoc.mockResolvedValue(undefined);
+
+      await expect(clearCardRevealAnimations('game_123', [])).resolves.not.toThrow();
+    });
+
+    it('propagates errors from updateDoc', async () => {
+      const error = new Error('Permission denied');
+      mockUpdateDoc.mockRejectedValue(error);
+
+      await expect(clearCardRevealAnimations('game_123', [])).rejects.toThrow('Permission denied');
+    });
+
+    it('preserves the card-reveal animation id and createdAt', async () => {
+      mockUpdateDoc.mockResolvedValue(undefined);
+      const remaining: CardRevealAnimation[] = [
+        { id: 'card_1', x: 1, y: 1, createdAt: 1000 },
+        { id: 'card_2', x: 2, y: 2, createdAt: 2000 },
+      ];
+
+      await clearCardRevealAnimations('game_xyz', remaining);
+
+      expect(mockUpdateDoc).toHaveBeenCalledWith({}, { cardRevealAnimations: remaining });
     });
   });
 

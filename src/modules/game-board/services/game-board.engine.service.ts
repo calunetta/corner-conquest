@@ -1,5 +1,5 @@
 import { db, doc, onSnapshot, runTransaction, setDoc, updateDoc } from '@/lib/firebase';
-import type { DeathAnimation, GameState } from '@/lib/types';
+import type { CardRevealAnimation, DeathAnimation, GameState } from '@/lib/types';
 
 export interface GameStateSubscriptionCallbacks {
   onData: (state: GameState) => void;
@@ -34,6 +34,11 @@ export async function saveGameState(gameId: string, state: GameState): Promise<v
 export async function clearDeathAnimations(gameId: string, remaining: DeathAnimation[]): Promise<void> {
   const gameDocRef = doc(db, 'games', gameId);
   await updateDoc(gameDocRef, { deathAnimations: remaining });
+}
+
+export async function clearCardRevealAnimations(gameId: string, remaining: CardRevealAnimation[]): Promise<void> {
+  const gameDocRef = doc(db, 'games', gameId);
+  await updateDoc(gameDocRef, { cardRevealAnimations: remaining });
 }
 
 /**

@@ -4,12 +4,13 @@ import * as service from './services/game-board.engine.service';
 import { useToast } from '@/modules/shared';
 import { takeBotTurn } from '@/modules/game-rules';
 import { useRouter } from 'next/navigation';
-import type { GameState, DeathAnimation } from '@/lib/types';
+import type { GameState, DeathAnimation, CardRevealAnimation } from '@/lib/types';
 
 jest.mock('./services/game-board.engine.service', () => ({
   subscribeToGameState: jest.fn(),
   saveGameState: jest.fn(),
   clearDeathAnimations: jest.fn(),
+  clearCardRevealAnimations: jest.fn(),
   writeHeartbeat: jest.fn(),
 }));
 
@@ -29,6 +30,7 @@ jest.mock('next/navigation', () => ({
 const mockSubscribeToGameState = service.subscribeToGameState as jest.Mock;
 const mockSaveGameState = service.saveGameState as jest.Mock;
 const mockClearDeathAnimations = service.clearDeathAnimations as jest.Mock;
+const mockClearCardRevealAnimations = service.clearCardRevealAnimations as jest.Mock;
 const mockUseToast = useToast as jest.Mock;
 const mockTakeBotTurn = takeBotTurn as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
@@ -111,6 +113,7 @@ const createGameState = (overrides?: Partial<GameState>): GameState => ({
   map: [],
   baseTiles: [],
   deathAnimations: [],
+  cardRevealAnimations: [],
   turn: 1,
   log: [],
   winner: null,
@@ -615,6 +618,87 @@ describe('useGameEngine', () => {
     expect(mockClearDeathAnimations).toHaveBeenCalledTimes(1);
   });
 
+  it('schedules card-reveal animation cleanup after the remaining time', async () => {
+    let onDataCallback: ((state: GameState) => void) | null = null;
+
+    mockSubscribeToGameState.mockImplementation(
+      (gameId: string, callbacks: { onData: (state: GameState) => void; onMissing: () => void; onError: (error: unknown) => void }) => {
+        onDataCallback = callbacks.onData;
+        return jest.fn();
+      }
+    );
+
+    mockClearCardRevealAnimations.mockResolvedValue(undefined);
+
+    renderHook(() => useGameEngine('game_123', 'player_1'));
+
+    const now = Date.now();
+    const cardAnim: CardRevealAnimation = {
+      id: 'card_1',
+      x: 5,
+      y: 5,
+      createdAt: now - 100, // Created 100ms ago
+    };
+
+    const gameState = createGameState({
+      currentPlayerIndex: 0,
+      cardRevealAnimations: [cardAnim],
+    });
+
+    act(() => {
+      onDataCallback?.(gameState);
+    });
+
+    // The hook should schedule cleanup for ~1300ms (1400ms - 100ms elapsed)
+    act(() => {
+      jest.advanceTimersByTime(1350);
+    });
+
+    expect(mockClearCardRevealAnimations).toHaveBeenCalledWith('game_123', []);
+  });
+
+  it('does not schedule the same card-reveal animation twice', async () => {
+    let onDataCallback: ((state: GameState) => void) | null = null;
+
+    mockSubscribeToGameState.mockImplementation(
+      (gameId: string, callbacks: { onData: (state: GameState) => void; onMissing: () => void; onError: (error: unknown) => void }) => {
+        onDataCallback = callbacks.onData;
+        return jest.fn();
+      }
+    );
+
+    mockClearCardRevealAnimations.mockResolvedValue(undefined);
+
+    renderHook(() => useGameEngine('game_123', 'player_1'));
+
+    const cardAnim: CardRevealAnimation = {
+      id: 'card_1',
+      x: 5,
+      y: 5,
+      createdAt: Date.now(),
+    };
+
+    const gameState = createGameState({
+      cardRevealAnimations: [cardAnim],
+    });
+
+    act(() => {
+      onDataCallback?.(gameState);
+    });
+
+    // Trigger the same game state again (simulating a redundant update)
+    act(() => {
+      onDataCallback?.(gameState);
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(1450);
+    });
+
+    // clearCardRevealAnimations should be called only once for this animation
+    expect(mockClearCardRevealAnimations).toHaveBeenCalledTimes(1);
+  });
+
   it('unsubscribes from game state on unmount', () => {
     const unsubscribe = jest.fn();
     mockSubscribeToGameState.mockReturnValue(unsubscribe);
@@ -717,6 +801,24 @@ describe('useGameEngine', () => {
         jest.advanceTimersByTime(1300);
       });
       expect(mockClearDeathAnimations).toHaveBeenCalledWith('game_123', []);
+    });
+
+    it('the lowest human seat clears card-reveal animations, and a higher human seat does not', () => {
+      mockClearCardRevealAnimations.mockResolvedValue(undefined);
+      const cardAnimation: CardRevealAnimation = { id: 'card_1', x: 5, y: 5, createdAt: Date.now() };
+      const state = { ...createSeatWithBotHost(), cardRevealAnimations: [cardAnimation] };
+
+      renderEngineAs('player_3', state);
+      act(() => {
+        jest.advanceTimersByTime(1450);
+      });
+      expect(mockClearCardRevealAnimations).not.toHaveBeenCalled();
+
+      renderEngineAs('player_2', state);
+      act(() => {
+        jest.advanceTimersByTime(1450);
+      });
+      expect(mockClearCardRevealAnimations).toHaveBeenCalledWith('game_123', []);
     });
   });
 });

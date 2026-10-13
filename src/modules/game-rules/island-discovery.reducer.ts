@@ -61,6 +61,8 @@ export function revealIsland(state: GameState, x: number, y: number, isScout: bo
         const cardIndex = Math.floor(Math.random() * state.specialCardsDeck.length);
         const drawnCardResult = state.specialCardsDeck.splice(cardIndex, 1)[0];
         player.specialCards.push(drawnCardResult);
+        const createdAt = Date.now();
+        state.cardRevealAnimations.push({ id: `card-${x}-${y}-${createdAt}`, x, y, createdAt });
         pushLogEntry(state, {
           category: 'economy',
           message: `${player.name} discovered a special island and found a card: "${drawnCardResult}"!`,

@@ -135,7 +135,11 @@ export function GameDialogManager() {
               } else if (currentDiscard.length > 0) {
                 cardDrawn = currentDiscard[0];
               }
-              await onAction(GameAction.RollOnSpecialIsland, { roll });
+              await onAction(GameAction.RollOnSpecialIsland, {
+                roll,
+                x: dialogs.specialIslandRoll!.x,
+                y: dialogs.specialIslandRoll!.y,
+              });
             }
             dispatch({
               type: 'SET_SPECIAL_ISLAND_ROLL_DIALOG',

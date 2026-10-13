@@ -5,6 +5,7 @@ import { clearCollectedPositions } from './resource-collection';
 import { applyCollectorAbility, applyDeferredReclaim, applyExplorerAbility } from './turn-start-passives.reducer';
 
 const DEATH_ANIMATION_DURATION_MS = 2000;
+const REVEAL_ANIMATION_DURATION_MS = 1400;
 
 /**
  * Collects resources from all of a player's positioned armies, then clears each collected spot's
@@ -120,6 +121,12 @@ export function handleEndTurn(state: GameState): GameState {
     const now = Date.now();
     state.deathAnimations = state.deathAnimations.filter(
       (anim) => anim.createdAt && now - anim.createdAt < DEATH_ANIMATION_DURATION_MS,
+    );
+  }
+  if (state.cardRevealAnimations && state.cardRevealAnimations.length > 0) {
+    const now = Date.now();
+    state.cardRevealAnimations = state.cardRevealAnimations.filter(
+      (anim) => anim.createdAt && now - anim.createdAt < REVEAL_ANIMATION_DURATION_MS,
     );
   }
 

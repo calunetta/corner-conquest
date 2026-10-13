@@ -138,39 +138,76 @@ describe('handleRollOnSpecialIsland', () => {
 
   it.each([3, 6])('a forced roll of %i draws a card', (roll) => {
     const initialCards = game.players[0].specialCards.length;
-    const nextState = handleRollOnSpecialIsland(game, { roll });
+    const nextState = handleRollOnSpecialIsland(game, { roll, x: 2, y: 3 });
     expect(nextState.players[0].specialCards.length).toBe(initialCards + 1);
     expect(nextState.log.some((entry) => toLogMessage(entry).includes(`rolled a ${roll} and found a card`))).toBe(true);
   });
 
+  it.each([3, 6])('a forced roll of %i pushes a CardRevealAnimation with the payload x/y', (roll) => {
+    expect(game.cardRevealAnimations).toHaveLength(0);
+
+    const nextState = handleRollOnSpecialIsland(game, { roll, x: 2, y: 3 });
+
+    expect(nextState.cardRevealAnimations).toHaveLength(1);
+    expect(nextState.cardRevealAnimations[0]).toMatchObject({ x: 2, y: 3 });
+    expect(nextState.cardRevealAnimations[0].id).toContain('card-2-3-');
+    expect(typeof nextState.cardRevealAnimations[0].createdAt).toBe('number');
+  });
+
   it.each([1, 2, 4, 5])('a forced roll of %i draws nothing', (roll) => {
     const initialCards = game.players[0].specialCards.length;
-    const nextState = handleRollOnSpecialIsland(game, { roll });
+    const nextState = handleRollOnSpecialIsland(game, { roll, x: 2, y: 3 });
     expect(nextState.players[0].specialCards.length).toBe(initialCards);
     expect(nextState.log.some((entry) => toLogMessage(entry).includes('found nothing'))).toBe(true);
+  });
+
+  it.each([1, 2, 4, 5])('a forced roll of %i pushes no CardRevealAnimation', (roll) => {
+    const nextState = handleRollOnSpecialIsland(game, { roll, x: 2, y: 3 });
+    expect(nextState.cardRevealAnimations).toHaveLength(0);
   });
 
   it('logs without drawing when the hand is full even on a winning roll (boundary)', () => {
     const player = game.players[0];
     player.specialCards = new Array(HAND_LIMIT).fill('Scout');
-    const nextState = handleRollOnSpecialIsland(game, { roll: 3 });
+    const nextState = handleRollOnSpecialIsland(game, { roll: 3, x: 2, y: 3 });
     expect(nextState.players[0].specialCards.length).toBe(HAND_LIMIT);
     expect(nextState.log.some((entry) => toLogMessage(entry).includes('hand is full'))).toBe(true);
+  });
+
+  it('pushes no CardRevealAnimation when the hand is full (boundary)', () => {
+    game.players[0].specialCards = new Array(HAND_LIMIT).fill('Scout');
+    const nextState = handleRollOnSpecialIsland(game, { roll: 3, x: 2, y: 3 });
+    expect(nextState.cardRevealAnimations).toHaveLength(0);
   });
 
   it('logs when the deck and discard pile are both empty on a winning roll (empty input)', () => {
     game.specialCardsDeck = [];
     game.discardPile = [];
-    const nextState = handleRollOnSpecialIsland(game, { roll: 6 });
+    const nextState = handleRollOnSpecialIsland(game, { roll: 6, x: 2, y: 3 });
     expect(nextState.log.some((entry) => toLogMessage(entry).includes('deck is completely empty'))).toBe(true);
+  });
+
+  it('pushes no CardRevealAnimation when the deck and discard pile are both empty (empty input)', () => {
+    game.specialCardsDeck = [];
+    game.discardPile = [];
+    const nextState = handleRollOnSpecialIsland(game, { roll: 6, x: 2, y: 3 });
+    expect(nextState.cardRevealAnimations).toHaveLength(0);
   });
 
   it('reshuffles the discard pile into the deck on a winning roll when the deck is empty', () => {
     game.specialCardsDeck = [];
     game.discardPile = ['Scout'];
-    const nextState = handleRollOnSpecialIsland(game, { roll: 3 });
+    const nextState = handleRollOnSpecialIsland(game, { roll: 3, x: 2, y: 3 });
     expect(nextState.players[0].specialCards.length).toBe(1);
     expect(nextState.discardPile).toEqual([]);
+  });
+
+  it('pushes no CardRevealAnimation when no payload is given at all, even on a winning random roll', () => {
+    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.4); // Math.floor(0.4*6)+1 === 3
+    const nextState = handleRollOnSpecialIsland(game);
+    expect(nextState.players[0].specialCards.length).toBe(1);
+    expect(nextState.cardRevealAnimations).toHaveLength(0);
+    randomSpy.mockRestore();
   });
 });
 
