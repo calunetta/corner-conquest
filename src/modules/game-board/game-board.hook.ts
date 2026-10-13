@@ -117,6 +117,7 @@ export function useGameBoardProvider(
       uiState,
       dispatch,
       gameState: gameStateForDisplay,
+      serverGameState,
       localPlayer,
       isMyTurn,
       isHost,
@@ -133,6 +134,7 @@ export function useGameBoardProvider(
     [
       uiState,
       gameStateForDisplay,
+      serverGameState,
       localPlayer,
       isMyTurn,
       isHost,

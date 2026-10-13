@@ -32,7 +32,7 @@ export function playConnectionWarningTone(): void {
 /** Adapts the game board context into the connection-warning dialog's view model, ticking the
  *  countdown once a second and sounding a tone exactly once per hidden->open transition. */
 export function useConnectionWarning(): ConnectionWarningViewModel {
-  const { gameState, localPlayer } = useGameBoard();
+  const { gameState, localPlayer, serverGameState } = useGameBoard();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -40,11 +40,17 @@ export function useConnectionWarning(): ConnectionWarningViewModel {
     return () => clearInterval(intervalId);
   }, []);
 
+  // Live record for the local seat: serverGameState is never turn-buffered, unlike gameState.
+  // Falls back to localPlayer only if the seat is ever missing from serverGameState (should not
+  // happen in practice; playerId is a stable session id, same pattern as game-board.state.hook.ts).
+  const livePlayer =
+    serverGameState.players.find((player) => player.playerId === localPlayer.playerId) ?? localPlayer;
+
   const viewModel = toConnectionWarningViewModel(
-    localPlayer.lastSeenAt,
+    livePlayer.lastSeenAt,
     now,
     gameState.status,
-    localPlayer.isBot,
+    livePlayer.isBot,
     WARNING_THRESHOLD_MS,
     STALE_THRESHOLD_MS,
   );

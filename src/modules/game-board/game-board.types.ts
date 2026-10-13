@@ -87,6 +87,7 @@ export interface GameBoardContextType {
   uiState: GameBoardUIState;
   dispatch: Dispatch<GameBoardUIAction>;
   gameState: GameState;
+  serverGameState: GameState;
   localPlayer: Player;
   isMyTurn: boolean;
   isHost: boolean;

@@ -117,5 +117,7 @@ export type SessionHandlers = Pick<
 // Call order (must match today's hook order): useToast, useGameBoardState, useGameBoardActions,
 // useCardActions, useLocalActions (incl. Escape effect), auto end-turn useEffect, useTileClick,
 // useSessionHandlers, useTurnTimer, useMemo(contextValue).
-// contextValue deps = the 14 entries of GameBoardContext.tsx:507-520 PLUS `dispatch` (15; stable, required by exhaustive-deps).
+// contextValue deps = the 14 entries of GameBoardContext.tsx:507-520 PLUS `dispatch` and
+// `serverGameState` (16; `dispatch` stable, `serverGameState` the live Firestore snapshot used by
+// ConnectionWarningDialog — both required by exhaustive-deps).
 // `handleStartGame` gets `localPlayerName: localPlayer.name` (the DERIVED localPlayer, not localPlayerFromServer, as at :439).

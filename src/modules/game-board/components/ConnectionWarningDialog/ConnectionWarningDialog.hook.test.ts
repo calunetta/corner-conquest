@@ -32,10 +32,25 @@ const createPlayer = (overrides?: Partial<Player>): Player =>
 const createGameState = (status: GameStatus = GameStatus.Playing): GameState =>
   ({ id: 'game_1', status, players: [] }) as unknown as GameState;
 
-const mockUseGameBoard = (localPlayer: Player, status: GameStatus = GameStatus.Playing) => {
+/** `serverLocalPlayer` defaults to the same record as `localPlayer` so existing cases (which
+ *  don't care about the buffered-vs-live split) see no behavior change. Pass a different record
+ *  to simulate the buffered `gameState.localPlayer` being stale while the live `serverGameState`
+ *  player has already advanced (or vice versa). */
+const mockUseGameBoard = (
+  localPlayer: Player,
+  status: GameStatus = GameStatus.Playing,
+  serverLocalPlayer: Player = localPlayer,
+) => {
+  const serverGameState = {
+    id: 'game_1',
+    status,
+    players: [serverLocalPlayer],
+  } as unknown as GameState;
+
   jest.mocked(useGameBoard).mockReturnValue({
     gameState: createGameState(status),
     localPlayer,
+    serverGameState,
   } as unknown as ReturnType<typeof useGameBoard>);
 };
 
@@ -138,6 +153,36 @@ describe('useConnectionWarning', () => {
     expect(result.current.isOpen).toBe(true);
 
     mockUseGameBoard(createPlayer({ lastSeenAt: Date.now() }));
+    rerender();
+
+    expect(result.current.isOpen).toBe(false);
+  });
+
+  it('stays closed during the player\'s own turn when gameState\'s buffered lastSeenAt is stale but serverGameState\'s live lastSeenAt is fresh', () => {
+    const bufferedPlayer = createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS - 1 });
+    const liveServerPlayer = createPlayer({ lastSeenAt: Date.now() });
+    mockUseGameBoard(bufferedPlayer, GameStatus.Playing, liveServerPlayer);
+
+    const { result } = renderHook(() => useConnectionWarning());
+
+    expect(result.current.isOpen).toBe(false);
+  });
+
+  it("onDismiss closes the dialog once serverGameState's lastSeenAt advances, even though the buffered gameState's lastSeenAt never changes", () => {
+    const bufferedPlayer = createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS });
+    mockUseGameBoard(bufferedPlayer, GameStatus.Playing, bufferedPlayer);
+
+    const { result, rerender } = renderHook(() => useConnectionWarning());
+
+    act(() => {
+      jest.advanceTimersByTime(1_000);
+    });
+    expect(result.current.isOpen).toBe(true);
+
+    // The buffered localPlayer (gameState.localPlayer) never changes across this rerender; only
+    // the live serverGameState player's lastSeenAt advances, simulating a forced heartbeat landing
+    // on the server while the turn-buffer stays frozen at the turn-start clone.
+    mockUseGameBoard(bufferedPlayer, GameStatus.Playing, createPlayer({ lastSeenAt: Date.now() }));
     rerender();
 
     expect(result.current.isOpen).toBe(false);

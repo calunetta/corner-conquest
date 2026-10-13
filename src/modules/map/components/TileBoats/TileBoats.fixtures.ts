@@ -129,6 +129,7 @@ const asyncNoop = (): Promise<void> => Promise.resolve();
  * that needs to assert a call happened should create its own local jest.fn() instead. */
 export const gameBoardContextFixture: GameBoardContextType = {
   gameState: gameStateFixture,
+  serverGameState: gameStateFixture,
   localPlayer: bluePlayer,
   uiState: initialUIState,
   dispatch: noop,
