@@ -14,7 +14,7 @@ Tier: M · Phases: 1
 - [x] docs updated (docs-sync)
 - [x] checks: typecheck, lint, unit tests
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 79208d5
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
