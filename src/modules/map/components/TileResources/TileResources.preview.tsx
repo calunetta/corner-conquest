@@ -9,8 +9,6 @@ import {
   dualFarmedNodes,
   tripleFarmedNodes,
   baseFarmedNodes,
-  quadNodes,
-  quadFarmedNodes,
 } from './TileResources.preview.nodes';
 import type { ComponentPreview } from '@/testbed/testbed.types';
 import { useIsMobile } from '@/modules/shared';
@@ -81,22 +79,6 @@ export const tileResourcesPreview: ComponentPreview = {
       render: () => (
         <TileBox>
           <TileResourcesView nodes={baseFarmedNodes} />
-        </TileBox>
-      ),
-    },
-    {
-      name: '4 nodes (max), no collector',
-      render: () => (
-        <TileBox>
-          <TileResourcesView nodes={quadNodes} />
-        </TileBox>
-      ),
-    },
-    {
-      name: '4 nodes (max) with collector',
-      render: () => (
-        <TileBox>
-          <TileResourcesView nodes={quadFarmedNodes} />
         </TileBox>
       ),
     },

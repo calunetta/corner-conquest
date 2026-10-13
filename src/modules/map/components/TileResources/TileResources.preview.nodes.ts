@@ -2,7 +2,6 @@ import {
   baseIslandWithResources,
   resourceIslandWithDualResources,
   resourceIslandWithTwoDistinctResources,
-  resourceIslandWithFourNodes,
 } from './TileResources.fixtures';
 import { toTileResourcesViewModel } from './TileResources.map';
 import { buildPlayer } from '../../board-context.fixtures';
@@ -72,8 +71,3 @@ export const baseFarmedNodes = farmedNodesFor(
   true,
   [ResourceType.Food, ResourceType.Gold],
 );
-
-// The real max: 2 types x amount 2 = 4 nodes, filling all of QUAD_RESOURCE_SLOTS.
-export const quadNodes: ResourceNodeViewModel[] = toTileResourcesViewModel(resourceIslandWithFourNodes, false, []) ?? [];
-
-export const quadFarmedNodes = farmedNodesFor(resourceIslandWithFourNodes, false, [ResourceType.Food, ResourceType.Wood]);
