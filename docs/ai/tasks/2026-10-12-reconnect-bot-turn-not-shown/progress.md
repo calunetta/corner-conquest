@@ -27,7 +27,7 @@ Tier: M · Phases: 2
       `e2e/reconnect-bot-takeover.spec.ts` passes fully end to end - `1 passed (28.2s)`.
 - [x] docs updated (docs-sync: systems-and-visuals.md §6.10 turn-buffering exception noted)
 - [x] final review (architect-b): APPROVED, see `review.md`
-- [ ] committed: <hash>
+- [x] committed: 5d82f0a
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
