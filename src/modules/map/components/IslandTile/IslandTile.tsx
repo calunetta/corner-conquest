@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Home, HelpCircle, Star } from 'lucide-react';
+import { Home, HelpCircle } from 'lucide-react';
 import { IslandType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -12,9 +12,12 @@ import { TileResources } from '../TileResources';
 import { TileBoats } from '../TileBoats';
 import { TileOccupants } from '../TileOccupants';
 import { DeathEffect } from '../DeathEffect';
+import { CardRevealEffect } from '../CardRevealEffect';
 import { useIslandTile } from './IslandTile.hook';
 import { playerTileIndicatorShadow, styles } from './IslandTile.styles';
 import type { IslandTileProps, IslandTileViewModel } from './IslandTile.types';
+
+const SPECIAL_ISLAND_IDLE_SPRITE = '/sprites/special_island_idle.png';
 
 /** One tile's monster icons, suppressed while its death animation is playing. */
 function renderMonsterIcons(viewModel: IslandTileViewModel) {
@@ -33,9 +36,10 @@ function renderMonsterIcons(viewModel: IslandTileViewModel) {
   );
 }
 
-/** The tile's center feature: fogged placeholder, base crest, monster stack, special star, or resources. */
+/** The tile's center feature: fogged placeholder, base crest, monster stack, special island art, or resources. */
 function getTileCenterContent(viewModel: IslandTileViewModel) {
-  const { island, isTileVisible, baseOwner } = viewModel;
+  const { island, isTileVisible, baseOwner, cardRevealAnimationOnTile, prefersReducedMotion, onCardRevealHidden } =
+    viewModel;
   if (!isTileVisible) return <HelpCircle className={styles.fogIcon} />;
 
   switch (island.type) {
@@ -64,7 +68,25 @@ function getTileCenterContent(viewModel: IslandTileViewModel) {
     case IslandType.Monster:
       return renderMonsterIcons(viewModel);
     case IslandType.Special:
-      return <Star className={styles.specialIcon} />;
+      return (
+        <div className={styles.specialContent}>
+          {cardRevealAnimationOnTile && !prefersReducedMotion ? (
+            <CardRevealEffect
+              id={cardRevealAnimationOnTile.id}
+              createdAt={cardRevealAnimationOnTile.createdAt}
+              onHidden={() => onCardRevealHidden(cardRevealAnimationOnTile.id)}
+            />
+          ) : (
+            <Image
+              src={SPECIAL_ISLAND_IDLE_SPRITE}
+              alt="Special island"
+              fill
+              className={styles.specialImage}
+              unoptimized
+            />
+          )}
+        </div>
+      );
     case IslandType.Resource:
       return <TileResources island={island} isBase={false} />;
     case IslandType.Empty:

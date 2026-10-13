@@ -26,6 +26,9 @@ export const createViewModel = (island: IslandTileViewModel['island']): IslandTi
   tilePlayerColor: null,
   isClickable: false,
   deathAnimationOnTile: undefined,
+  cardRevealAnimationOnTile: undefined,
+  prefersReducedMotion: false,
+  onCardRevealHidden: noop,
   borderImageSequence: [BORDER_PLACEHOLDER, BORDER_PLACEHOLDER, BORDER_PLACEHOLDER],
   onClick: noop,
 });

@@ -24,7 +24,13 @@ import {
   emptyIslandSlotTuningGrove3,
   baseIslandSlotTuningAll,
 } from './IslandTile.fixtures';
-import { createBaseViewModel, WithGameBoardContext, islandState, flaggedIslandState } from './IslandTile.preview.shared';
+import {
+  createBaseViewModel,
+  createViewModelWithState,
+  WithGameBoardContext,
+  islandState,
+  flaggedIslandState,
+} from './IslandTile.preview.shared';
 import { IslandTileSlotLab } from './IslandTile.preview.slot-lab';
 import type { ComponentPreview } from '@/testbed/testbed.types';
 
@@ -57,6 +63,24 @@ export const islandTilePreview: ComponentPreview = {
     islandState('Resource island', resourceIsland),
     islandState('Monster island', monsterIslandWithLivingMonster),
     islandState('Special island', specialIsland),
+    {
+      name: 'Special island, mid-reveal',
+      render: () => (
+        <WithGameBoardContext
+          viewModel={createViewModelWithState(specialIsland, {
+            cardRevealAnimationOnTile: {
+              id: 'card-4-4-preview',
+              x: specialIsland.x,
+              y: specialIsland.y,
+              createdAt: Date.now(),
+            },
+          })}
+        />
+      ),
+    },
+    flaggedIslandState('Special island, reveal finished', specialIsland, {
+      cardRevealAnimationOnTile: undefined,
+    }),
     flaggedIslandState('Selected tile', emptyIsland, { isSelected: true, isClickable: true }),
     flaggedIslandState('Possible move', emptyIsland, { isPossibleMove: true, isClickable: true }),
     flaggedIslandState('Teleport target', emptyIsland, { isTeleportTarget: true, isClickable: true }),

@@ -1,6 +1,6 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { useIslandTile } from './IslandTile.hook';
-import { IslandType, type Island, type DeathAnimation } from '@/lib/types';
+import { IslandType, type Island, type DeathAnimation, type CardRevealAnimation } from '@/lib/types';
 import { useGameBoard, initialUIState } from '@/modules/game-board';
 import type { GameBoardContextType } from '@/modules/game-board';
 import { gameStateFixture, localPlayerFixture } from './IslandTile.fixtures';
@@ -436,5 +436,358 @@ describe('useIslandTile', () => {
     rerender();
 
     expect(result.current.deathAnimationOnTile).toEqual(deathAnimation);
+  });
+
+  const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
+  function mockReducedMotion(prefersReduced: boolean) {
+    window.matchMedia = jest.fn((query: string) => ({
+      matches: prefersReduced && query === REDUCED_MOTION_QUERY,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+  }
+
+  describe('cardRevealAnimationOnTile', () => {
+    const originalMatchMedia = window.matchMedia;
+
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia;
+    });
+
+    it('finds card reveal animation at island coordinates within duration', () => {
+      mockReducedMotion(false);
+      const now = Date.now();
+      const cardRevealAnimation: CardRevealAnimation = {
+        id: 'card-1-1-0',
+        x: 1,
+        y: 1,
+        createdAt: now - 500,
+      };
+
+      jest.mocked(useGameBoard).mockReturnValue({
+        gameState: { ...mockGameState, cardRevealAnimations: [cardRevealAnimation] },
+        localPlayer: localPlayerFixture,
+        uiState: mockUIState,
+        selectedArmy: null,
+        handleTileClick: mockHandleTileClick,
+        dispatch: jest.fn(),
+        isMyTurn: true,
+        isHost: true,
+        turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+        onAction: jest.fn(),
+        onLocalAction: jest.fn(),
+        handleStartGame: jest.fn(),
+        handleExitClick: jest.fn(),
+        handleConfirmExit: jest.fn(),
+        handleConfirmHostLeave: jest.fn(),
+      } as unknown as GameBoardContextType);
+
+      const island: Island = {
+        id: '1-1',
+        x: 1,
+        y: 1,
+        type: IslandType.Special,
+        resources: [],
+        occupants: [],
+      };
+
+      const { result } = renderHook(() => useIslandTile({ island }));
+
+      expect(result.current.cardRevealAnimationOnTile).toEqual(cardRevealAnimation);
+    });
+
+    it('does not find card reveal animation at different coordinates', () => {
+      mockReducedMotion(false);
+      const now = Date.now();
+      const cardRevealAnimation: CardRevealAnimation = {
+        id: 'card-2-2-0',
+        x: 2,
+        y: 2,
+        createdAt: now - 500,
+      };
+
+      jest.mocked(useGameBoard).mockReturnValue({
+        gameState: { ...mockGameState, cardRevealAnimations: [cardRevealAnimation] },
+        localPlayer: localPlayerFixture,
+        uiState: mockUIState,
+        selectedArmy: null,
+        handleTileClick: mockHandleTileClick,
+        dispatch: jest.fn(),
+        isMyTurn: true,
+        isHost: true,
+        turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+        onAction: jest.fn(),
+        onLocalAction: jest.fn(),
+        handleStartGame: jest.fn(),
+        handleExitClick: jest.fn(),
+        handleConfirmExit: jest.fn(),
+        handleConfirmHostLeave: jest.fn(),
+      } as unknown as GameBoardContextType);
+
+      const island: Island = {
+        id: '1-1',
+        x: 1,
+        y: 1,
+        type: IslandType.Special,
+        resources: [],
+        occupants: [],
+      };
+
+      const { result } = renderHook(() => useIslandTile({ island }));
+
+      expect(result.current.cardRevealAnimationOnTile).toBeUndefined();
+    });
+
+    it('ignores expired card reveal animations (past REVEAL_ANIMATION_DURATION of 1400ms)', () => {
+      mockReducedMotion(false);
+      const now = Date.now();
+      const cardRevealAnimation: CardRevealAnimation = {
+        id: 'card-1-1-0',
+        x: 1,
+        y: 1,
+        createdAt: now - 2000, // past 1400ms duration
+      };
+
+      jest.mocked(useGameBoard).mockReturnValue({
+        gameState: { ...mockGameState, cardRevealAnimations: [cardRevealAnimation] },
+        localPlayer: localPlayerFixture,
+        uiState: mockUIState,
+        selectedArmy: null,
+        handleTileClick: mockHandleTileClick,
+        dispatch: jest.fn(),
+        isMyTurn: true,
+        isHost: true,
+        turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+        onAction: jest.fn(),
+        onLocalAction: jest.fn(),
+        handleStartGame: jest.fn(),
+        handleExitClick: jest.fn(),
+        handleConfirmExit: jest.fn(),
+        handleConfirmHostLeave: jest.fn(),
+      } as unknown as GameBoardContextType);
+
+      const island: Island = {
+        id: '1-1',
+        x: 1,
+        y: 1,
+        type: IslandType.Special,
+        resources: [],
+        occupants: [],
+      };
+
+      const { result } = renderHook(() => useIslandTile({ island }));
+
+      expect(result.current.cardRevealAnimationOnTile).toBeUndefined();
+    });
+
+    it('finds a card reveal animation with no createdAt regardless of elapsed time', () => {
+      mockReducedMotion(false);
+      const cardRevealAnimation: CardRevealAnimation = {
+        id: 'card-1-1-none',
+        x: 1,
+        y: 1,
+      };
+
+      jest.mocked(useGameBoard).mockReturnValue({
+        gameState: { ...mockGameState, cardRevealAnimations: [cardRevealAnimation] },
+        localPlayer: localPlayerFixture,
+        uiState: mockUIState,
+        selectedArmy: null,
+        handleTileClick: mockHandleTileClick,
+        dispatch: jest.fn(),
+        isMyTurn: true,
+        isHost: true,
+        turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+        onAction: jest.fn(),
+        onLocalAction: jest.fn(),
+        handleStartGame: jest.fn(),
+        handleExitClick: jest.fn(),
+        handleConfirmExit: jest.fn(),
+        handleConfirmHostLeave: jest.fn(),
+      } as unknown as GameBoardContextType);
+
+      const island: Island = {
+        id: '1-1',
+        x: 1,
+        y: 1,
+        type: IslandType.Special,
+        resources: [],
+        occupants: [],
+      };
+
+      const { result } = renderHook(() => useIslandTile({ island }));
+
+      expect(result.current.cardRevealAnimationOnTile).toEqual(cardRevealAnimation);
+    });
+
+    it('suppresses cardRevealAnimationOnTile once onCardRevealHidden(id) is invoked, even though the array entry is untouched', () => {
+      mockReducedMotion(false);
+      const now = Date.now();
+      const cardRevealAnimation: CardRevealAnimation = {
+        id: 'card-1-1-0',
+        x: 1,
+        y: 1,
+        createdAt: now - 500,
+      };
+
+      jest.mocked(useGameBoard).mockReturnValue({
+        gameState: { ...mockGameState, cardRevealAnimations: [cardRevealAnimation] },
+        localPlayer: localPlayerFixture,
+        uiState: mockUIState,
+        selectedArmy: null,
+        handleTileClick: mockHandleTileClick,
+        dispatch: jest.fn(),
+        isMyTurn: true,
+        isHost: true,
+        turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+        onAction: jest.fn(),
+        onLocalAction: jest.fn(),
+        handleStartGame: jest.fn(),
+        handleExitClick: jest.fn(),
+        handleConfirmExit: jest.fn(),
+        handleConfirmHostLeave: jest.fn(),
+      } as unknown as GameBoardContextType);
+
+      const island: Island = {
+        id: '1-1',
+        x: 1,
+        y: 1,
+        type: IslandType.Special,
+        resources: [],
+        occupants: [],
+      };
+
+      const { result, rerender } = renderHook(() => useIslandTile({ island }));
+
+      expect(result.current.cardRevealAnimationOnTile).toEqual(cardRevealAnimation);
+
+      act(() => {
+        result.current.onCardRevealHidden('card-1-1-0');
+      });
+      rerender();
+
+      expect(result.current.cardRevealAnimationOnTile).toBeUndefined();
+    });
+
+    it('does not suppress a different id on the same tile', () => {
+      mockReducedMotion(false);
+      const now = Date.now();
+      const firstAnimation: CardRevealAnimation = {
+        id: 'card-1-1-0',
+        x: 1,
+        y: 1,
+        createdAt: now - 500,
+      };
+
+      jest.mocked(useGameBoard).mockReturnValue({
+        gameState: { ...mockGameState, cardRevealAnimations: [firstAnimation] },
+        localPlayer: localPlayerFixture,
+        uiState: mockUIState,
+        selectedArmy: null,
+        handleTileClick: mockHandleTileClick,
+        dispatch: jest.fn(),
+        isMyTurn: true,
+        isHost: true,
+        turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+        onAction: jest.fn(),
+        onLocalAction: jest.fn(),
+        handleStartGame: jest.fn(),
+        handleExitClick: jest.fn(),
+        handleConfirmExit: jest.fn(),
+        handleConfirmHostLeave: jest.fn(),
+      } as unknown as GameBoardContextType);
+
+      const island: Island = {
+        id: '1-1',
+        x: 1,
+        y: 1,
+        type: IslandType.Special,
+        resources: [],
+        occupants: [],
+      };
+
+      const { result, rerender } = renderHook(() => useIslandTile({ island }));
+
+      act(() => {
+        result.current.onCardRevealHidden('card-1-1-0');
+      });
+
+      const secondAnimation: CardRevealAnimation = {
+        id: 'card-1-1-1',
+        x: 1,
+        y: 1,
+        createdAt: now - 100,
+      };
+
+      jest.mocked(useGameBoard).mockReturnValue({
+        gameState: { ...mockGameState, cardRevealAnimations: [secondAnimation] },
+        localPlayer: localPlayerFixture,
+        uiState: mockUIState,
+        selectedArmy: null,
+        handleTileClick: mockHandleTileClick,
+        dispatch: jest.fn(),
+        isMyTurn: true,
+        isHost: true,
+        turnTimer: { timeLeft: 60, formattedTime: '1:00', turnDuration: 60, isExpiring: false, percentage: 100 },
+        onAction: jest.fn(),
+        onLocalAction: jest.fn(),
+        handleStartGame: jest.fn(),
+        handleExitClick: jest.fn(),
+        handleConfirmExit: jest.fn(),
+        handleConfirmHostLeave: jest.fn(),
+      } as unknown as GameBoardContextType);
+
+      rerender();
+
+      expect(result.current.cardRevealAnimationOnTile).toEqual(secondAnimation);
+    });
+  });
+
+  describe('prefersReducedMotion', () => {
+    const originalMatchMedia = window.matchMedia;
+
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia;
+    });
+
+    it('is true when window.matchMedia reports prefers-reduced-motion: reduce', () => {
+      mockReducedMotion(true);
+
+      const island: Island = {
+        id: '1-1',
+        x: 1,
+        y: 1,
+        type: IslandType.Empty,
+        resources: [],
+        occupants: [],
+      };
+
+      const { result } = renderHook(() => useIslandTile({ island }));
+
+      expect(result.current.prefersReducedMotion).toBe(true);
+    });
+
+    it('is false when window.matchMedia does not report prefers-reduced-motion: reduce', () => {
+      mockReducedMotion(false);
+
+      const island: Island = {
+        id: '1-1',
+        x: 1,
+        y: 1,
+        type: IslandType.Empty,
+        resources: [],
+        occupants: [],
+      };
+
+      const { result } = renderHook(() => useIslandTile({ island }));
+
+      expect(result.current.prefersReducedMotion).toBe(false);
+    });
   });
 });

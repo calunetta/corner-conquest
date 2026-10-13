@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { IslandTile, IslandTileView } from './IslandTile';
+import { REVEAL_ANIMATION_DURATION } from '../CardRevealEffect';
 import { toIslandTileViewModel } from './IslandTile.map';
 import {
   localPlayerFixture,
@@ -77,8 +78,11 @@ describe('IslandTile Component', () => {
         ...viewModel,
         island: baseIslandOwnedByLocalPlayer,
         deathAnimationOnTile: undefined,
+        cardRevealAnimationOnTile: undefined,
+        prefersReducedMotion: false,
         borderImageSequence: ['', '', ''] as [string, string, string],
         onClick: jest.fn(),
+        onCardRevealHidden: jest.fn(),
       };
 
       render(<IslandTileView {...enriched} />);
@@ -99,8 +103,11 @@ describe('IslandTile Component', () => {
         ...viewModel,
         island: resourceIsland,
         deathAnimationOnTile: undefined,
+        cardRevealAnimationOnTile: undefined,
+        prefersReducedMotion: false,
         borderImageSequence: ['', '', ''] as [string, string, string],
         onClick: jest.fn(),
+        onCardRevealHidden: jest.fn(),
       };
 
       render(<IslandTileView {...enriched} />);
@@ -120,18 +127,26 @@ describe('IslandTile Component', () => {
         ...viewModel,
         island: baseIslandOwnedByLocalPlayer,
         deathAnimationOnTile: undefined,
+        cardRevealAnimationOnTile: undefined,
+        prefersReducedMotion: false,
         borderImageSequence: ['', '', ''] as [string, string, string],
         onClick: jest.fn(),
+        onCardRevealHidden: jest.fn(),
       };
 
       render(<IslandTileView {...enriched} />);
       expect(screen.getByTestId('island-tile-0-0')).toBeInTheDocument();
     });
 
-    it('renders special island with star icon', () => {
+    const visibleSpecialIslandPlayer = {
+      ...localPlayerFixture,
+      revealedTiles: [...localPlayerFixture.revealedTiles, specialIsland.id],
+    };
+
+    it('renders special island with the idle sprite, not a Star icon', () => {
       const context: IslandTileContext = {
         gameState: gameStateFixture,
-        localPlayer: localPlayerFixture,
+        localPlayer: visibleSpecialIslandPlayer,
         uiState: makeUIState(),
         selectedArmy: null,
       };
@@ -140,12 +155,66 @@ describe('IslandTile Component', () => {
         ...viewModel,
         island: specialIsland,
         deathAnimationOnTile: undefined,
+        cardRevealAnimationOnTile: undefined,
+        prefersReducedMotion: false,
         borderImageSequence: ['', '', ''] as [string, string, string],
         onClick: jest.fn(),
+        onCardRevealHidden: jest.fn(),
       };
 
       render(<IslandTileView {...enriched} />);
-      expect(screen.getByTestId('island-tile-4-4')).toBeInTheDocument();
+      const image = screen.getByAltText('Special island');
+      expect(image).toBeInTheDocument();
+      expect(image.getAttribute('src')).toMatch(/special_island_idle\.png/);
+      expect(screen.queryByText('Star', { exact: false })).not.toBeInTheDocument();
+    });
+
+    it('renders the CardRevealEffect instead of the idle sprite when a reveal animation is active', () => {
+      const context: IslandTileContext = {
+        gameState: gameStateFixture,
+        localPlayer: visibleSpecialIslandPlayer,
+        uiState: makeUIState(),
+        selectedArmy: null,
+      };
+      const viewModel = toIslandTileViewModel(specialIsland, context);
+      const enriched = {
+        ...viewModel,
+        island: specialIsland,
+        deathAnimationOnTile: undefined,
+        cardRevealAnimationOnTile: { id: 'card-4-4-0', x: 4, y: 4, createdAt: Date.now() },
+        prefersReducedMotion: false,
+        borderImageSequence: ['', '', ''] as [string, string, string],
+        onClick: jest.fn(),
+        onCardRevealHidden: jest.fn(),
+      };
+
+      render(<IslandTileView {...enriched} />);
+      expect(screen.getByAltText('Card revealed')).toBeInTheDocument();
+      expect(screen.queryByAltText('Special island')).not.toBeInTheDocument();
+    });
+
+    it('renders only the idle sprite when prefersReducedMotion is true, even with an active reveal animation', () => {
+      const context: IslandTileContext = {
+        gameState: gameStateFixture,
+        localPlayer: visibleSpecialIslandPlayer,
+        uiState: makeUIState(),
+        selectedArmy: null,
+      };
+      const viewModel = toIslandTileViewModel(specialIsland, context);
+      const enriched = {
+        ...viewModel,
+        island: specialIsland,
+        deathAnimationOnTile: undefined,
+        cardRevealAnimationOnTile: { id: 'card-4-4-0', x: 4, y: 4, createdAt: Date.now() },
+        prefersReducedMotion: true,
+        borderImageSequence: ['', '', ''] as [string, string, string],
+        onClick: jest.fn(),
+        onCardRevealHidden: jest.fn(),
+      };
+
+      render(<IslandTileView {...enriched} />);
+      expect(screen.getByAltText('Special island')).toBeInTheDocument();
+      expect(screen.queryByAltText('Card revealed')).not.toBeInTheDocument();
     });
 
     it('renders fog-of-war placeholder when tile is not visible', () => {
@@ -160,12 +229,42 @@ describe('IslandTile Component', () => {
         ...viewModel,
         island: hiddenFogIsland,
         deathAnimationOnTile: undefined,
+        cardRevealAnimationOnTile: undefined,
+        prefersReducedMotion: false,
         borderImageSequence: ['', '', ''] as [string, string, string],
         onClick: jest.fn(),
+        onCardRevealHidden: jest.fn(),
       };
 
       render(<IslandTileView {...enriched} />);
       expect(screen.getByTestId('island-tile-4-0')).toBeInTheDocument();
+    });
+
+    it('shows the fog icon on a fogged special island even with an active reveal animation, not idle or reveal art', () => {
+      const context: IslandTileContext = {
+        gameState: gameStateFixture,
+        localPlayer: { ...localPlayerFixture, revealedTiles: [] },
+        uiState: makeUIState(),
+        selectedArmy: null,
+      };
+      const viewModel = toIslandTileViewModel(specialIsland, context);
+      const enriched = {
+        ...viewModel,
+        island: specialIsland,
+        deathAnimationOnTile: undefined,
+        cardRevealAnimationOnTile: { id: 'card-4-4-0', x: 4, y: 4, createdAt: Date.now() },
+        prefersReducedMotion: false,
+        borderImageSequence: ['', '', ''] as [string, string, string],
+        onClick: jest.fn(),
+        onCardRevealHidden: jest.fn(),
+      };
+
+      render(<IslandTileView {...enriched} />);
+      expect(screen.queryByAltText('Special island')).not.toBeInTheDocument();
+      expect(screen.queryByAltText('Card revealed')).not.toBeInTheDocument();
+      // Fog placeholder is the HelpCircle icon (no next/image, no alt text); its presence confirms
+      // the fog branch rendered instead of idle/reveal art, not just that neither art rendered.
+      expect(screen.getByTestId('lucide-icon-helpcircle')).toBeInTheDocument();
     });
 
     it('calls onClick handler when button is clicked', () => {
@@ -181,8 +280,11 @@ describe('IslandTile Component', () => {
         ...viewModel,
         island: resourceIsland,
         deathAnimationOnTile: undefined,
+        cardRevealAnimationOnTile: undefined,
+        prefersReducedMotion: false,
         borderImageSequence: ['', '', ''] as [string, string, string],
         onClick: handleClick,
+        onCardRevealHidden: jest.fn(),
       };
 
       render(<IslandTileView {...enriched} />);
@@ -204,8 +306,11 @@ describe('IslandTile Component', () => {
         ...viewModel,
         island: resourceIsland,
         deathAnimationOnTile: undefined,
+        cardRevealAnimationOnTile: undefined,
+        prefersReducedMotion: false,
         borderImageSequence: borderImages as [string, string, string],
         onClick: jest.fn(),
+        onCardRevealHidden: jest.fn(),
       };
 
       render(<IslandTileView {...enriched} />);
@@ -229,8 +334,11 @@ describe('IslandTile Component', () => {
           {...viewModel}
           island={island}
           deathAnimationOnTile={undefined}
+          cardRevealAnimationOnTile={undefined}
+          prefersReducedMotion={false}
           borderImageSequence={['', '', '']}
           onClick={jest.fn()}
+          onCardRevealHidden={jest.fn()}
         />,
       );
     };
@@ -290,6 +398,46 @@ describe('IslandTile Component', () => {
       const button = screen.getByTestId('island-tile-2-2');
       fireEvent.click(button);
       expect(button).toBeInTheDocument();
+    });
+
+    it('falls back to the idle sprite once its own reveal timer fires, even though gameState.cardRevealAnimations is untouched', () => {
+      // Regression test for preview-b's find: CardRevealEffect's local setTimeout hides the GIF
+      // before the Firestore clear removes the array entry, so without onHidden/onCardRevealHidden
+      // wiring the tile would render neither the GIF nor the idle art for that gap.
+      jest.useFakeTimers();
+      const visibleSpecialIslandPlayer = {
+        ...localPlayerFixture,
+        revealedTiles: [...localPlayerFixture.revealedTiles, specialIsland.id],
+      };
+      const stateWithActiveReveal = {
+        ...gameStateFixture,
+        cardRevealAnimations: [{ id: 'card-4-4-0', x: 4, y: 4, createdAt: Date.now() }],
+      };
+      (useGameBoard as jest.Mock).mockReturnValue({
+        gameState: stateWithActiveReveal,
+        localPlayer: visibleSpecialIslandPlayer,
+        uiState: makeUIState(),
+        selectedArmy: null,
+        handleTileClick: jest.fn(),
+      });
+
+      try {
+        render(<IslandTile island={specialIsland} />);
+        expect(screen.getByAltText('Card revealed')).toBeInTheDocument();
+        expect(screen.queryByAltText('Special island')).not.toBeInTheDocument();
+
+        act(() => {
+          jest.advanceTimersByTime(REVEAL_ANIMATION_DURATION);
+        });
+
+        // gameState.cardRevealAnimations still has the entry (no new mock return), but the
+        // locally-hidden id must suppress it so the idle art reappears, not a blank tile.
+        expect(screen.getByAltText('Special island')).toBeInTheDocument();
+        expect(screen.queryByAltText('Card revealed')).not.toBeInTheDocument();
+      } finally {
+        jest.runOnlyPendingTimers();
+        jest.useRealTimers();
+      }
     });
 
     it('respects fog of war when tile is hidden', () => {

@@ -11,13 +11,13 @@ Tier: L · Phases: 2
 - [x] committed: 8c91371
 
 ## Phase 2: IslandTile rendering, CardRevealEffect component, previews, docs
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a, preview-b)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] docs-sync (docs/architecture/game-mechanics.md:35)
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a, preview-b)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify)
+- [x] docs-sync (docs/architecture/game-mechanics.md:35)
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Log

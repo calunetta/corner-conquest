@@ -186,6 +186,66 @@ export interface IslandTileViewModel extends IslandTileStaticViewModel {
 // });
 ```
 
+### Addendum (Phase 2, revise): local-hide race between CardRevealEffect's own timer and the Firestore clear
+
+preview-b found this live, with screenshots: `CardRevealEffect`'s own `setTimeout` makes it return `null` at `t+~1400ms`, but `IslandTile` only re-evaluates `cardRevealAnimationOnTile` on its own re-render — nothing forces that re-render at the same instant, so the tile goes blank (idle art not shown either) for the gap between "GIF's local timer hides it" and "the array entry is actually cleared and a new snapshot arrives" (100-500ms+, every single reveal, every viewer).
+
+Fix: `CardRevealEffect` reports its own hide via an `onHidden` callback; `IslandTile` tracks which animation `id`s have already reported hidden and falls back to idle art for those immediately, without waiting on `gameState.cardRevealAnimations` to actually lose the entry.
+
+```ts
+// src/modules/map/components/CardRevealEffect/CardRevealEffect.types.ts — CardRevealEffectProps gains:
+export interface CardRevealEffectProps {
+  id: string;
+  createdAt?: number;
+  onHidden?: () => void;
+}
+// REVEAL_ANIMATION_DURATION, REVEAL_SPRITE_PATH, CardRevealEffectState unchanged.
+
+// src/modules/map/components/CardRevealEffect/CardRevealEffect.hook.ts — useCardRevealEffect:
+// the existing setTimeout callback that calls setIsVisible(false) also calls props.onHidden?.()
+// in that same callback, after setIsVisible(false). No new effect, no new dependency —
+// onHidden is read from props at fire time, not added to the timer effect's dependency array
+// (mirrors how props.sprite/props.id already aren't re-derived mid-timer in useDeathEffect).
+
+// src/modules/map/components/IslandTile/IslandTile.types.ts — IslandTileViewModel gains:
+export interface IslandTileViewModel extends IslandTileStaticViewModel {
+  // ...cardRevealAnimationOnTile, prefersReducedMotion unchanged...
+  onCardRevealHidden: (id: string) => void;
+}
+
+// src/modules/map/components/IslandTile/IslandTile.hook.ts — useIslandTile additions:
+// const [locallyHiddenRevealIds, setLocallyHiddenRevealIds] = useState<Set<string>>(new Set());
+// const onCardRevealHidden = useCallback((id: string) => {
+//   setLocallyHiddenRevealIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
+// }, []);
+// cardRevealAnimationOnTile's existing .find(...) predicate gains one more condition,
+// ANDed with the existing x/y/elapsed-time checks: !locallyHiddenRevealIds.has(anim.id)
+// A new reveal on the same tile later has a different id (`card-${x}-${y}-${createdAt}`),
+// so it is never pre-suppressed by an older id already in the set.
+// locallyHiddenRevealIds needs no manual cleanup: it is component state scoped to one
+// IslandTile instance (one per tile, keyed by coordinates in MapGrid), so it resets on unmount.
+
+// src/modules/map/components/IslandTile/IslandTile.tsx — Special case, CardRevealEffect call site gains onHidden:
+// <CardRevealEffect
+//   id={cardRevealAnimationOnTile.id}
+//   createdAt={cardRevealAnimationOnTile.createdAt}
+//   onHidden={() => onCardRevealHidden(cardRevealAnimationOnTile.id)}
+// />
+```
+
+Rejected: having `IslandTile` poll/re-render on a `setTimeout` of its own sized to `REVEAL_ANIMATION_DURATION` — duplicates the timing logic `CardRevealEffect` already owns, and two independent timers (one per component) can drift relative to each other in a way a single callback can't. Rejected: clearing the Firestore entry faster (shrinking the engine-hook buffer) — doesn't fix the underlying bug, a slow network still reproduces the gap, and it was already the minimum-safe buffer mirroring `deathAnimations`.
+
+File plan: no new files, no new owners. `CardRevealEffect.hook.ts`/`IslandTile.hook.ts` stay implementer-a; `CardRevealEffect.tsx`/`IslandTile.tsx` stay implementer-b — same rows as above, this addendum is additional scope on files already in their columns.
+
+Phase 2 steps 2-4 gain: step 2 (implementer-a) also adds `onHidden` to `CardRevealEffect.hook.ts`/`.types.ts` and `locallyHiddenRevealIds`/`onCardRevealHidden` to `IslandTile.hook.ts`/`.types.ts`; step 3 (implementer-b) also wires `onHidden` in `CardRevealEffect.tsx`; step 4 (implementer-b) also passes `onCardRevealHidden` through in `IslandTile.tsx`. Model escalation for step 4 already called sonnet; this addendum doesn't change that.
+
+Test plan addition:
+- tester-a: `CardRevealEffect.hook.test.ts` — `onHidden` is called exactly once, at the same timer fire as `isVisible` flipping to `false`; not called before the timer fires; not called again on an unrelated re-render. `IslandTile.hook.test.ts` — once `onCardRevealHidden(id)` is invoked for an animation still present in `gameState.cardRevealAnimations` (simulating the pre-clear gap), `cardRevealAnimationOnTile` becomes `undefined` on the next render even though the array entry is untouched; a *different* id on the same tile is unaffected.
+- tester-b: `IslandTile.test.tsx` — with fake timers, render with an active `cardRevealAnimationOnTile` and advance past `REVEAL_ANIMATION_DURATION`; assert the idle image reappears (not a blank tile) even though the view model's `cardRevealAnimationOnTile` prop/gameState never changed — this is the regression test for preview-b's exact defect.
+
+Risk: this is Phase 2, already in progress (preview-b flagged it during the previews stage) — implementer-a and implementer-b should treat this addendum as part of their current phase 2 work, not a new phase.
+
+
 ## Phases
 ### Phase 1: GameState field, reducers, engine sync, dialog threading
 1. Add `CardRevealAnimation` to `cards.ts`; add field to `GameState`; add `x`/`y` to `SpecialIslandRollDialogState`. (implementer-a)

@@ -1,6 +1,7 @@
 import { mapZoomControlsPreview } from '@/modules/map/components/MapZoomControls/MapZoomControls.preview';
 import { animatedMonsterPreview } from '@/modules/map/components/AnimatedMonster/AnimatedMonster.preview';
 import { deathEffectPreview } from '@/modules/map/components/DeathEffect/DeathEffect.preview';
+import { cardRevealEffectPreview } from '@/modules/map/components/CardRevealEffect/CardRevealEffect.preview';
 import { tileForestPreview } from '@/modules/map/components/TileForest/TileForest.preview';
 import { tileResourcesPreview } from '@/modules/map/components/TileResources/TileResources.preview';
 import { tileBoatsPreview } from '@/modules/map/components/TileBoats/TileBoats.preview';
@@ -18,6 +19,7 @@ import { gameBoardHeaderPreview } from '@/modules/hud/components/GameBoardHeader
 import { gameStatusBadgePreview } from '@/modules/hud/components/GameStatusBadge/GameStatusBadge.preview';
 import { connectionWarningDialogPreview } from '@/modules/game-board/components/ConnectionWarningDialog/ConnectionWarningDialog.preview';
 import { resourceCollectionFeedbackDemoPreview } from '@/modules/game-board/ResourceCollectionFeedbackDemo.preview';
+import { gameBoardSandboxPreview } from '@/features/game/components/GameBoardSandbox.preview';
 import { gameLogPreview } from '@/modules/hud/components/GameLog/GameLog.preview';
 import { playerInfoPreview } from '@/modules/hud/components/PlayerInfo/PlayerInfo.preview';
 import { tutorialBeaconPreview } from '@/modules/hud/components/TutorialBeacon/TutorialBeacon.preview';
@@ -49,6 +51,7 @@ export const previews: ComponentPreview[] = [
   mapZoomControlsPreview,
   animatedMonsterPreview,
   deathEffectPreview,
+  cardRevealEffectPreview,
   tileForestPreview,
   tileResourcesPreview,
   tileBoatsPreview,
@@ -66,6 +69,7 @@ export const previews: ComponentPreview[] = [
   gameStatusBadgePreview,
   connectionWarningDialogPreview,
   resourceCollectionFeedbackDemoPreview,
+  gameBoardSandboxPreview,
   gameLogPreview,
   playerInfoPreview,
   tutorialBeaconPreview,

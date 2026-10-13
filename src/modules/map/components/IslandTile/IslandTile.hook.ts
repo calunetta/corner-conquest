@@ -1,8 +1,11 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useGameBoard } from '@/modules/game-board';
+import { REVEAL_ANIMATION_DURATION } from '../CardRevealEffect';
 import { DEATH_ANIMATION_DURATION } from '../DeathEffect';
 import { toIslandTileViewModel } from './IslandTile.map';
 import type { IslandTileProps, IslandTileViewModel } from './IslandTile.types';
+
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 const BORDER_IMAGES = [
   '/sprites/island_edge_1.gif',
@@ -31,6 +34,22 @@ export function useIslandTile(props: IslandTileProps): IslandTileViewModel {
       anim.y === island.y &&
       (!anim.createdAt || now - anim.createdAt < DEATH_ANIMATION_DURATION),
   );
+  const [locallyHiddenRevealIds, setLocallyHiddenRevealIds] = useState<Set<string>>(new Set());
+  const onCardRevealHidden = useCallback((id: string) => {
+    setLocallyHiddenRevealIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
+  }, []);
+
+  const cardRevealAnimationOnTile = gameState.cardRevealAnimations.find(
+    (anim) =>
+      anim.x === island.x &&
+      anim.y === island.y &&
+      (!anim.createdAt || now - anim.createdAt < REVEAL_ANIMATION_DURATION) &&
+      !locallyHiddenRevealIds.has(anim.id),
+  );
+
+  const [prefersReducedMotion] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(REDUCED_MOTION_QUERY).matches,
+  );
 
   // Deterministic sprite selection based on island coordinates.
   // Ensures server and client render the same middle sprite during hydration.
@@ -48,7 +67,10 @@ export function useIslandTile(props: IslandTileProps): IslandTileViewModel {
     ...staticViewModel,
     island,
     deathAnimationOnTile,
+    cardRevealAnimationOnTile,
+    prefersReducedMotion,
     borderImageSequence,
     onClick,
+    onCardRevealHidden,
   };
 }

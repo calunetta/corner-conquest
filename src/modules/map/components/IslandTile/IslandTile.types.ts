@@ -1,4 +1,4 @@
-import type { Army, DeathAnimation, GameState, Island, Player, PlayerColor } from '@/lib/types';
+import type { Army, CardRevealAnimation, DeathAnimation, GameState, Island, Player, PlayerColor } from '@/lib/types';
 import type { GameBoardUIState } from '@/modules/game-board';
 
 export interface IslandTileProps {
@@ -28,6 +28,9 @@ export interface IslandTileStaticViewModel {
 export interface IslandTileViewModel extends IslandTileStaticViewModel {
   island: Island;
   deathAnimationOnTile: DeathAnimation | undefined;
+  cardRevealAnimationOnTile: CardRevealAnimation | undefined;
+  prefersReducedMotion: boolean;
   borderImageSequence: [string, string, string];
   onClick: () => void;
+  onCardRevealHidden: (id: string) => void;
 }
