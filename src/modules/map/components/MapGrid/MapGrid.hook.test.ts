@@ -10,6 +10,7 @@ import { buildGameState } from '../../board-context.fixtures';
 
 jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
+  useResourceGainEvents: jest.fn().mockReturnValue([]),
 }));
 
 jest.mock('@/modules/shared', () => ({

@@ -6,6 +6,7 @@ import { gameStateFixture, gameBoardContextFixture, bluePlayer } from './TileBoa
 
 jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
+  useResourceGainEvents: jest.fn().mockReturnValue([]),
   initialUIState: undefined,
 }));
 

@@ -7,6 +7,7 @@ import { gameStateFixture, localPlayerFixture } from './IslandTile.fixtures';
 
 jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
+  useResourceGainEvents: jest.fn().mockReturnValue([]),
   initialUIState: { possibleMoves: [], pendingAction: null, selectedArmyId: null },
 }));
 

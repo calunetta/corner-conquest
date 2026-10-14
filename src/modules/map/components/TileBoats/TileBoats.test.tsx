@@ -11,6 +11,7 @@ import type { Island, Player } from '@/lib/types';
 // The connected TileBoats container reads the game-board context and the viewport (useIsMobile).
 jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
+  useResourceGainEvents: jest.fn().mockReturnValue([]),
 }));
 
 jest.mock('@/modules/shared', () => ({

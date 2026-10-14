@@ -21,6 +21,7 @@ jest.mock('next/image', () => ({
 // Mock useGameBoard
 jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
+  useResourceGainEvents: jest.fn().mockReturnValue([]),
 }));
 
 import { useGameBoard } from '@/modules/game-board';

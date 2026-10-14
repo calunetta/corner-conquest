@@ -16,6 +16,7 @@ function cornerOf(style: Record<string, string>): string {
 
 jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
+  useResourceGainEvents: jest.fn().mockReturnValue([]),
 }));
 
 describe('useTileOccupants', () => {

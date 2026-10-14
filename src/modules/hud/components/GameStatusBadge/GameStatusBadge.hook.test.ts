@@ -3,7 +3,10 @@ import { useGameBoard } from '@/modules/game-board';
 import type { Player } from '@/lib/types';
 import { useGameStatusBadge } from './GameStatusBadge.hook';
 
-jest.mock('@/modules/game-board', () => ({ useGameBoard: jest.fn() }));
+jest.mock('@/modules/game-board', () => ({
+  useGameBoard: jest.fn(),
+  useResourceGainEvents: jest.fn().mockReturnValue([]),
+}));
 
 const createPlayer = (id: number, name: string): Player =>
   ({
