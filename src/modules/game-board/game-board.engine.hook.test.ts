@@ -56,6 +56,7 @@ const createGameState = (overrides?: Partial<GameState>): GameState => ({
     gridSize: { rows: 10, cols: 10 },
   },
   currentPlayerIndex: 0,
+  heartbeats: {},
   players: [
     {
       id: 0,
@@ -63,7 +64,6 @@ const createGameState = (overrides?: Partial<GameState>): GameState => ({
       name: 'Player 1',
       isBot: false,
       isVacant: false,
-      lastSeenAt: null,
       reclaimRequested: false,
       color: 'blue' as const,
       armies: [],
@@ -89,7 +89,6 @@ const createGameState = (overrides?: Partial<GameState>): GameState => ({
       name: 'Player 2',
       isBot: true,
       isVacant: false,
-      lastSeenAt: null,
       reclaimRequested: false,
       color: 'red' as const,
       armies: [],

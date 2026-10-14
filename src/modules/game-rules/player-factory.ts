@@ -33,7 +33,6 @@ export function createPlayer(
     color,
     isBot,
     isVacant: false,
-    lastSeenAt: null,
     reclaimRequested: false,
     armies: [{ id: 0, position: basePos, hasActed: false }],
     resources: startingResources,

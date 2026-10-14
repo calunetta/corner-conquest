@@ -135,7 +135,7 @@ describe('handlePlayerExit', () => {
       const written = writtenStateOf(transaction);
       expect(written.players.map((p) => p.playerId)).toEqual(['host', 'p2', 'p3']);
       expect(written.players.map((p) => p.id)).toEqual([0, 1, 2]);
-      expect(written.players[0]).toMatchObject({ name: 'Host', isBot: true, isVacant: true, lastSeenAt: null });
+      expect(written.players[0]).toMatchObject({ name: 'Host', isBot: true, isVacant: true });
       expect(written.players.map((p) => p.isBot)).toEqual([true, false, false]);
       expect(written.currentPlayerIndex).toBe(2);
     });
@@ -156,7 +156,7 @@ describe('handlePlayerExit', () => {
       expect(written.players.map((p) => p.playerId)).toEqual(['host', 'p2', 'p3']);
       expect(written.players.map((p) => p.id)).toEqual([0, 1, 2]);
       expect(written.players.map((p) => p.isBot)).toEqual([false, true, false]);
-      expect(written.players[1]).toMatchObject({ name: 'Player 2', isVacant: true, lastSeenAt: null });
+      expect(written.players[1]).toMatchObject({ name: 'Player 2', isVacant: true });
       expect(written.players[2].isVacant).toBe(false);
       expect(written.baseTiles).toEqual(baseTilesBefore);
       expect(written.map).toEqual(mapBefore);
@@ -165,12 +165,26 @@ describe('handlePlayerExit', () => {
 
     it('clears the stored heartbeat of the converted seat', async () => {
       const game = buildStartedGame(['p2']);
-      game.players[1].lastSeenAt = 1_700_000_000_000;
+      game.heartbeats[1] = 1_700_000_000_000;
       const transaction = stubTransaction(game);
 
       await handlePlayerExit('game_test', 'p2');
 
-      expect(writtenStateOf(transaction).players[1].lastSeenAt).toBeNull();
+      expect(writtenStateOf(transaction).heartbeats[1]).toBeUndefined();
+    });
+
+    it("leaves other seats' heartbeat entries untouched when one seat is converted", async () => {
+      const game = buildStartedGame(['p2', 'p3']);
+      game.heartbeats[0] = 1_700_000_000_000;
+      game.heartbeats[2] = 1_700_000_000_111;
+      const transaction = stubTransaction(game);
+
+      await handlePlayerExit('game_test', 'p2');
+
+      const written = writtenStateOf(transaction);
+      expect(written.heartbeats[0]).toBe(1_700_000_000_000);
+      expect(written.heartbeats[2]).toBe(1_700_000_000_111);
+      expect(written.heartbeats[1]).toBeUndefined();
     });
 
     it('appends exactly one system log entry naming the seat that left', async () => {
@@ -216,7 +230,7 @@ describe('handlePlayerExit', () => {
       await handlePlayerExit('game_test', 'p2');
 
       const written = writtenStateOf(transaction);
-      expect(written.players[1]).toMatchObject({ isBot: true, isVacant: true, lastSeenAt: null });
+      expect(written.players[1]).toMatchObject({ isBot: true, isVacant: true });
       expect(written.currentPlayerIndex).toBe(1);
       expect(written.turn).toBe(turnBefore);
       const newLogMessages = written.log.slice(logLengthBefore).map(toLogMessage);

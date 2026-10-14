@@ -9,7 +9,6 @@ const samplePlayer: Player = {
   color: 'blue',
   isBot: false,
   isVacant: false,
-  lastSeenAt: null,
   reclaimRequested: false,
   armies: [
     { id: 0, position: { x: 5, y: 5 }, hasActed: false },

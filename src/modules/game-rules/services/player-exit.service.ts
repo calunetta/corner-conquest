@@ -19,7 +19,7 @@ function convertSeatToBot(state: GameState, playerIndex: number): void {
   });
   seat.isBot = true;
   seat.isVacant = true;
-  seat.lastSeenAt = null;
+  delete state.heartbeats[playerIndex];
 }
 
 /**

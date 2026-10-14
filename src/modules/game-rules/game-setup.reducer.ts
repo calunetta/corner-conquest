@@ -116,6 +116,7 @@ export function initializeGame(
     map,
     baseTiles,
     players,
+    heartbeats: {},
     currentPlayerIndex: 0,
     turn: 0,
     log: [`Game '${gameName}' created by ${creator.name}! Waiting for players...`],

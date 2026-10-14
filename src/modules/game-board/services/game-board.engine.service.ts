@@ -1,4 +1,4 @@
-import { db, doc, onSnapshot, runTransaction, setDoc, updateDoc } from '@/lib/firebase';
+import { db, doc, onSnapshot, setDoc, updateDoc } from '@/lib/firebase';
 import type { CardRevealAnimation, DeathAnimation, GameState } from '@/lib/types';
 
 export interface GameStateSubscriptionCallbacks {
@@ -41,23 +41,10 @@ export async function clearCardRevealAnimations(gameId: string, remaining: CardR
   await updateDoc(gameDocRef, { cardRevealAnimations: remaining });
 }
 
-/**
- * Stamps `lastSeenAt` on one seat. Runs as a transaction because `players` is an array: a dotted
- * `updateDoc` path cannot address an element by index, and a plain write from a stale snapshot
- * would drop another player's concurrent heartbeat.
- */
+/** Stamps this seat's heartbeat with a single-field-path write, so it is never version-checked
+ *  against the rest of the document and cannot collide with a concurrent `saveGameState`/bot-turn
+ *  `setDoc`. */
 export async function writeHeartbeat(gameId: string, playerIndex: number): Promise<void> {
   const gameDocRef = doc(db, 'games', gameId);
-
-  await runTransaction(db, async (transaction) => {
-    const gameDoc = await transaction.get(gameDocRef);
-    if (!gameDoc.exists()) return;
-
-    const state = gameDoc.data() as GameState;
-    const seat = state.players[playerIndex];
-    if (!seat) return;
-
-    seat.lastSeenAt = Date.now();
-    transaction.set(gameDocRef, state);
-  });
+  await updateDoc(gameDocRef, { [`heartbeats.${playerIndex}`]: Date.now() });
 }

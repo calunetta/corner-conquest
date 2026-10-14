@@ -2,18 +2,16 @@ jest.mock('@/lib/firebase', () => ({
   db: {},
   doc: jest.fn(() => ({})),
   onSnapshot: jest.fn(),
-  runTransaction: jest.fn(),
   setDoc: jest.fn(),
   updateDoc: jest.fn(),
 }));
 
-import { onSnapshot, runTransaction, setDoc, updateDoc, doc, db } from '@/lib/firebase';
+import { onSnapshot, setDoc, updateDoc, doc, db } from '@/lib/firebase';
 // Imported after the mock so the service picks up the mocked `@/lib/firebase` module.
 import { subscribeToGameState, saveGameState, clearDeathAnimations, clearCardRevealAnimations, writeHeartbeat } from './game-board.engine.service';
-import type { GameState, DeathAnimation, CardRevealAnimation, Player } from '@/lib/types';
+import type { GameState, DeathAnimation, CardRevealAnimation } from '@/lib/types';
 
 const mockOnSnapshot = onSnapshot as jest.Mock;
-const mockRunTransaction = runTransaction as jest.Mock;
 const mockSetDoc = setDoc as jest.Mock;
 const mockUpdateDoc = updateDoc as jest.Mock;
 const mockDoc = doc as jest.Mock;
@@ -40,6 +38,7 @@ const createGameState = (overrides?: Partial<GameState>): GameState => ({
   },
   currentPlayerIndex: 0,
   players: [],
+  heartbeats: {},
   map: [],
   baseTiles: [],
   deathAnimations: [],
@@ -283,105 +282,44 @@ describe('game-board.engine.service', () => {
   describe('writeHeartbeat', () => {
     const HEARTBEAT_TIME = new Date('2026-10-10T12:00:00Z').getTime();
 
-    const createSeat = (id: number, lastSeenAt: number | null): Player => ({ id, playerId: `player_${id + 1}`, lastSeenAt }) as Player;
-
-    // Mimics Firestore's transaction API: `get` returns the snapshot the transaction was started on,
-    // `set` records the document it would write back.
-    const runHeartbeatAgainst = (snapshotState: GameState | null) => {
-      const transaction = {
-        get: jest.fn().mockResolvedValue({
-          exists: () => snapshotState !== null,
-          data: () => snapshotState,
-        }),
-        set: jest.fn(),
-      };
-      mockRunTransaction.mockImplementation(async (_db: unknown, updateFunction: (tx: unknown) => Promise<void>) =>
-        updateFunction(transaction),
-      );
-      return transaction;
-    };
-
     beforeEach(() => {
       jest.useFakeTimers();
       jest.setSystemTime(HEARTBEAT_TIME);
+      mockUpdateDoc.mockResolvedValue(undefined);
     });
 
     afterEach(() => {
       jest.useRealTimers();
     });
 
-    it('runs a transaction on the game document', async () => {
-      runHeartbeatAgainst(createGameState({ players: [createSeat(0, null)] }));
-
-      await writeHeartbeat('game_123', 0);
+    it('writes a single heartbeats.<seat> field path with the current time, on the game document', async () => {
+      await writeHeartbeat('game_123', 2);
 
       expect(mockDoc).toHaveBeenCalledWith(db, 'games', 'game_123');
-      expect(mockRunTransaction).toHaveBeenCalledTimes(1);
-      expect(mockRunTransaction.mock.calls[0][0]).toBe(db);
-    });
-
-    it('reads the game document inside the transaction', async () => {
-      const transaction = runHeartbeatAgainst(createGameState({ players: [createSeat(0, null)] }));
-
-      await writeHeartbeat('game_123', 0);
-
-      expect(transaction.get).toHaveBeenCalledWith(mockDoc.mock.results[0].value);
-    });
-
-    it('stamps lastSeenAt with the current time on the given seat and writes the whole document back', async () => {
-      const transaction = runHeartbeatAgainst(createGameState({ players: [createSeat(0, 111), createSeat(1, null)] }));
-
-      await writeHeartbeat('game_123', 1);
-
-      expect(transaction.set).toHaveBeenCalledTimes(1);
-      const [writtenRef, writtenState] = transaction.set.mock.calls[0] as [unknown, GameState];
-      expect(writtenRef).toBe(mockDoc.mock.results[0].value);
-      expect(writtenState.players[1].lastSeenAt).toBe(HEARTBEAT_TIME);
-      expect(writtenState.players.map((player) => player.id)).toEqual([0, 1]);
-    });
-
-    it("keeps another seat's lastSeenAt from the transaction's read so a concurrent heartbeat is not dropped", async () => {
-      const transaction = runHeartbeatAgainst(createGameState({ players: [createSeat(0, 111), createSeat(1, null)] }));
-
-      await writeHeartbeat('game_123', 1);
-
-      const [, writtenState] = transaction.set.mock.calls[0] as [unknown, GameState];
-      expect(writtenState.players[0].lastSeenAt).toBe(111);
-    });
-
-    it('does not use a dotted-path updateDoc or a plain setDoc', async () => {
-      runHeartbeatAgainst(createGameState({ players: [createSeat(0, null)] }));
-
-      await writeHeartbeat('game_123', 0);
-
-      expect(mockUpdateDoc).not.toHaveBeenCalled();
-      expect(mockSetDoc).not.toHaveBeenCalled();
-    });
-
-    it('writes nothing when the game document no longer exists', async () => {
-      const transaction = runHeartbeatAgainst(null);
-
-      await expect(writeHeartbeat('game_123', 0)).resolves.toBeUndefined();
-
-      expect(transaction.set).not.toHaveBeenCalled();
+      expect(mockUpdateDoc).toHaveBeenCalledTimes(1);
+      expect(mockUpdateDoc).toHaveBeenCalledWith(mockDoc.mock.results[0].value, { 'heartbeats.2': HEARTBEAT_TIME });
     });
 
     it.each([
-      ['a negative index', -1],
-      ['an index equal to the seat count', 2],
-      ['an index well past the seat count', 99],
-    ])('writes nothing for %s', async (_label, playerIndex) => {
-      const transaction = runHeartbeatAgainst(createGameState({ players: [createSeat(0, null), createSeat(1, null)] }));
-
+      ['seat 0', 0],
+      ['a high seat index', 3],
+    ])('addresses the correct dotted path for %s', async (_label, playerIndex) => {
       await writeHeartbeat('game_123', playerIndex);
 
-      expect(transaction.set).not.toHaveBeenCalled();
+      expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), { [`heartbeats.${playerIndex}`]: HEARTBEAT_TIME });
     });
 
-    it('rejects when the transaction fails, so the caller can log it', async () => {
-      mockRunTransaction.mockRejectedValue(new Error('transaction aborted'));
+    it('never runs a transaction or a whole-document setDoc, so it cannot collide with a concurrent write', async () => {
+      await writeHeartbeat('game_123', 0);
 
-      await expect(writeHeartbeat('game_123', 0)).rejects.toThrow('transaction aborted');
+      expect(mockSetDoc).not.toHaveBeenCalled();
+    });
+
+    it('rejects when updateDoc fails, so the caller can log it', async () => {
+      const error = new Error('failed-precondition');
+      mockUpdateDoc.mockRejectedValue(error);
+
+      await expect(writeHeartbeat('game_123', 0)).rejects.toThrow('failed-precondition');
     });
   });
 });

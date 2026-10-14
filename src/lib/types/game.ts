@@ -67,6 +67,12 @@ export type GameState = {
   map: Island[];
   baseTiles: BaseTileInfo[];
   players: Player[];
+  /** Epoch ms of each human seat's last heartbeat write, keyed by `Player.id` (seat index).
+   *  A missing key means no heartbeat yet (equivalent to the old `lastSeenAt: null`); bot seats
+   *  never get an entry. Written by `writeHeartbeat` via a single-field-path `updateDoc`, so a
+   *  heartbeat write is never version-checked against the rest of the document. Cleared (key
+   *  deleted) by `convertSeatToBot` on takeover. */
+  heartbeats: Partial<Record<number, number>>;
   currentPlayerIndex: number;
   turn: number;
   log: LogEntry[];
