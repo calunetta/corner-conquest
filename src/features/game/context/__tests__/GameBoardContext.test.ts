@@ -24,15 +24,23 @@ describe('GameBoard Reducer', () => {
     },
   };
 
-  it('handles SET_SELECTED_ARMY', () => {
+  it('handles SET_SELECTED_ARMY by setting only selectedArmyId', () => {
     const nextState = gameBoardReducer(initialTestState, {
       type: 'SET_SELECTED_ARMY',
       armyId: 2,
-      possibleMoves: [{ x: 1, y: 1 }],
     });
 
     expect(nextState.selectedArmyId).toBe(2);
-    expect(nextState.possibleMoves).toEqual([{ x: 1, y: 1 }]);
+    // possibleMoves is derived in useGameBoardState, not reducer state, so the reducer leaves it alone.
+    expect(nextState.possibleMoves).toBe(initialTestState.possibleMoves);
+  });
+
+  it('handles SET_SELECTED_ARMY with null by clearing the selection', () => {
+    const selected: GameBoardUIState = { ...initialTestState, selectedArmyId: 2 };
+
+    const nextState = gameBoardReducer(selected, { type: 'SET_SELECTED_ARMY', armyId: null });
+
+    expect(nextState.selectedArmyId).toBeNull();
   });
 
   it('handles SET_PENDING_ACTION', () => {

@@ -221,9 +221,10 @@ describe('useStalenessCheck', () => {
       localPlayerId: 'player_1',
     });
 
-    // A new snapshot arrives 10s into the interval, after the peer has gone stale in it.
+    // A new snapshot arrives mid-interval, after the peer has gone stale in it.
+    const HALF_INTERVAL = STALENESS_CHECK_INTERVAL_MS / 2;
     act(() => {
-      jest.advanceTimersByTime(10_000);
+      jest.advanceTimersByTime(HALF_INTERVAL);
     });
     rerender({
       gameId: 'game_1',
@@ -234,9 +235,9 @@ describe('useStalenessCheck', () => {
       localPlayerId: 'player_1',
     });
 
-    // The original interval still fires at 20s, not 10s + 20s.
+    // The original interval still fires at one full tick, not half + a full interval.
     act(() => {
-      jest.advanceTimersByTime(10_000);
+      jest.advanceTimersByTime(HALF_INTERVAL);
     });
 
     expect(mockHandlePlayerExit).toHaveBeenCalledTimes(1);

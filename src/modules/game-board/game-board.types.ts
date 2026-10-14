@@ -64,8 +64,7 @@ export const initialUIState: GameBoardUIState = {
 };
 
 export type GameBoardUIAction =
-  | { type: 'SET_SELECTED_ARMY'; armyId: number | null; possibleMoves?: { x: number; y: number }[] }
-  | { type: 'SET_POSSIBLE_MOVES'; possibleMoves: { x: number; y: number }[] }
+  | { type: 'SET_SELECTED_ARMY'; armyId: number | null }
   | { type: 'SET_PENDING_ACTION'; pendingAction: PendingAction }
   | { type: 'SET_PERFORMING_ACTION'; isPerforming: boolean }
   | { type: 'SET_EXITING'; isExiting: boolean }

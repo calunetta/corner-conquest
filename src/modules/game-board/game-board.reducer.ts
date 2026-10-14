@@ -11,12 +11,6 @@ export function gameBoardReducer(state: GameBoardUIState, action: GameBoardUIAct
       return {
         ...state,
         selectedArmyId: action.armyId,
-        possibleMoves: action.possibleMoves !== undefined ? action.possibleMoves : state.possibleMoves,
-      };
-    case 'SET_POSSIBLE_MOVES':
-      return {
-        ...state,
-        possibleMoves: action.possibleMoves,
       };
     case 'SET_PENDING_ACTION':
       return {

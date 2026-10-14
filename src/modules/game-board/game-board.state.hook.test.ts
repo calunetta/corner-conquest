@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { useGameBoardState } from './game-board.state.hook';
 import type { GameBoardStateArgs } from './game-board.hook.types';
 import type { GameState, Player } from '@/lib/types';
+import { IslandType } from '@/lib/types';
 
 const createPlayer = (overrides?: Partial<Player>): Player =>
   ({
@@ -186,6 +187,92 @@ describe('useGameBoardState', () => {
       rerender(createArgs(createGameState([hostPlayer, joinedPlayer], { status: 'playing' }), true));
 
       expect(result.current.localGameState).toBe(bufferBefore);
+    });
+  });
+
+  describe('possibleMoves for the selected army', () => {
+    const GRID = 3;
+
+    // A 3x3 board of Resource tiles with one army at the centre (1,1). From the centre every other
+    // tile is within move radius 2, so an unacted army has 8 possible moves.
+    const createBoardState = (armyHasActed: boolean): GameState => {
+      const map = Array.from({ length: GRID * GRID }, (_, i) => ({
+        id: `${i % GRID}-${Math.floor(i / GRID)}`,
+        x: i % GRID,
+        y: Math.floor(i / GRID),
+        type: IslandType.Resource,
+        resources: [],
+        occupants: [],
+      }));
+      const army = { id: 1, position: { x: 1, y: 1 }, hasActed: armyHasActed };
+      const host = createPlayer({ id: 0, playerId: 'player_1', name: 'Host', armies: [army] });
+      return createGameState([host], {
+        status: 'playing',
+        map,
+        baseTiles: [],
+        settings: { gridSize: { rows: GRID, cols: GRID } },
+      } as unknown as Partial<GameState>);
+    };
+
+    it('lists every other tile within radius 2 for a freshly selected army that has not acted', () => {
+      const { result } = renderHook((args: GameBoardStateArgs) => useGameBoardState(args), {
+        initialProps: createArgs(createBoardState(false), true),
+      });
+
+      act(() => result.current.dispatch({ type: 'SET_SELECTED_ARMY', armyId: 1 }));
+
+      const coords = result.current.uiState.possibleMoves.map((p) => `${p.x},${p.y}`).sort();
+      expect(coords).toEqual(['0,0', '0,1', '0,2', '1,0', '1,2', '2,0', '2,1', '2,2']);
+    });
+
+    it('clears possibleMoves when the selection is cleared', () => {
+      const { result } = renderHook((args: GameBoardStateArgs) => useGameBoardState(args), {
+        initialProps: createArgs(createBoardState(false), true),
+      });
+      act(() => result.current.dispatch({ type: 'SET_SELECTED_ARMY', armyId: 1 }));
+      expect(result.current.uiState.possibleMoves).toHaveLength(8);
+
+      act(() => result.current.dispatch({ type: 'SET_SELECTED_ARMY', armyId: null }));
+
+      expect(result.current.selectedArmy).toBeNull();
+      expect(result.current.uiState.possibleMoves).toEqual([]);
+    });
+
+    it('returns no possibleMoves when it is not the local player turn, even with an unacted army selected', () => {
+      const { result } = renderHook((args: GameBoardStateArgs) => useGameBoardState(args), {
+        initialProps: createArgs(createBoardState(false), false),
+      });
+
+      act(() => result.current.dispatch({ type: 'SET_SELECTED_ARMY', armyId: 1 }));
+
+      expect(result.current.selectedArmy?.id).toBe(1);
+      expect(result.current.uiState.possibleMoves).toEqual([]);
+    });
+
+    it('does not render the pre-action possibleMoves in the same render that marks the selected army as acted', () => {
+      const renders: { hasActed: boolean | null; possibleMoves: { x: number; y: number }[] }[] = [];
+      const { result } = renderHook(
+        (args: GameBoardStateArgs) => {
+          const state = useGameBoardState(args);
+          renders.push({
+            hasActed: state.selectedArmy?.hasActed ?? null,
+            possibleMoves: state.uiState.possibleMoves,
+          });
+          return state;
+        },
+        { initialProps: createArgs(createBoardState(false), true) },
+      );
+
+      act(() => result.current.dispatch({ type: 'SET_SELECTED_ARMY', armyId: 1 }));
+      expect(result.current.uiState.possibleMoves).toHaveLength(8);
+
+      // Mirrors the position action: the buffered state is replaced with one where the army has acted.
+      renders.length = 0;
+      act(() => result.current.setLocalGameState(createBoardState(true)));
+
+      // The army is still selected and now hasActed; the move list must clear in that same render.
+      expect(renders[0]).toEqual({ hasActed: true, possibleMoves: [] });
+      expect(result.current.uiState.possibleMoves).toEqual([]);
     });
   });
 });

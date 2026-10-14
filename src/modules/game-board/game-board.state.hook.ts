@@ -3,7 +3,7 @@ import { cloneDeep } from 'lodash';
 import { getPossibleMoves } from '@/modules/game-rules';
 import type { GameState } from '@/lib/types';
 import { gameBoardReducer } from './game-board.reducer';
-import { initialUIState } from './game-board.types';
+import { initialUIState, type GameBoardUIState } from './game-board.types';
 import { withSyncedSeatManagement } from './game-board.state.map';
 import type { GameBoardStateArgs, GameBoardState } from './game-board.hook.types';
 
@@ -55,18 +55,20 @@ export function useGameBoardState({
     }
   }, [isMyTurn]);
 
-  // Recalculate possible moves when selectedArmy changes
-  useEffect(() => {
-    if (selectedArmy && gameStateForDisplay && isMyTurn) {
-      const moves = getPossibleMoves(gameStateForDisplay, selectedArmy);
-      dispatch({ type: 'SET_POSSIBLE_MOVES', possibleMoves: moves });
-    } else {
-      dispatch({ type: 'SET_POSSIBLE_MOVES', possibleMoves: [] });
-    }
+  // Derived during render, not in an effect: an effect-written copy lagged one render behind
+  // selectedArmy, so a tile click could read the previous army's move list as still valid.
+  const possibleMoves = useMemo<{ x: number; y: number }[]>(() => {
+    if (!selectedArmy || !gameStateForDisplay || !isMyTurn) return [];
+    return getPossibleMoves(gameStateForDisplay, selectedArmy);
   }, [selectedArmy, gameStateForDisplay, isMyTurn]);
 
+  const uiStateForDisplay = useMemo<GameBoardUIState>(
+    () => ({ ...uiState, possibleMoves }),
+    [uiState, possibleMoves],
+  );
+
   return {
-    uiState,
+    uiState: uiStateForDisplay,
     dispatch,
     localGameState,
     setLocalGameState,
