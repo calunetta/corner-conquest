@@ -59,8 +59,9 @@ export const styles = {
   specialImage: 'object-contain',
   monsterStack: 'flex h-full w-full flex-col',
   monsterSlot: 'relative h-1/2 w-full',
-  borderRow: 'pointer-events-none absolute -bottom-[11px] left-1/2 z-0 flex w-full -translate-x-1/2 justify-center',
-  borderImageWrapper: 'relative h-5 w-10',
+  // Bottom offset and each image's box are set inline from island-tile-slots.types.ts (see IslandTile.tsx).
+  borderRow: 'pointer-events-none absolute left-1/2 z-0 flex w-full -translate-x-1/2 justify-center',
+  borderImageWrapper: 'relative',
   borderImage: 'object-contain',
 } as const;
 

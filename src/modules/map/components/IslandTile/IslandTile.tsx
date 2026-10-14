@@ -13,7 +13,14 @@ import { TileBoats } from '../TileBoats';
 import { TileOccupants } from '../TileOccupants';
 import { DeathEffect } from '../DeathEffect';
 import { CardRevealEffect } from '../CardRevealEffect';
-import { BASE_CREST_MIN_PX, BASE_CREST_SIZE, SPECIAL_ISLAND_SIZE } from '../../island-tile-slots.types';
+import {
+  BASE_CREST_MIN_PX,
+  BASE_CREST_SIZE,
+  BORDER_DECORATION_BOTTOM_OFFSET_PX,
+  BORDER_DECORATION_HEIGHT_PX,
+  BORDER_DECORATION_WIDTH_PX,
+  SPECIAL_ISLAND_SIZE,
+} from '../../island-tile-slots.types';
 import { useIslandTile } from './IslandTile.hook';
 import { playerTileIndicatorShadow, styles } from './IslandTile.styles';
 import type { IslandTileProps, IslandTileViewModel } from './IslandTile.types';
@@ -137,9 +144,13 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
 
         <TileOccupants island={island} />
 
-        <div className={styles.borderRow}>
+        <div className={styles.borderRow} style={{ bottom: `${BORDER_DECORATION_BOTTOM_OFFSET_PX}px` }}>
           {borderImageSequence.map((src, index) => (
-            <div key={index} className={styles.borderImageWrapper}>
+            <div
+              key={index}
+              className={styles.borderImageWrapper}
+              style={{ width: BORDER_DECORATION_WIDTH_PX, height: BORDER_DECORATION_HEIGHT_PX }}
+            >
               <Image src={src} alt="" fill className={styles.borderImage} unoptimized />
             </div>
           ))}
