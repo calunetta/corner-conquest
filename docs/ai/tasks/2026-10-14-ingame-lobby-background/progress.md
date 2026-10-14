@@ -12,7 +12,7 @@ Tier: M · Phases: 2
 - [x] tests (tester-a, tester-b)
 - [x] checks: typecheck, lint, unit tests
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: e9c10dc
 
 ## Phase 2: HUD toggle + legacy wiring
 - [x] plan approved (architect-b)
@@ -28,3 +28,9 @@ Tier: M · Phases: 2
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
 2026-10-14 architect-a: DONE, wrote plan.md (2 phases) and this progress.md
+2026-10-14 ui-designer-a/b: DONE, ui-design.md approved
+2026-10-14 architect-a/b: DONE, plan.md APPROVED
+2026-10-14 implementer-a/b: DONE, phase 1 shared store/hook + gradient constant, cross-reviewed APPROVED
+2026-10-14 tester-a/b: DONE, phase 1 logic tests, one revise round, APPROVED
+2026-10-14 architect-b (final-review): DONE, phase 1 APPROVED, no findings
+2026-10-14 coordinator: committed phase 1 (e9c10dc)
