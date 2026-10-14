@@ -2,6 +2,8 @@ export { toPlayerIdleSprite } from './player-sprite';
 export { playerTextColors } from './player-text-colors';
 export { useToast, toast } from './use-toast';
 export { useIsMobile } from './use-is-mobile';
+export { useBoardBackground } from './use-board-background';
+export { SKY_GRADIENT_CLASS } from './sky-gradient';
 export { getResourceDisplayName, RESOURCE_SPRITES, RESOURCE_GAIN_SPRITES, RESOURCE_GAIN_ANIMATION_MS } from './resource-display';
 export { useTransientPulses } from './use-transient-pulses';
 export type { PulseState } from './use-transient-pulses';
