@@ -13,6 +13,7 @@ export const styles = {
   rightGroup: 'flex items-center gap-2',
   turnIndicatorWrapper: 'flex items-center gap-1.5 rounded-md bg-black/40 border border-white/10 px-2.5 py-1 text-xs font-semibold',
   turnLabel: 'text-muted-foreground hidden sm:inline',
+  backgroundIcon: 'h-3.5 w-3.5 text-muted-foreground',
   playerName: 'font-bold text-foreground',
   startGameButton: 'font-bold bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black',
   exitButtonArrow: 'h-4 w-4',

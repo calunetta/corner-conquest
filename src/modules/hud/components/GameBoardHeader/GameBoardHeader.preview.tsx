@@ -8,6 +8,8 @@ import {
   playingMyTurnExpiringProps,
   playingOpponentTurnProps,
   exitingProps,
+  backgroundOnProps,
+  backgroundOffProps,
 } from './GameBoardHeader.fixtures';
 
 export const gameBoardHeaderPreview: ComponentPreview = {
@@ -23,5 +25,7 @@ export const gameBoardHeaderPreview: ComponentPreview = {
     { name: 'Playing – my turn, not expiring', render: () => <GameBoardHeaderView {...playingMyTurnNotExpiringProps} /> },
     { name: 'Playing – with resources', render: () => <GameBoardHeaderView {...playingMyTurnNotExpiringProps} /> },
     { name: 'Exiting', render: () => <GameBoardHeaderView {...exitingProps} /> },
+    { name: 'Background on', render: () => <GameBoardHeaderView {...backgroundOnProps} /> },
+    { name: 'Background off', render: () => <GameBoardHeaderView {...backgroundOffProps} /> },
   ],
 };

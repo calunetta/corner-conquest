@@ -94,6 +94,8 @@ export const waitingCanStartProps: GameBoardHeaderViewProps = {
   isExiting: false,
   onExitClick: async () => {},
   onStartGame: async () => {},
+  isBackgroundOn: true,
+  onToggleBackground: () => {},
 };
 
 export const waitingCannotStartProps: GameBoardHeaderViewProps = {
@@ -101,6 +103,8 @@ export const waitingCannotStartProps: GameBoardHeaderViewProps = {
   isExiting: false,
   onExitClick: async () => {},
   onStartGame: async () => {},
+  isBackgroundOn: true,
+  onToggleBackground: () => {},
 };
 
 export const waitingNotHostProps: GameBoardHeaderViewProps = {
@@ -108,6 +112,8 @@ export const waitingNotHostProps: GameBoardHeaderViewProps = {
   isExiting: false,
   onExitClick: async () => {},
   onStartGame: async () => {},
+  isBackgroundOn: true,
+  onToggleBackground: () => {},
 };
 
 export const playingMyTurnNotExpiringProps: GameBoardHeaderViewProps = {
@@ -115,6 +121,8 @@ export const playingMyTurnNotExpiringProps: GameBoardHeaderViewProps = {
   isExiting: false,
   onExitClick: async () => {},
   onStartGame: async () => {},
+  isBackgroundOn: true,
+  onToggleBackground: () => {},
 };
 
 export const playingMyTurnExpiringProps: GameBoardHeaderViewProps = {
@@ -122,6 +130,8 @@ export const playingMyTurnExpiringProps: GameBoardHeaderViewProps = {
   isExiting: false,
   onExitClick: async () => {},
   onStartGame: async () => {},
+  isBackgroundOn: true,
+  onToggleBackground: () => {},
 };
 
 export const playingOpponentTurnProps: GameBoardHeaderViewProps = {
@@ -129,6 +139,8 @@ export const playingOpponentTurnProps: GameBoardHeaderViewProps = {
   isExiting: false,
   onExitClick: async () => {},
   onStartGame: async () => {},
+  isBackgroundOn: true,
+  onToggleBackground: () => {},
 };
 
 export const exitingProps: GameBoardHeaderViewProps = {
@@ -136,4 +148,16 @@ export const exitingProps: GameBoardHeaderViewProps = {
   isExiting: true,
   onExitClick: async () => {},
   onStartGame: async () => {},
+  isBackgroundOn: true,
+  onToggleBackground: () => {},
+};
+
+export const backgroundOnProps: GameBoardHeaderViewProps = {
+  ...waitingCanStartProps,
+  isBackgroundOn: true,
+};
+
+export const backgroundOffProps: GameBoardHeaderViewProps = {
+  ...waitingCanStartProps,
+  isBackgroundOn: false,
 };

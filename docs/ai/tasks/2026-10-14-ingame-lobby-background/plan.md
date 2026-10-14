@@ -132,24 +132,21 @@ export interface GameBoardHeaderViewProps extends GameBoardHeaderViewModel {
 ```
 
 ### `GameBoardHeaderView` markup contract (implementer-b)
+**Amended during phase 2 build (deviation from ui-design.md's Final spec, reviewed and approved — see progress.md's log):** drop the `Tooltip`/`TooltipTrigger`/`TooltipContent` wrapping. Radix `TooltipTrigger`'s own `data-state="closed"` attribute overwrites the Radix `Switch`'s `data-state` (`checked`/`unchecked`), which the `Switch` primitive uses to pick its track color (`switch.tsx:14`'s `data-[state=checked]:bg-primary`/`data-[state=unchecked]:bg-input`) — with the wrapper, the track rendered transparent in both states, confirmed by preview-a's headless screenshots of both the "Background on" and "Background off" testbed states. Fixed by removing the `Tooltip` wrapper entirely rather than the alternative (a non-Tooltip `span` wrapper to carry a hover title): no acceptance criterion requires the hover/focus hint, only the accessible name, which `aria-label="Toggle sky background"` on the `Switch` itself already satisfies (ui-design.md's Accessibility section already frames the Tooltip as "only for the hover/focus hint, not... the accessible name"). `docs/architecture/systems-and-visuals.md` §6.7 and `structure-and-state.md`'s `shared/`/`GameBoardHeader` entries correctly document the toggle without mentioning a tooltip (confirmed in phase 2's final review).
+
 Inside `rightGroup`, before the existing `isPlaying && <div className={styles.turnIndicatorWrapper}>...` block, add (ungated by `isPlaying`):
 ```tsx
 <div className={styles.turnIndicatorWrapper}>
-  <Image className={styles.backgroundIcon} aria-hidden="true" />
+  <ImageIcon className={styles.backgroundIcon} aria-hidden="true" />
   <span className={styles.turnLabel}>Background</span>
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <Switch
-        checked={isBackgroundOn}
-        onCheckedChange={onToggleBackground}
-        aria-label="Toggle sky background"
-      />
-    </TooltipTrigger>
-    <TooltipContent>Toggle sky background</TooltipContent>
-  </Tooltip>
+  <Switch
+    checked={isBackgroundOn}
+    onCheckedChange={onToggleBackground}
+    aria-label="Toggle sky background"
+  />
 </div>
 ```
-Imports to add in `GameBoardHeader.tsx`: `Image` from `lucide-react` (alongside the existing `ArrowLeft, Play, Trophy, Loader2, Timer`), `Switch` from `@/components/ui/switch`, `Tooltip, TooltipTrigger, TooltipContent` from `@/components/ui/tooltip`. `TooltipTrigger asChild` wraps the `Switch` directly (one tab stop); the icon and label are plain siblings outside the `Tooltip`, per ui-design.md's Final spec correction.
+Imports to add in `GameBoardHeader.tsx`: `ImageIcon` from `lucide-react` (alongside the existing `ArrowLeft, Play, Trophy, Loader2, Timer` — `ImageIcon` over the contract's original `Image`, since `Image` would shadow the DOM global; `lucide-react` exports both as aliases of the same icon), `Switch` from `@/components/ui/switch`. No `Tooltip` import.
 
 ### `GameBoard.tsx` wiring contract (implementer-b)
 ```tsx
@@ -186,14 +183,14 @@ Model escalation: none — straight pattern reuse of `toast-store.ts`/`use-toast
 5. Edit `GameBoardHeader.tsx` per the markup contract (implementer-b).
 6. Edit `src/features/game/components/GameBoard.tsx` per the wiring contract (implementer-b).
 7. Edit `GameBoardHeader.hook.test.ts`: mock `@/modules/shared`'s `useBoardBackground`, assert passthrough (tester-a, first).
-8. Edit `GameBoardHeader.test.tsx`: wrap every render in `TooltipProvider`; add the toggle's view tests (tester-b).
+8. Edit `GameBoardHeader.test.tsx`: add the toggle's view tests (tester-b). No `TooltipProvider` wrapper needed — amended, see the markup contract above.
 9. Edit `GameBoardHeader.preview.tsx`: register the two new states, using the new fixtures (preview-a).
 10. Run `npm run typecheck`, `npm run lint`, `npx jest src/modules/hud/components/GameBoardHeader`.
 11. `docs-sync` edits `docs/architecture/structure-and-state.md:14`.
 12. UI-verify at 1280x720 and 390x844 (both acceptance criteria breakpoints) with the testbed's "Background on"/"Background off" states, and the live board if feasible.
 13. Commit, then stop and ask the user to type `continue`.
 
-Model escalation: none — reuses existing `Switch`/`Tooltip` precedents (`GameLog.tsx`, `ActionButton.tsx`), no new visual pattern beyond the approved pill.
+Model escalation: none — reuses the existing `Switch` precedent (`GameLog.tsx`), no new visual pattern beyond the approved pill. (The `Tooltip` precedent from `ActionButton.tsx` was dropped during the build — see the markup contract's amendment note.)
 
 ## Test plan
 - tester-a (logic, first):
@@ -201,7 +198,7 @@ Model escalation: none — reuses existing `Switch`/`Tooltip` precedents (`GameL
   - `use-board-background.test.ts`: `renderHook(() => useBoardBackground())` returns `{ isBackgroundOn: true, setBackgroundOn }` by default; calling `setBackgroundOn(false)` updates `result.current.isBackgroundOn`; a second `renderHook` instance picks up a change made via the first instance's `setBackgroundOn` (cross-instance sync); with `localStorage` pre-seeded to `'false'` before mount, the hook settles on `false` after its effect runs.
   - `GameBoardHeader.hook.test.ts`: mocked `useBoardBackground` returning `{ isBackgroundOn: false, setBackgroundOn: fn }` surfaces as `result.current.isBackgroundOn === false` and `result.current.onToggleBackground === fn`.
 - tester-b (view and e2e):
-  - `GameBoardHeader.test.tsx` (wrapped in `TooltipProvider`): Switch is checked when `isBackgroundOn` is `true`, unchecked when `false`; clicking the Switch calls `onToggleBackground` with the opposite boolean; the Switch's accessible name is `Toggle sky background` (`getByRole('switch', { name: 'Toggle sky background' })`); the `Background` text label is present (desktop fixture renders it, since `hidden sm:inline` is a CSS class, not conditional markup — assert the text node exists in the DOM, not visibility, matching how `turnLabel` is already tested if at all — otherwise skip a visibility assertion jsdom can't evaluate).
+  - `GameBoardHeader.test.tsx` (no `TooltipProvider` needed — amended, see markup contract): Switch is checked when `isBackgroundOn` is `true`, unchecked when `false`; clicking the Switch calls `onToggleBackground` with the opposite boolean; the Switch's accessible name is `Toggle sky background` (`getByRole('switch', { name: 'Toggle sky background' })`); the `Background` text label is present (desktop fixture renders it, since `hidden sm:inline` is a CSS class, not conditional markup — assert the text node exists in the DOM, not visibility, matching how `turnLabel` is already tested if at all — otherwise skip a visibility assertion jsdom can't evaluate).
   - No e2e spec: out of scope per triage (client-only cosmetic preference, no documented game-rule flow to add to `e2e/`).
 
 ## Preview states
@@ -209,4 +206,4 @@ Model escalation: none — reuses existing `Switch`/`Tooltip` precedents (`GameL
 
 ## Risks
 - `hydrateBoardBackgroundFromStorage` running from two independent `useBoardBackground()` call sites (header + legacy board) must guard itself (an internal "already hydrated" flag) so it reads `localStorage` once, not twice, and doesn't double-notify; covered by the store's own test ("second call is a no-op").
-- `GameBoardHeader.test.tsx`'s existing renders (`render(<GameBoardHeaderView {...someProps} />)`) will throw once the view renders a bare `Tooltip` without a `TooltipProvider` ancestor — every existing render call in that file needs the wrapper, not just the new tests; tester-b must update all of them, not add a second render helper.
+- ~~`GameBoardHeader.test.tsx`'s existing renders will throw once the view renders a bare `Tooltip` without a `TooltipProvider` ancestor~~ — moot: the `Tooltip` wrapper was dropped during the phase 2 build (Radix `Tooltip`/`Switch` `data-state` conflict; see the markup contract's amendment note), so no `TooltipProvider` wrapper is needed anywhere in this component.

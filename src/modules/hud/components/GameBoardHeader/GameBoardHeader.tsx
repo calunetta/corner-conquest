@@ -1,7 +1,8 @@
 'use client';
 
-import { ArrowLeft, Play, Trophy, Loader2, Timer } from 'lucide-react';
+import { ArrowLeft, Play, Trophy, Loader2, Timer, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { ResourceIcon } from '@/modules/shared';
 import { useGameBoardHeader } from './GameBoardHeader.hook';
 import { styles } from './GameBoardHeader.styles';
@@ -19,6 +20,8 @@ export function GameBoardHeaderView({
   isExiting,
   onExitClick,
   onStartGame,
+  isBackgroundOn,
+  onToggleBackground,
 }: GameBoardHeaderViewProps): JSX.Element {
   return (
     <div className={styles.root}>
@@ -52,6 +55,16 @@ export function GameBoardHeaderView({
       </div>
 
       <div className={styles.rightGroup}>
+        <div className={styles.turnIndicatorWrapper}>
+          <ImageIcon className={styles.backgroundIcon} aria-hidden="true" />
+          <span className={styles.turnLabel}>Background</span>
+          <Switch
+            checked={isBackgroundOn}
+            onCheckedChange={onToggleBackground}
+            aria-label="Toggle sky background"
+          />
+        </div>
+
         {isPlaying && (
           <div className={styles.turnIndicatorWrapper}>
             <Timer className={styles.turnTimerIcon({ isExpiring: turnTimer.isExpiring })} />

@@ -4,6 +4,8 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { usePlayer } from '@/modules/session';
 import { useGameEngine } from '@/modules/game-board';
+import { useBoardBackground, SKY_GRADIENT_CLASS } from '@/modules/shared';
+import { cn } from '@/lib/utils';
 import { MapGrid } from '@/modules/map';
 import { ActionsPanel, GameLog, GameBoardHeader, GameStatusBadge, TutorialBeacon } from '@/modules/hud';
 import { PlayerInfoBar } from './PlayerInfoBar';
@@ -20,9 +22,15 @@ type GameBoardProps = {
  *  entry point. */
 export function GameBoardContent() {
   const { gameState } = useGameBoard();
+  const { isBackgroundOn } = useBoardBackground();
 
   return (
-    <div className="relative flex min-h-screen lg:h-screen lg:max-h-screen w-full flex-col gap-2 overflow-y-auto lg:overflow-hidden p-2 sm:p-3 bg-gradient-to-b from-background via-background/95 to-black/90">
+    <div
+      className={cn(
+        'relative flex min-h-screen lg:h-screen lg:max-h-screen w-full flex-col gap-2 overflow-y-auto lg:overflow-hidden p-2 sm:p-3',
+        isBackgroundOn ? SKY_GRADIENT_CLASS : 'bg-gradient-to-b from-background via-background/95 to-black/90',
+      )}
+    >
       {gameState.status !== 'finished' && (
         <>
           <GameBoardHeader />

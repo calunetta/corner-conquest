@@ -1,11 +1,16 @@
 import { renderHook } from '@testing-library/react';
 import { useGameBoard } from '@/modules/game-board';
+import { useBoardBackground } from '@/modules/shared';
 import type { Player } from '@/lib/types';
 import { useGameBoardHeader } from './GameBoardHeader.hook';
 
 jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
   useResourceGainEvents: jest.fn().mockReturnValue([]),
+}));
+
+jest.mock('@/modules/shared', () => ({
+  useBoardBackground: jest.fn(),
 }));
 
 const createPlayer = (id: number, name: string): Player =>
@@ -17,6 +22,13 @@ const createPlayer = (id: number, name: string): Player =>
   }) as unknown as Player;
 
 describe('useGameBoardHeader', () => {
+  beforeEach(() => {
+    jest.mocked(useBoardBackground).mockReturnValue({
+      isBackgroundOn: true,
+      setBackgroundOn: jest.fn(),
+    });
+  });
+
   it('combines gameState and handlers into GameBoardHeaderViewProps', () => {
     const players = [createPlayer(0, 'Player 1'), createPlayer(1, 'Alice')];
     const handleExitClick = jest.fn();
@@ -117,5 +129,39 @@ describe('useGameBoardHeader', () => {
     const { result } = renderHook(() => useGameBoardHeader());
 
     expect(result.current.isExiting).toBe(true);
+  });
+
+  it('passes the shared background preference through unchanged', () => {
+    const setBackgroundOn = jest.fn();
+    jest.mocked(useBoardBackground).mockReturnValue({
+      isBackgroundOn: false,
+      setBackgroundOn,
+    });
+    jest.mocked(useGameBoard).mockReturnValue({
+      gameState: {
+        status: 'playing',
+        name: 'Test Game',
+        players: [createPlayer(0, 'Player 1')],
+        settings: { victoryPointGoal: 50 },
+        currentPlayerIndex: 0,
+      },
+      isHost: false,
+      isMyTurn: false,
+      uiState: { isExiting: false },
+      turnTimer: {
+        timeLeft: 90000,
+        formattedTime: '01:30',
+        turnDuration: 180000,
+        isExpiring: false,
+        percentage: 50,
+      },
+      handleExitClick: jest.fn(),
+      handleStartGame: jest.fn(),
+    } as unknown as ReturnType<typeof useGameBoard>);
+
+    const { result } = renderHook(() => useGameBoardHeader());
+
+    expect(result.current.isBackgroundOn).toBe(false);
+    expect(result.current.onToggleBackground).toBe(setBackgroundOn);
   });
 });

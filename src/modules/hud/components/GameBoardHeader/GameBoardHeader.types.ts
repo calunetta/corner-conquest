@@ -18,4 +18,6 @@ export interface GameBoardHeaderViewProps extends GameBoardHeaderViewModel {
   isExiting: boolean; // uiState.isExiting
   onExitClick: () => Promise<void>; // passthrough of handleExitClick
   onStartGame: () => Promise<void>; // passthrough of handleStartGame
+  isBackgroundOn: boolean; // device-local sky-background preference (useBoardBackground)
+  onToggleBackground: (enabled: boolean) => void; // passed directly as the Switch's onCheckedChange
 }

@@ -9,7 +9,10 @@ import {
   playingMyTurnExpiringProps,
   playingOpponentTurnProps,
   exitingProps,
+  backgroundOnProps,
+  backgroundOffProps,
 } from './GameBoardHeader.fixtures';
+import type { GameBoardHeaderViewProps } from './GameBoardHeader.types';
 
 // Mock next/image like resource-icon.test.tsx does, so the icon renders as a plain <img> with its alt text.
 jest.mock('next/image', () => ({
@@ -196,6 +199,57 @@ describe('GameBoardHeaderView', () => {
       render(<GameBoardHeaderView {...{ ...playingMyTurnNotExpiringProps, resources: [] }} />);
 
       expect(screen.getByTestId('gameboard-resource-strip').children).toHaveLength(0);
+    });
+  });
+
+  describe('sky background toggle', () => {
+    const renderHeader = (props: GameBoardHeaderViewProps) =>
+      render(<GameBoardHeaderView {...props} />);
+
+    it('is checked when the background is on', () => {
+      renderHeader(backgroundOnProps);
+
+      expect(screen.getByRole('switch', { name: 'Toggle sky background' })).toBeChecked();
+    });
+
+    it('is unchecked when the background is off', () => {
+      renderHeader(backgroundOffProps);
+
+      expect(screen.getByRole('switch', { name: 'Toggle sky background' })).not.toBeChecked();
+    });
+
+    it('calls onToggleBackground with false when clicked while on', () => {
+      const onToggleBackground = jest.fn();
+
+      renderHeader({ ...backgroundOnProps, onToggleBackground });
+      fireEvent.click(screen.getByRole('switch', { name: 'Toggle sky background' }));
+
+      expect(onToggleBackground).toHaveBeenCalledTimes(1);
+      expect(onToggleBackground).toHaveBeenCalledWith(false);
+    });
+
+    it('calls onToggleBackground with true when clicked while off', () => {
+      const onToggleBackground = jest.fn();
+
+      renderHeader({ ...backgroundOffProps, onToggleBackground });
+      fireEvent.click(screen.getByRole('switch', { name: 'Toggle sky background' }));
+
+      expect(onToggleBackground).toHaveBeenCalledTimes(1);
+      expect(onToggleBackground).toHaveBeenCalledWith(true);
+    });
+
+    it('keeps its accessible name when the visible text label is hidden', () => {
+      renderHeader(backgroundOnProps);
+
+      // The label is hidden below sm via CSS, which jsdom cannot evaluate, so the name must not depend on it.
+      expect(screen.getByText('Background')).toBeInTheDocument();
+      expect(screen.getByRole('switch', { name: 'Toggle sky background' })).toBeInTheDocument();
+    });
+
+    it('is shown during play, not only before the game starts', () => {
+      renderHeader({ ...playingMyTurnNotExpiringProps, isBackgroundOn: true });
+
+      expect(screen.getByRole('switch', { name: 'Toggle sky background' })).toBeChecked();
     });
   });
 });
