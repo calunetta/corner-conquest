@@ -1,5 +1,16 @@
 import { cva } from 'class-variance-authority';
+import type { CSSProperties } from 'react';
 import type { PlayerColor } from '@/lib/types';
+import {
+  BASE_CREST_MIN_PX,
+  BASE_CREST_SIZE,
+  BORDER_DECORATION_BOTTOM_OFFSET_PX,
+  BORDER_DECORATION_HEIGHT_PX,
+  BORDER_DECORATION_WIDTH_PX,
+  SPECIAL_ISLAND_LEFT,
+  SPECIAL_ISLAND_SIZE,
+  SPECIAL_ISLAND_TOP,
+} from '../../island-tile-slots.types';
 
 export const styles = {
   tile: cva(
@@ -50,16 +61,17 @@ export const styles = {
   // Absolute so its box is the tile's padding box, not the p-1 centerContent inset: TileResources'
   // percent slot sizes resolve against this box, and the inset shrank them to ~6px at T=46.
   baseContent: 'absolute inset-0 flex items-center justify-center',
-  // Size is set inline as percent-of-tile (see IslandTile.tsx), not by fixed px classes tied to the window breakpoint.
+  // Size is set inline as percent-of-tile (see toBaseCrestStyle below), not by fixed px classes tied to the window breakpoint.
   baseImageWrapper: 'relative drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)]',
   baseImage: 'object-contain',
   baseFallbackIcon: 'h-full w-full p-2 text-muted-foreground',
-  // Size is set inline as percent-of-tile (see IslandTile.tsx), not by fixed px classes tied to the window breakpoint.
-  specialContent: 'relative',
+  // Position and size are set inline (see toSpecialIslandStyle below), same top/left-is-center
+  // convention as the resource-node slots, resolved against the tile's full padding box.
+  specialContent: 'absolute',
   specialImage: 'object-contain',
   monsterStack: 'flex h-full w-full flex-col',
   monsterSlot: 'relative h-1/2 w-full',
-  // Bottom offset and each image's box are set inline from island-tile-slots.types.ts (see IslandTile.tsx).
+  // Bottom offset and each image's box are set inline from island-tile-slots.types.ts (see toBorderRowStyle/toBorderImageStyle below).
   borderRow: 'pointer-events-none absolute left-1/2 z-0 flex w-full -translate-x-1/2 justify-center',
   borderImageWrapper: 'relative',
   borderImage: 'object-contain',
@@ -72,3 +84,26 @@ export const playerTileIndicatorShadow: Record<PlayerColor, string> = {
   purple: 'shadow-purple-500/50',
   yellow: 'shadow-yellow-400/50',
 };
+
+export function toBaseCrestStyle(): CSSProperties {
+  const side = `max(${BASE_CREST_MIN_PX}px, ${BASE_CREST_SIZE}%)`;
+  return { width: side, height: side };
+}
+
+export function toSpecialIslandStyle(): CSSProperties {
+  return {
+    top: SPECIAL_ISLAND_TOP,
+    left: SPECIAL_ISLAND_LEFT,
+    width: `${SPECIAL_ISLAND_SIZE}%`,
+    height: `${SPECIAL_ISLAND_SIZE}%`,
+    transform: 'translate(-50%, -50%)',
+  };
+}
+
+export function toBorderRowStyle(): CSSProperties {
+  return { bottom: `${BORDER_DECORATION_BOTTOM_OFFSET_PX}px` };
+}
+
+export function toBorderImageStyle(): CSSProperties {
+  return { width: BORDER_DECORATION_WIDTH_PX, height: BORDER_DECORATION_HEIGHT_PX };
+}

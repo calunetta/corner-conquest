@@ -13,16 +13,15 @@ import { TileBoats } from '../TileBoats';
 import { TileOccupants } from '../TileOccupants';
 import { DeathEffect } from '../DeathEffect';
 import { CardRevealEffect } from '../CardRevealEffect';
-import {
-  BASE_CREST_MIN_PX,
-  BASE_CREST_SIZE,
-  BORDER_DECORATION_BOTTOM_OFFSET_PX,
-  BORDER_DECORATION_HEIGHT_PX,
-  BORDER_DECORATION_WIDTH_PX,
-  SPECIAL_ISLAND_SIZE,
-} from '../../island-tile-slots.types';
 import { useIslandTile } from './IslandTile.hook';
-import { playerTileIndicatorShadow, styles } from './IslandTile.styles';
+import {
+  playerTileIndicatorShadow,
+  styles,
+  toBaseCrestStyle,
+  toBorderImageStyle,
+  toBorderRowStyle,
+  toSpecialIslandStyle,
+} from './IslandTile.styles';
 import type { IslandTileProps, IslandTileViewModel } from './IslandTile.types';
 
 const SPECIAL_ISLAND_IDLE_SPRITE = '/sprites/special_island_idle.png';
@@ -55,13 +54,7 @@ function getTileCenterContent(viewModel: IslandTileViewModel) {
       return (
         <div className={styles.baseContent}>
           {baseOwner?.color ? (
-            <div
-              className={styles.baseImageWrapper}
-              style={{
-                width: `max(${BASE_CREST_MIN_PX}px, ${BASE_CREST_SIZE}%)`,
-                height: `max(${BASE_CREST_MIN_PX}px, ${BASE_CREST_SIZE}%)`,
-              }}
-            >
+            <div className={styles.baseImageWrapper} style={toBaseCrestStyle()}>
               <Image
                 src={PLAYER_DATA[baseOwner.color].base}
                 alt={`${baseOwner.color} base`}
@@ -80,10 +73,7 @@ function getTileCenterContent(viewModel: IslandTileViewModel) {
       return renderMonsterIcons(viewModel);
     case IslandType.Special:
       return (
-        <div
-          className={styles.specialContent}
-          style={{ width: `${SPECIAL_ISLAND_SIZE}%`, height: `${SPECIAL_ISLAND_SIZE}%` }}
-        >
+        <div className={styles.specialContent} style={toSpecialIslandStyle()}>
           {cardRevealAnimationOnTile && !prefersReducedMotion ? (
             <CardRevealEffect
               id={cardRevealAnimationOnTile.id}
@@ -127,7 +117,6 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
         data-testid={`island-tile-${island.x}-${island.y}`}
       >
         <div className={styles.terrain} />
-
         {deathAnimationOnTile && (
           <DeathEffect
             sprite={deathAnimationOnTile.sprite}
@@ -135,22 +124,13 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
             createdAt={deathAnimationOnTile.createdAt}
           />
         )}
-
         {isTileVisible && <TileForest island={island} isBase={isBase} />}
-
         <TileBoats island={island} />
-
         <div className={styles.centerContent}>{getTileCenterContent(viewModel)}</div>
-
         <TileOccupants island={island} />
-
-        <div className={styles.borderRow} style={{ bottom: `${BORDER_DECORATION_BOTTOM_OFFSET_PX}px` }}>
+        <div className={styles.borderRow} style={toBorderRowStyle()}>
           {borderImageSequence.map((src, index) => (
-            <div
-              key={index}
-              className={styles.borderImageWrapper}
-              style={{ width: BORDER_DECORATION_WIDTH_PX, height: BORDER_DECORATION_HEIGHT_PX }}
-            >
+            <div key={index} className={styles.borderImageWrapper} style={toBorderImageStyle()}>
               <Image src={src} alt="" fill className={styles.borderImage} unoptimized />
             </div>
           ))}

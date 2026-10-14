@@ -88,6 +88,10 @@ export const MONSTER_SPRITE_SIZE_PX = 64; // monster sprite width/height in px (
 export const BASE_CREST_SIZE = 44; // base tile's player-crest box width/height, % of T
 export const BASE_CREST_MIN_PX = 18; // base crest's floor, so it stays legible at small tile sizes
 export const SPECIAL_ISLAND_SIZE = 100; // special island's idle-art box width/height, % of the tile's padded content box
+// Special island's center point, same top/left-is-center convention as the resource slots above
+// (consumer centers on it with transform: translate(-50%, -50%)). Currently dead center; edit to move it.
+export const SPECIAL_ISLAND_TOP = '50%';
+export const SPECIAL_ISLAND_LEFT = '50%';
 export const BORDER_DECORATION_WIDTH_PX = 40; // each castle-border image's box width, px (fixed, not % of T)
 export const BORDER_DECORATION_HEIGHT_PX = 20; // each castle-border image's box height, px (fixed, not % of T)
 export const BORDER_DECORATION_BOTTOM_OFFSET_PX = -11; // border row's offset below the tile's bottom edge, px
