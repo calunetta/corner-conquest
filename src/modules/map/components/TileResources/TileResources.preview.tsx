@@ -9,6 +9,8 @@ import {
   dualFarmedNodes,
   tripleFarmedNodes,
   baseFarmedNodes,
+  singleGainNodes,
+  dualGainFarmedNodes,
 } from './TileResources.preview.nodes';
 import type { ComponentPreview } from '@/testbed/testbed.types';
 import { useIsMobile } from '@/modules/shared';
@@ -89,6 +91,25 @@ export const tileResourcesPreview: ComponentPreview = {
       render: () => (
         <TileBox>
           <TileResourcesView nodes={withCollectorNode} showFarmingCollector={false} />
+        </TileBox>
+      ),
+    },
+    {
+      // Gain overlay: the GIF plays once over the node sprite, then useTransientPulses clears it.
+      name: 'Resource with gain overlay',
+      render: () => (
+        <TileBox>
+          <TileResourcesView nodes={singleGainNodes} />
+        </TileBox>
+      ),
+    },
+    {
+      // Both same-type dual-slot nodes pulse from one shared gain, with the collector badge present
+      // so the z-[35] badge-above-overlay ordering is visible.
+      name: 'Dual same-type nodes with gain overlay + collector',
+      render: () => (
+        <TileBox>
+          <TileResourcesView nodes={dualGainFarmedNodes} />
         </TileBox>
       ),
     },

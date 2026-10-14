@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from 'react';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/modules/shared';
 import { useTileResources } from './TileResources.hook';
 import { styles } from './TileResources.styles';
@@ -46,7 +47,10 @@ export function TileResourcesView({ nodes, showFarmingCollector = true }: TileRe
             transform: 'translate(-50%, -50%)',
           }}
         >
-          <div data-testid={`resource-sprite-${node.type}`} className={styles.resourceSprite}>
+          <div
+            data-testid={`resource-sprite-${node.type}`}
+            className={cn(styles.resourceSprite, node.gainPulse && styles.resourceSpriteGain)}
+          >
             <Image
               src={node.spriteSrc}
               alt={`${node.type} resource`}
@@ -55,6 +59,21 @@ export function TileResourcesView({ nodes, showFarmingCollector = true }: TileRe
               unoptimized
             />
           </div>
+
+          {node.gainPulse && (
+            <div data-testid={`resource-gain-${node.type}`} className={styles.gainOverlay}>
+              {/* Keyed by token so a repeat gain remounts the GIF and restarts it from frame 1. */}
+              <Image
+                key={node.gainPulse.token}
+                src={node.gainPulse.spriteSrc}
+                alt=""
+                aria-hidden
+                fill
+                className={styles.gainImage}
+                unoptimized
+              />
+            </div>
+          )}
 
           {showFarmingCollector && node.farmingCollector && (
             <div

@@ -47,9 +47,10 @@ jest.mock('@/components/ui/tooltip', () => ({
   TooltipContent: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
 }));
 
-// Mock useGameBoard
+// Mock useGameBoard and the gain-event hook that TileResources reads through it
 jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
+  useResourceGainEvents: jest.fn().mockReturnValue([]),
 }));
 
 import { useGameBoard } from '@/modules/game-board';

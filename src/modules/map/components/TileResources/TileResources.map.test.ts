@@ -67,7 +67,7 @@ describe('toTileResourcesViewModel', () => {
       ],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     expect(result).toBeNull();
   });
 
@@ -82,7 +82,7 @@ describe('toTileResourcesViewModel', () => {
       monsters: [],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     expect(result).not.toBeNull();
     expect(result).toHaveLength(1);
     expect(result![0].type).toBe(ResourceType.Food);
@@ -98,7 +98,7 @@ describe('toTileResourcesViewModel', () => {
       occupants: [],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     expect(result).toBeNull();
   });
 
@@ -117,7 +117,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     expect(result).not.toBeNull();
     expect(result!.length).toBe(3);
 
@@ -142,7 +142,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     expect(result!.length).toBe(2);
     expect(result!.every((n) => n.type === ResourceType.Food)).toBe(true);
   });
@@ -162,7 +162,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [],
     };
 
-    const result = toTileResourcesViewModel(island, true, mockPlayers);
+    const result = toTileResourcesViewModel(island, true, mockPlayers, {});
     expect(result!.length).toBe(3); // 1 per resource type
     expect(result!.filter((n) => n.type === ResourceType.Food)).toHaveLength(1);
     expect(result!.filter((n) => n.type === ResourceType.Wood)).toHaveLength(1);
@@ -180,7 +180,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [{ playerId: 0, resource: ResourceType.Gold }],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     expect(result).not.toBeNull();
 
     const goldNode = result![0];
@@ -198,7 +198,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     expect(result).not.toBeNull();
 
     const goldNode = result![0];
@@ -216,7 +216,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [{ playerId: 0, resource: ResourceType.Gold }],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     expect(result).not.toBeNull();
 
     const goldNode = result![0];
@@ -236,7 +236,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     const goldNode = result![0];
     expect(goldNode.farmingCollector).toBeNull();
   });
@@ -252,7 +252,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [{ playerId: 0, resource: ResourceType.Gold }],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     expect(result!.length).toBe(2);
     expect(result!.every((n) => n.spriteSrc === RESOURCE_SPRITES[ResourceType.Gold].activeSprite)).toBe(true);
   });
@@ -268,7 +268,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [{ playerId: 0, resource: ResourceType.Gold }],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     expect(result!.length).toBe(2);
     expect(result!.every((n) => n.farmingCollector !== null)).toBe(true);
   });
@@ -287,7 +287,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     const keys = result!.map((n) => n.key);
     const uniqueKeys = new Set(keys);
     expect(keys.length).toBe(uniqueKeys.size);
@@ -304,7 +304,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     const node = result![0];
     expect(node.slotStyle).toBeDefined();
     expect(typeof node.slotStyle).toBe('object');
@@ -321,7 +321,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     const foodNode = result![0];
     // Single slot is 39%; Food scale 1.45 gives 39 * 1.45 = 56.55, rounded to one decimal = 56.6
     expect(foodNode.nodeSize).toBe('56.6%');
@@ -341,7 +341,7 @@ describe('toTileResourcesViewModel', () => {
       positionedBy: [],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     const woodNode = result![0];
     const goldNode = result![1];
     // With 2 resources total, they use DUAL_RESOURCE_SLOTS with size 32%
@@ -362,7 +362,7 @@ describe('toTileResourcesViewModel', () => {
 
     const originalIsland = JSON.parse(JSON.stringify(island));
 
-    toTileResourcesViewModel(island, false, mockPlayers);
+    toTileResourcesViewModel(island, false, mockPlayers, {});
 
     expect(island).toEqual(originalIsland);
   });
@@ -377,7 +377,7 @@ describe('toTileResourcesViewModel', () => {
       occupants: [],
     };
 
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     expect(result).not.toBeNull();
     expect(result![0].farmingCollector).toBeNull();
   });
@@ -385,12 +385,12 @@ describe('toTileResourcesViewModel', () => {
 
 describe('toTileResourcesViewModel band and Base slot positions', () => {
   it('places a single resource node centered in the middle band', () => {
-    const result = toTileResourcesViewModel(resourceIslandWithFood, false, mockPlayers);
+    const result = toTileResourcesViewModel(resourceIslandWithFood, false, mockPlayers, {});
     expect(result![0].slotStyle).toEqual({ top: '65.5%', left: '50%' });
   });
 
   it('places a two-node island at distinct centers, not both in the top band', () => {
-    const result = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, mockPlayers);
+    const result = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, mockPlayers, {});
     expect(result).toHaveLength(2);
     expect(result![0].type).toBe(ResourceType.Gold);
     expect(result![0].slotStyle).toEqual({ top: '36%', left: '40%' });
@@ -399,7 +399,7 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
   });
 
   it('places a three-node island at three distinct centers', () => {
-    const result = toTileResourcesViewModel(resourceIslandWithDualResources, false, mockPlayers);
+    const result = toTileResourcesViewModel(resourceIslandWithDualResources, false, mockPlayers, {});
     expect(result).toHaveLength(3);
     expect(result!.map((n) => n.slotStyle)).toEqual([
       { top: '33.5%', left: '37.5%' },
@@ -409,8 +409,8 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
   });
 
   it('never puts width or height in slotStyle, on dual-resource or Base islands', () => {
-    const dual = toTileResourcesViewModel(resourceIslandWithDualResources, false, mockPlayers);
-    const base = toTileResourcesViewModel(baseIslandWithResources, true, mockPlayers);
+    const dual = toTileResourcesViewModel(resourceIslandWithDualResources, false, mockPlayers, {});
+    const base = toTileResourcesViewModel(baseIslandWithResources, true, mockPlayers, {});
     [...dual!, ...base!].forEach((node) => {
       expect(node.slotStyle).not.toHaveProperty('width');
       expect(node.slotStyle).not.toHaveProperty('height');
@@ -418,7 +418,7 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
   });
 
   it('gives each Base node its resource slot center, with no explicit width or height', () => {
-    const result = toTileResourcesViewModel(baseIslandWithResources, true, mockPlayers);
+    const result = toTileResourcesViewModel(baseIslandWithResources, true, mockPlayers, {});
     expect(result!.map((n) => n.slotStyle)).toEqual([
       { top: '15%', left: '50%' },
       { top: '85%', left: '35%' },
@@ -426,7 +426,7 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
   });
 
   it('gives a three-resource Base fixture one node per base slot, in slot order', () => {
-    const result = toTileResourcesViewModel(baseIslandWithThreeResources, true, mockPlayers);
+    const result = toTileResourcesViewModel(baseIslandWithThreeResources, true, mockPlayers, {});
     expect(result!.map((n) => n.type)).toEqual([ResourceType.Food, ResourceType.Wood, ResourceType.Gold]);
     expect(result!.map((n) => n.slotStyle)).toEqual([
       { top: '15%', left: '50%' },
@@ -436,7 +436,7 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
   });
 
   it('gives Base Wood and Gold nodes 22% and the Food node 31.9%', () => {
-    const result = toTileResourcesViewModel(baseIslandWithThreeResources, true, mockPlayers);
+    const result = toTileResourcesViewModel(baseIslandWithThreeResources, true, mockPlayers, {});
     const sizeByType = Object.fromEntries(result!.map((n) => [n.type, n.nodeSize]));
     expect(sizeByType).toEqual({
       [ResourceType.Food]: '31.9%',
@@ -473,7 +473,7 @@ describe('toTileResourcesViewModel percent sizing by slot tier', () => {
     [ResourceType.Gold, 3, false, '27%'],
     [ResourceType.Gold, 1, true, '22%'],
   ])('sizes a %s node in the tier of amount %i (base: %s) as %s', (type, amount, isBase, expected) => {
-    const result = toTileResourcesViewModel(islandWith(type, amount, isBase), isBase, mockPlayers);
+    const result = toTileResourcesViewModel(islandWith(type, amount, isBase), isBase, mockPlayers, {});
     expect(result![0].nodeSize).toBe(expected);
   });
 
@@ -492,13 +492,13 @@ describe('toTileResourcesViewModel percent sizing by slot tier', () => {
     [ResourceType.Gold, 1, true, '65%'],
   ])('sizes a farmed %s badge in the tier of amount %i (base: %s) as %s', (type, amount, isBase, expected) => {
     const island: Island = { ...islandWith(type, amount, isBase), positionedBy: [{ playerId: 0, resource: type }] };
-    const result = toTileResourcesViewModel(island, isBase, mockPlayers);
+    const result = toTileResourcesViewModel(island, isBase, mockPlayers, {});
     expect(result![0].farmingCollector?.size).toBe(expected);
   });
 
   it('never returns a px string or a bare number for nodeSize or badge size', () => {
     const island: Island = { ...islandWith(ResourceType.Food, 1, false), positionedBy: [{ playerId: 0, resource: ResourceType.Food }] };
-    const node = toTileResourcesViewModel(island, false, mockPlayers)![0];
+    const node = toTileResourcesViewModel(island, false, mockPlayers, {})![0];
     expect(node.nodeSize).toMatch(/^\d+(\.\d)?%$/);
     expect(node.farmingCollector!.size).toMatch(/^\d+(\.\d)?%$/);
   });
@@ -510,7 +510,7 @@ describe('toTileResourcesViewModel farming collector badge', () => {
       ...resourceIslandWithFood,
       positionedBy: [{ playerId: 0, resource: ResourceType.Food }],
     };
-    const node = toTileResourcesViewModel(island, false, mockPlayers)![0];
+    const node = toTileResourcesViewModel(island, false, mockPlayers, {})![0];
     expect(node.nodeSize).toBe('56.6%');
     expect(node.farmingCollector).toEqual({
       color: PlayerColor.Blue,
@@ -525,7 +525,7 @@ describe('toTileResourcesViewModel farming collector badge', () => {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Gold }],
     };
-    const goldNode = toTileResourcesViewModel(island, false, mockPlayers)![0];
+    const goldNode = toTileResourcesViewModel(island, false, mockPlayers, {})![0];
     expect(goldNode.type).toBe(ResourceType.Gold);
     expect(goldNode.nodeSize).toBe('32%');
     expect(goldNode.farmingCollector).toEqual({
@@ -540,7 +540,7 @@ describe('toTileResourcesViewModel farming collector badge', () => {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Wood }],
     };
-    const woodNode = toTileResourcesViewModel(island, false, mockPlayers)![1];
+    const woodNode = toTileResourcesViewModel(island, false, mockPlayers, {})![1];
     expect(woodNode.type).toBe(ResourceType.Wood);
     expect(woodNode.farmingCollector).toEqual({
       color: PlayerColor.Blue,
@@ -554,7 +554,7 @@ describe('toTileResourcesViewModel farming collector badge', () => {
       ...resourceIslandWithDualResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Wood }],
     };
-    const woodNode = toTileResourcesViewModel(island, false, mockPlayers)![2];
+    const woodNode = toTileResourcesViewModel(island, false, mockPlayers, {})![2];
     expect(woodNode.nodeSize).toBe('27%');
     expect(woodNode.farmingCollector).toEqual({
       color: PlayerColor.Blue,
@@ -568,7 +568,7 @@ describe('toTileResourcesViewModel farming collector badge', () => {
       ...baseIslandWithResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Food }],
     };
-    const foodNode = toTileResourcesViewModel(island, true, mockPlayers)![0];
+    const foodNode = toTileResourcesViewModel(island, true, mockPlayers, {})![0];
     expect(foodNode.type).toBe(ResourceType.Food);
     expect(foodNode.nodeSize).toBe('31.9%');
     expect(foodNode.farmingCollector).toEqual({
@@ -583,7 +583,7 @@ describe('toTileResourcesViewModel farming collector badge', () => {
       ...baseIslandWithThreeResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Wood }],
     };
-    const woodNode = toTileResourcesViewModel(island, true, mockPlayers)![1];
+    const woodNode = toTileResourcesViewModel(island, true, mockPlayers, {})![1];
     expect(woodNode.type).toBe(ResourceType.Wood);
     expect(woodNode.nodeSize).toBe('22%');
     expect(woodNode.farmingCollector).toEqual({
@@ -601,7 +601,7 @@ describe('toTileResourcesViewModel farming collector badge', () => {
         { playerId: 0, resource: ResourceType.Wood },
       ],
     };
-    const badges = toTileResourcesViewModel(island, false, mockPlayers)!.map((n) => n.farmingCollector);
+    const badges = toTileResourcesViewModel(island, false, mockPlayers, {})!.map((n) => n.farmingCollector);
     expect(badges).toHaveLength(3);
     badges.forEach((badge) => {
       expect(badge).not.toBeNull();
@@ -614,7 +614,7 @@ describe('toTileResourcesViewModel farming collector badge', () => {
       ...resourceIslandWithFood,
       positionedBy: [{ playerId: 1, resource: ResourceType.Food }],
     };
-    const node = toTileResourcesViewModel(island, false, mockPlayers)![0];
+    const node = toTileResourcesViewModel(island, false, mockPlayers, {})![0];
     expect(node.farmingCollector?.color).toBe(PlayerColor.Red);
     expect(node.farmingCollector?.sprite).toBe(FARM_SPRITES[PlayerColor.Red]);
   });
@@ -624,7 +624,7 @@ describe('toTileResourcesViewModel farming collector badge', () => {
       ...resourceIslandWithFood,
       positionedBy: [{ playerId: 99, resource: ResourceType.Food }],
     };
-    const node = toTileResourcesViewModel(island, false, mockPlayers)![0];
+    const node = toTileResourcesViewModel(island, false, mockPlayers, {})![0];
     expect(node.farmingCollector).toBeNull();
     expect(node.spriteSrc).toBe(RESOURCE_SPRITES[ResourceType.Food].sprite);
   });
@@ -634,8 +634,101 @@ describe('toTileResourcesViewModel farming collector badge', () => {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Wood }],
     };
-    const result = toTileResourcesViewModel(island, false, mockPlayers);
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     expect(result![0].farmingCollector).toBeNull();
     expect(result![1].farmingCollector).not.toBeNull();
+  });
+});
+
+describe('toTileResourcesViewModel gain pulses', () => {
+  const goldIslandWithTwoNodes: Island = {
+    id: '1-1',
+    x: 1,
+    y: 1,
+    type: IslandType.Resource,
+    resources: [{ type: ResourceType.Gold, amount: 2 }],
+    occupants: [],
+    positionedBy: [],
+  };
+
+  it('gives both nodes of a dual-slot type the identical gainPulse', () => {
+    const result = toTileResourcesViewModel(goldIslandWithTwoNodes, false, mockPlayers, {
+      [ResourceType.Gold]: { isActive: true, token: 3 },
+    });
+    expect(result).toHaveLength(2);
+    expect(result![0].gainPulse).toEqual({ token: 3, spriteSrc: '/sprites/gold_gain.gif' });
+    expect(result![1].gainPulse).toEqual(result![0].gainPulse);
+  });
+
+  it.each([
+    [ResourceType.Food, '/sprites/food_gain.gif'],
+    [ResourceType.Wood, '/sprites/wood_gain.gif'],
+    [ResourceType.Gold, '/sprites/gold_gain.gif'],
+  ])('uses the %s gain sprite for an active %s pulse', (type, expectedSprite) => {
+    const island: Island = {
+      id: '1-1',
+      x: 1,
+      y: 1,
+      type: IslandType.Resource,
+      resources: [{ type, amount: 1 }],
+      occupants: [],
+      positionedBy: [],
+    };
+    const result = toTileResourcesViewModel(island, false, mockPlayers, {
+      [type]: { isActive: true, token: 1 },
+    });
+    expect(result![0].gainPulse).toEqual({ token: 1, spriteSrc: expectedSprite });
+  });
+
+  it('pulses only the node whose type has an active pulse', () => {
+    const result = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, mockPlayers, {
+      [ResourceType.Wood]: { isActive: true, token: 2 },
+    });
+    expect(result![0].type).toBe(ResourceType.Gold);
+    expect(result![0].gainPulse).toBeNull();
+    expect(result![1].type).toBe(ResourceType.Wood);
+    expect(result![1].gainPulse).toEqual({ token: 2, spriteSrc: '/sprites/wood_gain.gif' });
+  });
+
+  it('gives gainPulse null on every node when the gain map is empty', () => {
+    const result = toTileResourcesViewModel(resourceIslandWithDualResources, false, mockPlayers, {});
+    expect(result).toHaveLength(3);
+    expect(result!.every((node) => node.gainPulse === null)).toBe(true);
+  });
+
+  it('gives gainPulse null when the type pulse is inactive, even with a stale token', () => {
+    const result = toTileResourcesViewModel(goldIslandWithTwoNodes, false, mockPlayers, {
+      [ResourceType.Gold]: { isActive: false, token: 4 },
+    });
+    expect(result!.every((node) => node.gainPulse === null)).toBe(true);
+  });
+
+  it('pulses a Base node of the gained type and leaves the other Base node idle', () => {
+    const result = toTileResourcesViewModel(baseIslandWithResources, true, mockPlayers, {
+      [ResourceType.Food]: { isActive: true, token: 2 },
+    });
+    expect(result!.map((node) => node.type)).toEqual([ResourceType.Food, ResourceType.Gold]);
+    expect(result![0].gainPulse).toEqual({ token: 2, spriteSrc: '/sprites/food_gain.gif' });
+    expect(result![1].gainPulse).toBeNull();
+  });
+
+  it('leaves layout, sprite and farming badge unchanged when a pulse is added', () => {
+    const island: Island = {
+      ...resourceIslandWithTwoDistinctResources,
+      positionedBy: [{ playerId: 0, resource: ResourceType.Gold }],
+    };
+    const without = toTileResourcesViewModel(island, false, mockPlayers, {});
+    const withPulse = toTileResourcesViewModel(island, false, mockPlayers, {
+      [ResourceType.Gold]: { isActive: true, token: 1 },
+    });
+    expect(withPulse![0]).toEqual({ ...without![0], gainPulse: { token: 1, spriteSrc: '/sprites/gold_gain.gif' } });
+    expect(withPulse![1]).toEqual(without![1]);
+  });
+
+  it('does not mutate the gainPulses input', () => {
+    const gainPulses = { [ResourceType.Gold]: { isActive: true, token: 5 } };
+    const snapshot = JSON.parse(JSON.stringify(gainPulses));
+    toTileResourcesViewModel(goldIslandWithTwoNodes, false, mockPlayers, gainPulses);
+    expect(gainPulses).toEqual(snapshot);
   });
 });

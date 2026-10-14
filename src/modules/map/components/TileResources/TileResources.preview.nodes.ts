@@ -1,11 +1,13 @@
 import {
   baseIslandWithResources,
   resourceIslandWithDualResources,
+  resourceIslandWithFood,
   resourceIslandWithTwoDistinctResources,
 } from './TileResources.fixtures';
 import { toTileResourcesViewModel } from './TileResources.map';
 import { buildPlayer } from '../../board-context.fixtures';
 import type { ResourceNodeViewModel } from './TileResources.types';
+import type { PulseState } from '@/modules/shared';
 import { PlayerColor, ResourceType } from '@/lib/types';
 import type { Island } from '@/lib/types';
 
@@ -19,6 +21,7 @@ export const multipleResourceNodes: ResourceNodeViewModel[] = toTileResourcesVie
   resourceIslandWithTwoDistinctResources,
   false,
   [],
+  {},
 ) ?? [];
 
 export const withCollectorNode: ResourceNodeViewModel[] = [
@@ -33,6 +36,7 @@ export const withCollectorNode: ResourceNodeViewModel[] = [
       sprite: '/sprites/farm_blue.gif',
       size: '44.8%',
     },
+    gainPulse: null,
   },
 ];
 
@@ -46,9 +50,10 @@ function farmedNodesFor(
   island: Island,
   isBase: boolean,
   farmedResources: ResourceType[],
+  gainPulses: Partial<Record<ResourceType, PulseState>> = {},
 ): ResourceNodeViewModel[] {
   const positionedBy = farmedResources.map((resource) => ({ playerId: 0, resource }));
-  return toTileResourcesViewModel({ ...island, positionedBy }, isBase, farmingPlayers) ?? [];
+  return toTileResourcesViewModel({ ...island, positionedBy }, isBase, farmingPlayers, gainPulses) ?? [];
 }
 
 // resourceIslandWithTwoDistinctResources expands to 2 nodes: both DUAL_RESOURCE_SLOTS show a badge.
@@ -71,3 +76,27 @@ export const baseFarmedNodes = farmedNodesFor(
   true,
   [ResourceType.Food, ResourceType.Gold],
 );
+
+// Gain-active states: a pulse entry as useTransientPulses returns it while a gain plays.
+const activeFoodGain: Partial<Record<ResourceType, PulseState>> = {
+  [ResourceType.Food]: { isActive: true, token: 1 },
+};
+
+export const singleGainNodes: ResourceNodeViewModel[] = toTileResourcesViewModel(
+  resourceIslandWithFood,
+  false,
+  [],
+  activeFoodGain,
+) ?? [];
+
+// Two Gold nodes (DUAL_RESOURCE_SLOTS), both farmed, both pulsing from one gain: checks the badge
+// stays above the overlay (z-[35] vs z-[32]) and that both nodes share the one pulse.
+const goldOnlyDualIsland: Island = {
+  ...resourceIslandWithFood,
+  id: 'resource-gold-dual-preview',
+  resources: [{ type: ResourceType.Gold, amount: 2 }],
+};
+
+export const dualGainFarmedNodes = farmedNodesFor(goldOnlyDualIsland, false, [ResourceType.Gold], {
+  [ResourceType.Gold]: { isActive: true, token: 1 },
+});

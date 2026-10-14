@@ -1,5 +1,7 @@
 import type { Island, Player, ResourceType } from '@/lib/types';
 import { IslandType, ResourceType as ResourceTypeEnum } from '@/lib/types';
+import { RESOURCE_GAIN_SPRITES } from '@/modules/shared';
+import type { PulseState } from '@/modules/shared';
 import type { ResourceNodeViewModel } from './TileResources.types';
 import {
   SINGLE_RESOURCE_SLOT,
@@ -56,6 +58,17 @@ function toBadgeSize(type: ResourceType): string {
   return `${isFood ? roundToOneDecimal(badgePercent / FOOD_SCALE) : badgePercent}%`;
 }
 
+// Keyed by resource type, not node: every node of a pulsing type gets the same pulse, so a dual-slot
+// gain animates both of its nodes together.
+function toGainPulse(
+  type: ResourceType,
+  gainPulses: Partial<Record<ResourceType, PulseState>>,
+): ResourceNodeViewModel['gainPulse'] {
+  const pulse = gainPulses[type];
+  if (!pulse?.isActive) return null;
+  return { token: pulse.token, spriteSrc: RESOURCE_GAIN_SPRITES[type] };
+}
+
 function getSlot(idx: number, total: number, isBase: boolean): SlotDef {
   if (isBase) {
     return BASE_RESOURCE_SLOTS[idx % BASE_RESOURCE_SLOTS.length];
@@ -73,6 +86,7 @@ export function toTileResourcesViewModel(
   island: Island,
   isBase: boolean,
   players: Player[],
+  gainPulses: Partial<Record<ResourceType, PulseState>>,
 ): ResourceNodeViewModel[] | null {
   const { resources, positionedBy = [], type: islandType, monsters } = island;
 
@@ -136,6 +150,7 @@ export function toTileResourcesViewModel(
             size: toBadgeSize(node.type),
           }
         : null,
+      gainPulse: toGainPulse(node.type, gainPulses),
     };
   });
 }

@@ -69,4 +69,5 @@ export const singleNodeFixture: ResourceNodeViewModel = {
   nodeSize: '56.6%',
   slotStyle: { top: '65.5%', left: '50%' },
   farmingCollector: null,
+  gainPulse: null,
 };

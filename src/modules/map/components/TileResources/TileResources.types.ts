@@ -19,6 +19,8 @@ export interface ResourceNodeViewModel {
     transform?: string;
   };
   farmingCollector: FarmingCollectorViewModel | null;
+  /** Non-null only while this node's gain animation plays; `token` restarts the GIF on each gain. */
+  gainPulse: { token: number; spriteSrc: string } | null;
 }
 
 export interface FarmingCollectorViewModel {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { TileResources, TileResourcesView } from './TileResources';
 import { toTileResourcesViewModel } from './TileResources.map';
@@ -10,17 +10,21 @@ import {
   baseIslandWithResources,
   monsterIslandWithLivingMonsters,
 } from './TileResources.fixtures';
-import { useGameBoard } from '@/modules/game-board';
-import { useIsMobile } from '@/modules/shared';
+import { useGameBoard, useResourceGainEvents } from '@/modules/game-board';
+import type { ResourceGainEvent } from '@/modules/game-board';
+import { RESOURCE_GAIN_ANIMATION_MS, RESOURCE_GAIN_SPRITES, useIsMobile } from '@/modules/shared';
 import { PlayerColor, IslandType, ResourceType as ResourceTypeEnum } from '@/lib/types';
 import type { Island, Player } from '@/lib/types';
 
-// The connected TileResources container reads the game-board context and the viewport (useIsMobile).
+// The connected TileResources container reads the game-board context, the gain events and the viewport.
 jest.mock('@/modules/game-board', () => ({
   useGameBoard: jest.fn(),
+  useResourceGainEvents: jest.fn(),
 }));
 
+// Keep the real pulse hook and gain sprites so a gain event drives the real overlay; only the viewport is faked.
 jest.mock('@/modules/shared', () => ({
+  ...jest.requireActual('@/modules/shared'),
   useIsMobile: jest.fn(),
 }));
 
@@ -33,6 +37,10 @@ jest.mock('next/image', () => ({
     return <img {...imageProps} alt={String(alt)} />;
   },
 }));
+
+beforeEach(() => {
+  jest.mocked(useResourceGainEvents).mockReturnValue([]);
+});
 
 describe('TileResources Component', () => {
   const mockPlayers: Player[] = [
@@ -78,7 +86,7 @@ describe('TileResources Component', () => {
       occupants: [],
       positionedBy: [],
     };
-    const nodes = toTileResourcesViewModel(islandWithAllResources, false, mockPlayers);
+    const nodes = toTileResourcesViewModel(islandWithAllResources, false, mockPlayers, {});
     render(<TileResourcesView nodes={nodes} />);
 
     const foodNode = screen.getByTestId('resource-node-food');
@@ -92,13 +100,13 @@ describe('TileResources Component', () => {
   });
 
   it('renders 2 distinct food sprites when resource amount is 2', () => {
-    const nodes = toTileResourcesViewModel(resourceIslandWithDualResources, false, mockPlayers);
+    const nodes = toTileResourcesViewModel(resourceIslandWithDualResources, false, mockPlayers, {});
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getAllByTestId('resource-sprite-gold')).toHaveLength(2);
   });
 
   it('renders all base resources in top banner for base tiles', () => {
-    const nodes = toTileResourcesViewModel(baseIslandWithResources, true, mockPlayers);
+    const nodes = toTileResourcesViewModel(baseIslandWithResources, true, mockPlayers, {});
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('resource-node-food')).toBeInTheDocument();
     expect(screen.getByTestId('resource-node-gold')).toBeInTheDocument();
@@ -114,7 +122,7 @@ describe('TileResources Component', () => {
       occupants: [{ playerId: 0, armyId: 0 }],
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Gold }],
     };
-    const nodes = toTileResourcesViewModel(islandWithPositioned, false, mockPlayers);
+    const nodes = toTileResourcesViewModel(islandWithPositioned, false, mockPlayers, {});
     render(<TileResourcesView nodes={nodes} />);
 
     // Mine should switch to active mine
@@ -137,7 +145,7 @@ describe('TileResources Component', () => {
       occupants: [{ playerId: 0, armyId: 0 }],
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Gold }],
     };
-    const nodes = toTileResourcesViewModel(dualGoldIsland, false, mockPlayers);
+    const nodes = toTileResourcesViewModel(dualGoldIsland, false, mockPlayers, {});
     render(<TileResourcesView nodes={nodes} />);
 
     // Both mines should switch to active mine
@@ -153,7 +161,7 @@ describe('TileResources Component', () => {
   });
 
   it('suppresses all resources on monster islands while monsters are undefeated', () => {
-    const nodes = toTileResourcesViewModel(monsterIslandWithLivingMonsters, false, mockPlayers);
+    const nodes = toTileResourcesViewModel(monsterIslandWithLivingMonsters, false, mockPlayers, {});
     expect(nodes).toBeNull();
   });
 
@@ -167,7 +175,7 @@ describe('TileResources Component', () => {
       occupants: [],
       positionedBy: [],
     };
-    const nodes = toTileResourcesViewModel(emptyResourceIsland, false, mockPlayers);
+    const nodes = toTileResourcesViewModel(emptyResourceIsland, false, mockPlayers, {});
     expect(nodes).toBeNull();
   });
 });
@@ -179,33 +187,33 @@ describe('TileResourcesView placement and sizing', () => {
   ] as unknown as Player[];
 
   it('places a single resource node in the middle band of the tile', () => {
-    const nodes = toTileResourcesViewModel(resourceIslandWithFood, false, players);
+    const nodes = toTileResourcesViewModel(resourceIslandWithFood, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '65.5%', left: '50%' });
   });
 
   it('sizes a single Food node as a percent of the tile, scaled up for the sheep canvas padding', () => {
-    const nodes = toTileResourcesViewModel(resourceIslandWithFood, false, players);
+    const nodes = toTileResourcesViewModel(resourceIslandWithFood, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('resource-node-food')).toHaveStyle({ width: '56.6%', height: '56.6%' });
   });
 
   it('sizes a non-Food node of a two-resource tile as a percent of the tile, not px', () => {
-    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players);
+    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ width: '32%', height: '32%' });
     expect(screen.getByTestId('resource-node-wood')).toHaveStyle({ width: '32%', height: '32%' });
   });
 
   it('sizes a Base gold node as a percent of the tile and a Base food node with the Food scale', () => {
-    const nodes = toTileResourcesViewModel(baseIslandWithResources, true, players);
+    const nodes = toTileResourcesViewModel(baseIslandWithResources, true, players, {});
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ width: '22%', height: '22%' });
     expect(screen.getByTestId('resource-node-food')).toHaveStyle({ width: '31.9%', height: '31.9%' });
   });
 
   it('places the Base food node at the top-center slot and the Base gold node at the bottom-left slot', () => {
-    const nodes = toTileResourcesViewModel(baseIslandWithResources, true, players);
+    const nodes = toTileResourcesViewModel(baseIslandWithResources, true, players, {});
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '15%', left: '50%' });
     expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ top: '85%', left: '35%' });
@@ -216,7 +224,7 @@ describe('TileResourcesView placement and sizing', () => {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Gold }],
     };
-    const nodes = toTileResourcesViewModel(island, false, players);
+    const nodes = toTileResourcesViewModel(island, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({
       width: '65%',
@@ -232,7 +240,7 @@ describe('TileResourcesView placement and sizing', () => {
       ...resourceIslandWithFood,
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Food }],
     };
-    const nodes = toTileResourcesViewModel(island, false, players);
+    const nodes = toTileResourcesViewModel(island, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({ width: '44.8%', height: '44.8%' });
   });
@@ -245,7 +253,7 @@ describe('TileResourcesView placement and sizing', () => {
         { playerId: 0, resource: ResourceTypeEnum.Wood },
       ],
     };
-    const nodes = toTileResourcesViewModel(island, false, players);
+    const nodes = toTileResourcesViewModel(island, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
     const badges = screen.getAllByTestId('collector-farm-blue');
     expect(badges).toHaveLength(3);
@@ -265,13 +273,13 @@ describe('TileResourcesView placement and sizing', () => {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Gold }],
     };
-    const nodes = toTileResourcesViewModel(island, false, players);
+    const nodes = toTileResourcesViewModel(island, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('collector-farm-blue').getAttribute('style')).not.toMatch(/px/);
   });
 
   it('renders no collector badge on an unfarmed node', () => {
-    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players);
+    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.queryByTestId(/^collector-farm-/)).not.toBeInTheDocument();
   });
@@ -281,7 +289,7 @@ describe('TileResourcesView placement and sizing', () => {
       ...resourceIslandWithFood,
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Food }],
     };
-    const nodes = toTileResourcesViewModel(island, false, players);
+    const nodes = toTileResourcesViewModel(island, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
     for (const img of [
       screen.getByRole('img', { name: 'food resource' }),
@@ -297,7 +305,7 @@ describe('TileResourcesView placement and sizing', () => {
       ...resourceIslandWithFood,
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Food }],
     };
-    const nodes = toTileResourcesViewModel(island, false, players);
+    const nodes = toTileResourcesViewModel(island, false, players, {});
     render(<TileResourcesView nodes={nodes} showFarmingCollector={false} />);
     expect(screen.getByTestId('resource-node-food')).toBeInTheDocument();
     expect(screen.queryByTestId(/^collector-farm-/)).not.toBeInTheDocument();
@@ -333,5 +341,173 @@ describe('TileResources connected component', () => {
     render(<TileResources island={farmedFoodIsland} />);
     expect(screen.getByTestId('resource-node-food')).toBeInTheDocument();
     expect(screen.queryByTestId(/^collector-farm-/)).not.toBeInTheDocument();
+  });
+});
+
+describe('TileResourcesView resource gain overlay', () => {
+  const players = [{ id: 0, color: PlayerColor.Blue }] as unknown as Player[];
+
+  it('renders the gain overlay on the gaining node only', () => {
+    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players, {
+      [ResourceTypeEnum.Gold]: { isActive: true, token: 1 },
+    });
+    render(<TileResourcesView nodes={nodes} />);
+
+    const goldNode = screen.getByTestId('resource-node-gold');
+    expect(goldNode.querySelector('[data-testid="resource-gain-gold"]')).toBeInTheDocument();
+    expect(screen.queryByTestId('resource-gain-wood')).not.toBeInTheDocument();
+  });
+
+  it('plays the gold gain GIF inside the overlay', () => {
+    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players, {
+      [ResourceTypeEnum.Gold]: { isActive: true, token: 1 },
+    });
+    render(<TileResourcesView nodes={nodes} />);
+
+    expect(screen.getByTestId('resource-gain-gold').querySelector('img')).toHaveAttribute(
+      'src',
+      RESOURCE_GAIN_SPRITES[ResourceTypeEnum.Gold],
+    );
+  });
+
+  it('hides the gain overlay from assistive technology, since it is decorative', () => {
+    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players, {
+      [ResourceTypeEnum.Gold]: { isActive: true, token: 1 },
+    });
+    render(<TileResourcesView nodes={nodes} />);
+
+    expect(screen.getByTestId('resource-gain-gold').querySelector('img')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('places the gain overlay after the resource sprite in the DOM, so it draws above the sprite', () => {
+    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players, {
+      [ResourceTypeEnum.Gold]: { isActive: true, token: 1 },
+    });
+    render(<TileResourcesView nodes={nodes} />);
+
+    const sprite = screen.getByTestId('resource-sprite-gold');
+    const overlay = screen.getByTestId('resource-gain-gold');
+    expect(sprite.compareDocumentPosition(overlay) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('renders no gain overlay when no pulse is active', () => {
+    const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players, {
+      [ResourceTypeEnum.Gold]: { isActive: false, token: 1 },
+    });
+    render(<TileResourcesView nodes={nodes} />);
+
+    expect(screen.queryByTestId(/^resource-gain-/)).not.toBeInTheDocument();
+  });
+
+  it('shows one overlay on each of two same-type nodes (dual slot) from a single pulse', () => {
+    const nodes = toTileResourcesViewModel(resourceIslandWithDualResources, false, players, {
+      [ResourceTypeEnum.Gold]: { isActive: true, token: 3 },
+    });
+    render(<TileResourcesView nodes={nodes} />);
+
+    const overlays = screen.getAllByTestId('resource-gain-gold');
+    expect(overlays).toHaveLength(2);
+    overlays.forEach((overlay) => {
+      expect(overlay.querySelector('img')).toHaveAttribute('src', RESOURCE_GAIN_SPRITES[ResourceTypeEnum.Gold]);
+    });
+    expect(screen.queryByTestId('resource-gain-wood')).not.toBeInTheDocument();
+  });
+});
+
+describe('TileResources connected gain overlay', () => {
+  const players = [{ id: 0, color: PlayerColor.Blue }] as unknown as Player[];
+  const goldIsland = resourceIslandWithTwoDistinctResources;
+  const goldGainOnIsland: ResourceGainEvent = {
+    playerId: 'p0',
+    type: ResourceTypeEnum.Gold,
+    tileIds: [goldIsland.id],
+  };
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.mocked(useGameBoard).mockReturnValue({
+      gameState: { players },
+    } as unknown as ReturnType<typeof useGameBoard>);
+    jest.mocked(useResourceGainEvents).mockReturnValue([]);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('shows the gain overlay on the gold node when a gain names this island', () => {
+    jest.mocked(useResourceGainEvents).mockReturnValue([goldGainOnIsland]);
+    render(<TileResources island={goldIsland} />);
+
+    expect(screen.getByTestId('resource-gain-gold')).toBeInTheDocument();
+    expect(screen.queryByTestId('resource-gain-wood')).not.toBeInTheDocument();
+  });
+
+  it('keeps the gain overlay until the animation duration has elapsed', () => {
+    jest.mocked(useResourceGainEvents).mockReturnValue([goldGainOnIsland]);
+    render(<TileResources island={goldIsland} />);
+
+    act(() => jest.advanceTimersByTime(RESOURCE_GAIN_ANIMATION_MS - 1));
+
+    expect(screen.getByTestId('resource-gain-gold')).toBeInTheDocument();
+  });
+
+  it('removes the gain overlay from the DOM once the animation duration has elapsed', () => {
+    jest.mocked(useResourceGainEvents).mockReturnValue([goldGainOnIsland]);
+    render(<TileResources island={goldIsland} />);
+
+    act(() => jest.advanceTimersByTime(RESOURCE_GAIN_ANIMATION_MS));
+
+    expect(screen.queryByTestId('resource-gain-gold')).not.toBeInTheDocument();
+  });
+
+  it('ignores a gain that names a different island', () => {
+    jest.mocked(useResourceGainEvents).mockReturnValue([{ ...goldGainOnIsland, tileIds: ['some-other-island'] }]);
+    render(<TileResources island={goldIsland} />);
+
+    expect(screen.queryByTestId(/^resource-gain-/)).not.toBeInTheDocument();
+  });
+
+  it('shows no overlay on any node for a gain with no tile (Wealthy or Steal)', () => {
+    jest.mocked(useResourceGainEvents).mockReturnValue([{ ...goldGainOnIsland, tileIds: [] }]);
+    render(<TileResources island={goldIsland} />);
+
+    expect(screen.queryByTestId(/^resource-gain-/)).not.toBeInTheDocument();
+  });
+
+  it('animates each resource type gained on this island independently', () => {
+    jest.mocked(useResourceGainEvents).mockReturnValue([
+      goldGainOnIsland,
+      { playerId: 'p0', type: ResourceTypeEnum.Wood, tileIds: [goldIsland.id] },
+    ]);
+    render(<TileResources island={goldIsland} />);
+
+    expect(screen.getByTestId('resource-gain-gold')).toBeInTheDocument();
+    expect(screen.getByTestId('resource-gain-wood')).toBeInTheDocument();
+  });
+
+  it('shows the overlay on both dual-slot nodes of a gained type', () => {
+    jest.mocked(useResourceGainEvents).mockReturnValue([{ ...goldGainOnIsland, tileIds: [resourceIslandWithDualResources.id] }]);
+    render(<TileResources island={resourceIslandWithDualResources} />);
+
+    expect(screen.getAllByTestId('resource-gain-gold')).toHaveLength(2);
+    expect(screen.queryByTestId('resource-gain-wood')).not.toBeInTheDocument();
+  });
+
+  it('restarts the timer when the same gain repeats while it plays, so the overlay outlives the first schedule', () => {
+    jest.mocked(useResourceGainEvents).mockReturnValue([goldGainOnIsland]);
+    const { rerender } = render(<TileResources island={goldIsland} />);
+
+    act(() => jest.advanceTimersByTime(500));
+    // A repeat gain is a new event batch; the overlay restarts rather than stacking a second copy.
+    jest.mocked(useResourceGainEvents).mockReturnValue([{ ...goldGainOnIsland }]);
+    rerender(<TileResources island={goldIsland} />);
+    act(() => jest.advanceTimersByTime(RESOURCE_GAIN_ANIMATION_MS - 1));
+
+    // The first schedule would have cleared the overlay at RESOURCE_GAIN_ANIMATION_MS (t=820); the restart holds it to t=1320.
+    expect(screen.getAllByTestId('resource-gain-gold')).toHaveLength(1);
+
+    act(() => jest.advanceTimersByTime(1));
+    expect(screen.queryByTestId('resource-gain-gold')).not.toBeInTheDocument();
   });
 });
