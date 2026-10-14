@@ -189,37 +189,37 @@ describe('TileResourcesView placement and sizing', () => {
   it('places a single resource node in the middle band of the tile', () => {
     const nodes = toTileResourcesViewModel(resourceIslandWithFood, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
-    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '65.5%', left: '50%' });
+    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '50%', left: '50%' });
   });
 
   it('sizes a single Food node as a percent of the tile, scaled up for the sheep canvas padding', () => {
     const nodes = toTileResourcesViewModel(resourceIslandWithFood, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
-    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ width: '56.6%', height: '56.6%' });
+    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ width: '58%', height: '58%' });
   });
 
   it('sizes a non-Food node of a two-resource tile as a percent of the tile, not px', () => {
     const nodes = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
-    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ width: '32%', height: '32%' });
-    expect(screen.getByTestId('resource-node-wood')).toHaveStyle({ width: '32%', height: '32%' });
+    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ width: '40%', height: '40%' });
+    expect(screen.getByTestId('resource-node-wood')).toHaveStyle({ width: '40%', height: '40%' });
   });
 
   it('sizes a Base gold node as a percent of the tile and a Base food node with the Food scale', () => {
     const nodes = toTileResourcesViewModel(baseIslandWithResources, true, players, {});
     render(<TileResourcesView nodes={nodes} />);
-    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ width: '22%', height: '22%' });
-    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ width: '31.9%', height: '31.9%' });
+    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ width: '30%', height: '30%' });
+    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ width: '43.5%', height: '43.5%' });
   });
 
-  it('places the Base food node at the top-center slot and the Base gold node at the bottom-left slot', () => {
+  it('places the Base food node in Base slot 0 and the Base gold node in Base slot 1', () => {
     const nodes = toTileResourcesViewModel(baseIslandWithResources, true, players, {});
     render(<TileResourcesView nodes={nodes} />);
-    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '15%', left: '50%' });
-    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ top: '85%', left: '35%' });
+    expect(screen.getByTestId('resource-node-food')).toHaveStyle({ top: '60%', left: '20%' });
+    expect(screen.getByTestId('resource-node-gold')).toHaveStyle({ top: '45%', right: '-17%' });
   });
 
-  it('gives a farmed Gold node a 65% collector badge centered on the node\'s left edge', () => {
+  it('gives a farmed Gold node a 110% collector badge inset 20% from the node\'s left edge', () => {
     const island = {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Gold }],
@@ -227,25 +227,25 @@ describe('TileResourcesView placement and sizing', () => {
     const nodes = toTileResourcesViewModel(island, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
     expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({
-      width: '65%',
-      height: '65%',
+      width: '110%',
+      height: '110%',
       top: '50%',
-      right: '100%',
+      right: '80%',
       transform: 'translate(50%, -50%)',
     });
   });
 
-  it('gives a farmed Food node a 44.8% collector badge, so it matches the 65% badge on other resources', () => {
+  it('gives a farmed Food node a 75.9% collector badge, so it matches the 110% badge on other resources', () => {
     const island = {
       ...resourceIslandWithFood,
       positionedBy: [{ playerId: 0, resource: ResourceTypeEnum.Food }],
     };
     const nodes = toTileResourcesViewModel(island, false, players, {});
     render(<TileResourcesView nodes={nodes} />);
-    expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({ width: '44.8%', height: '44.8%' });
+    expect(screen.getByTestId('collector-farm-blue')).toHaveStyle({ width: '75.9%', height: '75.9%' });
   });
 
-  it('keeps every farmed badge on its node\'s left edge, whichever slot the node occupies', () => {
+  it('keeps every farmed badge inset 20% from its node\'s left edge, whichever slot the node occupies', () => {
     const island = {
       ...resourceIslandWithDualResources,
       positionedBy: [
@@ -259,10 +259,10 @@ describe('TileResourcesView placement and sizing', () => {
     expect(badges).toHaveLength(3);
     badges.forEach((badge) => {
       expect(badge).toHaveStyle({
-        width: '65%',
-        height: '65%',
+        width: '110%',
+        height: '110%',
         top: '50%',
-        right: '100%',
+        right: '80%',
         transform: 'translate(50%, -50%)',
       });
     });

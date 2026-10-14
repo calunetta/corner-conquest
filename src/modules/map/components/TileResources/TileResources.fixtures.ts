@@ -38,6 +38,21 @@ export const resourceIslandWithTwoDistinctResources: Island = {
   positionedBy: [],
 };
 
+/** The real max for a resource island: 2 resource types x amount 2 each (see
+ *  generateIslandTerrain in map-generation.ts), expanding to 4 individual nodes. */
+export const resourceIslandWithFourNodes: Island = {
+  id: 'resource-quad-1',
+  x: 2,
+  y: 4,
+  type: IslandType.Resource,
+  resources: [
+    { type: ResourceTypeEnum.Food, amount: 2 },
+    { type: ResourceTypeEnum.Wood, amount: 2 },
+  ],
+  occupants: [],
+  positionedBy: [],
+};
+
 export const baseIslandWithResources: Island = {
   id: 'base-1',
   x: 0,

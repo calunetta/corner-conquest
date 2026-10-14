@@ -5,6 +5,7 @@ import { useIsMobile } from '@/modules/shared';
 import { useTileBoats } from './TileBoats.hook';
 import { styles } from './TileBoats.styles';
 import type { TileBoatsProps, BoatEntryViewModel } from './TileBoats.types';
+import { BOAT_SIZE, IDLE_COLLECTOR_SIZE, IDLE_COLLECTOR_TOP } from '../../island-tile-slots.types';
 
 interface TileBoatsViewProps {
   boats: BoatEntryViewModel[] | null;
@@ -19,7 +20,11 @@ export function TileBoatsView({ boats, showIdleCollectors = true }: TileBoatsVie
   return (
     <div className={styles.container} data-testid="tile-boats">
       {boats.map((boat) => (
-        <div key={boat.key} className={styles.boatEntry} style={boat.cornerStyle}>
+        <div
+          key={boat.key}
+          className={styles.boatEntry}
+          style={{ width: `${BOAT_SIZE}%`, height: `${BOAT_SIZE}%`, ...boat.cornerStyle }}
+        >
           <div data-testid="docked-boat" className={styles.boat}>
             <Image
               src="/sprites/boat.gif"
@@ -30,7 +35,17 @@ export function TileBoatsView({ boats, showIdleCollectors = true }: TileBoatsVie
             />
 
             {showIdleCollectors && boat.showIdleCollector && boat.idleCollectorSprite && (
-              <div data-testid={`collector-idle-${boat.color}`} className={styles.collectorOverlay}>
+              <div
+                data-testid={`collector-idle-${boat.color}`}
+                className={styles.collectorOverlay}
+                style={{
+                  width: `${IDLE_COLLECTOR_SIZE}%`,
+                  height: `${IDLE_COLLECTOR_SIZE}%`,
+                  top: `${IDLE_COLLECTOR_TOP}%`,
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
                 <Image
                   src={boat.idleCollectorSprite}
                   alt={`${boat.color} collector idle`}

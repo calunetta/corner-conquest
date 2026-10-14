@@ -2,14 +2,16 @@ import type { Island, Player, ResourceType } from '@/lib/types';
 import { IslandType, ResourceType as ResourceTypeEnum } from '@/lib/types';
 import { RESOURCE_GAIN_SPRITES } from '@/modules/shared';
 import type { PulseState } from '@/modules/shared';
-import type { ResourceNodeViewModel } from './TileResources.types';
-import {
-  SINGLE_RESOURCE_SLOT,
-  DUAL_RESOURCE_SLOTS,
-  TRIPLE_RESOURCE_SLOTS,
-  BASE_RESOURCE_SLOTS,
-} from '../../island-tile-slots.types';
 import type { SlotDef } from '../../island-tile-slots.types';
+import {
+  BASE_RESOURCE_SLOTS,
+  DUAL_RESOURCE_SLOTS,
+  FARMING_BADGE_SIZE_RATIO,
+  QUAD_RESOURCE_SLOTS,
+  SINGLE_RESOURCE_SLOT,
+  TRIPLE_RESOURCE_SLOTS,
+} from '../../island-tile-slots.types';
+import type { ResourceNodeViewModel } from './TileResources.types';
 
 export const FARM_SPRITES = {
   blue: '/sprites/farm_blue.gif',
@@ -36,9 +38,8 @@ export const RESOURCE_SPRITES = {
 // sheep.gif has large transparent canvas padding, so its node box is scaled up to keep the
 // visible sprite the same size as the other resources.
 const FOOD_SCALE = 1.45;
-// The farming badge is ~65% of the node's own (uninflated) box. No px floor: a floor makes
-// the badge bigger than its node at small tile sizes, so mobile hides the badge instead.
-const BADGE_SIZE_RATIO = 0.65;
+// No px floor on the badge: a floor makes it bigger than its node at small tile sizes, so
+// mobile hides the badge instead. Size itself is FARMING_BADGE_SIZE_RATIO (island-tile-slots.types.ts).
 
 // Float math leaks into the CSS percent strings unless rounded: 65 / 1.45 = 44.827586206896555
 // (Food badge), and (39 * 1.45).toFixed(1) gives '56.5' where the spec needs 56.6, so Math.round is used instead.
@@ -53,7 +54,7 @@ function toNodeSize(type: ResourceType, slotSize: number): string {
 
 // Badge size depends only on the node's type, so every slot tier of one resource shows the same badge.
 function toBadgeSize(type: ResourceType): string {
-  const badgePercent = roundToOneDecimal(BADGE_SIZE_RATIO * 100);
+  const badgePercent = roundToOneDecimal(FARMING_BADGE_SIZE_RATIO * 100);
   const isFood = type === ResourceTypeEnum.Food;
   return `${isFood ? roundToOneDecimal(badgePercent / FOOD_SCALE) : badgePercent}%`;
 }
@@ -79,7 +80,12 @@ function getSlot(idx: number, total: number, isBase: boolean): SlotDef {
   if (total === 2) {
     return DUAL_RESOURCE_SLOTS[idx % DUAL_RESOURCE_SLOTS.length];
   }
-  return TRIPLE_RESOURCE_SLOTS[idx % TRIPLE_RESOURCE_SLOTS.length];
+  if (total === 3) {
+    return TRIPLE_RESOURCE_SLOTS[idx % TRIPLE_RESOURCE_SLOTS.length];
+  }
+  // A resource island tops out at 4 nodes (2 resource types x amount 2 each); beyond that,
+  // cycling QUAD_RESOURCE_SLOTS is a defined fallback rather than an unreachable case.
+  return QUAD_RESOURCE_SLOTS[idx % QUAD_RESOURCE_SLOTS.length];
 }
 
 export function toTileResourcesViewModel(

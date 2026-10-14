@@ -6,12 +6,13 @@ import {
   DUAL_RESOURCE_SLOTS,
   EMPTY_GROVE_SLOTS,
   OCCUPANT_CORNER_SLOTS,
+  QUAD_RESOURCE_SLOTS,
   SINGLE_RESOURCE_SLOT,
   SPECIAL_FOREST_SLOT,
   TRIPLE_RESOURCE_SLOTS,
 } from './island-tile-slots.types';
 
-// Literal expectations, copied from the approved spec (ui-design.md Final spec). Do not derive
+// Literal expectations, copied from the hand-tuned slot tables (island-tile-slots.types.ts). Do not derive
 // them from the table under test: a silent change to a constant must fail here.
 
 describe('BOAT_CORNER_POSITIONS', () => {
@@ -47,10 +48,10 @@ describe('OCCUPANT_CORNER_SLOTS', () => {
   });
 
   it.each([
-    ['br', { bottom: '24%', right: '24%' }],
-    ['tr', { top: '24%', right: '24%' }],
-    ['tl', { top: '24%', left: '24%' }],
-    ['bl', { bottom: '24%', left: '24%' }],
+    ['br', { bottom: '-1%', right: '-5%' }],
+    ['tr', { top: '-20%', right: '-5%' }],
+    ['tl', { top: '-20%', left: '-5%' }],
+    ['bl', { bottom: '-1%', left: '-5%' }],
   ])('pins the offset knight anchor for corner %s', (id, expectedStyle) => {
     const corner = OCCUPANT_CORNER_SLOTS.find((entry) => entry.id === id);
     expect(corner?.style).toEqual(expectedStyle);
@@ -66,46 +67,78 @@ describe('OCCUPANT_CORNER_SLOTS', () => {
 describe('resource slot tables', () => {
   it('pins the single-node slot center in the middle band', () => {
     expect(SINGLE_RESOURCE_SLOT).toEqual({
-      top: '65.5%',
+      top: '50%',
       left: '50%',
-      size: 39,
+      size: 40,
     });
   });
 
   it('pins the two-node slot centers', () => {
     expect(DUAL_RESOURCE_SLOTS).toEqual([
-      { top: '36%', left: '40%', size: 32 },
-      { top: '86%', left: '60%', size: 32 },
+      { top: '20%', left: '50%', size: 40 },
+      { top: '55%', left: '60%', size: 40 },
     ]);
   });
 
   it('pins the three-node slot centers', () => {
     expect(TRIPLE_RESOURCE_SLOTS).toEqual([
-      { top: '33.5%', left: '37.5%', size: 27 },
-      { top: '59.5%', left: '74.5%', size: 27 },
-      { top: '83.5%', left: '25.5%', size: 27 },
+      { top: '20%', left: '45%', size: 40 },
+      { top: '45%', left: '75%', size: 40 },
+      { top: '55%', left: '35%', size: 40 },
+    ]);
+  });
+
+  it('pins the four-node slot centers', () => {
+    expect(QUAD_RESOURCE_SLOTS).toEqual([
+      { top: '20%', left: '35%', size: 40 },
+      { top: '25%', left: '70%', size: 40 },
+      { top: '50%', left: '30%', size: 40 },
+      { top: '60%', left: '80%', size: 40 },
     ]);
   });
 
   it('pins the three Base resource slot centers', () => {
     expect(BASE_RESOURCE_SLOTS).toEqual([
-      { top: '15%', left: '50%', size: 22 },
-      { top: '85%', left: '35%', size: 22 },
-      { top: '85%', left: '65%', size: 22 },
+      { top: '60%', left: '20%', size: 30 },
+      { top: '45%', right: '-17%', size: 30 },
+      { top: '15%', left: '50%', size: 30 },
     ]);
   });
 });
 
 describe('forest slot tables', () => {
-  it('pins the two Base trees', () => {
+  it('pins the fifteen Base trees', () => {
     expect(BASE_FOREST_SLOTS).toEqual([
-      { top: '2%', left: '23%', size: '15%', z: 12 },
-      { top: '11%', left: '23%', size: '15%', z: 14 },
+      { top: '29%', left: '37%', size: '15%', z: 10 },
+      { top: '30%', left: '35%', size: '15%', z: 10 },
+      { top: '30%', left: '30%', size: '15%', z: 10 },
+      { top: '30%', left: '24%', size: '15%', z: 10 },
+      { top: '34%', left: '35%', size: '15%', z: 10 },
+      { top: '32%', left: '27%', size: '15%', z: 10 },
+      { top: '29%', left: '49%', size: '15%', z: 10 },
+      { top: '32%', left: '45%', size: '15%', z: 10 },
+      { top: '31%', left: '45%', size: '15%', z: 10 },
+      { top: '30%', left: '60%', size: '15%', z: 10 },
+      { top: '32%', left: '40%', size: '15%', z: 10 },
+      { top: '32%', left: '55%', size: '15%', z: 10 },
+      { top: '37%', left: '45%', size: '15%', z: 10 },
+      { top: '39%', left: '55%', size: '15%', z: 10 },
+      { top: '30%', left: '45%', size: '15%', z: 10 },
     ]);
   });
 
-  it('pins the single Special tree', () => {
-    expect(SPECIAL_FOREST_SLOT).toEqual([{ top: '4px', left: '4px', size: '16%', z: 12 }]);
+  it('pins the nine Special trees', () => {
+    expect(SPECIAL_FOREST_SLOT).toEqual([
+      { top: '5%', left: '0%', size: '16%', z: 10 },
+      { top: '7%', left: '10%', size: '16%', z: 12 },
+      { top: '10%', left: '20%', size: '16%', z: 15 },
+      { top: '20px', left: '20%', size: '16%', z: 15 },
+      { top: '30%', left: '20%', size: '16%', z: 15 },
+      { top: '30%', left: '22%', size: '16%', z: 15 },
+      { top: '20px', left: '20%', size: '16%', z: 15 },
+      { top: '20px', left: '20%', size: '16%', z: 15 },
+      { top: '70px', left: '50px', size: '16%', z: 20 },
+    ]);
   });
 
   it('pins the grove: trees 1 and 2 at 24% from their side, tree 3 unchanged at left 44%', () => {

@@ -323,8 +323,8 @@ describe('toTileResourcesViewModel', () => {
 
     const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     const foodNode = result![0];
-    // Single slot is 39%; Food scale 1.45 gives 39 * 1.45 = 56.55, rounded to one decimal = 56.6
-    expect(foodNode.nodeSize).toBe('56.6%');
+    // Single slot is 40%; Food scale 1.45 gives 40 * 1.45 = 58
+    expect(foodNode.nodeSize).toBe('58%');
   });
 
   it('does not scale Wood and Gold resources', () => {
@@ -344,9 +344,9 @@ describe('toTileResourcesViewModel', () => {
     const result = toTileResourcesViewModel(island, false, mockPlayers, {});
     const woodNode = result![0];
     const goldNode = result![1];
-    // With 2 resources total, they use DUAL_RESOURCE_SLOTS with size 32%
-    expect(woodNode.nodeSize).toBe('32%');
-    expect(goldNode.nodeSize).toBe('32%');
+    // With 2 resources total, they use DUAL_RESOURCE_SLOTS with size 40%
+    expect(woodNode.nodeSize).toBe('40%');
+    expect(goldNode.nodeSize).toBe('40%');
   });
 
   it('does not mutate input island', () => {
@@ -386,25 +386,25 @@ describe('toTileResourcesViewModel', () => {
 describe('toTileResourcesViewModel band and Base slot positions', () => {
   it('places a single resource node centered in the middle band', () => {
     const result = toTileResourcesViewModel(resourceIslandWithFood, false, mockPlayers, {});
-    expect(result![0].slotStyle).toEqual({ top: '65.5%', left: '50%' });
+    expect(result![0].slotStyle).toEqual({ top: '50%', left: '50%' });
   });
 
   it('places a two-node island at distinct centers, not both in the top band', () => {
     const result = toTileResourcesViewModel(resourceIslandWithTwoDistinctResources, false, mockPlayers, {});
     expect(result).toHaveLength(2);
     expect(result![0].type).toBe(ResourceType.Gold);
-    expect(result![0].slotStyle).toEqual({ top: '36%', left: '40%' });
+    expect(result![0].slotStyle).toEqual({ top: '20%', left: '50%' });
     expect(result![1].type).toBe(ResourceType.Wood);
-    expect(result![1].slotStyle).toEqual({ top: '86%', left: '60%' });
+    expect(result![1].slotStyle).toEqual({ top: '55%', left: '60%' });
   });
 
   it('places a three-node island at three distinct centers', () => {
     const result = toTileResourcesViewModel(resourceIslandWithDualResources, false, mockPlayers, {});
     expect(result).toHaveLength(3);
     expect(result!.map((n) => n.slotStyle)).toEqual([
-      { top: '33.5%', left: '37.5%' },
-      { top: '59.5%', left: '74.5%' },
-      { top: '83.5%', left: '25.5%' },
+      { top: '20%', left: '45%' },
+      { top: '45%', left: '75%' },
+      { top: '55%', left: '35%' },
     ]);
   });
 
@@ -420,8 +420,8 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
   it('gives each Base node its resource slot center, with no explicit width or height', () => {
     const result = toTileResourcesViewModel(baseIslandWithResources, true, mockPlayers, {});
     expect(result!.map((n) => n.slotStyle)).toEqual([
-      { top: '15%', left: '50%' },
-      { top: '85%', left: '35%' },
+      { top: '60%', left: '20%' },
+      { top: '45%', right: '-17%' },
     ]);
   });
 
@@ -429,19 +429,19 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
     const result = toTileResourcesViewModel(baseIslandWithThreeResources, true, mockPlayers, {});
     expect(result!.map((n) => n.type)).toEqual([ResourceType.Food, ResourceType.Wood, ResourceType.Gold]);
     expect(result!.map((n) => n.slotStyle)).toEqual([
+      { top: '60%', left: '20%' },
+      { top: '45%', right: '-17%' },
       { top: '15%', left: '50%' },
-      { top: '85%', left: '35%' },
-      { top: '85%', left: '65%' },
     ]);
   });
 
-  it('gives Base Wood and Gold nodes 22% and the Food node 31.9%', () => {
+  it('gives Base Wood and Gold nodes 30% and the Food node 43.5%', () => {
     const result = toTileResourcesViewModel(baseIslandWithThreeResources, true, mockPlayers, {});
     const sizeByType = Object.fromEntries(result!.map((n) => [n.type, n.nodeSize]));
     expect(sizeByType).toEqual({
-      [ResourceType.Food]: '31.9%',
-      [ResourceType.Wood]: '22%',
-      [ResourceType.Gold]: '22%',
+      [ResourceType.Food]: '43.5%',
+      [ResourceType.Wood]: '30%',
+      [ResourceType.Gold]: '30%',
     });
   });
 });
@@ -460,36 +460,36 @@ describe('toTileResourcesViewModel percent sizing by slot tier', () => {
   });
 
   it.each([
-    [ResourceType.Food, 1, false, '56.6%'],
-    [ResourceType.Food, 2, false, '46.4%'],
-    [ResourceType.Food, 3, false, '39.2%'],
-    [ResourceType.Food, 1, true, '31.9%'],
-    [ResourceType.Wood, 1, false, '39%'],
-    [ResourceType.Wood, 2, false, '32%'],
-    [ResourceType.Wood, 3, false, '27%'],
-    [ResourceType.Wood, 1, true, '22%'],
-    [ResourceType.Gold, 1, false, '39%'],
-    [ResourceType.Gold, 2, false, '32%'],
-    [ResourceType.Gold, 3, false, '27%'],
-    [ResourceType.Gold, 1, true, '22%'],
+    [ResourceType.Food, 1, false, '58%'],
+    [ResourceType.Food, 2, false, '58%'],
+    [ResourceType.Food, 3, false, '58%'],
+    [ResourceType.Food, 1, true, '43.5%'],
+    [ResourceType.Wood, 1, false, '40%'],
+    [ResourceType.Wood, 2, false, '40%'],
+    [ResourceType.Wood, 3, false, '40%'],
+    [ResourceType.Wood, 1, true, '30%'],
+    [ResourceType.Gold, 1, false, '40%'],
+    [ResourceType.Gold, 2, false, '40%'],
+    [ResourceType.Gold, 3, false, '40%'],
+    [ResourceType.Gold, 1, true, '30%'],
   ])('sizes a %s node in the tier of amount %i (base: %s) as %s', (type, amount, isBase, expected) => {
     const result = toTileResourcesViewModel(islandWith(type, amount, isBase), isBase, mockPlayers, {});
     expect(result![0].nodeSize).toBe(expected);
   });
 
   it.each([
-    [ResourceType.Food, 1, false, '44.8%'],
-    [ResourceType.Food, 2, false, '44.8%'],
-    [ResourceType.Food, 3, false, '44.8%'],
-    [ResourceType.Food, 1, true, '44.8%'],
-    [ResourceType.Wood, 1, false, '65%'],
-    [ResourceType.Wood, 2, false, '65%'],
-    [ResourceType.Wood, 3, false, '65%'],
-    [ResourceType.Wood, 1, true, '65%'],
-    [ResourceType.Gold, 1, false, '65%'],
-    [ResourceType.Gold, 2, false, '65%'],
-    [ResourceType.Gold, 3, false, '65%'],
-    [ResourceType.Gold, 1, true, '65%'],
+    [ResourceType.Food, 1, false, '75.9%'],
+    [ResourceType.Food, 2, false, '75.9%'],
+    [ResourceType.Food, 3, false, '75.9%'],
+    [ResourceType.Food, 1, true, '75.9%'],
+    [ResourceType.Wood, 1, false, '110%'],
+    [ResourceType.Wood, 2, false, '110%'],
+    [ResourceType.Wood, 3, false, '110%'],
+    [ResourceType.Wood, 1, true, '110%'],
+    [ResourceType.Gold, 1, false, '110%'],
+    [ResourceType.Gold, 2, false, '110%'],
+    [ResourceType.Gold, 3, false, '110%'],
+    [ResourceType.Gold, 1, true, '110%'],
   ])('sizes a farmed %s badge in the tier of amount %i (base: %s) as %s', (type, amount, isBase, expected) => {
     const island: Island = { ...islandWith(type, amount, isBase), positionedBy: [{ playerId: 0, resource: type }] };
     const result = toTileResourcesViewModel(island, isBase, mockPlayers, {});
@@ -505,37 +505,37 @@ describe('toTileResourcesViewModel percent sizing by slot tier', () => {
 });
 
 describe('toTileResourcesViewModel farming collector badge', () => {
-  it('sizes a Food badge at 44.8% of its node, with no offset', () => {
+  it('sizes a Food badge at 75.9% of its inflated node, with no offset', () => {
     const island: Island = {
       ...resourceIslandWithFood,
       positionedBy: [{ playerId: 0, resource: ResourceType.Food }],
     };
     const node = toTileResourcesViewModel(island, false, mockPlayers, {})![0];
-    expect(node.nodeSize).toBe('56.6%');
+    expect(node.nodeSize).toBe('58%');
     expect(node.farmingCollector).toEqual({
       color: PlayerColor.Blue,
       sprite: FARM_SPRITES[PlayerColor.Blue],
-      size: '44.8%',
+      size: '75.9%',
     });
     expect(node.farmingCollector).not.toHaveProperty('offset');
   });
 
-  it('sizes a dual-slot Gold badge at 65% with no px floor, for the top slot', () => {
+  it('sizes a dual-slot Gold badge at 110% with no px floor, for the top slot', () => {
     const island: Island = {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Gold }],
     };
     const goldNode = toTileResourcesViewModel(island, false, mockPlayers, {})![0];
     expect(goldNode.type).toBe(ResourceType.Gold);
-    expect(goldNode.nodeSize).toBe('32%');
+    expect(goldNode.nodeSize).toBe('40%');
     expect(goldNode.farmingCollector).toEqual({
       color: PlayerColor.Blue,
       sprite: FARM_SPRITES[PlayerColor.Blue],
-      size: '65%',
+      size: '110%',
     });
   });
 
-  it('sizes a dual-slot Wood badge at 65% for the right-anchored bottom slot', () => {
+  it('sizes a dual-slot Wood badge at 110% for the right-anchored bottom slot', () => {
     const island: Island = {
       ...resourceIslandWithTwoDistinctResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Wood }],
@@ -545,51 +545,51 @@ describe('toTileResourcesViewModel farming collector badge', () => {
     expect(woodNode.farmingCollector).toEqual({
       color: PlayerColor.Blue,
       sprite: FARM_SPRITES[PlayerColor.Blue],
-      size: '65%',
+      size: '110%',
     });
   });
 
-  it('sizes a triple-slot Wood badge at 65% for the left-anchored bottom slot', () => {
+  it('sizes a triple-slot Wood badge at 110% for the left-anchored bottom slot', () => {
     const island: Island = {
       ...resourceIslandWithDualResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Wood }],
     };
     const woodNode = toTileResourcesViewModel(island, false, mockPlayers, {})![2];
-    expect(woodNode.nodeSize).toBe('27%');
+    expect(woodNode.nodeSize).toBe('40%');
     expect(woodNode.farmingCollector).toEqual({
       color: PlayerColor.Blue,
       sprite: FARM_SPRITES[PlayerColor.Blue],
-      size: '65%',
+      size: '110%',
     });
   });
 
-  it('sizes the Base Food badge at 44.8% beside its 31.9% node', () => {
+  it('sizes the Base Food badge at 75.9% beside its 43.5% node', () => {
     const island: Island = {
       ...baseIslandWithResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Food }],
     };
     const foodNode = toTileResourcesViewModel(island, true, mockPlayers, {})![0];
     expect(foodNode.type).toBe(ResourceType.Food);
-    expect(foodNode.nodeSize).toBe('31.9%');
+    expect(foodNode.nodeSize).toBe('43.5%');
     expect(foodNode.farmingCollector).toEqual({
       color: PlayerColor.Blue,
       sprite: FARM_SPRITES[PlayerColor.Blue],
-      size: '44.8%',
+      size: '75.9%',
     });
   });
 
-  it('sizes the Base Wood badge at 65% beside its 22% node', () => {
+  it('sizes the Base Wood badge at 110% beside its 30% node', () => {
     const island: Island = {
       ...baseIslandWithThreeResources,
       positionedBy: [{ playerId: 0, resource: ResourceType.Wood }],
     };
     const woodNode = toTileResourcesViewModel(island, true, mockPlayers, {})![1];
     expect(woodNode.type).toBe(ResourceType.Wood);
-    expect(woodNode.nodeSize).toBe('22%');
+    expect(woodNode.nodeSize).toBe('30%');
     expect(woodNode.farmingCollector).toEqual({
       color: PlayerColor.Blue,
       sprite: FARM_SPRITES[PlayerColor.Blue],
-      size: '65%',
+      size: '110%',
     });
   });
 

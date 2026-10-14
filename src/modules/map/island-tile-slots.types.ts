@@ -1,4 +1,5 @@
-// Single source of truth for every island-tile sprite-placement coordinate.
+// Single source of truth for every island-tile sprite-placement coordinate AND size (the
+// few sizes not already expressed as a SlotDef's own `size` are the SPRITE SIZES block below).
 // All percent values are % of the tile's own side length T. Corner-clearance rule (see
 // ui-design.md): a non-corner slot must clear the 0-22%/78-100% band on at least one axis
 // for every corner it is near. 22% = the boat's 21% half-box + a 1-point visible gap.
@@ -24,10 +25,10 @@ export const BOAT_CORNER_POSITIONS: CornerPosition[] = [
  *  in from its boat's corner and flush-anchored by its two edges, so it sits beside its boat
  *  without overlapping the boat's hull box. No transform: nothing is centered on the corner. */
 export const OCCUPANT_CORNER_SLOTS: CornerPosition[] = [
-  { id: 'br', style: { bottom: '24%', right: '24%' } },
-  { id: 'tr', style: { top: '24%', right: '24%' } },
-  { id: 'tl', style: { top: '24%', left: '24%' } },
-  { id: 'bl', style: { bottom: '24%', left: '24%' } },
+  { id: 'br', style: { bottom: '-1%', right: '-5%' } },
+  { id: 'tr', style: { top: '-20%', right: '-5%' } },
+  { id: 'tl', style: { top: '-20%', left: '-5%' } },
+  { id: 'bl', style: { bottom: '-1%', left: '-5%' } },
 ];
 
 /** Centers an element on its tile corner point: half of its own box overhangs past the
@@ -59,38 +60,55 @@ export interface SlotDef {
 // in every direction, which is also why these are the exact centers the old edge-anchored
 // values resolved to (top' = top + size/2, etc.) — unscaled (Wood/Gold) placement is unchanged.
 export const SINGLE_RESOURCE_SLOT: SlotDef = {
-  top: '65.5%',
+  top: '50%',
   left: '50%',
-  size: 39,
+  size: 40,
 };
 
 // left/right corrected 14% -> 24% to clear the boat corner band (was the one coordination
 // gap the triage flagged: these slots were never checked against the boat corners).
 export const DUAL_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '36%', left: '40%', size: 32 },
-  { top: '86%', left: '60%', size: 32 },
+  { top: '20%', left: '50%', size: 40 },
+  { top: '55%', left: '60%', size: 40 },
 ];
 
 // Slot 1's left corrected 12% -> 24% (same gap as above); slots 2-3 already clear by their
 // vertical offset (46%/70% fall outside the 0-22%/78-100% bands) and are unchanged.
 export const TRIPLE_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '33.5%', left: '37.5%', size: 27 },
-  { top: '59.5%', left: '74.5%', size: 27 },
-  { top: '83.5%', left: '25.5%', size: 27 },
+  { top: '20%', left: '45%', size: 40 },
+  { top: '45%', left: '75%', size: 40 },
+  { top: '55%', left: '35%', size: 40 },
+];
+
+// PLACEHOLDER: a resource island can hold up to 4 individual nodes (2 resource types x amount
+// 2 each, see generateIslandTerrain in map-generation.ts), but getSlot() in TileResources.map.ts
+// previously fell through to TRIPLE_RESOURCE_SLOTS for any total >= 3, so a 4th node silently
+// stacked on slot [0] via idx % 3. This table and the total === 4 branch fix that overlap; the
+// positions below are an untuned starting grid, not final.
+export const QUAD_RESOURCE_SLOTS: SlotDef[] = [
+  { top: '20%', left: '35%', size: 40 },
+  { top: '25%', left: '70%', size: 40 },
+  { top: '50%', left: '30%', size: 40 },
+  { top: '60%', left: '80%', size: 40 },
 ];
 
 // ---- SPRITE SIZES ----
 // The few sizes not already expressed as a SlotDef's own `size`. Percent is of the tile side T
 // unless noted otherwise. Consumers apply these as inline styles (not Tailwind classes), since
 // Tailwind can't generate CSS for a class built from a JS variable — only from a literal string
-// in source — so this is the one place to edit every monster/base/special-island size.
+// in source — so this is the one place to edit every knight/boat/collector/base/special-island size.
+export const OCCUPANT_SIZE = 43; // knight box width/height, % of T
+export const BOAT_SIZE = 42; // boat box width/height, % of T
+export const IDLE_COLLECTOR_SIZE = 75; // idle-in-boat collector width/height, % of the boat's own box
+export const IDLE_COLLECTOR_TOP = 40; // idle-in-boat collector's vertical center, % of the boat's own box (horizontally centered)
+export const FARMING_BADGE_SIZE_RATIO = 1.1; // farming badge size, fraction of the resource node's own (uninflated) box
 export const MONSTER_SPRITE_SIZE_PX = 64; // monster sprite width/height in px (fixed, not % of T — see AnimatedMonster.tsx)
 export const BASE_CREST_SIZE = 44; // base tile's player-crest box width/height, % of T
 export const BASE_CREST_MIN_PX = 18; // base crest's floor, so it stays legible at small tile sizes
-export const SPECIAL_ISLAND_SIZE = 100; // special island's idle-art box width/height, % of the tile's padded content box
+export const SPECIAL_ISLAND_SIZE = 35; // special island's idle-art box width/height, % of the tile's padded content box
 // Special island's center point, same top/left-is-center convention as the resource slots above
 // (consumer centers on it with transform: translate(-50%, -50%)). Currently dead center; edit to move it.
-export const SPECIAL_ISLAND_TOP = '50%';
+export const SPECIAL_ISLAND_TOP = '40%';
 export const SPECIAL_ISLAND_LEFT = '50%';
 export const BORDER_DECORATION_WIDTH_PX = 40; // each castle-border image's box width, px (fixed, not % of T)
 export const BORDER_DECORATION_HEIGHT_PX = 20; // each castle-border image's box height, px (fixed, not % of T)
@@ -98,9 +116,9 @@ export const BORDER_DECORATION_BOTTOM_OFFSET_PX = -11; // border row's offset be
 
 // Edge-midpoint slots keep clear of the boat and occupant corner anchors. Unchanged.
 export const BASE_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '15%', left: '50%', size: 22 },
-  { top: '85%', left: '35%', size: 22 },
-  { top: '85%', left: '65%', size: 22 },
+  { top: '60%', left: '20%', size: 30 },
+  { top: '45%', right: '-17%', size: 30 },
+  { top: '15%', left: '50%', size: 30 },
 ];
 
 export interface TreeSlot {
@@ -116,12 +134,35 @@ export interface TreeSlot {
 // Unchanged: kept inside the gap between the top-left boat corner (0-21% of T) and the base
 // crest/top resource slot, so trees never sit under the resource icons.
 export const BASE_FOREST_SLOTS: TreeSlot[] = [
-  { top: '2%', left: '23%', size: '15%', z: 12 },
-  { top: '11%', left: '23%', size: '15%', z: 14 },
+  { top: '29%', left: '37%', size: '15%', z: 10 },
+  { top: '30%', left: '35%', size: '15%', z: 10 },
+  { top: '30%', left: '30%', size: '15%', z: 10 },
+  { top: '30%', left: '24%', size: '15%', z: 10 },
+  { top: '34%', left: '35%', size: '15%', z: 10 },
+  { top: '32%', left: '27%', size: '15%', z: 10 },
+  { top: '29%', left: '49%', size: '15%', z: 10 },
+  { top: '32%', left: '45%', size: '15%', z: 10 },
+  { top: '31%', left: '45%', size: '15%', z: 10 },
+  { top: '30%', left: '60%', size: '15%', z: 10 },
+  { top: '32%', left: '40%', size: '15%', z: 10 },
+  { top: '32%', left: '55%', size: '15%', z: 10 },
+  { top: '37%', left: '45%', size: '15%', z: 10 },
+  { top: '39%', left: '55%', size: '15%', z: 10 },
+  { top: '30%', left: '45%', size: '15%', z: 10 },
 ];
 
 // Unchanged: single decorative slot, not corner-adjacent.
-export const SPECIAL_FOREST_SLOT: TreeSlot[] = [{ top: '4px', left: '4px', size: '16%', z: 12 }];
+export const SPECIAL_FOREST_SLOT: TreeSlot[] = [
+  { top: '5%', left: '0%', size: '16%', z: 10 },
+  { top: '7%', left: '10%', size: '16%', z: 12 },
+  { top: '10%', left: '20%', size: '16%', z: 15 },
+  { top: '20px', left: '20%', size: '16%', z: 15 },
+  { top: '30%', left: '20%', size: '16%', z: 15 },
+  { top: '30%', left: '22%', size: '16%', z: 15 },
+  { top: '20px', left: '20%', size: '16%', z: 15 },
+  { top: '20px', left: '20%', size: '16%', z: 15 },
+  { top: '70px', left: '50px', size: '16%', z: 20 },
+];
 
 // Trees 1 and 2's left/right corrected 22% -> 24% to clear the boat corner band; tree 3
 // (bottom:26%, left:44%) was already clear and is unchanged.

@@ -218,12 +218,12 @@ describe('TileOccupants Component', () => {
       return { boatEntries, riderSlots };
     }
 
-    // Literal rider anchors per corner, in boat order (br, tr, tl, bl). Each rider is inset 24%
-    // from the two tile edges of its corner and has no transform, unlike its boat (centered on the corner).
-    const RIDER_ANCHOR_BR = { top: '', bottom: '24%', left: '', right: '24%', transform: '' };
-    const RIDER_ANCHOR_TR = { top: '24%', bottom: '', left: '', right: '24%', transform: '' };
-    const RIDER_ANCHOR_TL = { top: '24%', bottom: '', left: '24%', right: '', transform: '' };
-    const RIDER_ANCHOR_BL = { top: '', bottom: '24%', left: '24%', right: '', transform: '' };
+    // Literal rider anchors per corner, in boat order (br, tr, tl, bl), copied from OCCUPANT_CORNER_SLOTS.
+    // Each rider has no transform, unlike its boat (centered on the corner).
+    const RIDER_ANCHOR_BR = { top: '', bottom: '-1%', left: '', right: '-5%', transform: '' };
+    const RIDER_ANCHOR_TR = { top: '-20%', bottom: '', left: '', right: '-5%', transform: '' };
+    const RIDER_ANCHOR_TL = { top: '-20%', bottom: '', left: '-5%', right: '', transform: '' };
+    const RIDER_ANCHOR_BL = { top: '', bottom: '-1%', left: '-5%', right: '', transform: '' };
 
     it('places a single rider beside its boat on land, not centered on the boat', () => {
       const { boatEntries, riderSlots } = renderBoatsAndRiders(1);

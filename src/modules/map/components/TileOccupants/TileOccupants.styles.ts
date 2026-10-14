@@ -2,10 +2,9 @@ import { cva } from 'class-variance-authority';
 
 export const styles = {
   container: 'absolute inset-0 z-30 pointer-events-none',
-  // 27% of T. Flush-anchored by slotStyle's two 24% offset edges (OCCUPANT_CORNER_SLOTS), so the
-  // knight stands beside its boat's corner on land and never shares the boat's center point.
-  // Transform stays off the slot: slotStyle sets an inline transform that would override scale-90.
-  slot: cva('absolute w-[27%] h-[27%]', {
+  // Flush-anchored by slotStyle's offset edges (OCCUPANT_CORNER_SLOTS); size comes from
+  // OCCUPANT_SIZE via that same inline slotStyle (island-tile-slots.types.ts), not a class here.
+  slot: cva('absolute', {
     variants: {
       isOverflow: {
         true: 'opacity-90',

@@ -56,7 +56,7 @@ describe('toForestLayout', () => {
     expect(result!.layout.map((slot) => slot.size)).toEqual(['28%', '28%']);
   });
 
-  it('returns 2-tree base layout when isBase is true', () => {
+  it('returns 15-tree base layout when isBase is true', () => {
     const island: Island = {
       id: '0-0',
       x: 0,
@@ -68,13 +68,13 @@ describe('toForestLayout', () => {
 
     const result = toForestLayout(island, true);
     expect(result).not.toBeNull();
-    expect(result!.layout.length).toBe(2);
-    expect(result!.layout[0]).toHaveProperty('top', '2%');
-    expect(result!.layout[1]).toHaveProperty('top', '11%');
-    expect(result!.layout.map((slot) => slot.size)).toEqual(['15%', '15%']);
+    expect(result!.layout.length).toBe(15);
+    expect(result!.layout[0]).toHaveProperty('top', '29%');
+    expect(result!.layout[1]).toHaveProperty('top', '30%');
+    expect(result!.layout.map((slot) => slot.size)).toEqual(Array(15).fill('15%'));
   });
 
-  it('returns 1-tree special layout for Special islands', () => {
+  it('returns 9-tree special layout for Special islands', () => {
     const island: Island = {
       id: '3-3',
       x: 3,
@@ -86,8 +86,8 @@ describe('toForestLayout', () => {
 
     const result = toForestLayout(island, false);
     expect(result).not.toBeNull();
-    expect(result!.layout.length).toBe(1);
-    expect(result!.layout[0]).toHaveProperty('top', '4px');
+    expect(result!.layout.length).toBe(9);
+    expect(result!.layout[0]).toHaveProperty('top', '5%');
     expect(result!.layout[0].size).toBe('16%');
   });
 
@@ -190,12 +190,12 @@ describe('toForestLayout', () => {
       expect(result!.layout.map((slot) => slot.size)).toEqual(['28%', '28%']);
     });
 
-    it('uses the 16% base layout whenever isBase is true, regardless of island type', () => {
+    it('uses the 15% base layout whenever isBase is true, regardless of island type', () => {
       const island: Island = { id: '4-4', x: 4, y: 4, type: IslandType.Empty, resources: [], occupants: [] };
 
       const result = toForestLayout(island, true);
 
-      expect(result!.layout.map((slot) => slot.size)).toEqual(['15%', '15%']);
+      expect(result!.layout.map((slot) => slot.size)).toEqual(Array(15).fill('15%'));
     });
   });
 

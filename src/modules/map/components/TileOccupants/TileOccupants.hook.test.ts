@@ -20,6 +20,9 @@ jest.mock('@/modules/game-board', () => ({
 }));
 
 describe('useTileOccupants', () => {
+  // Knight box size, copied from OCCUPANT_SIZE (43% of the tile side).
+  const KNIGHT_BOX = { width: '43%', height: '43%' };
+
   const mockGameState = { ...gameStateFixture, deathAnimations: [] };
 
   beforeEach(() => {
@@ -569,12 +572,13 @@ describe('useTileOccupants', () => {
     });
 
     // Literal expectations: a reorder of the offset table must fail this test on purpose.
+    // The hook also sizes every knight box from OCCUPANT_SIZE (43% of the tile).
     it.each([
-      [0, { bottom: '24%', right: '24%' }],
-      [1, { top: '24%', right: '24%' }],
-      [2, { top: '24%', left: '24%' }],
-      [3, { bottom: '24%', left: '24%' }],
-      [4, { bottom: '24%', right: '24%' }],
+      [0, { bottom: '-1%', right: '-5%', ...KNIGHT_BOX }],
+      [1, { top: '-20%', right: '-5%', ...KNIGHT_BOX }],
+      [2, { top: '-20%', left: '-5%', ...KNIGHT_BOX }],
+      [3, { bottom: '-1%', left: '-5%', ...KNIGHT_BOX }],
+      [4, { bottom: '-1%', right: '-5%', ...KNIGHT_BOX }],
     ])('occupant %i has the exact offset slotStyle with no transform', (index, expected) => {
       const { result } = renderHook(() => useTileOccupants({ island: fiveOccupantIsland }));
 
@@ -619,9 +623,9 @@ describe('useTileOccupants', () => {
     });
 
     it.each([
-      [5, { top: '24%', right: '24%' }],
-      [6, { top: '24%', left: '24%' }],
-      [7, { bottom: '24%', left: '24%' }],
+      [5, { top: '-20%', right: '-5%', ...KNIGHT_BOX }],
+      [6, { top: '-20%', left: '-5%', ...KNIGHT_BOX }],
+      [7, { bottom: '-1%', left: '-5%', ...KNIGHT_BOX }],
     ])('occupant %i wraps to the matching offset corner with isOverflow true', (index, expected) => {
       const { result } = renderHook(() => useTileOccupants({ island: eightOccupantIsland }));
 

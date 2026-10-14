@@ -2,7 +2,7 @@ import { useGameBoard } from '@/modules/game-board';
 import { PLAYER_DATA } from '@/modules/game-rules';
 import { IslandType } from '@/lib/types';
 import { DEATH_ANIMATION_DURATION } from '../DeathEffect';
-import { OCCUPANT_CORNER_SLOTS } from '../../island-tile-slots.types';
+import { OCCUPANT_CORNER_SLOTS, OCCUPANT_SIZE } from '../../island-tile-slots.types';
 import type { TileOccupantsProps, OccupantSpriteViewModel } from './TileOccupants.types';
 
 export function useTileOccupants(props: TileOccupantsProps): { occupants: OccupantSpriteViewModel[] } {
@@ -56,7 +56,11 @@ export function useTileOccupants(props: TileOccupantsProps): { occupants: Occupa
       const sprite = PLAYER_DATA[player.color]?.sprite;
       // Same corner index as the boat entry at this index (TileBoats.map.ts), but offset onto land.
       const slot = OCCUPANT_CORNER_SLOTS[index % OCCUPANT_CORNER_SLOTS.length];
-      const slotStyle: Record<string, string> = { ...(slot.style as Record<string, string>) };
+      const slotStyle: Record<string, string> = {
+        ...(slot.style as Record<string, string>),
+        width: `${OCCUPANT_SIZE}%`,
+        height: `${OCCUPANT_SIZE}%`,
+      };
 
       return {
         key: `army-sprite-${player.id}-${army.id}`,

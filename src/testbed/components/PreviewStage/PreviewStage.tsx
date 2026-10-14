@@ -40,7 +40,7 @@ export function PreviewStage({ slug, stateName }: PreviewStageProps) {
               return (
                 <li key={state.name} className={styles.stateListItem}>
                   <Link
-                    href={`/testbed/${slug}?state=${state.name}`}
+                    href={`/testbed/${slug}?state=${encodeURIComponent(state.name)}`}
                     className={styles.stateLink(isActive)}
                     aria-current={isActive ? 'page' : undefined}
                   >

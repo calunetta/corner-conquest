@@ -33,7 +33,7 @@ describe('TileForest Component', () => {
 
   it('renders a cluster positioned for player base', () => {
     render(<TileForest island={baseIsland} isBase={true} />);
-    expect(screen.getAllByTestId('tile-forest-tree')).toHaveLength(2);
+    expect(screen.getAllByTestId('tile-forest-tree')).toHaveLength(15);
   });
 
   it('hides the forest completely on monster tiles with living monsters', () => {
@@ -51,15 +51,15 @@ describe('TileForest Component', () => {
   it('renders forest on special islands', () => {
     render(<TileForest island={specialIsland} />);
     expect(screen.getByTestId('tile-forest')).toBeInTheDocument();
-    expect(screen.getAllByTestId('tile-forest-tree')).toHaveLength(1);
+    expect(screen.getAllByTestId('tile-forest-tree')).toHaveLength(9);
   });
 
   describe('tree sizing (percent of the tile side)', () => {
     it.each([
       ['empty island grove', emptyIsland, false, 2, '28%'],
       ['cleared monster grove', clearedMonsterIsland, false, 2, '28%'],
-      ['base accent', baseIsland, true, 2, '15%'],
-      ['special accent', specialIsland, false, 1, '16%'],
+      ['base accent', baseIsland, true, 15, '15%'],
+      ['special accent', specialIsland, false, 9, '16%'],
     ])('%s renders %i trees each sized %s', (_name, island, isBase, treeCount, size) => {
       render(<TileForest island={island} isBase={isBase} />);
 

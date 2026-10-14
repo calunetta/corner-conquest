@@ -19,11 +19,11 @@ interface TileResourcesViewProps {
 }
 
 /**
- * Anchors the badge on the node's left-edge midpoint, always. The transform's percentages resolve
- * against the badge's own box, so the badge centers on that edge whatever its size.
+ * Anchors the badge 20% in from the node's left edge (right: 80% + the translate centers it on
+ * that point, whatever the badge's own size), always.
  */
 function toCollectorBadgeStyle({ size }: Pick<FarmingCollectorViewModel, 'size'>): CSSProperties {
-  return { width: size, height: size, top: '50%', right: '100%', transform: 'translate(50%, -50%)' };
+  return { width: size, height: size, top: '50%', right: '80%', transform: 'translate(50%, -50%)' };
 }
 
 /** Pure view: everything comes from props, so tests and previews need no providers. */
