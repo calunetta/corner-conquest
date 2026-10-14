@@ -1,5 +1,6 @@
 import { PlayerColor } from '@/lib/types';
 import type { Player } from '@/lib/types';
+import { PLAYER_DATA } from '@/modules/game-rules';
 import { toPlayerIdleSprite } from '@/modules/shared';
 import { toVictoryViewModel } from './VictoryDialog.map';
 import { botWinner, humanWinner } from './VictoryDialog.fixtures';
@@ -46,10 +47,10 @@ describe('toVictoryViewModel', () => {
 
   describe('commanderLine', () => {
     it.each([
-      [humanWinner, 'blue Commander'],
-      [redHumanWinner, 'red Commander'],
-      [purpleBotWinner, 'purple Commander'],
-    ])('is "<color> Commander" for the winner in color %#', (winner, expected) => {
+      [humanWinner, PLAYER_DATA[PlayerColor.Blue].name],
+      [redHumanWinner, PLAYER_DATA[PlayerColor.Red].name],
+      [purpleBotWinner, PLAYER_DATA[PlayerColor.Purple].name],
+    ])('is the winner color\'s faction name (PLAYER_DATA) for winner in color %#', (winner, expected) => {
       expect(toVictoryViewModel(winner, false).commanderLine).toBe(expected);
     });
   });

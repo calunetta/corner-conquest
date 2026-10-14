@@ -10,7 +10,7 @@ export const styles = {
   winnerInfo: 'flex flex-col gap-0.5 items-start',
   winnerNameRow: 'flex items-center gap-1.5',
   winnerName: 'text-lg font-extrabold text-foreground tracking-tight',
-  commanderLine: 'text-xs text-muted-foreground capitalize',
+  commanderLine: 'text-xs text-muted-foreground',
   botBadge: 'text-[9px] px-1 py-0 h-4 bg-white/10 text-muted-foreground font-semibold',
   footer: 'pt-2',
   returnButton: 'w-full h-11 font-bold bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-all duration-300 hover:scale-[1.02] py-5',

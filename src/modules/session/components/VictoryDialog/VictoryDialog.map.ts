@@ -1,10 +1,12 @@
 import type { Player, PlayerColor } from '@/lib/types';
+import { PLAYER_DATA } from '@/modules/game-rules';
 import { toPlayerIdleSprite } from '@/modules/shared';
 
 export interface VictoryViewModel {
   title: 'Victory!' | 'Game Over';
   subtitle: string;
-  /** e.g. "blue Commander". Rendered with the `capitalize` Tailwind class, not title-cased here. */
+  /** The winner's chosen faction, e.g. "The Legionnaires" (`PLAYER_DATA[color].name`) — the same
+   *  name shown in CreateGameDialog's faction picker, not an invented label. */
   commanderLine: string;
   spriteSrc: string;
   color: PlayerColor;
@@ -21,7 +23,7 @@ export function toVictoryViewModel(winner: Player, isLocalWinner: boolean): Vict
   return {
     title: isLocalWinner ? VICTORY_TITLE : GAME_OVER_TITLE,
     subtitle: isLocalWinner ? `You ${reachedGoal}` : `${winner.name} ${reachedGoal}`,
-    commanderLine: `${winner.color} Commander`,
+    commanderLine: PLAYER_DATA[winner.color].name,
     spriteSrc: toPlayerIdleSprite(winner.color),
     color: winner.color,
     isBot: winner.isBot,
