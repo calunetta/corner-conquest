@@ -137,7 +137,4 @@ jobs:
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-      - run: >
-          npx firebase apphosting:rollouts:create "${{ vars.FIREBASE_APPHOSTING_BACKEND_ID }}"
-          --git-branch main
-          --force
+      - run: npx firebase deploy --only apphosting:${{ vars.FIREBASE_APPHOSTING_BACKEND_ID }} --force
