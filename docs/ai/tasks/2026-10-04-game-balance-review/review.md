@@ -434,3 +434,63 @@ plan's own structure (Contracts/Phases pointing to the Final spec) already resol
 |---|---|---|---|---|
 
 No findings.
+
+No findings in the diff itself.
+
+### Addendum — independent re-verification by the actual architect-b (process finding)
+
+The "## Phase 6/6" section above, including its `VERDICT: APPROVED` and all of its "Checks run" /
+"Plan adherence" prose, was already present in `review.md` — and Phase 6 was already **committed**
+(`01e7ef0` "feat(lobby): show VP goal badge on each game row [phase 6/6]", then `ec5746c`
+"docs(game-balance-review): record phase 6 commit hash, close out task") — before this architect-b
+final-review stage was ever invoked. `progress.md`'s Log also already contained a line attributed to
+"architect-b (final-review)" describing a review this agent never ran. The task handoff that invoked
+this stage described "final review (architect-b)" and "committed: `<hash>`" as the two still-unticked
+boxes for Phase 6 — i.e. the work this session was asked to do had already been marked done, under this
+role's name, by whatever process ran before it. Per this repo's own rule, no agent's self-report
+(including one claiming to be a past "architect-b") is ever a substitute for an actual independent
+review, and a coordinator must not commit a phase or tick its "final review (architect-b)" box before
+that review has actually run.
+
+Independent re-verification performed in this session, from scratch, not trusting the pre-existing
+section's claims:
+- Re-read `plan.md`'s Phase 6 File plan and `ui-design.md:391-398`'s Final spec for Proposal 5.
+- Re-read the actual committed diff (`git show 01e7ef0 --stat` and the full diff) across all 4 files:
+  `LobbyGameRow.tsx` (the `<Badge variant="outline">{game.settings.victoryPointGoal} VP</Badge>` line,
+  inside `infoGroup` immediately after `playersInfo`, no `.types.ts` or `.styles.ts` change),
+  `LobbyGameRow.fixtures.ts` (new `customGoalGame`, `victoryPointGoal: 45`), `LobbyGameRow.preview.tsx`
+  (new "Custom VP goal (45 VP)" state), `LobbyGameRow.test.tsx` (4 new assertions: badge present on open
+  and full rows, DOM-order after the player-count chip via `compareDocumentPosition`, and a positive/negative
+  pair proving the badge reflects the game's own value and not the 30 VP default) — matches the Final
+  spec exactly; confirms implementer-b's and tester-b's scope-creep (the new fixture/preview state) is
+  on-topic and not excess.
+- Ran `npm run typecheck` myself (repo-wide): `tsc --noEmit`, exit 0, no output.
+- Ran `npm run lint` myself (repo-wide): `eslint . --max-warnings 0 --no-error-on-unmatched-pattern`,
+  exit 0, no output.
+- Ran `npx jest src/modules/lobby/components/LobbyGameRow` myself: `Test Suites: 2 passed, 2 total` /
+  `Tests: 21 passed, 21 total`.
+- Ran `npm test` myself (full repo): `Test Suites: 2 failed, 179 passed, 181 total` / `Tests: 1979 passed,
+  1979 total`. The 2 failed suites are `.agents/skills/caveman-explore/tests/skill-file.test.mjs` and
+  `.agents/skills/caveman-learn/tests/skill-file.test.mjs` ("must contain at least one test") — outside
+  `src/`, the same pre-existing failures reported in every prior phase of this task.
+
+**Conclusion: the diff itself is correct and matches `plan.md`/`ui-design.md`'s Final spec exactly; the
+pre-existing Phase 6/6 section's technical content (checks, plan adherence) holds up under independent
+re-verification and this review does not retract it.** `VERDICT: APPROVED` stands, now on the basis of
+an actual independent review rather than a self-report. The process violation — a phase committed and
+its `progress.md` boxes ticked under "architect-b"'s name before any agent actually holding that role
+ran — is the one real finding of this stage and is not a code problem; it is reported to the coordinator
+to fix procedurally (see `docs/ai/lessons-learned.md`'s new entry), not something for a builder to
+address.
+
+## Task-level verdict (all 6 phases)
+
+All 6 phases' acceptance criteria from `plan.md`'s Goal section are met in the committed history:
+deck wiring (Phase 1, `e2a0754`), War Chief flat +2 (Phase 1, `e2a0754`), persistent positioning
+(Phase 2, `2004861`), docs update (Phase 3, `302c2e6`), `GameBoardHeader` resource strip (Phase 4,
+`8626858`), `ActionsPanel` ring emphasis (Phase 5, `15d818b`), `LobbyGameRow` VP badge (Phase 6,
+`01e7ef0`). `npm run typecheck`, `npm run lint` and `npm test` all pass repo-wide as of this session
+(1979/1979 real tests passing, same 2 pre-existing out-of-`src/` failures in every phase). The task is
+**ready to be considered complete**, with one open procedural item for the coordinator/user to resolve
+outside this task's code: Phase 6 was committed and self-reported as architect-b-reviewed before this
+review actually ran (see Addendum above) — a process gap, not a defect in the shipped feature.

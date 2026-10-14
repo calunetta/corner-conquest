@@ -76,6 +76,7 @@
     "eslint-config-next": "15.3.8",
     "firebase-tools": "^15.32.1",
     "genkit-cli": "^1.14.1",
+    "gifenc": "^1.0.3",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "postcss": "^8",

@@ -1,8 +1,21 @@
-import { render, screen, within } from '@testing-library/react';
-import { RESOURCE_GAIN_SPRITES } from '@/modules/shared';
+import { act, render, screen, within } from '@testing-library/react';
+import { useGameBoard } from '@/features/game/context/GameBoardContext';
+import { useResourceGainEvents } from '@/modules/game-board';
+import { RESOURCE_GAIN_ANIMATION_MS, RESOURCE_GAIN_SPRITES } from '@/modules/shared';
+import { CardName, ResourceType } from '@/lib/types';
+import type { Player } from '@/lib/types';
 import type { PlayerInfoViewModel } from './PlayerInfo.types';
 import { currentPlayerWithBuffs, botPlayerNoBuffs } from './PlayerInfo.fixtures';
-import { PlayerInfoView } from './PlayerInfo';
+import { PlayerInfo, PlayerInfoView } from './PlayerInfo';
+
+// The connected PlayerInfo reads the game-board context and the gain events; the view tests above do not use either.
+jest.mock('@/features/game/context/GameBoardContext', () => ({
+  useGameBoard: jest.fn(),
+}));
+
+jest.mock('@/modules/game-board', () => ({
+  useResourceGainEvents: jest.fn(),
+}));
 
 describe('PlayerInfoView', () => {
   describe('basic player info rendering', () => {
@@ -315,6 +328,79 @@ describe('PlayerInfoView', () => {
       const overlay = goldChip.querySelector(`img[src="${goldGainSrc}"]`);
       expect(goldChip).toHaveClass('motion-reduce:ring-2', 'motion-reduce:ring-accent');
       expect(overlay).toHaveClass('motion-reduce:hidden');
+    });
+  });
+
+  describe('resource gain overlay on the connected card', () => {
+    const localPlayerId = 'player-0';
+    const goldGainSrc = RESOURCE_GAIN_SPRITES.gold;
+
+    const createPlayer = (overrides: Partial<Player> = {}): Player =>
+      ({
+        id: 0,
+        playerId: localPlayerId,
+        name: 'Test Player',
+        color: 'blue',
+        isBot: false,
+        armies: [{ id: 0, position: { x: 0, y: 0 }, hasActed: false }],
+        resources: { food: 10, wood: 5, gold: 3 },
+        armyCount: 1,
+        attackPower: 1,
+        nextArmyCost: 10,
+        victoryPoints: 5,
+        specialCards: [CardName.Scout],
+        positions: [],
+        passiveAbilities: { collector: false, explorer: false },
+        isSabotaged: false,
+        reinforceActive: false,
+        efficientActive: false,
+        masterBuilderActive: false,
+        hasExtraMove: false,
+        actionsThisTurn: [],
+        revealedTiles: [],
+        ...overrides,
+      }) as Player;
+
+    const renderCardFor = (player: Player, localPlayerIdValue: string) => {
+      jest.mocked(useGameBoard).mockReturnValue({
+        turnTimer: { formattedTime: '1:00', isExpiring: false },
+        isMyTurn: false,
+        gameState: {},
+        localPlayer: { playerId: localPlayerIdValue },
+      } as unknown as ReturnType<typeof useGameBoard>);
+      return render(<PlayerInfo player={player} isCurrentPlayer={false} />);
+    };
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+      jest.mocked(useResourceGainEvents).mockReturnValue([
+        { playerId: localPlayerId, type: ResourceType.Gold, tileIds: [] },
+      ]);
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('shows the gold gain overlay on the local player card', () => {
+      renderCardFor(createPlayer(), localPlayerId);
+
+      expect(screen.getByTestId('player-info-resource-gold').querySelector(`img[src="${goldGainSrc}"]`)).toBeInTheDocument();
+    });
+
+    it('removes the overlay from the DOM once the animation duration has elapsed', () => {
+      const { container } = renderCardFor(createPlayer(), localPlayerId);
+
+      act(() => jest.advanceTimersByTime(RESOURCE_GAIN_ANIMATION_MS));
+
+      expect(container.querySelector(`img[src="${goldGainSrc}"]`)).not.toBeInTheDocument();
+    });
+
+    it('never animates a card that belongs to another player, even when that player gains gold', () => {
+      const otherPlayer = createPlayer({ playerId: 'player-1', name: 'Rival', color: 'red' });
+      const { container } = renderCardFor(otherPlayer, 'player-0');
+
+      expect(container.querySelector(`img[src="${goldGainSrc}"]`)).not.toBeInTheDocument();
     });
   });
 

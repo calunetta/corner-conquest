@@ -25,7 +25,7 @@ export const styles = {
   card: 'transition-all duration-300 bg-background/50 backdrop-blur-xl border-white/10 shadow-lg border-l-4 relative overflow-hidden',
   cardCurrent: 'ring-2 ring-accent shadow-[0_0_24px_rgba(var(--accent),0.4)] scale-[1.01] bg-accent/5',
   cardOther: 'hover:scale-[1.005]',
-  content: 'p-2.5 sm:p-3 flex flex-col gap-2',
+  content: 'p-2.5 sm:p-3 flex flex-col gap-2 bg-black',
   headerRow: 'flex items-center justify-between gap-2',
   avatarSection: 'flex items-center gap-2 min-w-0 flex-1',
   avatarContainer: 'relative h-9 w-9 shrink-0 rounded-xl bg-black/50 p-0.5 border border-white/15 overflow-hidden flex items-center justify-center ring-1',

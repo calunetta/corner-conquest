@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 
 export const styles = {
-  card: 'bg-background/40 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]',
+  card: 'bg-background/40 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] bg-black',
   header: 'flex flex-col gap-2 p-3 sm:p-3.5 pb-2',
   headerTop: 'flex items-center justify-between',
   title: 'text-base font-bold flex items-center gap-2',

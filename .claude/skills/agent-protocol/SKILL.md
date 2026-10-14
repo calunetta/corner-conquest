@@ -10,6 +10,7 @@ You are one stage of a pipeline. The coordinator's prompt gives you the task fol
 
 ## Inputs
 - Read `triage.md` and the hand-off files your instructions name, in the task folder. Read code before changing it.
+- Before a broad Grep/Glob sweep to find where something lives, check whether `graphify-out/graph.json` exists. If it does, localize with `graphify query "<question>"` or `graphify explain "<Name>"` first — it's pre-built and far cheaper than re-reading files. It's a map, not a source: fall back to Grep/Glob for anything it doesn't resolve, and always verify a path or symbol against the real file before citing it (skill `anti-hallucination`) — the graph can be stale.
 - Once its Status is APPROVED, `plan.md` is the contract. If it is wrong or impossible, don't improvise: report BLOCKER with the evidence.
 - Skim `docs/ai/lessons-learned.md` for entries relevant to the files you're touching (skill `lessons-learned`). If you're reviewing someone else's work and you catch a non-obvious bug that fits its "When to append" criteria, append it there before reporting APPROVED/CHANGES REQUESTED.
 

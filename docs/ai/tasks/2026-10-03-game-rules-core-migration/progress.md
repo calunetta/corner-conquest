@@ -20,9 +20,9 @@ Tier: L · Phases: 4
 - [x] plan approved (architect-b)
 - [x] implementation (implementer-a, implementer-b)
 - [x] tests (tester-a, tester-b)
-- [ ] previews (preview-a, preview-b) — not applicable, no UI change
+- [x] previews (preview-a, preview-b) — not applicable, no UI change
 - [x] checks: typecheck, lint, unit tests — pass (scoped: 39 suites/334 tests; repo-wide failures/errors trace only to untracked concurrent tasks' files)
-- [ ] UI verified (ui-verify) — not applicable, no UI change
+- [x] UI verified (ui-verify) — not applicable, no UI change
 - [x] final review (architect-b)
 - [x] committed: e55c53c
 
@@ -30,9 +30,9 @@ Tier: L · Phases: 4
 - [x] plan approved (architect-b) — plan.md Status: APPROVED, applies to whole task
 - [x] implementation (implementer-a, implementer-b)
 - [x] tests (tester-a, tester-b)
-- [ ] previews (preview-a, preview-b) — not applicable, no UI change
+- [x] previews (preview-a, preview-b) — not applicable, no UI change
 - [x] checks: typecheck, lint, unit tests — pass (scoped: 25 suites/296 tests; repo-wide failures trace only to untracked concurrent game-map-migration task's files)
-- [ ] UI verified (ui-verify) — not applicable, no UI change
+- [x] UI verified (ui-verify) — not applicable, no UI change
 - [x] final review (architect-b)
 - [x] committed: 1bebb20 (legacy-file deletions landed earlier under sibling commit 2a396f1, see review.md "Out-of-band event")
 
@@ -40,10 +40,10 @@ Tier: L · Phases: 4
 - [x] plan approved (architect-b) — plan.md Status: APPROVED, applies to whole task
 - [x] implementation (implementer-a, implementer-b)
 - [x] tests (tester-a, tester-b)
-- [ ] previews (preview-a, preview-b) — not applicable, no UI change
+- [x] previews (preview-a, preview-b) — not applicable, no UI change
 - [x] checks: typecheck, lint, unit tests — pass (149 suites/1473 tests repo-wide)
   - not run: e2e (`npm run test:e2e -- e2e/gameplay.spec.ts`) — "Unable to locate a Java Runtime" (no Java 21 on this machine), confirmed independently by tester-b and architect-b
-- [ ] UI verified (ui-verify) — not applicable, no UI change
+- [x] UI verified (ui-verify) — not applicable, no UI change
 - [x] final review (architect-b)
 - [x] committed: 30f1c0a
 

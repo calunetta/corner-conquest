@@ -40,9 +40,11 @@ Full inventory of everything still outside the `src/modules/<domain>/` standard 
 | 11 | App entry points | `src/app/page.tsx`, `src/app/layout.tsx`, `src/components/icons.tsx` | #6, #9, #10 | `app-entry-migration` | done (10dc4b8, 4cfd509, 9532cfd) |
 
 ## Not in scope here
-- `src/lib/types/*.ts`, `src/features/game/types.ts`: shared type definitions. Move each type
-  into the `src/modules/<domain>/Name.types.ts` of whichever row above first consumes it, rather
-  than migrating types as a standalone pass — a types-only move has no behavior to test against.
+- `src/lib/types/*.ts`: shared domain types (`Player`, `GameState`, etc.), imported from 229
+  call sites across every domain module. `component-architecture` (`SKILL.md:41`) reserves a
+  module's `.types.ts` for props/view-model types and says domain types should be *imported*
+  from `@/lib/types`, not redefined per-domain — this is the intended home, not a pending
+  migration.
 - `src/lib/firebase.ts`, `placeholder-images.ts`, `utils.ts`: cross-cutting utilities, not
   components. Leave in place unless a specific row's migration requires touching them.
 - `src/components/ui/` (shadcn, vendored) and `src/testbed/` (already follows its own structure).

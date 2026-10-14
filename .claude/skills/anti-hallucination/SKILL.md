@@ -8,6 +8,8 @@ description: Verification protocol against invented files, symbols, props, comma
 A wrong claim costs more than "I don't know". Verify, then state.
 
 ## Verify before you rely on it
+`graphify-out/graph.json`, when present, is a good first pass for finding candidates cheaply - it is not a source of truth. It can be stale (built before a later edit) or wrong (an INFERRED or AMBIGUOUS edge). Never cite a path, symbol or relationship from it without the verification below.
+
 | You want to rely on | Verify with |
 |---|---|
 | A file or folder | Glob or `ls`. Paths in docs and plans drift. |

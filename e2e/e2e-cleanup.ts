@@ -11,16 +11,16 @@ export async function safeCleanupGame(page: Page): Promise<void> {
     // 1. If on the GameBoard, click the exit button and confirm leave
     const exitBtn = page.getByTestId('gameboard-exit-btn');
     if (await exitBtn.isVisible({ timeout: 500 }).catch(() => false)) {
-      await exitBtn.click().catch(() => {});
+      await exitBtn.click({ timeout: 2000 }).catch(() => {});
 
       const confirmLeaveBtn = page.getByRole('button', { name: /confirm & leave|leave match/i });
       if (await confirmLeaveBtn.isVisible({ timeout: 1500 }).catch(() => false)) {
-        await confirmLeaveBtn.click().catch(() => {});
+        await confirmLeaveBtn.click({ timeout: 2000 }).catch(() => {});
       }
 
       const confirmExitNonHost = page.getByRole('button', { name: /leave game/i });
       if (await confirmExitNonHost.isVisible({ timeout: 800 }).catch(() => false)) {
-        await confirmExitNonHost.click().catch(() => {});
+        await confirmExitNonHost.click({ timeout: 2000 }).catch(() => {});
       }
 
       // Allow Firestore transaction to finalize room cleanup
@@ -35,7 +35,7 @@ export async function safeCleanupGame(page: Page): Promise<void> {
       if (await openDialog.isVisible({ timeout: 300 }).catch(() => false)) {
         const cancelBtn = openDialog.getByRole('button', { name: /cancel|close/i }).first();
         if (await cancelBtn.isVisible({ timeout: 300 }).catch(() => false)) {
-          await cancelBtn.click().catch(() => {});
+          await cancelBtn.click({ timeout: 2000 }).catch(() => {});
         } else {
           await page.keyboard.press('Escape').catch(() => {});
         }

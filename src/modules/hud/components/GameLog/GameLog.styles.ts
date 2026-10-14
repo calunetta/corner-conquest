@@ -1,5 +1,5 @@
 export const styles = {
-  card: 'bg-background/40 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]',
+  card: 'bg-background/40 bg-black backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]',
   header: 'p-3 pb-1 flex items-center justify-between gap-2',
   title: 'text-xs font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap',
   toggleRow: 'flex items-center gap-1.5 shrink-0',
