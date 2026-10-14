@@ -8,9 +8,11 @@ export const styles = {
   // Same terrain surface as a real board tile (IslandTile.styles.ts `terrain`), without its z-index layering.
   // Hidden below md: at phone width the 26%-wide islands sit entirely behind the login card.
   island: 'absolute hidden md:block aspect-square rounded-lg border-2 border-black/50 bg-terrain bg-cover bg-center bg-no-repeat shadow-2xl',
-  // Clips the monster's wander (AnimatedMonster translates the sprite inside its own box) to this tile.
+  // Clips the monster's wander (the sprite translates inside its own box) to this tile.
   monsterIsland: 'overflow-hidden',
+  monsterSprite: 'absolute drop-shadow-[0_8px_12px_rgba(0,0,0,0.5)] transition-transform duration-700 ease-in-out',
   islandSprite: 'absolute inset-[15%] drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)]',
+  knight: 'absolute drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)]',
   resourceNode: 'absolute',
   sprite: 'object-contain',
 } as const;

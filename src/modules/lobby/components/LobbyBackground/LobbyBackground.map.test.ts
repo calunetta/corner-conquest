@@ -1,14 +1,25 @@
 import fs from 'fs';
 import path from 'path';
-import { ResourceType } from '@/lib/types';
-import { MONSTER_DATA } from '@/modules/game-rules';
-import { CLOUD_SIZE, RESOURCE_NODE_SLOTS } from './LobbyBackground.layout';
+import { PlayerColor, ResourceType } from '@/lib/types';
+import type { Monster } from '@/lib/types';
+import { MONSTER_DATA, PLAYER_DATA } from '@/modules/game-rules';
 import {
+  CLOUD_SIZE,
+  KNIGHT_POSITION,
+  KNIGHT_SIZE_PERCENT,
+  MONSTER_POSITION,
+  MONSTER_SIZE_PERCENT,
+  RESOURCE_NODE_SLOTS,
+} from './LobbyBackground.layout';
+import {
+  BASE_OWNER_COLOR,
+  createBaseKnight,
   createMonsterIslandMonster,
   createResourceIslandNodes,
   toCloudStyle,
+  toLobbyMonsterViewModel,
 } from './LobbyBackground.map';
-import type { CloudViewModel } from './LobbyBackground.types';
+import type { CloudViewModel, MonsterWanderState } from './LobbyBackground.types';
 
 const COMPONENT_DIR = __dirname;
 
@@ -27,6 +38,16 @@ function makeCloud(overrides: Partial<CloudViewModel> = {}): CloudViewModel {
 function publicFileExists(src: string): boolean {
   return fs.existsSync(path.join(process.cwd(), 'public', src));
 }
+
+function makeWander(overrides: Partial<MonsterWanderState> = {}): MonsterWanderState {
+  return { isAttacking: false, isFlipped: false, offsetPercent: 0, ...overrides };
+}
+
+const TEST_MONSTER: Monster = {
+  name: createMonsterIslandMonster().name,
+  level: 4,
+  sprite: { idle: '/sprites/idle-test.gif', attack: '/sprites/attack-test.gif', death: '/sprites/death.gif' },
+};
 
 describe('LobbyBackground.map', () => {
   describe('toCloudStyle', () => {
@@ -140,6 +161,91 @@ describe('LobbyBackground.map', () => {
     });
   });
 
+  describe('BASE_OWNER_COLOR', () => {
+    it('is blue, the colour of the castle on the base island', () => {
+      expect(BASE_OWNER_COLOR).toBe(PlayerColor.Blue);
+    });
+  });
+
+  describe('createBaseKnight', () => {
+    it('draws the idle sprite of the base owner from PLAYER_DATA', () => {
+      expect(createBaseKnight().src).toBe(PLAYER_DATA[BASE_OWNER_COLOR].sprite.idle);
+    });
+
+    it('places the knight at KNIGHT_POSITION, sized as a percentage of the island box', () => {
+      expect(createBaseKnight().style).toEqual({
+        top: KNIGHT_POSITION.top,
+        left: KNIGHT_POSITION.left,
+        width: `${KNIGHT_SIZE_PERCENT}%`,
+        height: `${KNIGHT_SIZE_PERCENT}%`,
+      });
+    });
+
+    it('returns a knight sprite that exists under public/', () => {
+      expect(publicFileExists(createBaseKnight().src)).toBe(true);
+    });
+
+    it('returns fresh style objects on every call', () => {
+      expect(createBaseKnight().style).not.toBe(createBaseKnight().style);
+    });
+  });
+
+  describe('toLobbyMonsterViewModel', () => {
+    it('shows the idle sprite and no transform while the monster is not wandering', () => {
+      const view = toLobbyMonsterViewModel(TEST_MONSTER, makeWander());
+
+      expect(view.spriteSrc).toBe(TEST_MONSTER.sprite.idle);
+      expect(view.style.transform).toBe('translateX(0%)');
+    });
+
+    it('places the sprite at MONSTER_POSITION, sized as a percentage of the island box', () => {
+      const view = toLobbyMonsterViewModel(TEST_MONSTER, makeWander());
+
+      expect(view.style).toMatchObject({
+        top: MONSTER_POSITION.top,
+        left: MONSTER_POSITION.left,
+        width: `${MONSTER_SIZE_PERCENT}%`,
+        height: `${MONSTER_SIZE_PERCENT}%`,
+      });
+    });
+
+    it.each([
+      { name: 'a rightward step', offsetPercent: 12, isFlipped: false, expected: 'translateX(12%)' },
+      { name: 'a leftward step', offsetPercent: -9, isFlipped: true, expected: 'translateX(-9%) scaleX(-1)' },
+      { name: 'a zero step facing right', offsetPercent: 0, isFlipped: false, expected: 'translateX(0%)' },
+      { name: 'a leftward step at the range minimum', offsetPercent: -15, isFlipped: true, expected: 'translateX(-15%) scaleX(-1)' },
+    ])('translates for $name', ({ offsetPercent, isFlipped, expected }) => {
+      const view = toLobbyMonsterViewModel(TEST_MONSTER, makeWander({ offsetPercent, isFlipped }));
+
+      expect(view.style.transform).toBe(expected);
+    });
+
+    it('shows the attack sprite and drops the sideways translation while attacking', () => {
+      const view = toLobbyMonsterViewModel(TEST_MONSTER, makeWander({ isAttacking: true, offsetPercent: 12 }));
+
+      expect(view.spriteSrc).toBe(TEST_MONSTER.sprite.attack);
+      expect(view.style.transform).toBe('');
+    });
+
+    it('keeps the facing while attacking so the monster does not turn around mid-pose', () => {
+      const view = toLobbyMonsterViewModel(TEST_MONSTER, makeWander({ isAttacking: true, isFlipped: true, offsetPercent: -9 }));
+
+      expect(view.spriteSrc).toBe(TEST_MONSTER.sprite.attack);
+      expect(view.style.transform).toBe('scaleX(-1)');
+    });
+
+    it('does not mutate the monster or the wander state it receives', () => {
+      const wander = makeWander({ isFlipped: true, offsetPercent: -9 });
+      const monsterSnapshot = JSON.parse(JSON.stringify(TEST_MONSTER)) as Monster;
+      const wanderSnapshot = { ...wander };
+
+      toLobbyMonsterViewModel(TEST_MONSTER, wander);
+
+      expect(TEST_MONSTER).toEqual(monsterSnapshot);
+      expect(wander).toEqual(wanderSnapshot);
+    });
+  });
+
   // Regression guard: the lobby background must not depend on the real board's locked slot tables
   // (see LobbyBackground.layout.ts). Every source file in this folder is checked, including files
   // added later, so the guard does not depend on a hand-kept list of names.
@@ -156,6 +262,8 @@ describe('LobbyBackground.map', () => {
         'LobbyBackground.hook.ts',
         'LobbyBackground.types.ts',
         'LobbyBackground.tsx',
+        'LobbyBackground.monster.hook.ts',
+        'LobbyBackground.random.ts',
       ]));
     });
 
@@ -163,6 +271,14 @@ describe('LobbyBackground.map', () => {
       const source = fs.readFileSync(path.join(COMPONENT_DIR, file), 'utf8');
 
       expect(source).not.toContain('island-tile-slots');
+    });
+
+    // The monster's motion is lobby-owned so it can be tuned in layout.ts without touching the real monster.
+    it.each(sourceFiles)('%s does not import the real AnimatedMonster component or hook', (file) => {
+      const source = fs.readFileSync(path.join(COMPONENT_DIR, file), 'utf8');
+
+      expect(source).not.toMatch(/from\s+['"][^'"]*AnimatedMonster/);
+      expect(source).not.toContain('useAnimatedMonster');
     });
   });
 });

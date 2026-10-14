@@ -3,19 +3,24 @@
 import type { CSSProperties } from 'react';
 import Image from 'next/image';
 import { PLAYER_DATA } from '@/modules/game-rules';
-import { AnimatedMonster } from '@/modules/map';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { PlayerColor } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ISLAND_POSITIONS, ISLAND_WIDTH_PERCENT } from './LobbyBackground.layout';
-import { createMonsterIslandMonster, createResourceIslandNodes, toCloudStyle } from './LobbyBackground.map';
+import {
+  BASE_OWNER_COLOR,
+  createBaseKnight,
+  createMonsterIslandMonster,
+  createResourceIslandNodes,
+  toCloudStyle,
+} from './LobbyBackground.map';
 import { styles } from './LobbyBackground.styles';
 import { useLobbyBackground } from './LobbyBackground.hook';
+import { useLobbyMonster } from './LobbyBackground.monster.hook';
 
-// Built once at module load: the monster object must keep its identity across renders so AnimatedMonster's wander state survives.
+// Built once at module load so the lists and monster keep a stable identity across renders.
 const RESOURCE_NODES = createResourceIslandNodes();
 const MONSTER = createMonsterIslandMonster();
-const BASE_CASTLE_SRC = PLAYER_DATA[PlayerColor.Blue].base;
+const KNIGHT = createBaseKnight();
+const BASE_CASTLE_SRC = PLAYER_DATA[BASE_OWNER_COLOR].base;
 
 function islandStyle(position: { top: string; left: string }): CSSProperties {
   return { top: position.top, left: position.left, width: `${ISLAND_WIDTH_PERCENT}%` };
@@ -24,6 +29,7 @@ function islandStyle(position: { top: string; left: string }): CSSProperties {
 /** Decorative layer behind the login and lobby screens. Hidden from assistive tech and pointer-transparent. */
 export function LobbyBackground() {
   const { clouds } = useLobbyBackground();
+  const monster = useLobbyMonster(MONSTER);
 
   return (
     <div className={styles.root} aria-hidden>
@@ -40,6 +46,9 @@ export function LobbyBackground() {
         <div className={styles.islandSprite}>
           <Image src={BASE_CASTLE_SRC} alt="" fill className={styles.sprite} unoptimized />
         </div>
+        <div className={styles.knight} style={KNIGHT.style}>
+          <Image src={KNIGHT.src} alt="" fill className={styles.sprite} unoptimized />
+        </div>
       </div>
 
       <div className={styles.island} style={islandStyle(ISLAND_POSITIONS.resource)}>
@@ -51,9 +60,9 @@ export function LobbyBackground() {
       </div>
 
       <div className={cn(styles.island, styles.monsterIsland)} style={islandStyle(ISLAND_POSITIONS.monster)}>
-        <TooltipProvider>
-          <AnimatedMonster monster={MONSTER} />
-        </TooltipProvider>
+        <div className={styles.monsterSprite} style={monster.style}>
+          <Image src={monster.spriteSrc} alt="" fill className={styles.sprite} unoptimized />
+        </div>
       </div>
     </div>
   );

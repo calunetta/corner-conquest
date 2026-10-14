@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { LobbyBackground } from './LobbyBackground';
 import { SAMPLE_CLOUDS } from './LobbyBackground.fixtures';
 import { useLobbyBackground } from './LobbyBackground.hook';
@@ -24,9 +24,11 @@ jest.mock('./LobbyBackground.hook', () => ({
 }));
 
 const BASE_CASTLE_SRC = '/sprites/castle_blue.png';
+const KNIGHT_SRC = '/sprites/blue.gif';
 const RESOURCE_SPRITE_SRCS = ['/sprites/sheep.gif', '/sprites/tree.gif', '/sprites/mine.png'];
 const MONSTER_IDLE_SRC = '/sprites/minotaur_idle.gif';
-const ISLAND_IMAGE_COUNT = 1 + RESOURCE_SPRITE_SRCS.length + 1;
+// Base castle, base knight, three resource nodes and the monster.
+const ISLAND_IMAGE_COUNT = 1 + 1 + RESOURCE_SPRITE_SRCS.length + 1;
 
 function renderedImageSources(container: HTMLElement): string[] {
   return Array.from(container.querySelectorAll('img')).map((img) => img.getAttribute('src') ?? '');
@@ -47,18 +49,19 @@ describe('LobbyBackground', () => {
     expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('renders the base castle, the three resource nodes and the Minotaur in island order', () => {
+  it('renders the base castle, the base knight, the three resource nodes and the Minotaur in island order', () => {
     const { container } = render(<LobbyBackground />);
     const islandSources = renderedImageSources(container).slice(SAMPLE_CLOUDS.length);
 
-    expect(islandSources).toEqual([BASE_CASTLE_SRC, ...RESOURCE_SPRITE_SRCS, MONSTER_IDLE_SRC]);
+    expect(islandSources).toEqual([BASE_CASTLE_SRC, KNIGHT_SRC, ...RESOURCE_SPRITE_SRCS, MONSTER_IDLE_SRC]);
     expect(islandSources).toHaveLength(ISLAND_IMAGE_COUNT);
   });
 
-  it('names the monster island sprite after the Minotaur', () => {
-    render(<LobbyBackground />);
+  it('draws the Minotaur as a decorative image with empty alt text, inside the hidden layer', () => {
+    const { container } = render(<LobbyBackground />);
+    const monsterImage = container.querySelector(`img[src="${MONSTER_IDLE_SRC}"]`);
 
-    expect(screen.getByAltText('Minotaur')).toBeInTheDocument();
+    expect(monsterImage).toHaveAttribute('alt', '');
   });
 
   it('draws one sprite per cloud the hook returns, in the order it returns them', () => {
@@ -73,7 +76,7 @@ describe('LobbyBackground', () => {
 
     const { container } = render(<LobbyBackground />);
 
-    expect(renderedImageSources(container)).toEqual([BASE_CASTLE_SRC, ...RESOURCE_SPRITE_SRCS, MONSTER_IDLE_SRC]);
+    expect(renderedImageSources(container)).toEqual([BASE_CASTLE_SRC, KNIGHT_SRC, ...RESOURCE_SPRITE_SRCS, MONSTER_IDLE_SRC]);
   });
 
   it('renders without React or Radix warnings', () => {

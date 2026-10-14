@@ -4,8 +4,8 @@ import {
   CLOUD_SCALE_RANGE,
   CLOUD_SPAWN,
   CLOUD_TOP_PERCENT_RANGE,
-  type NumberRange,
 } from './LobbyBackground.layout';
+import { randomWithin } from './LobbyBackground.random';
 import type { CloudViewModel, LobbyBackgroundViewModel } from './LobbyBackground.types';
 
 const MS_PER_SECOND = 1000;
@@ -15,10 +15,6 @@ const CLOUD_SPRITES = [
   '/sprites/cloud_medium.png',
   '/sprites/cloud_big.png',
 ];
-
-function randomWithin(range: NumberRange): number {
-  return range.min + Math.random() * (range.max - range.min);
-}
 
 function pickRandomSprite(): string {
   return CLOUD_SPRITES[Math.floor(Math.random() * CLOUD_SPRITES.length)];

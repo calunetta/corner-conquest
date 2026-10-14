@@ -37,3 +37,18 @@ export const RESOURCE_NODE_SLOTS: Array<{ top: string; left: string; sizePercent
   { top: '52%', left: '18%', sizePercent: 34 },
   { top: '34%', left: '56%', sizePercent: 34 },
 ];
+
+/** Knight standing on the base island, in front of the castle. Percentages are of the island box. */
+export const KNIGHT_SIZE_PERCENT = 22;
+export const KNIGHT_POSITION: { top: string; left: string } = { top: '66%', left: '62%' };
+
+/** Monster sprite width and height as a share of its island box. */
+export const MONSTER_SIZE_PERCENT = 45;
+/** Top-left corner of the monster sprite box, in % of its island box. 27.5 = (100 - 45) / 2 centres it. */
+export const MONSTER_POSITION: { top: string; left: string } = { top: '27.5%', left: '27.5%' };
+/** Each wander step shifts the monster by this many percent of its own sprite width. */
+export const MONSTER_WANDER_OFFSET_RANGE: NumberRange = { min: -15, max: 15 };
+/** Milliseconds between wander steps; one value is drawn on mount and kept for the session. */
+export const MONSTER_WANDER_INTERVAL_MS: NumberRange = { min: 3000, max: 5500 };
+/** Chance per step that the monster shows its attack pose instead of wandering. */
+export const MONSTER_ATTACK_CHANCE = 0.25;

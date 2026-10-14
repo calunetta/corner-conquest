@@ -1,13 +1,23 @@
 import type { CSSProperties } from 'react';
 import type { Monster } from '@/lib/types';
-import { ResourceType } from '@/lib/types';
-import { MONSTER_DATA } from '@/modules/game-rules';
+import { PlayerColor, ResourceType } from '@/lib/types';
+import { MONSTER_DATA, PLAYER_DATA } from '@/modules/game-rules';
 import { RESOURCE_SPRITES } from '@/modules/map';
-import { CLOUD_SIZE, RESOURCE_NODE_SLOTS } from './LobbyBackground.layout';
-import type { CloudViewModel } from './LobbyBackground.types';
+import {
+  CLOUD_SIZE,
+  KNIGHT_POSITION,
+  KNIGHT_SIZE_PERCENT,
+  MONSTER_POSITION,
+  MONSTER_SIZE_PERCENT,
+  RESOURCE_NODE_SLOTS,
+} from './LobbyBackground.layout';
+import type { CloudViewModel, LobbyMonsterViewModel, MonsterWanderState } from './LobbyBackground.types';
 
 /** Level 4 in MONSTER_DATA is the Minotaur. */
 const MONSTER_ISLAND_LEVEL = 4;
+
+/** Owner of the base island's castle; the knight standing beside it uses the same colour. */
+export const BASE_OWNER_COLOR = PlayerColor.Blue;
 
 /** Index-aligned with RESOURCE_NODE_SLOTS. */
 const RESOURCE_TYPES_BY_SLOT = [ResourceType.Food, ResourceType.Wood, ResourceType.Gold] as const;
@@ -45,4 +55,38 @@ export function createMonsterIslandMonster(): Monster {
   const { name, sprite } = MONSTER_DATA[MONSTER_ISLAND_LEVEL];
 
   return { name, level: MONSTER_ISLAND_LEVEL, sprite };
+}
+
+/** The knight on the base island, drawn in the base owner's idle sprite. */
+export function createBaseKnight(): { src: string; style: CSSProperties } {
+  return {
+    src: PLAYER_DATA[BASE_OWNER_COLOR].sprite.idle,
+    style: {
+      top: KNIGHT_POSITION.top,
+      left: KNIGHT_POSITION.left,
+      width: `${KNIGHT_SIZE_PERCENT}%`,
+      height: `${KNIGHT_SIZE_PERCENT}%`,
+    },
+  };
+}
+
+function toMonsterTransform(wander: MonsterWanderState): string {
+  const flip = wander.isFlipped ? 'scaleX(-1)' : '';
+  // The attack pose keeps the facing but does not wander sideways.
+  if (wander.isAttacking) return flip;
+
+  return `translateX(${wander.offsetPercent}%) ${flip}`.trim();
+}
+
+export function toLobbyMonsterViewModel(monster: Monster, wander: MonsterWanderState): LobbyMonsterViewModel {
+  return {
+    spriteSrc: wander.isAttacking ? monster.sprite.attack : monster.sprite.idle,
+    style: {
+      top: MONSTER_POSITION.top,
+      left: MONSTER_POSITION.left,
+      width: `${MONSTER_SIZE_PERCENT}%`,
+      height: `${MONSTER_SIZE_PERCENT}%`,
+      transform: toMonsterTransform(wander),
+    },
+  };
 }
