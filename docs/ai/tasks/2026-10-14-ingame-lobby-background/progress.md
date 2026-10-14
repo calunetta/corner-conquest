@@ -23,7 +23,7 @@ Tier: M · Phases: 2
 - [x] UI verified (ui-verify)
 - [x] docs-sync (structure-and-state.md, systems-and-visuals.md)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: d084db5
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
@@ -38,3 +38,4 @@ Tier: M · Phases: 2
 2026-10-14 architect-b (final-review): CHANGES REQUESTED — review.md finding #1: unflagged deviation from the architect-approved markup contract (plan.md), no note in this log. Finding #2 (ImageIcon vs. Image import) not blocking.
 2026-10-14 architect-a (revise): DONE, amended plan.md's Contracts/markup section (and the phase 2 steps, model-escalation line, test plan, risks) to make the Tooltip removal the approved contract, with the Radix `data-state` conflict as the recorded reason; added this log entry per the coordinator's instruction. Re-review by architect-b pending.
 2026-10-14 architect-b (final-review, re-review): APPROVED. Independently verified the Radix `data-state` conflict in `node_modules` (`@radix-ui/react-switch/dist/index.js:80-90` spreads `...switchProps` after its own `"data-state"` key, so a Tooltip-asChild-merged `data-state` silently overwrites the Switch's checked/unchecked attribute) — the amended contract's reasoning holds, not just asserted. Shipped `GameBoardHeader.tsx` matches the amended contract exactly (no Tooltip anywhere). `npm run typecheck` clean; lint clean on all touched files (0 warnings); `npx jest "^src/modules/hud/components/GameBoardHeader"` 52/52 passed, `npx jest "^src/modules/shared" "^src/features/game/components"` 105/105 passed (full/unanchored jest runs hit pre-existing `.claude/worktrees/*` duplicate-test noise, not this task's bug); ui-verify screenshots of testbed "Background on"/"Background off" at 1280x720 and 390x844, 0 console errors, mobile correctly hides the text label. docs-sync's two doc edits confirmed accurate. review.md updated to VERDICT: APPROVED.
+2026-10-14 coordinator: committed phase 2 (d084db5)
