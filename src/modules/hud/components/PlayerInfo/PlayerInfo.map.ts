@@ -1,5 +1,7 @@
 import { ResourceType } from '@/lib/types';
 import { PLAYER_DATA } from '@/modules/game-rules';
+import { RESOURCE_GAIN_SPRITES } from '@/modules/shared';
+import type { PulseState } from '@/modules/shared';
 import type { Player } from '@/lib/types';
 import type {
   BuffViewModel,
@@ -78,22 +80,37 @@ function toBuffs(player: Player): BuffViewModel[] {
   return buffs;
 }
 
-export function toResources(player: Player): ResourceStatViewModel[] {
+function toGainPulse(
+  type: ResourceType,
+  gainPulses: Partial<Record<ResourceType, PulseState>>,
+): ResourceStatViewModel['gainPulse'] {
+  const pulse = gainPulses[type];
+  if (!pulse?.isActive) return null;
+  return { token: pulse.token, spriteSrc: RESOURCE_GAIN_SPRITES[type] };
+}
+
+export function toResources(
+  player: Player,
+  gainPulses: Partial<Record<ResourceType, PulseState>> = {},
+): ResourceStatViewModel[] {
   return [
     {
       type: ResourceType.Food,
       label: 'Food',
       value: player.resources?.food ?? 0,
+      gainPulse: toGainPulse(ResourceType.Food, gainPulses),
     },
     {
       type: ResourceType.Wood,
       label: 'Wood',
       value: player.resources?.wood ?? 0,
+      gainPulse: toGainPulse(ResourceType.Wood, gainPulses),
     },
     {
       type: ResourceType.Gold,
       label: 'Gold',
       value: player.resources?.gold ?? 0,
+      gainPulse: toGainPulse(ResourceType.Gold, gainPulses),
     },
   ];
 }
@@ -118,6 +135,7 @@ export function toPlayerInfoViewModel(
   vpGoal: number,
   turnTimer: { formattedTime: string; isExpiring: boolean },
   isMyTurn: boolean,
+  gainPulses: Partial<Record<ResourceType, PulseState>> = {},
 ): PlayerInfoViewModel {
   const armyCount = player.armies ? player.armies.length : (player.armyCount ?? 0);
   const positionedCount = player.positions ? player.positions.length : 0;
@@ -137,7 +155,7 @@ export function toPlayerInfoViewModel(
     specialCardsCount: player.specialCards ? player.specialCards.length : 0,
     specialCards: player.specialCards || [],
     attackPower: player.attackPower ?? 0,
-    resources: toResources(player),
+    resources: toResources(player, gainPulses),
     buffs: toBuffs(player),
     turnBadge: toTurnBadge(isCurrentPlayer, isMyTurn, turnTimer),
   };

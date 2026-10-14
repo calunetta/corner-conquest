@@ -1,7 +1,8 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { useGameBoard } from '@/features/game/context/GameBoardContext';
-import type { Player } from '@/lib/types';
-import { CardName } from '@/lib/types';
+import type { GameState, LogEntry, Player, StructuredLogEntry } from '@/lib/types';
+import { CardName, ResourceType } from '@/lib/types';
+import { RESOURCE_GAIN_ANIMATION_MS } from '@/modules/shared';
 import { usePlayerInfo } from './PlayerInfo.hook';
 
 jest.mock('@/features/game/context/GameBoardContext');
@@ -174,5 +175,112 @@ describe('usePlayerInfo', () => {
     expect(result.current.resources[0].value).toBe(20);
     expect(result.current.resources[1].value).toBe(10);
     expect(result.current.resources[2].value).toBe(5);
+  });
+});
+
+describe('usePlayerInfo resource gain pulses', () => {
+  const LOCAL_PLAYER_ID = 'player-0';
+
+  const buildGainEntry = (playerId: string, type: ResourceType): StructuredLogEntry => ({
+    kind: 'structured',
+    turn: 1,
+    category: 'economy',
+    message: 'gained stuff',
+    playerId,
+    resourceGain: [{ type, amount: 1, tileIds: ['0-0'] }],
+  });
+
+  const mockBoard = (log: LogEntry[]) => {
+    jest.mocked(useGameBoard).mockReturnValue({
+      turnTimer: { formattedTime: '1:30', isExpiring: false },
+      isMyTurn: false,
+      gameState: { log } as unknown as GameState,
+      localPlayer: { playerId: LOCAL_PLAYER_ID } as Player,
+    } as unknown as ReturnType<typeof useGameBoard>);
+  };
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('pulses the matching chip on the local player card when a gain for that player is logged', () => {
+    const player = createPlayer({ playerId: LOCAL_PLAYER_ID });
+    mockBoard([]);
+    const { result, rerender } = renderHook(() => usePlayerInfo({ player, isCurrentPlayer: false }));
+
+    mockBoard([buildGainEntry(LOCAL_PLAYER_ID, ResourceType.Gold)]);
+    rerender();
+
+    const gold = result.current.resources.find((resource) => resource.type === ResourceType.Gold);
+    expect(gold?.gainPulse).toEqual(expect.objectContaining({ token: 1 }));
+    expect(result.current.resources.filter((resource) => resource.gainPulse !== null)).toHaveLength(1);
+  });
+
+  it('pulses two chips when one update grants two resource types (Collector tick)', () => {
+    const player = createPlayer({ playerId: LOCAL_PLAYER_ID });
+    mockBoard([]);
+    const { result, rerender } = renderHook(() => usePlayerInfo({ player, isCurrentPlayer: false }));
+
+    mockBoard([
+      {
+        ...buildGainEntry(LOCAL_PLAYER_ID, ResourceType.Wood),
+        resourceGain: [
+          { type: ResourceType.Wood, amount: 1, tileIds: ['0-0'] },
+          { type: ResourceType.Gold, amount: 1, tileIds: ['0-0'] },
+        ],
+      },
+    ]);
+    rerender();
+
+    expect(result.current.resources.map((resource) => resource.gainPulse !== null)).toEqual([false, true, true]);
+  });
+
+  it('never pulses a card that belongs to another player, even when that player gains resources', () => {
+    const otherPlayer = createPlayer({ playerId: 'player-1' });
+    mockBoard([]);
+    const { result, rerender } = renderHook(() => usePlayerInfo({ player: otherPlayer, isCurrentPlayer: false }));
+
+    mockBoard([buildGainEntry('player-1', ResourceType.Gold)]);
+    rerender();
+
+    expect(result.current.resources.every((resource) => resource.gainPulse === null)).toBe(true);
+  });
+
+  it('ignores a gain logged for a different player on the local player card', () => {
+    const player = createPlayer({ playerId: LOCAL_PLAYER_ID });
+    mockBoard([]);
+    const { result, rerender } = renderHook(() => usePlayerInfo({ player, isCurrentPlayer: false }));
+
+    mockBoard([buildGainEntry('player-1', ResourceType.Gold)]);
+    rerender();
+
+    expect(result.current.resources.every((resource) => resource.gainPulse === null)).toBe(true);
+  });
+
+  it('does not pulse for gains already in the log at mount (seeds without replay)', () => {
+    const player = createPlayer({ playerId: LOCAL_PLAYER_ID });
+    mockBoard([buildGainEntry(LOCAL_PLAYER_ID, ResourceType.Gold)]);
+
+    const { result } = renderHook(() => usePlayerInfo({ player, isCurrentPlayer: false }));
+
+    expect(result.current.resources.every((resource) => resource.gainPulse === null)).toBe(true);
+  });
+
+  it('clears the pulse exactly after RESOURCE_GAIN_ANIMATION_MS', () => {
+    const player = createPlayer({ playerId: LOCAL_PLAYER_ID });
+    mockBoard([]);
+    const { result, rerender } = renderHook(() => usePlayerInfo({ player, isCurrentPlayer: false }));
+    mockBoard([buildGainEntry(LOCAL_PLAYER_ID, ResourceType.Gold)]);
+    rerender();
+
+    act(() => jest.advanceTimersByTime(RESOURCE_GAIN_ANIMATION_MS - 1));
+    expect(result.current.resources[2].gainPulse).not.toBeNull();
+
+    act(() => jest.advanceTimersByTime(1));
+    expect(result.current.resources[2].gainPulse).toBeNull();
   });
 });

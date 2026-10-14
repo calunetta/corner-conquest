@@ -8,4 +8,6 @@ export type {
 } from './game-board.types';
 export { GameBoardProvider, useGameBoard } from './game-board.provider';
 export { useGameEngine } from './game-board.engine.hook';
+export { useResourceGainEvents } from './resource-gain-events.hook';
+export type { ResourceGainEvent } from './resource-gain-events.types';
 export { ConnectionWarningDialog } from './components/ConnectionWarningDialog';

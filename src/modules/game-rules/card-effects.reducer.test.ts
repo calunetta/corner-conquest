@@ -128,6 +128,37 @@ describe('handleUseProductiveCard', () => {
     expect(collectionEntry).toMatchObject({ resourcesCollected: { [ResourceType.Food]: 2 } });
   });
 
+  it('attaches resourceGain carrying the doubled amount and the collected island id', () => {
+    const player = game.players[0];
+    player.specialCards = [CardName.Productive];
+    player.resources = { food: 0, wood: 0, gold: 0 };
+    player.positions = [{ x: 0, y: 0, resource: ResourceType.Food, armyId: 0 }];
+    const tile = game.map[0 * game.settings.gridSize.cols + 0];
+    tile.positionedBy = [{ playerId: player.id, resource: ResourceType.Food }];
+
+    const nextState = handleUseProductiveCard(game, ResourceType.Food);
+
+    expect(nextState.log.find((entry) => typeof entry !== 'string' && entry.resourcesCollected !== undefined)).toMatchObject({
+      playerId: player.playerId,
+      resourceGain: [{ type: ResourceType.Food, amount: 2, tileIds: [tile.id] }],
+    });
+  });
+
+  it('attaches resourceGain with the undoubled amount when the selection is null (empty input)', () => {
+    const player = game.players[0];
+    player.specialCards = [CardName.Productive];
+    player.resources = { food: 0, wood: 0, gold: 0 };
+    player.positions = [{ x: 0, y: 0, resource: ResourceType.Food, armyId: 0 }];
+    const tile = game.map[0 * game.settings.gridSize.cols + 0];
+    tile.positionedBy = [{ playerId: player.id, resource: ResourceType.Food }];
+
+    const nextState = handleUseProductiveCard(game, null);
+
+    expect(nextState.log.find((entry) => typeof entry !== 'string' && entry.resourcesCollected !== undefined)).toMatchObject({
+      resourceGain: [{ type: ResourceType.Food, amount: 1, tileIds: [tile.id] }],
+    });
+  });
+
   it('does not double a resource where the player is not positioned', () => {
     const player = game.players[0];
     player.specialCards = [CardName.Productive];

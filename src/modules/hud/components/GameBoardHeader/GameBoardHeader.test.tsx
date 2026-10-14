@@ -180,9 +180,9 @@ describe('GameBoardHeaderView', () => {
 
     it('shows a zero value as 0 rather than hiding the pair', () => {
       const resources = [
-        { type: ResourceType.Food, label: 'Food', value: 0 },
-        { type: ResourceType.Wood, label: 'Wood', value: 0 },
-        { type: ResourceType.Gold, label: 'Gold', value: 0 },
+        { type: ResourceType.Food, label: 'Food', value: 0, gainPulse: null },
+        { type: ResourceType.Wood, label: 'Wood', value: 0, gainPulse: null },
+        { type: ResourceType.Gold, label: 'Gold', value: 0, gainPulse: null },
       ];
 
       render(<GameBoardHeaderView {...{ ...playingMyTurnNotExpiringProps, resources }} />);

@@ -283,9 +283,9 @@ describe('toGameBoardHeaderViewModel', () => {
       const result = toGameBoardHeaderViewModel(gameState, false, false, turnTimer, localPlayer);
 
       expect(result.resources).toEqual([
-        { type: ResourceType.Food, label: 'Food', value: 4 },
-        { type: ResourceType.Wood, label: 'Wood', value: 2 },
-        { type: ResourceType.Gold, label: 'Gold', value: 1 },
+        { type: ResourceType.Food, label: 'Food', value: 4, gainPulse: null },
+        { type: ResourceType.Wood, label: 'Wood', value: 2, gainPulse: null },
+        { type: ResourceType.Gold, label: 'Gold', value: 1, gainPulse: null },
       ]);
     });
 
@@ -306,9 +306,9 @@ describe('toGameBoardHeaderViewModel', () => {
       );
 
       expect(result.resources).toEqual([
-        { type: ResourceType.Food, label: 'Food', value: 0 },
-        { type: ResourceType.Wood, label: 'Wood', value: 0 },
-        { type: ResourceType.Gold, label: 'Gold', value: 0 },
+        { type: ResourceType.Food, label: 'Food', value: 0, gainPulse: null },
+        { type: ResourceType.Wood, label: 'Wood', value: 0, gainPulse: null },
+        { type: ResourceType.Gold, label: 'Gold', value: 0, gainPulse: null },
       ]);
     });
   });

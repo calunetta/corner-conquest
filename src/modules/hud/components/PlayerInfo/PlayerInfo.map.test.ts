@@ -1,5 +1,6 @@
 import type { Player } from '@/lib/types';
 import { CardName } from '@/lib/types';
+import { RESOURCE_GAIN_SPRITES } from '@/modules/shared';
 import { toPlayerInfoViewModel } from './PlayerInfo.map';
 
 const createPlayer = (overrides: Partial<Player> = {}): Player =>
@@ -130,9 +131,9 @@ describe('toPlayerInfoViewModel', () => {
       const player = createPlayer({ resources: { food: 20, wood: 15, gold: 5 } });
       const result = toPlayerInfoViewModel(player, true, 10, mockTurnTimer, false);
       expect(result.resources).toHaveLength(3);
-      expect(result.resources[0]).toEqual({ type: 'food', label: 'Food', value: 20 });
-      expect(result.resources[1]).toEqual({ type: 'wood', label: 'Wood', value: 15 });
-      expect(result.resources[2]).toEqual({ type: 'gold', label: 'Gold', value: 5 });
+      expect(result.resources[0]).toEqual({ type: 'food', label: 'Food', value: 20, gainPulse: null });
+      expect(result.resources[1]).toEqual({ type: 'wood', label: 'Wood', value: 15, gainPulse: null });
+      expect(result.resources[2]).toEqual({ type: 'gold', label: 'Gold', value: 5, gainPulse: null });
     });
     it('handles zero and missing resource values', () => {
       const player = createPlayer({ resources: {} as Record<string, number> });
@@ -142,6 +143,32 @@ describe('toPlayerInfoViewModel', () => {
       expect(result.resources[2].value).toBe(0);
     });
   });
+  describe('resource gain pulses', () => {
+    it('leaves every chip without a gain pulse when no gainPulses are passed (default empty record)', () => {
+      const result = toPlayerInfoViewModel(createPlayer(), true, 10, mockTurnTimer, false);
+
+      expect(result.resources.map((resource) => resource.gainPulse)).toEqual([null, null, null]);
+    });
+
+    it('attaches the active gold pulse token and gold-gain sprite to the Gold chip only', () => {
+      const gainPulses = { gold: { isActive: true, token: 3 } };
+
+      const result = toPlayerInfoViewModel(createPlayer(), true, 10, mockTurnTimer, false, gainPulses);
+
+      expect(result.resources[0].gainPulse).toBeNull();
+      expect(result.resources[1].gainPulse).toBeNull();
+      expect(result.resources[2].gainPulse).toEqual({ token: 3, spriteSrc: RESOURCE_GAIN_SPRITES.gold });
+    });
+
+    it('keeps the gainPulse null for a pulse whose isActive is false, even with a token', () => {
+      const gainPulses = { food: { isActive: false, token: 2 } };
+
+      const result = toPlayerInfoViewModel(createPlayer(), true, 10, mockTurnTimer, false, gainPulses);
+
+      expect(result.resources[0].gainPulse).toBeNull();
+    });
+  });
+
   describe('buffs', () => {
     const buffCases: Array<[string, Partial<Player>, string]> = [
       ['collector', { passiveAbilities: { collector: true, explorer: false } }, 'Collector'],

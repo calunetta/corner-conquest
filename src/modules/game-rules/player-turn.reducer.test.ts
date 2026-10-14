@@ -92,6 +92,31 @@ describe('handleEndTurn', () => {
     expect(collectionEntry).toMatchObject({ resourcesCollected: { [ResourceType.Gold]: goldYield } });
   });
 
+  it('attaches resourceGain with the collected island id, mirroring resourcesCollected 1:1', () => {
+    const player2 = game.players[1];
+    player2.armies[0].hasActed = true;
+    const armyPos = player2.armies[0].position;
+    player2.positions.push({
+      armyId: player2.armies[0].id,
+      resource: ResourceType.Gold,
+      x: armyPos.x,
+      y: armyPos.y,
+    });
+    const baseTile = game.map[armyPos.y * game.settings.gridSize.cols + armyPos.x];
+    baseTile.positionedBy = [{ playerId: player2.id, resource: ResourceType.Gold }];
+    const goldYield = baseTile.resources.find((r) => r.type === ResourceType.Gold)!.amount;
+
+    const nextState = handleEndTurn(game);
+
+    const collectionEntry = nextState.log.find(
+      (entry) => typeof entry !== 'string' && entry.resourcesCollected !== undefined,
+    );
+    expect(collectionEntry).toMatchObject({
+      playerId: player2.playerId,
+      resourceGain: [{ type: ResourceType.Gold, amount: goldYield, tileIds: [baseTile.id] }],
+    });
+  });
+
   it('a cleared position collects nothing on the next turn until the army is re-positioned (new rule: no auto-renew)', () => {
     const player2 = game.players[1];
     player2.armies[0].hasActed = true;

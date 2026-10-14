@@ -1,6 +1,7 @@
 import type { Army, GameState, Player, ResourceType } from '@/lib/types';
 import { CardName, GameStatus } from '@/lib/types';
 import { pushLogEntry } from './log-entry';
+import { toResourceGainEntries } from './resource-gain-log';
 import { clearCollectedPositions } from './resource-collection';
 import { applyCollectorAbility, applyDeferredReclaim, applyExplorerAbility } from './turn-start-passives.reducer';
 
@@ -13,14 +14,16 @@ const REVEAL_ANIMATION_DURATION_MS = 1400;
  */
 function applyAutomaticCollection(state: GameState, player: Player): GameState {
   const collectedResources: Partial<Record<ResourceType, number>> = {};
+  const collectedTileIds: Partial<Record<ResourceType, string[]>> = {};
   const collectedPositions: typeof player.positions = [];
 
   player.positions.forEach((pos) => {
     const tile = state.map[pos.y * state.settings.gridSize.cols + pos.x];
     const resourceSpot = tile?.resources.find((r) => r.type === pos.resource);
-    if (resourceSpot) {
+    if (tile && resourceSpot) {
       player.resources[resourceSpot.type] += resourceSpot.amount;
       collectedResources[resourceSpot.type] = (collectedResources[resourceSpot.type] || 0) + resourceSpot.amount;
+      collectedTileIds[resourceSpot.type] = [...(collectedTileIds[resourceSpot.type] ?? []), tile.id];
       collectedPositions.push(pos);
     }
   });
@@ -35,6 +38,7 @@ function applyAutomaticCollection(state: GameState, player: Player): GameState {
       playerId: player.playerId,
       isPassive: true,
       resourcesCollected: collectedResources,
+      resourceGain: toResourceGainEntries(collectedResources, collectedTileIds),
     });
   }
 

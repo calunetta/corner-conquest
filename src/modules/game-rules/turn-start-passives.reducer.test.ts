@@ -177,6 +177,51 @@ describe('applyCollectorAbility', () => {
     expect(state.log.map(toLogMessage)).toContain("Player 0's Collector ability gathered 1 wood, 1 gold.");
   });
 
+  it('attaches resourceGain with the island id for each type from one island (two types share one tile id)', () => {
+    const map = Array.from({ length: COLS * 2 }, (_, i) => buildTile(i % COLS, Math.floor(i / COLS)));
+    map[1 * COLS + 1] = buildTile(1, 1, {
+      type: IslandType.Resource,
+      resources: [
+        { type: ResourceType.Wood, amount: 5 },
+        { type: ResourceType.Gold, amount: 5 },
+      ],
+    });
+    const player = buildPlayer({
+      passiveAbilities: { collector: true },
+      armies: [{ id: 0, position: { x: 1, y: 1 }, hasActed: false }],
+    });
+    const state = buildState(map);
+
+    applyCollectorAbility(state, player);
+
+    expect(state.log[0]).toMatchObject({
+      resourceGain: [
+        { type: ResourceType.Wood, amount: 1, tileIds: ['1-1'] },
+        { type: ResourceType.Gold, amount: 1, tileIds: ['1-1'] },
+      ],
+    });
+  });
+
+  it('merges two distinct islands granting the same type into one gain with both island ids', () => {
+    const map = Array.from({ length: COLS * 2 }, (_, i) => buildTile(i % COLS, Math.floor(i / COLS)));
+    map[1 * COLS + 1] = buildTile(1, 1, { type: IslandType.Resource, resources: [{ type: ResourceType.Food, amount: 1 }] });
+    map[1 * COLS + 2] = buildTile(2, 1, { type: IslandType.Resource, resources: [{ type: ResourceType.Food, amount: 1 }] });
+    const player = buildPlayer({
+      passiveAbilities: { collector: true },
+      armies: [
+        { id: 0, position: { x: 1, y: 1 }, hasActed: false },
+        { id: 1, position: { x: 2, y: 1 }, hasActed: false },
+      ],
+    });
+    const state = buildState(map);
+
+    applyCollectorAbility(state, player);
+
+    expect(state.log[0]).toMatchObject({
+      resourceGain: [{ type: ResourceType.Food, amount: 2, tileIds: ['1-1', '2-1'] }],
+    });
+  });
+
   it('does not grant resources for a Base tile, even if it has resources (boundary)', () => {
     const map = Array.from({ length: COLS * 2 }, (_, i) => buildTile(i % COLS, Math.floor(i / COLS)));
     map[0] = buildTile(0, 0, { type: IslandType.Base, resources: [{ type: ResourceType.Food, amount: 1 }] });

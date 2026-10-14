@@ -27,6 +27,15 @@ export type GameSettings = {
 
 export type LogCategory = 'combat' | 'economy' | 'cards' | 'turn' | 'system';
 
+/** One resource gain for the resource-gain animation. `tileIds` holds `Island.id` values the gain
+ *  is attributed to; omitted means no tile (Wealthy, Steal). */
+export type ResourceGainLogEntry = {
+  type: ResourceType;
+  amount: number;
+  /** Island.id values this gain can be attributed to. Omitted = no tile (Wealthy, Steal). */
+  tileIds?: string[];
+};
+
 export type StructuredLogEntry = {
   kind: 'structured';
   turn: number; // GameState.turn at push time; 0 = pre-game (lobby)
@@ -39,6 +48,10 @@ export type StructuredLogEntry = {
   /** Set only on the two collection log entries (automatic + Productive-card); lets a client
    *  derive a toast without re-parsing `message`. Never read by GameLog rendering. */
   resourcesCollected?: Partial<Record<ResourceType, number>>;
+  /** Set on every log entry that increases `playerId`'s resources, for the resource-gain
+   *  animation feature. `playerId` is always the gainer. Independent of `resourcesCollected`
+   *  (toast-only) — adding this never changes which entries toast. */
+  resourceGain?: ResourceGainLogEntry[];
 };
 
 export type LogEntry = string | StructuredLogEntry;

@@ -1,6 +1,7 @@
-import type { Army, GameState, Player } from '@/lib/types';
+import type { Army, GameState, Player, ResourceType } from '@/lib/types';
 import { IslandType } from '@/lib/types';
 import { pushLogEntry } from './log-entry';
+import { toResourceGainEntries } from './resource-gain-log';
 
 /**
  * Applies a reclaim that was deferred because it arrived mid-turn: if the outgoing player's seat
@@ -50,6 +51,7 @@ export function applyCollectorAbility(state: GameState, player: Player): void {
   if (!player.passiveAbilities.collector) return;
 
   const resourcesCollected: Partial<Record<string, number>> = {};
+  const collectedTileIds: Partial<Record<ResourceType, string[]>> = {};
   const occupiedIslands = new Set<string>();
 
   player.armies.forEach((army: Army) => {
@@ -61,6 +63,7 @@ export function applyCollectorAbility(state: GameState, player: Player): void {
       tile.resources.forEach((resource) => {
         player.resources[resource.type] += 1;
         resourcesCollected[resource.type] = (resourcesCollected[resource.type] || 0) + 1;
+        collectedTileIds[resource.type] = [...(collectedTileIds[resource.type] ?? []), tile.id];
       });
     }
   });
@@ -72,6 +75,7 @@ export function applyCollectorAbility(state: GameState, player: Player): void {
       message: `${player.name}'s Collector ability gathered ${collectedStrings.join(', ')}.`,
       playerId: player.playerId,
       isPassive: true,
+      resourceGain: toResourceGainEntries(resourcesCollected, collectedTileIds),
     });
   }
 }

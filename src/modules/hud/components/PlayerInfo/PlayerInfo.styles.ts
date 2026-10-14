@@ -52,7 +52,12 @@ export const styles = {
   statValue: 'font-mono text-foreground font-bold',
   positionedIndicator: 'text-[10px] text-amber-400 flex items-center',
   resourcesGrid: 'grid grid-cols-3 gap-1.5',
-  resourceChip: 'flex items-center justify-between rounded-md bg-black/50 px-2 py-1 border border-white/10 shadow-sm cursor-default hover:bg-black/70 transition-colors',
+  // `relative` anchors the gain overlay; it is absolutely positioned, so the grid never reflows.
+  resourceChip: 'relative flex items-center justify-between rounded-md bg-black/50 px-2 py-1 border border-white/10 shadow-sm cursor-default hover:bg-black/70 transition-colors',
+  // Reduced-motion stand-in for the GIF: a ring (box-shadow, no layout change) while the gain is active.
+  resourceChipGain: 'motion-reduce:ring-2 motion-reduce:ring-accent',
+  // Centered under the chip. Hidden under reduced motion so no GIF frame renders.
+  resourceGainOverlay: 'pointer-events-none absolute left-1/2 top-full z-10 h-7 w-7 -translate-x-1/2 motion-reduce:hidden',
   resourceValue: 'font-mono font-extrabold text-xs text-foreground',
   buffsSection: 'flex flex-wrap items-center gap-1 pt-1 border-t border-white/5',
   buffBadge: 'text-[9px] px-1.5 py-0 h-4 flex items-center gap-1 bg-white/5 border-white/15 text-foreground hover:bg-white/10',

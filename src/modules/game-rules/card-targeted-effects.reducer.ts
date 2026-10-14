@@ -1,6 +1,7 @@
 import type { GameState } from '@/lib/types';
 import { CardName, GameAction, ResourceType } from '@/lib/types';
 import { pushLogEntry } from './log-entry';
+import { toResourceGainEntries } from './resource-gain-log';
 
 const WEALTHY_GAIN_AMOUNT = 5;
 const STEAL_RESOURCE_MAX_AMOUNT = 2;
@@ -42,6 +43,7 @@ export function handleGainWealth(state: GameState, resource: ResourceType): Game
     category: 'cards',
     message: `${player.name} used 'Wealthy' to gain ${WEALTHY_GAIN_AMOUNT} ${resource}.`,
     playerId: player.playerId,
+    resourceGain: toResourceGainEntries({ [resource]: WEALTHY_GAIN_AMOUNT }),
   });
 
   player.actionsThisTurn.push(GameAction.UseCard);
@@ -77,6 +79,7 @@ export function handleStealResource(
       message: `${currentPlayer.name} stole ${stolenAmount} ${payload.resource} from ${targetPlayer.name}!`,
       playerId: currentPlayer.playerId,
       targetPlayerId: targetPlayer.playerId,
+      resourceGain: toResourceGainEntries({ [payload.resource]: stolenAmount }),
     });
   } else {
     pushLogEntry(state, {

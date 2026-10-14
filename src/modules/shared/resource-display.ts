@@ -15,3 +15,13 @@ export const RESOURCE_SPRITES: Record<ResourceType, string> = {
   [ResourceType.Wood]: '/sprites/tree.gif',
   [ResourceType.Gold]: '/sprites/gold.gif',
 };
+
+export const RESOURCE_GAIN_SPRITES: Record<ResourceType, string> = {
+  [ResourceType.Food]: '/sprites/food_gain.gif',
+  [ResourceType.Wood]: '/sprites/wood_gain.gif',
+  [ResourceType.Gold]: '/sprites/gold_gain.gif',
+};
+
+/** Measured loop length of the gain GIFs (160ms + 6x110ms = 820ms, loop=infinite). The overlay
+ *  unmounts after this long so the GIF plays once. */
+export const RESOURCE_GAIN_ANIMATION_MS = 820;

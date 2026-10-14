@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import { RESOURCE_GAIN_SPRITES } from '@/modules/shared';
 import type { PlayerInfoViewModel } from './PlayerInfo.types';
 import { currentPlayerWithBuffs, botPlayerNoBuffs } from './PlayerInfo.fixtures';
 import { PlayerInfoView } from './PlayerInfo';
@@ -258,6 +259,62 @@ describe('PlayerInfoView', () => {
       expect(images.length).toBeGreaterThan(0);
       const spriteImage = Array.from(images).find((img) => img.src.includes(viewModel.spriteSrc));
       expect(spriteImage).toBeInTheDocument();
+    });
+  });
+
+  describe('resource gain overlay', () => {
+    const goldGainSrc = RESOURCE_GAIN_SPRITES.gold;
+    const withGoldPulse = (token: number): PlayerInfoViewModel => ({
+      ...currentPlayerWithBuffs,
+      resources: currentPlayerWithBuffs.resources.map((resource) =>
+        resource.type === 'gold' ? { ...resource, gainPulse: { token, spriteSrc: goldGainSrc } } : resource,
+      ),
+    });
+
+    it('renders the gain overlay inside the gold chip only', () => {
+      render(<PlayerInfoView {...withGoldPulse(1)} />);
+
+      const goldChip = screen.getByTestId('player-info-resource-gold');
+      const foodChip = screen.getByTestId('player-info-resource-food');
+      expect(goldChip.querySelector(`img[src="${goldGainSrc}"]`)).toBeInTheDocument();
+      expect(foodChip.querySelector(`img[src$="_gain.gif"]`)).not.toBeInTheDocument();
+    });
+
+    it('keeps the gold value readable while the overlay plays', () => {
+      render(<PlayerInfoView {...withGoldPulse(1)} />);
+
+      expect(within(screen.getByTestId('player-info-resource-gold')).getByText('10')).toBeInTheDocument();
+    });
+
+    it('removes the overlay from the DOM once the view model no longer carries a pulse', () => {
+      const { rerender, container } = render(<PlayerInfoView {...withGoldPulse(1)} />);
+      expect(container.querySelector(`img[src="${goldGainSrc}"]`)).toBeInTheDocument();
+
+      rerender(<PlayerInfoView {...currentPlayerWithBuffs} />);
+
+      expect(container.querySelector(`img[src="${goldGainSrc}"]`)).not.toBeInTheDocument();
+    });
+
+    it('mounts a new overlay element when the token changes, so a repeat gain restarts the GIF', () => {
+      const { rerender, container } = render(<PlayerInfoView {...withGoldPulse(1)} />);
+      const firstOverlay = container.querySelector(`img[src="${goldGainSrc}"]`);
+
+      rerender(<PlayerInfoView {...withGoldPulse(2)} />);
+
+      const secondOverlay = container.querySelector(`img[src="${goldGainSrc}"]`);
+      expect(secondOverlay).toBeInTheDocument();
+      expect(secondOverlay).not.toBe(firstOverlay);
+    });
+
+    // Reduced-motion fallback (acceptance criterion 5): the chip gets a ring and the GIF is hidden.
+    // Asserted as classes on purpose: they are the only mechanism that implements this fallback.
+    it('carries the reduced-motion ring on the chip and hides the GIF overlay under reduced motion', () => {
+      render(<PlayerInfoView {...withGoldPulse(1)} />);
+
+      const goldChip = screen.getByTestId('player-info-resource-gold');
+      const overlay = goldChip.querySelector(`img[src="${goldGainSrc}"]`);
+      expect(goldChip).toHaveClass('motion-reduce:ring-2', 'motion-reduce:ring-accent');
+      expect(overlay).toHaveClass('motion-reduce:hidden');
     });
   });
 

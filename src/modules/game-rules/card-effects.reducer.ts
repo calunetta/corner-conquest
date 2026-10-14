@@ -1,6 +1,7 @@
 import type { GameState, ResourceType } from '@/lib/types';
 import { CardName, GameAction } from '@/lib/types';
 import { pushLogEntry } from './log-entry';
+import { toResourceGainEntries } from './resource-gain-log';
 import { clearCollectedPositions } from './resource-collection';
 
 const IMMEDIATE_EFFECT_CARDS: CardName[] = [CardName.Reinforce, CardName.Efficient, CardName.MasterBuilder];
@@ -53,6 +54,7 @@ export function handleUseCard(state: GameState, payload: { cardName: CardName; i
 export function handleUseProductiveCard(state: GameState, selectedResource: ResourceType | null): GameState {
   const player = state.players[state.currentPlayerIndex];
   const collectedResources: Partial<Record<ResourceType, number>> = {};
+  const collectedTileIds: Partial<Record<ResourceType, string[]>> = {};
   const collectedPositions: typeof player.positions = [];
   let doubledResourceString = '';
 
@@ -72,7 +74,7 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
   player.positions.forEach((pos) => {
     const tile = state.map[pos.y * state.settings.gridSize.cols + pos.x];
     const resourceSpot = tile?.resources.find((r) => r.type === pos.resource);
-    if (resourceSpot) {
+    if (tile && resourceSpot) {
       let amount = resourceSpot.amount;
       if (pos.resource === validSelectedResource) {
         amount *= 2;
@@ -80,6 +82,7 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
       }
       player.resources[resourceSpot.type] += amount;
       collectedResources[resourceSpot.type] = (collectedResources[resourceSpot.type] || 0) + amount;
+      collectedTileIds[resourceSpot.type] = [...(collectedTileIds[resourceSpot.type] ?? []), tile.id];
       collectedPositions.push(pos);
     }
   });
@@ -93,6 +96,7 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
       message: `${player.name} collected ${collectedStrings.join(', ')}${doubledResourceString}.`,
       playerId: player.playerId,
       resourcesCollected: collectedResources,
+      resourceGain: toResourceGainEntries(collectedResources, collectedTileIds),
     });
   }
 

@@ -18,6 +18,8 @@ export interface ResourceStatViewModel {
   type: ResourceType;
   label: string;
   value: number;
+  /** Non-null only while this chip's gain animation plays; `token` restarts the GIF on each gain. */
+  gainPulse: { token: number; spriteSrc: string } | null;
 }
 
 export interface TurnBadgeViewModel {

@@ -74,6 +74,19 @@ describe('handleGainWealth', () => {
     },
   );
 
+  it('attaches resourceGain of the granted amount with no tileIds (no tile for Wealthy)', () => {
+    const player = game.players[0];
+    player.specialCards = [CardName.Wealthy];
+
+    const nextState = handleGainWealth(game, ResourceType.Gold);
+
+    expect(nextState.log[nextState.log.length - 1]).toMatchObject({
+      playerId: player.playerId,
+      resourceGain: [{ type: ResourceType.Gold, amount: 5 }],
+    });
+    expect(nextState.log[nextState.log.length - 1]).not.toHaveProperty('resourceGain.0.tileIds');
+  });
+
   it('throws on an invalid resource type (invalid input)', () => {
     const player = game.players[0];
     player.specialCards = [CardName.Wealthy];
@@ -101,6 +114,32 @@ describe('handleStealResource', () => {
     expect(nextState.players[1].resources.wood).toBe(8);
     expect(nextState.players[0].specialCards).not.toContain(CardName.StealResource);
     expect(nextState.discardPile).toContain(CardName.StealResource);
+  });
+
+  it('attaches resourceGain for the stolen amount to the gainer, with no tileIds', () => {
+    const player = game.players[0];
+    const opponent = game.players[1];
+    player.specialCards = [CardName.StealResource];
+    opponent.resources.wood = 10;
+
+    const nextState = handleStealResource(game, { targetPlayerId: opponent.id, resource: ResourceType.Wood });
+
+    expect(nextState.log[nextState.log.length - 1]).toMatchObject({
+      playerId: player.playerId,
+      resourceGain: [{ type: ResourceType.Wood, amount: 2 }],
+    });
+    expect(nextState.log[nextState.log.length - 1]).not.toHaveProperty('resourceGain.0.tileIds');
+  });
+
+  it('attaches no resourceGain field when the steal fails because the target has none (boundary: 0)', () => {
+    const player = game.players[0];
+    const opponent = game.players[1];
+    player.specialCards = [CardName.StealResource];
+    opponent.resources.wood = 0;
+
+    const nextState = handleStealResource(game, { targetPlayerId: opponent.id, resource: ResourceType.Wood });
+
+    expect(nextState.log[nextState.log.length - 1]).not.toHaveProperty('resourceGain');
   });
 
   it('steals the full amount when the target has less than the cap (boundary)', () => {

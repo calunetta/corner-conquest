@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { ResourceIcon, FightIcon } from '@/modules/shared';
 import { Anchor, Album, Zap } from 'lucide-react';
@@ -83,12 +84,29 @@ export function PlayerInfoStats({
 
       {/* Resources Breakdown Row (Food, Wood, Gold) */}
       <div className={styles.resourcesGrid}>
-        {resources.map(({ type, label, value }) => (
+        {resources.map(({ type, label, value, gainPulse }) => (
           <Tooltip key={type}>
             <TooltipTrigger asChild>
-              <div className={styles.resourceChip} data-testid={`player-info-resource-${type}`} aria-label={label}>
+              <div
+                className={cn(styles.resourceChip, gainPulse && styles.resourceChipGain)}
+                data-testid={`player-info-resource-${type}`}
+                aria-label={label}
+              >
                 <ResourceIcon type={type} className="h-3.5 w-3.5 shrink-0" />
                 <span className={styles.resourceValue}>{value}</span>
+                {gainPulse && (
+                  // Keyed by token so a repeat gain remounts the GIF and restarts it from frame 1.
+                  <Image
+                    key={gainPulse.token}
+                    src={gainPulse.spriteSrc}
+                    alt=""
+                    aria-hidden
+                    width={28}
+                    height={28}
+                    className={styles.resourceGainOverlay}
+                    unoptimized
+                  />
+                )}
               </div>
             </TooltipTrigger>
             <TooltipContent>

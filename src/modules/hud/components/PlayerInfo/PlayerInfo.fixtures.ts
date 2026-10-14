@@ -47,9 +47,9 @@ export const currentPlayerWithBuffs: PlayerInfoViewModel = {
   specialCards: [CardName.Scout, CardName.Reinforce],
   attackPower: 2,
   resources: [
-    { type: 'food', label: 'Food', value: 15 },
-    { type: 'wood', label: 'Wood', value: 8 },
-    { type: 'gold', label: 'Gold', value: 10 },
+    { type: 'food', label: 'Food', value: 15, gainPulse: null },
+    { type: 'wood', label: 'Wood', value: 8, gainPulse: null },
+    { type: 'gold', label: 'Gold', value: 10, gainPulse: null },
   ],
   buffs: [
     { id: 'collector', label: 'Collector', description: 'Collector: +1 extra food on harvest' },
@@ -77,9 +77,9 @@ export const botPlayerNoBuffs: PlayerInfoViewModel = {
   specialCards: [CardName.Scout],
   attackPower: 1,
   resources: [
-    { type: 'food', label: 'Food', value: 5 },
-    { type: 'wood', label: 'Wood', value: 3 },
-    { type: 'gold', label: 'Gold', value: 7 },
+    { type: 'food', label: 'Food', value: 5, gainPulse: null },
+    { type: 'wood', label: 'Wood', value: 3, gainPulse: null },
+    { type: 'gold', label: 'Gold', value: 7, gainPulse: null },
   ],
   buffs: [],
   turnBadge: null,
@@ -100,9 +100,9 @@ export const playerNearGoal: PlayerInfoViewModel = {
   specialCards: [CardName.ExtraMove, CardName.StealResource, CardName.Sabotage],
   attackPower: 4,
   resources: [
-    { type: 'food', label: 'Food', value: 25 },
-    { type: 'wood', label: 'Wood', value: 20 },
-    { type: 'gold', label: 'Gold', value: 30 },
+    { type: 'food', label: 'Food', value: 25, gainPulse: null },
+    { type: 'wood', label: 'Wood', value: 20, gainPulse: null },
+    { type: 'gold', label: 'Gold', value: 30, gainPulse: null },
   ],
   buffs: [
     { id: 'explorer', label: 'Explorer', description: 'Explorer: +1 extra movement range' },
