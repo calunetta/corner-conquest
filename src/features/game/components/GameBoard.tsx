@@ -15,7 +15,10 @@ type GameBoardProps = {
   onExit: () => void;
 };
 
-function GameBoardContent() {
+/** Exported only so GameBoardSandbox.tsx can reuse the real interactive board against a
+ *  local-only GameState (no Firestore) for debugging; GameBoard itself is still the app's own
+ *  entry point. */
+export function GameBoardContent() {
   const { gameState } = useGameBoard();
 
   return (
