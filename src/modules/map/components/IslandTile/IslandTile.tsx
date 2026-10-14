@@ -13,6 +13,7 @@ import { TileBoats } from '../TileBoats';
 import { TileOccupants } from '../TileOccupants';
 import { DeathEffect } from '../DeathEffect';
 import { CardRevealEffect } from '../CardRevealEffect';
+import { BASE_CREST_MIN_PX, BASE_CREST_SIZE, SPECIAL_ISLAND_SIZE } from '../../island-tile-slots.types';
 import { useIslandTile } from './IslandTile.hook';
 import { playerTileIndicatorShadow, styles } from './IslandTile.styles';
 import type { IslandTileProps, IslandTileViewModel } from './IslandTile.types';
@@ -49,7 +50,10 @@ function getTileCenterContent(viewModel: IslandTileViewModel) {
           {baseOwner?.color ? (
             <div
               className={styles.baseImageWrapper}
-              style={{ width: 'max(18px, 44%)', height: 'max(18px, 44%)' }}
+              style={{
+                width: `max(${BASE_CREST_MIN_PX}px, ${BASE_CREST_SIZE}%)`,
+                height: `max(${BASE_CREST_MIN_PX}px, ${BASE_CREST_SIZE}%)`,
+              }}
             >
               <Image
                 src={PLAYER_DATA[baseOwner.color].base}
@@ -69,7 +73,10 @@ function getTileCenterContent(viewModel: IslandTileViewModel) {
       return renderMonsterIcons(viewModel);
     case IslandType.Special:
       return (
-        <div className={styles.specialContent}>
+        <div
+          className={styles.specialContent}
+          style={{ width: `${SPECIAL_ISLAND_SIZE}%`, height: `${SPECIAL_ISLAND_SIZE}%` }}
+        >
           {cardRevealAnimationOnTile && !prefersReducedMotion ? (
             <CardRevealEffect
               id={cardRevealAnimationOnTile.id}

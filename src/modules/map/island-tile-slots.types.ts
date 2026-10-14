@@ -79,6 +79,16 @@ export const TRIPLE_RESOURCE_SLOTS: SlotDef[] = [
   { top: '83.5%', left: '25.5%', size: 27 },
 ];
 
+// ---- SPRITE SIZES ----
+// The few sizes not already expressed as a SlotDef's own `size`. Percent is of the tile side T
+// unless noted otherwise. Consumers apply these as inline styles (not Tailwind classes), since
+// Tailwind can't generate CSS for a class built from a JS variable — only from a literal string
+// in source — so this is the one place to edit every monster/base/special-island size.
+export const MONSTER_SPRITE_SIZE_PX = 64; // monster sprite width/height in px (fixed, not % of T — see AnimatedMonster.tsx)
+export const BASE_CREST_SIZE = 44; // base tile's player-crest box width/height, % of T
+export const BASE_CREST_MIN_PX = 18; // base crest's floor, so it stays legible at small tile sizes
+export const SPECIAL_ISLAND_SIZE = 100; // special island's idle-art box width/height, % of the tile's padded content box
+
 // Edge-midpoint slots keep clear of the boat and occupant corner anchors. Unchanged.
 export const BASE_RESOURCE_SLOTS: SlotDef[] = [
   { top: '15%', left: '50%', size: 22 },

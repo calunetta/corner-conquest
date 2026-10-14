@@ -54,7 +54,8 @@ export const styles = {
   baseImageWrapper: 'relative drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)]',
   baseImage: 'object-contain',
   baseFallbackIcon: 'h-full w-full p-2 text-muted-foreground',
-  specialContent: 'relative h-full w-full',
+  // Size is set inline as percent-of-tile (see IslandTile.tsx), not by fixed px classes tied to the window breakpoint.
+  specialContent: 'relative',
   specialImage: 'object-contain',
   monsterStack: 'flex h-full w-full flex-col',
   monsterSlot: 'relative h-1/2 w-full',
