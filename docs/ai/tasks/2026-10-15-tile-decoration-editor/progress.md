@@ -23,7 +23,7 @@ Tier: L · Phases: 3
 - [x] tests (tester-a)
 - [x] checks: typecheck, lint, unit tests
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 01db5b7
 
 ## Phase 3: editor view, preview, registry
 - [x] plan approved (architect-b)
@@ -55,3 +55,7 @@ Tier: L · Phases: 3
 2026-10-15 architect-b (final-review): DONE, APPROVED
 2026-10-15 coordinator: appended lessons-learned.md entry for the monster-cleared regression catch
 2026-10-15 coordinator: committed phase 1 (f20bd92)
+2026-10-15 implementer-a: DONE, phase 2 editor logic + API routes; flagged hook split (max-lines) and index.ts export gap for phase 3
+2026-10-15 tester-a: DONE, 54 new tests, 2816 total passing
+2026-10-15 architect-b (final-review): DONE, APPROVED, confirmed both deviations acceptable
+2026-10-15 coordinator: committed phase 2 (01db5b7)
