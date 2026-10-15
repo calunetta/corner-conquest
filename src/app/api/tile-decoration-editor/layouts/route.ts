@@ -1,8 +1,8 @@
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { NextResponse } from 'next/server';
-import { DECORATION_LAYOUTS_CONFIG_PATH, DECORATION_SCENARIO_KEYS } from '@/modules/map';
-import type { DecorationLayoutsConfig } from '@/modules/map';
+import { DECORATION_LAYOUTS_CONFIG_PATH, DECORATION_SCENARIO_KEYS } from '@/modules/map/decoration-layouts.types';
+import type { DecorationLayoutsConfig } from '@/modules/map/decoration-layouts.types';
 
 // Dev-only: this route must 404 in any deployed build, regardless of NEXT_PUBLIC_ENABLE_TESTBED
 // (which only gates the testbed UI, not filesystem writes) — see plan.md's Decisions.
