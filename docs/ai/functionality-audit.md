@@ -179,7 +179,7 @@ Fix plans created for everything below tagged `[BUG]`/`[WRONG]`/`[FEATURE]`. Eac
 105. `handlePlayerExit`: host leaving an in-progress match deletes the Firestore room doc.
 106. `handlePlayerExit`: last human player leaving (bots-only remaining) deletes the room immediately.
 107. `handlePlayerExit`: if remaining players drop to ≤1 when the host leaves, the room doc is dismantled.
-108. `TileForest`: 2–3 trees of one deterministically-hashed type (from island x/y + base flag) render on Base/empty islands; Resource islands suppress decorative trees entirely to avoid confusing them with wood nodes.
+108. `TileDecorations`: each island's decorative sprites come from `decoration-layouts.config.json`, chosen per scenario and deterministically per island (x/y + base flag). Base, Special, Empty and cleared Monster islands show trees; Resource and living Monster islands show whatever their (currently empty) default layout contains.
 109. `TileResources`: resources render as animated sprites (sheep=Food, trees=Wood, mine=Gold) at z-35, scattered organically (non-linear 2D), with multiple same-type resources shown as distinct side-by-side sprites rather than count badges.
 110. Active collectors (`farm_<color>.gif`) render directly on the specific resource node they're positioned on.
 111. `TileOccupants`: army soldier/knight sprites are persistently visible on their tile at all times (no hiding for stealth).

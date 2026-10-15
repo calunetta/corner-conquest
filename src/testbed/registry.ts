@@ -2,7 +2,7 @@ import { mapZoomControlsPreview } from '@/modules/map/components/MapZoomControls
 import { animatedMonsterPreview } from '@/modules/map/components/AnimatedMonster/AnimatedMonster.preview';
 import { deathEffectPreview } from '@/modules/map/components/DeathEffect/DeathEffect.preview';
 import { cardRevealEffectPreview } from '@/modules/map/components/CardRevealEffect/CardRevealEffect.preview';
-import { tileForestPreview } from '@/modules/map/components/TileForest/TileForest.preview';
+import { tileDecorationsPreview } from '@/modules/map/components/TileDecorations/TileDecorations.preview';
 import { tileResourcesPreview } from '@/modules/map/components/TileResources/TileResources.preview';
 import { tileBoatsPreview } from '@/modules/map/components/TileBoats/TileBoats.preview';
 import { tileOccupantsPreview } from '@/modules/map/components/TileOccupants/TileOccupants.preview';
@@ -52,7 +52,7 @@ export const previews: ComponentPreview[] = [
   animatedMonsterPreview,
   deathEffectPreview,
   cardRevealEffectPreview,
-  tileForestPreview,
+  tileDecorationsPreview,
   tileResourcesPreview,
   tileBoatsPreview,
   tileOccupantsPreview,

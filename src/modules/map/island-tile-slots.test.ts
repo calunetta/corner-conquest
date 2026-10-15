@@ -1,14 +1,11 @@
 import {
-  BASE_FOREST_SLOTS,
   BASE_RESOURCE_SLOTS,
   BOAT_CORNER_POSITIONS,
   CORNER_TRANSFORMS,
   DUAL_RESOURCE_SLOTS,
-  EMPTY_GROVE_SLOTS,
   OCCUPANT_CORNER_SLOTS,
   QUAD_RESOURCE_SLOTS,
   SINGLE_RESOURCE_SLOT,
-  SPECIAL_FOREST_SLOT,
   TRIPLE_RESOURCE_SLOTS,
 } from './island-tile-slots.types';
 
@@ -102,50 +99,6 @@ describe('resource slot tables', () => {
       { top: '60%', left: '20%', size: 30 },
       { top: '45%', right: '-17%', size: 30 },
       { top: '15%', left: '50%', size: 30 },
-    ]);
-  });
-});
-
-describe('forest slot tables', () => {
-  it('pins the fifteen Base trees', () => {
-    expect(BASE_FOREST_SLOTS).toEqual([
-      { top: '29%', left: '37%', size: '15%', z: 10 },
-      { top: '30%', left: '35%', size: '15%', z: 10 },
-      { top: '30%', left: '30%', size: '15%', z: 10 },
-      { top: '30%', left: '24%', size: '15%', z: 10 },
-      { top: '34%', left: '35%', size: '15%', z: 10 },
-      { top: '32%', left: '27%', size: '15%', z: 10 },
-      { top: '29%', left: '49%', size: '15%', z: 10 },
-      { top: '32%', left: '45%', size: '15%', z: 10 },
-      { top: '31%', left: '45%', size: '15%', z: 10 },
-      { top: '30%', left: '60%', size: '15%', z: 10 },
-      { top: '32%', left: '40%', size: '15%', z: 10 },
-      { top: '32%', left: '55%', size: '15%', z: 10 },
-      { top: '37%', left: '45%', size: '15%', z: 10 },
-      { top: '39%', left: '55%', size: '15%', z: 10 },
-      { top: '30%', left: '45%', size: '15%', z: 10 },
-    ]);
-  });
-
-  it('pins the nine Special trees', () => {
-    expect(SPECIAL_FOREST_SLOT).toEqual([
-      { top: '5%', left: '0%', size: '16%', z: 10 },
-      { top: '7%', left: '10%', size: '16%', z: 12 },
-      { top: '10%', left: '20%', size: '16%', z: 15 },
-      { top: '20px', left: '20%', size: '16%', z: 15 },
-      { top: '30%', left: '20%', size: '16%', z: 15 },
-      { top: '30%', left: '22%', size: '16%', z: 15 },
-      { top: '20px', left: '20%', size: '16%', z: 15 },
-      { top: '20px', left: '20%', size: '16%', z: 15 },
-      { top: '70px', left: '50px', size: '16%', z: 20 },
-    ]);
-  });
-
-  it('pins the grove: trees 1 and 2 at 24% from their side, tree 3 unchanged at left 44%', () => {
-    expect(EMPTY_GROVE_SLOTS).toEqual([
-      { top: '18%', left: '24%', size: '28%', z: 12 },
-      { top: '24%', right: '24%', size: '28%', z: 14 },
-      { bottom: '26%', left: '44%', size: '28%', z: 13 },
     ]);
   });
 });

@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PLAYER_DATA } from '@/modules/game-rules';
 import { AnimatedMonster } from '../AnimatedMonster';
-import { TileForest } from '../TileForest';
+import { TileDecorations } from '../TileDecorations';
 import { TileResources } from '../TileResources';
 import { TileBoats } from '../TileBoats';
 import { TileOccupants } from '../TileOccupants';
@@ -124,7 +124,7 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
             createdAt={deathAnimationOnTile.createdAt}
           />
         )}
-        {isTileVisible && <TileForest island={island} isBase={isBase} />}
+        {isTileVisible && <TileDecorations island={island} isBase={isBase} />}
         <TileBoats island={island} />
         <div className={styles.centerContent}>{getTileCenterContent(viewModel)}</div>
         <TileOccupants island={island} />

@@ -1,0 +1,355 @@
+{
+  "base": [
+    {
+      "id": "base-default",
+      "name": "Default",
+      "instances": [
+        {
+          "id": "base-default-0",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 36.5,
+          "left": 44.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-1",
+          "image": "/sprites/decorations/spring_tree.gif",
+          "top": 37.5,
+          "left": 42.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-2",
+          "image": "/sprites/decorations/autmn_tree.gif",
+          "top": 37.5,
+          "left": 37.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-3",
+          "image": "/sprites/decorations/tree.gif",
+          "top": 37.5,
+          "left": 31.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-4",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 41.5,
+          "left": 42.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-5",
+          "image": "/sprites/decorations/spring_tree.gif",
+          "top": 39.5,
+          "left": 34.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-6",
+          "image": "/sprites/decorations/autmn_tree.gif",
+          "top": 36.5,
+          "left": 56.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-7",
+          "image": "/sprites/decorations/tree.gif",
+          "top": 39.5,
+          "left": 52.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-8",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 38.5,
+          "left": 52.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-9",
+          "image": "/sprites/decorations/spring_tree.gif",
+          "top": 37.5,
+          "left": 67.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-10",
+          "image": "/sprites/decorations/autmn_tree.gif",
+          "top": 39.5,
+          "left": 47.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-11",
+          "image": "/sprites/decorations/tree.gif",
+          "top": 39.5,
+          "left": 62.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-12",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 44.5,
+          "left": 52.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-13",
+          "image": "/sprites/decorations/spring_tree.gif",
+          "top": 46.5,
+          "left": 62.5,
+          "size": 15,
+          "z": 10
+        },
+        {
+          "id": "base-default-14",
+          "image": "/sprites/decorations/autmn_tree.gif",
+          "top": 37.5,
+          "left": 52.5,
+          "size": 15,
+          "z": 10
+        }
+      ]
+    }
+  ],
+  "special": [
+    {
+      "id": "special-default",
+      "name": "Default",
+      "instances": [
+        {
+          "id": "special-default-0",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 13,
+          "left": 8,
+          "size": 16,
+          "z": 10
+        },
+        {
+          "id": "special-default-1",
+          "image": "/sprites/decorations/spring_tree.gif",
+          "top": 15,
+          "left": 18,
+          "size": 16,
+          "z": 12
+        },
+        {
+          "id": "special-default-2",
+          "image": "/sprites/decorations/autmn_tree.gif",
+          "top": 18,
+          "left": 28,
+          "size": 16,
+          "z": 15
+        },
+        {
+          "id": "special-default-3",
+          "image": "/sprites/decorations/tree.gif",
+          "top": 13.6,
+          "left": 28,
+          "size": 16,
+          "z": 15
+        },
+        {
+          "id": "special-default-4",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 38,
+          "left": 28,
+          "size": 16,
+          "z": 15
+        },
+        {
+          "id": "special-default-5",
+          "image": "/sprites/decorations/spring_tree.gif",
+          "top": 38,
+          "left": 30,
+          "size": 16,
+          "z": 15
+        },
+        {
+          "id": "special-default-6",
+          "image": "/sprites/decorations/autmn_tree.gif",
+          "top": 13.6,
+          "left": 28,
+          "size": 16,
+          "z": 15
+        },
+        {
+          "id": "special-default-7",
+          "image": "/sprites/decorations/tree.gif",
+          "top": 13.6,
+          "left": 28,
+          "size": 16,
+          "z": 15
+        },
+        {
+          "id": "special-default-8",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 27.4,
+          "left": 21.9,
+          "size": 16,
+          "z": 20
+        }
+      ]
+    }
+  ],
+  "empty-2": [
+    {
+      "id": "empty-2-default",
+      "name": "Default",
+      "instances": [
+        {
+          "id": "empty-2-default-0",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 32,
+          "left": 38,
+          "size": 28,
+          "z": 12
+        },
+        {
+          "id": "empty-2-default-1",
+          "image": "/sprites/decorations/spring_tree.gif",
+          "top": 38,
+          "left": 62,
+          "size": 28,
+          "z": 14
+        }
+      ]
+    }
+  ],
+  "empty-3": [
+    {
+      "id": "empty-3-default",
+      "name": "Default",
+      "instances": [
+        {
+          "id": "empty-3-default-0",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 32,
+          "left": 38,
+          "size": 28,
+          "z": 12
+        },
+        {
+          "id": "empty-3-default-1",
+          "image": "/sprites/decorations/spring_tree.gif",
+          "top": 38,
+          "left": 62,
+          "size": 28,
+          "z": 14
+        },
+        {
+          "id": "empty-3-default-2",
+          "image": "/sprites/decorations/autmn_tree.gif",
+          "top": 60,
+          "left": 58,
+          "size": 28,
+          "z": 13
+        }
+      ]
+    }
+  ],
+  "resource-1": [
+    {
+      "id": "resource-1-default",
+      "name": "Default",
+      "instances": []
+    }
+  ],
+  "resource-2": [
+    {
+      "id": "resource-2-default",
+      "name": "Default",
+      "instances": []
+    }
+  ],
+  "resource-3": [
+    {
+      "id": "resource-3-default",
+      "name": "Default",
+      "instances": []
+    }
+  ],
+  "resource-4": [
+    {
+      "id": "resource-4-default",
+      "name": "Default",
+      "instances": []
+    }
+  ],
+  "monster-alive": [
+    {
+      "id": "monster-alive-default",
+      "name": "Default",
+      "instances": []
+    }
+  ],
+  "monster-cleared": [
+    {
+      "id": "monster-cleared-default-2trees",
+      "name": "Default (2 trees)",
+      "instances": [
+        {
+          "id": "monster-cleared-default-2trees-0",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 32,
+          "left": 38,
+          "size": 28,
+          "z": 12
+        },
+        {
+          "id": "monster-cleared-default-2trees-1",
+          "image": "/sprites/decorations/spring_tree.gif",
+          "top": 38,
+          "left": 62,
+          "size": 28,
+          "z": 14
+        }
+      ]
+    },
+    {
+      "id": "monster-cleared-default-3trees",
+      "name": "Default (3 trees)",
+      "instances": [
+        {
+          "id": "monster-cleared-default-3trees-0",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 32,
+          "left": 38,
+          "size": 28,
+          "z": 12
+        },
+        {
+          "id": "monster-cleared-default-3trees-1",
+          "image": "/sprites/decorations/spring_tree.gif",
+          "top": 38,
+          "left": 62,
+          "size": 28,
+          "z": 14
+        },
+        {
+          "id": "monster-cleared-default-3trees-2",
+          "image": "/sprites/decorations/autmn_tree.gif",
+          "top": 60,
+          "left": 58,
+          "size": 28,
+          "z": 13
+        }
+      ]
+    }
+  ]
+}
