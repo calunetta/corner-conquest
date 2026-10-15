@@ -28,9 +28,9 @@ Tier: M · Phases: 1
 - [x] real `test:e2e` run: the Phase 2 bug (Firestore `setDoc` "undefined" rejection) is CONFIRMED FIXED — no longer appears. The suite still does NOT pass overall: it still times out, now on `actions-panel-end-turn`, and the match document still gets deleted mid-run. This is a separate, not-yet-root-caused issue — see Log and "Open issue" below.
 - [x] docs updated: `docs/architecture/systems-and-visuals.md` (docs-sync)
 - [x] final review (architect-b) — APPROVED Phase 1+2's own changes, explicitly not blocked on the suite's still-unresolved overall failure
-- [x] committed: pending (next step)
+- [x] committed: 99cd996
 
-## Open issue (not yet resolved — decide with user before further work)
+## Open issue (not yet resolved — per user decision, 2026-10-15, stopped here; `e2e/bot-vs-bot-ui.spec.ts` re-skipped to keep CI/deploys unblocked)
 The task's original acceptance criterion ("a full `npm run test:e2e -- e2e/bot-vs-bot-ui.spec.ts` run passes") is still NOT met. Two real, confirmed, independently-valuable bugs were found and fixed this task (the stale `possibleMoves` render race, and the `syncedHeartbeats` undefined-heartbeat `setDoc` crash), but the match document still gets deleted mid-run via the staleness→`convertSeatToBot`→`handlePlayerExit`→delete chain, even at the widened 120s threshold. architect-a already disproved both "Chrome background-tab timer throttling" and "Firestore write contention" as the mechanism by which a connected seat's heartbeat goes stale. Next hypothesis, untested: real CPU contention on one machine running two browser contexts + the Firestore emulator + the Next.js server simultaneously could delay a `setInterval` heartbeat's actual firing well past its nominal 15s/120s bounds, independent of Chrome's page-visibility-based throttling. Needs a fresh live trace with the (now working) incremental capture tooling, ideally with direct instrumentation of each client's own heartbeat-write timestamps.
 
 ## Log
