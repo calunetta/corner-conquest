@@ -21,7 +21,7 @@ Tier: L · Phases: 2
 - [x] docs updated (docs-sync: `docs/architecture/systems-and-visuals.md`)
 - [x] checks: typecheck, lint, unit tests
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 2a6aaf7
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
