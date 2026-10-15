@@ -33,7 +33,7 @@ Tier: L · Phases: 3
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 421f2de
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
