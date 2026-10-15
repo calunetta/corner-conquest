@@ -27,12 +27,12 @@ Tier: L · Phases: 3
 
 ## Phase 3: editor view, preview, registry
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-b)
-- [ ] tests (tester-b)
-- [ ] previews (preview-b)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
+- [x] implementation (implementer-b)
+- [x] tests (tester-b)
+- [x] previews (preview-b)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify)
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Log
@@ -59,3 +59,11 @@ Tier: L · Phases: 3
 2026-10-15 tester-a: DONE, 54 new tests, 2816 total passing
 2026-10-15 architect-b (final-review): DONE, APPROVED, confirmed both deviations acceptable
 2026-10-15 coordinator: committed phase 2 (01db5b7)
+2026-10-15 implementer-b: DONE, phase 3 view layer (styles, view, Rail/Canvas/Inspector/NameField/DeleteButton/LayoutActions)
+2026-10-15 tester-b: DONE, TileDecorationEditor.test.tsx
+2026-10-15 preview-b: DONE, TileDecorationEditor.preview.tsx + registry entry
+2026-10-15 architect-b (final-review, round 1): DONE, CHANGES REQUESTED
+2026-10-15 architect-b (final-review, round 2): DONE, CHANGES REQUESTED (deep import of IslandTile.fixtures symbols, not re-exported from @/modules/map barrel)
+2026-10-15 implementer-a: DONE, added cornerOccupants4/localPlayerFixture/monsterIslandWithLivingMonster to src/modules/map/index.ts's Dev/test-only export block
+2026-10-15 implementer-b (revise): DONE, switched TileDecorationEditor.display.map.ts to import the three fixtures from @/modules/map
+2026-10-15 architect-b (final-review, round 3): DONE, APPROVED

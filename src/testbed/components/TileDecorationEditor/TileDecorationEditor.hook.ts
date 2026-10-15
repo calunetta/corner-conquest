@@ -39,12 +39,20 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
   const [isDirty, setIsDirty] = useState(false);
   const [status, setStatus] = useState<TileDecorationEditorViewModel['status']>('idle');
   const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestConfigRef = useRef(config);
   const layouts = config[scenarioKey];
+
+  useEffect(() => {
+    latestConfigRef.current = config;
+  }, [config]);
 
   useEffect(() => {
     listDecorationImages()
       .then(setImages)
-      .catch(() => setImages([]));
+      .catch((error: unknown) => {
+        console.error('Failed to list decoration images', error);
+        setImages([]);
+      });
   }, []);
 
   useEffect(() => () => {
@@ -112,14 +120,20 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
   );
 
   const onSave = useCallback(() => {
+    const savedConfig = config;
     setStatus('saving');
-    saveDecorationLayouts(config)
+    saveDecorationLayouts(savedConfig)
       .then(() => {
-        setIsDirty(false);
+        // An edit made while the request was in flight is not in savedConfig, so the editor must stay dirty.
+        if (latestConfigRef.current === savedConfig) setIsDirty(false);
         setStatus('saved');
+        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
         savedTimeoutRef.current = setTimeout(() => setStatus('idle'), SAVED_BADGE_DURATION_MS);
       })
-      .catch(() => setStatus('error'));
+      .catch((error: unknown) => {
+        console.error('Failed to save decoration layouts', error);
+        setStatus('error');
+      });
   }, [config]);
 
   return {
