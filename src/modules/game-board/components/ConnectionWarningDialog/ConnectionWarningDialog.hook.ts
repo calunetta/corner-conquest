@@ -8,7 +8,7 @@ import type { ConnectionWarningViewModel } from './ConnectionWarningDialog.types
 
 const TICK_INTERVAL_MS = 1_000;
 
-/** Lower than STALE_THRESHOLD_MS; leaves a 20s countdown window before the seat converts. */
+/** Lower than STALE_THRESHOLD_MS; leaves a ~95s countdown window before the seat converts. */
 export const WARNING_THRESHOLD_MS = 25_000;
 
 /** Short tone on the hidden->open transition. Swallows any failure (autoplay restriction or no

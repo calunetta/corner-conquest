@@ -3,7 +3,7 @@ import { GameStatus } from '@/lib/types';
 import type { GameState } from '@/lib/types';
 import { handlePlayerExit } from '@/modules/game-rules';
 
-export const STALE_THRESHOLD_MS = 45_000;
+export const STALE_THRESHOLD_MS = 120_000;
 export const STALENESS_CHECK_INTERVAL_MS = 20_000;
 
 interface StalenessCheckArgs {

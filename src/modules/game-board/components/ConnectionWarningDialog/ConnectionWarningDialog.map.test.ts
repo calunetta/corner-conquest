@@ -2,7 +2,7 @@ import { GameStatus } from '@/lib/types';
 import { toConnectionWarningViewModel } from './ConnectionWarningDialog.map';
 
 const WARNING_THRESHOLD_MS = 25_000;
-const STALE_THRESHOLD_MS = 45_000;
+const STALE_THRESHOLD_MS = 120_000;
 const NOW = 1_000_000;
 
 describe('toConnectionWarningViewModel', () => {

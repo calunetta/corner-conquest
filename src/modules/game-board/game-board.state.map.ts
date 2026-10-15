@@ -58,7 +58,13 @@ function syncedHeartbeats(
   localSeatId: number | undefined,
 ): GameState['heartbeats'] {
   const merged: GameState['heartbeats'] = { ...server };
-  if (localSeatId !== undefined) merged[localSeatId] = local[localSeatId];
+  if (localSeatId !== undefined) {
+    if (localSeatId in local) {
+      merged[localSeatId] = local[localSeatId];
+    } else {
+      delete merged[localSeatId];
+    }
+  }
 
   const keys = new Set([...Object.keys(local), ...Object.keys(merged)]);
   const isSame = [...keys].every((key) => local[Number(key)] === merged[Number(key)]);

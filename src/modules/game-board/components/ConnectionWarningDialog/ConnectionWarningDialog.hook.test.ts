@@ -242,12 +242,12 @@ describe('useConnectionWarning', () => {
     act(() => {
       jest.advanceTimersByTime(1_000);
     });
-    expect(result.current.countdownLabel).toBe('Taking over in 0:20');
+    expect(result.current.countdownLabel).toBe('Taking over in 1:35');
 
     act(() => {
       jest.advanceTimersByTime(1_000);
     });
-    expect(result.current.countdownLabel).toBe('Taking over in 0:19');
+    expect(result.current.countdownLabel).toBe('Taking over in 1:34');
   });
 
   it('clears the interval on unmount', () => {
@@ -417,7 +417,7 @@ describe('useConnectionWarning', () => {
         jest.advanceTimersByTime(1_000);
       });
 
-      expect(result.current.countdownLabel).toBe('Taking over in 0:20');
+      expect(result.current.countdownLabel).toBe('Taking over in 1:35');
       expect(result.current.isDismissing).toBe(true);
     });
   });

@@ -250,5 +250,20 @@ describe('withSyncedSeatManagement', () => {
       expect(result).not.toBe(localState);
       expect(result.heartbeats[1]).toBeUndefined();
     });
+
+    it("leaves the local seat's own heartbeats key entirely absent when local never had it yet (turn-1 race), instead of writing an explicit undefined", () => {
+      // local.heartbeats has no key `0` at all — the local seat's own first writeHeartbeat
+      // hasn't round-tripped back through onSnapshot yet. Seat 1 also differs, so the merge
+      // isn't skipped by the no-op fast path.
+      const localState = createGameState([hostSeat(), botSeat()], { 1: 500 });
+      const serverState = createGameState([hostSeat(), botSeat()], { 0: 999, 1: 600 });
+
+      const result = withSyncedSeatManagement(localState, serverState, LOCAL_PLAYER_ID);
+
+      // A weaker `result.heartbeats[0] === undefined` assertion would also pass against today's
+      // buggy code, since the bug assigns an explicit `undefined` value onto an own property.
+      // Assert the key itself is absent (not merely undefined-valued).
+      expect(Object.prototype.hasOwnProperty.call(result.heartbeats, 0)).toBe(false);
+    });
   });
 });

@@ -174,6 +174,8 @@ function drainIssueBuffer(buffer: IssueBuffer): IssueBuffer {
 interface FlaggedTurn extends IssueBuffer {
   turnNumber: number;
   seat: number;
+  /** 'idle' = issues on the seat before its turn started; 'end' = issues during/after its turn. */
+  phase: 'idle' | 'end';
   landingIssues: string[];
   screenshot: Buffer;
 }
@@ -204,37 +206,31 @@ async function joinOpenMatchInLobby(guest: Page, matchName: string): Promise<voi
   await matchRow.getByRole('button', { name: 'Join', exact: true }).click();
 }
 
-/** Writes every flagged turn's screenshot and a report.json of its issues to a per-run folder,
- *  so ui-bug-reviewer.md reads only this filtered subset, never the full unfiltered run. */
-async function writeCaptures(runId: string, flaggedTurns: FlaggedTurn[]): Promise<string> {
-  const dir = path.join(CAPTURE_ROOT, runId);
-  await fs.mkdir(dir, { recursive: true });
-
-  const report = flaggedTurns.map((turn) => {
-    const fileName = `turn-${String(turn.turnNumber).padStart(3, '0')}-seat-${turn.seat}.png`;
-    return {
-      turnNumber: turn.turnNumber,
-      seat: turn.seat,
-      screenshot: fileName,
-      consoleErrors: turn.consoleErrors,
-      pageErrors: turn.pageErrors,
-      failedRequests: turn.failedRequests,
-      landingIssues: turn.landingIssues,
-    };
-  });
-
-  await Promise.all(
-    flaggedTurns.map((turn, index) => fs.writeFile(path.join(dir, report[index].screenshot), turn.screenshot)),
-  );
-  await fs.writeFile(path.join(dir, 'report.json'), JSON.stringify(report, null, 2));
-
-  return dir;
+function screenshotFileName(turn: FlaggedTurn): string {
+  return `turn-${String(turn.turnNumber).padStart(3, '0')}-seat-${turn.seat}-${turn.phase}.png`;
 }
 
-// Skipped: stalls ~10min on a still-unresolved UI race (position button stays disabled).
-// See docs/ai/tasks/2026-10-13-bot-ui-position-stall/progress.md (BLOCKER, not yet root-caused).
-// Re-enable once that investigation lands a confirmed fix.
-test.describe.skip('Bot-vs-bot self-play through the real UI', () => {
+/** Writes one flagged turn's screenshot, then rewrites report.json with every flag so far, into the
+ *  per-run folder that ui-bug-reviewer.md reads. Called as each turn is flagged, not at the end of the
+ *  run, so a run killed mid-loop (test timeout) still leaves its evidence on disk. */
+async function persistFlaggedTurn(runDir: string, turn: FlaggedTurn, flaggedSoFar: FlaggedTurn[]): Promise<void> {
+  await fs.mkdir(runDir, { recursive: true });
+  await fs.writeFile(path.join(runDir, screenshotFileName(turn)), turn.screenshot);
+
+  const report = flaggedSoFar.map((entry) => ({
+    turnNumber: entry.turnNumber,
+    seat: entry.seat,
+    phase: entry.phase,
+    screenshot: screenshotFileName(entry),
+    consoleErrors: entry.consoleErrors,
+    pageErrors: entry.pageErrors,
+    failedRequests: entry.failedRequests,
+    landingIssues: entry.landingIssues,
+  }));
+  await fs.writeFile(path.join(runDir, 'report.json'), JSON.stringify(report, null, 2));
+}
+
+test.describe('Bot-vs-bot self-play through the real UI', () => {
   let hostContext: BrowserContext | null = null;
   let guestContext: BrowserContext | null = null;
   let hostPage: Page | null = null;
@@ -284,13 +280,28 @@ test.describe.skip('Bot-vs-bot self-play through the real UI', () => {
     if (!state) throw new Error('Game never transitioned to Playing after Start Game was clicked.');
 
     const flaggedTurns: FlaggedTurn[] = [];
+    const captureDir = path.join(CAPTURE_ROOT, `${stamp}`);
+    const flagTurn = async (turn: FlaggedTurn): Promise<void> => {
+      flaggedTurns.push(turn);
+      await persistFlaggedTurn(captureDir, turn, flaggedTurns);
+    };
     let turnNumber = 0;
 
     while (state.status === GameStatus.Playing && state.turn <= MAX_ROUNDS) {
       turnNumber += 1;
       const actingSeat = state.currentPlayerIndex;
       const page = seatPages[actingSeat];
-      drainIssueBuffer(issueBuffers[actingSeat]); // discard noise from the previous seat's turn
+      const idleBuffer = drainIssueBuffer(issueBuffers[actingSeat]);
+      if (idleBuffer.consoleErrors.length > 0 || idleBuffer.pageErrors.length > 0 || idleBuffer.failedRequests.length > 0) {
+        await flagTurn({
+          turnNumber,
+          seat: actingSeat,
+          phase: 'idle',
+          landingIssues: ['issue(s) on this seat while idle, before its turn started'],
+          ...idleBuffer,
+          screenshot: await page.screenshot(),
+        });
+      }
 
       const landingIssues: string[] = [];
       let stepState = state;
@@ -314,23 +325,30 @@ test.describe.skip('Bot-vs-bot self-play through the real UI', () => {
       const screenshot = await page.screenshot();
       const { consoleErrors, pageErrors, failedRequests } = drainIssueBuffer(issueBuffers[actingSeat]);
       if (consoleErrors.length > 0 || pageErrors.length > 0 || failedRequests.length > 0 || landingIssues.length > 0) {
-        flaggedTurns.push({ turnNumber, seat: actingSeat, landingIssues, consoleErrors, pageErrors, failedRequests, screenshot });
+        await flagTurn({
+          turnNumber,
+          seat: actingSeat,
+          phase: 'end',
+          landingIssues,
+          consoleErrors,
+          pageErrors,
+          failedRequests,
+          screenshot,
+        });
       }
 
       state = nextState ?? (await readGameState(gameId));
     }
 
-    const captureDir = flaggedTurns.length > 0 ? await writeCaptures(`${stamp}`, flaggedTurns) : null;
-
     expect(
       state.status === GameStatus.Finished || state.turn > MAX_ROUNDS,
       `Match stalled at turn ${turnNumber} (status ${state.status}, round ${state.turn}). ` +
-        (captureDir ? `See ${captureDir} for flagged turns.` : 'No turn was flagged.'),
+        (flaggedTurns.length > 0 ? `See ${captureDir} for flagged turns.` : 'No turn was flagged.'),
     ).toBe(true);
 
     expect(
       flaggedTurns,
-      `${flaggedTurns.length} turn(s) flagged a broken interaction. See ${captureDir ?? '(no capture dir written)'}.`,
+      `${flaggedTurns.length} turn(s) flagged a broken interaction. See ${captureDir}.`,
     ).toEqual([]);
   });
 });

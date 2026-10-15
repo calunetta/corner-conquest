@@ -55,9 +55,40 @@ describe('useStalenessCheck', () => {
     jest.clearAllMocks();
   });
 
-  it('uses a 45 second stale threshold checked every 20 seconds', () => {
-    expect(STALE_THRESHOLD_MS).toBe(45_000);
+  it('uses a 120 second stale threshold checked every 20 seconds', () => {
+    expect(STALE_THRESHOLD_MS).toBe(120_000);
     expect(STALENESS_CHECK_INTERVAL_MS).toBe(20_000);
+  });
+
+  it('does not exit a peer idle for ~100 seconds (below the 120s threshold)', () => {
+    renderStalenessCheck({
+      gameId: 'game_1',
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: FIRST_CHECK_TIME - 100_000 },
+      ),
+      localPlayerId: 'player_1',
+    });
+
+    advanceToNextCheck();
+
+    expect(mockHandlePlayerExit).not.toHaveBeenCalled();
+  });
+
+  it('exits a peer idle for ~121 seconds (above the 120s threshold)', () => {
+    renderStalenessCheck({
+      gameId: 'game_1',
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: FIRST_CHECK_TIME - 121_000 },
+      ),
+      localPlayerId: 'player_1',
+    });
+
+    advanceToNextCheck();
+
+    expect(mockHandlePlayerExit).toHaveBeenCalledTimes(1);
+    expect(mockHandlePlayerExit).toHaveBeenCalledWith('game_1', 'player_2');
   });
 
   it('exits a human peer whose last heartbeat is older than the threshold', () => {
