@@ -231,15 +231,17 @@ async function persistFlaggedTurn(runDir: string, turn: FlaggedTurn, flaggedSoFa
 }
 
 // Skipped: still stalls ~10min on a match-document deletion (staleness check wrongly converts a
-// connected seat to a bot, eventually both seats, which deletes the match). Two real, separate
-// bugs on this same investigation were found and fixed (see git log for this file): a stale
-// possibleMoves render race, and a syncedHeartbeats bug that made Firestore reject the whole
-// game-state write. Neither was the full story -- the staleness mechanism still misfires even at
-// the widened 120s threshold, for a cause not yet confirmed (Chrome tab-backgrounding throttling
-// and Firestore write contention are both ruled out with direct evidence; next hypothesis is real
-// CPU contention from running two browser contexts + the Firestore emulator + the Next.js server
-// on one machine, delaying a setInterval heartbeat's actual firing).
-// See docs/ai/tasks/2026-10-13-bot-ui-position-stall/progress.md ("Open issue").
+// connected seat to a bot, eventually both seats, which deletes the match). Three real, separate
+// bugs on this same investigation were found and fixed (see git log for this file and
+// game-board.engine.hook.ts): a stale possibleMoves render race, a syncedHeartbeats bug that made
+// Firestore reject the whole game-state write, and a lost-update race where a turn's local buffer
+// could freeze a PEER's heartbeat at turn-start and clobber it on EndTurn (fixed by re-merging
+// against the engine's always-current gameStateRef before every save). None was the full story:
+// that last fix still doesn't close the ACTING seat's OWN heartbeat, which the reused merge
+// deliberately preserves from the (frozen) buffer, not from gameStateRef -- confirmed by direct
+// trace this session to roll an acting seat's own heartbeat back to its turn-start value on every
+// single EndTurn, not a rare race. See docs/ai/tasks/2026-10-13-bot-ui-position-stall/progress.md
+// ("Open issue") for the exact log evidence and the proposed fix.
 // Re-enable once that investigation lands a confirmed fix.
 test.describe.skip('Bot-vs-bot self-play through the real UI', () => {
   let hostContext: BrowserContext | null = null;

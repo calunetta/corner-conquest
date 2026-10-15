@@ -2,8 +2,9 @@ import { renderHook, act } from '@testing-library/react';
 import { useGameEngine } from './game-board.engine.hook';
 import * as service from './services/game-board.engine.service';
 import { useToast } from '@/modules/shared';
-import { takeBotTurn } from '@/modules/game-rules';
+import { takeBotTurn, handleGameAction } from '@/modules/game-rules';
 import { useRouter } from 'next/navigation';
+import { GameAction } from '@/lib/types';
 import type { GameState, DeathAnimation, CardRevealAnimation } from '@/lib/types';
 
 jest.mock('./services/game-board.engine.service', () => ({
@@ -21,6 +22,7 @@ jest.mock('@/modules/shared', () => ({
 jest.mock('@/modules/game-rules', () => ({
   takeBotTurn: jest.fn(),
   handlePlayerExit: jest.fn(),
+  handleGameAction: jest.fn(),
 }));
 
 jest.mock('next/navigation', () => ({
@@ -33,6 +35,7 @@ const mockClearDeathAnimations = service.clearDeathAnimations as jest.Mock;
 const mockClearCardRevealAnimations = service.clearCardRevealAnimations as jest.Mock;
 const mockUseToast = useToast as jest.Mock;
 const mockTakeBotTurn = takeBotTurn as jest.Mock;
+const mockHandleGameAction = handleGameAction as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
 
 const createGameState = (overrides?: Partial<GameState>): GameState => ({
@@ -713,6 +716,47 @@ describe('useGameEngine', () => {
     renderHook(() => useGameEngine('', 'player_1'));
 
     expect(mockSubscribeToGameState).not.toHaveBeenCalled();
+  });
+
+  describe('setGameState', () => {
+    // Regression for the turn-buffer lost-update race (docs/ai/tasks/2026-10-13-bot-ui-position-stall
+    // Phase 3): a caller's buffered state (e.g. localGameState, built at turn start) can still carry a
+    // peer's heartbeat frozen at an old value even though the engine's own live, Firestore-subscribed
+    // gameState (gameStateRef.current) already has a fresher one for that same seat. setGameState must
+    // persist the fresher value, not whatever its caller's state object happened to carry.
+    it('persists the engine\'s freshest known peer heartbeat, not the stale value carried by the caller\'s buffered state', async () => {
+      let onDataCallback: ((state: GameState) => void) | null = null;
+
+      mockSubscribeToGameState.mockImplementation(
+        (gameId: string, callbacks: { onData: (state: GameState) => void; onMissing: () => void; onError: (error: unknown) => void }) => {
+          onDataCallback = callbacks.onData;
+          return jest.fn();
+        }
+      );
+
+      const { result } = renderHook(() => useGameEngine('game_123', 'player_1'));
+
+      // The engine's own live state (gameStateRef.current): seat 1 (the peer) has a fresh heartbeat.
+      const liveState = createGameState({ heartbeats: { 0: 5000, 1: 9000 } });
+      act(() => {
+        onDataCallback?.(liveState);
+      });
+
+      // The caller's buffered state (e.g. localGameState at EndTurn time) still carries seat 1's
+      // heartbeat frozen at an earlier, stale value from turn start.
+      const staleCallerState = createGameState({ heartbeats: { 0: 5000, 1: 1000 } });
+      const actionResultState = { ...staleCallerState, turn: staleCallerState.turn + 1 };
+      mockHandleGameAction.mockReturnValue({ state: actionResultState });
+
+      await act(async () => {
+        await result.current.setGameState(staleCallerState, GameAction.EndTurn, undefined);
+      });
+
+      expect(mockSaveGameState).toHaveBeenCalledWith(
+        'game_123',
+        expect.objectContaining({ heartbeats: expect.objectContaining({ 1: 9000 }) })
+      );
+    });
   });
 
   describe('session driver (lowest seat that is still human)', () => {

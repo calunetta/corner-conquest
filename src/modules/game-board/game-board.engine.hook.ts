@@ -10,6 +10,7 @@ import { useHeartbeat } from './game-board.heartbeat.hook';
 import { useStalenessCheck } from './game-board.staleness.hook';
 import { useResourceCollectionFeedback } from './resource-collection-feedback.hook';
 import { useAnimationCleanup } from './game-board.animation-cleanup.hook';
+import { syncedHeartbeats } from './game-board.state.map';
 
 export function useGameEngine(gameId: string, playerId: string | null): UseGameEngineResult {
   const [gameState, setInternalGameState] = useState<GameState | null>(null);
@@ -17,19 +18,44 @@ export function useGameEngine(gameId: string, playerId: string | null): UseGameE
   const { toast } = useToast();
   const router = useRouter();
 
+  // Moved up from its old position (was after setGameState, now before it): the engine's own
+  // always-current GameState, independent of any local turn-buffer race.
+  const gameStateRef = useRef<GameState | null>(gameState);
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
   const setGameState = useCallback(
     async (currentState: GameState, action: GameAction, payload?: unknown): Promise<void> => {
       try {
         const result = handleGameAction({ action, gameState: currentState, payload });
         if (result.state) {
-          await saveGameState(gameId, result.state);
+          // A turn's own local buffer can lag the live server state for other seats' heartbeats
+          // (game-board.state.hook.ts's sync effect races non-functional setLocalGameState calls
+          // from in-turn actions and can lose). Re-sync from the engine's always-current
+          // gameStateRef right before the one place that actually persists to Firestore, so a
+          // stale buffered heartbeat for another seat can never overwrite that seat's real,
+          // fresher value already sitting in the live document.
+          // NOTE: syncedHeartbeats preserves the ACTING seat's own key from `result.state` (its
+          // first argument), not from `latestServerState` — the same lost-update shape could still
+          // roll this seat's own heartbeat back to a turn-start value. That is safe only because
+          // useHeartbeat (game-board.heartbeat.hook.ts) writes this seat's own heartbeat every 15s
+          // regardless of whose turn it is, self-healing well inside STALE_THRESHOLD_MS (120s) —
+          // an external hook's behavior this fix relies on, not something syncedHeartbeats itself
+          // guarantees. Don't assume own-key preservation is safe if that hook's behavior changes.
+          const latestServerState = gameStateRef.current;
+          const localSeatId = latestServerState?.players.find((p) => p.playerId === playerId)?.id;
+          const heartbeats = latestServerState
+            ? syncedHeartbeats(result.state.heartbeats, latestServerState.heartbeats, localSeatId)
+            : result.state.heartbeats;
+          await saveGameState(gameId, { ...result.state, heartbeats });
         }
       } catch (error) {
         console.error('Error handling game action:', error);
         toast({ title: 'Action Error', description: 'Could not process game action.', variant: 'destructive' });
       }
     },
-    [gameId, toast],
+    [gameId, toast, playerId],
   );
 
   useEffect(() => {
@@ -117,11 +143,6 @@ export function useGameEngine(gameId: string, playerId: string | null): UseGameE
       }, 3000);
     }
   }, [isLoading, localPlayer, router, toast]);
-
-  const gameStateRef = useRef<GameState | null>(gameState);
-  useEffect(() => {
-    gameStateRef.current = gameState;
-  }, [gameState]);
 
   // The session driver clears death and card-reveal animations from the database once they expire
   useAnimationCleanup({ gameState, isSessionDriver, gameId, gameStateRef });

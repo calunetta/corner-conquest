@@ -52,7 +52,7 @@ export function withSyncedSeatManagement(
 /** Every seat's heartbeat from the server, except `localSeatId`'s own (kept from `local` so this
  *  cannot clobber the turn-holder's own in-flight state — same non-clobber rule as the per-seat
  *  fields above). Returns `local` unchanged (same reference) if nothing differs. */
-function syncedHeartbeats(
+export function syncedHeartbeats(
   local: GameState['heartbeats'],
   server: GameState['heartbeats'],
   localSeatId: number | undefined,
