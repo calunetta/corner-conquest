@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { GameStatus } from '@/lib/types';
-import type { GameState, Player } from '@/lib/types';
+import type { GameState } from '@/lib/types';
 import { handlePlayerExit } from '@/modules/game-rules';
 
 export const STALE_THRESHOLD_MS = 45_000;
@@ -13,10 +13,13 @@ interface StalenessCheckArgs {
 }
 
 /** Peers that are human-controlled, not this client, and whose last heartbeat is older than the threshold. */
-function findStalePeerIds(players: Player[], localPlayerId: string | null, now: number): string[] {
-  return players
+function findStalePeerIds(gameState: GameState, localPlayerId: string | null, now: number): string[] {
+  return gameState.players
     .filter((player) => !player.isBot && player.playerId !== localPlayerId)
-    .filter((player) => player.lastSeenAt !== null && now - player.lastSeenAt > STALE_THRESHOLD_MS)
+    .filter((player) => {
+      const lastSeenAt = gameState.heartbeats[player.id];
+      return lastSeenAt !== undefined && now - lastSeenAt > STALE_THRESHOLD_MS;
+    })
     .map((player) => player.playerId);
 }
 
@@ -46,7 +49,7 @@ export function useStalenessCheck({ gameId, gameState, localPlayerId }: Stalenes
       const latestState = gameStateRef.current;
       if (!latestState) return;
 
-      findStalePeerIds(latestState.players, localPlayerId, Date.now()).forEach((playerId) => {
+      findStalePeerIds(latestState, localPlayerId, Date.now()).forEach((playerId) => {
         convertStalePeer(gameId, playerId).catch((error) => {
           console.error('Error converting stale player:', error);
         });

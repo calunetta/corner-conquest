@@ -2,13 +2,13 @@ import type { GameState } from '@/lib/types';
 
 /**
  * Carries forward out-of-band seat-management fields from the latest `serverGameState` into the
- * turn-holder's local buffer, for every seat except `localPlayerId`'s own. These four fields
- * (isBot, isVacant, lastSeenAt, reclaimRequested) are written by handlePlayerExit, handleSeatReclaim
+ * turn-holder's local buffer, for every seat except `localPlayerId`'s own. These three fields
+ * (isBot, isVacant, reclaimRequested) are written by handlePlayerExit, handleSeatReclaim
  * and applyDeferredReclaim (src/modules/game-rules/services/player-exit.service.ts,
- * player-reclaim.service.ts, turn-start-passives.reducer.ts), and by the per-seat heartbeat
- * (writeHeartbeat in src/modules/game-board/services/game-board.engine.service.ts). The heartbeat only
- * stamps the writing client's own seat, and none of them is a normal gameplay action, so this cannot
- * clobber the turn-holder's own in-progress optimistic changes to another seat.
+ * player-reclaim.service.ts, turn-start-passives.reducer.ts). `heartbeats` is synced separately
+ * (see `syncedHeartbeats`) since it lives at the top level of `GameState`, not per seat. None of
+ * these is a normal gameplay action, so this cannot clobber the turn-holder's own in-progress
+ * optimistic changes to another seat.
  * Returns `localGameState` unchanged (same reference) if nothing differs, so callers can skip
  * `setLocalGameState` and avoid an unnecessary re-render.
  */
@@ -28,7 +28,6 @@ export function withSyncedSeatManagement(
     if (
       seat.isBot === serverSeat.isBot &&
       seat.isVacant === serverSeat.isVacant &&
-      seat.lastSeenAt === serverSeat.lastSeenAt &&
       seat.reclaimRequested === serverSeat.reclaimRequested
     ) {
       return seat;
@@ -39,10 +38,29 @@ export function withSyncedSeatManagement(
       ...seat,
       isBot: serverSeat.isBot,
       isVacant: serverSeat.isVacant,
-      lastSeenAt: serverSeat.lastSeenAt,
       reclaimRequested: serverSeat.reclaimRequested,
     };
   });
 
-  return changed ? { ...localGameState, players } : localGameState;
+  const localSeatId = localGameState.players.find((player) => player.playerId === localPlayerId)?.id;
+  const heartbeats = syncedHeartbeats(localGameState.heartbeats, serverGameState.heartbeats, localSeatId);
+  if (heartbeats !== localGameState.heartbeats) changed = true;
+
+  return changed ? { ...localGameState, players, heartbeats } : localGameState;
+}
+
+/** Every seat's heartbeat from the server, except `localSeatId`'s own (kept from `local` so this
+ *  cannot clobber the turn-holder's own in-flight state — same non-clobber rule as the per-seat
+ *  fields above). Returns `local` unchanged (same reference) if nothing differs. */
+function syncedHeartbeats(
+  local: GameState['heartbeats'],
+  server: GameState['heartbeats'],
+  localSeatId: number | undefined,
+): GameState['heartbeats'] {
+  const merged: GameState['heartbeats'] = { ...server };
+  if (localSeatId !== undefined) merged[localSeatId] = local[localSeatId];
+
+  const keys = new Set([...Object.keys(local), ...Object.keys(merged)]);
+  const isSame = [...keys].every((key) => local[Number(key)] === merged[Number(key)]);
+  return isSame ? local : merged;
 }

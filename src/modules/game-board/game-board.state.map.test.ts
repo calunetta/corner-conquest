@@ -8,7 +8,6 @@ const createPlayer = (overrides?: Partial<Player>): Player =>
     name: 'Player 1',
     isBot: false,
     isVacant: false,
-    lastSeenAt: null,
     reclaimRequested: false,
     color: 'blue',
     armies: [],
@@ -17,12 +16,17 @@ const createPlayer = (overrides?: Partial<Player>): Player =>
     ...overrides,
   }) as unknown as Player;
 
-const createGameState = (players: Player[], overrides?: Partial<GameState>): GameState =>
+const createGameState = (
+  players: Player[],
+  heartbeats: GameState['heartbeats'] = {},
+  overrides?: Partial<GameState>,
+): GameState =>
   ({
     id: 'game_test',
     status: 'playing',
     currentPlayerIndex: 0,
     players,
+    heartbeats,
     ...overrides,
   }) as unknown as GameState;
 
@@ -33,7 +37,7 @@ const GUEST_PLAYER_ID = 'player_2';
 const botSeat = (): Player =>
   createPlayer({ id: 1, playerId: GUEST_PLAYER_ID, name: 'Guest', isBot: true, isVacant: true });
 
-// The same guest seat after the guest reclaimed it: the four seat-management fields flipped.
+// The same guest seat after the guest reclaimed it: the seat-management fields flipped.
 const reclaimedSeat = (overrides?: Partial<Player>): Player =>
   createPlayer({
     id: 1,
@@ -41,7 +45,6 @@ const reclaimedSeat = (overrides?: Partial<Player>): Player =>
     name: 'Guest',
     isBot: false,
     isVacant: false,
-    lastSeenAt: 1_700_000_000_000,
     reclaimRequested: true,
     ...overrides,
   });
@@ -51,7 +54,7 @@ const hostSeat = (overrides?: Partial<Player>): Player =>
 
 describe('withSyncedSeatManagement', () => {
   describe('when another seat changed its seat-management fields on the server', () => {
-    it('copies the four seat-management fields onto that seat in a new state object', () => {
+    it('copies the three seat-management fields onto that seat in a new state object', () => {
       const localState = createGameState([hostSeat(), botSeat()]);
       const serverState = createGameState([hostSeat(), reclaimedSeat()]);
 
@@ -60,7 +63,6 @@ describe('withSyncedSeatManagement', () => {
       expect(result).not.toBe(localState);
       expect(result.players[1].isBot).toBe(false);
       expect(result.players[1].isVacant).toBe(false);
-      expect(result.players[1].lastSeenAt).toBe(1_700_000_000_000);
       expect(result.players[1].reclaimRequested).toBe(true);
     });
 
@@ -90,8 +92,8 @@ describe('withSyncedSeatManagement', () => {
     });
 
     it('does not mutate the local or server state it was given', () => {
-      const localState = createGameState([hostSeat(), botSeat()]);
-      const serverState = createGameState([hostSeat(), reclaimedSeat()]);
+      const localState = createGameState([hostSeat(), botSeat()], { 1: 1_000 });
+      const serverState = createGameState([hostSeat(), reclaimedSeat()], { 1: 2_000 });
       const localBefore = JSON.stringify(localState);
       const serverBefore = JSON.stringify(serverState);
 
@@ -115,7 +117,7 @@ describe('withSyncedSeatManagement', () => {
     it('returns the same reference when only a non-seat-management field differs on the server', () => {
       // Gameplay fields are deliberately not synced; a difference there must not look like a change.
       const localState = createGameState([hostSeat(), botSeat()]);
-      const serverState = createGameState([hostSeat(), botSeat()], { currentPlayerIndex: 1 });
+      const serverState = createGameState([hostSeat(), botSeat()], {}, { currentPlayerIndex: 1 });
 
       const result = withSyncedSeatManagement(localState, serverState, LOCAL_PLAYER_ID);
 
@@ -123,11 +125,10 @@ describe('withSyncedSeatManagement', () => {
     });
   });
 
-  describe('when only one of the four seat-management fields differs', () => {
+  describe('when only one of the three seat-management fields differs', () => {
     it.each([
       ['isBot', { isBot: false }],
       ['isVacant', { isVacant: false }],
-      ['lastSeenAt', { lastSeenAt: 42 }],
       ['reclaimRequested', { reclaimRequested: true }],
     ] as const)('syncs the seat when only %s differs', (field, serverOverride) => {
       const localState = createGameState([hostSeat(), botSeat()]);
@@ -137,7 +138,6 @@ describe('withSyncedSeatManagement', () => {
         name: 'Guest',
         isBot: true,
         isVacant: true,
-        lastSeenAt: null,
         reclaimRequested: false,
         ...serverOverride,
       });
@@ -199,6 +199,56 @@ describe('withSyncedSeatManagement', () => {
 
       expect(result.players[0].isBot).toBe(true);
       expect(result.players[1].isBot).toBe(false);
+    });
+  });
+
+  describe('heartbeats sync (syncedHeartbeats)', () => {
+    it("flows a reclaimed peer's new heartbeats entry into the local buffer", () => {
+      const localState = createGameState([hostSeat(), botSeat()], {});
+      const serverState = createGameState([hostSeat(), reclaimedSeat()], { 1: 1_700_000_000_000 });
+
+      const result = withSyncedSeatManagement(localState, serverState, LOCAL_PLAYER_ID);
+
+      expect(result).not.toBe(localState);
+      expect(result.heartbeats[1]).toBe(1_700_000_000_000);
+    });
+
+    it('preserves the local player seat\'s own heartbeats entry from local, never overwriting it from server, even when they differ', () => {
+      const localState = createGameState([hostSeat(), botSeat()], { 0: 1_000 });
+      const serverState = createGameState([hostSeat(), botSeat()], { 0: 9_999 });
+
+      const result = withSyncedSeatManagement(localState, serverState, LOCAL_PLAYER_ID);
+
+      expect(result.heartbeats[0]).toBe(1_000);
+    });
+
+    it('returns the exact same localGameState reference when only the local seat\'s own heartbeat differs on the server', () => {
+      const localState = createGameState([hostSeat(), botSeat()], { 0: 1_000 });
+      const serverState = createGameState([hostSeat(), botSeat()], { 0: 9_999 });
+
+      const result = withSyncedSeatManagement(localState, serverState, LOCAL_PLAYER_ID);
+
+      expect(result).toBe(localState);
+    });
+
+    it('returns the same heartbeats reference (no change) when every entry already matches', () => {
+      const localState = createGameState([hostSeat(), botSeat()], { 0: 1_000, 1: 2_000 });
+      const serverState = createGameState([hostSeat(), botSeat()], { 0: 1_000, 1: 2_000 });
+
+      const result = withSyncedSeatManagement(localState, serverState, LOCAL_PLAYER_ID);
+
+      expect(result).toBe(localState);
+      expect(result.heartbeats).toBe(localState.heartbeats);
+    });
+
+    it('removes a local heartbeats entry that was cleared on the server (e.g. convertSeatToBot)', () => {
+      const localState = createGameState([hostSeat(), botSeat()], { 1: 1_000 });
+      const serverState = createGameState([hostSeat(), botSeat()], {});
+
+      const result = withSyncedSeatManagement(localState, serverState, LOCAL_PLAYER_ID);
+
+      expect(result).not.toBe(localState);
+      expect(result.heartbeats[1]).toBeUndefined();
     });
   });
 });

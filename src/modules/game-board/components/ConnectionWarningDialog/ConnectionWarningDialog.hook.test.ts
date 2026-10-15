@@ -24,7 +24,6 @@ const createPlayer = (overrides?: Partial<Player>): Player =>
     color: 'blue',
     isBot: false,
     isVacant: false,
-    lastSeenAt: START_TIME,
     reclaimRequested: false,
     ...overrides,
   }) as Player;
@@ -32,12 +31,13 @@ const createPlayer = (overrides?: Partial<Player>): Player =>
 const createGameState = (status: GameStatus = GameStatus.Playing): GameState =>
   ({ id: 'game_1', status, players: [] }) as unknown as GameState;
 
-/** `serverLocalPlayer` defaults to the same record as `localPlayer` so existing cases (which
- *  don't care about the buffered-vs-live split) see no behavior change. Pass a different record
- *  to simulate the buffered `gameState.localPlayer` being stale while the live `serverGameState`
- *  player has already advanced (or vice versa). */
+/** `serverHeartbeat` is the only source of the warning countdown now (`serverGameState.heartbeats`).
+ *  `localPlayer`'s own heartbeat is no longer read at all. `serverLocalPlayer` lets a case give the
+ *  live `serverGameState.players` entry different non-heartbeat fields (e.g. `isBot`) than the
+ *  buffered `localPlayer`, simulating the turn-buffer gap. */
 const mockUseGameBoard = (
   localPlayer: Player,
+  serverHeartbeat: number | undefined,
   status: GameStatus = GameStatus.Playing,
   serverLocalPlayer: Player = localPlayer,
 ) => {
@@ -45,6 +45,7 @@ const mockUseGameBoard = (
     id: 'game_1',
     status,
     players: [serverLocalPlayer],
+    heartbeats: serverHeartbeat === undefined ? {} : { [serverLocalPlayer.id]: serverHeartbeat },
   } as unknown as GameState;
 
   jest.mocked(useGameBoard).mockReturnValue({
@@ -104,7 +105,7 @@ describe('useConnectionWarning', () => {
   });
 
   it('stays closed through multiple ticks while the player is connected', () => {
-    mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME }));
+    mockUseGameBoard(createPlayer(), START_TIME);
 
     const { result } = renderHook(() => useConnectionWarning());
 
@@ -122,8 +123,8 @@ describe('useConnectionWarning', () => {
     expect(audioContextConstructor).not.toHaveBeenCalled();
   });
 
-  it('opens once lastSeenAt ages past WARNING_THRESHOLD_MS and plays the tone exactly once', () => {
-    mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS }));
+  it('opens once the heartbeat ages past WARNING_THRESHOLD_MS and plays the tone exactly once', () => {
+    mockUseGameBoard(createPlayer(), START_TIME - WARNING_THRESHOLD_MS);
 
     const { result } = renderHook(() => useConnectionWarning());
 
@@ -143,7 +144,7 @@ describe('useConnectionWarning', () => {
   });
 
   it('closes on the render after a fresh heartbeat lands, without waiting for the next tick', () => {
-    mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS }));
+    mockUseGameBoard(createPlayer(), START_TIME - WARNING_THRESHOLD_MS);
 
     const { result, rerender } = renderHook(() => useConnectionWarning());
 
@@ -152,25 +153,25 @@ describe('useConnectionWarning', () => {
     });
     expect(result.current.isOpen).toBe(true);
 
-    mockUseGameBoard(createPlayer({ lastSeenAt: Date.now() }));
+    mockUseGameBoard(createPlayer(), Date.now());
     rerender();
 
     expect(result.current.isOpen).toBe(false);
   });
 
-  it('stays closed during the player\'s own turn when gameState\'s buffered lastSeenAt is stale but serverGameState\'s live lastSeenAt is fresh', () => {
-    const bufferedPlayer = createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS - 1 });
-    const liveServerPlayer = createPlayer({ lastSeenAt: Date.now() });
-    mockUseGameBoard(bufferedPlayer, GameStatus.Playing, liveServerPlayer);
+  it("stays closed during the player's own turn when the buffered localPlayer has no heartbeat read at all, as long as serverGameState's live heartbeat is fresh", () => {
+    const bufferedPlayer = createPlayer();
+    const liveServerPlayer = createPlayer();
+    mockUseGameBoard(bufferedPlayer, Date.now(), GameStatus.Playing, liveServerPlayer);
 
     const { result } = renderHook(() => useConnectionWarning());
 
     expect(result.current.isOpen).toBe(false);
   });
 
-  it("onDismiss closes the dialog once serverGameState's lastSeenAt advances, even though the buffered gameState's lastSeenAt never changes", () => {
-    const bufferedPlayer = createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS });
-    mockUseGameBoard(bufferedPlayer, GameStatus.Playing, bufferedPlayer);
+  it("onDismiss closes the dialog once serverGameState's heartbeat advances, even though the buffered localPlayer record never changes", () => {
+    const bufferedPlayer = createPlayer();
+    mockUseGameBoard(bufferedPlayer, START_TIME - WARNING_THRESHOLD_MS, GameStatus.Playing, bufferedPlayer);
 
     const { result, rerender } = renderHook(() => useConnectionWarning());
 
@@ -179,17 +180,17 @@ describe('useConnectionWarning', () => {
     });
     expect(result.current.isOpen).toBe(true);
 
-    // The buffered localPlayer (gameState.localPlayer) never changes across this rerender; only
-    // the live serverGameState player's lastSeenAt advances, simulating a forced heartbeat landing
-    // on the server while the turn-buffer stays frozen at the turn-start clone.
-    mockUseGameBoard(bufferedPlayer, GameStatus.Playing, createPlayer({ lastSeenAt: Date.now() }));
+    // The buffered localPlayer never changes across this rerender; only the live serverGameState
+    // heartbeat advances, simulating a forced heartbeat landing on the server while the turn-buffer
+    // stays frozen at the turn-start clone.
+    mockUseGameBoard(bufferedPlayer, Date.now(), GameStatus.Playing, createPlayer());
     rerender();
 
     expect(result.current.isOpen).toBe(false);
   });
 
   it('re-arms the tone on a recovery then a relapse (fires once more, not zero more times)', () => {
-    mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS }));
+    mockUseGameBoard(createPlayer(), START_TIME - WARNING_THRESHOLD_MS);
 
     const { result, rerender } = renderHook(() => useConnectionWarning());
 
@@ -200,13 +201,13 @@ describe('useConnectionWarning', () => {
     expect(audioContextConstructor).toHaveBeenCalledTimes(1);
 
     // Recovers: fresh heartbeat closes the dialog.
-    mockUseGameBoard(createPlayer({ lastSeenAt: Date.now() }));
+    mockUseGameBoard(createPlayer(), Date.now());
     rerender();
     expect(result.current.isOpen).toBe(false);
 
     // Relapses: ages past the threshold again.
     const relapseTime = Date.now();
-    mockUseGameBoard(createPlayer({ lastSeenAt: relapseTime - WARNING_THRESHOLD_MS }));
+    mockUseGameBoard(createPlayer(), relapseTime - WARNING_THRESHOLD_MS);
     rerender();
 
     act(() => {
@@ -217,8 +218,8 @@ describe('useConnectionWarning', () => {
     expect(audioContextConstructor).toHaveBeenCalledTimes(2);
   });
 
-  it('closes when isBot flips true (post-conversion) even if lastSeenAt is still old', () => {
-    mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS }));
+  it('closes when isBot flips true (post-conversion) even if the heartbeat is still old', () => {
+    mockUseGameBoard(createPlayer(), START_TIME - WARNING_THRESHOLD_MS);
 
     const { result, rerender } = renderHook(() => useConnectionWarning());
 
@@ -227,14 +228,14 @@ describe('useConnectionWarning', () => {
     });
     expect(result.current.isOpen).toBe(true);
 
-    mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS, isBot: true }));
+    mockUseGameBoard(createPlayer({ isBot: true }), START_TIME - WARNING_THRESHOLD_MS);
     rerender();
 
     expect(result.current.isOpen).toBe(false);
   });
 
   it('steps the countdownLabel down once per tick while the dialog is open', () => {
-    mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - 24_000 }));
+    mockUseGameBoard(createPlayer(), START_TIME - 24_000);
 
     const { result } = renderHook(() => useConnectionWarning());
 
@@ -250,7 +251,7 @@ describe('useConnectionWarning', () => {
   });
 
   it('clears the interval on unmount', () => {
-    mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME }));
+    mockUseGameBoard(createPlayer(), START_TIME);
     const clearIntervalSpy = jest.spyOn(window, 'clearInterval');
 
     const { unmount } = renderHook(() => useConnectionWarning());
@@ -259,8 +260,8 @@ describe('useConnectionWarning', () => {
     expect(clearIntervalSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('closes when gameState.status leaves playing even if lastSeenAt is still old', () => {
-    mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS }));
+  it('closes when gameState.status leaves playing even if the heartbeat is still old', () => {
+    mockUseGameBoard(createPlayer(), START_TIME - WARNING_THRESHOLD_MS);
 
     const { result, rerender } = renderHook(() => useConnectionWarning());
 
@@ -269,14 +270,26 @@ describe('useConnectionWarning', () => {
     });
     expect(result.current.isOpen).toBe(true);
 
-    mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS }), GameStatus.Finished);
+    mockUseGameBoard(createPlayer(), START_TIME - WARNING_THRESHOLD_MS, GameStatus.Finished);
     rerender();
 
     expect(result.current.isOpen).toBe(false);
   });
 
+  it('never opens for a seat with no heartbeats entry at all, same as the old lastSeenAt === null case', () => {
+    mockUseGameBoard(createPlayer(), undefined);
+
+    const { result } = renderHook(() => useConnectionWarning());
+
+    act(() => {
+      jest.advanceTimersByTime(60_000);
+    });
+
+    expect(result.current.isOpen).toBe(false);
+  });
+
   it('plays the tone once when the dialog is already open at mount', () => {
-    mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS - 1 }));
+    mockUseGameBoard(createPlayer(), START_TIME - WARNING_THRESHOLD_MS - 1);
 
     renderHook(() => useConnectionWarning());
 
@@ -284,7 +297,7 @@ describe('useConnectionWarning', () => {
   });
 
   it('closes the AudioContext once the oscillator finishes playing', () => {
-    mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS - 1 }));
+    mockUseGameBoard(createPlayer(), START_TIME - WARNING_THRESHOLD_MS - 1);
 
     renderHook(() => useConnectionWarning());
 
@@ -301,7 +314,7 @@ describe('useConnectionWarning', () => {
 
     it('sets isDismissing to true synchronously and calls writeHeartbeat with gameState.id and localPlayer.id', () => {
       jest.mocked(writeHeartbeat).mockReturnValue(new Promise(() => {}));
-      mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME }));
+      mockUseGameBoard(createPlayer(), START_TIME);
 
       const { result } = renderHook(() => useConnectionWarning());
 
@@ -315,7 +328,7 @@ describe('useConnectionWarning', () => {
 
     it('resolving writeHeartbeat resets isDismissing to false and does not call toast', async () => {
       jest.mocked(writeHeartbeat).mockResolvedValue(undefined);
-      mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME }));
+      mockUseGameBoard(createPlayer(), START_TIME);
 
       const { result } = renderHook(() => useConnectionWarning());
 
@@ -332,7 +345,7 @@ describe('useConnectionWarning', () => {
     it('rejecting writeHeartbeat resets isDismissing to false and shows the destructive toast', async () => {
       jest.mocked(writeHeartbeat).mockRejectedValue(new Error('offline'));
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-      mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS - 1 }));
+      mockUseGameBoard(createPlayer(), START_TIME - WARNING_THRESHOLD_MS - 1);
 
       const { result } = renderHook(() => useConnectionWarning());
       expect(result.current.isOpen).toBe(true);
@@ -360,7 +373,7 @@ describe('useConnectionWarning', () => {
         }),
       );
       jest.spyOn(console, 'error').mockImplementation(() => {});
-      mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - WARNING_THRESHOLD_MS }));
+      mockUseGameBoard(createPlayer(), START_TIME - WARNING_THRESHOLD_MS);
 
       const { result, rerender } = renderHook(() => useConnectionWarning());
 
@@ -376,7 +389,7 @@ describe('useConnectionWarning', () => {
 
       // Dialog closes through the normal recovery path (a fresh heartbeat lands through the
       // Firestore subscription) while the forced write from onDismiss is still in flight.
-      mockUseGameBoard(createPlayer({ lastSeenAt: Date.now() }));
+      mockUseGameBoard(createPlayer(), Date.now());
       rerender();
       expect(result.current.isOpen).toBe(false);
 
@@ -391,7 +404,7 @@ describe('useConnectionWarning', () => {
 
     it('keeps the countdown ticking while isDismissing is true', () => {
       jest.mocked(writeHeartbeat).mockReturnValue(new Promise(() => {}));
-      mockUseGameBoard(createPlayer({ lastSeenAt: START_TIME - 24_000 }));
+      mockUseGameBoard(createPlayer(), START_TIME - 24_000);
 
       const { result } = renderHook(() => useConnectionWarning());
 

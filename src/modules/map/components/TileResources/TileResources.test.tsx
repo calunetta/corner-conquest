@@ -64,7 +64,6 @@ describe('TileResources Component', () => {
       playerId: 'p0',
       isBot: false,
       isVacant: false,
-      lastSeenAt: null,
       reclaimRequested: false,
       armyCount: 1,
       passiveAbilities: {},

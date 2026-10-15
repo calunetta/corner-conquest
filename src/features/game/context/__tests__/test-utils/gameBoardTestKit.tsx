@@ -78,6 +78,7 @@ export function buildGameState(overrides: Partial<GameState> = {}): GameState {
     winner: null,
     combatState: null,
     monsterCombatState: null,
+    heartbeats: {},
     ...overrides,
   } as unknown as GameState;
 }

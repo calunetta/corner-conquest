@@ -47,7 +47,7 @@ export function useConnectionWarning(): ConnectionWarningViewModel {
     serverGameState.players.find((player) => player.playerId === localPlayer.playerId) ?? localPlayer;
 
   const viewModel = toConnectionWarningViewModel(
-    livePlayer.lastSeenAt,
+    serverGameState.heartbeats[livePlayer.id] ?? null,
     now,
     gameState.status,
     livePlayer.isBot,

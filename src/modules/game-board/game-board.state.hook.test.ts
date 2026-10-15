@@ -11,7 +11,6 @@ const createPlayer = (overrides?: Partial<Player>): Player =>
     name: 'Player 1',
     isBot: false,
     isVacant: false,
-    lastSeenAt: null,
     reclaimRequested: false,
     color: 'blue',
     armies: [],
@@ -32,13 +31,14 @@ const createPlayer = (overrides?: Partial<Player>): Player =>
     ...overrides,
   }) as unknown as Player;
 
-// Only the fields useGameBoardState reads (players, currentPlayerIndex, status) matter here.
+// Only the fields useGameBoardState reads (players, currentPlayerIndex, status, heartbeats) matter here.
 const createGameState = (players: Player[], overrides?: Partial<GameState>): GameState =>
   ({
     id: 'game_test',
     status: 'waiting',
     currentPlayerIndex: 0,
     players,
+    heartbeats: {},
     ...overrides,
   }) as unknown as GameState;
 
@@ -131,17 +131,14 @@ describe('useGameBoardState', () => {
       const hostBufferBefore = result.current.localGameState?.players[0];
 
       const reclaimedState = createGameState(
-        [
-          hostPlayer,
-          createPlayer({ id: 1, playerId: 'player_2', name: 'Joiner', isBot: false, isVacant: false, lastSeenAt: 1000 }),
-        ],
-        { status: 'playing' },
+        [hostPlayer, createPlayer({ id: 1, playerId: 'player_2', name: 'Joiner', isBot: false, isVacant: false })],
+        { status: 'playing', heartbeats: { 1: 1000 } },
       );
       rerender(createArgs(reclaimedState, true));
 
       expect(result.current.localGameState?.players[1].isBot).toBe(false);
       expect(result.current.localGameState?.players[1].isVacant).toBe(false);
-      expect(result.current.localGameState?.players[1].lastSeenAt).toBe(1000);
+      expect(result.current.localGameState?.heartbeats[1]).toBe(1000);
       expect(result.current.gameStateForDisplay).toBe(result.current.localGameState);
       expect(result.current.localGameState?.players[0]).toBe(hostBufferBefore);
     });
@@ -165,11 +162,8 @@ describe('useGameBoardState', () => {
       });
 
       const reclaimedState = createGameState(
-        [
-          hostPlayer,
-          createPlayer({ id: 1, playerId: 'player_2', name: 'Joiner', isBot: false, isVacant: false, lastSeenAt: 1000 }),
-        ],
-        { status: 'playing' },
+        [hostPlayer, createPlayer({ id: 1, playerId: 'player_2', name: 'Joiner', isBot: false, isVacant: false })],
+        { status: 'playing', heartbeats: { 1: 1000 } },
       );
       rerender(createArgs(reclaimedState, true));
 

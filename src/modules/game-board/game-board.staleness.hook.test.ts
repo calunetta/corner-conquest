@@ -11,7 +11,7 @@ jest.mock('@/modules/game-rules', () => ({
 const mockHandlePlayerExit = handlePlayerExit as jest.Mock;
 
 const START_TIME = new Date('2026-10-10T12:00:00Z').getTime();
-// The first interval tick fires at this instant; every lastSeenAt below is set relative to it.
+// The first interval tick fires at this instant; every heartbeat below is set relative to it.
 const FIRST_CHECK_TIME = START_TIME + STALENESS_CHECK_INTERVAL_MS;
 
 const createPlayer = (overrides?: Partial<Player>): Player =>
@@ -22,13 +22,15 @@ const createPlayer = (overrides?: Partial<Player>): Player =>
     color: 'red',
     isBot: false,
     isVacant: false,
-    lastSeenAt: FIRST_CHECK_TIME,
     reclaimRequested: false,
     ...overrides,
   }) as Player;
 
-const createGameState = (players: Player[], status: GameStatus = GameStatus.Playing): GameState =>
-  ({ id: 'game_1', status, players }) as unknown as GameState;
+const createGameState = (
+  players: Player[],
+  heartbeats: GameState['heartbeats'] = {},
+  status: GameStatus = GameStatus.Playing,
+): GameState => ({ id: 'game_1', status, players, heartbeats }) as unknown as GameState;
 
 type StalenessProps = Parameters<typeof useStalenessCheck>[0];
 
@@ -59,10 +61,12 @@ describe('useStalenessCheck', () => {
   });
 
   it('exits a human peer whose last heartbeat is older than the threshold', () => {
-    const stalePeer = createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: FIRST_CHECK_TIME - STALE_THRESHOLD_MS - 1 });
     renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([createPlayer({ id: 0, playerId: 'player_1' }), stalePeer]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: FIRST_CHECK_TIME - STALE_THRESHOLD_MS - 1 },
+      ),
       localPlayerId: 'player_1',
     });
 
@@ -73,10 +77,12 @@ describe('useStalenessCheck', () => {
   });
 
   it('does not exit a peer whose heartbeat is exactly at the threshold (the comparison is strictly greater)', () => {
-    const boundaryPeer = createPlayer({ playerId: 'player_2', lastSeenAt: FIRST_CHECK_TIME - STALE_THRESHOLD_MS });
     renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([createPlayer({ id: 0, playerId: 'player_1' }), boundaryPeer]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: FIRST_CHECK_TIME - STALE_THRESHOLD_MS },
+      ),
       localPlayerId: 'player_1',
     });
 
@@ -88,10 +94,10 @@ describe('useStalenessCheck', () => {
   it('does not exit a peer whose heartbeat is recent', () => {
     renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([
-        createPlayer({ id: 0, playerId: 'player_1' }),
-        createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: FIRST_CHECK_TIME - 1000 }),
-      ]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: FIRST_CHECK_TIME - 1000 },
+      ),
       localPlayerId: 'player_1',
     });
 
@@ -100,13 +106,13 @@ describe('useStalenessCheck', () => {
     expect(mockHandlePlayerExit).not.toHaveBeenCalled();
   });
 
-  it('never exits the local player, even when its own lastSeenAt is stale', () => {
+  it('never exits the local player, even when its own heartbeat is stale', () => {
     renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([
-        createPlayer({ id: 0, playerId: 'player_1', lastSeenAt: FIRST_CHECK_TIME - STALE_THRESHOLD_MS - 5000 }),
-        createPlayer({ id: 1, playerId: 'player_2' }),
-      ]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 0: FIRST_CHECK_TIME - STALE_THRESHOLD_MS - 5000, 1: FIRST_CHECK_TIME },
+      ),
       localPlayerId: 'player_1',
     });
 
@@ -115,13 +121,13 @@ describe('useStalenessCheck', () => {
     expect(mockHandlePlayerExit).not.toHaveBeenCalled();
   });
 
-  it('never exits a bot seat, even when its lastSeenAt is stale', () => {
+  it('never exits a bot seat, even when its heartbeat entry is stale', () => {
     renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([
-        createPlayer({ id: 0, playerId: 'player_1' }),
-        createPlayer({ id: 1, playerId: 'bot_1', isBot: true, lastSeenAt: FIRST_CHECK_TIME - STALE_THRESHOLD_MS - 5000 }),
-      ]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'bot_1', isBot: true })],
+        { 1: FIRST_CHECK_TIME - STALE_THRESHOLD_MS - 5000 },
+      ),
       localPlayerId: 'player_1',
     });
 
@@ -130,13 +136,13 @@ describe('useStalenessCheck', () => {
     expect(mockHandlePlayerExit).not.toHaveBeenCalled();
   });
 
-  it('skips a peer whose lastSeenAt is null (no heartbeat yet)', () => {
+  it('skips a peer with no heartbeats entry (no heartbeat yet)', () => {
     renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([
-        createPlayer({ id: 0, playerId: 'player_1' }),
-        createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: null }),
-      ]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        {},
+      ),
       localPlayerId: 'player_1',
     });
 
@@ -148,13 +154,20 @@ describe('useStalenessCheck', () => {
   it('exits every stale human peer and only those, in seat order', () => {
     renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([
-        createPlayer({ id: 0, playerId: 'player_1' }),
-        createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: FIRST_CHECK_TIME - STALE_THRESHOLD_MS - 1 }),
-        createPlayer({ id: 2, playerId: 'bot_3', isBot: true, lastSeenAt: null }),
-        createPlayer({ id: 3, playerId: 'player_4', lastSeenAt: FIRST_CHECK_TIME - 1000 }),
-        createPlayer({ id: 4, playerId: 'player_5', lastSeenAt: FIRST_CHECK_TIME - STALE_THRESHOLD_MS - 60_000 }),
-      ]),
+      gameState: createGameState(
+        [
+          createPlayer({ id: 0, playerId: 'player_1' }),
+          createPlayer({ id: 1, playerId: 'player_2' }),
+          createPlayer({ id: 2, playerId: 'bot_3', isBot: true }),
+          createPlayer({ id: 3, playerId: 'player_4' }),
+          createPlayer({ id: 4, playerId: 'player_5' }),
+        ],
+        {
+          1: FIRST_CHECK_TIME - STALE_THRESHOLD_MS - 1,
+          3: FIRST_CHECK_TIME - 1000,
+          4: FIRST_CHECK_TIME - STALE_THRESHOLD_MS - 60_000,
+        },
+      ),
       localPlayerId: 'player_1',
     });
 
@@ -170,10 +183,10 @@ describe('useStalenessCheck', () => {
   it('does nothing before the first interval tick', () => {
     renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([
-        createPlayer({ id: 0, playerId: 'player_1' }),
-        createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: START_TIME - STALE_THRESHOLD_MS - 1 }),
-      ]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: START_TIME - STALE_THRESHOLD_MS - 1 },
+      ),
       localPlayerId: 'player_1',
     });
 
@@ -191,10 +204,8 @@ describe('useStalenessCheck', () => {
     renderStalenessCheck({
       gameId: 'game_1',
       gameState: createGameState(
-        [
-          createPlayer({ id: 0, playerId: 'player_1' }),
-          createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: START_TIME - STALE_THRESHOLD_MS - 1 }),
-        ],
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: START_TIME - STALE_THRESHOLD_MS - 1 },
         status,
       ),
       localPlayerId: 'player_1',
@@ -217,7 +228,10 @@ describe('useStalenessCheck', () => {
   it('checks the latest snapshot on a tick without restarting the interval on each snapshot', () => {
     const { rerender } = renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        {},
+      ),
       localPlayerId: 'player_1',
     });
 
@@ -228,10 +242,10 @@ describe('useStalenessCheck', () => {
     });
     rerender({
       gameId: 'game_1',
-      gameState: createGameState([
-        createPlayer({ id: 0, playerId: 'player_1' }),
-        createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: FIRST_CHECK_TIME - STALE_THRESHOLD_MS - 1 }),
-      ]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: FIRST_CHECK_TIME - STALE_THRESHOLD_MS - 1 },
+      ),
       localPlayerId: 'player_1',
     });
 
@@ -247,19 +261,19 @@ describe('useStalenessCheck', () => {
   it('does not exit a peer whose heartbeat arrived again before the tick', () => {
     const { rerender } = renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([
-        createPlayer({ id: 0, playerId: 'player_1' }),
-        createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: START_TIME - STALE_THRESHOLD_MS - 1 }),
-      ]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: START_TIME - STALE_THRESHOLD_MS - 1 },
+      ),
       localPlayerId: 'player_1',
     });
 
     rerender({
       gameId: 'game_1',
-      gameState: createGameState([
-        createPlayer({ id: 0, playerId: 'player_1' }),
-        createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: FIRST_CHECK_TIME }),
-      ]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: FIRST_CHECK_TIME },
+      ),
       localPlayerId: 'player_1',
     });
 
@@ -271,10 +285,10 @@ describe('useStalenessCheck', () => {
   it('stops checking after unmount', () => {
     const { unmount } = renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([
-        createPlayer({ id: 0, playerId: 'player_1' }),
-        createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: START_TIME - STALE_THRESHOLD_MS - 1 }),
-      ]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: START_TIME - STALE_THRESHOLD_MS - 1 },
+      ),
       localPlayerId: 'player_1',
     });
 
@@ -289,20 +303,18 @@ describe('useStalenessCheck', () => {
   it('stops checking when the status changes to finished', () => {
     const { rerender } = renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([
-        createPlayer({ id: 0, playerId: 'player_1' }),
-        createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: START_TIME - STALE_THRESHOLD_MS - 1 }),
-      ]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: START_TIME - STALE_THRESHOLD_MS - 1 },
+      ),
       localPlayerId: 'player_1',
     });
 
     rerender({
       gameId: 'game_1',
       gameState: createGameState(
-        [
-          createPlayer({ id: 0, playerId: 'player_1' }),
-          createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: START_TIME - STALE_THRESHOLD_MS - 1 }),
-        ],
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: START_TIME - STALE_THRESHOLD_MS - 1 },
         GameStatus.Finished,
       ),
       localPlayerId: 'player_1',
@@ -320,10 +332,10 @@ describe('useStalenessCheck', () => {
 
     renderStalenessCheck({
       gameId: 'game_1',
-      gameState: createGameState([
-        createPlayer({ id: 0, playerId: 'player_1' }),
-        createPlayer({ id: 1, playerId: 'player_2', lastSeenAt: START_TIME - STALE_THRESHOLD_MS - 1 }),
-      ]),
+      gameState: createGameState(
+        [createPlayer({ id: 0, playerId: 'player_1' }), createPlayer({ id: 1, playerId: 'player_2' })],
+        { 1: START_TIME - STALE_THRESHOLD_MS - 1 },
+      ),
       localPlayerId: 'player_1',
     });
 

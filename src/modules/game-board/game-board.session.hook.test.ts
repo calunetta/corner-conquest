@@ -19,7 +19,6 @@ const createPlayer = (overrides?: Partial<Player>): Player =>
     color: 'blue',
     isBot: false,
     isVacant: false,
-    lastSeenAt: null,
     reclaimRequested: false,
     ...overrides,
   }) as Player;
