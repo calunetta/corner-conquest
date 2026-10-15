@@ -19,10 +19,10 @@ Tier: L · Phases: 3
 
 ## Phase 2: editor logic (hook, map, service, API routes)
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-a)
-- [ ] tests (tester-a)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a)
+- [x] tests (tester-a)
+- [x] checks: typecheck, lint, unit tests
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 3: editor view, preview, registry
