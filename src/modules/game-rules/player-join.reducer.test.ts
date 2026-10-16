@@ -1,4 +1,4 @@
-import { PlayerColor, GameStatus } from '@/lib/types';
+import { PlayerColor, GameStatus, IslandType } from '@/lib/types';
 import {
   initializeGame,
   startGame,
@@ -6,6 +6,7 @@ import {
   addPlayerToGame,
 } from './index';
 import { toLogMessage } from './log-entry';
+import { generateMonsters } from './monster-catalog';
 
 describe('player-join.reducer: addPlayerToGame', () => {
   describe('full game branch', () => {
@@ -221,6 +222,39 @@ it('accepts a valid join and stays in Waiting status when last seat is filled, a
         y: rows - 1,
       });
       expect(game.baseTiles[1]).toEqual(result.newBaseTile);
+    });
+  });
+
+  describe('leftover terrain monsters on the new Base tile', () => {
+    // KNOWN BUG (Phase 9 regression guard): terrain generation runs before a guest's seat
+    // exists, so the guest's future Base tile can be rolled as a Monster island with monsters.
+    // addPlayerToGame converts the tile to Base but must also clear those monsters, or the
+    // guest's turn-1 Position and Attack are blocked (ActionsPanel.map.ts canPosition/canAttack).
+    it('clears pre-rolled monsters when the tile becomes the joining guest Base', () => {
+      const cols = defaultGameSettings.gridSize.cols;
+      const rows = defaultGameSettings.gridSize.rows;
+
+      const game = initializeGame(
+        'game_test',
+        'Leftover Monsters Test',
+        2,
+        { playerId: 'p1', name: 'Player 1', color: PlayerColor.Blue },
+        0,
+        false,
+        defaultGameSettings
+      );
+
+      // Pre-join state of the guest's future base tile: terrain rolled it as a Monster island.
+      const guestBaseIndex = (rows - 1) * cols + (cols - 1);
+      game.map[guestBaseIndex].type = IslandType.Monster;
+      game.map[guestBaseIndex].monsters = generateMonsters(cols - 1, rows - 1);
+      expect(game.map[guestBaseIndex].monsters!.length).toBeGreaterThan(0);
+
+      const result = addPlayerToGame(game, { playerId: 'p2', name: 'Player 2' });
+      const guestBaseTile = result.newGameState!.map[guestBaseIndex];
+
+      expect(guestBaseTile.type).toBe(IslandType.Base);
+      expect(guestBaseTile.monsters).toEqual([]);
     });
   });
 });

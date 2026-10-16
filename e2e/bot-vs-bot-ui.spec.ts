@@ -308,13 +308,13 @@ test.describe('Bot-vs-bot self-play through the real UI', () => {
       }
 
       const landingIssues: string[] = [];
+      const turnChecks: EffectCheck[] = [];
       let stepState = state;
       for (const step of BOT_STEPS) {
         const before = stepState;
         const result = planNextStep(before, actingSeat, step);
         await performUiAction(page, result, actingSeat);
-        const checks = buildEffectChecks(actingSeat, before, result);
-        landingIssues.push(...(await waitForStepEffects(gameId, checks)));
+        turnChecks.push(...buildEffectChecks(actingSeat, before, result));
         stepState = result.state;
       }
 
@@ -342,6 +342,11 @@ test.describe('Bot-vs-bot self-play through the real UI', () => {
         SYNC_TIMEOUT_MS,
       );
       if (!nextState) landingIssues.push(`End Turn for seat ${actingSeat} never advanced the match state.`);
+
+      // Checked once per turn, not per BOT_STEP: Deploy/Upgrade/Move/Position only update the turn
+      // buffer, which reaches Firestore only at auto-end-turn or End Turn. Checking earlier reports
+      // actions that did land as "never landed" (see docs/ai/tasks/2026-10-13-bot-ui-position-stall).
+      landingIssues.push(...(await waitForStepEffects(gameId, turnChecks)));
 
       const screenshot = await page.screenshot();
       const { consoleErrors, pageErrors, failedRequests } = drainIssueBuffer(issueBuffers[actingSeat]);

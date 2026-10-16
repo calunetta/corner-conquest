@@ -66,6 +66,8 @@ export function addPlayerToGame(
         { type: ResourceType.Wood, amount: newGameState.settings.baseResourceAmount },
         { type: ResourceType.Gold, amount: newGameState.settings.baseResourceAmount }
     ];
+    // Terrain generation may have rolled this tile as a monster island before this seat existed.
+    baseTile.monsters = [];
 
     if (newGameState.settings.fogOfWar && !newPlayer.revealedTiles.includes(baseTile.id)) {
         newPlayer.revealedTiles.push(baseTile.id);
