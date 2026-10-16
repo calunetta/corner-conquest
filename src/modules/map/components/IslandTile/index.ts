@@ -1,4 +1,4 @@
-export { IslandTile, IslandTileView } from './IslandTile';
+export { IslandTile, IslandTileView, SPECIAL_ISLAND_IDLE_SPRITE } from './IslandTile';
 export { useIslandTile } from './IslandTile.hook';
 export { toIslandTileViewModel } from './IslandTile.map';
 export type { IslandTileContext, IslandTileProps, IslandTileStaticViewModel, IslandTileViewModel } from './IslandTile.types';

@@ -4,6 +4,11 @@
 // ui-design.md): a non-corner slot must clear the 0-22%/78-100% band on at least one axis
 // for every corner it is near. 22% = the boat's 21% half-box + a 1-point visible gap.
 
+// Dev-only: the path the Default-elements editor mode (testbed) reads/writes to persist edits
+// to this file's own exports (`path.join(process.cwd(), ISLAND_TILE_SLOTS_PATH)`), mirroring
+// DECORATION_LAYOUTS_CONFIG_PATH's pattern (decoration-layouts.types.ts).
+export const ISLAND_TILE_SLOTS_PATH = 'src/modules/map/island-tile-slots.types.ts';
+
 export type CornerId = 'br' | 'tr' | 'tl' | 'bl';
 
 export interface CornerPosition {
@@ -120,4 +125,24 @@ export const BASE_RESOURCE_SLOTS: SlotDef[] = [
   { top: '45%', right: '-17%', size: 30 },
   { top: '15%', left: '50%', size: 30 },
 ];
+
+/** The editable subset of this file's own exports: every value the Default-elements editor
+ *  mode can drag/nudge/resize. CORNER_TRANSFORMS is deliberately absent — it is derived per
+ *  corner, never user-tuned. */
+export interface IslandTileSlotsDraft {
+  occupantCornerSlots: CornerPosition[]; // 4, same br/tr/tl/bl order as today
+  boatCornerPositions: CornerPosition[]; // 4, same order
+  occupantSize: number;
+  boatSize: number;
+  specialIslandTop: string; // e.g. '40%'
+  specialIslandLeft: string;
+  specialIslandSize: number;
+  baseCrestSize: number;
+  baseCrestMinPx: number;
+  singleResourceSlot: SlotDef;
+  dualResourceSlots: SlotDef[];
+  tripleResourceSlots: SlotDef[];
+  quadResourceSlots: SlotDef[];
+  baseResourceSlots: SlotDef[];
+}
 

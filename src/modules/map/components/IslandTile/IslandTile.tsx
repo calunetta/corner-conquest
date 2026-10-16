@@ -24,7 +24,7 @@ import {
 } from './IslandTile.styles';
 import type { IslandTileProps, IslandTileViewModel } from './IslandTile.types';
 
-const SPECIAL_ISLAND_IDLE_SPRITE = '/sprites/special_island_idle.png';
+export const SPECIAL_ISLAND_IDLE_SPRITE = '/sprites/special_island_idle.png';
 
 /** One tile's monster icons, suppressed while its death animation is playing. */
 function renderMonsterIcons(viewModel: IslandTileViewModel) {
@@ -54,7 +54,7 @@ function getTileCenterContent(viewModel: IslandTileViewModel) {
       return (
         <div className={styles.baseContent}>
           {baseOwner?.color ? (
-            <div className={styles.baseImageWrapper} style={toBaseCrestStyle()}>
+            <div className={styles.baseImageWrapper} style={toBaseCrestStyle()} data-testid="base-crest">
               <Image
                 src={PLAYER_DATA[baseOwner.color].base}
                 alt={`${baseOwner.color} base`}
@@ -73,7 +73,7 @@ function getTileCenterContent(viewModel: IslandTileViewModel) {
       return renderMonsterIcons(viewModel);
     case IslandType.Special:
       return (
-        <div className={styles.specialContent} style={toSpecialIslandStyle()}>
+        <div className={styles.specialContent} style={toSpecialIslandStyle()} data-testid="special-content">
           {cardRevealAnimationOnTile && !prefersReducedMotion ? (
             <CardRevealEffect
               id={cardRevealAnimationOnTile.id}

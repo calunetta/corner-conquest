@@ -7,7 +7,7 @@ import type { TileOccupantsProps, OccupantSpriteViewModel } from './TileOccupant
 
 export function TileOccupantsView({ occupants }: { occupants: OccupantSpriteViewModel[] }) {
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-testid="tile-occupants">
       {occupants.map((occupant) => (
         <div
           key={occupant.key}

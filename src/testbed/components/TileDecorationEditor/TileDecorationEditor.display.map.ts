@@ -30,6 +30,18 @@ const baseIsland: Island = {
 
 const specialIsland: Island = { ...baseIsland, type: IslandType.Special, owner: undefined };
 
+// Three distinct resource types (not an amount > 1 on fewer types): on a Base island,
+// toTileResourcesViewModel expands one node per resources[] entry regardless of amount
+// (TileResources.map.ts), so this is the only shape that exercises all 3 BASE_RESOURCE_SLOTS.
+export const baseIslandWithResources: Island = {
+  ...baseIsland,
+  resources: [
+    { type: ResourceType.Food, amount: 1 },
+    { type: ResourceType.Wood, amount: 1 },
+    { type: ResourceType.Gold, amount: 1 },
+  ],
+};
+
 const emptyIsland: Island = { ...baseIsland, type: IslandType.Empty, owner: undefined, occupants: cornerOccupants4 };
 
 function resourceIsland(nodeCount: number): Island {
