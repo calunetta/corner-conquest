@@ -243,4 +243,136 @@ describe('useMobileActionsBar', () => {
     expect(capturedState?.isSheetOpen).toBe(true);
     expect(capturedState?.barHeightPx).toBe(85);
   });
+
+  describe('event log sheet', () => {
+    it('starts with the log sheet closed', () => {
+      const { result } = renderHook(() => useMobileActionsBar());
+
+      expect(result.current.isLogSheetOpen).toBe(false);
+      expect(result.current.onLogSheetOpenChange).toBeDefined();
+    });
+
+    it('opens the log sheet and closes the open actions sheet', () => {
+      const { result } = renderHook(() => useMobileActionsBar());
+
+      act(() => {
+        result.current.onSheetOpenChange(true);
+      });
+      expect(result.current.isSheetOpen).toBe(true);
+
+      act(() => {
+        result.current.onLogSheetOpenChange(true);
+      });
+
+      expect(result.current.isLogSheetOpen).toBe(true);
+      expect(result.current.isSheetOpen).toBe(false);
+    });
+
+    it('opens the actions sheet and closes the open log sheet', () => {
+      const { result } = renderHook(() => useMobileActionsBar());
+
+      act(() => {
+        result.current.onLogSheetOpenChange(true);
+      });
+      expect(result.current.isLogSheetOpen).toBe(true);
+
+      act(() => {
+        result.current.onSheetOpenChange(true);
+      });
+
+      expect(result.current.isSheetOpen).toBe(true);
+      expect(result.current.isLogSheetOpen).toBe(false);
+    });
+
+    it('opening the log sheet leaves a closed actions sheet closed', () => {
+      const { result } = renderHook(() => useMobileActionsBar());
+
+      act(() => {
+        result.current.onLogSheetOpenChange(true);
+      });
+
+      expect(result.current.isLogSheetOpen).toBe(true);
+      expect(result.current.isSheetOpen).toBe(false);
+    });
+
+    it('closing the log sheet while the actions sheet is open keeps the actions sheet open', () => {
+      const { result } = renderHook(() => useMobileActionsBar());
+
+      act(() => {
+        result.current.onSheetOpenChange(true);
+      });
+
+      act(() => {
+        result.current.onLogSheetOpenChange(false);
+      });
+
+      expect(result.current.isLogSheetOpen).toBe(false);
+      expect(result.current.isSheetOpen).toBe(true);
+    });
+
+    it('closing the actions sheet while the log sheet is open keeps the log sheet open', () => {
+      const { result } = renderHook(() => useMobileActionsBar());
+
+      act(() => {
+        result.current.onLogSheetOpenChange(true);
+      });
+
+      act(() => {
+        result.current.onSheetOpenChange(false);
+      });
+
+      expect(result.current.isSheetOpen).toBe(false);
+      expect(result.current.isLogSheetOpen).toBe(true);
+    });
+
+    it('closes the log sheet with onLogSheetOpenChange(false)', () => {
+      const { result } = renderHook(() => useMobileActionsBar());
+
+      act(() => {
+        result.current.onLogSheetOpenChange(true);
+      });
+      act(() => {
+        result.current.onLogSheetOpenChange(false);
+      });
+
+      expect(result.current.isLogSheetOpen).toBe(false);
+      expect(result.current.isSheetOpen).toBe(false);
+    });
+
+    it('maintains log sheet state independently from height updates', () => {
+      let capturedState: ReturnType<typeof useMobileActionsBar> | undefined;
+
+      render(
+        <HookTestComponent
+          onStateChange={(state) => {
+            capturedState = state;
+          }}
+        />,
+      );
+
+      act(() => {
+        resizeObserverInstances[0].callback(
+          [{ contentRect: { height: 72, width: 100 } } as ResizeObserverEntry],
+          {} as ResizeObserver,
+        );
+      });
+
+      act(() => {
+        capturedState?.onLogSheetOpenChange(true);
+      });
+
+      expect(capturedState?.isLogSheetOpen).toBe(true);
+      expect(capturedState?.barHeightPx).toBe(72);
+
+      act(() => {
+        resizeObserverInstances[0].callback(
+          [{ contentRect: { height: 85, width: 100 } } as ResizeObserverEntry],
+          {} as ResizeObserver,
+        );
+      });
+
+      expect(capturedState?.isLogSheetOpen).toBe(true);
+      expect(capturedState?.barHeightPx).toBe(85);
+    });
+  });
 });

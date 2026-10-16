@@ -2,11 +2,12 @@
 
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronUp } from 'lucide-react';
 import { XCircle, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActionButton } from './ActionButton';
 import { MobileActionsSheet } from './MobileActionsSheet';
+import { MobileEventLogSheet } from './MobileEventLogSheet';
+import { MobileSheetTriggers } from './MobileSheetTriggers';
 import { useMobileActionsBar } from './MobileActionsBar.hook';
 import { styles } from './MobileActionsBar.styles';
 import { styles as actionsPanelStyles } from './ActionsPanel.styles';
@@ -30,8 +31,9 @@ export function MobileActionsBar({
   onEndTurn,
   infoBeacon,
 }: ActionsPanelViewProps) {
-  const { barRef, barHeightPx, isSheetOpen, onSheetOpenChange } = useMobileActionsBar();
+  const { barRef, barHeightPx, isSheetOpen, onSheetOpenChange, isLogSheetOpen, onLogSheetOpenChange } = useMobileActionsBar();
   const moreActionsButtonRef = useRef<HTMLButtonElement>(null);
+  const logButtonRef = useRef<HTMLButtonElement>(null);
 
   const rowCount = isMyTurn ? 4 : 3;
 
@@ -74,17 +76,12 @@ export function MobileActionsBar({
               <span>Extra Move active! Select a soldier on the map to continue.</span>
             </div>
           )}
-          <Button
-            ref={moreActionsButtonRef}
-            variant="outline"
-            size="sm"
-            className={styles.moreActionsButton}
-            onClick={() => onSheetOpenChange(true)}
-            data-testid="actions-panel-more-actions"
-          >
-            More Actions
-            <ChevronUp className="h-3.5 w-3.5" />
-          </Button>
+          <MobileSheetTriggers
+            onOpenLog={() => onLogSheetOpenChange(true)}
+            onOpenActions={() => onSheetOpenChange(true)}
+            logButtonRef={logButtonRef}
+            moreActionsButtonRef={moreActionsButtonRef}
+          />
         </div>
 
         {/* Row 2: main actions grid (Position, Attack, Deploy, and optionally End Turn). */}
@@ -151,6 +148,9 @@ export function MobileActionsBar({
         onActionClick={onActionClick}
         triggerRef={moreActionsButtonRef}
       />
+
+      {/* Sheet for the Event Log. */}
+      <MobileEventLogSheet open={isLogSheetOpen} onOpenChange={onLogSheetOpenChange} triggerRef={logButtonRef} />
     </>
   );
 }

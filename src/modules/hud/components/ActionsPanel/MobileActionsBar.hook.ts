@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 export interface MobileActionsBarState {
   /** Attach to the fixed bar's own root element (not the spacer). */
@@ -9,16 +9,30 @@ export interface MobileActionsBarState {
   barHeightPx: number;
   isSheetOpen: boolean;
   onSheetOpenChange: (open: boolean) => void;
+  isLogSheetOpen: boolean;
+  onLogSheetOpenChange: (open: boolean) => void;
 }
 
 /**
  * Manages mobile actions bar UI state: height measurement via ResizeObserver
- * and sheet open/closed state.
+ * and the open/closed state of the actions sheet and the event log sheet.
+ * The two sheets never stack: opening one closes the other.
  */
 export function useMobileActionsBar(): MobileActionsBarState {
   const barRef = useRef<HTMLDivElement>(null);
   const [barHeightPx, setBarHeightPx] = useState(0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isLogSheetOpen, setIsLogSheetOpen] = useState(false);
+
+  const onSheetOpenChange = useCallback((open: boolean) => {
+    setIsSheetOpen(open);
+    if (open) setIsLogSheetOpen(false);
+  }, []);
+
+  const onLogSheetOpenChange = useCallback((open: boolean) => {
+    setIsLogSheetOpen(open);
+    if (open) setIsSheetOpen(false);
+  }, []);
 
   useLayoutEffect(() => {
     const element = barRef.current;
@@ -41,6 +55,8 @@ export function useMobileActionsBar(): MobileActionsBarState {
     barRef,
     barHeightPx,
     isSheetOpen,
-    onSheetOpenChange: setIsSheetOpen,
+    onSheetOpenChange,
+    isLogSheetOpen,
+    onLogSheetOpenChange,
   };
 }

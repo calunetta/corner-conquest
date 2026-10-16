@@ -22,6 +22,9 @@ export type DisplayedLogEntry = LogEntryViewModel & {
   segments: LogMessageSegment[]; // `message` split into colored/plain runs
 };
 
+/** Presentation of the log: the inline desktop panel or the mobile bottom sheet. */
+export type GameLogVariant = 'panel' | 'sheet';
+
 export interface GameLogViewModel {
   entries: DisplayedLogEntry[]; // newest first, already filtered and divided
   showRoutineActivity: boolean;

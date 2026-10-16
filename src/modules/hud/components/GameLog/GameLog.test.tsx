@@ -146,4 +146,48 @@ describe('GameLogView', () => {
       expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
     });
   });
+
+  describe('variant', () => {
+    /** Visible entry texts in newest-first order, read from the scroll area. */
+    function entryTexts(): string[] {
+      const scrollArea = screen.getByTestId('game-log-scroll');
+      return within(scrollArea)
+        .getAllByRole('paragraph')
+        .map((entry) => entry.textContent ?? '');
+    }
+
+    it('panel and sheet variants show the same title, switch label, dividers and entries', () => {
+      const { unmount } = render(<GameLogView {...mixedTwoTurnsLog} variant="panel" />);
+      const panelEntries = entryTexts();
+      const panelDividers = screen.getAllByRole('separator').map((divider) => divider.textContent);
+      unmount();
+
+      render(<GameLogView {...mixedTwoTurnsLog} variant="sheet" />);
+
+      expect(screen.getByText('Event Log')).toBeInTheDocument();
+      expect(screen.getByRole('switch', { name: 'Show routine activity' })).toBeInTheDocument();
+      expect(entryTexts()).toEqual(panelEntries);
+      expect(screen.getAllByRole('separator').map((divider) => divider.textContent)).toEqual(panelDividers);
+    });
+
+    it('omitting variant renders the same entries as variant="panel"', () => {
+      const { unmount } = render(<GameLogView {...legacyOnlyLog} variant="panel" />);
+      const panelEntries = entryTexts();
+      unmount();
+
+      render(<GameLogView {...legacyOnlyLog} />);
+
+      expect(entryTexts()).toEqual(panelEntries);
+      expect(entryTexts()).toHaveLength(3);
+    });
+
+    it('the switch still calls onToggleShowRoutineActivity in the sheet variant', () => {
+      const onToggle = jest.fn();
+      render(<GameLogView {...declutterOffLog} onToggleShowRoutineActivity={onToggle} variant="sheet" />);
+
+      fireEvent.click(screen.getByRole('switch'));
+
+      expect(onToggle).toHaveBeenCalledTimes(1);
+    });
+  });
 });

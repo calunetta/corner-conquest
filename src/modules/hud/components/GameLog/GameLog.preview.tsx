@@ -5,6 +5,7 @@ import {
   declutterOnLog,
   emptyLog,
   legacyOnlyLog,
+  longSessionLog,
   mixedTwoTurnsLog,
   preGameLog,
   withMilestoneLog,
@@ -22,5 +23,14 @@ export const gameLogPreview: ComponentPreview = {
     { name: 'Declutter off (default)', render: () => <GameLogView {...declutterOffLog} /> },
     { name: 'Declutter on', render: () => <GameLogView {...declutterOnLog} /> },
     { name: 'Pre-game (turn 0)', render: () => <GameLogView {...preGameLog} /> },
+    {
+      // The sheet variant only scrolls inside a bounded parent; the height mirrors the mobile sheet's h-[75vh].
+      name: 'Sheet variant',
+      render: () => (
+        <div className="flex h-[75vh] max-h-[85vh] flex-col">
+          <GameLogView {...longSessionLog} variant="sheet" />
+        </div>
+      ),
+    },
   ],
 };

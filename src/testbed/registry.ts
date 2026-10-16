@@ -25,6 +25,7 @@ import { playerInfoPreview } from '@/modules/hud/components/PlayerInfo/PlayerInf
 import { tutorialBeaconPreview } from '@/modules/hud/components/TutorialBeacon/TutorialBeacon.preview';
 import { actionsPanelPreview } from '@/modules/hud/components/ActionsPanel/ActionsPanel.preview';
 import { mobileActionsBarPreview } from '@/modules/hud/components/ActionsPanel/MobileActionsBar.preview';
+import { mobileEventLogSheetPreview } from '@/modules/hud/components/ActionsPanel/MobileEventLogSheet.preview';
 import { cardsDialogPreview } from '@/modules/cards/components/CardsDialog/CardsDialog.preview';
 import { productiveCardDialogPreview } from '@/modules/cards/components/ProductiveCardDialog/ProductiveCardDialog.preview';
 import { specialIslandRollDialogPreview } from '@/modules/cards/components/SpecialIslandRollDialog/SpecialIslandRollDialog.preview';
@@ -76,6 +77,7 @@ export const previews: ComponentPreview[] = [
   tutorialBeaconPreview,
   actionsPanelPreview,
   mobileActionsBarPreview,
+  mobileEventLogSheetPreview,
   cardsDialogPreview,
   productiveCardDialogPreview,
   specialIslandRollDialogPreview,

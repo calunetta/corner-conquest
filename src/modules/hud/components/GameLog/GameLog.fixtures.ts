@@ -48,6 +48,32 @@ const mixedTwoTurnsLogs: LogEntry[] = [
 
 export const mixedTwoTurnsLog: GameLogViewModel = toFixture(mixedTwoTurnsLogs, false);
 
+// Long enough to overflow the mobile sheet's h-[75vh] wrapper, so the sheet variant's scrolling is visible.
+const longSessionLogs: LogEntry[] = [
+  'Pre-game: Ada joined the match',
+  'Pre-game: Bo joined the match',
+  { kind: 'structured', turn: 1, category: 'cards', message: 'Ada bought a card', playerId: 'p-blue' },
+  { kind: 'structured', turn: 1, category: 'economy', message: 'Bo gained 5 Gold from harvesting', playerId: 'p-red' },
+  { kind: 'structured', turn: 1, category: 'cards', message: 'Bo bought a card', playerId: 'p-red' },
+  { kind: 'structured', turn: 2, category: 'economy', message: 'Ada gained 4 Food from harvesting', playerId: 'p-blue' },
+  { kind: 'structured', turn: 2, category: 'combat', message: 'Ada deployed an army to the north island', playerId: 'p-blue' },
+  { kind: 'structured', turn: 2, category: 'cards', message: 'Bo played Forced March', playerId: 'p-red' },
+  { kind: 'structured', turn: 3, category: 'combat', message: 'Bo attacked Ada at the coast', playerId: 'p-red', targetPlayerId: 'p-blue' },
+  { kind: 'structured', turn: 3, category: 'combat', message: 'Ada held the coast', playerId: 'p-blue', targetPlayerId: 'p-red' },
+  { kind: 'structured', turn: 3, category: 'economy', message: 'Ada gained 6 Gold from harvesting', playerId: 'p-blue' },
+  { kind: 'structured', turn: 4, category: 'economy', message: 'Bo gained 3 Food from harvesting', playerId: 'p-red' },
+  { kind: 'structured', turn: 4, category: 'cards', message: 'Ada bought a card', playerId: 'p-blue' },
+  { kind: 'structured', turn: 4, category: 'combat', message: 'Bo raided Ada’s forest camp', playerId: 'p-red', targetPlayerId: 'p-blue' },
+  { kind: 'structured', turn: 5, category: 'system', message: 'Bo upgraded to 3 attack power', playerId: 'p-red' },
+  { kind: 'structured', turn: 5, category: 'combat', message: 'Ada defeated Bo in battle!', playerId: 'p-blue', targetPlayerId: 'p-red' },
+  { kind: 'structured', turn: 5, category: 'economy', message: 'Ada gained 5 Gold from harvesting', playerId: 'p-blue' },
+  { kind: 'structured', turn: 6, category: 'cards', message: 'Bo bought a card', playerId: 'p-red' },
+  { kind: 'structured', turn: 6, category: 'economy', message: 'Bo gained 4 Food from harvesting', playerId: 'p-red' },
+  { kind: 'structured', turn: 6, category: 'combat', message: 'Bo deployed an army to the south island', playerId: 'p-red' },
+];
+
+export const longSessionLog: GameLogViewModel = toFixture(longSessionLogs, false);
+
 const withMilestoneLogs: LogEntry[] = [
   { kind: 'structured', turn: 1, category: 'economy', message: 'Ada collected resources', playerId: 'p-blue', isPassive: true },
   {

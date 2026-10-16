@@ -72,7 +72,10 @@ export function GameBoardContent() {
                   />
                 }
               />
-              <GameLog />
+              {/* Mobile shows the Event Log in a sheet from MobileActionsBar instead; md = useIsMobile's 768px. */}
+              <div className="hidden md:block">
+                <GameLog />
+              </div>
             </aside>
           </div>
         </>

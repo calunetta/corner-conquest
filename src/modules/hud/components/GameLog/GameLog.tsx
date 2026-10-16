@@ -7,7 +7,12 @@ import { Switch } from '@/components/ui/switch';
 import type { LogCategory } from '@/lib/types';
 import { useGameLog } from './GameLog.hook';
 import { styles } from './GameLog.styles';
-import type { DisplayedLogEntry, GameLogViewModel, LogMessageSegment } from './GameLog.types';
+import type {
+  DisplayedLogEntry,
+  GameLogVariant,
+  GameLogViewModel,
+  LogMessageSegment,
+} from './GameLog.types';
 
 const CATEGORY_ICONS: Record<LogCategory, typeof Swords> = {
   combat: Swords,
@@ -42,10 +47,15 @@ function EntryMessage({ segments }: { segments: LogMessageSegment[] }) {
   );
 }
 
-/** Pure view: renders the game log entries, turn dividers and the declutter toggle. */
-export function GameLogView({ entries, showRoutineActivity, onToggleShowRoutineActivity }: GameLogViewModel) {
+/** Pure view: renders the game log entries, turn dividers and the declutter toggle. `variant` only changes presentation. */
+export function GameLogView({
+  entries,
+  showRoutineActivity,
+  onToggleShowRoutineActivity,
+  variant = 'panel',
+}: GameLogViewModel & { variant?: GameLogVariant }) {
   return (
-    <Card className={styles.card}>
+    <Card className={styles.card({ variant })}>
       <CardHeader className={styles.header}>
         <CardTitle className={styles.title}>Event Log</CardTitle>
         <div className={styles.toggleRow}>
@@ -57,8 +67,8 @@ export function GameLogView({ entries, showRoutineActivity, onToggleShowRoutineA
           />
         </div>
       </CardHeader>
-      <CardContent className={styles.content}>
-        <ScrollArea className={styles.scrollArea} data-testid="game-log-scroll">
+      <CardContent className={styles.content({ variant })}>
+        <ScrollArea className={styles.scrollArea({ variant })} data-testid="game-log-scroll">
           <div className={styles.entriesContainer}>
             {entries.map((entry, index) => (
               <div key={entries.length - 1 - index}>

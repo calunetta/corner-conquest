@@ -39,8 +39,24 @@ export const styles = {
   extraMoveBanner:
     'bg-amber-500/20 border border-amber-500/40 rounded-lg p-2 text-xs font-semibold text-amber-200 flex items-center gap-2 animate-pulse',
 
+  /** Groups the "Log" and "More Actions" triggers as one right-hand Row 1 child. */
+  triggerButtonGroup: 'flex items-center gap-1.5',
+
   /** "More Actions" button trigger (opens the sheet). */
   moreActionsButton: 'h-7 text-xs px-2 whitespace-nowrap flex items-center gap-1',
+
+  /** "Log" button trigger (opens the Event Log sheet). */
+  logButton: 'h-7 text-xs px-2 whitespace-nowrap flex items-center gap-1',
+
+  /** Icon inside the "Log" button. */
+  logButtonIcon: 'h-3.5 w-3.5',
+
+  /** Event Log sheet: fills most of the viewport; p-0 so GameLogView's own Card provides the padding. */
+  logSheetContent:
+    'h-[75vh] max-h-[85vh] flex flex-col p-0 motion-reduce:duration-0 motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none',
+
+  /** Radix needs a DialogTitle in the sheet; sr-only keeps it for assistive tech without a second visible title. */
+  logSheetSrTitle: 'sr-only',
 
   /** End Turn button container (mobile-only sizing, reused for desktop internal tokens). */
   endTurnButtonMobile: cn(

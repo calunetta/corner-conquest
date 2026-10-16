@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { useGameBoard } from '@/features/game/context/GameBoardContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { ActionsPanelViewModel } from './ActionsPanel.types';
 import {
@@ -13,6 +14,8 @@ import {
 } from './ActionsPanel.fixtures';
 import { MobileActionsBar } from './MobileActionsBar';
 import { styles } from './MobileActionsBar.styles';
+
+jest.mock('@/features/game/context/GameBoardContext', () => ({ useGameBoard: jest.fn() }));
 
 // Mock ResizeObserver for all tests in this file
 const resizeObserverInstances: Array<{
@@ -299,6 +302,67 @@ describe('MobileActionsBar', () => {
       const endTurnButton = screen.getByTestId('actions-panel-end-turn');
       fireEvent.click(endTurnButton);
       expect(onEndTurn).toHaveBeenCalled();
+    });
+  });
+
+  describe('Log button and Event Log sheet', () => {
+    beforeEach(() => {
+      jest.mocked(useGameBoard).mockReturnValue({
+        gameState: { log: [], players: [] },
+      } as unknown as ReturnType<typeof useGameBoard>);
+    });
+
+    it.each([
+      ['my turn with no selection', myTurnNoSelection],
+      ['not my turn', notMyTurn],
+      ['a card action in progress', cardActionInProgress],
+      ['an army selected', armySelectedCanAttack],
+      ['an extra move active', extraMoveActive],
+    ])('shows the Log button next to More Actions when %s', (_label, viewModel) => {
+      renderWithTooltip(<MobileActionsBar {...viewModel} />);
+
+      const logButton = screen.getByRole('button', { name: 'Open event log' });
+      const moreActionsButton = screen.getByTestId('actions-panel-more-actions');
+      expect(logButton).toBeVisible();
+      expect(logButton.parentElement).toBe(moreActionsButton.parentElement);
+    });
+
+    it('does not show the Event Log sheet until Log is clicked', () => {
+      renderWithTooltip(<MobileActionsBar {...myTurnNoSelection} />);
+
+      expect(screen.queryByRole('dialog', { name: 'Event Log' })).not.toBeInTheDocument();
+    });
+
+    it('opens the Event Log sheet when Log is clicked', () => {
+      renderWithTooltip(<MobileActionsBar {...myTurnNoSelection} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Open event log' }));
+
+      const dialog = screen.getByRole('dialog', { name: 'Event Log' });
+      expect(within(dialog).getByRole('switch', { name: 'Show routine activity' })).toBeInTheDocument();
+    });
+
+    it('clicking Log while More Actions is open closes the actions sheet and opens the log', async () => {
+      renderWithTooltip(<MobileActionsBar {...myTurnNoSelection} />);
+      fireEvent.click(screen.getByTestId('actions-panel-more-actions'));
+      expect(screen.getByRole('dialog', { name: 'Actions' })).toBeInTheDocument();
+
+      // Radix hides the rest of the page while a modal is open, so the Log button is addressed by test id.
+      fireEvent.click(screen.getByTestId('actions-panel-log'));
+
+      expect(screen.getByRole('dialog', { name: 'Event Log' })).toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Actions' })).not.toBeInTheDocument());
+    });
+
+    it('clicking More Actions while the Event Log is open closes the log and opens the actions sheet', async () => {
+      renderWithTooltip(<MobileActionsBar {...myTurnNoSelection} />);
+      fireEvent.click(screen.getByTestId('actions-panel-log'));
+      expect(screen.getByRole('dialog', { name: 'Event Log' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId('actions-panel-more-actions'));
+
+      expect(screen.getByRole('dialog', { name: 'Actions' })).toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Event Log' })).not.toBeInTheDocument());
     });
   });
 
