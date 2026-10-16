@@ -213,22 +213,25 @@ describe('withSyncedSeatManagement', () => {
       expect(result.heartbeats[1]).toBe(1_700_000_000_000);
     });
 
-    it('preserves the local player seat\'s own heartbeats entry from local, never overwriting it from server, even when they differ', () => {
+    it('takes the local player seat\'s own heartbeats entry from server, even though local holds a different value', () => {
+      // The acting seat's own heartbeat is an independent side channel; the turn buffer's copy is
+      // a turn-start snapshot and must not win over the live server value.
       const localState = createGameState([hostSeat(), botSeat()], { 0: 1_000 });
       const serverState = createGameState([hostSeat(), botSeat()], { 0: 9_999 });
 
       const result = withSyncedSeatManagement(localState, serverState, LOCAL_PLAYER_ID);
 
-      expect(result.heartbeats[0]).toBe(1_000);
+      expect(result.heartbeats[0]).toBe(9_999);
     });
 
-    it('returns the exact same localGameState reference when only the local seat\'s own heartbeat differs on the server', () => {
+    it('returns a new state object adopting the server value when only the local seat\'s own heartbeat differs', () => {
       const localState = createGameState([hostSeat(), botSeat()], { 0: 1_000 });
       const serverState = createGameState([hostSeat(), botSeat()], { 0: 9_999 });
 
       const result = withSyncedSeatManagement(localState, serverState, LOCAL_PLAYER_ID);
 
-      expect(result).toBe(localState);
+      expect(result).not.toBe(localState);
+      expect(result.heartbeats).toEqual({ 0: 9_999 });
     });
 
     it('returns the same heartbeats reference (no change) when every entry already matches', () => {
@@ -251,7 +254,7 @@ describe('withSyncedSeatManagement', () => {
       expect(result.heartbeats[1]).toBeUndefined();
     });
 
-    it("leaves the local seat's own heartbeats key entirely absent when local never had it yet (turn-1 race), instead of writing an explicit undefined", () => {
+    it("adopts the local seat's own heartbeat from server when local never had it yet (turn-1 race), instead of leaving it absent", () => {
       // local.heartbeats has no key `0` at all — the local seat's own first writeHeartbeat
       // hasn't round-tripped back through onSnapshot yet. Seat 1 also differs, so the merge
       // isn't skipped by the no-op fast path.
@@ -260,10 +263,10 @@ describe('withSyncedSeatManagement', () => {
 
       const result = withSyncedSeatManagement(localState, serverState, LOCAL_PLAYER_ID);
 
-      // A weaker `result.heartbeats[0] === undefined` assertion would also pass against today's
-      // buggy code, since the bug assigns an explicit `undefined` value onto an own property.
-      // Assert the key itself is absent (not merely undefined-valued).
-      expect(Object.prototype.hasOwnProperty.call(result.heartbeats, 0)).toBe(false);
+      // Server always wins for every seat, including the local seat's own key, so key 0 is
+      // present with the server value rather than absent.
+      expect(result.heartbeats[0]).toBe(999);
+      expect(result.heartbeats[1]).toBe(600);
     });
   });
 });

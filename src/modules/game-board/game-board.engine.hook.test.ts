@@ -757,6 +757,43 @@ describe('useGameEngine', () => {
         expect.objectContaining({ heartbeats: expect.objectContaining({ 1: 9000 }) })
       );
     });
+
+    // Regression for the acting-seat rollback (docs/ai/tasks/2026-10-13-bot-ui-position-stall Phase 4):
+    // the turn buffer seeds the acting seat's own heartbeat once at turn start and never refreshes it,
+    // while useHeartbeat keeps writing the fresh value into the live state. setGameState must persist
+    // the live value for the acting seat (player_1 = seat 0), not the turn-start value in the buffer.
+    it('persists the engine\'s freshest known value for the acting seat\'s own heartbeat, not the turn-start value carried by the caller\'s buffered state', async () => {
+      let onDataCallback: ((state: GameState) => void) | null = null;
+
+      mockSubscribeToGameState.mockImplementation(
+        (gameId: string, callbacks: { onData: (state: GameState) => void; onMissing: () => void; onError: (error: unknown) => void }) => {
+          onDataCallback = callbacks.onData;
+          return jest.fn();
+        }
+      );
+
+      const { result } = renderHook(() => useGameEngine('game_123', 'player_1'));
+
+      // The engine's live state: the acting seat 0 (this client) has a fresh heartbeat from its own writeHeartbeat.
+      const liveState = createGameState({ heartbeats: { 0: 9000, 1: 5000 } });
+      act(() => {
+        onDataCallback?.(liveState);
+      });
+
+      // The caller's buffered state (built at turn start) still carries seat 0's heartbeat at its turn-start value.
+      const staleCallerState = createGameState({ heartbeats: { 0: 1000, 1: 5000 } });
+      const actionResultState = { ...staleCallerState, turn: staleCallerState.turn + 1 };
+      mockHandleGameAction.mockReturnValue({ state: actionResultState });
+
+      await act(async () => {
+        await result.current.setGameState(staleCallerState, GameAction.EndTurn, undefined);
+      });
+
+      expect(mockSaveGameState).toHaveBeenCalledWith(
+        'game_123',
+        expect.objectContaining({ heartbeats: expect.objectContaining({ 0: 9000 }) })
+      );
+    });
   });
 
   describe('session driver (lowest seat that is still human)', () => {

@@ -42,31 +42,25 @@ export function withSyncedSeatManagement(
     };
   });
 
-  const localSeatId = localGameState.players.find((player) => player.playerId === localPlayerId)?.id;
-  const heartbeats = syncedHeartbeats(localGameState.heartbeats, serverGameState.heartbeats, localSeatId);
+  const heartbeats = syncedHeartbeats(localGameState.heartbeats, serverGameState.heartbeats);
   if (heartbeats !== localGameState.heartbeats) changed = true;
 
   return changed ? { ...localGameState, players, heartbeats } : localGameState;
 }
 
-/** Every seat's heartbeat from the server, except `localSeatId`'s own (kept from `local` so this
- *  cannot clobber the turn-holder's own in-flight state — same non-clobber rule as the per-seat
- *  fields above). Returns `local` unchanged (same reference) if nothing differs. */
+/**
+ * Every seat's heartbeat, taken from `server`, including the local seat's own. Heartbeats are an
+ * independent, continuously updated side channel (`useHeartbeat`, on its own 15s interval regardless
+ * of whose turn it is), never part of any seat's own in-turn gameplay mutations, so there is no
+ * "don't clobber the turn-holder's in-flight state" concern to protect here, unlike the per-seat
+ * fields in `withSyncedSeatManagement`. `server` is always at least as fresh as `local` for every
+ * seat's heartbeat. Returns `local` unchanged (same reference) if nothing differs.
+ */
 export function syncedHeartbeats(
   local: GameState['heartbeats'],
   server: GameState['heartbeats'],
-  localSeatId: number | undefined,
 ): GameState['heartbeats'] {
-  const merged: GameState['heartbeats'] = { ...server };
-  if (localSeatId !== undefined) {
-    if (localSeatId in local) {
-      merged[localSeatId] = local[localSeatId];
-    } else {
-      delete merged[localSeatId];
-    }
-  }
-
-  const keys = new Set([...Object.keys(local), ...Object.keys(merged)]);
-  const isSame = [...keys].every((key) => local[Number(key)] === merged[Number(key)]);
-  return isSame ? local : merged;
+  const keys = new Set([...Object.keys(local), ...Object.keys(server)]);
+  const isSame = [...keys].every((key) => local[Number(key)] === server[Number(key)]);
+  return isSame ? local : { ...server };
 }

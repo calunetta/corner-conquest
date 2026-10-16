@@ -230,20 +230,11 @@ async function persistFlaggedTurn(runDir: string, turn: FlaggedTurn, flaggedSoFa
   await fs.writeFile(path.join(runDir, 'report.json'), JSON.stringify(report, null, 2));
 }
 
-// Skipped: still stalls ~10min on a match-document deletion (staleness check wrongly converts a
-// connected seat to a bot, eventually both seats, which deletes the match). Three real, separate
-// bugs on this same investigation were found and fixed (see git log for this file and
-// game-board.engine.hook.ts): a stale possibleMoves render race, a syncedHeartbeats bug that made
-// Firestore reject the whole game-state write, and a lost-update race where a turn's local buffer
-// could freeze a PEER's heartbeat at turn-start and clobber it on EndTurn (fixed by re-merging
-// against the engine's always-current gameStateRef before every save). None was the full story:
-// that last fix still doesn't close the ACTING seat's OWN heartbeat, which the reused merge
-// deliberately preserves from the (frozen) buffer, not from gameStateRef -- confirmed by direct
-// trace this session to roll an acting seat's own heartbeat back to its turn-start value on every
-// single EndTurn, not a rare race. See docs/ai/tasks/2026-10-13-bot-ui-position-stall/progress.md
-// ("Open issue") for the exact log evidence and the proposed fix.
-// Re-enable once that investigation lands a confirmed fix.
-test.describe.skip('Bot-vs-bot self-play through the real UI', () => {
+// Phase 4 (docs/ai/tasks/2026-10-13-bot-ui-position-stall): syncedHeartbeats no longer special-cases
+// the acting seat's own key -- it always adopts the server value for any heartbeat that differs, so
+// the acting seat's own heartbeat can no longer be rolled back to its turn-start value on EndTurn.
+// Re-enabled for the mandatory real test:e2e run this phase requires before it can be closed.
+test.describe('Bot-vs-bot self-play through the real UI', () => {
   let hostContext: BrowserContext | null = null;
   let guestContext: BrowserContext | null = null;
   let hostPage: Page | null = null;
@@ -327,7 +318,7 @@ test.describe.skip('Bot-vs-bot self-play through the real UI', () => {
         stepState = result.state;
       }
 
-      await page.getByTestId('actions-panel-end-turn').click();
+      await page.getByTestId('actions-panel-end-turn').click({ timeout: SYNC_TIMEOUT_MS });
       const nextState = await waitForGameState(
         gameId,
         (s) => s.currentPlayerIndex !== actingSeat || s.status !== GameStatus.Playing,

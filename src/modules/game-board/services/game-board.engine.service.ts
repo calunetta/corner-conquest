@@ -46,5 +46,6 @@ export async function clearCardRevealAnimations(gameId: string, remaining: CardR
  *  `setDoc`. */
 export async function writeHeartbeat(gameId: string, playerIndex: number): Promise<void> {
   const gameDocRef = doc(db, 'games', gameId);
-  await updateDoc(gameDocRef, { [`heartbeats.${playerIndex}`]: Date.now() });
+  const now = Date.now();
+  await updateDoc(gameDocRef, { [`heartbeats.${playerIndex}`]: now });
 }

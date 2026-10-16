@@ -72,8 +72,6 @@ export function useTileClick({
       }
 
       const isPossibleMove = uiState.possibleMoves.some((p) => p.x === x && p.y === y);
-      // TEMP DEBUG — remove before handoff.
-      console.error('[DEBUG tileClick]', JSON.stringify({ x, y, armyId: selectedArmy?.id ?? null, armyPos: selectedArmy?.position ?? null, isPossibleMove, possibleMoves: uiState.possibleMoves }));
       if (selectedArmy && isPossibleMove) {
         const targetTile = gameStateForDisplay.map[y * gameStateForDisplay.settings.gridSize.cols + x];
         const isRevealedSpecial =

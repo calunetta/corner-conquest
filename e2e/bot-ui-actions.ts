@@ -127,11 +127,11 @@ export function planNextStep(state: GameState, seat: number, step: BotStep): Bot
 }
 
 async function clickTile(page: Page, at: { x: number; y: number }): Promise<void> {
-  await page.getByTestId(`island-tile-${at.x}-${at.y}`).click();
+  await page.getByTestId(`island-tile-${at.x}-${at.y}`).click({ timeout: SYNC_TIMEOUT_MS });
 }
 
 async function clickActionButton(page: Page, action: GameAction): Promise<void> {
-  await page.getByTestId(`action-button-${action}`).click();
+  await page.getByTestId(`action-button-${action}`).click({ timeout: SYNC_TIMEOUT_MS });
 }
 
 /** Resolves the `ArmySelectionDialog` (`ArmySelectionDialog.tsx:64-101`) that appears only when
@@ -142,7 +142,7 @@ async function selectArmyIfAmbiguous(page: Page, armyId: number): Promise<void> 
     .waitFor({ state: 'visible', timeout: PROBE_TIMEOUT_MS })
     .then(() => true)
     .catch(() => false);
-  if (appeared) await squadButton.click();
+  if (appeared) await squadButton.click({ timeout: SYNC_TIMEOUT_MS });
 }
 
 /** Resolves the one combat dialog `GameAction.InitiateCombat` opens: player combat
@@ -158,7 +158,7 @@ async function resolveCombat(page: Page): Promise<void> {
     .then(() => true)
     .catch(() => false);
   if (isPlayerCombat) {
-    await rollButton.click();
+    await rollButton.click({ timeout: SYNC_TIMEOUT_MS });
     await page.getByRole('button', { name: 'Confirm Results' }).click({ timeout: SYNC_TIMEOUT_MS });
     return;
   }
@@ -168,7 +168,7 @@ async function resolveCombat(page: Page): Promise<void> {
     .then(() => true)
     .catch(() => false);
   if (isMonsterCombat) {
-    await attackMonsterButton.click();
+    await attackMonsterButton.click({ timeout: SYNC_TIMEOUT_MS });
     await page.getByRole('button', { name: 'Continue' }).click({ timeout: SYNC_TIMEOUT_MS });
   }
 }
@@ -182,13 +182,13 @@ async function clickUseCard(page: Page, cardName: CardName): Promise<void> {
     .getByText(cardName, { exact: true })
     .locator('xpath=ancestor::div[.//button][1]')
     .getByRole('button', { name: /use/i })
-    .click();
+    .click({ timeout: SYNC_TIMEOUT_MS });
 }
 
 async function clickUseWealthyCard(page: Page, resource: ResourceType | null): Promise<void> {
   if (!resource) return; // No gain line was logged; nothing to pick in WealthyDialog.
   await clickUseCard(page, CardName.Wealthy);
-  await page.getByTestId(`wealthy-resource-${resource}`).click();
+  await page.getByTestId(`wealthy-resource-${resource}`).click({ timeout: SYNC_TIMEOUT_MS });
 }
 
 /** Opens the Abilities shop (`action-button-local:open-abilities-shop`) and buys `abilityName`,
@@ -201,7 +201,7 @@ async function buyAbility(page: Page, abilityName: AbilityName): Promise<void> {
     .getByText(title, { exact: true })
     .locator('xpath=ancestor::div[.//button][1]')
     .getByRole('button', { name: /buy/i })
-    .click();
+    .click({ timeout: SYNC_TIMEOUT_MS });
 }
 
 /** Strategic UseCard plays bot-card-strategy.reducer.ts actually takes unconditionally
@@ -261,7 +261,7 @@ export async function performUiAction(page: Page, result: BotStepResult, seat: n
     await clickTile(page, position.at);
     await selectArmyIfAmbiguous(page, position.armyId);
     await clickActionButton(page, GameAction.local_Position);
-    await page.getByTestId(`position-resource-btn-${position.resource}`).click();
+    await page.getByTestId(`position-resource-btn-${position.resource}`).click({ timeout: SYNC_TIMEOUT_MS });
   }
 
   for (const attack of result.attacks) {

@@ -36,17 +36,15 @@ export function useGameEngine(gameId: string, playerId: string | null): UseGameE
           // gameStateRef right before the one place that actually persists to Firestore, so a
           // stale buffered heartbeat for another seat can never overwrite that seat's real,
           // fresher value already sitting in the live document.
-          // NOTE: syncedHeartbeats preserves the ACTING seat's own key from `result.state` (its
-          // first argument), not from `latestServerState` — the same lost-update shape could still
-          // roll this seat's own heartbeat back to a turn-start value. That is safe only because
-          // useHeartbeat (game-board.heartbeat.hook.ts) writes this seat's own heartbeat every 15s
-          // regardless of whose turn it is, self-healing well inside STALE_THRESHOLD_MS (120s) —
-          // an external hook's behavior this fix relies on, not something syncedHeartbeats itself
-          // guarantees. Don't assume own-key preservation is safe if that hook's behavior changes.
+          // Every seat's heartbeat, including this client's own, is an independent side channel
+          // (useHeartbeat) and is never part of a seat's in-turn gameplay mutations. The turn buffer
+          // (currentState / result.state) never refreshes a seat's own heartbeat after turn start, so
+          // re-sync every seat from the engine's always-current gameStateRef right before the one
+          // place that persists to Firestore. This is what guarantees correctness; the mid-turn buffer
+          // sync (withSyncedSeatManagement) only keeps the display fresh.
           const latestServerState = gameStateRef.current;
-          const localSeatId = latestServerState?.players.find((p) => p.playerId === playerId)?.id;
           const heartbeats = latestServerState
-            ? syncedHeartbeats(result.state.heartbeats, latestServerState.heartbeats, localSeatId)
+            ? syncedHeartbeats(result.state.heartbeats, latestServerState.heartbeats)
             : result.state.heartbeats;
           await saveGameState(gameId, { ...result.state, heartbeats });
         }
@@ -55,7 +53,7 @@ export function useGameEngine(gameId: string, playerId: string | null): UseGameE
         toast({ title: 'Action Error', description: 'Could not process game action.', variant: 'destructive' });
       }
     },
-    [gameId, toast, playerId],
+    [gameId, toast],
   );
 
   useEffect(() => {
