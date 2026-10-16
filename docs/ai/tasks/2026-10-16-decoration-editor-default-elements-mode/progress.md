@@ -12,7 +12,7 @@ Tier: L · Phases: 2
 - [x] tests (tester-a)
 - [x] checks: typecheck, lint, unit tests
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 0186d6b
 
 ## Phase 2: UI layer — mode tabs, default-elements rail/canvas/inspector, sprite generalization, wiring
 - [ ] plan approved (architect-b)
@@ -28,3 +28,11 @@ Tier: L · Phases: 2
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
 - 2026-10-16 architect-a: DONE, wrote plan.md (2 phases) and this progress.md.
+- 2026-10-16 architect-b: CHANGES REQUESTED, clamp range [0,100] would snap BASE_RESOURCE_SLOTS[1]'s locked `right: '-17%'` to 0.
+- 2026-10-16 architect-a: DONE, revised to one shared clampAnchoredOffsetPercent [-50,100].
+- 2026-10-16 architect-b: DONE, re-review of clamp fix only — APPROVED.
+- 2026-10-16 implementer-a, implementer-b: DONE, Phase 1 files built and cross-reviewed, both APPROVED.
+- 2026-10-16 tester-a: DONE, Phase 1 logic tests; found toAnchoredStyleReadout capitalizing every key instead of just the first.
+- 2026-10-16 implementer-a: DONE, fixed toAnchoredStyleReadout.
+- 2026-10-16 architect-b: DONE, Phase 1 final review — APPROVED (review.md).
+- 2026-10-16 coordinator: committed Phase 1, hash 0186d6b.
