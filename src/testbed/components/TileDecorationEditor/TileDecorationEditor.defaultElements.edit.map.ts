@@ -18,6 +18,13 @@ export function clampAnchoredOffsetPercent(value: number): number {
   return Math.min(ANCHORED_OFFSET_MAX, Math.max(ANCHORED_OFFSET_MIN, value));
 }
 
+/** Rounds a clamped percent to 1 decimal before it becomes a stored style string, so drag/nudge
+ *  never writes a 15-digit float into island-tile-slots.types.ts on Save (same helper shape as
+ *  TileResources.map.ts's roundToOneDecimal). */
+function roundToOneDecimal(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
 /** For each key present in previousStyle: top -> clamp(pointerTopPercent); bottom -> clamp(100 - pointerTopPercent);
  *  left -> clamp(pointerLeftPercent); right -> clamp(100 - pointerLeftPercent). Only present keys are touched/returned. */
 export function toAnchoredStyleFromPointer(
@@ -27,10 +34,10 @@ export function toAnchoredStyleFromPointer(
   clamp: (value: number) => number,
 ): AnchoredStyle {
   const next: AnchoredStyle = {};
-  if (previousStyle.top !== undefined) next.top = `${clamp(pointerTopPercent)}%`;
-  if (previousStyle.bottom !== undefined) next.bottom = `${clamp(100 - pointerTopPercent)}%`;
-  if (previousStyle.left !== undefined) next.left = `${clamp(pointerLeftPercent)}%`;
-  if (previousStyle.right !== undefined) next.right = `${clamp(100 - pointerLeftPercent)}%`;
+  if (previousStyle.top !== undefined) next.top = `${roundToOneDecimal(clamp(pointerTopPercent))}%`;
+  if (previousStyle.bottom !== undefined) next.bottom = `${roundToOneDecimal(clamp(100 - pointerTopPercent))}%`;
+  if (previousStyle.left !== undefined) next.left = `${roundToOneDecimal(clamp(pointerLeftPercent))}%`;
+  if (previousStyle.right !== undefined) next.right = `${roundToOneDecimal(clamp(100 - pointerLeftPercent))}%`;
   return next;
 }
 
@@ -43,10 +50,10 @@ export function nudgeAnchoredStyle(
   clamp: (value: number) => number,
 ): AnchoredStyle {
   const next: AnchoredStyle = {};
-  if (previousStyle.top !== undefined) next.top = `${clamp(parseFloat(previousStyle.top) + dTop)}%`;
-  if (previousStyle.bottom !== undefined) next.bottom = `${clamp(parseFloat(previousStyle.bottom) - dTop)}%`;
-  if (previousStyle.left !== undefined) next.left = `${clamp(parseFloat(previousStyle.left) + dLeft)}%`;
-  if (previousStyle.right !== undefined) next.right = `${clamp(parseFloat(previousStyle.right) - dLeft)}%`;
+  if (previousStyle.top !== undefined) next.top = `${roundToOneDecimal(clamp(parseFloat(previousStyle.top) + dTop))}%`;
+  if (previousStyle.bottom !== undefined) next.bottom = `${roundToOneDecimal(clamp(parseFloat(previousStyle.bottom) - dTop))}%`;
+  if (previousStyle.left !== undefined) next.left = `${roundToOneDecimal(clamp(parseFloat(previousStyle.left) + dLeft))}%`;
+  if (previousStyle.right !== undefined) next.right = `${roundToOneDecimal(clamp(parseFloat(previousStyle.right) - dLeft))}%`;
   return next;
 }
 

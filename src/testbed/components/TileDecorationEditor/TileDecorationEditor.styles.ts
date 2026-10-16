@@ -65,4 +65,21 @@ export const styles = {
   emptyText: 'text-sm text-muted-foreground',
   inlineAnchor: 'inline-flex',
   srOnly: 'sr-only',
+  modeTabsList: 'w-full',
+  modeTabsTrigger: 'flex-1',
+  // Each hides the matching real tile layer under the editor's own sprites for that row, the
+  // same technique styles.tileFrame already uses for tile-decorations.
+  hideOccupants: '[&_[data-testid=tile-occupants]]:hidden',
+  hideBoats: '[&_[data-testid=tile-boats]]:hidden',
+  hideResources: '[&_[data-testid=tile-resources]]:hidden',
+  hideSpecialContent: '[&_[data-testid=special-content]]:hidden',
+  // Dimmer than panelTitle: a sub-heading inside the Default-elements rail's grouped list, not a
+  // sibling panel title.
+  groupHeader: 'text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70',
+  // Scaled-down version of emptyHint's dashed-border treatment, for the Player-crest row's
+  // non-interactive "Centered — size only" badge.
+  crestBadge: 'pointer-events-none absolute inset-0 z-[61] flex items-center justify-center',
+  crestBadgeLabel:
+    'rounded-full border border-dashed border-white/30 bg-black/70 px-3 py-1 text-center text-xs text-foreground',
+  saveWarningText: 'text-xs text-muted-foreground',
 } as const;

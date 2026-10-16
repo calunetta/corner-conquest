@@ -74,6 +74,13 @@ describe('toAnchoredStyleFromPointer', () => {
       left: '0%',
     });
   });
+
+  it('rounds a fractional pointer position to 1 decimal, never a long float', () => {
+    expect(toAnchoredStyleFromPointer({ bottom: '0%', right: '0%' }, 30.388514866863905, 15.317585059171606, identityClamp)).toEqual({
+      bottom: '69.6%',
+      right: '84.7%',
+    });
+  });
 });
 
 describe('nudgeAnchoredStyle', () => {
@@ -88,6 +95,10 @@ describe('nudgeAnchoredStyle', () => {
 
   it('only touches keys present on the previous style', () => {
     expect(nudgeAnchoredStyle({ left: '20%' }, 1, 5, identityClamp)).toEqual({ left: '25%' });
+  });
+
+  it('rounds a fractional previous value to 1 decimal, never a long float', () => {
+    expect(nudgeAnchoredStyle({ left: '19.61214866863905%' }, 0, 1, identityClamp)).toEqual({ left: '20.6%' });
   });
 
   // Required case (architect-b): one ArrowRight nudge (dLeft=1) on the real locked

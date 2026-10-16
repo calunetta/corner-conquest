@@ -2,11 +2,9 @@
 
 import Image from 'next/image';
 import { useRef } from 'react';
-import type { KeyboardEvent, PointerEvent } from 'react';
-import type { DecorationInstance } from '@/modules/map';
+import type { CSSProperties, KeyboardEvent, PointerEvent } from 'react';
 import { toPointerPercent } from './TileDecorationEditor.map';
-import { SPRITE_CENTER_TRANSFORM, styles } from './TileDecorationEditor.styles';
-import { toFileName } from './TileDecorationEditor.display.map';
+import { styles } from './TileDecorationEditor.styles';
 
 /** Pointer movement below this many px is a click, not a drag, so selecting never nudges a sprite. */
 const DRAG_THRESHOLD_PX = 4;
@@ -26,29 +24,31 @@ interface DragStart {
   isDragging: boolean;
 }
 
-interface TileDecorationEditorSpriteProps {
-  instance: DecorationInstance;
-  index: number;
-  count: number;
+export interface TileDecorationEditorSpriteProps {
+  image: string;
+  ariaLabel: string;
+  /** Fully computed by the caller: position keys + width/height + transform + zIndex if any. */
+  style: CSSProperties;
   isSelected: boolean;
   onSelect: () => void;
-  onDrag: (top: number, left: number) => void;
+  onDrag: (topPercent: number, leftPercent: number) => void;
   onNudge: (dTop: number, dLeft: number) => void;
 }
 
-/** One decoration on the canvas: a focusable button that selects on press, drags with the pointer
- *  (1:1 with the tile's box) and nudges with the arrow keys (Shift for the large step). */
+/** One sprite on the canvas: a focusable button that selects on press, drags with the pointer
+ *  (1:1 with the tile's box) and nudges with the arrow keys (Shift for the large step). Format-
+ *  agnostic: the caller computes the full style (center-point decorations, corner-anchored
+ *  default elements), so both editing modes share this exact interaction logic. */
 export function TileDecorationEditorSprite({
-  instance,
-  index,
-  count,
+  image,
+  ariaLabel,
+  style,
   isSelected,
   onSelect,
   onDrag,
   onNudge,
 }: TileDecorationEditorSpriteProps) {
   const dragStartRef = useRef<DragStart | null>(null);
-  const fileName = toFileName(instance.image);
 
   function handlePointerDown(event: PointerEvent<HTMLButtonElement>) {
     onSelect();
@@ -92,15 +92,8 @@ export function TileDecorationEditorSprite({
     <button
       type="button"
       className={styles.sprite({ isSelected })}
-      style={{
-        top: `${instance.top}%`,
-        left: `${instance.left}%`,
-        width: `${instance.size}%`,
-        height: `${instance.size}%`,
-        zIndex: instance.z,
-        transform: SPRITE_CENTER_TRANSFORM,
-      }}
-      aria-label={`Decoration ${index + 1} of ${count}, ${fileName}`}
+      style={style}
+      aria-label={ariaLabel}
       aria-pressed={isSelected}
       data-testid="tile-decoration-editor-sprite"
       onPointerDown={handlePointerDown}
@@ -110,7 +103,7 @@ export function TileDecorationEditorSprite({
       onPointerCancel={endPointerGesture}
       onKeyDown={handleKeyDown}
     >
-      <Image src={instance.image} alt="" fill className={styles.spriteImage} unoptimized />
+      <Image src={image} alt="" fill className={styles.spriteImage} unoptimized />
     </button>
   );
 }

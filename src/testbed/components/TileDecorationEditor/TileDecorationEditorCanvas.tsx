@@ -1,17 +1,10 @@
 'use client';
 
-import { IslandType } from '@/lib/types';
-import {
-  createBaseViewModel,
-  createViewModel,
-  IslandTileView,
-  labGameStateFixture,
-  localPlayerFixture,
-} from '@/modules/map';
-import type { DecorationInstance, DecorationScenarioKey, IslandTileViewModel } from '@/modules/map';
-import { GameBoardProvider } from '@/modules/game-board';
+import type { DecorationInstance, DecorationScenarioKey } from '@/modules/map';
+import { toDecorationAriaLabel, toDecorationSpriteStyle } from './TileDecorationEditor.map';
 import { toReferenceIsland } from './TileDecorationEditor.display.map';
 import { styles } from './TileDecorationEditor.styles';
+import { TileDecorationEditorReferenceTile } from './TileDecorationEditorReferenceTile';
 import { TileDecorationEditorSprite } from './TileDecorationEditorSprite';
 
 const EMPTY_LAYOUT_HINT = 'No decorations — pick an image to add one';
@@ -25,25 +18,6 @@ interface TileDecorationEditorCanvasProps {
   onNudgeInstance: (instanceId: string, dTop: number, dLeft: number) => void;
 }
 
-/** Wraps the reference tile in the same GameBoardProvider the slot lab uses. debugMode (in
- *  labGameStateFixture) keeps the tile visible without pre-registering its id in any player's map. */
-function WithReferenceGameBoardContext({ viewModel }: { viewModel: IslandTileViewModel }) {
-  return (
-    <GameBoardProvider
-      gameId="preview_game"
-      playerId={localPlayerFixture.playerId}
-      serverGameState={labGameStateFixture}
-      localPlayerFromServer={localPlayerFixture}
-      isMyTurn={false}
-      isHost={true}
-      setGameState={async () => {}}
-      onExit={() => {}}
-    >
-      <IslandTileView {...viewModel} />
-    </GameBoardProvider>
-  );
-}
-
 /** The realistic tile, with its own decoration layer hidden (see styles.tileFrame) and the editor's
  *  draggable sprites drawn in its place at the same z-[12] slot. */
 export function TileDecorationEditorCanvas({
@@ -55,19 +29,17 @@ export function TileDecorationEditorCanvas({
   onNudgeInstance,
 }: TileDecorationEditorCanvasProps) {
   const island = toReferenceIsland(scenarioKey);
-  const viewModel =
-    island.type === IslandType.Base ? createBaseViewModel(island, localPlayerFixture) : createViewModel(island);
 
   return (
     <div className={styles.tileFrame}>
-      <WithReferenceGameBoardContext viewModel={viewModel} />
+      <TileDecorationEditorReferenceTile island={island} />
       <div className={styles.decorationOverlay}>
         {instances.map((instance, index) => (
           <TileDecorationEditorSprite
             key={instance.id}
-            instance={instance}
-            index={index}
-            count={instances.length}
+            image={instance.image}
+            ariaLabel={toDecorationAriaLabel(instance, index, instances.length)}
+            style={toDecorationSpriteStyle(instance)}
             isSelected={instance.id === selectedInstanceId}
             onSelect={() => onSelectInstance(instance.id)}
             onDrag={(top, left) => onDragInstance(instance.id, top, left)}

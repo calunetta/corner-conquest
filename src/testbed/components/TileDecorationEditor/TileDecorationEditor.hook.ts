@@ -1,35 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { decorationLayoutsConfig } from '@/modules/map';
 import type { DecorationLayout, DecorationLayoutsConfig, DecorationScenarioKey } from '@/modules/map';
+import { useDefaultElementsEditor } from './TileDecorationEditor.defaultElements.hook';
 import { createId } from './TileDecorationEditor.ids';
 import { useLayoutActions } from './TileDecorationEditor.layouts.hook';
-import { createInstance, nudgeInstance, removeInstance, toScenarioOptions } from './TileDecorationEditor.map';
+import {
+  cloneDecorationLayoutsConfig,
+  createInstance,
+  firstVariantKey,
+  nudgeInstance,
+  removeInstance,
+  toScenarioKey,
+  toScenarioOptions,
+} from './TileDecorationEditor.map';
 import { listDecorationImages, saveDecorationLayouts } from './TileDecorationEditor.service';
-import type { TileDecorationEditorViewModel } from './TileDecorationEditor.types';
+import type { EditorMode, TileDecorationEditorViewModel } from './TileDecorationEditor.types';
 
 const SAVED_BADGE_DURATION_MS = 2000;
 const SCENARIO_OPTIONS = toScenarioOptions();
-
-/** Deep-clones the statically-imported config so editing never mutates the shared JSON module. */
-function cloneConfig(config: DecorationLayoutsConfig): DecorationLayoutsConfig {
-  return JSON.parse(JSON.stringify(config)) as DecorationLayoutsConfig;
-}
-
-function toScenarioKey(outerKey: string, variant: DecorationScenarioKey | null): DecorationScenarioKey {
-  return (variant ?? outerKey) as DecorationScenarioKey;
-}
-
-function firstVariantKey(outerKey: string): DecorationScenarioKey | null {
-  const option = SCENARIO_OPTIONS.find((candidate) => candidate.key === outerKey);
-  return option && option.variants.length > 0 ? option.variants[0].key : null;
-}
 
 /** Adapts the decoration-layouts config into the editor's view model: scenario/variant/layout
  *  navigation, instance selection, and the drag/nudge/resize/relayer/save handlers. The config
  *  is edited entirely in memory; onSave is the only place it leaves the component. Layout-list
  *  CRUD (add/duplicate/rename/delete) lives in TileDecorationEditor.layouts.hook.ts. */
 export function useTileDecorationEditor(): TileDecorationEditorViewModel {
-  const [config, setConfig] = useState<DecorationLayoutsConfig>(() => cloneConfig(decorationLayoutsConfig));
+  const [mode, setMode] = useState<EditorMode>('decorations');
+  const defaultElements = useDefaultElementsEditor();
+  const [config, setConfig] = useState<DecorationLayoutsConfig>(() => cloneDecorationLayoutsConfig(decorationLayoutsConfig));
   const [activeScenario, setActiveScenario] = useState('base');
   const [activeVariant, setActiveVariant] = useState<DecorationScenarioKey | null>(null);
   const scenarioKey = toScenarioKey(activeScenario, activeVariant);
@@ -119,6 +116,8 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
     [updateActiveLayout],
   );
 
+  const onModeChange = (nextMode: EditorMode) => { setMode(nextMode); setSelectedInstanceId(null); defaultElements.clearSelection(); };
+
   const onSave = useCallback(() => {
     const savedConfig = config;
     setStatus('saving');
@@ -137,6 +136,9 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
   }, [config]);
 
   return {
+    mode,
+    onModeChange,
+    defaultElements,
     scenarioOptions: SCENARIO_OPTIONS,
     activeScenario,
     activeVariant,
@@ -147,7 +149,7 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
     isDirty,
     status,
     canDeleteActiveLayout: layouts.length > 1,
-    onScenarioChange: (outerKey) => goToScenario(outerKey, firstVariantKey(outerKey)),
+    onScenarioChange: (outerKey) => goToScenario(outerKey, firstVariantKey(outerKey, SCENARIO_OPTIONS)),
     onVariantChange: (variant) => goToScenario(activeScenario, variant),
     onSelectLayout: (layoutId) => {
       setActiveLayoutId(layoutId);

@@ -1,4 +1,7 @@
 import type { DecorationLayout, DecorationLayoutsConfig, DecorationScenarioKey } from '@/modules/map';
+import type { DefaultElementsEditorState } from './TileDecorationEditor.defaultElements.hook';
+
+export type EditorMode = 'decorations' | 'default-elements';
 
 /** One outer scenario `<Select>` option. `variants` is empty for Base/Special, which have no
  *  sub-picker and resolve directly to a `DecorationScenarioKey` equal to their own `key`. */
@@ -11,6 +14,9 @@ export interface EditorScenarioOption {
 export type EditorStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export interface TileDecorationEditorViewModel {
+  mode: EditorMode;
+  onModeChange: (mode: EditorMode) => void;
+  defaultElements: DefaultElementsEditorState;
   scenarioOptions: EditorScenarioOption[];
   activeScenario: string;
   /** null only for Base/Special, which have no sub-picker. */

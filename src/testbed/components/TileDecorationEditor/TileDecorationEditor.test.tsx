@@ -2,10 +2,14 @@ import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { TileDecorationEditor, TileDecorationEditorView } from './TileDecorationEditor';
+import { applyDragToDraft, applySharedCornerSizeToDraft } from './TileDecorationEditor.defaultElements.edit.map';
+import type { DefaultElementsEditorState } from './TileDecorationEditor.defaultElements.hook';
+import { DEFAULT_ELEMENT_ROWS, toIslandTileSlotsDraft, toSlotsForRow } from './TileDecorationEditor.defaultElements.map';
 import { useTileDecorationEditor } from './TileDecorationEditor.hook';
 import { sampleDecorationImages, sampleDecorationLayoutsConfig } from './TileDecorationEditor.fixtures';
 import { toScenarioOptions } from './TileDecorationEditor.map';
 import type { TileDecorationEditorViewModel } from './TileDecorationEditor.types';
+import type { DefaultElementRowMeta } from './TileDecorationEditor.defaultElements.types';
 
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -20,10 +24,51 @@ jest.mock('./TileDecorationEditor.hook', () => ({ useTileDecorationEditor: jest.
 const BASE_IMAGE = sampleDecorationImages[0];
 const FIRST_BASE_INSTANCE_ID = 'base-default-0';
 const EMPTY_HINT = 'No decorations — pick an image to add one';
+const SAVE_WARNING_TEXT = 'Saving writes directly to island-tile-slots.types.ts.';
+
+const KNIGHT_ROW = DEFAULT_ELEMENT_ROWS.find((row) => row.id === 'knight') as DefaultElementRowMeta;
+const CREST_ROW = DEFAULT_ELEMENT_ROWS.find((row) => row.id === 'crest') as DefaultElementRowMeta;
+
+function findRow(rowId: string): DefaultElementRowMeta {
+  const row = DEFAULT_ELEMENT_ROWS.find((candidate) => candidate.id === rowId);
+  if (!row) throw new Error(`Unknown default-element row id in test fixture: ${rowId}`);
+  return row;
+}
+
+/** A Default-elements sub-state with every handler a jest.fn, defaulting to the real Knight row
+ *  built from the real draft/slots so tests exercise the actual toSlotsForRow/draft shape rather
+ *  than an invented one. */
+function createDefaultElementsState(overrides: Partial<DefaultElementsEditorState> = {}): DefaultElementsEditorState {
+  const draft = overrides.draft ?? toIslandTileSlotsDraft();
+  const activeRow = overrides.activeRow ?? KNIGHT_ROW;
+  const slots = overrides.slots ?? toSlotsForRow(activeRow, draft);
+  return {
+    draft,
+    activeRowId: activeRow.id,
+    activeRow,
+    slots,
+    selectedSlotId: null,
+    isDirty: false,
+    status: 'idle',
+    onSelectRow: jest.fn(),
+    onSelectSlot: jest.fn(),
+    onDragSlot: jest.fn(),
+    onNudgeSlot: jest.fn(),
+    onResizeSharedCornerSize: jest.fn(),
+    onResizeSlot: jest.fn(),
+    onResizeCrest: jest.fn(),
+    onSave: jest.fn(),
+    clearSelection: jest.fn(),
+    ...overrides,
+  };
+}
 
 /** A view model for the Base scenario, with every handler a jest.fn so each test can assert calls. */
 function createViewModel(overrides: Partial<TileDecorationEditorViewModel> = {}): TileDecorationEditorViewModel {
   return {
+    mode: 'decorations',
+    onModeChange: jest.fn(),
+    defaultElements: createDefaultElementsState(),
     scenarioOptions: toScenarioOptions(),
     activeScenario: 'base',
     activeVariant: null,
@@ -529,6 +574,284 @@ describe('TileDecorationEditorView', () => {
       render(<TileDecorationEditorView {...createViewModel()} />);
 
       expect(screen.getByRole('status')).toHaveTextContent('');
+    });
+  });
+
+  describe('default elements mode', () => {
+    // Radix's TabsTrigger activates on pointer press (onMouseDown), not on the synthesized click
+    // fireEvent.click produces, so these simulate a real left-button mouse-down.
+    it('switches to Default elements mode via the mode tab', () => {
+      const viewModel = createViewModel();
+      render(<TileDecorationEditorView {...viewModel} />);
+
+      fireEvent.mouseDown(screen.getByRole('tab', { name: 'Default elements' }), { button: 0 });
+
+      expect(viewModel.onModeChange).toHaveBeenCalledWith('default-elements');
+    });
+
+    it('switches back to Decorations mode via the mode tab', () => {
+      const viewModel = createViewModel({ mode: 'default-elements' });
+      render(<TileDecorationEditorView {...viewModel} />);
+
+      fireEvent.mouseDown(screen.getByRole('tab', { name: 'Decorations' }), { button: 0 });
+
+      expect(viewModel.onModeChange).toHaveBeenCalledWith('decorations');
+    });
+
+    it('shows the Decorations rail (Scenario picker) and no element list when mode is decorations', () => {
+      render(<TileDecorationEditorView {...createViewModel()} />);
+
+      expect(screen.getByRole('combobox', { name: 'Scenario' })).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'Default elements' })).not.toBeInTheDocument();
+    });
+
+    it('replaces the Scenario/Variant/Layouts rail with the element list when mode is default-elements', () => {
+      render(<TileDecorationEditorView {...createViewModel({ mode: 'default-elements' })} />);
+
+      expect(screen.queryByRole('combobox', { name: 'Scenario' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('combobox', { name: 'Variant' })).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Default elements' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Knight (all corners)' })).toHaveAttribute('aria-current', 'true');
+      expect(screen.getByRole('button', { name: 'Boat (all corners)' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Player crest' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Resource slots (base)' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Idle art' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '1 resource node' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '4 resource nodes' })).toBeInTheDocument();
+    });
+
+    it('selects a different row when its rail button is clicked', () => {
+      const defaultElements = createDefaultElementsState();
+      render(<TileDecorationEditorView {...createViewModel({ mode: 'default-elements', defaultElements })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Boat (all corners)' }));
+
+      expect(defaultElements.onSelectRow).toHaveBeenCalledWith('boat');
+    });
+
+    it.each([
+      ['knight', 4],
+      ['boat', 4],
+      ['crest', 0],
+      ['base-resources', 3],
+      ['special-art', 1],
+      ['resource-1', 1],
+      ['resource-2', 2],
+      ['resource-3', 3],
+      ['resource-4', 4],
+    ])('renders %s sprite(s) for the "%s" row', (rowId, expectedCount) => {
+      const row = findRow(rowId);
+      const draft = toIslandTileSlotsDraft();
+      const slots = toSlotsForRow(row, draft);
+      render(
+        <TileDecorationEditorView
+          {...createViewModel({
+            mode: 'default-elements',
+            defaultElements: createDefaultElementsState({ draft, activeRow: row, slots }),
+          })}
+        />,
+      );
+
+      expect(screen.queryAllByTestId('tile-decoration-editor-sprite')).toHaveLength(expectedCount);
+    });
+
+    it('renders no draggable sprite and the "Centered — size only" badge for the Player crest row', () => {
+      const draft = toIslandTileSlotsDraft();
+      render(
+        <TileDecorationEditorView
+          {...createViewModel({
+            mode: 'default-elements',
+            defaultElements: createDefaultElementsState({ draft, activeRow: CREST_ROW, slots: [] }),
+          })}
+        />,
+      );
+
+      expect(screen.queryAllByTestId('tile-decoration-editor-sprite')).toHaveLength(0);
+      expect(screen.getByText('Centered — size only')).toBeInTheDocument();
+    });
+
+    it('shows exactly the Size (% of tile) and Minimum size (px) fields, with no position readout, for Player crest', () => {
+      const draft = toIslandTileSlotsDraft();
+      render(
+        <TileDecorationEditorView
+          {...createViewModel({
+            mode: 'default-elements',
+            defaultElements: createDefaultElementsState({ draft, activeRow: CREST_ROW, slots: [] }),
+          })}
+        />,
+      );
+
+      expect(screen.getByRole('spinbutton', { name: 'Size (% of tile)' })).toHaveValue(draft.baseCrestSize);
+      expect(screen.getByRole('spinbutton', { name: 'Minimum size (px)' })).toHaveValue(draft.baseCrestMinPx);
+      expect(screen.getAllByRole('spinbutton')).toHaveLength(2);
+      expect(screen.queryByText(/^Top /)).not.toBeInTheDocument();
+      expect(screen.queryByText('Click a decoration on the tile to edit it.')).not.toBeInTheDocument();
+    });
+
+    it('changing the shared Size field while a corner is selected calls onResizeSharedCornerSize, not a per-corner resize', () => {
+      const draft = toIslandTileSlotsDraft();
+      const slots = toSlotsForRow(KNIGHT_ROW, draft);
+      const trCorner = slots.find((slot) => slot.id === 'tr');
+      if (!trCorner) throw new Error('fixture must contain a tr corner slot');
+      const defaultElements = createDefaultElementsState({ draft, activeRow: KNIGHT_ROW, slots, selectedSlotId: trCorner.id });
+      render(<TileDecorationEditorView {...createViewModel({ mode: 'default-elements', defaultElements })} />);
+
+      fireEvent.change(screen.getByRole('spinbutton', { name: 'Size (applies to all 4 corners)' }), {
+        target: { value: '50' },
+      });
+
+      expect(defaultElements.onResizeSharedCornerSize).toHaveBeenCalledWith(50);
+    });
+
+    it('resizing the shared corner size renders all 4 corner sprites at the same new width/height', () => {
+      const draft = toIslandTileSlotsDraft();
+      const resizedDraft = applySharedCornerSizeToDraft('knight', 50, draft);
+      const slots = toSlotsForRow(KNIGHT_ROW, resizedDraft);
+      render(
+        <TileDecorationEditorView
+          {...createViewModel({
+            mode: 'default-elements',
+            defaultElements: createDefaultElementsState({ draft: resizedDraft, activeRow: KNIGHT_ROW, slots }),
+          })}
+        />,
+      );
+
+      const sprites = screen.getAllByTestId('tile-decoration-editor-sprite');
+      expect(sprites).toHaveLength(4);
+      sprites.forEach((sprite) => {
+        expect(sprite.style.width).toBe('50%');
+        expect(sprite.style.height).toBe('50%');
+      });
+    });
+
+    it('calls onDragSlot with the dragged corner\'s own id and the pointer position as a percentage of the canvas box', () => {
+      const draft = toIslandTileSlotsDraft();
+      const slots = toSlotsForRow(KNIGHT_ROW, draft);
+      const trIndex = slots.findIndex((slot) => slot.id === 'tr');
+      const defaultElements = createDefaultElementsState({ draft, activeRow: KNIGHT_ROW, slots });
+      render(<TileDecorationEditorView {...createViewModel({ mode: 'default-elements', defaultElements })} />);
+      const sprite = screen.getAllByTestId('tile-decoration-editor-sprite')[trIndex];
+      mockCanvasBox(sprite);
+
+      firePointer(sprite, 'pointerdown', { clientX: 100, clientY: 100 });
+      firePointer(sprite, 'pointermove', { clientX: 150, clientY: 50 });
+
+      expect(defaultElements.onDragSlot).toHaveBeenLastCalledWith('tr', 25, 75);
+    });
+
+    it('dragging one knight corner leaves the other 3 corners\' rendered position and size unchanged', () => {
+      const draft = toIslandTileSlotsDraft();
+      const beforeSlots = toSlotsForRow(KNIGHT_ROW, draft);
+      const trBefore = beforeSlots.find((slot) => slot.id === 'tr');
+      if (!trBefore) throw new Error('fixture must contain a tr corner slot');
+
+      const { rerender } = render(
+        <TileDecorationEditorView
+          {...createViewModel({
+            mode: 'default-elements',
+            defaultElements: createDefaultElementsState({ draft, activeRow: KNIGHT_ROW, slots: beforeSlots, selectedSlotId: 'tr' }),
+          })}
+        />,
+      );
+      const otherStylesBefore = screen
+        .getAllByTestId('tile-decoration-editor-sprite')
+        .filter((sprite) => sprite.getAttribute('aria-label') !== trBefore.ariaLabel)
+        .map((sprite) => sprite.getAttribute('style'));
+
+      const draggedDraft = applyDragToDraft(KNIGHT_ROW, 'tr', 10, 20, draft);
+      const afterSlots = toSlotsForRow(KNIGHT_ROW, draggedDraft);
+      const trAfter = afterSlots.find((slot) => slot.id === 'tr');
+      if (!trAfter) throw new Error('fixture must contain a tr corner slot');
+      // Sanity: the dragged corner's own style actually changed, proving the next assertion is
+      // not vacuously true because nothing moved.
+      expect(trAfter.style).not.toEqual(trBefore.style);
+
+      rerender(
+        <TileDecorationEditorView
+          {...createViewModel({
+            mode: 'default-elements',
+            defaultElements: createDefaultElementsState({
+              draft: draggedDraft,
+              activeRow: KNIGHT_ROW,
+              slots: afterSlots,
+              selectedSlotId: 'tr',
+            }),
+          })}
+        />,
+      );
+      const otherStylesAfter = screen
+        .getAllByTestId('tile-decoration-editor-sprite')
+        .filter((sprite) => sprite.getAttribute('aria-label') !== trBefore.ariaLabel)
+        .map((sprite) => sprite.getAttribute('style'));
+
+      expect(otherStylesAfter).toEqual(otherStylesBefore);
+    });
+
+    it('resizes a selected resource node independently through onResizeSlot', () => {
+      const row = findRow('resource-3');
+      const draft = toIslandTileSlotsDraft();
+      const slots = toSlotsForRow(row, draft);
+      const secondNode = slots[1];
+      const defaultElements = createDefaultElementsState({ draft, activeRow: row, slots, selectedSlotId: secondNode.id });
+      render(<TileDecorationEditorView {...createViewModel({ mode: 'default-elements', defaultElements })} />);
+
+      fireEvent.change(screen.getByRole('spinbutton', { name: 'Size (% of tile)' }), { target: { value: '22' } });
+
+      expect(defaultElements.onResizeSlot).toHaveBeenCalledWith(secondNode.id, 22);
+    });
+
+    it('calls defaultElements.onSave when Save is clicked in Default-elements mode', () => {
+      const defaultElements = createDefaultElementsState({ isDirty: true });
+      render(<TileDecorationEditorView {...createViewModel({ mode: 'default-elements', defaultElements })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      expect(defaultElements.onSave).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the Save-row warning text only in Default-elements mode, not in Decorations mode', () => {
+      const { rerender } = render(<TileDecorationEditorView {...createViewModel({ isDirty: true })} />);
+      expect(screen.queryByText(SAVE_WARNING_TEXT)).not.toBeInTheDocument();
+
+      rerender(
+        <TileDecorationEditorView
+          {...createViewModel({
+            mode: 'default-elements',
+            defaultElements: createDefaultElementsState({ isDirty: true }),
+          })}
+        />,
+      );
+      expect(screen.getByText(SAVE_WARNING_TEXT)).toBeInTheDocument();
+    });
+
+    it('never renders a Layer (z-index) field in Default-elements mode, for any row', () => {
+      DEFAULT_ELEMENT_ROWS.forEach((row) => {
+        const draft = toIslandTileSlotsDraft();
+        const slots = toSlotsForRow(row, draft);
+        const selectedSlotId = slots[0]?.id ?? null;
+        const { unmount } = render(
+          <TileDecorationEditorView
+            {...createViewModel({
+              mode: 'default-elements',
+              defaultElements: createDefaultElementsState({ draft, activeRow: row, slots, selectedSlotId }),
+            })}
+          />,
+        );
+
+        expect(screen.queryByText('Layer (z-index)')).not.toBeInTheDocument();
+        expect(screen.queryByRole('spinbutton', { name: 'Layer (z-index)' })).not.toBeInTheDocument();
+
+        unmount();
+      });
+    });
+
+    it('never renders the Add/Duplicate/Rename/Delete layout controls in Default-elements mode', () => {
+      render(<TileDecorationEditorView {...createViewModel({ mode: 'default-elements' })} />);
+
+      expect(screen.queryByRole('button', { name: 'Add layout' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Duplicate' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Rename' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
     });
   });
 });

@@ -1,19 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Loader2, Plus, Save } from 'lucide-react';
+import { Copy, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TileDecorationEditorDeleteButton } from './TileDecorationEditorDeleteButton';
 import { TileDecorationEditorNameField } from './TileDecorationEditorNameField';
+import { TileDecorationEditorSaveRow } from './TileDecorationEditorSaveRow';
 import { styles } from './TileDecorationEditor.styles';
-import type { EditorStatus, TileDecorationEditorViewModel } from './TileDecorationEditor.types';
-
-const STATUS_TEXT: Record<EditorStatus, string> = {
-  idle: '',
-  saving: '',
-  saved: 'Saved.',
-  error: 'Could not save — see console.',
-};
+import type { TileDecorationEditorViewModel } from './TileDecorationEditor.types';
 
 type LayoutEditMode = 'idle' | 'adding' | 'renaming';
 
@@ -49,7 +43,6 @@ export function TileDecorationEditorLayoutActions({
   onSave,
 }: TileDecorationEditorLayoutActionsProps) {
   const [editMode, setEditMode] = useState<LayoutEditMode>('idle');
-  const isSaving = status === 'saving';
 
   function handleNameSubmit(name: string) {
     if (editMode === 'adding') onAddLayout(name);
@@ -89,15 +82,7 @@ export function TileDecorationEditorLayoutActions({
         />
       )}
 
-      <div className={styles.saveRow}>
-        <Button type="button" size="sm" disabled={!isDirty || isSaving} onClick={onSave}>
-          {isSaving ? <Loader2 className={styles.spinner} aria-hidden /> : <Save className={styles.icon} aria-hidden />}
-          Save
-        </Button>
-        <p role="status" className={styles.statusText({ status })}>
-          {STATUS_TEXT[status]}
-        </p>
-      </div>
+      <TileDecorationEditorSaveRow isDirty={isDirty} status={status} onSave={onSave} />
     </div>
   );
 }

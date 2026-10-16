@@ -6,6 +6,8 @@ import {
   removeInstance,
   removeLayout,
   renameLayout,
+  toDecorationAriaLabel,
+  toDecorationSpriteStyle,
   toPointerPercent,
   toScenarioOptions,
 } from './TileDecorationEditor.map';
@@ -84,6 +86,46 @@ describe('nudgeInstance', () => {
     const original = { ...baseInstance };
     nudgeInstance(baseInstance, 1, 1);
     expect(baseInstance).toEqual(original);
+  });
+});
+
+describe('toDecorationSpriteStyle', () => {
+  const instance: DecorationInstance = { id: 'i-1', image: 'img.gif', top: 36.5, left: 44.5, size: 15, z: 10 };
+
+  it('converts the instance fields into a fully-computed inline style, percent/zIndex/transform', () => {
+    expect(toDecorationSpriteStyle(instance)).toEqual({
+      top: '36.5%',
+      left: '44.5%',
+      width: '15%',
+      height: '15%',
+      zIndex: 10,
+      transform: 'translate(-50%, -50%)',
+    });
+  });
+
+  it('does not mutate the input instance', () => {
+    const original = { ...instance };
+    toDecorationSpriteStyle(instance);
+    expect(instance).toEqual(original);
+  });
+});
+
+describe('toDecorationAriaLabel', () => {
+  it('includes the 1-based position, total count, and the image file name', () => {
+    const instance: DecorationInstance = {
+      id: 'i-1',
+      image: '/sprites/decorations/pine_tree.gif',
+      top: 10,
+      left: 10,
+      size: 15,
+      z: 10,
+    };
+    expect(toDecorationAriaLabel(instance, 0, 2)).toBe('Decoration 1 of 2, pine_tree.gif');
+  });
+
+  it('uses the index to compute the 1-based position, not always 1', () => {
+    const instance: DecorationInstance = { id: 'i-2', image: 'tree.gif', top: 10, left: 10, size: 15, z: 10 };
+    expect(toDecorationAriaLabel(instance, 2, 3)).toBe('Decoration 3 of 3, tree.gif');
   });
 });
 

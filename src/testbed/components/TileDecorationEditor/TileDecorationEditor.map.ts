@@ -1,5 +1,22 @@
-import type { DecorationInstance, DecorationLayout } from '@/modules/map';
+import type { CSSProperties } from 'react';
+import type { DecorationInstance, DecorationLayout, DecorationLayoutsConfig, DecorationScenarioKey } from '@/modules/map';
 import type { EditorScenarioOption } from './TileDecorationEditor.types';
+import { SPRITE_CENTER_TRANSFORM } from './TileDecorationEditor.styles';
+import { toFileName } from './TileDecorationEditor.display.map';
+
+/** Deep-clones the statically-imported config so editing never mutates the shared JSON module. */
+export function cloneDecorationLayoutsConfig(config: DecorationLayoutsConfig): DecorationLayoutsConfig {
+  return JSON.parse(JSON.stringify(config)) as DecorationLayoutsConfig;
+}
+
+export function toScenarioKey(outerKey: string, variant: DecorationScenarioKey | null): DecorationScenarioKey {
+  return (variant ?? outerKey) as DecorationScenarioKey;
+}
+
+export function firstVariantKey(outerKey: string, options: EditorScenarioOption[]): DecorationScenarioKey | null {
+  const option = options.find((candidate) => candidate.key === outerKey);
+  return option && option.variants.length > 0 ? option.variants[0].key : null;
+}
 
 const MIN_PERCENT = 0;
 const MAX_PERCENT = 100;
@@ -36,6 +53,24 @@ export function createInstance(id: string, image: string): DecorationInstance {
 /** Keyboard equivalent of drag: moves by dTop/dLeft (signed, e.g. +/-1 or +/-5), clamped. */
 export function nudgeInstance(instance: DecorationInstance, dTop: number, dLeft: number): DecorationInstance {
   return { ...instance, top: clampPercent(instance.top + dTop), left: clampPercent(instance.left + dLeft) };
+}
+
+/** The decorations-mode sprite's fully-computed inline style: today's inline style, moved here
+ *  so TileDecorationEditorSprite stays format-agnostic (the generalized component takes a
+ *  pre-computed style instead of a DecorationInstance). */
+export function toDecorationSpriteStyle(instance: DecorationInstance): CSSProperties {
+  return {
+    top: `${instance.top}%`,
+    left: `${instance.left}%`,
+    width: `${instance.size}%`,
+    height: `${instance.size}%`,
+    zIndex: instance.z,
+    transform: SPRITE_CENTER_TRANSFORM,
+  };
+}
+
+export function toDecorationAriaLabel(instance: DecorationInstance, index: number, count: number): string {
+  return `Decoration ${index + 1} of ${count}, ${toFileName(instance.image)}`;
 }
 
 export function renameLayout(layout: DecorationLayout, name: string): DecorationLayout {

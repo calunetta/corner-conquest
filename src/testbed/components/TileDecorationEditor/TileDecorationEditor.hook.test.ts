@@ -3,6 +3,7 @@ import { useTileDecorationEditor } from './TileDecorationEditor.hook';
 import { listDecorationImages, saveDecorationLayouts } from './TileDecorationEditor.service';
 
 jest.mock('@/modules/map', () => ({
+  ...jest.requireActual('@/modules/map'),
   decorationLayoutsConfig: jest.requireActual('./TileDecorationEditor.fixtures').sampleDecorationLayoutsConfig,
 }));
 
@@ -468,6 +469,28 @@ describe('useTileDecorationEditor', () => {
     expect(result.current.status).toBe('error');
     expect(result.current.isDirty).toBe(true);
     expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to save decoration layouts', saveError);
+  });
+
+  it('onModeChange resets both the decorations selection and the default-elements selection', async () => {
+    const { result } = renderHook(() => useTileDecorationEditor());
+    await act(async () => {});
+
+    act(() => {
+      result.current.onSelectInstance('base-default-0');
+    });
+    act(() => {
+      result.current.defaultElements.onSelectSlot('br');
+    });
+    expect(result.current.selectedInstanceId).toBe('base-default-0');
+    expect(result.current.defaultElements.selectedSlotId).toBe('br');
+
+    act(() => {
+      result.current.onModeChange('default-elements');
+    });
+
+    expect(result.current.mode).toBe('default-elements');
+    expect(result.current.selectedInstanceId).toBeNull();
+    expect(result.current.defaultElements.selectedSlotId).toBeNull();
   });
 
   it('loads images from listDecorationImages on mount', async () => {

@@ -2,7 +2,6 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import type { DecorationScenarioKey } from '@/modules/map';
 import { TileDecorationEditorLayoutActions } from './TileDecorationEditorLayoutActions';
 import { styles } from './TileDecorationEditor.styles';
@@ -36,7 +35,7 @@ export function TileDecorationEditorRail(props: TileDecorationEditorRailProps) {
   const activeLayoutName = activeLayout?.name ?? '';
 
   return (
-    <aside className={cn(styles.panel, styles.railPanel)} aria-label="Scenario and layouts">
+    <>
       <div className={styles.fieldRow}>
         <span className={styles.label}>Scenario</span>
         <Select value={activeScenario} onValueChange={props.onScenarioChange}>
@@ -108,6 +107,6 @@ export function TileDecorationEditorRail(props: TileDecorationEditorRailProps) {
         onDeleteLayout={props.onDeleteLayout}
         onSave={props.onSave}
       />
-    </aside>
+    </>
   );
 }
