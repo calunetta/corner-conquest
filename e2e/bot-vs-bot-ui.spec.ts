@@ -318,7 +318,24 @@ test.describe('Bot-vs-bot self-play through the real UI', () => {
         stepState = result.state;
       }
 
-      await page.getByTestId('actions-panel-end-turn').click({ timeout: SYNC_TIMEOUT_MS });
+      // The app's own "no actions remain" auto-end-turn effect (game-board.hook.ts:63-84) can already
+      // have ended this turn by the time we get here — it's a real, documented feature (not a bug), and
+      // it fires faster (700ms) than anything this harness waits on elsewhere. Skip the click entirely
+      // if that already happened; if a race still catches us mid-click, re-check once before deciding
+      // it's a genuine stuck-End-Turn bug.
+      const beforeEndTurnClick = await readGameState(gameId);
+      const turnAlreadyEnded =
+        beforeEndTurnClick.currentPlayerIndex !== actingSeat || beforeEndTurnClick.status !== GameStatus.Playing;
+      if (!turnAlreadyEnded) {
+        try {
+          await page.getByTestId('actions-panel-end-turn').click({ timeout: SYNC_TIMEOUT_MS });
+        } catch (error) {
+          const afterFailedClick = await readGameState(gameId);
+          const turnEndedDuringClick =
+            afterFailedClick.currentPlayerIndex !== actingSeat || afterFailedClick.status !== GameStatus.Playing;
+          if (!turnEndedDuringClick) throw error;
+        }
+      }
       const nextState = await waitForGameState(
         gameId,
         (s) => s.currentPlayerIndex !== actingSeat || s.status !== GameStatus.Playing,
