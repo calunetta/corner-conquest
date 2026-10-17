@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useFogSettings } from './TileFog.context';
@@ -17,7 +18,12 @@ export function TileFog({ isCovered, isNeutral = false, prefersReducedMotion, va
   const { timing, variants } = useFogSettings();
   const variant = toFogVariant(variants, variantSeed);
   const { phase, liftId } = useFogPhase(isCovered, prefersReducedMotion, timing, variant.passMs);
+  // The gif is not decoded when it mounts, so an empty frame would show until its first frame loads.
+  // The still stays underneath until then; the gif paints over it, and the still is removed on load.
+  const [loadedLiftId, setLoadedLiftId] = useState<number | null>(null);
   const isPlayingPass = phase === 'lifting' || phase === 'fadingOut';
+  const isPassLoaded = loadedLiftId === liftId;
+  const showStill = phase === 'covered' || (isPlayingPass && !isPassLoaded);
 
   return (
     <div
@@ -37,11 +43,19 @@ export function TileFog({ isCovered, isNeutral = false, prefersReducedMotion, va
         ...toNeutralFogStyle(isNeutral),
       }}
     >
-      {phase === 'covered' && (
+      {showStill && (
         <Image key={`still-${variant.id}`} src={variant.still} alt="" fill className={styles.image} unoptimized />
       )}
       {isPlayingPass && (
-        <Image key={`pass-${variant.id}-${liftId}`} src={variant.animation} alt="" fill className={styles.image} unoptimized />
+        <Image
+          key={`pass-${variant.id}-${liftId}`}
+          src={variant.animation}
+          alt=""
+          fill
+          className={styles.image}
+          unoptimized
+          onLoad={() => setLoadedLiftId(liftId)}
+        />
       )}
     </div>
   );
