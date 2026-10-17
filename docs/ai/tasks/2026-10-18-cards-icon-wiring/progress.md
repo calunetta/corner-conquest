@@ -15,7 +15,7 @@ Tier: M · Phases: 1
 - [x] UI verified (ui-verify) — none planned, overrides empty so no visible change; skip unless architect-b requests
 - [x] docs updated (docs-sync)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: e9d4989
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
