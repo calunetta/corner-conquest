@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef } from 'react';
 import type { CardRevealAnimation, DeathAnimation, GameState } from '@/lib/types';
 import { clearDeathAnimations, clearCardRevealAnimations } from './services/game-board.engine.service';
