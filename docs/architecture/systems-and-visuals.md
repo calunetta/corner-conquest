@@ -48,6 +48,7 @@ Part of the architecture & game-rules docs. Index and directives: [`docs/README.
     -   Each player has their own, independent visibility of the map stored in `player.revealedTiles`.
     -   Tiles (and any armies on them) are only revealed to a player when they move one of their armies to an adjacent tile.
     -   Opponent armies are only visible on their starting Base or on personally explored islands.
+    -   **Neutral fog colour (`settings.neutralFog`, optional boolean, default off; a missing field means off):** only with fog of war on. Covered tiles get an opaque grey backing (`NEUTRAL_FOG_COLOUR` in `TileFog/TileFog.map.ts`) under the fog art, so the terrain colour cannot show through. Set in the lobby's "Customize Game Settings" sheet (`CustomSettingsSheet/NeutralFogRow.tsx`). `IslandTile.map.ts` derives `isNeutralFog`; `TileFog` renders it as `data-neutral`.
 -   **Fog of War (Disabled):** This mode provides a more open, chess-like experience.
     -   Map visibility is shared. When any player reveals a tile, it becomes visible to *all* players for the rest of the game.
 -   **Debug Mode:** This is a special mode intended for testing, which is automatically enabled for "Player vs. Bot" games started from the lobby.

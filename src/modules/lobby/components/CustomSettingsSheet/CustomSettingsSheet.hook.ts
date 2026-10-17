@@ -23,7 +23,11 @@ export function useCustomSettingsSheet({
     setSettings((prev) => ({ ...prev, fogOfWar: checked }));
   };
 
-  const handleCardToggle = (cardName: CardName, checked: boolean): void => {
+  const handleNeutralFogChange = (checked: boolean): void => {
+    setSettings((prev) => ({ ...prev, neutralFog: checked }));
+  };
+
+  const handleCardToggle =(cardName: CardName, checked: boolean): void => {
     setSettings((prev) => ({
       ...prev,
       availableCards: checked
@@ -45,6 +49,7 @@ export function useCustomSettingsSheet({
     settings,
     onSliderChange: handleSliderChange,
     onFogOfWarChange: handleFogOfWarChange,
+    onNeutralFogChange: handleNeutralFogChange,
     onCardToggle: handleCardToggle,
     onAbilityToggle: handleAbilityToggle,
     onSave: () => onSave(settings),

@@ -1,5 +1,5 @@
 import { toIslandTileViewModel } from './IslandTile.map';
-import { IslandType, CardName, PlayerColor, type Island } from '@/lib/types';
+import { IslandType, CardName, PlayerColor, type GameSettings, type Island } from '@/lib/types';
 import { initialUIState } from '@/modules/game-board';
 import {
   gameStateFixture,
@@ -421,6 +421,29 @@ describe('toIslandTileViewModel', () => {
     const result = toIslandTileViewModel(island, baseContext);
 
     expect(result.isClickable).toBe(true);
+  });
+
+  it('sets isNeutralFog only when settings.neutralFog is true', () => {
+    const island: Island = { id: '1-1', x: 1, y: 1, type: IslandType.Empty, resources: [], occupants: [] };
+    const withNeutralFog = (neutralFog: boolean | undefined): IslandTileContext => ({
+      ...baseContext,
+      gameState: { ...baseContext.gameState, settings: { ...baseContext.gameState.settings, neutralFog } },
+    });
+
+    expect(toIslandTileViewModel(island, withNeutralFog(true)).isNeutralFog).toBe(true);
+    expect(toIslandTileViewModel(island, withNeutralFog(false)).isNeutralFog).toBe(false);
+  });
+
+  it('treats a game saved without the neutralFog field as off', () => {
+    const island: Island = { id: '1-1', x: 1, y: 1, type: IslandType.Empty, resources: [], occupants: [] };
+    const legacySettings: GameSettings = { ...baseContext.gameState.settings };
+    delete legacySettings.neutralFog;
+    const legacyContext: IslandTileContext = {
+      ...baseContext,
+      gameState: { ...baseContext.gameState, settings: legacySettings },
+    };
+
+    expect(toIslandTileViewModel(island, legacyContext).isNeutralFog).toBe(false);
   });
 
   it('does not mutate input island', () => {

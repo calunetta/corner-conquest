@@ -139,6 +139,7 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
         <TileBoats island={island} />
         <TileFog
           isCovered={!isTileVisible}
+          isNeutral={viewModel.isNeutralFog}
           prefersReducedMotion={prefersReducedMotion}
           variantSeed={island.x * 31 + island.y}
         />

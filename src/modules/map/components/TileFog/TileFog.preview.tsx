@@ -18,6 +18,10 @@ export const tileFogPreview: ComponentPreview = {
     flaggedIslandState('Covered: monster island beneath fog', monsterIslandWithLivingMonster, {
       isTileVisible: false,
     }),
+    flaggedIslandState('Covered: monster island, neutral grey fog (setting on)', monsterIslandWithLivingMonster, {
+      isTileVisible: false,
+      isNeutralFog: true,
+    }),
     islandState('Revealed: resource island, fog gone', resourceIslandWithThreeNodesAndThreeOccupants),
   ],
 };

@@ -1,4 +1,5 @@
 import { toFogVariant, type FogVariant } from './TileFog.config';
+import { NEUTRAL_FOG_COLOUR, toNeutralFogStyle } from './TileFog.map';
 
 const variants: FogVariant[] = ['a', 'b', 'c', 'd', 'e'].map((id) => ({
   id,
@@ -20,5 +21,15 @@ describe('toFogVariant', () => {
       for (let y = 0; y < 9; y++) used.add(toFogVariant(variants, x * 31 + y).id);
     }
     expect([...used].sort()).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+});
+
+describe('toNeutralFogStyle', () => {
+  it('returns no style when the setting is off, so the fog keeps its terrain colour', () => {
+    expect(toNeutralFogStyle(false)).toBeUndefined();
+  });
+
+  it('returns the neutral grey backing when the setting is on', () => {
+    expect(toNeutralFogStyle(true)).toEqual({ backgroundColor: NEUTRAL_FOG_COLOUR });
   });
 });
