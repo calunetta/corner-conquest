@@ -42,6 +42,9 @@ Part of the architecture & game-rules docs. Index and directives: [`docs/README.
 - **Dialog:** `DeleteAccountButton` is exported from `src/modules/session/index.ts`. Its dialog moves through confirm, deleting and error views and calls `deleteAccount` (§3.1). No page mounts it yet; it is shown only in the testbed.
 - **Firestore rules change:** `firestore.rules` now lets the owning uid delete its own `accounts/{uid}` and `usernames/{name}`. This change is **not yet tested with `npm run test:rules`** (needs the Firestore emulator and Java 21). Run it before the rules are deployed.
 
+#### **Player Avatars (`src/modules/avatars/`)**
+- **Avatars:** the lobby picker, the lobby rows, the HUD `PlayerInfo` and the `VictoryDialog` show a player's chosen avatar. Full details in §6.16 (`docs/architecture/player-avatars.md`).
+
 ## 6.8. Fog of War & Debug Mode
 
 -   **Fog of War (Enabled):** This is the default, tactical experience.

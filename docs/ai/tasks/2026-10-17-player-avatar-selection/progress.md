@@ -23,12 +23,12 @@ Tier: L · Phases: 3
 - [x] committed: 4649e7c
 
 ## Phase 3: Previews, docs, verification
-- [ ] previews (preview-a)
-- [ ] docs synced (docs-sync)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
-- [ ] committed: <hash>
+- [x] previews (preview-a)
+- [x] docs synced (docs-sync) — new docs/architecture/player-avatars.md (§6.16) plus structure-and-state.md §2/§3.1/§3.2 and a pointer in systems-and-visuals.md §6.7
+- [x] checks: typecheck, lint, unit tests — typecheck clean, lint 0 warnings, jest 114 suites / 1833 tests passed
+- [x] UI verified (ui-verify) — preview-report.md: all 4 testbed URLs pass desktop+mobile, 0 console errors, avatar images load. Non-blocking: mobile picker dialog is edge-to-edge (no 16px gutter)
+- [x] final review (architect-b) — APPROVED, see review.md
+- [x] committed: <hash>
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
