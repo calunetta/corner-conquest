@@ -11,6 +11,8 @@ jest.mock('./services/account.service', () => ({
   bindUsernameToAccount: jest.fn(),
   claimAccountUsername: jest.fn(),
   findAccountUsername: jest.fn(),
+  findAccountAvatarId: jest.fn(),
+  setAccountAvatarId: jest.fn(),
   linkGoogleAccount: jest.fn(),
   signInAnonymously: jest.fn(),
   signInWithGoogle: jest.fn(),
@@ -28,6 +30,8 @@ const mockReleaseUsername = playerSession.releaseUsername as jest.Mock;
 const mockBindUsernameToAccount = account.bindUsernameToAccount as jest.Mock;
 const mockClaimAccountUsername = account.claimAccountUsername as jest.Mock;
 const mockFindAccountUsername = account.findAccountUsername as jest.Mock;
+const mockFindAccountAvatarId = account.findAccountAvatarId as jest.Mock;
+const mockSetAccountAvatarId = account.setAccountAvatarId as jest.Mock;
 const mockLinkGoogleAccount = account.linkGoogleAccount as jest.Mock;
 const mockSignInAnonymously = account.signInAnonymously as jest.Mock;
 const mockSignInWithGoogle = account.signInWithGoogle as jest.Mock;
@@ -855,6 +859,121 @@ describe('usePlayerProvider', () => {
 
       await expect(result.current.linkWithGoogle()).rejects.toBe(error);
       expect(mockLinkGoogleAccount).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('avatar', () => {
+    async function signInAsAlice(storedAvatarId: unknown) {
+      mockFindAccountUsername.mockResolvedValue('Alice');
+      mockFindAccountAvatarId.mockResolvedValue(storedAvatarId);
+      const hook = renderHook(() => usePlayerProvider());
+      await flushAuthCallback(() => emitAuthChange(ALICE));
+      return hook;
+    }
+
+    it('starts as null for a guest and never reads the account avatar', async () => {
+      const { result } = renderHook(() => usePlayerProvider());
+      await settle();
+
+      expect(result.current.avatarId).toBeNull();
+      expect(mockFindAccountAvatarId).not.toHaveBeenCalled();
+    });
+
+    it('restores a valid stored avatarId for a signed-in account', async () => {
+      const { result } = await signInAsAlice('human-07');
+
+      expect(mockFindAccountAvatarId).toHaveBeenCalledWith('uid_alice');
+      expect(result.current.avatarId).toBe('human-07');
+    });
+
+    it.each([
+      ['an unknown id', 'human-26'],
+      ['an empty string', ''],
+      ['null', null],
+      ['a non-string', 7],
+    ])('defaults to null when the stored avatarId is %s', async (_label, stored) => {
+      const { result } = await signInAsAlice(stored);
+
+      expect(result.current.avatarId).toBeNull();
+    });
+
+    it('logs and keeps avatarId null when reading the stored avatar fails', async () => {
+      mockFindAccountUsername.mockResolvedValue('Alice');
+      const error = new Error('unavailable');
+      mockFindAccountAvatarId.mockRejectedValue(error);
+
+      const { result } = renderHook(() => usePlayerProvider());
+      await flushAuthCallback(() => emitAuthChange(ALICE));
+
+      expect(console.error).toHaveBeenCalledWith('Error loading account avatar:', error);
+      expect(result.current.avatarId).toBeNull();
+      expect(result.current.isAuthLoading).toBe(false);
+    });
+
+    it('persists a signed-in choice through setAccountAvatarId and resolves true', async () => {
+      mockSetAccountAvatarId.mockResolvedValue(undefined);
+      const { result } = await signInAsAlice(null);
+
+      let saved: boolean | undefined;
+      await act(async () => {
+        saved = await result.current.setAvatarId('human-03');
+      });
+
+      expect(saved).toBe(true);
+      expect(mockSetAccountAvatarId).toHaveBeenCalledTimes(1);
+      expect(mockSetAccountAvatarId).toHaveBeenCalledWith('uid_alice', 'human-03');
+      expect(result.current.avatarId).toBe('human-03');
+    });
+
+    it('reverts to the previous avatarId and resolves false when the write is rejected', async () => {
+      const error = new Error('permission-denied');
+      mockSetAccountAvatarId.mockRejectedValue(error);
+      const { result } = await signInAsAlice('human-01');
+
+      let saved: boolean | undefined;
+      await act(async () => {
+        saved = await result.current.setAvatarId('human-09');
+      });
+
+      expect(saved).toBe(false);
+      expect(console.error).toHaveBeenCalledWith('Error saving avatar:', error);
+      expect(result.current.avatarId).toBe('human-01');
+    });
+
+    it('reverts to null when the first-ever write is rejected', async () => {
+      mockSetAccountAvatarId.mockRejectedValue(new Error('offline'));
+      const { result } = await signInAsAlice(null);
+
+      let saved: boolean | undefined;
+      await act(async () => {
+        saved = await result.current.setAvatarId('human-09');
+      });
+
+      expect(saved).toBe(false);
+      expect(result.current.avatarId).toBeNull();
+    });
+
+    it('keeps a guest choice in memory only: resolves true and never writes', async () => {
+      const { result } = renderHook(() => usePlayerProvider());
+      await settle();
+
+      let saved: boolean | undefined;
+      await act(async () => {
+        saved = await result.current.setAvatarId('human-12');
+      });
+
+      expect(saved).toBe(true);
+      expect(mockSetAccountAvatarId).not.toHaveBeenCalled();
+      expect(result.current.avatarId).toBe('human-12');
+    });
+
+    it('clears a signed-in avatar when the session switches to a guest', async () => {
+      const { result } = await signInAsAlice('human-05');
+      expect(result.current.avatarId).toBe('human-05');
+
+      await flushAuthCallback(() => emitAuthChange(GUEST_2));
+
+      expect(result.current.avatarId).toBeNull();
     });
   });
 });

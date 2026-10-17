@@ -11,6 +11,7 @@ export function createPlayer(
   basePos: { x: number; y: number },
   settings: GameSettings,
   debugMode: boolean,
+  avatarId: string | null = null,
 ): Player {
   let startingCards: CardName[] = [];
   if (debugMode && !isBot) { // Only give debug cards to the human player
@@ -50,5 +51,6 @@ export function createPlayer(
     masterBuilderActive: false,
     reinforceActive: false,
     revealedTiles,
+    avatarId,
   };
 }

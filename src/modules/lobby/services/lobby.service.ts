@@ -76,7 +76,7 @@ export async function saveGame(game: GameState): Promise<void> {
  */
 export async function joinOpenGame(
   gameId: string,
-  player: { playerId: string; name: string },
+  player: { playerId: string; name: string; avatarId?: string | null },
 ): Promise<void> {
   const gameDocRef = doc(db, 'games', gameId);
 

@@ -26,7 +26,7 @@ export function initializeGame(
   gameId: string,
   gameName: string,
   maxPlayers: number,
-  creator: { playerId: string; name: string; color: PlayerColor },
+  creator: { playerId: string; name: string; color: PlayerColor; avatarId?: string | null },
   numBots: number,
   debugMode: boolean = false,
   settings: GameSettings = defaultGameSettings,
@@ -49,7 +49,7 @@ export function initializeGame(
   const creatorSeatIndex = 0;
   const creatorPos = basePositions[creatorSeatIndex];
 
-  const creatorPlayer = createPlayer(creatorSeatIndex, creator.playerId, creator.name, creator.color, false, creatorPos, settings, debugMode);
+  const creatorPlayer = createPlayer(creatorSeatIndex, creator.playerId, creator.name, creator.color, false, creatorPos, settings, debugMode, creator.avatarId);
   players.push(creatorPlayer);
 
   // Update creator's base tile

@@ -6,6 +6,7 @@ jest.mock('@/lib/firebase', () => {
     db: { name: 'db' },
     doc: jest.fn((database: unknown, collection: string, id: string) => ({ database, collection, id })),
     getDoc: jest.fn(),
+    setDoc: jest.fn(),
     writeBatch: jest.fn(),
     GoogleAuthProvider: jest.fn(() => mockProvider),
     signInWithPopup: jest.fn(),
@@ -23,6 +24,7 @@ import {
   db,
   doc,
   getDoc,
+  setDoc,
   writeBatch,
   GoogleAuthProvider,
   signInWithPopup,
@@ -37,7 +39,9 @@ import {
   bindUsernameToAccount,
   claimAccountUsername,
   deleteAccount,
+  findAccountAvatarId,
   findAccountUsername,
+  setAccountAvatarId,
   linkGoogleAccount,
   signInAnonymously,
   signInWithGoogle,
@@ -47,6 +51,7 @@ import {
 
 const mockDoc = doc as jest.Mock;
 const mockGetDoc = getDoc as jest.Mock;
+const mockSetDoc = setDoc as jest.Mock;
 const mockWriteBatch = writeBatch as jest.Mock;
 const mockGoogleAuthProvider = GoogleAuthProvider as unknown as jest.Mock;
 const mockSignInWithPopup = signInWithPopup as jest.Mock;
@@ -553,6 +558,56 @@ describe('account.service', () => {
       await expect(deleteAccount('alice')).rejects.toBe(otherError);
       expect(mockReauthenticateWithPopup).not.toHaveBeenCalled();
       expect(mockDeleteUser).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('findAccountAvatarId', () => {
+    it('returns the stored avatarId', async () => {
+      givenDocs({ 'accounts/uid_1': existingSnapshot({ username: 'Alice', avatarId: 'human-04' }) });
+
+      await expect(findAccountAvatarId('uid_1')).resolves.toBe('human-04');
+    });
+
+    it('returns null when the field is absent', async () => {
+      givenDocs({ 'accounts/uid_1': existingSnapshot({ username: 'Alice' }) });
+
+      await expect(findAccountAvatarId('uid_1')).resolves.toBeNull();
+    });
+
+    it('returns null when the account doc does not exist', async () => {
+      givenDocs({});
+
+      await expect(findAccountAvatarId('uid_1')).resolves.toBeNull();
+    });
+
+    it('reads accounts/{uid}', async () => {
+      givenDocs({});
+
+      await findAccountAvatarId('uid_1');
+
+      expect(mockDoc).toHaveBeenCalledWith(db, 'accounts', 'uid_1');
+    });
+  });
+
+  describe('setAccountAvatarId', () => {
+    it('merges only { avatarId } into accounts/{uid}', async () => {
+      mockSetDoc.mockResolvedValue(undefined);
+
+      await setAccountAvatarId('uid_1', 'human-11');
+
+      expect(mockSetDoc).toHaveBeenCalledTimes(1);
+      expect(mockSetDoc).toHaveBeenCalledWith(
+        { database: db, collection: 'accounts', id: 'uid_1' },
+        { avatarId: 'human-11' },
+        { merge: true },
+      );
+    });
+
+    it('propagates a rejected write', async () => {
+      const error = new Error('permission-denied');
+      mockSetDoc.mockRejectedValue(error);
+
+      await expect(setAccountAvatarId('uid_1', 'human-11')).rejects.toBe(error);
     });
   });
 });

@@ -59,4 +59,22 @@ describe('Game Setup Reducer', () => {
     expect(toLogMessage(started.log[started.log.length - 2])).toContain('started the game');
     expect(toLogMessage(started.log[started.log.length - 1])).toContain("It's now");
   });
+
+  describe('avatarId threading', () => {
+    it('passes the creator avatarId to the creator and gives every bot null', () => {
+      const creator = { playerId: 'user_1', name: 'Alice', color: PlayerColor.Blue, avatarId: 'human-14' };
+      const game = initializeGame('game_av', 'Avatar Match', 1, creator, 2, false, defaultGameSettings);
+
+      expect(game.players).toHaveLength(3);
+      expect(game.players[0].avatarId).toBe('human-14');
+      expect(game.players.slice(1).map((p) => p.avatarId)).toEqual([null, null]);
+    });
+
+    it('stores null for a creator without an avatarId', () => {
+      const creator = { playerId: 'user_1', name: 'Alice', color: PlayerColor.Blue };
+      const game = initializeGame('game_av2', 'No Avatar', 2, creator, 0, false, defaultGameSettings);
+
+      expect(game.players[0].avatarId).toBeNull();
+    });
+  });
 });

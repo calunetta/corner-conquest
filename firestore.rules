@@ -55,6 +55,13 @@ service cloud.firestore {
         (request.auth != null && resource.data.get('authUid', null) == request.auth.uid);
     }
 
+    // Must match AVATAR_IDS in src/modules/avatars/avatar-catalog.ts.
+    function isKnownAvatarId(id) {
+      return id is string && id in [
+        'human-01', 'human-02', 'human-03', 'human-04', 'human-05', 'human-06', 'human-07', 'human-08', 'human-09', 'human-10', 'human-11', 'human-12', 'human-13', 'human-14', 'human-15', 'human-16', 'human-17', 'human-18', 'human-19', 'human-20', 'human-21', 'human-22', 'human-23', 'human-24', 'human-25'
+      ];
+    }
+
     // Reverse lookup: which username does this Firebase Auth account own. Written once,
     // atomically with the usernames/{username} doc, by account.service.ts's bindUsernameToAccount.
     match /accounts/{authUid} {
@@ -62,7 +69,12 @@ service cloud.firestore {
       allow create: if request.auth != null &&
         request.auth.uid == authUid &&
         request.resource.data.username is string;
-      allow update: if false; // picking a username is a one-time action
+      // Picking a username is a one-time action, so `username` is immutable: the only key an
+      // update may change is `avatarId`, and only to a catalog id, by the owning account.
+      allow update: if request.auth != null &&
+        request.auth.uid == authUid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarId']) &&
+        isKnownAvatarId(request.resource.data.avatarId);
       // Account deletion (account.service.ts deleteAccount): the owner may delete their own
       // accounts/{uid} doc. No one else may delete another account's doc.
       allow delete: if request.auth != null && request.auth.uid == authUid;

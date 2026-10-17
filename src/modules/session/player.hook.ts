@@ -1,23 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { findUsernameOwner, reserveUsername, releaseUsername } from './services/player-session.service';
 import {
-  bindUsernameToAccount,
-  claimAccountUsername,
-  findAccountUsername,
-  linkGoogleAccount as linkGoogleAccountOnFirebase,
-  signInAnonymously,
-  signInWithGoogle as signInWithGoogleAccount,
-  signOutOfAccount,
-  subscribeToAuthState,
-  type AuthAccount,
+  bindUsernameToAccount, claimAccountUsername, findAccountUsername, signInAnonymously,
+  linkGoogleAccount as linkGoogleAccountOnFirebase, signInWithGoogle as signInWithGoogleAccount,
+  signOutOfAccount, subscribeToAuthState, type AuthAccount,
 } from './services/account.service';
 import { releaseGuestReservation } from './guest-session';
+import { usePlayerAvatar } from './player-avatar.hook';
 import type { PlayerContextType } from './player.types';
 
 export function usePlayerProvider(): PlayerContextType {
   const [account, setAccount] = useState<AuthAccount | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [username, setUsernameState] = useState<string | null>(null);
+
+  const { avatarId, setAvatarId, syncAvatarWithAccount } = usePlayerAvatar(account);
 
   const playerId = account ? account.uid : null;
   const isGuest = !isAuthLoading && account !== null && account.isAnonymous;
@@ -75,9 +72,10 @@ export function usePlayerProvider(): PlayerContextType {
       } else {
         await restoreAccountUsername(nextAccount.uid);
       }
+      await syncAvatarWithAccount(nextAccount);
       setIsAuthLoading(false);
     });
-  }, [restoreAccountUsername, validateSession]);
+  }, [restoreAccountUsername, syncAvatarWithAccount, validateSession]);
 
   const releaseGuestSession = useCallback(async () => {
     await releaseGuestReservation(username);
@@ -182,5 +180,5 @@ export function usePlayerProvider(): PlayerContextType {
     };
   }, [account, releaseGuestSession]);
 
-  return { playerId, username, isGuest, isAuthLoading, setUsername: setUsernameCallback, signInWithGoogle, linkWithGoogle, logout };
+  return { playerId, username, isGuest, isAuthLoading, setUsername: setUsernameCallback, signInWithGoogle, linkWithGoogle, logout, avatarId, setAvatarId };
 }

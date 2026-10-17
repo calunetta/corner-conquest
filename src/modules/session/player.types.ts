@@ -1,3 +1,5 @@
+import type { AvatarId } from '@/modules/avatars';
+
 export interface PlayerContextType {
   playerId: string | null;
   username: string | null;
@@ -15,4 +17,8 @@ export interface PlayerContextType {
    */
   linkWithGoogle: () => Promise<void>;
   logout: () => void;
+  avatarId: AvatarId | null;
+  /** Signed-in account: persists to accounts/{uid}.avatarId, reverts local state and resolves
+   *  false on a failed write. Guest: updates local state only, always resolves true. */
+  setAvatarId: (avatarId: AvatarId) => Promise<boolean>;
 }

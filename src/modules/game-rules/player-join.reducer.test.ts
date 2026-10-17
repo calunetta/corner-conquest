@@ -257,4 +257,39 @@ it('accepts a valid join and stays in Waiting status when last seat is filled, a
       expect(guestBaseTile.monsters).toEqual([]);
     });
   });
+
+describe('player-join.reducer: avatarId threading', () => {
+  const newGame = () =>
+    initializeGame(
+      'game_av',
+      'Avatar Join',
+      3,
+      { playerId: 'p1', name: 'Player 1', color: PlayerColor.Blue, avatarId: 'human-01' },
+      0,
+      false,
+      defaultGameSettings,
+    );
+
+  it('passes the joining player avatarId through', () => {
+    const { newGameState } = addPlayerToGame(newGame(), { playerId: 'p2', name: 'Player 2', avatarId: 'human-20' });
+
+    expect(newGameState!.players.map((p) => p.avatarId)).toEqual(['human-01', 'human-20']);
+  });
+
+  it('stores null for a joining player without an avatarId', () => {
+    const { newGameState } = addPlayerToGame(newGame(), { playerId: 'p2', name: 'Player 2' });
+
+    expect(newGameState!.players[1].avatarId).toBeNull();
+  });
+
+  it('does not mutate the input game when joining with an avatar', () => {
+    const game = newGame();
+    const playersBefore = [...game.players];
+
+    addPlayerToGame(game, { playerId: 'p2', name: 'Player 2', avatarId: 'human-20' });
+
+    expect(game.players).toEqual(playersBefore);
+    expect(game.players).toHaveLength(1);
+  });
+});
 });

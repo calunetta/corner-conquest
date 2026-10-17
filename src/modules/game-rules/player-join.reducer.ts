@@ -10,7 +10,7 @@ export const BASE_TILE_SIZE = 150;
 
 export function addPlayerToGame(
     gameState: GameState,
-    playerInfo: { playerId: string, name: string }
+    playerInfo: { playerId: string, name: string, avatarId?: string | null }
 ): { newGameState: GameState | null, newBaseTile: BaseTileInfo | null } {
 
     if (gameState.status !== GameStatus.Waiting) {
@@ -52,7 +52,8 @@ export function addPlayerToGame(
         false,
         newPlayerPos,
         newGameState.settings,
-        newGameState.debugMode
+        newGameState.debugMode,
+        playerInfo.avatarId
     );
 
     newGameState.players.push(newPlayer);

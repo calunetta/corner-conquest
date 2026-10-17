@@ -38,6 +38,8 @@ describe('PlayerProvider and usePlayer', () => {
         signInWithGoogle: jest.fn(),
         linkWithGoogle: jest.fn(),
         logout: jest.fn(),
+        avatarId: null,
+        setAvatarId: jest.fn(),
       };
 
       mockUsePlayerProvider.mockReturnValue(mockContextValue);
@@ -62,6 +64,8 @@ describe('PlayerProvider and usePlayer', () => {
         signInWithGoogle: jest.fn(),
         linkWithGoogle: jest.fn(),
         logout: jest.fn(),
+        avatarId: null,
+        setAvatarId: jest.fn(),
       };
 
       mockUsePlayerProvider.mockReturnValue(mockContextValue);
@@ -96,6 +100,8 @@ describe('PlayerProvider and usePlayer', () => {
         signInWithGoogle: jest.fn(),
         linkWithGoogle: jest.fn(),
         logout: jest.fn(),
+        avatarId: null,
+        setAvatarId: jest.fn(),
       };
 
       mockUsePlayerProvider.mockReturnValue(mockContextValue);

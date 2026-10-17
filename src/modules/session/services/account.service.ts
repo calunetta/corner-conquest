@@ -3,6 +3,7 @@ import {
   db,
   doc,
   getDoc,
+  setDoc,
   writeBatch,
   GoogleAuthProvider,
   signInWithPopup,
@@ -75,6 +76,24 @@ export async function findAccountUsername(authUid: string): Promise<string | nul
     return null;
   }
   return accountSnap.data().username as string;
+}
+
+/** Reads accounts/{authUid}.avatarId. Returns null if the field or the doc is absent. */
+export async function findAccountAvatarId(authUid: string): Promise<string | null> {
+  const accountSnap = await getDoc(doc(db, 'accounts', authUid));
+  if (!accountSnap.exists()) {
+    return null;
+  }
+  return (accountSnap.data().avatarId as string | undefined) ?? null;
+}
+
+/**
+ * Merges { avatarId } into accounts/{authUid} without touching `username`. The doc must already
+ * exist (created by claimAccountUsername/bindUsernameToAccount): firestore.rules only allows an
+ * update that changes `avatarId` alone.
+ */
+export async function setAccountAvatarId(authUid: string, avatarId: string): Promise<void> {
+  await setDoc(doc(db, 'accounts', authUid), { avatarId }, { merge: true });
 }
 
 /**

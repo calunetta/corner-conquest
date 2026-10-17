@@ -165,4 +165,21 @@ describe('Player Factory', () => {
       expect(player.reinforceActive).toBe(false);
     });
   });
+
+  describe('createPlayer avatarId', () => {
+    const create = (avatarId?: string | null) =>
+      createPlayer(0, 'user_1', 'Alice', PlayerColor.Blue, false, { x: 0, y: 0 }, defaultGameSettings, false, avatarId);
+
+    it('stores the given avatarId', () => {
+      expect(create('human-08').avatarId).toBe('human-08');
+    });
+
+    it('defaults to null when omitted', () => {
+      expect(create().avatarId).toBeNull();
+    });
+
+    it('keeps an explicit null', () => {
+      expect(create(null).avatarId).toBeNull();
+    });
+  });
 });

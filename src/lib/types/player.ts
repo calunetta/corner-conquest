@@ -44,4 +44,7 @@ export type Player = {
   efficientActive: boolean;
   masterBuilderActive: boolean;
   revealedTiles: string[];
+  /** Stable catalog id ("human-01".."human-25"); absent/null => caller falls back to the
+   *  existing color sprite. Never set for a bot. */
+  avatarId?: string | null;
 };

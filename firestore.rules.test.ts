@@ -455,6 +455,62 @@ describe('Firestore Rules: accounts collection', () => {
     });
   });
 
+  describe('Update: avatarId', () => {
+    beforeEach(async () => {
+      await seedWithRulesDisabled('accounts/uid_alice', { username: 'alice_perm' });
+    });
+
+    it('should allow the owner to set avatarId to a known catalog id, keeping username', async () => {
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').set({ avatarId: 'human-07' }, { merge: true })
+      ).resolves.toBeUndefined();
+
+      const snap = await db.doc('accounts/uid_alice').get();
+      expect(snap.data()).toEqual({ username: 'alice_perm', avatarId: 'human-07' });
+    });
+
+    it.each([
+      ['an unknown id', 'human-26'],
+      ['an empty string', ''],
+      ['a non-string value', 7],
+    ])('should reject setting avatarId to %s', async (_label, avatarId) => {
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').update({ avatarId })
+      ).rejects.toThrow();
+    });
+
+    it('should reject another uid setting the avatarId', async () => {
+      const db = testEnv.authenticatedContext('uid_mallory').firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').update({ avatarId: 'human-01' })
+      ).rejects.toThrow();
+    });
+
+    it('should reject an unauthenticated client setting the avatarId', async () => {
+      const db = testEnv.unauthenticatedContext().firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').update({ avatarId: 'human-01' })
+      ).rejects.toThrow();
+    });
+
+    it('should reject a write that also changes username', async () => {
+      const db = testEnv.authenticatedContext('uid_alice').firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').update({ avatarId: 'human-01', username: 'renamed' })
+      ).rejects.toThrow();
+
+      const snap = await db.doc('accounts/uid_alice').get();
+      expect((snap.data() as AccountDoc).username).toBe('alice_perm');
+    });
+  });
+
   describe('Update and delete', () => {
     it('should reject updating an accounts doc, even by its owner', async () => {
       await seedWithRulesDisabled('accounts/uid_alice', { username: 'alice_perm' });
