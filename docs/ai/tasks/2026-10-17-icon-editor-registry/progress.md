@@ -14,7 +14,7 @@ Tier: L · Phases: 2
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (none this phase — no view yet)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: a6addc9
 
 ## Phase 2: View layer — styles, view, row, preview, registry wiring
 - [x] plan approved (architect-b)
