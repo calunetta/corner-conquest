@@ -1,10 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Loader2 } from 'lucide-react';
 import { usePlayer } from '@/modules/session';
 import { useGameEngine } from '@/modules/game-board';
-import { useBoardBackground, SKY_GRADIENT_CLASS } from '@/modules/shared';
+import { useBoardBackground, SKY_GRADIENT_CLASS, RegistryIcon } from '@/modules/shared';
 import { cn } from '@/lib/utils';
 import { MapGrid } from '@/modules/map';
 import { ActionsPanel, GameLog, GameBoardHeader, GameStatusBadge, TutorialBeacon } from '@/modules/hud';
@@ -100,7 +99,7 @@ export function GameBoard({ gameId, onExit }: GameBoardProps) {
   if (isLoading || !serverGameState || !localPlayerFromServer) {
     return (
       <div className="flex h-screen w-screen items-center justify-center p-4 text-center">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <RegistryIcon id="loader-2" className="h-16 w-16 animate-spin text-primary" />
         <p className="ml-4 text-lg">
           {!localPlayerFromServer && !isLoading
             ? 'You are not in this game. Returning to lobby...'

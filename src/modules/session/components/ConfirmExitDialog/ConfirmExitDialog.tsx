@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, LogOut } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -20,7 +20,7 @@ export function ConfirmExitDialog({ onConfirm, onClose }: ConfirmExitDialogProps
         <AlertDialogHeader className={styles.header}>
           <div className={styles.headerRow}>
             <div className={styles.iconWrap}>
-              <AlertTriangle className={styles.icon} />
+              <RegistryIcon id="alert-triangle" className={styles.icon} />
             </div>
             <div>
               <AlertDialogTitle className={styles.title}>Leave Conquest?</AlertDialogTitle>
@@ -35,7 +35,7 @@ export function ConfirmExitDialog({ onConfirm, onClose }: ConfirmExitDialogProps
             Stay in Game
           </Button>
           <Button size="sm" variant="destructive" onClick={onConfirm} className={styles.leaveButton}>
-            <LogOut className={styles.leaveIcon} />
+            <RegistryIcon id="log-out" className={styles.leaveIcon} />
             Leave Match
           </Button>
         </AlertDialogFooter>

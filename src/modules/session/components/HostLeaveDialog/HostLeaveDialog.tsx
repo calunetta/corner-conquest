@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, LogOut } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -23,7 +23,7 @@ export function HostLeaveDialog({ open, onClose, onConfirm, isLastPlayer, gameSt
         <AlertDialogHeader className={styles.header}>
           <div className={styles.headerRow}>
             <div className={styles.iconWrap}>
-              <AlertTriangle className={styles.icon} />
+              <RegistryIcon id="alert-triangle" className={styles.icon} />
             </div>
             <div>
               <AlertDialogTitle className={styles.title}>Host Departure</AlertDialogTitle>
@@ -36,7 +36,7 @@ export function HostLeaveDialog({ open, onClose, onConfirm, isLastPlayer, gameSt
             Cancel
           </Button>
           <Button size="sm" variant="destructive" onClick={onConfirm} className={styles.confirmButton}>
-            <LogOut className={styles.confirmIcon} />
+            <RegistryIcon id="log-out" className={styles.confirmIcon} />
             Confirm & Leave
           </Button>
         </AlertDialogFooter>

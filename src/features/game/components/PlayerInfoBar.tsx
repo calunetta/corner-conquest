@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useIsMobile } from '@/modules/shared';
+import { useIsMobile, RegistryIcon } from '@/modules/shared';
 import { PlayerInfo, TutorialBeacon } from '@/modules/hud';
 import { useGameBoard } from '../context/GameBoardContext';
 
@@ -34,7 +33,7 @@ export function PlayerInfoBar() {
               <h2 className="text-sm font-semibold">Players</h2>
               {status === 'playing' && (
                 <div className="flex items-center gap-1.5 rounded bg-background/70 px-2 py-0.5 text-xs font-semibold">
-                  <Trophy className="h-3 w-3 text-yellow-400" />
+                  <RegistryIcon id="trophy" className="h-3 w-3 text-yellow-400" />
                   <span>Goal: {settings.victoryPointGoal} VP</span>
                 </div>
               )}
@@ -47,7 +46,7 @@ export function PlayerInfoBar() {
             </div>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm">
-                {isPlayerInfoOpen ? <ChevronUp /> : <ChevronDown />}
+                {isPlayerInfoOpen ? <RegistryIcon id="chevron-up" className="h-6 w-6" /> : <RegistryIcon id="chevron-down" className="h-6 w-6" />}
               </Button>
             </CollapsibleTrigger>
           </div>
@@ -91,7 +90,7 @@ export function PlayerInfoBar() {
           </div>
           {status === 'playing' && (
             <div className="flex items-center gap-1 rounded bg-black/40 px-2 py-0.5 text-xs font-bold text-yellow-400 border border-white/5">
-              <Trophy className="h-3 w-3" />
+              <RegistryIcon id="trophy" className="h-3 w-3" />
               <span>Goal: {settings.victoryPointGoal}</span>
             </div>
           )}

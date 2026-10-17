@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import Image from 'next/image';
-import { Loader2, LogOut, Trophy } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -36,7 +36,7 @@ export function VictoryDialog({ winner, isLocalWinner, isExiting, onReturnToLobb
       >
         <AlertDialogHeader>
           <div className={styles.iconWrap}>
-            <Trophy className={styles.icon} />
+            <RegistryIcon id="trophy" className={styles.icon} />
           </div>
           <AlertDialogTitle className={styles.title}>{vm.title}</AlertDialogTitle>
           <AlertDialogDescription className={styles.subtitle}>{vm.subtitle}</AlertDialogDescription>
@@ -75,12 +75,12 @@ export function VictoryDialog({ winner, isLocalWinner, isExiting, onReturnToLobb
           >
             {isExiting ? (
               <>
-                <Loader2 className={styles.loadingIcon} />
+                <RegistryIcon id="loader-2" className={styles.loadingIcon} />
                 Returning…
               </>
             ) : (
               <>
-                <LogOut className={styles.buttonIcon} />
+                <RegistryIcon id="log-out" className={styles.buttonIcon} />
                 Return to Lobby
               </>
             )}

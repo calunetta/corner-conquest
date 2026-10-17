@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, RefreshCw, WifiOff } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -36,7 +36,7 @@ export function ConnectionWarningDialogView({
       <AlertDialogContent onEscapeKeyDown={keepOpen}>
         <AlertDialogHeader>
           <div className={styles.titleRow}>
-            <WifiOff className={styles.icon({ isExpiring })} />
+            <RegistryIcon id="wifi-off" className={styles.icon({ isExpiring })} />
             <AlertDialogTitle>Connection lost</AlertDialogTitle>
           </div>
           <AlertDialogDescription>
@@ -47,9 +47,9 @@ export function ConnectionWarningDialogView({
         <AlertDialogFooter>
           <Button onClick={onDismiss} disabled={isDismissing} className={styles.dismissButton}>
             {isDismissing ? (
-              <Loader2 className={styles.dismissIcon({ isPending: true })} aria-hidden="true" />
+              <RegistryIcon id="loader-2" className={styles.dismissIcon({ isPending: true })} aria-hidden />
             ) : (
-              <RefreshCw className={styles.dismissIcon({ isPending: false })} aria-hidden="true" />
+              <RegistryIcon id="refresh-cw" className={styles.dismissIcon({ isPending: false })} aria-hidden />
             )}
             {isDismissing ? 'Checking…' : "I'm back"}
           </Button>

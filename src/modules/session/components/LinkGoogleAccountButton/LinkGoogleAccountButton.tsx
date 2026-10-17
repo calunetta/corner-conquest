@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +38,7 @@ export function LinkGoogleAccountButtonView({
         onClick={onLink}
         disabled={isLinking}
       >
-        {isLinking ? <Loader2 className={styles.spinnerIcon} aria-hidden /> : <GoogleIcon className={styles.icon} />}
+        {isLinking ? <RegistryIcon id="loader-2" className={styles.spinnerIcon} aria-hidden /> : <GoogleIcon className={styles.icon} />}
         {isLinking ? LINKING_LABEL : 'Link Google Account'}
       </Button>
       <Button
@@ -51,7 +51,7 @@ export function LinkGoogleAccountButtonView({
         aria-label={MOBILE_ARIA_LABEL}
       >
         {isLinking ? (
-          <Loader2 className={styles.mobileSpinnerIcon} aria-hidden />
+          <RegistryIcon id="loader-2" className={styles.mobileSpinnerIcon} aria-hidden />
         ) : (
           <GoogleIcon className={styles.mobileIcon} />
         )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Swords, Compass } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,7 +44,7 @@ export function LoginView({
         <Card className={styles.card}>
           <CardHeader className={styles.header}>
             <div className={styles.iconWrap}>
-              <Compass className={styles.icon} />
+              <RegistryIcon id="compass" className={styles.icon} />
             </div>
             <CardTitle className={styles.title}>Welcome to Corner Conquest</CardTitle>
             {!isLoadingMode && (
@@ -56,7 +56,7 @@ export function LoginView({
           <CardContent className={styles.content}>
             {isLoadingMode && (
               <div className={styles.loadingWrap} role="status" aria-label="Loading">
-                <Loader2 className={styles.spinner} aria-hidden />
+                <RegistryIcon id="loader-2" className={styles.spinner} aria-hidden />
               </div>
             )}
             {isGuestMode && (
@@ -100,9 +100,9 @@ export function LoginView({
             <CardFooter>
               <Button className={styles.submitButton} onClick={onSubmit} disabled={isLoading || !name.trim()}>
                 {isLoading ? (
-                  <Loader2 className={styles.loadingIcon} />
+                  <RegistryIcon id="loader-2" className={styles.loadingIcon} />
                 ) : (
-                  <Swords className={styles.submitIcon} />
+                  <RegistryIcon id="swords" className={styles.submitIcon} />
                 )}
                 Enter Lobby
               </Button>
