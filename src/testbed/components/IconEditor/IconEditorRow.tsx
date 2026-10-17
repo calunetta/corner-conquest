@@ -6,14 +6,13 @@ import * as LucideIcons from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { IconDefaultSource } from '@/modules/icons';
+import { toIconTransform, type IconDefaultSource } from '@/modules/icons';
 import { styles } from './IconEditor.styles';
 import type { IconRowViewModel } from './IconEditor.types';
 import { IconField } from './IconEditorField';
 
 const ROTATION_RANGE = { min: 0, max: 359, step: 1 } as const;
 const SIZE_RANGE = { min: 25, max: 200, step: 5 } as const;
-const PERCENT_PER_UNIT = 100;
 const IMAGE_ACCEPT = 'image/png,image/jpeg,image/gif,image/webp';
 const UPLOAD_ERROR_TEXT = 'Could not upload — check the file type and try again.';
 
@@ -29,10 +28,6 @@ function IconGlyph({ source }: { source: IconDefaultSource }) {
   const Glyph = lucideGlyphsByName[source.name];
   if (!Glyph) return null;
   return <Glyph aria-hidden className={styles.thumbnailGlyph} />;
-}
-
-function toTransform(rotation: number, size: number): string {
-  return `rotate(${rotation}deg) scale(${size / PERCENT_PER_UNIT})`;
 }
 
 export function IconEditorRow({
@@ -59,7 +54,7 @@ export function IconEditorRow({
   return (
     <div className={styles.row}>
       <div className={styles.thumbnailFrame}>
-        <div className={styles.thumbnailTransform} style={{ transform: toTransform(rotation, size) }}>
+        <div className={styles.thumbnailTransform} style={{ transform: toIconTransform(rotation, size) }}>
           <IconGlyph source={currentSource} />
         </div>
       </div>
