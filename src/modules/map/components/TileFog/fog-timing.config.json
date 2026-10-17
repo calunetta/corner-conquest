@@ -1,0 +1,9 @@
+{
+  "fadeStartMs": 0,
+  "fadeMs": 2000,
+  "scale": 1.21,
+  "offsetXPct": 0,
+  "offsetYPct": -7,
+  "revealDelayMs": 400,
+  "revealFadeMs": 2000
+}

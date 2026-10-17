@@ -7,6 +7,7 @@ import { tileResourcesPreview } from '@/modules/map/components/TileResources/Til
 import { tileBoatsPreview } from '@/modules/map/components/TileBoats/TileBoats.preview';
 import { tileOccupantsPreview } from '@/modules/map/components/TileOccupants/TileOccupants.preview';
 import { islandTilePreview } from '@/modules/map/components/IslandTile/IslandTile.preview';
+import { tileFogPreview } from '@/modules/map/components/TileFog/TileFog.preview';
 import { mapDecorationsPreview } from '@/modules/map/components/MapDecorations/MapDecorations.preview';
 import { mapGridPreview } from '@/modules/map/components/MapGrid/MapGrid.preview';
 import { combatDialogPreview } from '@/modules/combat/components/CombatDialog/CombatDialog.preview';
@@ -46,6 +47,7 @@ import { createGameDialogPreview } from '@/modules/lobby/components/CreateGameDi
 import { customSettingsSheetPreview } from '@/modules/lobby/components/CustomSettingsSheet/CustomSettingsSheet.preview';
 import { rejoinMatchPanelPreview } from '@/modules/lobby/components/RejoinMatchPanel/RejoinMatchPanel.preview';
 import { tileDecorationEditorPreview } from '@/testbed/components/TileDecorationEditor/TileDecorationEditor.preview';
+import { tileVariantEditorPreview } from '@/testbed/components/TileVariantEditor/TileVariantEditor.preview';
 import type { ComponentPreview } from './testbed.types';
 
 /** Every preview shown in the testbed. Register new previews here (skill: testbed-preview). */
@@ -59,6 +61,7 @@ export const previews: ComponentPreview[] = [
   tileBoatsPreview,
   tileOccupantsPreview,
   islandTilePreview,
+  tileFogPreview,
   mapDecorationsPreview,
   mapGridPreview,
   combatDialogPreview,
@@ -98,6 +101,7 @@ export const previews: ComponentPreview[] = [
   customSettingsSheetPreview,
   rejoinMatchPanelPreview,
   tileDecorationEditorPreview,
+  tileVariantEditorPreview,
 ];
 
 export function findPreview(slug: string): ComponentPreview | undefined {

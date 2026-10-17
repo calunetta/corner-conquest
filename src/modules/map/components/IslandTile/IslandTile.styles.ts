@@ -1,6 +1,7 @@
 import { cva } from 'class-variance-authority';
 import type { CSSProperties } from 'react';
 import type { PlayerColor } from '@/lib/types';
+import type { FogTiming } from '../TileFog';
 import {
   BASE_CREST_MIN_PX,
   BASE_CREST_SIZE,
@@ -56,8 +57,11 @@ export const styles = {
     },
   ),
   terrain: 'absolute inset-0 z-10 rounded-lg bg-terrain bg-cover bg-center bg-no-repeat',
+  // Holds the tile's decorations and center content. Hidden (not unmounted) while fogged so the
+  // reveal can fade the content in beneath the fog layer (TileFog).
+  revealLayer: 'absolute inset-0 z-20 flex items-center justify-center transition-opacity ease-out',
+  revealLayerCovered: 'opacity-0',
   centerContent: 'z-20 h-full w-full p-1',
-  fogIcon: 'h-full w-full text-muted-foreground/50',
   // Absolute so its box is the tile's padding box, not the p-1 centerContent inset: TileResources'
   // percent slot sizes resolve against this box, and the inset shrank them to ~6px at T=46.
   baseContent: 'absolute inset-0 flex items-center justify-center',
@@ -70,6 +74,7 @@ export const styles = {
   specialContent: 'absolute',
   specialImage: 'object-contain',
   monsterStack: 'flex h-full w-full flex-col',
+  monsterBackground: 'absolute inset-0 z-0 object-contain',
   monsterSlot: 'relative h-1/2 w-full',
   // Bottom offset and each image's box are set inline from island-tile-slots.types.ts (see toBorderRowStyle/toBorderImageStyle below).
   borderRow: 'pointer-events-none absolute left-1/2 z-0 flex w-full -translate-x-1/2 justify-center',
@@ -88,6 +93,14 @@ export const playerTileIndicatorShadow: Record<PlayerColor, string> = {
 export function toBaseCrestStyle(): CSSProperties {
   const side = `max(${BASE_CREST_MIN_PX}px, ${BASE_CREST_SIZE}%)`;
   return { width: side, height: side };
+}
+
+export function toRevealLayerStyle(timing: FogTiming, prefersReducedMotion: boolean): CSSProperties {
+  if (prefersReducedMotion) return { transitionDuration: '0ms', transitionDelay: '0ms' };
+  return {
+    transitionDuration: `${timing.revealFadeMs}ms`,
+    transitionDelay: `${timing.revealDelayMs}ms`,
+  };
 }
 
 export function toSpecialIslandStyle(): CSSProperties {

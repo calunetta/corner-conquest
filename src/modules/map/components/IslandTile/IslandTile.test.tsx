@@ -218,7 +218,7 @@ describe('IslandTile Component', () => {
       expect(screen.queryByAltText('Card revealed')).not.toBeInTheDocument();
     });
 
-    it('renders fog-of-war placeholder when tile is not visible', () => {
+    it('renders the fog layer over the tile when it is not visible', () => {
       const context: IslandTileContext = {
         gameState: gameStateFixture,
         localPlayer: { ...localPlayerFixture, revealedTiles: [] },
@@ -239,9 +239,10 @@ describe('IslandTile Component', () => {
 
       render(<IslandTileView {...enriched} />);
       expect(screen.getByTestId('island-tile-4-0')).toBeInTheDocument();
+      expect(screen.getByTestId('tile-fog')).toHaveAttribute('data-phase', 'covered');
     });
 
-    it('shows the fog icon on a fogged special island even with an active reveal animation, not idle or reveal art', () => {
+    it('keeps the special island art beneath the fog and never mounts the reveal animation while fogged', () => {
       const context: IslandTileContext = {
         gameState: gameStateFixture,
         localPlayer: { ...localPlayerFixture, revealedTiles: [] },
@@ -261,11 +262,10 @@ describe('IslandTile Component', () => {
       };
 
       render(<IslandTileView {...enriched} />);
-      expect(screen.queryByAltText('Special island')).not.toBeInTheDocument();
+      // Idle art is rendered beneath the fog so it can fade in on reveal; the reveal effect is not.
+      expect(screen.getByAltText('Special island')).toBeInTheDocument();
       expect(screen.queryByAltText('Card revealed')).not.toBeInTheDocument();
-      // Fog placeholder is the HelpCircle icon (no next/image, no alt text); its presence confirms
-      // the fog branch rendered instead of idle/reveal art, not just that neither art rendered.
-      expect(screen.getByTestId('lucide-icon-helpcircle')).toBeInTheDocument();
+      expect(screen.getByTestId('tile-fog')).toHaveAttribute('data-phase', 'covered');
     });
 
     it('calls onClick handler when button is clicked', () => {

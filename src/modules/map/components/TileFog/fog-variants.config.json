@@ -1,0 +1,52 @@
+{
+  "variants": [
+    {
+      "id": "default",
+      "name": "Default",
+      "still": "/sprites/fog-keyed-still.png",
+      "animation": "/sprites/fog-variants/default-fog-175ms.gif",
+      "frameDelayMs": 175,
+      "passMs": 1400
+    },
+    {
+      "id": "fog-still1",
+      "name": "Fog still 1",
+      "still": "/sprites/fog-variants/fog-still1-still.png",
+      "animation": "/sprites/fog-variants/default-fog-175ms.gif",
+      "frameDelayMs": 175,
+      "passMs": 1400
+    },
+    {
+      "id": "fog-still2",
+      "name": "Fog still 2",
+      "still": "/sprites/fog-variants/fog-still2-still.png",
+      "animation": "/sprites/fog-variants/default-fog-175ms.gif",
+      "frameDelayMs": 175,
+      "passMs": 1400
+    },
+    {
+      "id": "fog-still3",
+      "name": "Fog still 3",
+      "still": "/sprites/fog-variants/fog-still3-still.png",
+      "animation": "/sprites/fog-variants/default-fog-175ms.gif",
+      "frameDelayMs": 175,
+      "passMs": 1400
+    },
+    {
+      "id": "fog-still4",
+      "name": "Fog still 4",
+      "still": "/sprites/fog-variants/fog-still4-still.png",
+      "animation": "/sprites/fog-variants/default-fog-175ms.gif",
+      "frameDelayMs": 175,
+      "passMs": 1400
+    },
+    {
+      "id": "fog-still5",
+      "name": "Fog still 5",
+      "still": "/sprites/fog-variants/fog-still5-still.png",
+      "animation": "/sprites/fog-variants/default-fog-175ms.gif",
+      "frameDelayMs": 175,
+      "passMs": 1400
+    }
+  ]
+}

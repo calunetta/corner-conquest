@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/fog-variants/sync-fog-variants.mjs && node scripts/tile-variants/sync-tile-variants.mjs",
     "dev": "next dev --turbopack -p 9002",
+    "prebuild": "node scripts/fog-variants/sync-fog-variants.mjs && node scripts/tile-variants/sync-tile-variants.mjs",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "next build",

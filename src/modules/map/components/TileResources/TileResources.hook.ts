@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useGameBoard, useResourceGainEvents } from '@/modules/game-board';
 import { RESOURCE_GAIN_ANIMATION_MS, useTransientPulses } from '@/modules/shared';
+import { useTileArt } from '../TileVariants';
 import { toTileResourcesViewModel } from './TileResources.map';
 import type { TileResourcesProps, ResourceNodeViewModel } from './TileResources.types';
 
@@ -20,7 +21,9 @@ export function useTileResources(props: TileResourcesProps): { nodes: ResourceNo
   );
   const gainPulses = useTransientPulses(pulseTriggers, RESOURCE_GAIN_ANIMATION_MS);
 
-  const nodes = toTileResourcesViewModel(props.island, props.isBase ?? false, gameState.players, gainPulses);
+  const tileArt = useTileArt();
+  const builtInNodes = toTileResourcesViewModel(props.island, props.isBase ?? false, gameState.players, gainPulses);
+  const nodes = builtInNodes?.map((node) => ({ ...node, spriteSrc: tileArt.resources[node.type] ?? node.spriteSrc })) ?? null;
 
   return { nodes };
 }

@@ -1,18 +1,20 @@
 'use client';
 
 import Image from 'next/image';
-import { Home, HelpCircle } from 'lucide-react';
+import { Home } from 'lucide-react';
 import { IslandType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PLAYER_DATA } from '@/modules/game-rules';
-import { AnimatedMonster } from '../AnimatedMonster';
 import { TileDecorations } from '../TileDecorations';
 import { TileResources } from '../TileResources';
 import { TileBoats } from '../TileBoats';
 import { TileOccupants } from '../TileOccupants';
 import { DeathEffect } from '../DeathEffect';
 import { CardRevealEffect } from '../CardRevealEffect';
+import { TileFog, useFogSettings } from '../TileFog';
+import { useTileArt, type TileArt } from '../TileVariants';
+import { MonsterIcons } from './IslandTile.monsters';
 import { useIslandTile } from './IslandTile.hook';
 import {
   playerTileIndicatorShadow,
@@ -20,34 +22,27 @@ import {
   toBaseCrestStyle,
   toBorderImageStyle,
   toBorderRowStyle,
+  toRevealLayerStyle,
   toSpecialIslandStyle,
 } from './IslandTile.styles';
 import type { IslandTileProps, IslandTileViewModel } from './IslandTile.types';
 
 export const SPECIAL_ISLAND_IDLE_SPRITE = '/sprites/special_island_idle.png';
 
-/** One tile's monster icons, suppressed while its death animation is playing. */
-function renderMonsterIcons(viewModel: IslandTileViewModel) {
-  const { island, deathAnimationOnTile } = viewModel;
-  if (!island.monsters || island.monsters.length === 0) return null;
-  if (deathAnimationOnTile?.id.startsWith('monster-')) return null;
-
-  return (
-    <div className={styles.monsterStack}>
-      {island.monsters.map((monster, i) => (
-        <div key={`${monster.name}-${i}`} className={styles.monsterSlot}>
-          <AnimatedMonster monster={monster} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** The tile's center feature: fogged placeholder, base crest, monster stack, special island art, or resources. */
-function getTileCenterContent(viewModel: IslandTileViewModel) {
-  const { island, isTileVisible, baseOwner, cardRevealAnimationOnTile, prefersReducedMotion, onCardRevealHidden } =
-    viewModel;
-  if (!isTileVisible) return <HelpCircle className={styles.fogIcon} />;
+/**
+ * The tile's center feature: base crest, monster stack, special island art, or resources. Rendered
+ * even while the tile is fogged (the reveal layer hides it), so the reveal fade has content to show.
+ */
+function getTileCenterContent(viewModel: IslandTileViewModel, art: TileArt) {
+  const {
+    island,
+    isTileVisible,
+    baseOwner,
+    cardRevealAnimationOnTile,
+    deathAnimationOnTile,
+    prefersReducedMotion,
+    onCardRevealHidden,
+  } = viewModel;
 
   switch (island.type) {
     case IslandType.Base:
@@ -56,7 +51,7 @@ function getTileCenterContent(viewModel: IslandTileViewModel) {
           {baseOwner?.color ? (
             <div className={styles.baseImageWrapper} style={toBaseCrestStyle()} data-testid="base-crest">
               <Image
-                src={PLAYER_DATA[baseOwner.color].base}
+                src={art.base[baseOwner.color] ?? PLAYER_DATA[baseOwner.color].base}
                 alt={`${baseOwner.color} base`}
                 fill
                 className={styles.baseImage}
@@ -70,11 +65,12 @@ function getTileCenterContent(viewModel: IslandTileViewModel) {
         </div>
       );
     case IslandType.Monster:
-      return renderMonsterIcons(viewModel);
+      if (!island.monsters?.length || deathAnimationOnTile?.id.startsWith('monster-')) return null;
+      return <MonsterIcons monsters={island.monsters} backgroundSrc={art.monster} />;
     case IslandType.Special:
       return (
         <div className={styles.specialContent} style={toSpecialIslandStyle()} data-testid="special-content">
-          {cardRevealAnimationOnTile && !prefersReducedMotion ? (
+          {isTileVisible && cardRevealAnimationOnTile && !prefersReducedMotion ? (
             <CardRevealEffect
               id={cardRevealAnimationOnTile.id}
               createdAt={cardRevealAnimationOnTile.createdAt}
@@ -82,7 +78,7 @@ function getTileCenterContent(viewModel: IslandTileViewModel) {
             />
           ) : (
             <Image
-              src={SPECIAL_ISLAND_IDLE_SPRITE}
+              src={art.special ?? SPECIAL_ISLAND_IDLE_SPRITE}
               alt="Special island"
               fill
               className={styles.specialImage}
@@ -103,7 +99,9 @@ function getTileCenterContent(viewModel: IslandTileViewModel) {
 export function IslandTileView(viewModel: IslandTileViewModel) {
   const { island, isTileVisible, isBase, deathAnimationOnTile, borderImageSequence, tilePlayerColor, onClick } =
     viewModel;
-  const { isSelected, isPossibleMove, isTeleportTarget, isScoutTarget, isClickable } = viewModel;
+  const { isSelected, isPossibleMove, isTeleportTarget, isScoutTarget, isClickable, prefersReducedMotion } = viewModel;
+  const { timing: fogTiming } = useFogSettings();
+  const tileArt = useTileArt();
 
   return (
     <TooltipProvider>
@@ -124,9 +122,20 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
             createdAt={deathAnimationOnTile.createdAt}
           />
         )}
-        {isTileVisible && <TileDecorations island={island} isBase={isBase} />}
+        <div
+          className={cn(styles.revealLayer, !isTileVisible && styles.revealLayerCovered)}
+          style={toRevealLayerStyle(fogTiming, prefersReducedMotion)}
+          data-testid="tile-reveal-layer"
+        >
+          <TileDecorations island={island} isBase={isBase} />
+          <div className={styles.centerContent}>{getTileCenterContent(viewModel, tileArt)}</div>
+        </div>
         <TileBoats island={island} />
-        <div className={styles.centerContent}>{getTileCenterContent(viewModel)}</div>
+        <TileFog
+          isCovered={!isTileVisible}
+          prefersReducedMotion={prefersReducedMotion}
+          variantSeed={island.x * 31 + island.y}
+        />
         <TileOccupants island={island} />
         <div className={styles.borderRow} style={toBorderRowStyle()}>
           {borderImageSequence.map((src, index) => (
