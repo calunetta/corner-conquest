@@ -3,6 +3,7 @@ import { Outfit } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { PlayerProvider } from '@/modules/session';
+import { FundingChoicesLoader } from '@/modules/consent';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 const outfit = Outfit({
@@ -30,6 +31,7 @@ export default function RootLayout({
             {children}
           </TooltipProvider>
         </PlayerProvider>
+        <FundingChoicesLoader />
         <Toaster />
       </body>
     </html>

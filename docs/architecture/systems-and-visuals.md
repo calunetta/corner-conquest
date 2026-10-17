@@ -32,6 +32,11 @@ Part of the architecture & game-rules docs. Index and directives: [`docs/README.
 #### **Legal Pages (`/privacy`, `/terms`)**
 - **Routes:** `src/app/privacy/page.tsx` and `src/app/terms/page.tsx` are static server components with no session or provider dependency. Both carry a DRAFT banner (pending lawyer review, not legal advice). They use the dark theme inherited from `RootLayout` and a shadcn `Card` (`@/components/ui/card`) for the content.
 
+#### **Consent (Google Funding Choices, `src/modules/consent/`)**
+- **Loader:** `FundingChoicesLoader` is mounted in `RootLayout` (`src/app/layout.tsx`) before `<Toaster />`. It loads Google Funding Choices' script only when `NEXT_PUBLIC_FUNDING_CHOICES_SCRIPT_SRC` is set; otherwise it renders nothing. This env var is not set in any environment yet, so production use needs the publisher's script URL before the script loads.
+- **No app banner:** the app renders no consent UI of its own.
+- **Signal:** `useConsentSignal()` mirrors the CMP's `__tcfapi` signal in memory (`status`, `gdprApplies`, `tcString`). Nothing in `src` consumes it yet.
+
 ## 6.8. Fog of War & Debug Mode
 
 -   **Fog of War (Enabled):** This is the default, tactical experience.
