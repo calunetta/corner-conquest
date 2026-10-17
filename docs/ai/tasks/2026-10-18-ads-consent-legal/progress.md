@@ -81,7 +81,7 @@ Tier: L (sub-phases of the Phase 0 and Phase 1 L-tier tasks, themselves part of 
 - [ ] previews (none — docs only)
 - [ ] checks: typecheck, lint
 - [ ] UI verified (ui-verify) — not applicable, no visual change in this phase
-- [ ] docs-sync: `docs/architecture/structure-and-state.md`, `docs/architecture/systems-and-visuals.md`
+- [x] docs-sync: `docs/architecture/structure-and-state.md`, `docs/architecture/systems-and-visuals.md`
 - [ ] final review (architect-b)
 - [ ] committed: <hash>
 

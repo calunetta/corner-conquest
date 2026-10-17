@@ -38,6 +38,10 @@ Part of the architecture & game-rules docs. Index and directives: [`docs/README.
 - **Signal:** `useConsentSignal()` mirrors the CMP's `__tcfapi` signal in memory (`status`, `gdprApplies`, `tcString`). Only the ad slot (below) consumes it.
 - **Ad slot (`AdSlot`, `src/modules/ads/`):** behind the `NEXT_PUBLIC_ADS_ENABLED === 'true'` flag (off by default) and the consent gate in `useAdSlot()`. It is not mounted on any page. Its view renders a labelled dev placeholder outside production and nothing in production; no ad network or live ad is wired.
 
+#### **Account Deletion (`DeleteAccountButton`, `src/modules/session/components/DeleteAccountButton/`)**
+- **Dialog:** `DeleteAccountButton` is exported from `src/modules/session/index.ts`. Its dialog moves through confirm, deleting and error views and calls `deleteAccount` (§3.1). No page mounts it yet; it is shown only in the testbed.
+- **Firestore rules change:** `firestore.rules` now lets the owning uid delete its own `accounts/{uid}` and `usernames/{name}`. This change is **not yet tested with `npm run test:rules`** (needs the Firestore emulator and Java 21). Run it before the rules are deployed.
+
 ## 6.8. Fog of War & Debug Mode
 
 -   **Fog of War (Enabled):** This is the default, tactical experience.
