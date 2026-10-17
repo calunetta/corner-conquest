@@ -22,7 +22,7 @@ import {
 import { DECORATION_LAYOUTS_DEFAULT } from '../TileDecorations/TileDecorations.map';
 import { BaseCrest } from './IslandTile.base';
 import { SpecialIslandArt } from './IslandTile.special';
-import { toTerrainStyle } from './IslandTile.terrain.map';
+import { TileGround } from './IslandTile.ground';
 import { MonsterIcons } from './IslandTile.monsters';
 import { useIslandTile } from './IslandTile.hook';
 import {
@@ -94,7 +94,7 @@ function getTileCenterContent(viewModel: IslandTileViewModel, picks: TilePicks) 
 
 /** Pure view: everything comes from props, so tests and previews need no providers. */
 export function IslandTileView(viewModel: IslandTileViewModel) {
-  const { island, isTileVisible, isBase, deathAnimationOnTile, borderImageSequence, tilePlayerColor, onClick, showDecorations = true } =
+  const { island, isTileVisible, isNeutralFog, isBase, deathAnimationOnTile, borderImageSequence, tilePlayerColor, onClick, showDecorations = true } =
     viewModel;
   const { isSelected, isPossibleMove, isTeleportTarget, isScoutTarget, isClickable, prefersReducedMotion } = viewModel;
   const { timing: fogTiming } = useFogSettings();
@@ -104,10 +104,7 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
   // The board spreads variants so neighbours differ; the seed pick is only the fallback outside the board.
   const assigned = useAssignedTileVariant(island.id);
   const picks: TilePicks = toTilePicks(variants, assigned, seed, ownerColor);
-  const decorationLayouts = toDecorationLayoutsConfig(
-    DECORATION_LAYOUTS_DEFAULT,
-    assigned ?? toTileVariant(island, variants, seed, ownerColor),
-  );
+  const decorationLayouts = toDecorationLayoutsConfig(DECORATION_LAYOUTS_DEFAULT, assigned ?? toTileVariant(island, variants, seed, ownerColor));
 
   return (
     <TooltipProvider>
@@ -120,7 +117,13 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
         aria-label={`Island at ${island.x}, ${island.y}`}
         data-testid={`island-tile-${island.x}-${island.y}`}
       >
-        <div className={styles.terrain} style={toTerrainStyle(island)} />
+        <TileGround
+          island={island}
+          isNeutralFog={isNeutralFog}
+          isTileVisible={isTileVisible}
+          timing={fogTiming}
+          prefersReducedMotion={prefersReducedMotion}
+        />
         {deathAnimationOnTile && (
           <DeathEffect
             sprite={deathAnimationOnTile.sprite}
@@ -139,7 +142,6 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
         <TileBoats island={island} />
         <TileFog
           isCovered={!isTileVisible}
-          isNeutral={viewModel.isNeutralFog}
           prefersReducedMotion={prefersReducedMotion}
           variantSeed={island.x * 31 + island.y}
         />

@@ -3,7 +3,6 @@ import { act, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { DEFAULT_FOG_TIMING, DEFAULT_FOG_VARIANTS } from './TileFog.config';
 import { TileFog } from './TileFog';
-import { NEUTRAL_FOG_COLOUR } from './TileFog.map';
 
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -79,38 +78,5 @@ describe('TileFog', () => {
 
     expect(screen.getByTestId('tile-fog')).toHaveAttribute('data-phase', 'cleared');
     expect(renderedSources()).toEqual([]);
-  });
-
-  describe('neutral fog', () => {
-    it('keeps the terrain-coloured fog when the setting is off (default)', () => {
-      render(<TileFog isCovered prefersReducedMotion={false} variantSeed={0} />);
-
-      const layer = screen.getByTestId('tile-fog');
-      expect(layer).toHaveAttribute('data-neutral', 'false');
-      expect(layer.style.backgroundColor).toBe('');
-      expect(layer).not.toHaveClass('rounded-lg');
-    });
-
-    it('paints an opaque grey backing under covered fog when the setting is on', () => {
-      render(<TileFog isCovered isNeutral prefersReducedMotion={false} variantSeed={0} />);
-
-      const layer = screen.getByTestId('tile-fog');
-      expect(layer).toHaveAttribute('data-neutral', 'true');
-      expect(layer).toHaveStyle({ backgroundColor: NEUTRAL_FOG_COLOUR });
-      expect(layer).toHaveClass('rounded-lg');
-      expect(renderedSources()).toEqual([FOG_STILL_SRC]);
-    });
-
-    it('keeps the grey backing through the pass and fade, so terrain does not flash before the fade', () => {
-      const { rerender } = render(<TileFog isCovered isNeutral prefersReducedMotion={false} variantSeed={0} />);
-
-      rerender(<TileFog isCovered={false} isNeutral prefersReducedMotion={false} variantSeed={0} />);
-      act(() => {
-        jest.advanceTimersByTime(DEFAULT_FOG_TIMING.fadeStartMs);
-      });
-
-      expect(screen.getByTestId('tile-fog')).toHaveAttribute('data-phase', 'fadingOut');
-      expect(screen.getByTestId('tile-fog')).toHaveStyle({ backgroundColor: NEUTRAL_FOG_COLOUR });
-    });
   });
 });

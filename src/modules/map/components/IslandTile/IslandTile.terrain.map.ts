@@ -18,3 +18,6 @@ export function toTerrainStyle(island: Island): CSSProperties | undefined {
   const filter = TERRAIN_FILTERS[island.type];
   return filter ? { filter } : undefined;
 }
+
+/** Plain grey the ground is drawn in while a covered tile hides its terrain (settings.neutralFog). Tailwind zinc-600. */
+export const NEUTRAL_GROUND_COLOUR = '#52525b';
