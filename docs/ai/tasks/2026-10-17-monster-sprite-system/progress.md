@@ -37,10 +37,18 @@ Tier: L · Phases: 3 (Phase 1 detailed in plan.md; Phases 2-3 outlined only, to 
 - [x] UI verified (ui-verify) — preview-b APPROVED; desktop + mobile screenshots under test-results/ui-verify/. Not exercised: boss warning line, clamp on Boss-off, file picks, submit paths (not submitted to avoid writing public/)
 - [x] docs-sync — `systems-and-visuals.md:182` bullet; game-mechanics.md unchanged (already documents caps)
 - [x] final review (architect-b) — APPROVED, review.md "Phase 3 review"
-- [ ] committed: <hash>
+- [x] committed: e0046b1
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
 - 2026-10-17 architect-a: DONE, wrote plan.md (Phase 1 detailed) and progress.md, Status: PROPOSED
 - 2026-10-17 architect-b: CHANGES REQUESTED on plan.md (missing docs-sync, 2 citation fixes, 1 signature narrowing, 1 non-blocking lint note)
 - 2026-10-17 architect-a: DONE, revised plan.md and progress.md per architect-b's findings, Status: PROPOSED
+- 2026-10-17 implementer-a: DONE, hook.ts; revisions (per-field GIF copy, pick-time size check, stale-error clearing)
+- 2026-10-17 implementer-b: DONE, view files verified; remount fix (fileInputResetKey)
+- 2026-10-17 tester-a: DONE, logic tests (187 pass in 4 files)
+- 2026-10-17 tester-b: DONE, view tests (31 pass)
+- 2026-10-17 preview-a: DONE, preview registered under Dev tools
+- 2026-10-17 preview-b: APPROVED, desktop/mobile ui-verify, no console errors
+- 2026-10-17 docs-sync: DONE, systems-and-visuals.md:182
+- 2026-10-17 architect-b: APPROVED (final review), review.md
