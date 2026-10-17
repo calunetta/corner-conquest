@@ -14,7 +14,7 @@ Tier: L · Phases: 2
 - [x] checks: typecheck, lint, unit tests
 - [ ] UI verified (ui-verify) — no preview-b hand-off or screenshots found in this task folder; not ticked
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 0ecec69
 
 ## Phase 2: ActionsPanel, MobileActionsBar, ActionButton, MobileSheetTriggers, GameLog, TutorialBeacon
 - [x] plan approved (architect-b)
