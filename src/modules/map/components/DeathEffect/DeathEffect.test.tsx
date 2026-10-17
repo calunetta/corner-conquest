@@ -1,5 +1,6 @@
 'use client';
 
+import { MONSTER_SIZE_PERCENT } from '../../island-tile-slots.types';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -51,8 +52,8 @@ describe('DeathEffect Component', () => {
     const now = Date.now();
     render(<DeathEffect sprite={mockSprite} id={mockId} createdAt={now} />);
     const image = screen.getByAltText('Death animation') as HTMLImageElement;
-    expect(image.width).toBe(64);
-    expect(image.height).toBe(64);
+    expect(image.style.width).toBe(`${MONSTER_SIZE_PERCENT}%`);
+    expect(image.style.height).toBe('auto');
   });
 
   it('handles different death sprite paths', () => {

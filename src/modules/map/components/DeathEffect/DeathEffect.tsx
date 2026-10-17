@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { MONSTER_SPRITE_SIZE_PX } from '../../island-tile-slots.types';
+import { MONSTER_SIZE_PERCENT } from '../../island-tile-slots.types';
 import { useDeathEffect } from './DeathEffect.hook';
 import { styles } from './DeathEffect.styles';
 import type { DeathEffectProps } from './DeathEffect.types';
@@ -17,8 +17,9 @@ export function DeathEffect(props: DeathEffectProps) {
         key={props.id}
         src={freshSpriteSrc}
         alt="Death animation"
-        width={MONSTER_SPRITE_SIZE_PX}
-        height={MONSTER_SPRITE_SIZE_PX}
+        width={256}
+        height={256}
+        style={{ width: `${MONSTER_SIZE_PERCENT}%`, height: 'auto', aspectRatio: '1 / 1' }}
         unoptimized
         priority
       />

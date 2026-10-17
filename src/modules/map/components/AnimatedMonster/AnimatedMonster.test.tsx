@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { BOSS_MONSTER_SCALE, MONSTER_SIZE_PERCENT } from '../../island-tile-slots.types';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { AnimatedMonster } from './AnimatedMonster';
@@ -66,18 +67,17 @@ describe('AnimatedMonster Component', () => {
   });
 
   describe('sprite size', () => {
-    it('renders a non-boss monster at 64x64', () => {
+    it('sizes a non-boss monster as a percent of its tile', () => {
       render(<AnimatedMonster monster={mockMonster} />);
       const image = screen.getByAltText('Lancer');
-      expect(image).toHaveAttribute('width', '64');
-      expect(image).toHaveAttribute('height', '64');
+      expect(image.style.width).toBe(`${MONSTER_SIZE_PERCENT}%`);
+      expect(image.style.height).toBe('auto');
     });
 
-    it('renders a boss monster at 96x96', () => {
+    it('sizes a boss monster BOSS_MONSTER_SCALE times larger than a non-boss, still as a percent of its tile', () => {
       render(<AnimatedMonster monster={{ ...mockMonster, isBoss: true }} />);
       const image = screen.getByAltText('Lancer');
-      expect(image).toHaveAttribute('width', '96');
-      expect(image).toHaveAttribute('height', '96');
+      expect(image.style.width).toBe(`${MONSTER_SIZE_PERCENT * BOSS_MONSTER_SCALE}%`);
     });
   });
 });

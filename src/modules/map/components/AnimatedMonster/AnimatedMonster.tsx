@@ -5,11 +5,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAnimatedMonster } from './AnimatedMonster.hook';
 import { styles } from './AnimatedMonster.styles';
 import type { AnimatedMonsterProps } from './AnimatedMonster.types';
-import { BOSS_MONSTER_SCALE, MONSTER_SPRITE_SIZE_PX } from '../../island-tile-slots.types';
+import { BOSS_MONSTER_SCALE, MONSTER_SIZE_PERCENT } from '../../island-tile-slots.types';
+
+// Intrinsic size of the monster GIFs. Only the aspect and the layout hint matter; CSS sets the drawn size.
+const SPRITE_NATURAL_PX = 256;
 
 export function AnimatedMonster({ monster }: AnimatedMonsterProps) {
   const { spriteSrc, styleTransform } = useAnimatedMonster(monster);
-  const spriteSizePx = monster.isBoss ? Math.round(MONSTER_SPRITE_SIZE_PX * BOSS_MONSTER_SCALE) : MONSTER_SPRITE_SIZE_PX;
+  const sizePercent = monster.isBoss ? MONSTER_SIZE_PERCENT * BOSS_MONSTER_SCALE : MONSTER_SIZE_PERCENT;
 
   return (
     <Tooltip>
@@ -18,10 +21,10 @@ export function AnimatedMonster({ monster }: AnimatedMonsterProps) {
           <Image
             src={spriteSrc}
             alt={monster.name}
-            width={spriteSizePx}
-            height={spriteSizePx}
+            width={SPRITE_NATURAL_PX}
+            height={SPRITE_NATURAL_PX}
             className={styles.image}
-            style={{ transform: styleTransform }}
+            style={{ transform: styleTransform, width: `${sizePercent}%`, height: 'auto', aspectRatio: '1 / 1' }}
             unoptimized
           />
         </div>
