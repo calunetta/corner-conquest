@@ -4,16 +4,16 @@ import type { TileVariant, TileVariantsConfig } from './TileVariants.config';
 const centred = { x: 50, y: 50, size: 100 };
 const config: TileVariantsConfig = {
   images: [
-    { id: 'special-a', type: 'special', name: 'a', image: '/sprites/tile-variants/generated/special/a.png' },
+    { id: 'empty-a', type: 'empty', name: 'a', image: '/sprites/tile-variants/generated/empty/a.png' },
     { id: 'base-b', type: 'base', name: 'b', image: '/sprites/tile-variants/generated/base/b.png' },
   ],
-  variants: [{ id: 'special-taken', type: 'special', name: 'taken', image: null, transform: centred, color: null }],
+  variants: [{ id: 'empty-taken', type: 'empty', name: 'taken', image: null, transform: centred, color: null }],
 };
 const draft = (overrides: Partial<TileVariant> = {}): TileVariant => ({
-  id: 'special-new',
-  type: 'special',
+  id: 'empty-new',
+  type: 'empty',
   name: 'New look',
-  image: '/sprites/tile-variants/generated/special/a.png',
+  image: '/sprites/tile-variants/generated/empty/a.png',
   transform: { x: 30, y: 40, size: 50 },
   color: null,
   ...overrides,
@@ -32,7 +32,7 @@ describe('toSlug and toVariantId', () => {
 });
 
 describe('validateVariant', () => {
-  it('accepts a valid special variant on an image of its type', () => {
+  it('accepts a valid variant on an image of its type', () => {
     expect(validateVariant(config, draft(), true)).toBeNull();
   });
 
@@ -42,13 +42,19 @@ describe('validateVariant', () => {
   });
 
   it('rejects a name that already exists for the type', () => {
-    expect(validateVariant(config, draft({ id: 'special-taken', name: 'taken' }), true)).toMatch(/already exists/);
-    expect(validateVariant(config, draft({ id: 'special-taken', name: 'taken' }), false)).toBeNull();
+    expect(validateVariant(config, draft({ id: 'empty-taken', name: 'taken' }), true)).toMatch(/already exists/);
+    expect(validateVariant(config, draft({ id: 'empty-taken', name: 'taken' }), false)).toBeNull();
   });
 
   it('requires a colour on base castles and only base castles may have one', () => {
     expect(validateVariant(config, draft({ type: 'base', color: null, image: null }), true)).toMatch(/needs a colour/);
     expect(validateVariant(config, draft({ color: 'red' }), true)).toMatch(/Only base castles/);
+  });
+
+  it('refuses a picture on the special and resource islands, which always use the built-in art', () => {
+    expect(validateVariant(config, draft({ type: 'resource-gold', color: null }), true)).toMatch(/built-in art/);
+    expect(validateVariant(config, draft({ image: null }), true)).toBeNull();
+    expect(validateVariant(config, draft({ type: 'resource-wood', image: null }), true)).toBeNull();
   });
 
   it('rejects an image that is not in the folders or belongs to another type', () => {
