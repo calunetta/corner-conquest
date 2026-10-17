@@ -15,7 +15,7 @@ Tier: L · Phases: 2
 - [x] UI verified (ui-verify) — none planned, no visible change
 - [x] docs updated (docs-sync)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 33aed66
 
 ## Phase 2: combat dialogs wired to the registry
 - [x] plan approved (architect-b)
