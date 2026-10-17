@@ -10,6 +10,8 @@ import {
   signOut,
   onAuthStateChanged,
   linkWithPopup,
+  deleteUser,
+  reauthenticateWithPopup,
 } from '@/lib/firebase';
 import { findUsernameOwner } from './player-session.service';
 
@@ -84,6 +86,47 @@ export async function bindUsernameToAccount(username: string, authUid: string): 
   batch.set(doc(db, 'usernames', username), { playerId: authUid, authUid });
   batch.set(doc(db, 'accounts', authUid), { username });
   await batch.commit();
+}
+
+function isRecentLoginRequired(error: unknown): boolean {
+  return (error as { code?: string } | null)?.code === 'auth/requires-recent-login';
+}
+
+/**
+ * Deletes the signed-in player's account: usernames/{username} (if `username` is given) and
+ * accounts/{uid} (a no-op delete if it doesn't exist, e.g. a guest) in one batch, then the
+ * Firebase Auth user itself. Firestore is deleted first because the rules key on
+ * request.auth.uid, which is gone once the Auth user is deleted. Throws
+ * `new Error('No active session to delete.')` if nobody is signed in.
+ *
+ * If the final deleteUser call fails with `auth/requires-recent-login`:
+ * - Google-linked account: reauthenticates once via a Google popup, then retries deleteUser.
+ *   Any further failure (including a cancelled popup) is rethrown untouched.
+ * - Guest (anonymous) account: rethrown immediately — there is no credential to reauthenticate
+ *   an anonymous session with. Firestore docs are already gone at that point; only the Auth
+ *   user remains, which the caller's UI must tell the player about.
+ */
+export async function deleteAccount(username: string | null): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('No active session to delete.');
+  }
+  const batch = writeBatch(db);
+  if (username !== null) {
+    batch.delete(doc(db, 'usernames', username));
+  }
+  batch.delete(doc(db, 'accounts', user.uid));
+  await batch.commit();
+
+  try {
+    await deleteUser(user);
+  } catch (error) {
+    if (!isRecentLoginRequired(error) || user.isAnonymous) {
+      throw error;
+    }
+    await reauthenticateWithPopup(user, new GoogleAuthProvider());
+    await deleteUser(user);
+  }
 }
 
 /**

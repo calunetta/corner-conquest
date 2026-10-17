@@ -49,8 +49,10 @@ service cloud.firestore {
         );
 
       // Guest reservations can be released on logout/beforeunload, exactly as before.
-      // Account reservations are permanent: no delete, ever.
-      allow delete: if resource.data.get('authUid', null) == null;
+      // An account-bound reservation may be deleted only by the account that owns it
+      // (account.service.ts deleteAccount); no one else may delete it.
+      allow delete: if resource.data.get('authUid', null) == null ||
+        (request.auth != null && resource.data.get('authUid', null) == request.auth.uid);
     }
 
     // Reverse lookup: which username does this Firebase Auth account own. Written once,
@@ -61,7 +63,9 @@ service cloud.firestore {
         request.auth.uid == authUid &&
         request.resource.data.username is string;
       allow update: if false; // picking a username is a one-time action
-      allow delete: if false; // never released, by design
+      // Account deletion (account.service.ts deleteAccount): the owner may delete their own
+      // accounts/{uid} doc. No one else may delete another account's doc.
+      allow delete: if request.auth != null && request.auth.uid == authUid;
     }
 
     // True when request.auth is a seated participant of the given players list

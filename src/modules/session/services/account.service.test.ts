@@ -13,6 +13,8 @@ jest.mock('@/lib/firebase', () => {
     signOut: jest.fn(),
     onAuthStateChanged: jest.fn(),
     linkWithPopup: jest.fn(),
+    deleteUser: jest.fn(),
+    reauthenticateWithPopup: jest.fn(),
   };
 });
 
@@ -28,10 +30,13 @@ import {
   signOut,
   onAuthStateChanged,
   linkWithPopup,
+  deleteUser,
+  reauthenticateWithPopup,
 } from '@/lib/firebase';
 import {
   bindUsernameToAccount,
   claimAccountUsername,
+  deleteAccount,
   findAccountUsername,
   linkGoogleAccount,
   signInAnonymously,
@@ -49,6 +54,8 @@ const mockSignInAnonymouslyWithFirebase = signInAnonymouslyWithFirebase as jest.
 const mockSignOut = signOut as jest.Mock;
 const mockOnAuthStateChanged = onAuthStateChanged as jest.Mock;
 const mockLinkWithPopup = linkWithPopup as jest.Mock;
+const mockDeleteUser = deleteUser as jest.Mock;
+const mockReauthenticateWithPopup = reauthenticateWithPopup as jest.Mock;
 
 const existingSnapshot = (data: Record<string, unknown>) => ({ exists: () => true, data: () => data });
 const missingSnapshot = () => ({ exists: () => false, data: () => undefined });
@@ -61,12 +68,12 @@ function givenDocs(docs: Record<string, ReturnType<typeof existingSnapshot> | Re
 }
 
 describe('account.service', () => {
-  let batch: { set: jest.Mock; commit: jest.Mock };
+  let batch: { set: jest.Mock; delete: jest.Mock; commit: jest.Mock };
 
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, 'error').mockImplementation(() => {});
-    batch = { set: jest.fn(), commit: jest.fn().mockResolvedValue(undefined) };
+    batch = { set: jest.fn(), delete: jest.fn(), commit: jest.fn().mockResolvedValue(undefined) };
     mockWriteBatch.mockReturnValue(batch);
   });
 
@@ -440,6 +447,112 @@ describe('account.service', () => {
 
       expect(isClaimed).toBe(false);
       expect(console.error).toHaveBeenCalledWith('Error claiming account username:', expect.any(Error));
+    });
+  });
+
+  describe('deleteAccount', () => {
+    const recentLoginError = Object.assign(new Error('recent login'), { code: 'auth/requires-recent-login' });
+    let user: { uid: string; isAnonymous: boolean };
+
+    beforeEach(() => {
+      user = { uid: 'uid_1', isAnonymous: false };
+      (auth as { currentUser: unknown }).currentUser = user;
+      mockDeleteUser.mockResolvedValue(undefined);
+      mockReauthenticateWithPopup.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+      (auth as { currentUser: unknown }).currentUser = undefined;
+    });
+
+    it('deletes usernames/{username} and accounts/{uid} in one committed batch', async () => {
+      await deleteAccount('alice');
+
+      expect(mockWriteBatch).toHaveBeenCalledWith(db);
+      expect(batch.delete).toHaveBeenCalledTimes(2);
+      expect(batch.delete).toHaveBeenCalledWith({ database: db, collection: 'usernames', id: 'alice' });
+      expect(batch.delete).toHaveBeenCalledWith({ database: db, collection: 'accounts', id: 'uid_1' });
+      expect(batch.commit).toHaveBeenCalledTimes(1);
+    });
+
+    it('deletes only accounts/{uid} when no username was claimed', async () => {
+      await deleteAccount(null);
+
+      expect(batch.delete).toHaveBeenCalledTimes(1);
+      expect(batch.delete).toHaveBeenCalledWith({ database: db, collection: 'accounts', id: 'uid_1' });
+    });
+
+    it('deletes the Auth user only after the batch commit has resolved', async () => {
+      const order: string[] = [];
+      batch.commit.mockImplementation(async () => {
+        order.push('commit');
+      });
+      mockDeleteUser.mockImplementation(async () => {
+        order.push('deleteUser');
+      });
+
+      await deleteAccount('alice');
+
+      expect(order).toEqual(['commit', 'deleteUser']);
+      expect(mockDeleteUser).toHaveBeenCalledWith(user);
+    });
+
+    it('rejects with "No active session to delete." and touches nothing when signed out', async () => {
+      (auth as { currentUser: unknown }).currentUser = null;
+
+      await expect(deleteAccount('alice')).rejects.toThrow('No active session to delete.');
+      expect(mockWriteBatch).not.toHaveBeenCalled();
+      expect(mockDeleteUser).not.toHaveBeenCalled();
+    });
+
+    it('does not delete the Auth user when the batch commit fails', async () => {
+      batch.commit.mockRejectedValue(new Error('permission-denied'));
+
+      await expect(deleteAccount('alice')).rejects.toThrow('permission-denied');
+      expect(mockDeleteUser).not.toHaveBeenCalled();
+    });
+
+    it('reauthenticates a Google-linked user with a Google popup, then retries deleteUser', async () => {
+      mockDeleteUser.mockRejectedValueOnce(recentLoginError);
+
+      await deleteAccount('alice');
+
+      expect(mockReauthenticateWithPopup).toHaveBeenCalledWith(user, { name: 'google-provider' });
+      expect(mockDeleteUser).toHaveBeenCalledTimes(2);
+    });
+
+    it('propagates the failure when the retry after reauthentication also rejects', async () => {
+      const retryError = new Error('network down');
+      mockDeleteUser.mockRejectedValueOnce(recentLoginError).mockRejectedValueOnce(retryError);
+
+      await expect(deleteAccount('alice')).rejects.toBe(retryError);
+    });
+
+    it('propagates a cancelled reauthentication popup without retrying deleteUser', async () => {
+      const cancelled = Object.assign(new Error('popup closed'), { code: 'auth/popup-closed-by-user' });
+      mockDeleteUser.mockRejectedValueOnce(recentLoginError);
+      mockReauthenticateWithPopup.mockRejectedValue(cancelled);
+
+      await expect(deleteAccount('alice')).rejects.toBe(cancelled);
+      expect(mockDeleteUser).toHaveBeenCalledTimes(1);
+    });
+
+    it('rethrows requires-recent-login for a guest without trying to reauthenticate', async () => {
+      user.isAnonymous = true;
+      mockDeleteUser.mockRejectedValue(recentLoginError);
+
+      await expect(deleteAccount(null)).rejects.toBe(recentLoginError);
+      expect(mockReauthenticateWithPopup).not.toHaveBeenCalled();
+      expect(mockDeleteUser).toHaveBeenCalledTimes(1);
+    });
+
+    it('rethrows any other deleteUser error untouched, with no reauthentication or retry', async () => {
+      const otherError = Object.assign(new Error('network'), { code: 'auth/network-request-failed' });
+      mockDeleteUser.mockRejectedValue(otherError);
+
+      await expect(deleteAccount('alice')).rejects.toBe(otherError);
+      expect(mockReauthenticateWithPopup).not.toHaveBeenCalled();
+      expect(mockDeleteUser).toHaveBeenCalledTimes(1);
     });
   });
 });

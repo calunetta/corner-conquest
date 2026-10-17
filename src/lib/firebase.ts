@@ -26,6 +26,8 @@ import {
     onAuthStateChanged,
     connectAuthEmulator,
     linkWithPopup,
+    deleteUser,
+    reauthenticateWithPopup,
 } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -66,6 +68,8 @@ export {
     signOut,
     onAuthStateChanged,
     linkWithPopup,
+    deleteUser,
+    reauthenticateWithPopup,
     doc,
     getDoc,
     setDoc,

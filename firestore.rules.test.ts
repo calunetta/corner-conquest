@@ -244,19 +244,46 @@ describe('Firestore Rules: usernames collection', () => {
       ).resolves.toBeUndefined();
     });
 
-    it('should reject deleting a permanent binding, even by its owner', async () => {
-      await seedWithRulesDisabled('usernames/keep_forever', {
+    it('should allow the owner to delete their own account-bound username', async () => {
+      await seedWithRulesDisabled('usernames/alice_bound', {
         playerId: 'uid_alice',
         authUid: 'uid_alice',
       });
       const testDb = testEnv.authenticatedContext('uid_alice').firestore();
 
       await expect(
-        testDb.doc('usernames/keep_forever').delete()
+        testDb.doc('usernames/alice_bound').delete()
+      ).resolves.toBeUndefined();
+
+      const remaining = await testDb.doc('usernames/alice_bound').get();
+      expect(remaining.exists).toBe(false);
+    });
+
+    it('should reject a different uid deleting someone else\'s account-bound username', async () => {
+      await seedWithRulesDisabled('usernames/alice_bound', {
+        playerId: 'uid_alice',
+        authUid: 'uid_alice',
+      });
+      const testDb = testEnv.authenticatedContext('uid_mallory').firestore();
+
+      await expect(
+        testDb.doc('usernames/alice_bound').delete()
       ).rejects.toThrow();
 
-      const remaining = await testDb.doc('usernames/keep_forever').get();
+      const remaining = await testEnv.authenticatedContext('uid_alice').firestore().doc('usernames/alice_bound').get();
       expect(remaining.data()).toEqual({ playerId: 'uid_alice', authUid: 'uid_alice' });
+    });
+
+    it('should reject an unauthenticated client deleting an account-bound username', async () => {
+      await seedWithRulesDisabled('usernames/alice_bound', {
+        playerId: 'uid_alice',
+        authUid: 'uid_alice',
+      });
+      const testDb = testEnv.unauthenticatedContext().firestore();
+
+      await expect(
+        testDb.doc('usernames/alice_bound').delete()
+      ).rejects.toThrow();
     });
   });
 
@@ -441,16 +468,37 @@ describe('Firestore Rules: accounts collection', () => {
       expect((snap.data() as AccountDoc).username).toBe('alice_perm');
     });
 
-    it('should reject deleting an accounts doc, even by its owner', async () => {
+    it('should allow the owner to delete their own accounts doc', async () => {
       await seedWithRulesDisabled('accounts/uid_alice', { username: 'alice_perm' });
       const db = testEnv.authenticatedContext('uid_alice').firestore();
 
       await expect(
         db.doc('accounts/uid_alice').delete()
-      ).rejects.toThrow();
+      ).resolves.toBeUndefined();
 
       const snap = await db.doc('accounts/uid_alice').get();
+      expect(snap.exists).toBe(false);
+    });
+
+    it('should reject a different uid deleting someone else\'s accounts doc', async () => {
+      await seedWithRulesDisabled('accounts/uid_alice', { username: 'alice_perm' });
+      const db = testEnv.authenticatedContext('uid_mallory').firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').delete()
+      ).rejects.toThrow();
+
+      const snap = await testEnv.authenticatedContext('uid_alice').firestore().doc('accounts/uid_alice').get();
       expect(snap.exists).toBe(true);
+    });
+
+    it('should reject an unauthenticated client deleting an accounts doc', async () => {
+      await seedWithRulesDisabled('accounts/uid_alice', { username: 'alice_perm' });
+      const db = testEnv.unauthenticatedContext().firestore();
+
+      await expect(
+        db.doc('accounts/uid_alice').delete()
+      ).rejects.toThrow();
     });
   });
 });
