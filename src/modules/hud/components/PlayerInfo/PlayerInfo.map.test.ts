@@ -1,5 +1,7 @@
 import type { Player } from '@/lib/types';
 import { CardName } from '@/lib/types';
+import { AVATAR_CATALOG } from '@/modules/avatars';
+import { PLAYER_DATA } from '@/modules/game-rules';
 import { RESOURCE_GAIN_SPRITES } from '@/modules/shared';
 import { toPlayerInfoViewModel } from './PlayerInfo.map';
 
@@ -35,6 +37,20 @@ const createPlayer = (overrides: Partial<Player> = {}): Player =>
 const mockTurnTimer = { formattedTime: '1:30', isExpiring: false };
 
 describe('toPlayerInfoViewModel', () => {
+  describe('avatarSrc', () => {
+    it('uses the chosen avatar image when avatarId is set', () => {
+      const result = toPlayerInfoViewModel(createPlayer({ avatarId: 'human-04' }), true, 10, mockTurnTimer, false);
+
+      expect(result.avatarSrc).toBe(AVATAR_CATALOG['human-04'].src);
+    });
+
+    it.each([undefined, null, 'human-99'])('falls back to the color idle sprite for avatarId %p', (avatarId) => {
+      const result = toPlayerInfoViewModel(createPlayer({ avatarId }), true, 10, mockTurnTimer, false);
+
+      expect(result.avatarSrc).toBe(PLAYER_DATA.blue.sprite.idle);
+    });
+  });
+
   describe('basic player info', () => {
     it('includes correct player properties', () => {
       const player = createPlayer({ name: 'Alice', color: 'red', isBot: true });

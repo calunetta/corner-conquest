@@ -31,7 +31,7 @@ export function PlayerInfoView(viewModel: PlayerInfoViewModel) {
             <div className={styles.avatarSection}>
               <div className={cn(styles.avatarContainer, playerRingColors[viewModel.color])}>
                 <Image
-                  src={viewModel.spriteSrc}
+                  src={viewModel.avatarSrc}
                   alt={`${viewModel.color} player`}
                   width={36}
                   height={36}

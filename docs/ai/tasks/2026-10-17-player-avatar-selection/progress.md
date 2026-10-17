@@ -16,11 +16,11 @@ Tier: L · Phases: 3
 - [x] committed: d22526f
 
 ## Phase 2: Lobby, HUD, victory rendering + header picker
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] final review (architect-b)
-- [ ] committed: <hash>
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] checks: typecheck, lint, unit tests — typecheck clean, lint clean (0 warnings), `npx jest src/modules/avatars src/modules/hud/components/PlayerInfo src/modules/session src/modules/lobby src/modules/game-rules`: Test Suites 83 passed, Tests 1252 passed
+- [x] final review (architect-b) — APPROVED round 2, see review.md. Non-blocking: real session↔avatars import cycle (madge), recorded for a future cleanup
+- [x] committed: <hash>
 
 ## Phase 3: Previews, docs, verification
 - [ ] previews (preview-a)

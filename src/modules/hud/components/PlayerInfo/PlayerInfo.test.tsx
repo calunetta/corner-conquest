@@ -3,6 +3,7 @@ import { useGameBoard } from '@/features/game/context/GameBoardContext';
 import { useResourceGainEvents } from '@/modules/game-board';
 import { RESOURCE_GAIN_ANIMATION_MS, RESOURCE_GAIN_SPRITES } from '@/modules/shared';
 import { CardName, ResourceType } from '@/lib/types';
+import { AVATAR_CATALOG } from '@/modules/avatars';
 import type { Player } from '@/lib/types';
 import type { PlayerInfoViewModel } from './PlayerInfo.types';
 import { currentPlayerWithBuffs, botPlayerNoBuffs } from './PlayerInfo.fixtures';
@@ -270,8 +271,24 @@ describe('PlayerInfoView', () => {
 
       const images = container.querySelectorAll('img');
       expect(images.length).toBeGreaterThan(0);
-      const spriteImage = Array.from(images).find((img) => img.src.includes(viewModel.spriteSrc));
+      const spriteImage = Array.from(images).find((img) => img.src.includes(viewModel.avatarSrc));
       expect(spriteImage).toBeInTheDocument();
+    });
+
+    it('renders the chosen avatar image from avatarSrc when an avatar is set', () => {
+      const avatarSrc = AVATAR_CATALOG['human-07'].src;
+      render(<PlayerInfoView {...currentPlayerWithBuffs} avatarSrc={avatarSrc} />);
+
+      const avatarImage = screen.getAllByRole('img').find((img) => decodeURI(img.getAttribute('src') ?? '') === avatarSrc);
+      expect(avatarImage).toBeInTheDocument();
+    });
+
+    it('renders the color sprite image when avatarSrc is the color sprite (no avatar set)', () => {
+      render(<PlayerInfoView {...currentPlayerWithBuffs} />);
+
+      const sources = screen.getAllByRole('img').map((img) => decodeURI(img.getAttribute('src') ?? ''));
+      expect(sources).toContain(currentPlayerWithBuffs.avatarSrc);
+      expect(sources.some((src) => src.includes('Human Avatars'))).toBe(false);
     });
   });
 
@@ -418,7 +435,7 @@ describe('PlayerInfoView', () => {
       const { container } = render(<PlayerInfoView {...viewModel} />);
 
       const images = container.querySelectorAll('img');
-      const spriteImage = Array.from(images).find((img) => img.src.includes(viewModel.spriteSrc));
+      const spriteImage = Array.from(images).find((img) => img.src.includes(viewModel.avatarSrc));
       expect(spriteImage).toHaveAttribute('alt');
       expect(spriteImage?.getAttribute('alt')).toMatch(/player|commander/i);
     });

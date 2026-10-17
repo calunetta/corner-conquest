@@ -1,4 +1,5 @@
 import type { GameSettings, GameState, PlayerColor } from '@/lib/types';
+import type { AvatarPickerButtonViewModel } from '@/modules/avatars';
 import type { LinkGoogleAccountButtonViewProps } from '@/modules/session';
 
 export type LobbyProps = {
@@ -9,6 +10,7 @@ export type LobbyViewModel = {
   username: string | null;
   isGuest: boolean;
   linkGoogleAccountButton: LinkGoogleAccountButtonViewProps;
+  avatarPicker: AvatarPickerButtonViewModel;
   games: GameState[];
   isGamesLoading: boolean;
   isCreateDialogOpen: boolean;

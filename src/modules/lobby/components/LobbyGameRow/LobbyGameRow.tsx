@@ -1,6 +1,6 @@
 'use client';
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { RegistryIcon } from '@/modules/shared';
 import type { GameSettings } from '@/lib/types';
-import { toSettingsSummaryRows } from './LobbyGameRow.map';
+import { toPlayerAvatars, toSettingsSummaryRows } from './LobbyGameRow.map';
 import { styles } from './LobbyGameRow.styles';
 import type { LobbyGameRowProps } from './LobbyGameRow.types';
 
@@ -63,15 +63,17 @@ export function LobbyGameRow({
   onJoin,
 }: LobbyGameRowProps) {
   const isFull = game.players.length >= game.maxPlayers;
+  const playerAvatars = toPlayerAvatars(game.players);
 
   return (
     <div className={styles.root}>
       <div className={styles.playersGroup}>
         <div className={styles.avatarStack}>
-          {game.players.map((p) => (
+          {playerAvatars.map((p) => (
             <Tooltip key={p.playerId}>
               <TooltipTrigger asChild>
                 <Avatar className="h-8 w-8 border-2" style={{ borderColor: p.color }}>
+                  {p.avatarSrc && <AvatarImage src={p.avatarSrc} alt={p.name} />}
                   <AvatarFallback style={{ backgroundColor: p.color }} className="text-white font-bold">
                     {p.name.charAt(0)}
                   </AvatarFallback>

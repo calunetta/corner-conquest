@@ -1,4 +1,5 @@
-import type { GameSettings } from '@/lib/types';
+import type { GameSettings, Player } from '@/lib/types';
+import { AVATAR_CATALOG, isValidAvatarId } from '@/modules/avatars';
 import type { SettingsSummaryRow } from './LobbyGameRow.types';
 
 const PERCENT_MULTIPLIER = 100;
@@ -14,4 +15,21 @@ export function toSettingsSummaryRows(settings: GameSettings): SettingsSummaryRo
     { label: 'Upgrade Cost', value: String(settings.upgradeCost) },
     { label: 'Ability Cost', value: String(settings.abilityCost) },
   ];
+}
+
+export interface PlayerAvatarViewModel {
+  playerId: string;
+  name: string;
+  color: Player['color'];
+  /** null => render the AvatarFallback letter. */
+  avatarSrc: string | null;
+}
+
+export function toPlayerAvatars(players: Player[]): PlayerAvatarViewModel[] {
+  return players.map((player) => ({
+    playerId: player.playerId,
+    name: player.name,
+    color: player.color,
+    avatarSrc: isValidAvatarId(player.avatarId) ? AVATAR_CATALOG[player.avatarId].src : null,
+  }));
 }

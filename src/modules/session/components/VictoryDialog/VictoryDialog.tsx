@@ -45,7 +45,7 @@ export function VictoryDialog({ winner, isLocalWinner, isExiting, onReturnToLobb
         <div className={styles.winnerRow}>
           <div className={cn(styles.avatarContainer, playerRingColors[vm.color])}>
             <Image
-              src={vm.spriteSrc}
+              src={vm.avatarSrc}
               alt={`${vm.color} player`}
               width={64}
               height={64}

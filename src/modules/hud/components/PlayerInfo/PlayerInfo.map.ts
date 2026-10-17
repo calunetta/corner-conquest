@@ -1,4 +1,5 @@
 import { ResourceType } from '@/lib/types';
+import { toAvatarSrc } from '@/modules/avatars';
 import { PLAYER_DATA } from '@/modules/game-rules';
 import { RESOURCE_GAIN_SPRITES } from '@/modules/shared';
 import type { PulseState } from '@/modules/shared';
@@ -146,7 +147,10 @@ export function toPlayerInfoViewModel(
     color: player.color,
     isBot: player.isBot ?? false,
     isCurrentPlayer,
-    spriteSrc: PLAYER_DATA[player.color]?.sprite.idle || `/sprites/${player.color}_idle.gif`,
+    avatarSrc: toAvatarSrc(
+      player.avatarId,
+      PLAYER_DATA[player.color]?.sprite.idle || `/sprites/${player.color}_idle.gif`,
+    ),
     armyCount,
     positionedCount,
     victoryPoints,

@@ -1,5 +1,6 @@
 import { PlayerColor } from '@/lib/types';
 import type { Player } from '@/lib/types';
+import { AVATAR_CATALOG } from '@/modules/avatars';
 import { PLAYER_DATA } from '@/modules/game-rules';
 import { toPlayerIdleSprite } from '@/modules/shared';
 import { toVictoryViewModel } from './VictoryDialog.map';
@@ -55,20 +56,32 @@ describe('toVictoryViewModel', () => {
     });
   });
 
-  describe('spriteSrc', () => {
+  describe('avatarSrc', () => {
     it.each([
       ['blue', humanWinner],
       ['red', redHumanWinner],
       ['purple', purpleBotWinner],
-    ])('equals toPlayerIdleSprite for the %s winner', (_color, winner) => {
-      expect(toVictoryViewModel(winner, true).spriteSrc).toBe(toPlayerIdleSprite(winner.color));
+    ])('falls back to toPlayerIdleSprite for the %s winner when avatarId is unset', (_color, winner) => {
+      expect(toVictoryViewModel(winner, true).avatarSrc).toBe(toPlayerIdleSprite(winner.color));
     });
 
-    it('differs between two colors, so the sprite is not a constant fallback', () => {
-      const blue = toVictoryViewModel(humanWinner, true).spriteSrc;
-      const red = toVictoryViewModel(redHumanWinner, true).spriteSrc;
+    it('differs between two colors when unset, so the fallback is not a constant', () => {
+      const blue = toVictoryViewModel(humanWinner, true).avatarSrc;
+      const red = toVictoryViewModel(redHumanWinner, true).avatarSrc;
 
       expect(blue).not.toBe(red);
+    });
+
+    it('uses the chosen avatar image when avatarId is set', () => {
+      const winner: Player = { ...humanWinner, avatarId: 'human-03' };
+
+      expect(toVictoryViewModel(winner, true).avatarSrc).toBe(AVATAR_CATALOG['human-03'].src);
+    });
+
+    it.each([null, 'human-99', ''])('falls back to the idle sprite for avatarId %p (null or invalid)', (avatarId) => {
+      const winner: Player = { ...humanWinner, avatarId };
+
+      expect(toVictoryViewModel(winner, true).avatarSrc).toBe(toPlayerIdleSprite(winner.color));
     });
   });
 

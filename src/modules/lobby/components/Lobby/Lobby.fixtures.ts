@@ -2,6 +2,7 @@ import { defaultGameSettings } from '@/modules/game-rules';
 import { PlayerColor } from '@/lib/types';
 import type { GameState, Player } from '@/lib/types';
 import type { LinkGoogleAccountButtonViewProps } from '@/modules/session';
+import type { AvatarPickerButtonViewModel } from '@/modules/avatars';
 import type { LobbyViewModel } from './Lobby.types';
 
 const noop = (): void => undefined;
@@ -31,10 +32,21 @@ const idleLinkGoogleAccountButton: LinkGoogleAccountButtonViewProps = {
   onErrorDialogOpenChange: noop,
 };
 
+const noAvatarPicker: AvatarPickerButtonViewModel = {
+  currentAvatarId: null,
+  isDialogOpen: false,
+  onOpenChange: noop,
+  cells: [],
+  isSaving: false,
+  saveError: null,
+  onSelect: noop,
+};
+
 const baseViewModel: LobbyViewModel = {
   username: 'Ada',
   isGuest: false,
   linkGoogleAccountButton: idleLinkGoogleAccountButton,
+  avatarPicker: noAvatarPicker,
   games: [],
   isGamesLoading: false,
   isCreateDialogOpen: false,

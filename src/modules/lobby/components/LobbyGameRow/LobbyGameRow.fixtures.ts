@@ -3,8 +3,8 @@ import { PlayerColor } from '@/lib/types';
 import type { GameState, Player } from '@/lib/types';
 
 /** Minimal, deterministic player shaped object; only the fields the row and its popover read matter. */
-const createRowPlayer = (playerId: string, name: string, color: PlayerColor): Player =>
-  ({ playerId, name, color }) as Player;
+const createRowPlayer = (playerId: string, name: string, color: PlayerColor, avatarId?: string): Player =>
+  ({ playerId, name, color, avatarId }) as Player;
 
 export const openGame: GameState = {
   id: 'game-open',
@@ -28,4 +28,15 @@ export const customGoalGame: GameState = {
   id: 'game-custom-goal',
   name: "Mira's Long War",
   settings: { ...defaultGameSettings, victoryPointGoal: 45 },
+} as GameState;
+
+/** One seat with a chosen avatar, one without, to show both renderings side by side. */
+export const mixedAvatarGame: GameState = {
+  ...openGame,
+  id: 'game-mixed-avatars',
+  name: "Ada's Mixed Crew",
+  players: [
+    createRowPlayer('p1', 'Ada', PlayerColor.Blue, 'human-01'),
+    createRowPlayer('p2', 'Bo', PlayerColor.Red),
+  ],
 } as GameState;
