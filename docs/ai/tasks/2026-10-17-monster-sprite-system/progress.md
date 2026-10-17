@@ -15,7 +15,7 @@ Tier: L · Phases: 3 (Phase 1 detailed in plan.md; Phases 2-3 outlined only, to 
 - [x] UI verified (n/a — no view files)
 - [x] docs-sync (game-mechanics.md:31, systems-and-visuals.md:21-22 — mandatory, same phase)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 6fcfc15
 
 ## Phase 2: Combat/rendering wiring for the optional attack
 - [ ] plan detailed and approved (architect-a, architect-b)
@@ -26,7 +26,7 @@ Tier: L · Phases: 3 (Phase 1 detailed in plan.md; Phases 2-3 outlined only, to 
 - [ ] UI verified (ui-verify)
 - [ ] docs-sync (systems-and-visuals.md: skip-attack-animation behavior)
 - [ ] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 6fcfc15
 
 ## Phase 3: Testbed uploader
 - [ ] plan detailed and approved (architect-a, architect-b)
@@ -37,7 +37,7 @@ Tier: L · Phases: 3 (Phase 1 detailed in plan.md; Phases 2-3 outlined only, to 
 - [ ] UI verified (ui-verify)
 - [ ] docs-sync (if upload route shape or convention needs recording)
 - [ ] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 6fcfc15
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
