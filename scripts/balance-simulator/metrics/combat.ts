@@ -1,14 +1,8 @@
 import { MonsterName } from '../../../src/lib/types/monsters';
+import { MONSTER_LEVEL } from '../monster-levels';
 import { attackerWinProbabilityVsMonster } from '../combat-odds';
 import type { MatchResult } from '../engine';
 import { pooledZTest, type PooledZTestResult } from '../stats';
-
-const MONSTER_LEVEL: Record<MonsterName, number> = {
-  [MonsterName.Lancer]: 1,
-  [MonsterName.Bear]: 2,
-  [MonsterName.Ogre]: 3,
-  [MonsterName.Minotaur]: 4,
-};
 
 // --- M9: combat accuracy ------------------------------------------------------------------------
 

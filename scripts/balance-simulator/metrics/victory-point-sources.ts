@@ -1,12 +1,6 @@
 import { MonsterName } from '../../../src/lib/types/monsters';
+import { MONSTER_LEVEL } from '../monster-levels';
 import type { MatchResult } from '../engine';
-
-const MONSTER_LEVEL: Record<MonsterName, number> = {
-  [MonsterName.Lancer]: 1,
-  [MonsterName.Bear]: 2,
-  [MonsterName.Ogre]: 3,
-  [MonsterName.Minotaur]: 4,
-};
 
 function zeros(count: number): number[] {
   return new Array(count).fill(0);
