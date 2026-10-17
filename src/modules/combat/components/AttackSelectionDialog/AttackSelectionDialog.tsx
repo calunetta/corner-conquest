@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -62,14 +61,7 @@ export function AttackSelectionDialog({ state, onSelectTarget, onClose, isMyTurn
                 className={cn(styles.armyButton, isMyTurn ? styles.armyButtonEnabled : styles.armyButtonDisabled)}
               >
                 <div className={styles.spriteWrap}>
-                  <Image
-                    src={army.sprite}
-                    alt={`Enemy Army ${army.id + 1}`}
-                    width={40}
-                    height={40}
-                    className={styles.sprite}
-                    unoptimized
-                  />
+                  <RegistryIcon id={army.iconId} alt={`Enemy Army ${army.id + 1}`} className={styles.sprite} />
                 </div>
                 <p className={styles.name}>Enemy Squad {army.id + 1}</p>
                 <div className={cn(styles.statusRow, styles.statusColor[army.status])}>

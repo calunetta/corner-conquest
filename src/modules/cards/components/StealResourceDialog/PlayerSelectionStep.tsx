@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { RegistryIcon } from '@/modules/shared';
@@ -38,7 +37,7 @@ export function PlayerSelectionStep({ options, onSelectPlayer, onClose }: Player
             )}
           >
             <div className={styles.spriteWrap}>
-              <Image src={option.sprite} alt={option.name} width={36} height={36} className={styles.sprite} unoptimized />
+              <RegistryIcon id={option.iconId} alt={option.name} className={styles.sprite} />
             </div>
             <p className={styles.playerName}>{option.name}</p>
             <span className={styles.totalResources}>{option.totalResources} total resources</span>

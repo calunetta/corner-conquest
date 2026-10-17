@@ -1,8 +1,6 @@
 import type { Player, ResourceType } from '@/lib/types';
-import { getResourceDisplayName, RESOURCE_SPRITES, toPlayerIdleSprite } from '@/modules/shared';
+import { getResourceDisplayName, toArmyIconId, toResourceIconId } from '@/modules/shared';
 import type { StealPlayerOptionViewModel, StealResourceOptionViewModel } from './StealResourceDialog.types';
-
-const DEFAULT_RESOURCE_SPRITE = '/sprites/mine.png';
 
 const toTotalResources = (player: Player): number =>
   Object.values(player.resources).reduce((total, amount) => total + amount, 0);
@@ -12,7 +10,7 @@ export function toPlayerOptions(players: Player[], selectedPlayerId: number | nu
   return players.map((player) => ({
     id: player.id,
     name: player.name,
-    sprite: toPlayerIdleSprite(player.color),
+    iconId: toArmyIconId(player.color),
     totalResources: toTotalResources(player),
     isSelected: selectedPlayerId === player.id,
   }));
@@ -28,7 +26,7 @@ export function toResourceOptions(
 
     return {
       resource,
-      sprite: RESOURCE_SPRITES[resource] || DEFAULT_RESOURCE_SPRITE,
+      iconId: toResourceIconId(resource),
       displayName: getResourceDisplayName(resource),
       available,
       isAvailable: available > 0,

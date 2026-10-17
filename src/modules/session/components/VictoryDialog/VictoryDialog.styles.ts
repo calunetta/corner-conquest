@@ -6,7 +6,7 @@ export const styles = {
   subtitle: 'text-xs sm:text-sm text-muted-foreground text-center',
   winnerRow: 'flex items-center gap-3 justify-center py-2',
   avatarContainer: 'relative h-16 w-16 shrink-0 rounded-xl bg-black/50 p-0.5 border border-white/15 overflow-hidden flex items-center justify-center ring-2',
-  avatarImage: 'object-contain',
+  avatarImage: 'h-16 w-16 object-contain',
   winnerInfo: 'flex flex-col gap-0.5 items-start',
   winnerNameRow: 'flex items-center gap-1.5',
   winnerName: 'text-lg font-extrabold text-foreground tracking-tight',

@@ -1,8 +1,7 @@
 import type { ProductiveCardDialogState, ResourceType } from '@/lib/types';
-import { RESOURCE_SPRITES, getResourceDisplayName } from '@/modules/shared';
+import { getResourceDisplayName, toResourceIconId } from '@/modules/shared';
 import type { ProductiveCardDialogViewModel, ProductiveOptionViewModel } from './ProductiveCardDialog.types';
 
-const FALLBACK_SPRITE = '/sprites/mine.png';
 
 /** Pure. `state` is the dialog's own non-null shape; callers check for null first. */
 export function toProductiveCardDialogViewModel(
@@ -12,7 +11,7 @@ export function toProductiveCardDialogViewModel(
   const options: ProductiveOptionViewModel[] = state.options.map((option) => ({
     resource: option.resource,
     amount: option.amount,
-    sprite: RESOURCE_SPRITES[option.resource] || FALLBACK_SPRITE,
+    iconId: toResourceIconId(option.resource),
     displayName: getResourceDisplayName(option.resource),
     isSelected: selectedResource === option.resource,
   }));

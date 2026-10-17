@@ -85,16 +85,16 @@ describe('toAttackSelectionViewModel', () => {
   });
 
   it.each([
-    [PlayerColor.Blue, '/sprites/blue.gif'],
-    [PlayerColor.Red, '/sprites/red.gif'],
-  ])('derives the sprite from the defending player color (%s)', (color, expectedSprite) => {
+    [PlayerColor.Blue, 'army-blue'],
+    [PlayerColor.Red, 'army-red'],
+  ])('derives the icon id from the defending player color (%s)', (color, expectedIconId) => {
     const state: AttackSelectionDialogState = {
       armies: [buildArmy({ id: 0 })],
       defendingPlayer: buildDefendingPlayer({ color }),
       attackingArmyId: 0,
     };
     const result = toAttackSelectionViewModel(state, true);
-    expect(result?.armies[0].sprite).toBe(expectedSprite);
+    expect(result?.armies[0].iconId).toBe(expectedIconId);
   });
 
   it('produces the same view model regardless of isMyTurn (no per-army selectability field)', () => {

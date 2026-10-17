@@ -37,8 +37,8 @@ describe('toSabotageDialogViewModel', () => {
 
     expect(viewModel).toEqual({
       targets: [
-        { id: 0, name: 'Ada', sprite: '/sprites/blue.gif' },
-        { id: 1, name: 'Bo', sprite: '/sprites/red.gif' },
+        { id: 0, name: 'Ada', iconId: 'army-blue' },
+        { id: 1, name: 'Bo', iconId: 'army-red' },
       ],
     });
   });
@@ -51,7 +51,7 @@ describe('toSabotageDialogViewModel', () => {
     const players = [buildPlayer({ id: 2, playerId: 'p2', name: 'Cy', color: 'not-a-real-color' as PlayerColor })];
 
     expect(toSabotageDialogViewModel(players)).toEqual({
-      targets: [{ id: 2, name: 'Cy', sprite: '/sprites/blue_idle.gif' }],
+      targets: [{ id: 2, name: 'Cy', iconId: 'army-blue' }],
     });
   });
 

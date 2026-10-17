@@ -10,6 +10,17 @@ export function getResourceDisplayName(type: ResourceType): string {
   return RESOURCE_DISPLAY_NAMES[type] || type;
 }
 
+const RESOURCE_ICON_IDS: Record<ResourceType, string> = {
+  [ResourceType.Food]: 'resource-food',
+  [ResourceType.Wood]: 'resource-wood',
+  [ResourceType.Gold]: 'resource-gold',
+};
+
+/** Registry id of a resource's card-option icon, falling back to food for an unknown type. */
+export function toResourceIconId(type: ResourceType): string {
+  return RESOURCE_ICON_IDS[type] || RESOURCE_ICON_IDS[ResourceType.Food];
+}
+
 export const RESOURCE_SPRITES: Record<ResourceType, string> = {
   [ResourceType.Food]: '/sprites/sheep.gif',
   [ResourceType.Wood]: '/sprites/tree.gif',

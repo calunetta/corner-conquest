@@ -16,7 +16,7 @@ export interface ArmyOptionViewModel {
   status: ArmyStatus;
   isSelectable: boolean;
   isSelected: boolean;
-  sprite: string;
+  iconId: string;
 }
 
 export interface ArmySelectionViewModel {

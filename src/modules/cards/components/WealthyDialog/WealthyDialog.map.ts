@@ -1,8 +1,7 @@
 import { ResourceType } from '@/lib/types';
-import { RESOURCE_SPRITES, getResourceDisplayName } from '@/modules/shared';
+import { getResourceDisplayName, toResourceIconId } from '@/modules/shared';
 import type { WealthyDialogViewModel } from './WealthyDialog.types';
 
-const DEFAULT_RESOURCE_SPRITE = '/sprites/mine.png';
 
 /** Fixed order, legacy WealthyDialog.tsx:22. */
 const RESOURCES: ResourceType[] = [ResourceType.Food, ResourceType.Wood, ResourceType.Gold];
@@ -12,7 +11,7 @@ export function toWealthyDialogViewModel(): WealthyDialogViewModel {
   return {
     options: RESOURCES.map((resource) => ({
       resource,
-      sprite: RESOURCE_SPRITES[resource] || DEFAULT_RESOURCE_SPRITE,
+      iconId: toResourceIconId(resource),
       displayName: getResourceDisplayName(resource),
     })),
   };

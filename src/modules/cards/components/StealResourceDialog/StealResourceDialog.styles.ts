@@ -15,7 +15,7 @@ export const styles = {
   playerButtonSelected: 'border-purple-400 bg-purple-500/20 shadow-[0_0_16px_rgba(168,85,247,0.4)] scale-105',
   playerButtonIdle: 'border-white/10 bg-black/40 hover:border-white/20 hover:bg-black/60',
   spriteWrap: 'relative h-10 w-10 mb-1 flex items-center justify-center',
-  sprite: 'object-contain drop-shadow',
+  sprite: 'h-9 w-9 drop-shadow',
   playerName: 'text-xs font-bold truncate max-w-full text-foreground',
   totalResources: 'text-[10px] text-muted-foreground mt-0.5',
 

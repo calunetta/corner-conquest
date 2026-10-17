@@ -1,5 +1,5 @@
 import type { Army, AttackSelectionDialogState } from '@/lib/types';
-import { toPlayerIdleSprite } from '@/modules/shared';
+import { toArmyIconId } from '@/modules/shared';
 import type {
   AttackArmyOptionViewModel,
   AttackSelectionViewModel,
@@ -27,7 +27,7 @@ export function toAttackSelectionViewModel(
   const armyOptions: AttackArmyOptionViewModel[] = armies.map((army) => ({
     id: army.id,
     status: toArmyStatus(army, defendingPlayer.positions),
-    sprite: toPlayerIdleSprite(defendingPlayer.color),
+    iconId: toArmyIconId(defendingPlayer.color),
   }));
 
   return { defendingPlayerName: defendingPlayer.name, armies: armyOptions };

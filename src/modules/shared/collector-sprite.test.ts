@@ -1,17 +1,17 @@
 import { PlayerColor } from '@/lib/types';
-import { toCollectorIdleSprite } from './collector-sprite';
+import { toCollectorIconId } from './collector-sprite';
 
-describe('toCollectorIdleSprite', () => {
+describe('toCollectorIconId', () => {
   it.each([
-    [PlayerColor.Blue, '/sprites/collector_blue_idle.gif'],
-    [PlayerColor.Red, '/sprites/collector_red_idle.gif'],
-    [PlayerColor.Purple, '/sprites/collector_purple_idle.gif'],
-    [PlayerColor.Yellow, '/sprites/collector_yellow_idle.gif'],
-  ])('returns the %s collector idle sprite', (color, expectedSprite) => {
-    expect(toCollectorIdleSprite(color)).toBe(expectedSprite);
+    [PlayerColor.Blue, 'collector-blue'],
+    [PlayerColor.Red, 'collector-red'],
+    [PlayerColor.Purple, 'collector-purple'],
+    [PlayerColor.Yellow, 'collector-yellow'],
+  ])('returns the %s collector icon id', (color, expectedId) => {
+    expect(toCollectorIconId(color)).toBe(expectedId);
   });
 
-  it('falls back to the blue collector idle sprite for a color with no entry', () => {
-    expect(toCollectorIdleSprite('not-a-real-color' as PlayerColor)).toBe('/sprites/collector_blue_idle.gif');
+  it('falls back to the blue collector icon id for a color with no entry', () => {
+    expect(toCollectorIconId('not-a-real-color' as PlayerColor)).toBe('collector-blue');
   });
 });

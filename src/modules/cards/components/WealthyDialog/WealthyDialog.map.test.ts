@@ -12,14 +12,14 @@ describe('toWealthyDialogViewModel', () => {
     ]);
   });
 
-  it('attaches the correct sprite and display name per resource', () => {
+  it('attaches the correct icon id and display name per resource', () => {
     const viewModel = toWealthyDialogViewModel();
 
     expect(viewModel).toEqual({
       options: [
-        { resource: ResourceType.Food, sprite: '/sprites/sheep.gif', displayName: 'Food' },
-        { resource: ResourceType.Wood, sprite: '/sprites/tree.gif', displayName: 'Wood' },
-        { resource: ResourceType.Gold, sprite: '/sprites/gold.gif', displayName: 'Gold' },
+        { resource: ResourceType.Food, iconId: 'resource-food', displayName: 'Food' },
+        { resource: ResourceType.Wood, iconId: 'resource-wood', displayName: 'Wood' },
+        { resource: ResourceType.Gold, iconId: 'resource-gold', displayName: 'Gold' },
       ],
     });
   });

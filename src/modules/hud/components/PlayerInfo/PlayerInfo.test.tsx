@@ -1,6 +1,7 @@
 import { act, render, screen, within } from '@testing-library/react';
 import { useGameBoard } from '@/features/game/context/GameBoardContext';
 import { useResourceGainEvents } from '@/modules/game-board';
+import { resolveIcon } from '@/modules/icons';
 import { RESOURCE_GAIN_ANIMATION_MS, RESOURCE_GAIN_SPRITES } from '@/modules/shared';
 import { CardName, ResourceType } from '@/lib/types';
 import type { Player } from '@/lib/types';
@@ -16,6 +17,12 @@ jest.mock('@/features/game/context/GameBoardContext', () => ({
 jest.mock('@/modules/game-board', () => ({
   useResourceGainEvents: jest.fn(),
 }));
+
+/** The image URL a registry icon id resolves to, so a test can find its <img>. */
+function iconSrc(iconId: string): string {
+  const { source } = resolveIcon(iconId);
+  return source.kind === 'image' ? source.src : '';
+}
 
 describe('PlayerInfoView', () => {
   describe('basic player info rendering', () => {
@@ -270,7 +277,7 @@ describe('PlayerInfoView', () => {
 
       const images = container.querySelectorAll('img');
       expect(images.length).toBeGreaterThan(0);
-      const spriteImage = Array.from(images).find((img) => img.src.includes(viewModel.spriteSrc));
+      const spriteImage = Array.from(images).find((img) => img.src.includes(iconSrc(viewModel.iconId)));
       expect(spriteImage).toBeInTheDocument();
     });
   });
@@ -418,7 +425,7 @@ describe('PlayerInfoView', () => {
       const { container } = render(<PlayerInfoView {...viewModel} />);
 
       const images = container.querySelectorAll('img');
-      const spriteImage = Array.from(images).find((img) => img.src.includes(viewModel.spriteSrc));
+      const spriteImage = Array.from(images).find((img) => img.src.includes(iconSrc(viewModel.iconId)));
       expect(spriteImage).toHaveAttribute('alt');
       expect(spriteImage?.getAttribute('alt')).toMatch(/player|commander/i);
     });

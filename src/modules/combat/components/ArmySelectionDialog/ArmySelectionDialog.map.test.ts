@@ -105,13 +105,13 @@ describe('toArmySelectionViewModel', () => {
   });
 
   it.each([
-    [PlayerColor.Blue, '/sprites/blue.gif'],
-    [PlayerColor.Red, '/sprites/red.gif'],
-  ])('derives the sprite from the player color (%s)', (color, expectedSprite) => {
+    [PlayerColor.Blue, 'army-blue'],
+    [PlayerColor.Red, 'army-red'],
+  ])('derives the icon id from the player color (%s)', (color, expectedIconId) => {
     const state: ArmySelectionDialogState = { x: 0, y: 0, armies: [buildArmy({ id: 0 })] };
     const player = buildPlayer({ color });
     const result = toArmySelectionViewModel(state, player, true, null);
-    expect(result?.armies[0].sprite).toBe(expectedSprite);
+    expect(result?.armies[0].iconId).toBe(expectedIconId);
   });
 
   it('does not mutate the input state or player', () => {

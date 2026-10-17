@@ -1,6 +1,6 @@
 import type { Player, PlayerColor } from '@/lib/types';
 import { PLAYER_DATA } from '@/modules/game-rules';
-import { toPlayerIdleSprite } from '@/modules/shared';
+import { toArmyIconId } from '@/modules/shared';
 
 export interface VictoryViewModel {
   title: 'Victory!' | 'Game Over';
@@ -8,7 +8,7 @@ export interface VictoryViewModel {
   /** The winner's chosen faction, e.g. "The Legionnaires" (`PLAYER_DATA[color].name`) — the same
    *  name shown in CreateGameDialog's faction picker, not an invented label. */
   commanderLine: string;
-  spriteSrc: string;
+  iconId: string;
   color: PlayerColor;
   isBot: boolean;
 }
@@ -24,7 +24,7 @@ export function toVictoryViewModel(winner: Player, isLocalWinner: boolean): Vict
     title: isLocalWinner ? VICTORY_TITLE : GAME_OVER_TITLE,
     subtitle: isLocalWinner ? `You ${reachedGoal}` : `${winner.name} ${reachedGoal}`,
     commanderLine: PLAYER_DATA[winner.color].name,
-    spriteSrc: toPlayerIdleSprite(winner.color),
+    iconId: toArmyIconId(winner.color),
     color: winner.color,
     isBot: winner.isBot,
   };

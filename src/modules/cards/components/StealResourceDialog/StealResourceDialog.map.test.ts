@@ -27,15 +27,15 @@ const buildPlayer = (overrides: Partial<Player> & { id: number; playerId: string
   }) as Player;
 
 describe('toPlayerOptions', () => {
-  it('maps players to options with their sprite, name and total resources', () => {
+  it('maps players to options with their icon id, name and total resources', () => {
     const players = [
       buildPlayer({ id: 0, playerId: 'p0', name: 'Ada', color: PlayerColor.Red, resources: { food: 3, wood: 2, gold: 5 } }),
       buildPlayer({ id: 1, playerId: 'p1', name: 'Bo', color: PlayerColor.Purple, resources: { food: 0, wood: 4, gold: 0 } }),
     ];
 
     expect(toPlayerOptions(players, null)).toEqual([
-      { id: 0, name: 'Ada', sprite: '/sprites/red.gif', totalResources: 10, isSelected: false },
-      { id: 1, name: 'Bo', sprite: '/sprites/purple.gif', totalResources: 4, isSelected: false },
+      { id: 0, name: 'Ada', iconId: 'army-red', totalResources: 10, isSelected: false },
+      { id: 1, name: 'Bo', iconId: 'army-purple', totalResources: 4, isSelected: false },
     ]);
   });
 
@@ -74,15 +74,15 @@ describe('toPlayerOptions', () => {
 });
 
 describe('toResourceOptions', () => {
-  it('maps every resource key with sprite, display name, availability and selection', () => {
+  it('maps every resource key with icon id, display name, availability and selection', () => {
     const player = buildPlayer({ id: 0, playerId: 'p0', name: 'Ada', resources: { food: 0, wood: 2, gold: 5 } });
 
     const options = toResourceOptions(player, ResourceType.Gold);
 
     expect(options).toEqual([
-      { resource: ResourceType.Food, sprite: '/sprites/sheep.gif', displayName: 'Food', available: 0, isAvailable: false, isSelected: false },
-      { resource: ResourceType.Wood, sprite: '/sprites/tree.gif', displayName: 'Wood', available: 2, isAvailable: true, isSelected: false },
-      { resource: ResourceType.Gold, sprite: '/sprites/gold.gif', displayName: 'Gold', available: 5, isAvailable: true, isSelected: true },
+      { resource: ResourceType.Food, iconId: 'resource-food', displayName: 'Food', available: 0, isAvailable: false, isSelected: false },
+      { resource: ResourceType.Wood, iconId: 'resource-wood', displayName: 'Wood', available: 2, isAvailable: true, isSelected: false },
+      { resource: ResourceType.Gold, iconId: 'resource-gold', displayName: 'Gold', available: 5, isAvailable: true, isSelected: true },
     ]);
   });
 

@@ -1,7 +1,6 @@
 'use client';
 
-import Image from 'next/image';
-import { toCollectorIdleSprite } from '@/modules/shared';
+import { RegistryIcon, toCollectorIconId } from '@/modules/shared';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -25,14 +24,7 @@ export function PositionDialog({ resources, color, onSelect, onClose }: Position
         <AlertDialogHeader className={styles.header}>
           <div className={styles.headerRow}>
             <div className={styles.iconWrap}>
-              <Image
-                src={toCollectorIdleSprite(color)}
-                alt="Collector"
-                width={20}
-                height={20}
-                className={styles.icon}
-                unoptimized
-              />
+              <RegistryIcon id={toCollectorIconId(color)} alt="Collector" className={styles.icon} />
             </div>
             <div>
               <AlertDialogTitle className={styles.title}>Position Army Collector</AlertDialogTitle>
@@ -53,14 +45,7 @@ export function PositionDialog({ resources, color, onSelect, onClose }: Position
               className={styles.option}
             >
               <div className={styles.spriteWrap}>
-                <Image
-                  src={option.sprite}
-                  alt={option.displayName}
-                  width={48}
-                  height={48}
-                  className={styles.sprite}
-                  unoptimized
-                />
+                <RegistryIcon id={option.iconId} alt={option.displayName} className={styles.sprite} />
               </div>
 
               <div className={styles.nameRow}>

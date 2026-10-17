@@ -1,7 +1,7 @@
 import { PlayerColor } from '@/lib/types';
 import type { Player } from '@/lib/types';
 import { PLAYER_DATA } from '@/modules/game-rules';
-import { toPlayerIdleSprite } from '@/modules/shared';
+import { toArmyIconId } from '@/modules/shared';
 import { toVictoryViewModel } from './VictoryDialog.map';
 import { botWinner, humanWinner } from './VictoryDialog.fixtures';
 
@@ -55,18 +55,18 @@ describe('toVictoryViewModel', () => {
     });
   });
 
-  describe('spriteSrc', () => {
+  describe('iconId', () => {
     it.each([
       ['blue', humanWinner],
       ['red', redHumanWinner],
       ['purple', purpleBotWinner],
-    ])('equals toPlayerIdleSprite for the %s winner', (_color, winner) => {
-      expect(toVictoryViewModel(winner, true).spriteSrc).toBe(toPlayerIdleSprite(winner.color));
+    ])('equals toArmyIconId for the %s winner', (_color, winner) => {
+      expect(toVictoryViewModel(winner, true).iconId).toBe(toArmyIconId(winner.color));
     });
 
     it('differs between two colors, so the sprite is not a constant fallback', () => {
-      const blue = toVictoryViewModel(humanWinner, true).spriteSrc;
-      const red = toVictoryViewModel(redHumanWinner, true).spriteSrc;
+      const blue = toVictoryViewModel(humanWinner, true).iconId;
+      const red = toVictoryViewModel(redHumanWinner, true).iconId;
 
       expect(blue).not.toBe(red);
     });

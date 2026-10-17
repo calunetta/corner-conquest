@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { ResourceIcon, RegistryIcon } from '@/modules/shared';
@@ -57,14 +56,7 @@ export function ResourceSelectionStep({
             )}
 
             <div className={styles.resourceSpriteWrap}>
-              <Image
-                src={option.sprite}
-                alt={option.displayName}
-                width={44}
-                height={44}
-                className={styles.resourceSprite}
-                unoptimized
-              />
+              <RegistryIcon id={option.iconId} alt={option.displayName} className={styles.resourceSprite} />
             </div>
 
             <div className={styles.resourceRow}>

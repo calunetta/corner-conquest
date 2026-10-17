@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { ResourceIcon } from '@/modules/shared';
+import { RegistryIcon, ResourceIcon } from '@/modules/shared';
 import { toWealthyDialogViewModel } from './WealthyDialog.map';
 import { styles } from './WealthyDialog.styles';
 import type { WealthyDialogProps } from './WealthyDialog.types';
@@ -52,14 +52,7 @@ export function WealthyDialog({ onSelectResource, onClose }: WealthyDialogProps)
               className={styles.optionButton}
             >
               <div className={styles.spriteWrap}>
-                <Image
-                  src={option.sprite}
-                  alt={option.displayName}
-                  width={48}
-                  height={48}
-                  className={styles.sprite}
-                  unoptimized
-                />
+                <RegistryIcon id={option.iconId} alt={option.displayName} className={styles.sprite} />
               </div>
 
               <div className={styles.resourceRow}>

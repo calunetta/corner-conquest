@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -78,14 +77,7 @@ export function ArmySelectionDialog({
                 )}
               >
                 <div className={styles.spriteWrap}>
-                  <Image
-                    src={army.sprite}
-                    alt={`Army ${army.id + 1}`}
-                    width={40}
-                    height={40}
-                    className={styles.sprite}
-                    unoptimized
-                  />
+                  <RegistryIcon id={army.iconId} alt={`Army ${army.id + 1}`} className={styles.sprite} />
                 </div>
                 <div className={styles.nameRow}>
                   <span className={styles.name}>Squad {army.id + 1}</span>

@@ -33,7 +33,7 @@ export interface PlayerInfoViewModel {
   color: PlayerColor;
   isBot: boolean;
   isCurrentPlayer: boolean;
-  spriteSrc: string;
+  iconId: string;
   armyCount: number;
   positionedCount: number;
   victoryPoints: number;
