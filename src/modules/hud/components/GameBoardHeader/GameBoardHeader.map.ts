@@ -24,5 +24,6 @@ export function toGameBoardHeaderViewModel(
       isExpiring: turnTimer.isExpiring,
     },
     resources: localPlayer ? toResources(localPlayer) : [],
+    canRegenerateTerrain: gameState.debugMode,
   };
 }

@@ -12,12 +12,14 @@ export interface GameBoardHeaderViewModel {
   isMyTurn: boolean;
   turnTimer: { formattedTime: string; isExpiring: boolean };
   resources: ResourceStatViewModel[]; // local player's food/wood/gold; [] when there is no local player
+  canRegenerateTerrain: boolean; // gameState.debugMode: the debug-only terrain reroll is offered
 }
 
 export interface GameBoardHeaderViewProps extends GameBoardHeaderViewModel {
   isExiting: boolean; // uiState.isExiting
   onExitClick: () => Promise<void>; // passthrough of handleExitClick
   onStartGame: () => Promise<void>; // passthrough of handleStartGame
+  onRegenerateTerrain: () => void; // dispatches GameAction.RegenerateTerrain (debug matches only)
   isBackgroundOn: boolean; // device-local sky-background preference (useBoardBackground)
   onToggleBackground: (enabled: boolean) => void; // passed directly as the Switch's onCheckedChange
 }

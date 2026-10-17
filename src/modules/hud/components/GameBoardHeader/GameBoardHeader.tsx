@@ -19,6 +19,8 @@ export function GameBoardHeaderView({
   isExiting,
   onExitClick,
   onStartGame,
+  canRegenerateTerrain,
+  onRegenerateTerrain,
   isBackgroundOn,
   onToggleBackground,
 }: GameBoardHeaderViewProps): JSX.Element {
@@ -75,6 +77,12 @@ export function GameBoardHeaderView({
             <span className={styles.playerName}>{turnPlayerName}</span>
             {isMyTurn && <span className={styles.countdown({ isExpiring: turnTimer.isExpiring })}>({turnTimer.formattedTime})</span>}
           </div>
+        )}
+
+        {canRegenerateTerrain && (
+          <Button variant="outline" onClick={onRegenerateTerrain} data-testid="gameboard-regenerate-terrain-btn">
+            <RegistryIcon id="sparkles" className={styles.startGameIcon} /> Regenerate map
+          </Button>
         )}
 
         {canStartGame && (

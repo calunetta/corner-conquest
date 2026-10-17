@@ -18,6 +18,7 @@ import { handleGainWealth, handleSabotagePlayer, handleStealResource } from './c
 import { handleCancelAction, handleDeployAction, handleUpgradeAction } from './player-actions.reducer';
 import { handleEndTurn } from './player-turn.reducer';
 import { handleSelectResourceForPosition } from './resource-position.reducer';
+import { handleRegenerateTerrain } from './regenerate-terrain.reducer';
 
 export interface HandleActionParams {
   action: GameAction;
@@ -43,6 +44,9 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
         break;
       case GameAction.EndTurn:
         state = handleEndTurn(state);
+        break;
+      case GameAction.RegenerateTerrain:
+        state = handleRegenerateTerrain(state);
         break;
       case GameAction.CancelAction:
         state = handleCancelAction(state, payload as { cardName?: CardName; scoutedTiles?: string[] });

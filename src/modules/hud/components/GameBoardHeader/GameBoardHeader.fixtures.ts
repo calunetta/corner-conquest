@@ -23,11 +23,21 @@ const playingResources = [
   { type: ResourceType.Gold, label: 'Gold', value: 1, gainPulse: null },
 ];
 
+/** Handlers and flags the header view takes on every render; the fixtures spread this, then override what differs. */
+const idleViewActions = {
+  isExiting: false,
+  onExitClick: async () => {},
+  onStartGame: async () => {},
+  onRegenerateTerrain: () => {},
+  isBackgroundOn: true,
+  onToggleBackground: () => {},
+};
+
 export const waitingCanStartViewModel: GameBoardHeaderViewModel = {
   gameName: 'Island Quest',
   isPlaying: false,
   victoryPointGoal: 30,
-  canStartGame: true,
+  canStartGame: true, canRegenerateTerrain: false,
   turnPlayerName: undefined,
   isMyTurn: false,
   turnTimer: baseTurnTimer,
@@ -38,7 +48,7 @@ export const waitingCannotStartViewModel: GameBoardHeaderViewModel = {
   gameName: 'Island Quest',
   isPlaying: false,
   victoryPointGoal: 30,
-  canStartGame: false,
+  canStartGame: false, canRegenerateTerrain: false,
   turnPlayerName: undefined,
   isMyTurn: false,
   turnTimer: baseTurnTimer,
@@ -49,7 +59,7 @@ export const waitingNotHostViewModel: GameBoardHeaderViewModel = {
   gameName: 'Island Quest',
   isPlaying: false,
   victoryPointGoal: 30,
-  canStartGame: false,
+  canStartGame: false, canRegenerateTerrain: false,
   turnPlayerName: undefined,
   isMyTurn: false,
   turnTimer: baseTurnTimer,
@@ -60,7 +70,7 @@ export const playingMyTurnNotExpiringViewModel: GameBoardHeaderViewModel = {
   gameName: 'Island Quest',
   isPlaying: true,
   victoryPointGoal: 30,
-  canStartGame: false,
+  canStartGame: false, canRegenerateTerrain: false,
   turnPlayerName: 'You',
   isMyTurn: true,
   turnTimer: baseTurnTimer,
@@ -71,7 +81,7 @@ export const playingMyTurnExpiringViewModel: GameBoardHeaderViewModel = {
   gameName: 'Island Quest',
   isPlaying: true,
   victoryPointGoal: 30,
-  canStartGame: false,
+  canStartGame: false, canRegenerateTerrain: false,
   turnPlayerName: 'You',
   isMyTurn: true,
   turnTimer: expiringTurnTimer,
@@ -82,7 +92,7 @@ export const playingOpponentTurnViewModel: GameBoardHeaderViewModel = {
   gameName: 'Island Quest',
   isPlaying: true,
   victoryPointGoal: 30,
-  canStartGame: false,
+  canStartGame: false, canRegenerateTerrain: false,
   turnPlayerName: 'Alice',
   isMyTurn: false,
   turnTimer: baseTurnTimer,
@@ -91,65 +101,38 @@ export const playingOpponentTurnViewModel: GameBoardHeaderViewModel = {
 
 export const waitingCanStartProps: GameBoardHeaderViewProps = {
   ...waitingCanStartViewModel,
-  isExiting: false,
-  onExitClick: async () => {},
-  onStartGame: async () => {},
-  isBackgroundOn: true,
-  onToggleBackground: () => {},
+  ...idleViewActions,
 };
 
 export const waitingCannotStartProps: GameBoardHeaderViewProps = {
   ...waitingCannotStartViewModel,
-  isExiting: false,
-  onExitClick: async () => {},
-  onStartGame: async () => {},
-  isBackgroundOn: true,
-  onToggleBackground: () => {},
+  ...idleViewActions,
 };
 
 export const waitingNotHostProps: GameBoardHeaderViewProps = {
   ...waitingNotHostViewModel,
-  isExiting: false,
-  onExitClick: async () => {},
-  onStartGame: async () => {},
-  isBackgroundOn: true,
-  onToggleBackground: () => {},
+  ...idleViewActions,
 };
 
 export const playingMyTurnNotExpiringProps: GameBoardHeaderViewProps = {
   ...playingMyTurnNotExpiringViewModel,
-  isExiting: false,
-  onExitClick: async () => {},
-  onStartGame: async () => {},
-  isBackgroundOn: true,
-  onToggleBackground: () => {},
+  ...idleViewActions,
 };
 
 export const playingMyTurnExpiringProps: GameBoardHeaderViewProps = {
   ...playingMyTurnExpiringViewModel,
-  isExiting: false,
-  onExitClick: async () => {},
-  onStartGame: async () => {},
-  isBackgroundOn: true,
-  onToggleBackground: () => {},
+  ...idleViewActions,
 };
 
 export const playingOpponentTurnProps: GameBoardHeaderViewProps = {
   ...playingOpponentTurnViewModel,
-  isExiting: false,
-  onExitClick: async () => {},
-  onStartGame: async () => {},
-  isBackgroundOn: true,
-  onToggleBackground: () => {},
+  ...idleViewActions,
 };
 
 export const exitingProps: GameBoardHeaderViewProps = {
   ...playingMyTurnNotExpiringViewModel,
+  ...idleViewActions,
   isExiting: true,
-  onExitClick: async () => {},
-  onStartGame: async () => {},
-  isBackgroundOn: true,
-  onToggleBackground: () => {},
 };
 
 export const backgroundOnProps: GameBoardHeaderViewProps = {

@@ -49,6 +49,7 @@ export function useGameBoardActions({
         GameAction.CloseSpecialIslandDialog,
         GameAction.RollOnSpecialIsland,
         GameAction.UseProductiveCard,
+        GameAction.RegenerateTerrain,
       ];
 
       if (realTimeActions.includes(action)) {

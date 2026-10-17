@@ -55,6 +55,7 @@ Part of the architecture & game-rules docs. Index and directives: [`docs/README.
 -   **Fog of War (Disabled):** This mode provides a more open, chess-like experience.
     -   Map visibility is shared. When any player reveals a tile, it becomes visible to *all* players for the rest of the game.
 -   **Debug Mode:** This is a special mode intended for testing, which is automatically enabled for "Player vs. Bot" games started from the lobby.
+-   **Regenerate map (debug matches only):** the header shows a "Regenerate map" button when `gameState.debugMode` is on. `GameAction.RegenerateTerrain` (`handleRegenerateTerrain`, `src/modules/game-rules/regenerate-terrain.reducer.ts`) rerolls the type, resources and monsters of every tile that is neither a base nor occupied, using the same generator as game setup. Occupied tiles and bases keep their state. It is saved to the match like other real-time actions. Outside debug matches the action changes nothing.
     -   **Complete Map Visibility:** It overrides any Fog of War setting, making the entire map and all armies visible from the start of the match.
     -   **All Special Cards & 20 Starting Resources:** The human player begins the game with one of every available Special Card and **20 Food, 20 Wood, and 20 Gold**, allowing for immediate testing of all strategic and army mechanics.
 

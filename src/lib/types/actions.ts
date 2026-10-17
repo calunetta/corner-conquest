@@ -26,6 +26,7 @@ export const GameAction = {
   Scout: 'scout',
   HostLeave: 'host-leave',
   CancelAction: 'cancel-action',
+  RegenerateTerrain: 'regenerate-terrain',
 
   // Local UI Actions (prefixed with 'local:')
   local_DeselectArmy: 'local:deselect-army',

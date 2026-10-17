@@ -1,3 +1,4 @@
+import { GameAction } from '@/lib/types';
 import { useGameBoard } from '@/modules/game-board';
 import { useBoardBackground } from '@/modules/shared';
 import { toGameBoardHeaderViewModel } from './GameBoardHeader.map';
@@ -13,6 +14,7 @@ export function useGameBoardHeader(): GameBoardHeaderViewProps {
     localPlayer,
     handleExitClick,
     handleStartGame,
+    onAction,
   } = useGameBoard();
   const { isBackgroundOn, setBackgroundOn } = useBoardBackground();
 
@@ -21,6 +23,7 @@ export function useGameBoardHeader(): GameBoardHeaderViewProps {
     isExiting: uiState.isExiting,
     onExitClick: handleExitClick,
     onStartGame: handleStartGame,
+    onRegenerateTerrain: () => onAction(GameAction.RegenerateTerrain),
     isBackgroundOn,
     onToggleBackground: setBackgroundOn,
   };
