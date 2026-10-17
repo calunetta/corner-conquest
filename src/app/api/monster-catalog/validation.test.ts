@@ -1,5 +1,5 @@
 import { MAX_UPLOAD_BYTES } from '../tile-fog-variants/upload';
-import { parseMonsterEditBody, parseMonsterUploadFields, validateSpriteBytes } from './validation';
+import { parseMonsterEditBody, parseMonsterKeyBody, parseMonsterUploadFields, validateSpriteBytes } from './validation';
 import type { MonsterUploadFields, UploadFieldError } from './validation';
 
 const gif = (name = 'sprite.gif'): File => new File([new Uint8Array([0x47, 0x49, 0x46, 0x38])], name, { type: 'image/gif' });
@@ -185,6 +185,62 @@ describe('parseMonsterEditBody', () => {
       level: 2,
       nextLevel: 4,
       nextIsBoss: true,
+    });
+  });
+});
+
+describe('parseMonsterKeyBody', () => {
+  const validBody = { name: 'Fire Ogre', level: 2 };
+
+  it('returns the key for a valid body, trimming the name', () => {
+    expect(parseMonsterKeyBody({ name: '  Fire Ogre  ', level: 2 })).toEqual(validBody);
+  });
+
+  it.each([1, 4])('accepts the boundary level %p', (level) => {
+    expect(parseMonsterKeyBody({ ...validBody, level })).toEqual({ name: 'Fire Ogre', level });
+  });
+
+  it.each([null, undefined, 'text', 5])('rejects the non-object body %p on the name field with status 400', (body) => {
+    expect(parseMonsterKeyBody(body)).toEqual({
+      message: 'The request body is not a monster key.',
+      field: 'name',
+      status: 400,
+    });
+  });
+
+  it.each([
+    { title: 'a missing name', patch: { name: undefined } },
+    { title: 'a non-string name', patch: { name: 7 } },
+    { title: 'a blank name', patch: { name: '   ' } },
+    { title: 'a name with an empty slug', patch: { name: '!!!' } },
+  ])('rejects $title on the name field', ({ patch }) => {
+    expect(parseMonsterKeyBody({ ...validBody, ...patch })).toEqual({
+      message: 'The name needs at least one letter or digit.',
+      field: 'name',
+      status: 400,
+    });
+  });
+
+  it.each([
+    { title: 'level 0', level: 0 },
+    { title: 'level 5', level: 5 },
+    { title: 'a negative level', level: -1 },
+    { title: 'a missing level', level: undefined },
+    { title: 'a string level', level: '2' },
+    { title: 'NaN', level: Number.NaN },
+  ])('rejects $title on the level field', ({ level }) => {
+    expect(parseMonsterKeyBody({ ...validBody, level })).toEqual({
+      message: 'Level must be a whole number from 1 to 4.',
+      field: 'level',
+      status: 400,
+    });
+  });
+
+  it('rejects a non-integer level', () => {
+    expect(parseMonsterKeyBody({ ...validBody, level: 1.5 })).toEqual({
+      message: 'Level must be a whole number from 1 to 4.',
+      field: 'level',
+      status: 400,
     });
   });
 });

@@ -28,6 +28,12 @@ export interface LevelOption {
   label: string;
 }
 
+/** Removes one uploaded catalog row, identified by its name and level. */
+export interface CatalogRemoval {
+  name: string;
+  level: MonsterLevel;
+}
+
 export type UploadStatus = 'idle' | 'submitting' | 'success' | 'error';
 
 export type FieldErrors = Partial<Record<UploadField, string>>;
@@ -48,6 +54,9 @@ export interface MonsterSpriteUploaderViewModel {
   pendingCatalogKey: string | null;
   catalogEditError: string | null;
   onCatalogEdit: (edit: CatalogEdit) => void;
+  removeArmedKey: string | null;
+  onArmRemove: (removal: CatalogRemoval | null) => void;
+  onCatalogRemove: (removal: CatalogRemoval) => void;
   onNameChange: (name: string) => void;
   onLevelChange: (level: MonsterLevel) => void;
   onBossToggle: (isBoss: boolean) => void;

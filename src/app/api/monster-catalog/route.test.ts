@@ -24,7 +24,7 @@ import type {
   unlink as UnlinkFn,
   writeFile as WriteFileFn,
 } from 'fs/promises';
-import type { PATCH as PatchFn, POST as PostFn } from './route';
+import type { DELETE as DeleteFn, PATCH as PatchFn, POST as PostFn } from './route';
 import {
   buildMonsterCatalogEntries,
   renderMonsterCatalogSource,
@@ -38,7 +38,11 @@ const { readdir, mkdir, writeFile, readFile, unlink } = require('fs/promises') a
   readFile: jest.Mock & typeof ReadFileFn;
   unlink: jest.Mock & typeof UnlinkFn;
 };
-const { POST, PATCH } = require('./route') as { POST: typeof PostFn; PATCH: typeof PatchFn };
+const { POST, PATCH, DELETE } = require('./route') as {
+  POST: typeof PostFn;
+  PATCH: typeof PatchFn;
+  DELETE: typeof DeleteFn;
+};
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 const SPRITE_DIR = path.join(process.cwd(), 'public/monster');
@@ -392,5 +396,114 @@ describe('PATCH /api/monster-catalog', () => {
       isBoss: false,
       sprite: { idle: '/monster/fire-ogre-lvl3-idle.gif', attack: '/monster/fire-ogre-lvl3-attack.gif' },
     });
+  });
+});
+
+describe('DELETE /api/monster-catalog', () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+  const SEED_FILES = [
+    'lancer-lvl1-idle.gif',
+    'lancer-lvl1-attack.gif',
+    'bear-lvl2-idle.gif',
+    'bear-lvl2-attack.gif',
+    'ogre-lvl3-idle.gif',
+    'ogre-lvl3-attack.gif',
+    'boss-minotaur-lvl4-idle.gif',
+    'boss-minotaur-lvl4-attack.gif',
+  ];
+  const OGRE_FILES = ['fire-ogre-lvl2-idle.gif', 'fire-ogre-lvl2-attack.gif'];
+
+  function remove(body: unknown): Promise<Response> {
+    return DELETE({ json: async () => body } as unknown as Request);
+  }
+
+  function expectNothingChanged(): void {
+    expect(writeFile).not.toHaveBeenCalled();
+    expect(unlink).not.toHaveBeenCalled();
+  }
+
+  beforeEach(() => {
+    readdir.mockResolvedValue([...SEED_FILES, ...OGRE_FILES]);
+    writeFile.mockResolvedValue(undefined);
+    unlink.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    setNodeEnv(originalNodeEnv);
+    jest.resetAllMocks();
+  });
+
+  it('returns 404 and writes and unlinks nothing in production', async () => {
+    setNodeEnv('production');
+
+    const response = await remove({ name: 'Fire Ogre', level: 2 });
+
+    expect(response.status).toBe(404);
+    expectNothingChanged();
+  });
+
+  it('returns 400 and changes nothing for an invalid body', async () => {
+    const response = await remove({ name: 'Fire Ogre', level: 9 });
+    const body = (await response.json()) as { error: string; field: string };
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({ error: 'Level must be a whole number from 1 to 4.', field: 'level' });
+    expectNothingChanged();
+  });
+
+  it('returns 400 when the body is not valid JSON', async () => {
+    const response = await DELETE({
+      json: async () => {
+        throw new SyntaxError('bad json');
+      },
+    } as unknown as Request);
+
+    expect(response.status).toBe(400);
+    expectNothingChanged();
+  });
+
+  it('returns 404 when no monster has that name and level', async () => {
+    const response = await remove({ name: 'Ghost', level: 1 });
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(404);
+    expect(body.error).toBe('No monster named "Ghost" at level 1.');
+    expectNothingChanged();
+  });
+
+  it('returns 403 for a seed monster and unlinks nothing', async () => {
+    const response = await remove({ name: 'Lancer', level: 1 });
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(403);
+    expect(body.error).toBe("Lancer is a seed monster and can't be removed.");
+    expectNothingChanged();
+  });
+
+  it('unlinks both sprites and rewrites both sources without the monster', async () => {
+    const response = await remove({ name: 'Fire Ogre', level: 2 });
+    const body = (await response.json()) as unknown;
+
+    const expectedEntries = buildMonsterCatalogEntries(SEED_FILES);
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ removed: true });
+    expect(writeFile.mock.calls).toEqual([
+      [CATALOG_PATH, renderMonsterCatalogSource(expectedEntries)],
+      [NAMES_PATH, renderMonsterNameSource(expectedEntries.map((entry) => entry.name))],
+    ]);
+    expect(unlink.mock.calls).toEqual([
+      [path.join(SPRITE_DIR, 'fire-ogre-lvl2-idle.gif')],
+      [path.join(SPRITE_DIR, 'fire-ogre-lvl2-attack.gif')],
+    ]);
+  });
+
+  it('unlinks only the idle file when the monster has no attack sprite', async () => {
+    readdir.mockResolvedValue([...SEED_FILES, 'fire-ogre-lvl2-idle.gif']);
+
+    const response = await remove({ name: 'Fire Ogre', level: 2 });
+
+    expect(response.status).toBe(200);
+    expect(unlink.mock.calls).toEqual([[path.join(SPRITE_DIR, 'fire-ogre-lvl2-idle.gif')]]);
+    expect(writeFile).toHaveBeenCalledTimes(2);
   });
 });

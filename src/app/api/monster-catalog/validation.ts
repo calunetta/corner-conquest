@@ -84,6 +84,22 @@ export function parseMonsterEditBody(body: unknown): MonsterEditRequest | Upload
   return { name: name.trim(), level, nextLevel, nextIsBoss };
 }
 
+export interface MonsterKey {
+  name: string;
+  level: number;
+}
+
+/** Reads the JSON body of DELETE /api/monster-catalog: which monster to remove. */
+export function parseMonsterKeyBody(body: unknown): MonsterKey | UploadFieldError {
+  if (typeof body !== 'object' || body === null) return fieldError('name', 'The request body is not a monster key.');
+  const { name, level } = body as Record<string, unknown>;
+  if (typeof name !== 'string' || toMonsterSpriteSlug(name) === '') {
+    return fieldError('name', 'The name needs at least one letter or digit.');
+  }
+  if (!isWholeNumberInRange(level, MIN_LEVEL, MAX_BOSS_LEVEL)) return fieldError('level', LEVEL_RANGE_MESSAGE);
+  return { name: name.trim(), level };
+}
+
 function isWholeNumberInRange(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
 }

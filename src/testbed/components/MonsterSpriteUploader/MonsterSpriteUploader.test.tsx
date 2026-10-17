@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { SEED_MONSTER_CATALOG } from '@/modules/game-rules';
+import { SEED_MONSTER_CATALOG, toCatalogEntryKey } from '@/modules/game-rules';
 import {
   emptyUploaderViewModel,
   extraMonsterEntry,
@@ -196,12 +196,12 @@ describe('MonsterSpriteUploaderView catalog rows', () => {
       .find((candidate) => within(candidate).queryByText(extraMonsterEntry.name)) as HTMLElement;
     expect(within(row).getByRole('combobox', { name: 'Level of Fire Ogre' })).toHaveTextContent('2 — Little');
     expect(within(row).queryByText('Seed')).not.toBeInTheDocument();
-    expect(within(row).queryByRole('button', { name: /delete|remove/i })).not.toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Remove Fire Ogre' })).toBeInTheDocument();
   });
 
-  it('renders no delete control anywhere in the catalog', () => {
+  it('renders exactly one Remove button in the default catalog, on the uploaded row', () => {
     renderView();
-    expect(screen.queryByRole('button', { name: /delete|remove/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /remove/i })).toHaveLength(1);
   });
 });
 
@@ -391,5 +391,102 @@ describe('MonsterSpriteUploaderView catalog row editing', () => {
   it('renders no catalog alert when catalogEditError is null', () => {
     renderView({ catalogEditError: null });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+});
+
+describe('MonsterSpriteUploaderView catalog row removal', () => {
+  const fireOgreKey = toCatalogEntryKey(extraMonsterEntry.name, extraMonsterEntry.level);
+  const fireOgreRemoval = { name: 'Fire Ogre', level: 2 };
+  const iceWisp: MonsterCatalogEntry = {
+    name: 'Ice Wisp' as MonsterCatalogEntry['name'],
+    level: 1,
+    isBoss: false,
+    sprite: { idle: '/monster/ice-wisp-lvl1-idle.gif' },
+  };
+
+  function rowFor(name: string): HTMLElement {
+    return screen.getAllByTestId('monster-catalog-row').find((row) => within(row).queryByText(name)) as HTMLElement;
+  }
+
+  it('shows "Remove Fire Ogre" on the uploaded row and no button on seed rows', () => {
+    renderView();
+    expect(within(rowFor('Fire Ogre')).getByRole('button', { name: 'Remove Fire Ogre' })).toBeInTheDocument();
+    SEED_MONSTER_CATALOG.forEach((seed) => {
+      expect(screen.queryByRole('button', { name: `Remove ${seed.name}` })).not.toBeInTheDocument();
+    });
+    const seedRows = screen.getAllByTestId('monster-catalog-row').filter((row) => within(row).queryByText('Seed'));
+    expect(seedRows).toHaveLength(SEED_MONSTER_CATALOG.length);
+    seedRows.forEach((row) => expect(within(row).queryByRole('button')).not.toBeInTheDocument());
+  });
+
+  it('clicking Remove arms the removal and does not remove', () => {
+    const onArmRemove = jest.fn();
+    const onCatalogRemove = jest.fn();
+    renderView({ onArmRemove, onCatalogRemove });
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Fire Ogre' }));
+    expect(onArmRemove).toHaveBeenCalledTimes(1);
+    expect(onArmRemove).toHaveBeenCalledWith(fireOgreRemoval);
+    expect(onCatalogRemove).not.toHaveBeenCalled();
+  });
+
+  it('armed row shows Confirm remove and Cancel instead of Remove', () => {
+    renderView({ removeArmedKey: fireOgreKey });
+    const row = rowFor('Fire Ogre');
+    expect(within(row).getByRole('button', { name: 'Confirm remove' })).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove Fire Ogre' })).not.toBeInTheDocument();
+  });
+
+  it('Confirm remove calls onCatalogRemove with name and level only', () => {
+    const onArmRemove = jest.fn();
+    const onCatalogRemove = jest.fn();
+    renderView({ removeArmedKey: fireOgreKey, onArmRemove, onCatalogRemove });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm remove' }));
+    expect(onCatalogRemove).toHaveBeenCalledTimes(1);
+    expect(onCatalogRemove).toHaveBeenCalledWith(fireOgreRemoval);
+    expect(onArmRemove).not.toHaveBeenCalled();
+  });
+
+  it('Cancel calls onArmRemove(null) and does not remove', () => {
+    const onArmRemove = jest.fn();
+    const onCatalogRemove = jest.fn();
+    renderView({ removeArmedKey: fireOgreKey, onArmRemove, onCatalogRemove });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onArmRemove).toHaveBeenCalledTimes(1);
+    expect(onArmRemove).toHaveBeenCalledWith(null);
+    expect(onCatalogRemove).not.toHaveBeenCalled();
+  });
+
+  it('disables Remove while the row is pending, and leaves other rows enabled', () => {
+    const rows = toCatalogRowViewModels([...SEED_MONSTER_CATALOG, extraMonsterEntry, iceWisp]);
+    renderView({ catalogRows: rows, pendingCatalogKey: fireOgreKey });
+    expect(screen.getByRole('button', { name: 'Remove Fire Ogre' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Remove Ice Wisp' })).toBeEnabled();
+  });
+
+  it('disables Confirm remove and Cancel while the armed row is pending', () => {
+    renderView({ removeArmedKey: fireOgreKey, pendingCatalogKey: fireOgreKey });
+    expect(screen.getByRole('button', { name: 'Confirm remove' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+  });
+
+  it('removes the clicked row regardless of catalogRows order', () => {
+    const onArmRemove = jest.fn();
+    const rows = toCatalogRowViewModels([iceWisp, extraMonsterEntry, ...SEED_MONSTER_CATALOG].reverse());
+    renderView({ catalogRows: rows, onArmRemove });
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Ice Wisp' }));
+    expect(onArmRemove).toHaveBeenLastCalledWith({ name: 'Ice Wisp', level: 1 });
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Fire Ogre' }));
+    expect(onArmRemove).toHaveBeenLastCalledWith(fireOgreRemoval);
+  });
+
+  it('arms only the row whose key matches when two uploaded rows exist', () => {
+    const onCatalogRemove = jest.fn();
+    const rows = toCatalogRowViewModels([...SEED_MONSTER_CATALOG, iceWisp, extraMonsterEntry]);
+    renderView({ catalogRows: rows, removeArmedKey: fireOgreKey, onCatalogRemove });
+    expect(screen.getAllByRole('button', { name: 'Confirm remove' })).toHaveLength(1);
+    expect(within(rowFor('Ice Wisp')).getByRole('button', { name: 'Remove Ice Wisp' })).toBeInTheDocument();
+    fireEvent.click(within(rowFor('Fire Ogre')).getByRole('button', { name: 'Confirm remove' }));
+    expect(onCatalogRemove).toHaveBeenCalledWith(fireOgreRemoval);
   });
 });

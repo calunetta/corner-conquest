@@ -79,3 +79,27 @@ export async function moveMonsterSprites(edit: MonsterEditRequest): Promise<Mons
   }
   return { entry: findMonsterEntry(nextEntries, entry.name, edit.nextLevel) as MonsterCatalogEntry };
 }
+
+export interface MonsterRemoval {
+  name: string;
+  level: number;
+}
+
+/** Deletes an uploaded monster's sprite file(s) and regenerates both catalog sources. Seeds are fixed. */
+export async function removeMonsterSprites(removal: MonsterRemoval): Promise<MonsterEditFailure | { removed: true }> {
+  const currentFilenames = await listGifFilenames();
+  const currentEntries = buildMonsterCatalogEntries(currentFilenames);
+  const entry = findMonsterEntry(currentEntries, removal.name, removal.level);
+  if (!entry) return failure(`No monster named "${removal.name}" at level ${removal.level}.`, 404);
+  if (isSeedEntry(entry)) return failure(`${entry.name} is a seed monster and can't be removed.`, 403);
+
+  const spriteDirectory = toProjectPath(MONSTER_SPRITE_PUBLIC_DIRECTORY_FS);
+  const removedFiles = new Set(SPRITE_KINDS.flatMap((kind) => (entry.sprite[kind] ? [path.basename(entry.sprite[kind])] : [])));
+  const nextFilenames = currentFilenames.filter((filename) => !removedFiles.has(filename));
+  await writeCatalogSources(buildMonsterCatalogEntries(nextFilenames));
+
+  for (const filename of removedFiles) {
+    await unlink(path.join(spriteDirectory, filename));
+  }
+  return { removed: true };
+}

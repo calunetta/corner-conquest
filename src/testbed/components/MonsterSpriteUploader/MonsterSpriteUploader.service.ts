@@ -3,6 +3,7 @@ import type {
   AddMonsterErrorBody,
   AddMonsterResponseBody,
   CatalogEdit,
+  CatalogRemoval,
   UpdateMonsterResponseBody,
   UploadField,
 } from './MonsterSpriteUploader.types';
@@ -69,4 +70,15 @@ export async function updateMonster(edit: CatalogEdit): Promise<MonsterCatalogEn
   await throwIfNotOk(response);
   const body = (await response.json()) as UpdateMonsterResponseBody;
   return body.entry;
+}
+
+/** DELETEs an uploaded monster; the route removes its sprite file(s) and regenerates the catalog.
+ *  Throws AddMonsterError on a non-ok response. */
+export async function deleteMonster(removal: CatalogRemoval): Promise<void> {
+  const response = await fetch(ENDPOINT, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(removal),
+  });
+  await throwIfNotOk(response);
 }

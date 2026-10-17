@@ -1,4 +1,4 @@
-import { AddMonsterError, addMonster, updateMonster } from './MonsterSpriteUploader.service';
+import { AddMonsterError, addMonster, deleteMonster, updateMonster } from './MonsterSpriteUploader.service';
 
 const entry = { name: 'Fire Ogre', level: 2, isBoss: false, sprite: { idle: '/monster/fire-ogre-lvl2-idle.gif' } };
 
@@ -92,5 +92,35 @@ describe('updateMonster', () => {
     expect(error).toBeInstanceOf(AddMonsterError);
     expect((error as AddMonsterError).message).toBe('A monster named "Fire Ogre" at level 3 already exists.');
     expect((error as AddMonsterError).field).toBe('level');
+  });
+});
+
+describe('deleteMonster', () => {
+  const removal = { name: 'Fire Ogre', level: 2 } as const;
+
+  it('DELETEs the name and level as JSON to /api/monster-catalog', async () => {
+    const fetchMock = mockFetch({ ok: true, status: 200, json: async () => ({ removed: true }) });
+
+    await expect(deleteMonster(removal)).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/monster-catalog');
+    expect(init.method).toBe('DELETE');
+    expect(init.headers).toEqual({ 'Content-Type': 'application/json' });
+    expect(JSON.parse(init.body as string)).toEqual({ name: 'Fire Ogre', level: 2 });
+  });
+
+  it('throws AddMonsterError carrying the server message on a non-ok response', async () => {
+    mockFetch({
+      ok: false,
+      status: 403,
+      json: async () => ({ error: "Lancer is a seed monster and can't be removed." }),
+    });
+
+    const error = await deleteMonster({ name: 'Lancer', level: 1 }).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(AddMonsterError);
+    expect((error as AddMonsterError).message).toBe("Lancer is a seed monster and can't be removed.");
   });
 });

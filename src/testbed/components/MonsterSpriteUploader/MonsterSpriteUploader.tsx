@@ -19,6 +19,9 @@ export function MonsterSpriteUploaderView(viewModel: MonsterSpriteUploaderViewMo
           pendingCatalogKey={viewModel.pendingCatalogKey}
           catalogEditError={viewModel.catalogEditError}
           onCatalogEdit={viewModel.onCatalogEdit}
+          removeArmedKey={viewModel.removeArmedKey}
+          onArmRemove={viewModel.onArmRemove}
+          onCatalogRemove={viewModel.onCatalogRemove}
         />
       </div>
     </div>

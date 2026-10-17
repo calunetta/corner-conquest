@@ -8,8 +8,8 @@ import {
   MONSTER_SPRITE_PUBLIC_DIRECTORY_FS,
 } from '@/modules/game-rules/monster-catalog-generator';
 import { listGifFilenames, toProjectPath, writeCatalogSources } from './catalog-files';
-import { moveMonsterSprites } from './edit';
-import { parseMonsterEditBody, parseMonsterUploadFields, validateSpriteBytes } from './validation';
+import { moveMonsterSprites, removeMonsterSprites } from './edit';
+import { parseMonsterEditBody, parseMonsterKeyBody, parseMonsterUploadFields, validateSpriteBytes } from './validation';
 import type { UploadFieldError } from './validation';
 
 // Dev-only: this route must 404 in any deployed build, regardless of NEXT_PUBLIC_ENABLE_TESTBED
@@ -78,4 +78,18 @@ export async function PATCH(request: Request): Promise<Response> {
   const result = await moveMonsterSprites(edit);
   if ('message' in result) return errorResponse(result.message, result.status);
   return NextResponse.json({ entry: result.entry });
+}
+
+/** Removes an uploaded monster's sprite file(s). Seed monsters are rejected (they are code constants). */
+export async function DELETE(request: Request): Promise<Response> {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response(null, { status: 404 });
+  }
+
+  const key = parseMonsterKeyBody(await request.json().catch(() => null));
+  if ('message' in key) return errorResponse(key.message, key.status, key.field);
+
+  const result = await removeMonsterSprites(key);
+  if ('message' in result) return errorResponse(result.message, result.status);
+  return NextResponse.json({ removed: true });
 }
