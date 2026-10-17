@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { HandMetal } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { cn } from '@/lib/utils';
 import { styles } from './StealResourceDialog.styles';
 import type { PlayerSelectionStepProps } from './StealResourceDialog.types';
@@ -14,7 +14,7 @@ export function PlayerSelectionStep({ options, onSelectPlayer, onClose }: Player
       <AlertDialogHeader className={styles.header}>
         <div className={styles.headerRow}>
           <div className={styles.iconWrap}>
-            <HandMetal className={styles.icon} />
+            <RegistryIcon id="hand-metal" className={styles.icon} />
           </div>
           <div>
             <AlertDialogTitle className={styles.title}>Infiltrate & Steal</AlertDialogTitle>

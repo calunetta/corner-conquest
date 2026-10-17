@@ -12,9 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ResourceIcon } from '@/modules/shared';
+import { ResourceIcon, RegistryIcon } from '@/modules/shared';
 import { ResourceType } from '@/lib/types';
-import { CheckCircle, Award } from 'lucide-react';
 import { useAbilitiesDialog } from './AbilitiesDialog.hook';
 import { styles } from './AbilitiesDialog.styles';
 import type { AbilitiesDialogProps } from './AbilitiesDialog.types';
@@ -28,7 +27,7 @@ export function AbilitiesDialog(props: AbilitiesDialogProps) {
         <AlertDialogHeader className={styles.header}>
           <div className={styles.headerRow}>
             <div className={styles.iconWrap}>
-              <Award className={styles.icon} />
+              <RegistryIcon id="award" className={styles.icon} />
             </div>
             <div>
               <AlertDialogTitle className={styles.title}>Empire Abilities Shop</AlertDialogTitle>
@@ -47,7 +46,7 @@ export function AbilitiesDialog(props: AbilitiesDialogProps) {
                   <CardTitle className={styles.cardTitle}>{ability.title}</CardTitle>
                   {ability.hasAbility ? (
                     <Badge variant="outline" className={styles.activeBadge}>
-                      <CheckCircle className={styles.activeIcon} />
+                      <RegistryIcon id="check-circle" className={styles.activeIcon} />
                       <span>Active</span>
                     </Badge>
                   ) : (

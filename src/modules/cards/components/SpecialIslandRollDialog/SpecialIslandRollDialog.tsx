@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Dices, Sparkles, XCircle } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { toSpecialIslandRollViewModel } from './SpecialIslandRollDialog.map';
 import { styles } from './SpecialIslandRollDialog.styles';
 import type { SpecialIslandRollDialogProps } from './SpecialIslandRollDialog.types';
@@ -46,7 +46,7 @@ export function SpecialIslandRollDialog({ state, onRoll, onClose }: SpecialIslan
         <div className={styles.body}>
           {!viewModel.isRolled ? (
             <div className={styles.diceWrap}>
-              <Dices className={styles.diceIcon} />
+              <RegistryIcon id="dices" className={styles.diceIcon} />
             </div>
           ) : (
             <div className={styles.resultWrap}>
@@ -60,7 +60,7 @@ export function SpecialIslandRollDialog({ state, onRoll, onClose }: SpecialIslan
               {viewModel.cardDrawn ? (
                 <>
                   <div className={styles.unlockedRow}>
-                    <Sparkles className={styles.unlockedIcon} />
+                    <RegistryIcon id="sparkles" className={styles.unlockedIcon} />
                     <span>Treasure Unlocked!</span>
                   </div>
                   <p className={styles.cardAcquired}>
@@ -71,7 +71,7 @@ export function SpecialIslandRollDialog({ state, onRoll, onClose }: SpecialIslan
               ) : (
                 <>
                   <div className={styles.noTreasureRow}>
-                    <XCircle className={styles.noTreasureIcon} />
+                    <RegistryIcon id="x-circle" className={styles.noTreasureIcon} />
                     <span>No Treasure This Time</span>
                   </div>
                   <p className={styles.noTreasureHint}>Better fortune on your next discovery!</p>
@@ -84,7 +84,7 @@ export function SpecialIslandRollDialog({ state, onRoll, onClose }: SpecialIslan
         <AlertDialogFooter className={styles.footer}>
           {!viewModel.isRolled ? (
             <Button onClick={onRoll} className={styles.rollButton}>
-              <Dices className={styles.rollIcon} />
+              <RegistryIcon id="dices" className={styles.rollIcon} />
               Roll for Treasure (3 or 6)
             </Button>
           ) : (

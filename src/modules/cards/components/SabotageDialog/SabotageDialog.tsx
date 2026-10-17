@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Ban } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { toSabotageDialogViewModel } from './SabotageDialog.map';
 import { styles } from './SabotageDialog.styles';
 import type { SabotageDialogProps } from './SabotageDialog.types';
@@ -24,7 +24,7 @@ export function SabotageDialog({ players, onSabotage, onClose }: SabotageDialogP
         <AlertDialogHeader className={styles.header}>
           <div className={styles.headerRow}>
             <div className={styles.iconWrap}>
-              <Ban className={styles.icon} />
+              <RegistryIcon id="ban" className={styles.icon} />
             </div>
             <div>
               <AlertDialogTitle className={styles.title}>Sabotage Opponent</AlertDialogTitle>
@@ -55,7 +55,7 @@ export function SabotageDialog({ players, onSabotage, onClose }: SabotageDialogP
               </div>
               <p className={styles.name}>{target.name}</p>
               <span className={styles.skipLabel}>
-                <Ban className={styles.skipIcon} /> Skip Turn
+                <RegistryIcon id="ban" className={styles.skipIcon} /> Skip Turn
               </span>
             </button>
           ))}

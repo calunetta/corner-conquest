@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Zap, Shield, Play } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { toCardsDialogViewModel } from './CardsDialog.map';
 import { styles } from './CardsDialog.styles';
 import type { CardsDialogProps } from './CardsDialog.types';
@@ -26,7 +26,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
         <AlertDialogHeader className={styles.header}>
           <div className={styles.headerRow}>
             <div className={styles.iconWrap}>
-              <Sparkles className={styles.icon} />
+              <RegistryIcon id="sparkles" className={styles.icon} />
             </div>
             <div>
               <AlertDialogTitle className={styles.title}>{viewModel.playerName}&apos;s Special Cards</AlertDialogTitle>
@@ -44,7 +44,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
                 <Card key={card.name} className={styles.card}>
                   <CardHeader className={styles.cardHeader}>
                     <div className={styles.cardTitleRow}>
-                      <Zap className={styles.zapIcon} />
+                      <RegistryIcon id="zap" className={styles.zapIcon} />
                       <CardTitle className={styles.cardTitle}>{card.name}</CardTitle>
                     </div>
                     <div className={styles.badgeRow}>
@@ -58,7 +58,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
                           disabled={!viewModel.canUseCardAbility}
                           className={styles.useButton}
                         >
-                          <Play className={styles.playIcon} />
+                          <RegistryIcon id="play" className={styles.playIcon} />
                           Use
                         </Button>
                       )}
@@ -71,7 +71,7 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
               ))
             ) : (
               <div className={styles.emptyState}>
-                <Shield className={styles.emptyIcon} />
+                <RegistryIcon id="shield" className={styles.emptyIcon} />
                 <p className={styles.emptyText}>This player currently has no special cards.</p>
               </div>
             )}

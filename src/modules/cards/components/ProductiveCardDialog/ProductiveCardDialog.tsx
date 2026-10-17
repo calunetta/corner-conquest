@@ -10,8 +10,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { ResourceIcon } from '@/modules/shared';
-import { TrendingUp, Check } from 'lucide-react';
+import { ResourceIcon, RegistryIcon } from '@/modules/shared';
 import { useProductiveCardDialog } from './ProductiveCardDialog.hook';
 import { styles } from './ProductiveCardDialog.styles';
 import type { ProductiveCardDialogProps } from './ProductiveCardDialog.types';
@@ -27,7 +26,7 @@ export function ProductiveCardDialog(props: ProductiveCardDialogProps) {
         <AlertDialogHeader className={styles.header}>
           <div className={styles.headerRow}>
             <div className={styles.iconWrap}>
-              <TrendingUp className={styles.icon} />
+              <RegistryIcon id="trending-up" className={styles.icon} />
             </div>
             <div>
               <AlertDialogTitle className={styles.title}>Productive Harvest</AlertDialogTitle>
@@ -49,7 +48,7 @@ export function ProductiveCardDialog(props: ProductiveCardDialogProps) {
             >
               {option.isSelected && (
                 <div className={styles.selectedBadge}>
-                  <Check className={styles.selectedIcon} />
+                  <RegistryIcon id="check" className={styles.selectedIcon} />
                 </div>
               )}
 
