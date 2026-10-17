@@ -5,6 +5,7 @@ export const monsterSpriteUploaderPreview: ComponentPreview = {
   slug: 'monster-sprite-uploader',
   title: 'Monster Sprite Uploader',
   group: 'Dev tools',
+  devTool: true,
   states: [
     { name: 'Uploader', render: () => <MonsterSpriteUploader /> },
   ],

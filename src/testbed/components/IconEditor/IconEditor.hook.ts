@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { iconOverridesConfig, iconRegistry } from '@/modules/icons';
+import { iconRegistry } from '@/modules/icons';
 import type { IconOverridesConfig } from '@/modules/icons';
 import { clampRotation, clampSize, toModuleGroups } from './IconEditor.map';
-import { listIconUploads, saveIconOverrides, uploadIconImage } from './IconEditor.service';
+import {
+  IconOverridesConflictError,
+  listIconUploads,
+  loadIconOverrides,
+  saveIconOverrides,
+  uploadIconImage,
+} from './IconEditor.service';
 import type { IconEditorStatus, IconEditorViewModel, IconRowHandlers, IconUploadState } from './IconEditor.types';
 
 const SAVED_BADGE_DURATION_MS = 2000;
@@ -12,19 +18,33 @@ const SAVED_BADGE_DURATION_MS = 2000;
  *  see plan.md's Decisions), and the global save. */
 export function useIconEditor(): IconEditorViewModel {
   const [isLoading, setIsLoading] = useState(true);
-  const [savedOverrides, setSavedOverrides] = useState<IconOverridesConfig>(() => structuredClone(iconOverridesConfig));
-  const [draftOverrides, setDraftOverrides] = useState<IconOverridesConfig>(() => structuredClone(iconOverridesConfig));
+  const [savedOverrides, setSavedOverrides] = useState<IconOverridesConfig>({});
+  const [draftOverrides, setDraftOverrides] = useState<IconOverridesConfig>({});
+  const [baseSha, setBaseSha] = useState<string | null>(null);
   const [uploadStates, setUploadStates] = useState<Record<string, IconUploadState>>({});
   const [status, setStatus] = useState<IconEditorStatus>('idle');
   const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    listIconUploads()
-      .then(() => setIsLoading(false))
-      .catch((error: unknown) => {
-        console.error('Failed to list icon uploads', error);
-        setIsLoading(false);
+    let isCurrent = true;
+    loadIconOverrides()
+      .then((snapshot) => {
+        if (!isCurrent) return;
+        setSavedOverrides(snapshot.overrides);
+        setDraftOverrides(structuredClone(snapshot.overrides));
+        setBaseSha(snapshot.sha);
+      })
+      .catch((error: unknown) => console.error('Failed to load icon overrides', error))
+      .finally(() => {
+        if (isCurrent) setIsLoading(false);
       });
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    listIconUploads().catch((error: unknown) => console.error('Failed to list icon uploads', error));
   }, []);
 
   useEffect(() => () => {
@@ -69,21 +89,27 @@ export function useIconEditor(): IconEditorViewModel {
   }, []);
 
   const onSave = useCallback(() => {
+    if (baseSha === null) return;
     const overridesToSave = draftOverrides;
     setStatus('saving');
 
-    saveIconOverrides(overridesToSave)
-      .then(() => {
+    saveIconOverrides(overridesToSave, baseSha)
+      .then((saved) => {
         setSavedOverrides(overridesToSave);
+        setBaseSha(saved.sha);
         setStatus('saved');
         if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
         savedTimeoutRef.current = setTimeout(() => setStatus('idle'), SAVED_BADGE_DURATION_MS);
       })
       .catch((error: unknown) => {
+        if (error instanceof IconOverridesConflictError) {
+          setStatus('conflict');
+          return;
+        }
         console.error('Failed to save icon overrides', error);
         setStatus('error');
       });
-  }, [draftOverrides]);
+  }, [baseSha, draftOverrides]);
 
   const makeHandlers = useCallback(
     (iconId: string): IconRowHandlers => ({

@@ -1,12 +1,27 @@
 'use client';
 
 import Image from 'next/image';
-import { toPlacementStyle } from './TileVariants.map';
+import type { ReactNode } from 'react';
+import { toBuiltInOffsetStyle, toPlacementStyle } from './TileVariants.map';
 import type { TileTransform } from './TileVariants.config';
 
 interface PlacedVariantImageProps {
   src: string;
   transform: TileTransform;
+}
+
+interface PlacedBuiltInArtProps {
+  transform: TileTransform;
+  children: ReactNode;
+}
+
+/** The game's built-in art, moved by a variant's position. Its own spot and size come from its children. */
+export function PlacedBuiltInArt({ transform, children }: PlacedBuiltInArtProps) {
+  return (
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={toBuiltInOffsetStyle(transform)} data-testid="placed-built-in">
+      {children}
+    </div>
+  );
 }
 
 /** A variant's image at its saved position and size, relative to the tile. */

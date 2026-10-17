@@ -11,16 +11,6 @@ function island(overrides: Partial<Island> & Pick<Island, 'id' | 'x' | 'y' | 'ty
   return { resources: [], occupants: [], ...overrides };
 }
 
-/** Compares two instance arrays by position/sprite only, ignoring their ids: used when two
- *  scenarios reuse the same physical positions under different layout ids. */
-function withoutIds(instances: { id: string }[]): unknown[] {
-  return instances.map((instance) => {
-    const copy: Record<string, unknown> = { ...instance };
-    delete copy.id;
-    return copy;
-  });
-}
-
 describe('toScenarioKey', () => {
   it('returns "base" whenever isBase is true, regardless of island type', () => {
     const resourceIsland = island({ id: '0-0', x: 0, y: 0, type: IslandType.Resource });
@@ -77,70 +67,57 @@ describe('toScenarioKey', () => {
 });
 
 describe('toDecorationLayout', () => {
-  it('returns the migrated 15-instance Base layout exactly, from the real config file', () => {
+  it('returns the default Base grove exactly, from the real config file', () => {
     const baseIsland = island({ id: '0-0', x: 0, y: 0, type: IslandType.Base });
 
     const layout = toDecorationLayout(baseIsland, true, realConfig);
 
-    expect(layout).toEqual(realConfig.base[0]);
-    expect(layout.instances).toHaveLength(15);
-    expect(layout.instances[0]).toEqual({
-      id: 'base-default-0',
-      image: '/sprites/decorations/pine_tree.gif',
-      top: 36.5,
-      left: 44.5,
-      size: 15,
-      z: 10,
-    });
-    expect(layout.instances[14]).toEqual({
-      id: 'base-default-14',
-      image: '/sprites/decorations/autmn_tree.gif',
-      top: 37.5,
-      left: 52.5,
-      size: 15,
-      z: 10,
-    });
+    expect(layout).toEqual(realConfig.base[1]);
+    expect(layout.instances).toHaveLength(16);
+    expect(layout.instances[0]).toEqual({ id: 'base-default-b-0', image: '/sprites/decorations/rock-2.png', top: 3, left: 28.2, size: 9, z: 10 });
+    expect(layout.instances[15]).toEqual({ id: 'base-default-b-15', image: '/sprites/decorations/01.png', top: 79.2, left: 27.8, size: 10, z: 17 });
   });
 
-  it('returns the migrated 9-instance Special layout exactly, from the real config file', () => {
+  it('returns the default Special grove exactly, from the real config file', () => {
     const specialIsland = island({ id: '5-5', x: 5, y: 5, type: IslandType.Special });
 
     const layout = toDecorationLayout(specialIsland, false, realConfig);
 
     expect(layout).toEqual(realConfig.special[0]);
-    expect(layout.instances).toHaveLength(9);
-    expect(layout.instances[8]).toEqual({
-      id: 'special-default-8',
-      image: '/sprites/decorations/pine_tree.gif',
-      top: 27.4,
-      left: 21.9,
-      size: 16,
-      z: 20,
-    });
+    expect(layout.instances).toHaveLength(13);
+    expect(layout.instances[12]).toEqual({ id: 'special-default-a-12', image: '/sprites/decorations/bones-3.png', top: 60.7, left: 14.3, size: 9, z: 16 });
   });
 
-  it('returns the migrated 2-instance grove for an Empty island at an even seed', () => {
+  it('returns the default 2-instance grove for an Empty island at an even seed', () => {
     const emptyIsland = island({ id: '0-0', x: 0, y: 0, type: IslandType.Empty });
 
     const layout = toDecorationLayout(emptyIsland, false, realConfig);
 
     expect(layout).toEqual(realConfig['empty-2'][0]);
     expect(layout.instances).toEqual([
-      { id: 'empty-2-default-0', image: '/sprites/decorations/pine_tree.gif', top: 32, left: 38, size: 28, z: 12 },
-      { id: 'empty-2-default-1', image: '/sprites/decorations/spring_tree.gif', top: 38, left: 62, size: 28, z: 14 },
+      { id: 'empty-2-default-a-0', image: '/sprites/decorations/rock-2.png', top: 39.4, left: 62.6, size: 9, z: 13 },
+      { id: 'empty-2-default-a-1', image: '/sprites/decorations/09.png', top: 42.5, left: 49.6, size: 11, z: 14 },
+      { id: 'empty-2-default-a-2', image: '/sprites/decorations/bush-3.gif', top: 50.6, left: 26, size: 14, z: 15 },
+      { id: 'empty-2-default-a-3', image: '/sprites/decorations/07.png', top: 57.5, left: 67.8, size: 11, z: 15 },
+      { id: 'empty-2-default-a-4', image: '/sprites/decorations/bush-1.gif', top: 60.4, left: 56.8, size: 14, z: 16 },
+      { id: 'empty-2-default-a-5', image: '/sprites/decorations/rock-1.png', top: 63.1, left: 37.9, size: 9, z: 16 },
     ]);
   });
 
-  it('returns the migrated 3-instance grove for an Empty island at an odd seed', () => {
+  it('returns the default 3-instance grove for an Empty island at an odd seed', () => {
     const emptyIsland = island({ id: '1-0', x: 1, y: 0, type: IslandType.Empty });
 
     const layout = toDecorationLayout(emptyIsland, false, realConfig);
 
-    expect(layout).toEqual(realConfig['empty-3'][0]);
+    expect(layout).toEqual(realConfig['empty-3'][1]);
     expect(layout.instances).toEqual([
-      { id: 'empty-3-default-0', image: '/sprites/decorations/pine_tree.gif', top: 32, left: 38, size: 28, z: 12 },
-      { id: 'empty-3-default-1', image: '/sprites/decorations/spring_tree.gif', top: 38, left: 62, size: 28, z: 14 },
-      { id: 'empty-3-default-2', image: '/sprites/decorations/autmn_tree.gif', top: 60, left: 58, size: 28, z: 13 },
+      { id: 'empty-3-default-b-0', image: '/sprites/decorations/tree-1.gif', top: 42, left: 76.8, size: 30, z: 14 },
+      { id: 'empty-3-default-b-1', image: '/sprites/decorations/rock-2.png', top: 46.8, left: 51.1, size: 9, z: 14 },
+      { id: 'empty-3-default-b-2', image: '/sprites/decorations/09.png', top: 59.1, left: 63.5, size: 11, z: 15 },
+      { id: 'empty-3-default-b-3', image: '/sprites/decorations/08.png', top: 73.2, left: 50.2, size: 11, z: 17 },
+      { id: 'empty-3-default-b-4', image: '/sprites/decorations/09.png', top: 78.6, left: 70.7, size: 11, z: 17 },
+      { id: 'empty-3-default-b-5', image: '/sprites/decorations/10.png', top: 80.1, left: 42.9, size: 11, z: 18 },
+      { id: 'empty-3-default-b-6', image: '/sprites/decorations/rock-2.png', top: 85, left: 55.3, size: 9, z: 18 },
     ]);
   });
 
@@ -158,7 +135,7 @@ describe('toDecorationLayout', () => {
     expect(layout.instances).toEqual([]);
   });
 
-  it('returns an empty instances array for a living-Monster island (suppressed only while alive)', () => {
+  it('returns the lair layout for a living-Monster island: skull sticks, bones, weapons and no trees', () => {
     const monsterIsland = island({
       id: '2-2',
       x: 2,
@@ -169,25 +146,28 @@ describe('toDecorationLayout', () => {
 
     const layout = toDecorationLayout(monsterIsland, false, realConfig);
 
-    expect(layout.instances).toEqual([]);
+    expect(layout.id).toMatch(/^monster-alive-default-/);
+    expect(layout.instances.length).toBeGreaterThan(0);
+    expect(layout.instances.some((instance) => instance.image.includes('bones-'))).toBe(true);
+    expect(layout.instances.some((instance) => instance.image.includes('tree'))).toBe(false);
   });
 
-  it('picks the 2-tree monster-cleared layout at the same seed parity Empty uses for its 2-tree grove', () => {
+  it('picks a cleared-monster layout with two or three weapons and no trees', () => {
     const clearedIsland = island({ id: '0-0', x: 0, y: 0, type: IslandType.Monster, monsters: [] });
 
     const layout = toDecorationLayout(clearedIsland, false, realConfig);
 
-    expect(layout.id).toBe('monster-cleared-default-2trees');
-    expect(withoutIds(layout.instances)).toEqual(withoutIds(realConfig['empty-2'][0].instances));
+    const weapons = layout.instances.filter((instance) => instance.image.includes('/tool-'));
+    expect(layout.id).toBe('monster-cleared-default-a');
+    expect(weapons.length).toBeGreaterThanOrEqual(2);
+    expect(weapons.length).toBeLessThanOrEqual(3);
+    expect(layout.instances.some((instance) => instance.image.includes('tree'))).toBe(false);
   });
 
-  it('picks the 3-tree monster-cleared layout at the same seed parity Empty uses for its 3-tree grove', () => {
+  it('uses the second cleared-monster layout at the odd seed parity', () => {
     const clearedIsland = island({ id: '1-0', x: 1, y: 0, type: IslandType.Monster, monsters: [] });
 
-    const layout = toDecorationLayout(clearedIsland, false, realConfig);
-
-    expect(layout.id).toBe('monster-cleared-default-3trees');
-    expect(withoutIds(layout.instances)).toEqual(withoutIds(realConfig['empty-3'][0].instances));
+    expect(toDecorationLayout(clearedIsland, false, realConfig).id).toBe('monster-cleared-default-b');
   });
 
   it('is deterministic: the same island resolves to the same layout reference every call', () => {

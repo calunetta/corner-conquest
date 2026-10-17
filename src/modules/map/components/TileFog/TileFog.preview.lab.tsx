@@ -4,13 +4,13 @@ import { useState } from 'react';
 import { createViewModelWithState, WithGameBoardContext } from '../IslandTile/IslandTile.preview.shared';
 import { resourceIslandWithThreeNodesAndThreeOccupants } from '../IslandTile/IslandTile.fixtures';
 import { FogSettingsProvider } from './TileFog.context';
-import { applyFrameDelay, saveTimingDefaults } from './TileFog.preview.api';
+import { applyFrameDelay } from './TileFog.preview.api';
+import { useSavedFogTiming } from './TileFog.preview.saved';
 import { FogVariantUploadForm } from './TileFog.preview.upload';
 import { StatusText, type Status } from './TileFog.preview.status';
 import { useRepeatingReveal } from './TileFog.preview.repeat';
 import { BUTTON_CLASS, CONTROL_LABELS } from './TileFog.preview.controls';
 import {
-  DEFAULT_FOG_TIMING,
   DEFAULT_FOG_VARIANTS,
   FOG_TIMING_RANGES,
   FRAME_DELAY_RANGE,
@@ -28,10 +28,10 @@ const TILE_WIDTH_PX = 180;
 export function TileFogRevealLab() {
   const [isCovered, setIsCovered] = useState(true);
   const [repeat, setRepeat] = useState(false);
-  const [timing, setTiming] = useState<FogTiming>(DEFAULT_FOG_TIMING);
   const [variants, setVariants] = useState<FogVariant[]>(DEFAULT_FOG_VARIANTS);
   const [selectedId, setSelectedId] = useState(DEFAULT_FOG_VARIANTS[0].id);
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  const { timing, setTiming, save: handleSaveTiming } = useSavedFogTiming(setStatus);
   const selectedVariant = variants.find((variant) => variant.id === selectedId) ?? variants[0];
   const [speedDraft, setSpeedDraft] = useState(selectedVariant.frameDelayMs);
   useRepeatingReveal(repeat, isCovered, selectedVariant.passMs, setIsCovered);
@@ -43,12 +43,6 @@ export function TileFogRevealLab() {
   const updateField = (key: keyof FogTiming, value: number) => {
     setStatus({ kind: 'idle' });
     setTiming((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleSaveTiming = async () => {
-    setStatus({ kind: 'busy' });
-    const result = await saveTimingDefaults(timing);
-    setStatus(result.ok ? { kind: 'ok', message: 'Timing saved as defaults.' } : { kind: 'error', message: result.message });
   };
 
   const selectVariant = (id: string) => {

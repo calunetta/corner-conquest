@@ -5,5 +5,6 @@ export const tileVariantEditorPreview: ComponentPreview = {
   slug: 'tile-variant-editor',
   title: 'Tile Variant Editor',
   group: 'Dev tools',
+  devTool: true,
   states: [{ name: 'Editor', render: () => <TileVariantEditor /> }],
 };

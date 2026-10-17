@@ -14,13 +14,14 @@ import {
 } from '../../island-tile-slots.types';
 
 export const styles = {
+  // Tile art never takes the pointer: clicks reach the tile, and no picture can be dragged out as a ghost.
   tile: cva(
-    'relative flex aspect-square w-full items-center justify-center rounded-lg border-2 shadow-[0_10px_20px_rgba(0,0,0,0.6)] transition-all duration-300',
+    'relative flex aspect-square w-full items-center justify-center rounded-lg border-2 shadow-[0_10px_20px_rgba(0,0,0,0.6)] transition-all duration-300 [&_img]:pointer-events-none [&_img]:select-none [&_img]:[-webkit-user-drag:none]',
     {
       variants: {
         isClickable: {
           true: 'cursor-pointer hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(0,0,0,0.8)]',
-          false: 'cursor-default',
+          false: '!cursor-default',
         },
         isSelected: {
           true: 'border-primary shadow-[0_0_30px_rgba(var(--primary),0.8)]',
@@ -91,9 +92,10 @@ export const playerTileIndicatorShadow: Record<PlayerColor, string> = {
   yellow: 'shadow-yellow-400/50',
 };
 
-export function toBaseCrestStyle(): CSSProperties {
+/** `scale` is the variant's size relative to the built-in size (1 = built-in). */
+export function toBaseCrestStyle(scale = 1): CSSProperties {
   const side = `max(${BASE_CREST_MIN_PX}px, ${BASE_CREST_SIZE}%)`;
-  return { width: side, height: side };
+  return { width: side, height: side, transform: `scale(${scale})` };
 }
 
 export function toRevealLayerStyle(timing: FogTiming, prefersReducedMotion: boolean): CSSProperties {
@@ -104,13 +106,14 @@ export function toRevealLayerStyle(timing: FogTiming, prefersReducedMotion: bool
   };
 }
 
-export function toSpecialIslandStyle(): CSSProperties {
+/** `scale` is the variant's size relative to the built-in size (1 = built-in). */
+export function toSpecialIslandStyle(scale = 1): CSSProperties {
   return {
     top: SPECIAL_ISLAND_TOP,
     left: SPECIAL_ISLAND_LEFT,
     width: `${SPECIAL_ISLAND_SIZE}%`,
     height: `${SPECIAL_ISLAND_SIZE}%`,
-    transform: 'translate(-50%, -50%)',
+    transform: `translate(-50%, -50%) scale(${scale})`,
   };
 }
 

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { MONSTER_CATALOG } from '@/modules/game-rules';
 import type { MonsterCatalogEntry } from '@/modules/game-rules';
 import {
   clampLevelForBossFlag,
@@ -49,8 +48,8 @@ function validateForm(name: string, idleFile: File | null, attackFile: File | nu
   return errors;
 }
 
-/** Owns the add-monster form: field state, preview object URLs, submit flow and the local
- *  catalog list (seeded from the static catalog, appended with the server's returned entry). */
+/** Owns the add-monster form: field state, preview object URLs, submit flow and the saved catalog list,
+ *  which every change refreshes from the server's reply. */
 export function useMonsterSpriteUploader(): MonsterSpriteUploaderViewModel {
   const [name, setName] = useState('');
   const [level, setLevel] = useState<MonsterLevel | null>(null);
@@ -59,8 +58,8 @@ export function useMonsterSpriteUploader(): MonsterSpriteUploaderViewModel {
   const [attackFile, setAttackFile] = useState<File | null>(null);
   const [status, setStatus] = useState<UploadStatus>('idle');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [catalog, setCatalog] = useState<MonsterCatalogEntry[]>(MONSTER_CATALOG);
-  const catalogEdit = useCatalogEdit(setCatalog);
+  const [catalog, setCatalog] = useState<MonsterCatalogEntry[]>([]);
+  const { catalogSha, applySnapshot, ...catalogEdit } = useCatalogEdit(setCatalog);
   const idlePreviewUrl = useObjectUrl(idleFile);
   const attackPreviewUrl = useObjectUrl(attackFile);
 
@@ -108,16 +107,23 @@ export function useMonsterSpriteUploader(): MonsterSpriteUploaderViewModel {
       return;
     }
 
+    if (catalogSha === null) {
+      setStatus('error');
+      setFieldErrors({ name: 'The catalog is still loading. Try again in a moment.' });
+      return;
+    }
+
     setFieldErrors({});
     setStatus('submitting');
-    addMonster({ name, level, isBoss, idleFile, attackFile })
-      .then((entry) => {
-        setCatalog((previous) => [...previous, entry]);
+    addMonster({ name, level, isBoss, idleFile, attackFile }, catalogSha)
+      .then((saved) => {
+        applySnapshot(saved);
         resetFields();
         setStatus('success');
       })
       .catch((error: unknown) => {
         setStatus('error');
+        if (error instanceof AddMonsterError && error.newer) applySnapshot(error.newer);
         if (error instanceof AddMonsterError && error.field) {
           setFieldErrors({ [error.field]: error.message });
           return;

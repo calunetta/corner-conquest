@@ -2,15 +2,17 @@ import { act, renderHook } from '@testing-library/react';
 import { useTileDecorationEditor } from './TileDecorationEditor.hook';
 import { listDecorationImages, saveDecorationLayouts } from './TileDecorationEditor.service';
 
-jest.mock('@/modules/map', () => ({
-  ...jest.requireActual('@/modules/map'),
-  decorationLayoutsConfig: jest.requireActual('./TileDecorationEditor.fixtures').sampleDecorationLayoutsConfig,
-}));
-
 jest.mock('./TileDecorationEditor.service', () => ({
   listDecorationImages: jest.fn(),
   saveDecorationLayouts: jest.fn(),
+  saveVariantDecorations: jest.fn(),
+  SaveConflictError: class SaveConflictError extends Error {},
 }));
+
+const SNAPSHOTS = {
+  layouts: { config: jest.requireActual('./TileDecorationEditor.fixtures').sampleDecorationLayoutsConfig, sha: 'layouts-sha' },
+  variants: { config: jest.requireActual('@/modules/map/components/TileVariants/TileVariants.config').DEFAULT_TILE_VARIANTS_CONFIG, sha: 'variants-sha' },
+};
 
 let idCounter = 0;
 jest.mock('./TileDecorationEditor.ids', () => ({
@@ -29,7 +31,7 @@ describe('useTileDecorationEditor', () => {
   beforeEach(() => {
     idCounter = 0;
     mockListDecorationImages.mockResolvedValue([]);
-    mockSaveDecorationLayouts.mockResolvedValue(undefined);
+    mockSaveDecorationLayouts.mockResolvedValue({ sha: 'next-sha' });
   });
 
   afterEach(() => {
@@ -40,7 +42,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('starts on the base scenario, with its sole layout active and no instance selected', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     expect(result.current.activeScenario).toBe('base');
@@ -50,7 +52,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('switching scenario to one with a sub-picker auto-selects its first variant and resets layout/instance', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -67,7 +69,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('switching variant resets activeLayoutId to the new list\'s first entry and clears the selected instance', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -89,7 +91,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('onSelectLayout activates the chosen layout and clears the selected instance', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -108,7 +110,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('onDragInstance updates the instance position and marks isDirty', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     expect(result.current.isDirty).toBe(false);
@@ -123,7 +125,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('onNudgeInstance moves the instance by the clamped delta and marks isDirty', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -136,7 +138,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('onResizeInstance updates size and marks isDirty', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -149,7 +151,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('onRelayerInstance updates z and marks isDirty', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -162,7 +164,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('onAddInstance appends a default-positioned instance, selects it and marks isDirty', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -184,7 +186,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('onRemoveInstance clears the selection when the removed instance was selected', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -200,7 +202,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('onRemoveInstance keeps the selection when a different instance is removed', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -215,7 +217,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('canDeleteActiveLayout is false for a sole layout and true once a second layout is added', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -234,7 +236,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('onDeleteLayout is a no-op when the active scenario has only one layout', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -252,7 +254,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('onDeleteLayout removes the active layout when several exist, activates the first remaining one and marks isDirty', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -271,7 +273,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('onDuplicateLayout adds a copy with new layout and instance ids, activates it, and leaves the original untouched', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -297,12 +299,12 @@ describe('useTileDecorationEditor', () => {
     expect(original.id).toBe('base-default');
     expect(original.instances[0]).toEqual(expect.objectContaining({ id: 'base-default-0', top: 36.5, left: 44.5 }));
     expect(result.current.layouts[1].instances[0]).toEqual(
-      expect.objectContaining({ id: 'base-instance-2', top: 90, left: 90 }),
+      expect.objectContaining({ id: 'base-instance-2', top: 85, left: 85 }),
     );
   });
 
   it('onRenameLayout renames the active layout only, keeps its id and marks isDirty', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -316,12 +318,12 @@ describe('useTileDecorationEditor', () => {
   it('onSave calls saveDecorationLayouts with the edited config and transitions idle -> saving -> saved, clearing isDirty on success', async () => {
     let resolveSave: () => void = () => {};
     mockSaveDecorationLayouts.mockReturnValue(
-      new Promise<void>((resolve) => {
-        resolveSave = resolve;
+      new Promise<{ sha: string }>((resolve) => {
+        resolveSave = () => resolve({ sha: 'next-sha' });
       }),
     );
 
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -351,12 +353,12 @@ describe('useTileDecorationEditor', () => {
   it('onSave keeps isDirty set when an edit lands while the save is in flight', async () => {
     let resolveSave: () => void = () => {};
     mockSaveDecorationLayouts.mockReturnValue(
-      new Promise<void>((resolve) => {
-        resolveSave = resolve;
+      new Promise<{ sha: string }>((resolve) => {
+        resolveSave = () => resolve({ sha: 'next-sha' });
       }),
     );
 
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -378,12 +380,12 @@ describe('useTileDecorationEditor', () => {
     expect(result.current.status).toBe('saved');
     expect(result.current.isDirty).toBe(true);
     const instance = result.current.layouts[0].instances.find((i) => i.id === 'base-default-0');
-    expect(instance).toEqual(expect.objectContaining({ top: 80, left: 90 }));
+    expect(instance).toEqual(expect.objectContaining({ top: 80, left: 85 }));
   });
 
   it('returns status from saved to idle exactly 2000ms after a successful save', async () => {
     jest.useFakeTimers();
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -405,7 +407,7 @@ describe('useTileDecorationEditor', () => {
 
   it('a second successful save cancels the first save\'s revert timer, so status stays saved until 2000ms after the second save', async () => {
     jest.useFakeTimers();
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -450,7 +452,7 @@ describe('useTileDecorationEditor', () => {
       }),
     );
 
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -472,7 +474,7 @@ describe('useTileDecorationEditor', () => {
   });
 
   it('onModeChange resets both the decorations selection and the default-elements selection', async () => {
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     act(() => {
@@ -496,7 +498,7 @@ describe('useTileDecorationEditor', () => {
   it('loads images from listDecorationImages on mount', async () => {
     mockListDecorationImages.mockResolvedValue(['/sprites/decorations/pine_tree.gif']);
 
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     expect(result.current.images).toEqual(['/sprites/decorations/pine_tree.gif']);
@@ -507,7 +509,7 @@ describe('useTileDecorationEditor', () => {
     const listError = new Error('404');
     mockListDecorationImages.mockRejectedValue(listError);
 
-    const { result } = renderHook(() => useTileDecorationEditor());
+    const { result } = renderHook(() => useTileDecorationEditor(SNAPSHOTS));
     await act(async () => {});
 
     expect(result.current.images).toEqual([]);

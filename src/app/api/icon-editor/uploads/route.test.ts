@@ -1,3 +1,4 @@
+import { anonymousRequest, authorizedRequest, TEST_DEV_TOOLS_PASSWORD } from '@/lib/dev-tools/access.test-utils';
 // jsdom (this project's default test environment) has no Web Request/Response/fetch globals,
 // which next/server needs. Polyfill from undici before importing the route under test. Plain
 // `require` here, not `import`: imports are hoisted above the polyfill, and './route' reads the
@@ -29,11 +30,6 @@ const { GET, POST } = require('./route') as { GET: typeof GetFn; POST: typeof Po
 
 const FIXED_NOW = 1700000000000;
 
-// @types/node types NODE_ENV as readonly; Object.defineProperty bypasses that for this test only.
-function setNodeEnv(value: string): void {
-  Object.defineProperty(process.env, 'NODE_ENV', { value, configurable: true });
-}
-
 // The route only calls request.formData().get(). undici's multipart parser cannot run under jsdom
 // (its byte-type checks fail across the realm boundary), so the test hands the route a request
 // whose formData() resolves to the entries directly. The File is undici's, the same class the
@@ -42,7 +38,7 @@ function postUpload(fields: { iconId?: string; file?: File }): Promise<Response>
   const entries = new Map<string, FormDataEntryValue>();
   if (fields.iconId !== undefined) entries.set('iconId', fields.iconId);
   if (fields.file !== undefined) entries.set('file', fields.file);
-  const request = { formData: async () => entries as unknown as FormData } as unknown as Request;
+  const request = { ...authorizedRequest(), formData: async () => entries as unknown as FormData } as unknown as Request;
   return POST(request);
 }
 
@@ -54,15 +50,15 @@ function pngFile(name: string): File {
   return file;
 }
 
+process.env.DEV_TOOLS_PASSWORD = TEST_DEV_TOOLS_PASSWORD;
+
 describe('GET /api/icon-editor/uploads', () => {
-  const originalNodeEnv = process.env.NODE_ENV;
 
   beforeEach(() => {
     jest.spyOn(Date, 'now').mockReturnValue(FIXED_NOW);
   });
 
   afterEach(() => {
-    setNodeEnv(originalNodeEnv);
     jest.restoreAllMocks();
     jest.clearAllMocks();
   });
@@ -70,7 +66,7 @@ describe('GET /api/icon-editor/uploads', () => {
   it('returns only image files, prefixed with /sprites/icon-overrides/, keeping the directory listing order', async () => {
     readdir.mockResolvedValue(['a.png', 'b.JPG', 'c.jpeg', 'd.gif', 'e.webp', 'f.svg', 'g.txt', '.DS_Store', 'h.PNG']);
 
-    const response = await GET();
+    const response = await GET(authorizedRequest());
     const body = (await response.json()) as { images: string[] };
 
     expect(response.status).toBe(200);
@@ -87,7 +83,7 @@ describe('GET /api/icon-editor/uploads', () => {
   it('reads the icon-overrides folder under public/', async () => {
     readdir.mockResolvedValue([]);
 
-    await GET();
+    await GET(authorizedRequest());
 
     expect(readdir).toHaveBeenCalledWith(expect.stringMatching(/public[\\/]sprites[\\/]icon-overrides$/));
   });
@@ -95,26 +91,24 @@ describe('GET /api/icon-editor/uploads', () => {
   it('returns an empty list when the folder has no image files', async () => {
     readdir.mockResolvedValue(['notes.txt']);
 
-    const response = await GET();
+    const response = await GET(authorizedRequest());
     const body = (await response.json()) as { images: string[] };
 
     expect(response.status).toBe(200);
     expect(body.images).toEqual([]);
   });
 
-  it('returns 404 and never reads the filesystem in production', async () => {
-    setNodeEnv('production');
+  it('returns 401 without a token and never reads the filesystem', async () => {
+    const response = await GET(anonymousRequest());
 
-    const response = await GET();
-
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
     expect(readdir).not.toHaveBeenCalled();
   });
 
   it('returns an empty list instead of throwing when the folder does not exist yet (fresh checkout)', async () => {
     readdir.mockRejectedValue(Object.assign(new Error('ENOENT: no such file or directory'), { code: 'ENOENT' }));
 
-    const response = await GET();
+    const response = await GET(authorizedRequest());
     const body = (await response.json()) as { images: string[] };
 
     expect(response.status).toBe(200);
@@ -123,7 +117,6 @@ describe('GET /api/icon-editor/uploads', () => {
 });
 
 describe('POST /api/icon-editor/uploads', () => {
-  const originalNodeEnv = process.env.NODE_ENV;
 
   beforeEach(() => {
     jest.spyOn(Date, 'now').mockReturnValue(FIXED_NOW);
@@ -132,7 +125,6 @@ describe('POST /api/icon-editor/uploads', () => {
   });
 
   afterEach(() => {
-    setNodeEnv(originalNodeEnv);
     jest.restoreAllMocks();
     jest.clearAllMocks();
   });
@@ -185,12 +177,10 @@ describe('POST /api/icon-editor/uploads', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
-  it('returns 404 and writes nothing in production', async () => {
-    setNodeEnv('production');
+  it('returns 401 without a token and writes nothing', async () => {
+    const response = await POST(anonymousRequest());
 
-    const response = await postUpload({ iconId: 'swords', file: pngFile('a.png') });
-
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
     expect(mkdir).not.toHaveBeenCalled();
     expect(writeFile).not.toHaveBeenCalled();
   });

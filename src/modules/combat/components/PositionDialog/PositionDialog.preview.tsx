@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { ComponentPreview } from '@/testbed';
 import { Button } from '@/components/ui/button';
+import { PlayerColor } from '@/lib/types';
 import { PositionDialog } from './PositionDialog';
 import { singleResource, multipleResources } from './PositionDialog.fixtures';
 
@@ -46,6 +47,7 @@ export const positionDialogPreview: ComponentPreview = {
       render: () => (
         <InteractivePositionDialog
           resources={singleResource}
+          color={PlayerColor.Blue}
           onSelect={() => console.warn('onSelect')}
         />
       ),
@@ -55,6 +57,7 @@ export const positionDialogPreview: ComponentPreview = {
       render: () => (
         <InteractivePositionDialog
           resources={multipleResources}
+          color={PlayerColor.Red}
           onSelect={() => console.warn('onSelect')}
         />
       ),

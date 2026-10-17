@@ -93,9 +93,9 @@ describe('regenerateIslandTileSlotsSource', () => {
 
     const output = regenerateIslandTileSlotsSource(currentSource, draft);
 
-    expect(output).toContain("{ top: '45%', right: '-18%', size: 30 },");
-    expect(output).toContain("{ top: '60%', left: '20%', size: 30 },");
-    expect(output).toContain("{ top: '15%', left: '50%', size: 30 },");
+    expect(output).toContain("{ top: '40%', right: '-18%', size: 30 },");
+    expect(output).toContain("{ top: '66%', left: '24%', size: 30 },");
+    expect(output).toContain("{ top: '22%', left: '48%', size: 30 },");
   });
 
   it('changes SPECIAL_ISLAND_TOP\'s quoted string value on its own line only', () => {
@@ -106,7 +106,7 @@ describe('regenerateIslandTileSlotsSource', () => {
     const output = regenerateIslandTileSlotsSource(currentSource, draft);
 
     expect(output).toContain("export const SPECIAL_ISLAND_TOP = '12%';");
-    expect(output).toContain("export const SPECIAL_ISLAND_LEFT = '50%';"); // untouched sibling export
+    expect(output).toContain("export const SPECIAL_ISLAND_LEFT = '55%';"); // untouched sibling export
   });
 
   it('passes every comment, import and non-draft export through unchanged', () => {

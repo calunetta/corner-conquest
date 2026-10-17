@@ -13,5 +13,7 @@ export interface ComponentPreview {
   title: string;
   /** Catalog section, e.g. "HUD" or "Legacy / Game map". */
   group: string;
+  /** Dev tools stay reachable in a deployed build, behind the dev-tools token. */
+  devTool?: boolean;
   states: PreviewState[];
 }

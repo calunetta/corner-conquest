@@ -1,1 +1,43 @@
-{}
+{
+  "zoom-in": {
+    "src": "/sprites/icon-overrides/zoom-in-1792254889169.png"
+  },
+  "zoom-out": {
+    "src": "/sprites/icon-overrides/zoom-out-1792254906337.png"
+  },
+  "shield": {
+    "src": "/sprites/icon-overrides/shield-1792254951460.png"
+  },
+  "play": {
+    "src": "/sprites/icon-overrides/play-1792254962839.png"
+  },
+  "x-circle": {
+    "src": "/sprites/icon-overrides/x-circle-1792255004285.png"
+  },
+  "skull": {
+    "src": "/sprites/icon-overrides/skull-1792255052138.gif",
+    "size": 155
+  },
+  "swords": {
+    "src": "/sprites/icon-overrides/swords-1792255080068.png"
+  },
+  "anchor": {
+    "src": "/sprites/icon-overrides/anchor-1792255105567.gif",
+    "size": 150
+  },
+  "coins": {
+    "src": "/sprites/icon-overrides/coins-1792255129235.png"
+  },
+  "info": {
+    "src": "/sprites/icon-overrides/info-1792255137731.png"
+  },
+  "hammer": {
+    "src": "/sprites/icon-overrides/hammer-1792255173236.png"
+  },
+  "x": {
+    "src": "/sprites/icon-overrides/x-1792255187918.png"
+  },
+  "settings": {
+    "src": "/sprites/icon-overrides/settings-1792255201490.png"
+  }
+}

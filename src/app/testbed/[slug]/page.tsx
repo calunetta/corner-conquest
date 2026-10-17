@@ -1,4 +1,6 @@
-import { PreviewStage } from '@/testbed/components/PreviewStage';
+import { cookies } from 'next/headers';
+import { configuredDevToolsPassword, DEV_TOOLS_COOKIE, isDevToolsSessionValue } from '@/lib/dev-tools/session';
+import { TestbedPreviewGate } from '@/testbed/components/TestbedPreviewGate';
 
 interface TestbedPreviewPageProps {
   params: Promise<{ slug: string }>;
@@ -8,6 +10,14 @@ interface TestbedPreviewPageProps {
 export default async function TestbedPreviewPage({ params, searchParams }: TestbedPreviewPageProps) {
   const { slug } = await params;
   const { state } = await searchParams;
+  const session = (await cookies()).get(DEV_TOOLS_COOKIE)?.value;
 
-  return <PreviewStage slug={slug} stateName={typeof state === 'string' ? state : undefined} />;
+  return (
+    <TestbedPreviewGate
+      slug={slug}
+      stateName={typeof state === 'string' ? state : undefined}
+      isUnlocked={isDevToolsSessionValue(session)}
+      isConfigured={configuredDevToolsPassword() !== null}
+    />
+  );
 }

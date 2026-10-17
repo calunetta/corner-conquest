@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Anchor } from 'lucide-react';
+import { toCollectorIdleSprite } from '@/modules/shared';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -16,7 +16,7 @@ import { toPositionDialogViewModel } from './PositionDialog.map';
 import { styles } from './PositionDialog.styles';
 import type { PositionDialogProps, PositionOptionViewModel } from './PositionDialog.types';
 
-export function PositionDialog({ resources, onSelect, onClose }: PositionDialogProps) {
+export function PositionDialog({ resources, color, onSelect, onClose }: PositionDialogProps) {
   const viewModel = toPositionDialogViewModel(resources);
 
   return (
@@ -25,7 +25,14 @@ export function PositionDialog({ resources, onSelect, onClose }: PositionDialogP
         <AlertDialogHeader className={styles.header}>
           <div className={styles.headerRow}>
             <div className={styles.iconWrap}>
-              <Anchor className={styles.icon} />
+              <Image
+                src={toCollectorIdleSprite(color)}
+                alt="Collector"
+                width={20}
+                height={20}
+                className={styles.icon}
+                unoptimized
+              />
             </div>
             <div>
               <AlertDialogTitle className={styles.title}>Position Army Collector</AlertDialogTitle>

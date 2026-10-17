@@ -1,36 +1,20 @@
-import { mkdir, readdir, writeFile } from 'fs/promises';
+import { denyUnlessDevToolsAccess } from '@/lib/dev-tools/access';
+import { listDevToolDirectory, saveDevToolFiles } from '@/lib/dev-tools/save-file';
 import path from 'path';
 import { NextResponse } from 'next/server';
 
-// Dev-only: this route must 404 in any deployed build, regardless of NEXT_PUBLIC_ENABLE_TESTBED
-// (which only gates the testbed UI, not filesystem reads/writes) — see plan.md's Decisions.
+// Dev-only: every request needs the dev-tools token (see src/lib/dev-tools/access.ts).
 const UPLOADS_DIR = 'public/sprites/icon-overrides';
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
 // iconId becomes a filename segment (see POST below); restrict it to a safe slug so it can
 // never escape UPLOADS_DIR via "/", "\" or "..".
 const SAFE_ICON_ID = /^[a-zA-Z0-9_-]+$/;
 
-function isNodeErrorWithCode(error: unknown, code: string): boolean {
-  return error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === code;
-}
+export async function GET(request: Request): Promise<Response> {
+  const denied = denyUnlessDevToolsAccess(request);
+  if (denied) return denied;
 
-export async function GET(): Promise<Response> {
-  if (process.env.NODE_ENV === 'production') {
-    return new Response(null, { status: 404 });
-  }
-
-  let files: string[];
-  try {
-    files = await readdir(path.join(process.cwd(), UPLOADS_DIR));
-  } catch (error) {
-    // Fresh checkout: the folder doesn't exist until the first upload. Treat "no folder" as
-    // "no uploads yet" rather than failing the request.
-    if (isNodeErrorWithCode(error, 'ENOENT')) {
-      files = [];
-    } else {
-      throw error;
-    }
-  }
+  const files = await listDevToolDirectory(UPLOADS_DIR);
 
   const images = files
     .filter((file) => IMAGE_EXTENSIONS.has(path.extname(file).toLowerCase()))
@@ -40,9 +24,8 @@ export async function GET(): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  if (process.env.NODE_ENV === 'production') {
-    return new Response(null, { status: 404 });
-  }
+  const denied = denyUnlessDevToolsAccess(request);
+  if (denied) return denied;
 
   const formData = await request.formData();
   const iconId = formData.get('iconId');
@@ -62,8 +45,16 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const filename = `${iconId}-${Date.now()}${extension}`;
-  await mkdir(path.join(process.cwd(), UPLOADS_DIR), { recursive: true });
-  await writeFile(path.join(process.cwd(), UPLOADS_DIR, filename), Buffer.from(await file.arrayBuffer()));
+  const result = await saveDevToolFiles({
+    changes: [{ path: `${UPLOADS_DIR}/${filename}`, content: new Uint8Array(await file.arrayBuffer()), baseSha: null }],
+    message: `chore(icons): upload ${filename}`,
+  });
+  if (result.status === 'conflict') {
+    return NextResponse.json({ error: 'That file name is already taken. Try again.' }, { status: 409 });
+  }
 
-  return NextResponse.json({ path: `/sprites/icon-overrides/${filename}` });
+  return NextResponse.json({
+    path: `/sprites/icon-overrides/${filename}`,
+    pullRequestUrl: result.status === 'saved' && result.pullRequest.url ? result.pullRequest.url : null,
+  });
 }

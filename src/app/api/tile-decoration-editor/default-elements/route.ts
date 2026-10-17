@@ -1,3 +1,5 @@
+import { denyUnlessDevToolsAccess } from '@/lib/dev-tools/access';
+import { isGitHubTarget } from '@/lib/dev-tools/save-file';
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { NextResponse } from 'next/server';
@@ -5,8 +7,7 @@ import { ISLAND_TILE_SLOTS_PATH } from '@/modules/map/island-tile-slots.types';
 import type { IslandTileSlotsDraft } from '@/modules/map/island-tile-slots.types';
 import { regenerateIslandTileSlotsSource } from './regenerate-source';
 
-// Dev-only: this route must 404 in any deployed build, regardless of NEXT_PUBLIC_ENABLE_TESTBED
-// (which only gates the testbed UI, not filesystem writes) — see plan.md's Decisions.
+// Dev-only: every request needs the dev-tools token (see src/lib/dev-tools/access.ts).
 
 function isCornerPositionArray(value: unknown): value is IslandTileSlotsDraft['occupantCornerSlots'] {
   return (
@@ -47,8 +48,10 @@ function isCompleteIslandTileSlotsDraft(draft: unknown): draft is IslandTileSlot
 }
 
 export async function POST(request: Request): Promise<Response> {
-  if (process.env.NODE_ENV === 'production') {
-    return new Response(null, { status: 404 });
+  const denied = denyUnlessDevToolsAccess(request);
+  if (denied) return denied;
+  if (isGitHubTarget()) {
+    return NextResponse.json({ error: 'Default elements can only be saved on the local dev server for now.' }, { status: 501 });
   }
 
   const body = (await request.json()) as { draft?: unknown };

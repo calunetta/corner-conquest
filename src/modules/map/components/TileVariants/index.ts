@@ -1,6 +1,16 @@
-export { TileVariantsProvider, useTileVariants } from './TileVariants.context';
-export { toDecorationLayoutsConfig, toOffsetSlotStyle, toPlacementStyle, toTileVariant } from './TileVariants.map';
-export { PlacedVariantImage } from './PlacedVariantImage';
+export { TileVariantsProvider, TileVariantAssignmentProvider, useAssignedTileVariant, useTileVariants } from './TileVariants.context';
+export { assignTileVariants, type VariantTile } from './TileVariants.assign.map';
+export {
+  decorationVariantType,
+  toBuiltInOffsetStyle,
+  toBuiltInScale,
+  toDecorationLayoutsConfig,
+  toOffsetSlotStyle,
+  toPlacementStyle,
+  toTilePicks,
+  toTileVariant,
+} from './TileVariants.map';
+export { PlacedBuiltInArt, PlacedVariantImage } from './PlacedVariantImage';
 export {
   CENTRED_TRANSFORM,
   DEFAULT_TILE_VARIANTS_CONFIG,

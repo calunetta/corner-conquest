@@ -3,7 +3,7 @@ import { MONSTER_CATALOG } from '@/modules/game-rules';
 import { MAX_UPLOAD_BYTES } from '@/app/api/tile-fog-variants/upload';
 import { createGifFile, extraMonsterEntry } from './MonsterSpriteUploader.fixtures';
 import { useMonsterSpriteUploader } from './MonsterSpriteUploader.hook';
-import { AddMonsterError, addMonster } from './MonsterSpriteUploader.service';
+import { AddMonsterError, addMonster, loadCatalog } from './MonsterSpriteUploader.service';
 
 jest.mock('./MonsterSpriteUploader.service', () => {
   class MockAddMonsterError extends Error {
@@ -13,15 +13,18 @@ jest.mock('./MonsterSpriteUploader.service', () => {
       this.field = field;
     }
   }
-  return { AddMonsterError: MockAddMonsterError, addMonster: jest.fn() };
+  return { AddMonsterError: MockAddMonsterError, addMonster: jest.fn(), loadCatalog: jest.fn() };
 });
 
 const addMonsterMock = jest.mocked(addMonster);
+const loadCatalogMock = jest.mocked(loadCatalog);
+const savedCatalog = { entries: MONSTER_CATALOG, sha: 'loaded-sha', pullRequestUrl: null };
 let urlCounter = 0;
 let createObjectURL: jest.Mock;
 let revokeObjectURL: jest.Mock;
 
 beforeEach(() => {
+  loadCatalogMock.mockResolvedValue(savedCatalog);
   urlCounter = 0;
   createObjectURL = jest.fn(() => `blob:mock-${++urlCounter}`);
   revokeObjectURL = jest.fn();
@@ -32,6 +35,13 @@ afterEach(() => {
   jest.restoreAllMocks();
   jest.clearAllMocks();
 });
+
+/** Renders the uploader and waits for the saved catalog to load, so submit has its sha. */
+async function renderUploader() {
+  const view = renderHook(() => useMonsterSpriteUploader());
+  await act(async () => {});
+  return view;
+}
 
 function pngFile(): File {
   return new File(['x'], 'a.png', { type: 'image/png' });
@@ -50,8 +60,8 @@ function fillValidForm(result: { current: ReturnType<typeof useMonsterSpriteUplo
 }
 
 describe('useMonsterSpriteUploader', () => {
-  it('starts empty with the static catalog and a disabled submit', () => {
-    const { result } = renderHook(() => useMonsterSpriteUploader());
+  it('starts empty with the static catalog and a disabled submit', async () => {
+    const { result } = await renderUploader();
 
     expect(result.current.name).toBe('');
     expect(result.current.level).toBeNull();
@@ -63,8 +73,8 @@ describe('useMonsterSpriteUploader', () => {
   });
 
   describe('boss toggle', () => {
-    it('toggling Boss off at level 4 clamps the level to 3', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('toggling Boss off at level 4 clamps the level to 3', async () => {
+      const { result } = await renderUploader();
       act(() => result.current.onBossToggle(true));
       act(() => result.current.onLevelChange(4));
 
@@ -75,8 +85,8 @@ describe('useMonsterSpriteUploader', () => {
       expect(result.current.levelOptions.map((option) => option.value)).toEqual([1, 2, 3]);
     });
 
-    it('toggling Boss on at level 2 keeps level 2 and shows the soft warning', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('toggling Boss on at level 2 keeps level 2 and shows the soft warning', async () => {
+      const { result } = await renderUploader();
       act(() => result.current.onLevelChange(2));
 
       act(() => result.current.onBossToggle(true));
@@ -85,16 +95,16 @@ describe('useMonsterSpriteUploader', () => {
       expect(result.current.showsBossSoftWarning).toBe(true);
     });
 
-    it('toggling Boss with no level leaves the level null', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('toggling Boss with no level leaves the level null', async () => {
+      const { result } = await renderUploader();
       act(() => result.current.onBossToggle(true));
       expect(result.current.level).toBeNull();
     });
   });
 
   describe('preview object URLs', () => {
-    it('creates an object URL on pick', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('creates an object URL on pick', async () => {
+      const { result } = await renderUploader();
       const file = createGifFile();
 
       act(() => result.current.onIdleFileChange(file));
@@ -105,8 +115,8 @@ describe('useMonsterSpriteUploader', () => {
       expect(result.current.attackPreviewUrl).toBeNull();
     });
 
-    it('revokes the previous URL when the file is replaced', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('revokes the previous URL when the file is replaced', async () => {
+      const { result } = await renderUploader();
       act(() => result.current.onIdleFileChange(createGifFile('one.gif')));
 
       act(() => result.current.onIdleFileChange(createGifFile('two.gif')));
@@ -116,8 +126,8 @@ describe('useMonsterSpriteUploader', () => {
       expect(result.current.idlePreviewUrl).toBe('blob:mock-2');
     });
 
-    it('revokes the URL on unmount', () => {
-      const { result, unmount } = renderHook(() => useMonsterSpriteUploader());
+    it('revokes the URL on unmount', async () => {
+      const { result, unmount } = await renderUploader();
       act(() => result.current.onAttackFileChange(createGifFile()));
       expect(revokeObjectURL).not.toHaveBeenCalled();
 
@@ -126,8 +136,8 @@ describe('useMonsterSpriteUploader', () => {
       expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
     });
 
-    it('clears the preview and revokes the URL when the file is removed', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('clears the preview and revokes the URL when the file is removed', async () => {
+      const { result } = await renderUploader();
       act(() => result.current.onIdleFileChange(createGifFile()));
 
       act(() => result.current.onIdleFileChange(null));
@@ -141,8 +151,8 @@ describe('useMonsterSpriteUploader', () => {
     it.each([
       { kind: 'idle', previewKey: 'idlePreviewUrl', pick: 'onIdleFileChange' },
       { kind: 'attack', previewKey: 'attackPreviewUrl', pick: 'onAttackFileChange' },
-    ] as const)('a non-GIF $kind pick sets the error, creates no URL and stores no file', ({ kind, previewKey, pick }) => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    ] as const)('a non-GIF $kind pick sets the error, creates no URL and stores no file', async ({ kind, previewKey, pick }) => {
+      const { result } = await renderUploader();
 
       act(() => result.current[pick](pngFile()));
 
@@ -151,8 +161,8 @@ describe('useMonsterSpriteUploader', () => {
       expect(createObjectURL).not.toHaveBeenCalled();
     });
 
-    it('an oversized GIF pick sets the size error and leaves the preview null', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('an oversized GIF pick sets the size error and leaves the preview null', async () => {
+      const { result } = await renderUploader();
 
       act(() => result.current.onIdleFileChange(oversizedGif()));
 
@@ -160,8 +170,8 @@ describe('useMonsterSpriteUploader', () => {
       expect(result.current.fieldErrors.idle).toBe('Each file must be 2 MB or smaller.');
     });
 
-    it('an invalid pick replacing a valid file drops the stored file, so submit stays disabled', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('an invalid pick replacing a valid file drops the stored file, so submit stays disabled', async () => {
+      const { result } = await renderUploader();
       fillValidForm(result);
       expect(result.current.canSubmit).toBe(true);
 
@@ -171,8 +181,8 @@ describe('useMonsterSpriteUploader', () => {
       expect(result.current.canSubmit).toBe(false);
     });
 
-    it('a later valid pick clears the field error', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('a later valid pick clears the field error', async () => {
+      const { result } = await renderUploader();
       act(() => result.current.onIdleFileChange(pngFile()));
 
       act(() => result.current.onIdleFileChange(createGifFile()));
@@ -183,37 +193,37 @@ describe('useMonsterSpriteUploader', () => {
   });
 
   describe('canSubmit', () => {
-    it('is false without an idle file', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('is false without an idle file', async () => {
+      const { result } = await renderUploader();
       act(() => result.current.onNameChange('Fire Ogre'));
       act(() => result.current.onLevelChange(2));
       expect(result.current.canSubmit).toBe(false);
     });
 
-    it.each(['', '   '])('is false with the blank name "%s"', (name) => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it.each(['', '   '])('is false with the blank name "%s"', async (name) => {
+      const { result } = await renderUploader();
       act(() => result.current.onNameChange(name));
       act(() => result.current.onLevelChange(2));
       act(() => result.current.onIdleFileChange(createGifFile()));
       expect(result.current.canSubmit).toBe(false);
     });
 
-    it('is false without a level', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('is false without a level', async () => {
+      const { result } = await renderUploader();
       act(() => result.current.onNameChange('Fire Ogre'));
       act(() => result.current.onIdleFileChange(createGifFile()));
       expect(result.current.canSubmit).toBe(false);
     });
 
-    it('is true with a name, level and idle file', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('is true with a name, level and idle file', async () => {
+      const { result } = await renderUploader();
       fillValidForm(result);
       expect(result.current.canSubmit).toBe(true);
     });
 
-    it('is false while a submit is in flight', () => {
+    it('is false while a submit is in flight', async () => {
       addMonsterMock.mockReturnValue(new Promise(() => undefined));
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+      const { result } = await renderUploader();
       fillValidForm(result);
 
       act(() => result.current.onSubmit());
@@ -225,8 +235,8 @@ describe('useMonsterSpriteUploader', () => {
 
   describe('onSubmit', () => {
     it('sends the form values to the service', async () => {
-      addMonsterMock.mockResolvedValue(extraMonsterEntry);
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+      addMonsterMock.mockResolvedValue({ entry: extraMonsterEntry, entries: [...MONSTER_CATALOG, extraMonsterEntry], sha: 'next-sha', pullRequestUrl: null });
+      const { result } = await renderUploader();
       fillValidForm(result);
       act(() => result.current.onBossToggle(true));
 
@@ -235,12 +245,13 @@ describe('useMonsterSpriteUploader', () => {
       expect(addMonsterMock).toHaveBeenCalledTimes(1);
       expect(addMonsterMock).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'Fire Ogre', level: 2, isBoss: true, attackFile: null }),
+        'loaded-sha',
       );
     });
 
     it('on success appends the returned entry, sets success and resets every field', async () => {
-      addMonsterMock.mockResolvedValue(extraMonsterEntry);
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+      addMonsterMock.mockResolvedValue({ entry: extraMonsterEntry, entries: [...MONSTER_CATALOG, extraMonsterEntry], sha: 'next-sha', pullRequestUrl: null });
+      const { result } = await renderUploader();
       fillValidForm(result);
       act(() => result.current.onAttackFileChange(createGifFile('attack.gif')));
 
@@ -272,7 +283,7 @@ describe('useMonsterSpriteUploader', () => {
 
     it('on AddMonsterError with a field sets that field error and keeps the form filled', async () => {
       addMonsterMock.mockRejectedValue(new AddMonsterError('Already exists.', 'name'));
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+      const { result } = await renderUploader();
       fillValidForm(result);
 
       await act(async () => result.current.onSubmit());
@@ -288,7 +299,7 @@ describe('useMonsterSpriteUploader', () => {
       const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
       const error = new AddMonsterError('Server broke');
       addMonsterMock.mockRejectedValue(error);
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+      const { result } = await renderUploader();
       fillValidForm(result);
 
       await act(async () => result.current.onSubmit());
@@ -303,7 +314,7 @@ describe('useMonsterSpriteUploader', () => {
       const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
       const error = new TypeError('network down');
       addMonsterMock.mockRejectedValue(error);
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+      const { result } = await renderUploader();
       fillValidForm(result);
 
       await act(async () => result.current.onSubmit());
@@ -312,8 +323,8 @@ describe('useMonsterSpriteUploader', () => {
       expect(consoleError).toHaveBeenCalledWith(error);
     });
 
-    it('without a name, level or idle file sets client errors and never calls the service', () => {
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+    it('without a name, level or idle file sets client errors and never calls the service', async () => {
+      const { result } = await renderUploader();
 
       act(() => result.current.onSubmit());
 
@@ -327,7 +338,7 @@ describe('useMonsterSpriteUploader', () => {
   describe('editing clears errors', () => {
     it('editing the name clears the name error', async () => {
       addMonsterMock.mockRejectedValue(new AddMonsterError('Already exists.', 'name'));
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+      const { result } = await renderUploader();
       fillValidForm(result);
       await act(async () => result.current.onSubmit());
       expect(result.current.fieldErrors.name).toBe('Already exists.');
@@ -339,7 +350,7 @@ describe('useMonsterSpriteUploader', () => {
 
     it('editing the level clears the level error', async () => {
       addMonsterMock.mockRejectedValue(new AddMonsterError('Bad level.', 'level'));
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+      const { result } = await renderUploader();
       fillValidForm(result);
       await act(async () => result.current.onSubmit());
       expect(result.current.fieldErrors.level).toBe('Bad level.');
@@ -351,7 +362,7 @@ describe('useMonsterSpriteUploader', () => {
 
     it('toggling Boss clears the level error', async () => {
       addMonsterMock.mockRejectedValue(new AddMonsterError('Bad level.', 'level'));
-      const { result } = renderHook(() => useMonsterSpriteUploader());
+      const { result } = await renderUploader();
       fillValidForm(result);
       await act(async () => result.current.onSubmit());
 

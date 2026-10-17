@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { decorationLayoutsConfig } from '@/modules/map';
 import type { DecorationLayout, DecorationLayoutsConfig, DecorationScenarioKey } from '@/modules/map';
+import type { TileVariantsConfig } from '@/modules/map/components/TileVariants/TileVariants.config';
 import { useArtVariants } from './TileDecorationEditor.art.hook';
+import { usePreselectArtFromUrl } from './TileDecorationEditor.preselect.hook';
 import { useDefaultElementsEditor } from './TileDecorationEditor.defaultElements.hook';
 import { createId } from './TileDecorationEditor.ids';
 import { useLayoutActions } from './TileDecorationEditor.layouts.hook';
@@ -14,8 +15,14 @@ import {
   toScenarioKey,
   toScenarioOptions,
 } from './TileDecorationEditor.map';
-import { listDecorationImages, saveDecorationLayouts, saveVariantDecorations } from './TileDecorationEditor.service';
-import { useDecorationSave } from './TileDecorationEditor.save.hook';
+import {
+  listDecorationImages,
+  type Snapshot,
+} from './TileDecorationEditor.service';
+import { useDecorationSave, useDecorationSaveTarget } from './TileDecorationEditor.save.hook';
+import { clampDecorationPosition } from '@/modules/map/decoration-bounds.map';
+import { useRemoveSelectedWithKeyboard } from './TileDecorationEditor.keyboard.hook';
+import { useDecorationImageDelete } from './TileDecorationEditor.imageDelete.hook';
 import type { EditorMode, TileDecorationEditorViewModel } from './TileDecorationEditor.types';
 
 const SCENARIO_OPTIONS = toScenarioOptions();
@@ -24,10 +31,19 @@ const SCENARIO_OPTIONS = toScenarioOptions();
  *  navigation, instance selection, and the drag/nudge/resize/relayer/save handlers. The config
  *  is edited entirely in memory; onSave is the only place it leaves the component. Layout-list
  *  CRUD (add/duplicate/rename/delete) lives in TileDecorationEditor.layouts.hook.ts. */
-export function useTileDecorationEditor(): TileDecorationEditorViewModel {
+/** The saved files the editor starts from, each with the sha its next save must send back. */
+export interface DecorationSnapshots {
+  layouts: Snapshot<DecorationLayoutsConfig>;
+  variants: Snapshot<TileVariantsConfig>;
+}
+
+export function useTileDecorationEditor(snapshots: DecorationSnapshots): TileDecorationEditorViewModel {
   const [mode, setMode] = useState<EditorMode>('decorations');
   const defaultElements = useDefaultElementsEditor();
-  const [config, setConfig] = useState<DecorationLayoutsConfig>(() => cloneDecorationLayoutsConfig(decorationLayoutsConfig));
+  const [baseLayouts, setBaseLayouts] = useState<DecorationLayoutsConfig>(snapshots.layouts.config);
+  const [layoutsSha, setLayoutsSha] = useState(snapshots.layouts.sha);
+  const [variantsSha, setVariantsSha] = useState(snapshots.variants.sha);
+  const [config, setConfig] = useState<DecorationLayoutsConfig>(() => cloneDecorationLayoutsConfig(baseLayouts));
   const [activeScenario, setActiveScenario] = useState('base');
   const [activeVariant, setActiveVariant] = useState<DecorationScenarioKey | null>(null);
   const scenarioKey = toScenarioKey(activeScenario, activeVariant);
@@ -46,7 +62,9 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
       });
   }, []);
 
-  const { setTileConfig, selectedVariant, artOptions, artVariantId, onArtVariantChange } = useArtVariants({
+  const { tileConfig, setTileConfig, selectedVariant, artOptions, artVariantId, onArtVariantChange } = useArtVariants({
+    initialTileConfig: snapshots.variants.config,
+    baseLayouts,
     activeScenario,
     scenarioKey,
     setConfig,
@@ -98,6 +116,8 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
     [config],
   );
 
+  usePreselectArtFromUrl({ goToScenario, onArtVariantChange });
+
   const onAddInstance = useCallback(
     (image: string) => {
       const instance = createInstance(createId(`${scenarioKey}-instance`), image);
@@ -115,13 +135,30 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
     [updateActiveLayout],
   );
 
+  useRemoveSelectedWithKeyboard(mode === 'decorations' && selectedInstanceId !== null, () => {
+    if (selectedInstanceId) onRemoveInstance(selectedInstanceId);
+  });
+
+  const onDeleteImage = useDecorationImageDelete({
+    isDirty,
+    setImages,
+    setBaseLayouts,
+    setConfig,
+    setTileConfig,
+    setSelectedInstanceId,
+  });
+
   const onModeChange = (nextMode: EditorMode) => { setMode(nextMode); setSelectedInstanceId(null); defaultElements.clearSelection(); };
 
-  const saveTarget = useCallback(
-    (decorations: DecorationLayoutsConfig) =>
-      selectedVariant ? saveVariantDecorations(selectedVariant, decorations).then(setTileConfig) : saveDecorationLayouts(decorations),
-    [selectedVariant, setTileConfig],
-  );
+  const saveTarget = useDecorationSaveTarget({
+    selectedVariant,
+    layoutsSha,
+    variantsSha,
+    setLayoutsSha,
+    setVariantsSha,
+    setBaseLayouts,
+    setTileConfig,
+  });
   const { status, onSave } = useDecorationSave({ config, saveTarget, setIsDirty });
 
   return {
@@ -131,6 +168,8 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
     scenarioOptions: SCENARIO_OPTIONS,
     artOptions,
     artVariantId,
+    artVariant: selectedVariant,
+    artImages: tileConfig.images,
     onArtVariantChange,
     activeScenario,
     activeVariant,
@@ -150,12 +189,14 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
     ...layoutActions,
     onAddInstance,
     onSelectInstance: setSelectedInstanceId,
-    onDragInstance: (instanceId, top, left) => updateInstance(instanceId, (instance) => ({ ...instance, top, left })),
+    onDragInstance: (instanceId, top, left) =>
+      updateInstance(instanceId, (instance) => ({ ...instance, ...clampDecorationPosition({ top, left }) })),
     onNudgeInstance: (instanceId, dTop, dLeft) =>
       updateInstance(instanceId, (instance) => nudgeInstance(instance, dTop, dLeft)),
     onResizeInstance: (instanceId, size) => updateInstance(instanceId, (instance) => ({ ...instance, size })),
     onRelayerInstance: (instanceId, z) => updateInstance(instanceId, (instance) => ({ ...instance, z })),
     onRemoveInstance,
+    onDeleteImage,
     onSave,
   };
 }

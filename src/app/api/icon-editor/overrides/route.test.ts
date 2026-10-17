@@ -1,3 +1,4 @@
+import { anonymousRequest, AUTHORIZED_HEADERS, TEST_DEV_TOOLS_PASSWORD } from '@/lib/dev-tools/access.test-utils';
 // jsdom (this project's default test environment) has no Web Request/Response/fetch globals,
 // which next/server needs. Polyfill from undici before importing the route under test. Plain
 // `require` here, not `import`: imports are hoisted above the polyfill, and './route' reads the
@@ -12,6 +13,10 @@ Object.assign(globalThis, { Headers, Request, Response, fetch });
 
 jest.mock('fs/promises', () => ({
   writeFile: jest.fn(),
+  mkdir: jest.fn(),
+  rm: jest.fn(),
+  readdir: jest.fn(),
+  readFile: jest.fn(),
 }));
 
 import type { writeFile as WriteFileFn } from 'fs/promises';
@@ -21,24 +26,19 @@ const { writeFile } = require('fs/promises') as { writeFile: jest.Mock & typeof 
 const { POST } = require('./route') as { POST: typeof PostFn };
 /* eslint-enable @typescript-eslint/no-require-imports */
 
-// @types/node types NODE_ENV as readonly; Object.defineProperty bypasses that for this test only.
-function setNodeEnv(value: string): void {
-  Object.defineProperty(process.env, 'NODE_ENV', { value, configurable: true });
+function postOverrides(body: unknown): Promise<Response> {
+  return POST(new Request('http://localhost/api/icon-editor/overrides', { headers: AUTHORIZED_HEADERS, method: 'POST', body: JSON.stringify(body) }));
 }
 
-function postOverrides(body: unknown): Promise<Response> {
-  return POST(new Request('http://localhost/api/icon-editor/overrides', { method: 'POST', body: JSON.stringify(body) }));
-}
+process.env.DEV_TOOLS_PASSWORD = TEST_DEV_TOOLS_PASSWORD;
 
 describe('POST /api/icon-editor/overrides', () => {
-  const originalNodeEnv = process.env.NODE_ENV;
 
   beforeEach(() => {
     writeFile.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
-    setNodeEnv(originalNodeEnv);
     jest.clearAllMocks();
   });
 
@@ -52,11 +52,11 @@ describe('POST /api/icon-editor/overrides', () => {
     const body = (await response.json()) as { ok: boolean };
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({ ok: true });
+    expect(body).toEqual(expect.objectContaining({ ok: true }));
     expect(writeFile).toHaveBeenCalledTimes(1);
     const [writtenPath, writtenContents] = writeFile.mock.calls[0] as [string, string];
     expect(writtenPath).toMatch(/src[\\/]modules[\\/]icons[\\/]icon-overrides\.config\.json$/);
-    expect(writtenContents).toBe(JSON.stringify(overrides, null, 2));
+    expect(writtenContents).toBe(`${JSON.stringify(overrides, null, 2)}\n`);
   });
 
   it('accepts an empty overrides object and writes it as "{}"', async () => {
@@ -64,7 +64,7 @@ describe('POST /api/icon-editor/overrides', () => {
 
     expect(response.status).toBe(200);
     const [, writtenContents] = writeFile.mock.calls[0] as [string, string];
-    expect(writtenContents).toBe('{}');
+    expect(writtenContents).toBe('{}\n');
   });
 
   it.each([
@@ -123,7 +123,7 @@ describe('POST /api/icon-editor/overrides', () => {
   });
 
   it('returns 400 instead of throwing on a malformed JSON body', async () => {
-    const request = new Request('http://localhost/api/icon-editor/overrides', { method: 'POST', body: '{not json' });
+    const request = new Request('http://localhost/api/icon-editor/overrides', { headers: AUTHORIZED_HEADERS, method: 'POST', body: '{not json' });
 
     const response = await POST(request);
     const body = (await response.json()) as { error: string };
@@ -133,12 +133,10 @@ describe('POST /api/icon-editor/overrides', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
-  it('returns 404 and writes nothing in production', async () => {
-    setNodeEnv('production');
+  it('returns 401 without a token and writes nothing', async () => {
+    const response = await POST(anonymousRequest());
 
-    const response = await postOverrides({ overrides: { swords: { rotation: 90 } } });
-
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
     expect(writeFile).not.toHaveBeenCalled();
   });
 });

@@ -156,6 +156,7 @@ export function GameDialogManager() {
           {dialogs.position && (
             <PositionDialog
               resources={dialogs.position.resources}
+              color={localPlayer.color}
               onSelect={resource => {
                 onAction(GameAction.SelectResourcePosition, { resource, armyId: dialogs.position!.armyId });
                 dispatch({ type: 'SET_POSITION_DIALOG', state: null });

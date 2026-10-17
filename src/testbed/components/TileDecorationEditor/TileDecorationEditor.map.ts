@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { clampDecorationPosition } from '@/modules/map/decoration-bounds.map';
 import type { DecorationInstance, DecorationLayout, DecorationLayoutsConfig, DecorationScenarioKey } from '@/modules/map';
 import type { EditorScenarioOption } from './TileDecorationEditor.types';
 import { SPRITE_CENTER_TRANSFORM } from './TileDecorationEditor.styles';
@@ -16,10 +17,13 @@ export function toArtVariantTypes(outerKey: string): TileVariantType[] {
   return [outerKey as TileVariantType];
 }
 
-/** The dropdown entries for a scenario: the default (built-in decorations) first, then that scenario's variants. */
+/**
+ * The dropdown entries for a scenario: the default (built-in decorations) first, then that scenario's
+ * own variants. The `default-*` variants are the built-in art, so the "Default" entry already stands for them.
+ */
 export function toArtOptions(outerKey: string, config: TileVariantsConfig): { id: string; label: string }[] {
   const types = toArtVariantTypes(outerKey);
-  const variants = config.variants.filter((variant) => types.includes(variant.type));
+  const variants = config.variants.filter((variant) => types.includes(variant.type) && !variant.id.startsWith('default-'));
   return [
     { id: DEFAULT_ART_ID, label: 'Default' },
     ...variants.map((variant) => ({ id: variant.id, label: `${variant.name || 'Untitled'}${variant.color ? ` · ${variant.color}` : ''}` })),
@@ -82,7 +86,7 @@ export function createInstance(id: string, image: string): DecorationInstance {
 
 /** Keyboard equivalent of drag: moves by dTop/dLeft (signed, e.g. +/-1 or +/-5), clamped. */
 export function nudgeInstance(instance: DecorationInstance, dTop: number, dLeft: number): DecorationInstance {
-  return { ...instance, top: clampPercent(instance.top + dTop), left: clampPercent(instance.left + dLeft) };
+  return { ...instance, ...clampDecorationPosition({ top: instance.top + dTop, left: instance.left + dLeft }) };
 }
 
 /** The decorations-mode sprite's fully-computed inline style: today's inline style, moved here
@@ -130,6 +134,11 @@ export function removeLayout(layouts: DecorationLayout[], layoutId: string): Dec
   return layouts.filter((layout) => layout.id !== layoutId);
 }
 
+/** The outer scenario a variant type is decorated under. Resource variants share the Resource scenario. */
+export function toOuterScenarioKey(variantType: TileVariantType): string {
+  return variantType.startsWith('resource-') ? 'resource' : variantType;
+}
+
 /** The 5 outer scenario options and their sub-picker variants, in the fixed order the editor's
  *  Select controls use. Base/Special have no sub-picker (variants: []); their outer `key` is
  *  itself a valid DecorationScenarioKey. Labels match ui-design.md's Final spec Copy verbatim. */
@@ -164,4 +173,30 @@ export function toScenarioOptions(): EditorScenarioOption[] {
       ],
     },
   ];
+}
+
+/** The smallest a decoration can be dragged to, so its handle stays grabbable. */
+const MIN_RESIZE_PERCENT = 2;
+
+/** Moves a decoration by the pointer's travel since the press, as a share of the canvas, so the
+ *  decoration never jumps under the pointer. Same idea as the placement preview's whole-tile drag. */
+export function toDraggedInstancePercent(
+  start: { top: number; left: number; pointerX: number; pointerY: number },
+  pointer: { x: number; y: number },
+  box: { width: number; height: number },
+): { top: number; left: number } {
+  if (box.width <= 0 || box.height <= 0) return { top: start.top, left: start.left };
+  return {
+    top: clampPercent(start.top + ((pointer.y - start.pointerY) / box.height) * MAX_PERCENT),
+    left: clampPercent(start.left + ((pointer.x - start.pointerX) / box.width) * MAX_PERCENT),
+  };
+}
+
+/** A decoration's size after its corner handle moved by (dx, dy) pixels. The decoration grows from its
+ *  centre, so each edge moves half the size change: the factor of 2 keeps the corner under the pointer.
+ *  The average of both axes makes a diagonal drag feel even; the size is a percent of the canvas width. */
+export function toResizedSize(startSize: number, dx: number, dy: number, boxWidth: number): number {
+  if (boxWidth <= 0) return startSize;
+  const grownPercent = ((((dx + dy) / 2) / boxWidth) * MAX_PERCENT) * 2;
+  return Math.min(MAX_PERCENT, Math.max(MIN_RESIZE_PERCENT, startSize + grownPercent));
 }

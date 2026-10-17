@@ -12,6 +12,23 @@ export const tileFogPreview: ComponentPreview = {
   title: 'Tile Fog',
   group: 'Game map',
   states: [
+    flaggedIslandState('Covered: resource island beneath fog', resourceIslandWithThreeNodesAndThreeOccupants, {
+      isTileVisible: false,
+    }),
+    flaggedIslandState('Covered: monster island beneath fog', monsterIslandWithLivingMonster, {
+      isTileVisible: false,
+    }),
+    islandState('Revealed: resource island, fog gone', resourceIslandWithThreeNodesAndThreeOccupants),
+  ],
+};
+
+/** The fog editor (dev tools): variant gallery with uploads and speed, plus the reveal lab that saves timing. */
+export const tileFogEditorPreview: ComponentPreview = {
+  slug: 'tile-fog-editor',
+  title: 'Fog Editor',
+  group: 'Dev tools',
+  devTool: true,
+  states: [
     {
       name: 'All fog variants (covered)',
       render: () => <TileFogVariantGallery />,
@@ -20,12 +37,5 @@ export const tileFogPreview: ComponentPreview = {
       name: '[Reveal lab] Interactive: reveal a covered tile, tune timing',
       render: () => <TileFogRevealLab />,
     },
-    flaggedIslandState('Covered: resource island beneath fog', resourceIslandWithThreeNodesAndThreeOccupants, {
-      isTileVisible: false,
-    }),
-    flaggedIslandState('Covered: monster island beneath fog', monsterIslandWithLivingMonster, {
-      isTileVisible: false,
-    }),
-    islandState('Revealed: resource island, fog gone', resourceIslandWithThreeNodesAndThreeOccupants),
   ],
 };

@@ -4,12 +4,14 @@ import React from 'react';
 import { MapZoomControls } from '../MapZoomControls';
 import { MapDecorations } from '../MapDecorations';
 import { IslandTile } from '../IslandTile';
+import { TileVariantAssignmentProvider } from '../TileVariants';
 import { useMapGrid } from './MapGrid.hook';
 import { styles } from './MapGrid.styles';
 import type { MapGridViewModel } from './MapGrid.types';
 
 export function MapGridView({
   map,
+  variantAssignments,
   cols,
   isMobile,
   zoom,
@@ -43,6 +45,7 @@ export function MapGridView({
         <div className={styles.oceanFrame}>
           <MapDecorations isMobile={isMobile} />
 
+          <TileVariantAssignmentProvider value={variantAssignments}>
           <div
             className={styles.grid}
             style={{
@@ -56,6 +59,7 @@ export function MapGridView({
               <IslandTile key={island.id} island={island} />
             ))}
           </div>
+          </TileVariantAssignmentProvider>
         </div>
       </div>
     </div>

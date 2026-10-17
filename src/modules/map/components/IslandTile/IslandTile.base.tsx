@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { PLAYER_DATA } from '@/modules/game-rules';
 import { RegistryIcon } from '@/modules/shared';
 import type { PlayerColor } from '@/lib/types';
-import { PlacedVariantImage, type TileVariant } from '../TileVariants';
+import { PlacedBuiltInArt, PlacedVariantImage, toBuiltInScale, type TileVariant } from '../TileVariants';
 import { styles, toBaseCrestStyle } from './IslandTile.styles';
 
 interface BaseCrestProps {
@@ -16,10 +16,16 @@ interface BaseCrestProps {
 
 export function BaseCrest({ color, variant }: BaseCrestProps) {
   if (variant?.image) return <PlacedVariantImage src={variant.image} transform={variant.transform} />;
+  const built = toBuiltInCrest(color, variant);
+  return variant ? <PlacedBuiltInArt transform={variant.transform}>{built}</PlacedBuiltInArt> : built;
+}
+
+function toBuiltInCrest(color: PlayerColor | undefined, variant: TileVariant | null) {
   if (!color) return <RegistryIcon id="home" className={styles.baseFallbackIcon} />;
+  const scale = variant ? toBuiltInScale(variant.transform) : 1;
 
   return (
-    <div className={styles.baseImageWrapper} style={toBaseCrestStyle()} data-testid="base-crest">
+    <div className={styles.baseImageWrapper} style={toBaseCrestStyle(scale)} data-testid="base-crest">
       <Image src={PLAYER_DATA[color].base} alt={`${color} base`} fill className={styles.baseImage} unoptimized />
     </div>
   );

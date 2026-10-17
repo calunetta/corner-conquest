@@ -1,10 +1,12 @@
+import { denyUnlessDevToolsAccess } from '@/lib/dev-tools/access';
+import { isGitHubTarget } from '@/lib/dev-tools/save-file';
 import { execFile } from 'child_process';
 import { access, readFile, rm, writeFile } from 'fs/promises';
 import path from 'path';
 import { promisify } from 'util';
 import { NextResponse } from 'next/server';
-import { isTileVariantsConfig, TILE_VARIANT_TYPES, type TileVariantType } from '@/modules/map/components/TileVariants/TileVariants.config';
-import { toSlug } from '@/modules/map/components/TileVariants/TileVariants.validate';
+import { isTileVariantsConfig, TILE_VARIANT_TYPES, type TileVariantsConfig, type TileVariantType } from '@/modules/map/components/TileVariants/TileVariants.config';
+import { toSlug, variantsUsingImage } from '@/modules/map/components/TileVariants/TileVariants.validate';
 import { isGifBytes, isPngBytes, MAX_UPLOAD_BYTES } from '../../tile-fog-variants/upload';
 
 // Dev-only. Saves an uploaded picture into its type folder, then runs the sync script so it is listed right away.
@@ -26,8 +28,10 @@ async function freeFileName(folder: string, slug: string, extension: string): Pr
 }
 
 export async function POST(request: Request): Promise<Response> {
-  if (process.env.NODE_ENV === 'production') {
-    return new Response(null, { status: 404 });
+  const denied = denyUnlessDevToolsAccess(request);
+  if (denied) return denied;
+  if (isGitHubTarget()) {
+    return NextResponse.json({ error: 'Picture uploads only work on the local dev server for now.' }, { status: 501 });
   }
 
   const form = await request.formData();
@@ -63,4 +67,36 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   return NextResponse.json({ config, imagePath });
+}
+
+/** Deletes an uploaded picture from its type folder, then re-runs the sync so the list no longer offers it. */
+export async function DELETE(request: Request): Promise<Response> {
+  const denied = denyUnlessDevToolsAccess(request);
+  if (denied) return denied;
+  if (isGitHubTarget()) {
+    return NextResponse.json({ error: 'Picture uploads only work on the local dev server for now.' }, { status: 501 });
+  }
+
+  const imagePath = new URL(request.url).searchParams.get('image');
+  if (!imagePath) return NextResponse.json({ error: 'Send the picture path.' }, { status: 400 });
+  const config = await readConfigFile();
+  const image = config.images.find((candidate) => candidate.image === imagePath);
+  if (!image) return NextResponse.json({ error: 'That picture is not in the tile-variant folders.' }, { status: 404 });
+
+  const users = variantsUsingImage(config, imagePath);
+  if (users.length > 0) {
+    const names = users.map((variant) => variant.name || variant.id).join(', ');
+    return NextResponse.json({ error: `Still used by ${names}. Set those variants to Built-in and save, then delete.` }, { status: 400 });
+  }
+
+  const sourceFolder = path.join(process.cwd(), 'public', 'sprites', 'tile-variants', image.type);
+  await rm(path.join(sourceFolder, path.basename(imagePath)), { force: true });
+  await execFileAsync(process.execPath, [path.join(process.cwd(), SYNC_SCRIPT)], { cwd: process.cwd() });
+  return NextResponse.json({ config: await readConfigFile() });
+}
+
+async function readConfigFile(): Promise<TileVariantsConfig> {
+  const config: unknown = JSON.parse(await readFile(path.join(process.cwd(), CONFIG_PATH), 'utf-8'));
+  if (!isTileVariantsConfig(config)) throw new Error('tile-variants.config.json is malformed.');
+  return config;
 }

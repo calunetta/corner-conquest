@@ -1,11 +1,11 @@
+import { denyUnlessDevToolsAccess } from '@/lib/dev-tools/access';
 import { NextResponse } from 'next/server';
 import type { FogVariant } from '@/modules/map/components/TileFog/TileFog.config';
 import { decodeGifFrames } from './gif';
 import { isGifBytes, isPngBytes, MAX_UPLOAD_BYTES, toVariantId } from './upload';
 import { readVariants, VARIANTS_PUBLIC_DIR, writeAsset, writeVariants } from './variants-config';
 
-// Dev-only: this route must 404 in any deployed build, regardless of NEXT_PUBLIC_ENABLE_TESTBED
-// (which only gates the testbed UI, not filesystem writes), same as the tile decoration editor routes.
+// Dev-only: every request needs the dev-tools token (see src/lib/dev-tools/access.ts).
 
 function errorResponse(message: string, status: number): Response {
   return NextResponse.json({ error: message }, { status });
@@ -13,9 +13,8 @@ function errorResponse(message: string, status: number): Response {
 
 /** Accepts multipart fields: `name`, `still` (PNG) and `animation` (GIF). Writes both files and appends to the config. */
 export async function POST(request: Request): Promise<Response> {
-  if (process.env.NODE_ENV === 'production') {
-    return new Response(null, { status: 404 });
-  }
+  const denied = denyUnlessDevToolsAccess(request);
+  if (denied) return denied;
 
   const form = await request.formData();
   const name = form.get('name');

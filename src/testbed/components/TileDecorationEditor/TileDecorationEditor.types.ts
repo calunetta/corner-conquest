@@ -1,4 +1,5 @@
 import type { DecorationLayout, DecorationLayoutsConfig, DecorationScenarioKey } from '@/modules/map';
+import type { TileImage, TileVariant } from '@/modules/map/components/TileVariants/TileVariants.config';
 import type { DefaultElementsEditorState } from './TileDecorationEditor.defaultElements.hook';
 
 export type EditorMode = 'decorations' | 'default-elements';
@@ -11,7 +12,7 @@ export interface EditorScenarioOption {
   variants: { key: DecorationScenarioKey; label: string }[];
 }
 
-export type EditorStatus = 'idle' | 'saving' | 'saved' | 'error';
+export type EditorStatus = 'idle' | 'saving' | 'saved' | 'error' | 'conflict';
 
 export interface TileDecorationEditorViewModel {
   mode: EditorMode;
@@ -30,7 +31,10 @@ export interface TileDecorationEditorViewModel {
   /** The art variants this scenario can be decorated for; 'default' is the built-in decorations. */
   artOptions: { id: string; label: string }[];
   artVariantId: string;
-  onArtVariantChange: (id: string) => void;
+  /** The art variant being decorated, drawn on the canvas; null for the built-in default. */
+  artVariant: TileVariant | null;
+  artImages: TileImage[];
+  onArtVariantChange: (id: string, key?: DecorationScenarioKey) => void;
   /** false when the active scenario/variant has only one layout — it can't be deleted. */
   canDeleteActiveLayout: boolean;
   onScenarioChange: (outerKey: string) => void;
@@ -49,6 +53,8 @@ export interface TileDecorationEditorViewModel {
   onResizeInstance: (instanceId: string, size: number) => void;
   onRelayerInstance: (instanceId: string, z: number) => void;
   onRemoveInstance: (instanceId: string) => void;
+  /** Deletes the image file and its instances everywhere. Disabled while there are unsaved edits. */
+  onDeleteImage: (image: string) => Promise<void>;
   onSave: () => void;
 }
 

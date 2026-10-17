@@ -9,11 +9,20 @@ import { TileResources } from '../TileResources';
 import { TileBoats } from '../TileBoats';
 import { TileOccupants } from '../TileOccupants';
 import { DeathEffect } from '../DeathEffect';
-import { CardRevealEffect } from '../CardRevealEffect';
 import { TileFog, useFogSettings } from '../TileFog';
-import { PlacedVariantImage, pickVariant, poolFor, toDecorationLayoutsConfig, toTileVariant, useTileVariants, type TileVariant } from '../TileVariants';
+import {
+  PlacedVariantImage,
+  toDecorationLayoutsConfig,
+  toTilePicks,
+  toTileVariant,
+  useAssignedTileVariant,
+  useTileVariants,
+  type TileVariant,
+} from '../TileVariants';
 import { DECORATION_LAYOUTS_DEFAULT } from '../TileDecorations/TileDecorations.map';
 import { BaseCrest } from './IslandTile.base';
+import { SpecialIslandArt } from './IslandTile.special';
+import { toTerrainStyle } from './IslandTile.terrain.map';
 import { MonsterIcons } from './IslandTile.monsters';
 import { useIslandTile } from './IslandTile.hook';
 import {
@@ -22,11 +31,10 @@ import {
   toBorderImageStyle,
   toBorderRowStyle,
   toRevealLayerStyle,
-  toSpecialIslandStyle,
 } from './IslandTile.styles';
 import type { IslandTileProps, IslandTileViewModel } from './IslandTile.types';
 
-export const SPECIAL_ISLAND_IDLE_SPRITE = '/sprites/special_island_idle.png';
+export { SPECIAL_ISLAND_IDLE_SPRITE } from './IslandTile.special';
 
 /**
  * The tile's center feature: base crest, monster stack, special island art, or resources. Rendered
@@ -68,23 +76,11 @@ function getTileCenterContent(viewModel: IslandTileViewModel, picks: TilePicks) 
         return <PlacedVariantImage src={picks.special.image} transform={picks.special.transform} />;
       }
       return (
-        <div className={styles.specialContent} style={toSpecialIslandStyle()} data-testid="special-content">
-          {isTileVisible && cardRevealAnimationOnTile && !prefersReducedMotion ? (
-            <CardRevealEffect
-              id={cardRevealAnimationOnTile.id}
-              createdAt={cardRevealAnimationOnTile.createdAt}
-              onHidden={() => onCardRevealHidden(cardRevealAnimationOnTile.id)}
-            />
-          ) : (
-            <Image
-              src={SPECIAL_ISLAND_IDLE_SPRITE}
-              alt="Special island"
-              fill
-              className={styles.specialImage}
-              unoptimized
-            />
-          )}
-        </div>
+        <SpecialIslandArt
+          variant={picks.special}
+          reveal={showsReveal ? cardRevealAnimationOnTile : undefined}
+          onRevealHidden={onCardRevealHidden}
+        />
       );
     }
     case IslandType.Resource:
@@ -98,20 +94,20 @@ function getTileCenterContent(viewModel: IslandTileViewModel, picks: TilePicks) 
 
 /** Pure view: everything comes from props, so tests and previews need no providers. */
 export function IslandTileView(viewModel: IslandTileViewModel) {
-  const { island, isTileVisible, isBase, deathAnimationOnTile, borderImageSequence, tilePlayerColor, onClick } =
+  const { island, isTileVisible, isBase, deathAnimationOnTile, borderImageSequence, tilePlayerColor, onClick, showDecorations = true } =
     viewModel;
   const { isSelected, isPossibleMove, isTeleportTarget, isScoutTarget, isClickable, prefersReducedMotion } = viewModel;
   const { timing: fogTiming } = useFogSettings();
   const variants = useTileVariants();
   const seed = island.x * 31 + island.y;
   const ownerColor = viewModel.baseOwner?.color;
-  const picks: TilePicks = {
-    special: pickVariant(poolFor(variants, 'special'), seed),
-    monster: pickVariant(poolFor(variants, 'monster'), seed),
-    base: pickVariant(poolFor(variants, 'base', ownerColor), seed),
-    empty: pickVariant(poolFor(variants, 'empty'), seed),
-  };
-  const decorationLayouts = toDecorationLayoutsConfig(DECORATION_LAYOUTS_DEFAULT, toTileVariant(island, variants, seed, ownerColor));
+  // The board spreads variants so neighbours differ; the seed pick is only the fallback outside the board.
+  const assigned = useAssignedTileVariant(island.id);
+  const picks: TilePicks = toTilePicks(variants, assigned, seed, ownerColor);
+  const decorationLayouts = toDecorationLayoutsConfig(
+    DECORATION_LAYOUTS_DEFAULT,
+    assigned ?? toTileVariant(island, variants, seed, ownerColor),
+  );
 
   return (
     <TooltipProvider>
@@ -124,7 +120,7 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
         aria-label={`Island at ${island.x}, ${island.y}`}
         data-testid={`island-tile-${island.x}-${island.y}`}
       >
-        <div className={styles.terrain} />
+        <div className={styles.terrain} style={toTerrainStyle(island)} />
         {deathAnimationOnTile && (
           <DeathEffect
             sprite={deathAnimationOnTile.sprite}
@@ -137,7 +133,7 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
           style={toRevealLayerStyle(fogTiming, prefersReducedMotion)}
           data-testid="tile-reveal-layer"
         >
-          <TileDecorations island={island} isBase={isBase} layouts={decorationLayouts} />
+          {showDecorations && <TileDecorations island={island} isBase={isBase} layouts={decorationLayouts} />}
           <div className={styles.centerContent}>{getTileCenterContent(viewModel, picks)}</div>
         </div>
         <TileBoats island={island} />
