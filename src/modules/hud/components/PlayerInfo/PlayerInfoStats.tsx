@@ -37,7 +37,7 @@ export function PlayerInfoStats({
               <span className={styles.statValue}>{armyCount}/5</span>
               {positionedCount > 0 && (
                 <span className={styles.positionedIndicator}>
-                  <RegistryIcon id="anchor" className="h-2.5 w-2.5 ml-0.5" />
+                  <RegistryIcon id="anchor" className="h-10 w-10 ml-0.5" />
                   {positionedCount}
                 </span>
               )}
