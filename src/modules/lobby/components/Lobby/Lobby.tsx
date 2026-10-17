@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Compass, Loader2, Swords, Trophy, Shield, BookOpen, Sparkles, Power } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { LinkGoogleAccountButtonView } from '@/modules/session';
 import { CreateGameDialog } from '../CreateGameDialog';
 import { RejoinMatchPanel } from '../RejoinMatchPanel';
@@ -21,13 +21,13 @@ export function LobbyView(model: LobbyViewModel) {
           <div className={styles.headerContent}>
             <div className={styles.headerLeft}>
               <div className={styles.headerIcon}>
-                <Compass className={styles.headerCompass} />
+                <RegistryIcon id="compass" className={styles.headerCompass} />
               </div>
               <div>
                 <div className={styles.headerTitleContainer}>
                   <CardTitle className={styles.headerTitle}>Game Lobby</CardTitle>
                   <Badge variant="outline" className={styles.headerBadge}>
-                    <Sparkles className="h-3 w-3" /> Corner Conquest
+                    <RegistryIcon id="sparkles" className="h-3 w-3" /> Corner Conquest
                   </Badge>
                 </div>
                 <CardDescription className={styles.headerDescription}>
@@ -42,7 +42,7 @@ export function LobbyView(model: LobbyViewModel) {
               </div>
               {model.isGuest && <LinkGoogleAccountButtonView {...model.linkGoogleAccountButton} />}
               <Button variant="ghost" size="sm" onClick={model.onLogout} className={styles.logoutButton}>
-                <Power className="h-4 w-4 mr-1.5" /> Logout
+                <RegistryIcon id="power" className="h-4 w-4 mr-1.5" /> Logout
               </Button>
             </div>
           </div>
@@ -64,27 +64,27 @@ export function LobbyView(model: LobbyViewModel) {
                   </p>
                   <Button onClick={() => model.onCreateDialogChange(true)} disabled={model.isJoiningGame !== null}
                     className={styles.createButton}>
-                    {model.isJoiningGame && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {!model.isJoiningGame && <Swords className="mr-2 h-4 w-4" />}
+                    {model.isJoiningGame && <RegistryIcon id="loader-2" className="mr-2 h-4 w-4 animate-spin" />}
+                    {!model.isJoiningGame && <RegistryIcon id="swords" className="mr-2 h-4 w-4" />}
                     Create New Game
                   </Button>
                 </div>
                 <div className={styles.tacticalGuide}>
                   <div className={styles.tacticalHeader}>
-                    <BookOpen className={styles.tacticalHeaderIcon} />
+                    <RegistryIcon id="book-open" className={styles.tacticalHeaderIcon} />
                     <span>Tactical Field Guide</span>
                   </div>
                   <div className={styles.tacticalContent}>
                     <div className={styles.tacticalItem}>
-                      <Trophy className={`${styles.tacticalItemIcon} text-yellow-400`} />
+                      <RegistryIcon id="trophy" className={`${styles.tacticalItemIcon} text-yellow-400`} />
                       <p><strong className="text-foreground">Victory Point Goal:</strong> Earn VP by discovering islands, upgrading armies, and winning battles.</p>
                     </div>
                     <div className={styles.tacticalItem}>
-                      <Shield className={`${styles.tacticalItemIcon} text-blue-400`} />
+                      <RegistryIcon id="shield" className={`${styles.tacticalItemIcon} text-blue-400`} />
                       <p><strong className="text-foreground">Positioning:</strong> Position armies on resource islands to gather food, wood, and gold — re-position each turn to keep collecting.</p>
                     </div>
                     <div className={styles.tacticalItem}>
-                      <Sparkles className={`${styles.tacticalItemIcon} text-purple-400`} />
+                      <RegistryIcon id="sparkles" className={`${styles.tacticalItemIcon} text-purple-400`} />
                       <p><strong className="text-foreground">Special Cards:</strong> Teleport across the sea, scout unknown fog, or sabotage opponent armies.</p>
                     </div>
                   </div>
@@ -103,13 +103,13 @@ export function LobbyView(model: LobbyViewModel) {
                 <div className={styles.gamesList}>
                   {model.isGamesLoading && (
                     <div className={styles.loadingState}>
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <RegistryIcon id="loader-2" className="h-8 w-8 animate-spin text-primary" />
                       <span className="text-sm">Scanning tactical channels for open games...</span>
                     </div>
                   )}
                   {!model.isGamesLoading && model.games.length === 0 && (
                     <div className={styles.emptyState}>
-                      <Compass className={styles.emptyIcon} />
+                      <RegistryIcon id="compass" className={styles.emptyIcon} />
                       <p className={styles.emptyTitle}>No open matches currently waiting.</p>
                       <p className={styles.emptyDescription}>
                         Be the first commander to launch a match and challenge players or bots!

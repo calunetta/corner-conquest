@@ -40,22 +40,9 @@ describe('toFormatOptions', () => {
     expect(options[3].meta).toBe('Grand Conquest');
   });
 
-  it('has correct icon component reference for each entry', () => {
+  it('has the registry icon id for each entry, in value order', () => {
     const options = toFormatOptions();
 
-    // Each entry has an icon property containing a function (React component)
-    options.forEach((option) => {
-      expect(typeof option.icon).toBe('function');
-    });
-
-    // Verify all 4 icons are distinct functions (different references)
-    const icons = options.map((opt) => opt.icon);
-    const uniqueIcons = new Set(icons);
-    expect(uniqueIcons.size).toBe(4);
-
-    // Icon-to-value correctness (Bot/Swords/Users/Crown) is verified by rendering, in
-    // CreateGameDialog.test.tsx's "renders the correct icon for each format card" — the
-    // lucide-react jest mock returns a new function per access, so reference equality
-    // here can't distinguish which icon is which. See docs/ai/lessons-learned.md.
+    expect(options.map((option) => option.icon)).toEqual(['bot', 'swords', 'users', 'crown']);
   });
 });

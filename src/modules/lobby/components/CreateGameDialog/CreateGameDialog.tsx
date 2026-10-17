@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, HelpCircle, Settings, Swords, Shield } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { cn } from '@/lib/utils';
 import { CustomSettingsSheet } from '../CustomSettingsSheet';
 import { useCreateGameDialog } from './CreateGameDialog.hook';
@@ -24,7 +24,7 @@ export function CreateGameDialog(props: CreateGameDialogProps) {
           <DialogHeader className={styles.dialogHeader}>
             <div className={styles.headerContainer}>
               <div className={styles.headerIcon}>
-                <Swords className="h-5 w-5" />
+                <RegistryIcon id="swords" className="h-5 w-5" />
               </div>
               <div className={styles.headerTextGroup}>
                 <DialogTitle className={styles.dialogTitle}>Create Conquest Arena</DialogTitle>
@@ -44,14 +44,13 @@ export function CreateGameDialog(props: CreateGameDialogProps) {
               <Label id="maxPlayers" htmlFor="maxPlayers" className={styles.label}>Match Format</Label>
               <div role="group" aria-labelledby="maxPlayers" className={styles.formatGrid}>
                 {vm.formatOptions.map((opt) => {
-                  const Icon = opt.icon;
-                  const isSelected = vm.maxPlayers === opt.value;
+                                    const isSelected = vm.maxPlayers === opt.value;
                   return (
                     <button key={opt.value} type="button" aria-pressed={isSelected}
                       onClick={() => vm.onMaxPlayersChange(opt.value)}
                       className={cn(styles.formatCard, isSelected ? styles.formatCardSelected : styles.formatCardUnselected)}>
                       <div className={cn(styles.formatIconCircle, isSelected ? styles.formatIconCircleSelected : styles.formatIconCircleUnselected)}>
-                        <Icon className={styles.formatIconSize} />
+                        <RegistryIcon id={opt.icon} className={styles.formatIconSize} />
                       </div>
                       <div className={styles.formatTextGroup}>
                         <div className={styles.formatTitle}>{opt.title}</div>
@@ -83,7 +82,7 @@ export function CreateGameDialog(props: CreateGameDialogProps) {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <HelpCircle className={styles.helpIcon} />
+                          <RegistryIcon id="help-circle" className={styles.helpIcon} />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Disables Fog of War and provides all special cards for testing.</p>
@@ -99,11 +98,11 @@ export function CreateGameDialog(props: CreateGameDialogProps) {
           </div>
           <DialogFooter className={styles.dialogFooter}>
             <Button variant="outline" size="sm" onClick={vm.onOpenCustomize} className={styles.advancedButton}>
-              <Settings className="mr-1.5 h-3.5 w-3.5" />
+              <RegistryIcon id="settings" className="mr-1.5 h-3.5 w-3.5" />
               Advanced Rules
             </Button>
             <Button onClick={vm.onSubmit} disabled={!vm.gameName.trim() || vm.isCreating} className={styles.createButton}>
-              {vm.isCreating ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Shield className="mr-1.5 h-3.5 w-3.5" />}
+              {vm.isCreating ? <RegistryIcon id="loader-2" className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RegistryIcon id="shield" className="mr-1.5 h-3.5 w-3.5" />}
               Create Game
             </Button>
           </DialogFooter>

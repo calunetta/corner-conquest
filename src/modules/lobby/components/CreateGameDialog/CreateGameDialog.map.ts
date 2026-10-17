@@ -1,4 +1,3 @@
-import { Bot, Crown, Swords, Users } from 'lucide-react';
 import { PLAYER_COLORS, PLAYER_DATA } from '@/modules/game-rules';
 import type { FactionOption, FormatOption } from './CreateGameDialog.types';
 
@@ -18,25 +17,25 @@ export function toFormatOptions(): FormatOption[] {
       value: 1,
       title: 'Solo vs. Bot AI',
       meta: 'Training match',
-      icon: Bot,
+      icon: 'bot',
     },
     {
       value: 2,
       title: '2 Players',
       meta: '1v1 Duel',
-      icon: Swords,
+      icon: 'swords',
     },
     {
       value: 3,
       title: '3 Players',
       meta: 'Archipelago Skirmish',
-      icon: Users,
+      icon: 'users',
     },
     {
       value: 4,
       title: '4 Players',
       meta: 'Grand Conquest',
-      icon: Crown,
+      icon: 'crown',
     },
   ];
 }

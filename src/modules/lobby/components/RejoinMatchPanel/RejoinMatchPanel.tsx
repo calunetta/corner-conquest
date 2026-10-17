@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Loader2, Swords } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { styles } from './RejoinMatchPanel.styles';
 import type { RejoinMatchPanelProps } from './RejoinMatchPanel.types';
 
@@ -13,9 +13,9 @@ export function RejoinMatchPanel({ game, isReclaiming, onReclaim }: RejoinMatchP
       <p className={styles.description}>Your seat is bot-controlled.</p>
       <Button onClick={onReclaim} disabled={isReclaiming} className={styles.reclaimButton}>
         {isReclaiming ? (
-          <Loader2 className={styles.spinner} aria-hidden data-testid="reclaim-spinner" />
+          <RegistryIcon id="loader-2" className={styles.spinner} aria-hidden />
         ) : (
-          <Swords className={styles.icon} aria-hidden />
+          <RegistryIcon id="swords" className={styles.icon} aria-hidden />
         )}
         Resume Command
       </Button>

@@ -1,5 +1,4 @@
 import type { GameSettings, PlayerColor } from '@/lib/types';
-import type { LucideIcon } from 'lucide-react';
 
 export type CreateGameDialogProps = {
   open: boolean;
@@ -24,7 +23,8 @@ export type FormatOption = {
   value: number;
   title: string;
   meta: string;
-  icon: LucideIcon;
+  /** icon-registry.config.json id, e.g. "bot" — passed straight to <RegistryIcon id={...} />. */
+  icon: string;
 };
 
 export type CreateGameDialogViewModel = {

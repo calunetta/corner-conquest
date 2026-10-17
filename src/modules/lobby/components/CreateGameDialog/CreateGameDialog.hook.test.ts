@@ -220,8 +220,8 @@ describe('useCreateGameDialog', () => {
       expect(opt.value).toBe(expected[index].value);
       expect(opt.title).toBe(expected[index].title);
       expect(opt.meta).toBe(expected[index].meta);
-      // Verify icon is a function (component reference is tested in map.test.ts)
-      expect(typeof opt.icon).toBe('function');
     });
+    // Icons are icon-registry ids, resolved at render time; the map test pins the same ids.
+    expect(result.current.formatOptions.map((opt) => opt.icon)).toEqual(['bot', 'swords', 'users', 'crown']);
   });
 });

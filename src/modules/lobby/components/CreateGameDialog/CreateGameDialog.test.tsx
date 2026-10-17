@@ -2,6 +2,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { CreateGameDialog } from './CreateGameDialog';
 
+// Icons resolve through the saved overrides file; mock it empty so this test covers the default
+// lucide render path regardless of what the user has saved in icon-overrides.config.json.
+jest.mock('@/modules/icons/icon-overrides.config.json', () => ({}));
+
 const mockOnOpenChange = jest.fn();
 const mockOnCreateGame = jest.fn(async () => true);
 

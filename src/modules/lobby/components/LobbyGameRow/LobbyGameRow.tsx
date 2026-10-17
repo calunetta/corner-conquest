@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Crown, Users, Info, Loader2 } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import type { GameSettings } from '@/lib/types';
 import { toSettingsSummaryRows } from './LobbyGameRow.map';
 import { styles } from './LobbyGameRow.styles';
@@ -88,11 +88,11 @@ export function LobbyGameRow({
 
       <div className={styles.infoGroup}>
         <div className={styles.hostInfo}>
-          <Crown className="h-4 w-4 text-yellow-500" />
+          <RegistryIcon id="crown" className="h-4 w-4 text-yellow-500" />
           <span>{game.players[0]?.name || '...'}</span>
         </div>
         <div className={styles.playersInfo}>
-          <Users className="h-4 w-4" />
+          <RegistryIcon id="users" className="h-4 w-4" />
           <span>
             {game.players.length} / {game.maxPlayers}
           </span>
@@ -104,7 +104,7 @@ export function LobbyGameRow({
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon">
-              <Info className="h-4 w-4" />
+              <RegistryIcon id="info" className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className={styles.settingsPopoverContent}>
@@ -124,7 +124,7 @@ export function LobbyGameRow({
           className="min-w-[80px]"
           variant={isFull ? 'secondary' : 'default'}
         >
-          {isJoining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          {isJoining ? <RegistryIcon id="loader-2" className="mr-2 h-4 w-4 animate-spin" /> : null}
           {isFull ? 'Full' : 'Join'}
         </Button>
       </div>
