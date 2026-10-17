@@ -1,11 +1,11 @@
-// Scans public/sprites/tile-variants/<type>/ and registers every image as a tile variant.
+// Scans public/sprites/tile-variants/<type>/ and lists every image in tile-variants.config.json.
 //
 // - Stills (PNG) without transparency get their neutral-grey checkerboard keyed out. Each image is
 //   written to public/sprites/tile-variants/generated/<type>/ and that copy is what the game draws.
 // - GIFs are copied only when they already have transparency. Opaque GIFs are skipped with a warning.
-// - tile-variants.config.json is rebuilt from the folders. The colour of a base variant and the
-//   editor's selection are kept by id.
-// - Generated files for images that were removed are deleted.
+// - `images` is rebuilt from the folders. `variants` is kept, except that the default variants
+//   (one per type, one per castle colour) are created when missing.
+// - Generated files are deleted only when no variant uses them.
 //
 // Runs automatically before `npm run dev` and `npm run build` (predev/prebuild).
 
@@ -18,10 +18,12 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const SOURCE_DIR = path.join(ROOT, 'public', 'sprites', 'tile-variants');
 const GENERATED_DIR = path.join(SOURCE_DIR, 'generated');
 const CONFIG_PATH = path.join(ROOT, 'src', 'modules', 'map', 'components', 'TileVariants', 'tile-variants.config.json');
-const TYPES = ['base', 'special', 'monster', 'resource-food', 'resource-wood', 'resource-gold'];
+const TYPES = ['base', 'special', 'monster', 'empty', 'resource-food', 'resource-wood', 'resource-gold'];
+const COLORS = ['blue', 'red', 'purple', 'yellow'];
 const IMAGE_PATTERN = /\.(png|gif)$/i;
 /** Neutral grey (r = g = b, within this spread) is the baked-in checkerboard. */
 const GREY_SPREAD = 6;
+const CENTRED = { x: 50, y: 50, size: 100 };
 
 /** Returns a keyed PNG buffer, or null when the image already has transparency. */
 async function keyedPng(sourcePath) {
@@ -45,7 +47,7 @@ async function hasTransparency(sourcePath) {
   return false;
 }
 
-/** Writes one source image into the generated folder. Returns the file name it was written as, or null if skipped. */
+/** Writes one source image into the generated folder. Returns the file name written, or null if skipped. */
 async function generate(type, sourcePath, baseName, extension) {
   const outputDir = path.join(GENERATED_DIR, type);
   await mkdir(outputDir, { recursive: true });
@@ -73,45 +75,53 @@ async function listImages(dir) {
   return names.filter((name) => IMAGE_PATTERN.test(name)).sort();
 }
 
+/** The default variant for a type (or for one castle colour of the base). */
+function defaultVariant(type, color) {
+  const id = type === 'base' ? `default-base-${color}` : `default-${type}`;
+  return { id, type, name: 'Default', image: null, transform: CENTRED, color: color ?? null };
+}
+
+function withDefaults(variants) {
+  const ids = new Set(variants.map((variant) => variant.id));
+  const missing = [];
+  for (const type of TYPES) {
+    if (type === 'base') {
+      for (const color of COLORS) missing.push(defaultVariant('base', color));
+    } else {
+      missing.push(defaultVariant(type, null));
+    }
+  }
+  return [...variants, ...missing.filter((variant) => !ids.has(variant.id))];
+}
+
 async function main() {
   const existing = JSON.parse(await readFile(CONFIG_PATH, 'utf-8'));
-  const previousById = new Map(existing.variants.map((variant) => [variant.id, variant]));
-
-  const variants = [];
-  const keptFiles = new Map();
+  const images = [];
   for (const type of TYPES) {
-    const names = await listImages(path.join(SOURCE_DIR, type));
-    keptFiles.set(type, new Set());
-    for (const name of names) {
+    for (const name of await listImages(path.join(SOURCE_DIR, type))) {
       const extension = path.extname(name).slice(1).toLowerCase();
       const baseName = path.basename(name, path.extname(name));
       const written = await generate(type, path.join(SOURCE_DIR, type, name), baseName, extension);
       if (!written) continue;
-      keptFiles.get(type).add(written);
-      const id = `${type}-${baseName}`;
-      variants.push({
-        id,
-        type,
-        name: baseName,
-        image: `/sprites/tile-variants/generated/${type}/${written}`,
-        color: previousById.get(id)?.color ?? null,
-      });
+      images.push({ id: `${type}-${baseName}`, type, name: baseName, image: `/sprites/tile-variants/generated/${type}/${written}` });
     }
   }
 
-  // Remove generated files whose source image is gone.
+  const variants = withDefaults(existing.variants ?? []);
+  const usedImages = new Set(variants.map((variant) => variant.image).filter(Boolean));
   for (const type of TYPES) {
+    const keep = new Set(images.filter((image) => image.type === type).map((image) => path.basename(image.image)));
     const outputDir = path.join(GENERATED_DIR, type);
     for (const name of await readdir(outputDir).catch(() => [])) {
-      if (!keptFiles.get(type).has(name)) await rm(path.join(outputDir, name));
+      const publicPath = `/sprites/tile-variants/generated/${type}/${name}`;
+      if (!keep.has(name) && !usedImages.has(publicPath)) await rm(path.join(outputDir, name));
     }
   }
-
-  const next = { variants, selected: existing.selected ?? {} };
+  const next = { images, variants };
   const nextJson = `${JSON.stringify(next, null, 2)}\n`;
   if (nextJson !== (await readFile(CONFIG_PATH, 'utf-8'))) {
     await writeFile(CONFIG_PATH, nextJson);
-    console.log(`tile variants: ${variants.length} registered`);
+    console.log(`tile variants: ${images.length} image(s), ${variants.length} variant(s)`);
   }
 }
 

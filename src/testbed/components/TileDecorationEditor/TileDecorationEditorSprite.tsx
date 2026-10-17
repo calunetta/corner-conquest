@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useRef } from 'react';
 import type { CSSProperties, KeyboardEvent, PointerEvent } from 'react';
-import { toPointerPercent } from './TileDecorationEditor.map';
+import { toGrabbedCenterPercent } from './TileDecorationEditor.map';
 import { styles } from './TileDecorationEditor.styles';
 
 /** Pointer movement below this many px is a click, not a drag, so selecting never nudges a sprite. */
@@ -21,6 +21,9 @@ const ARROW_DIRECTIONS: Record<string, { dTop: number; dLeft: number }> = {
 interface DragStart {
   clientX: number;
   clientY: number;
+  /** Pointer minus the sprite's centre at press time, so the centre keeps its distance from the pointer. */
+  grabOffsetX: number;
+  grabOffsetY: number;
   isDragging: boolean;
 }
 
@@ -52,8 +55,15 @@ export function TileDecorationEditorSprite({
 
   function handlePointerDown(event: PointerEvent<HTMLButtonElement>) {
     onSelect();
+    const spriteBox = event.currentTarget.getBoundingClientRect();
     event.currentTarget.setPointerCapture(event.pointerId);
-    dragStartRef.current = { clientX: event.clientX, clientY: event.clientY, isDragging: false };
+    dragStartRef.current = {
+      clientX: event.clientX,
+      clientY: event.clientY,
+      grabOffsetX: event.clientX - (spriteBox.left + spriteBox.width / 2),
+      grabOffsetY: event.clientY - (spriteBox.top + spriteBox.height / 2),
+      isDragging: false,
+    };
   }
 
   // Enter and Space on a focused button fire a click without a pointerdown, so keyboard users
@@ -71,8 +81,8 @@ export function TileDecorationEditorSprite({
     const canvasBox = event.currentTarget.parentElement?.getBoundingClientRect();
     if (!canvasBox) return;
     onDrag(
-      toPointerPercent(event.clientY, canvasBox.top, canvasBox.height),
-      toPointerPercent(event.clientX, canvasBox.left, canvasBox.width),
+      toGrabbedCenterPercent(event.clientY, dragStart.grabOffsetY, canvasBox.top, canvasBox.height),
+      toGrabbedCenterPercent(event.clientX, dragStart.grabOffsetX, canvasBox.left, canvasBox.width),
     );
   }
 

@@ -8,6 +8,7 @@ import {
   renameLayout,
   toDecorationAriaLabel,
   toDecorationSpriteStyle,
+  toGrabbedCenterPercent,
   toPointerPercent,
   toScenarioOptions,
 } from './TileDecorationEditor.map';
@@ -276,5 +277,16 @@ describe('toScenarioOptions', () => {
         ],
       },
     ]);
+  });
+});
+
+describe('toGrabbedCenterPercent', () => {
+  it('keeps the centre the same distance from the pointer as it was at grab time', () => {
+    // Canvas 200px wide from x=100; pointer at 180 with the grab 10px left of the centre -> centre at 190px -> 45%.
+    expect(toGrabbedCenterPercent(180, -10, 100, 200)).toBeCloseTo(45);
+  });
+
+  it('matches the plain pointer position when the grab was at the centre', () => {
+    expect(toGrabbedCenterPercent(180, 0, 100, 200)).toBeCloseTo(toPointerPercent(180, 100, 200));
   });
 });

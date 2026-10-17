@@ -70,6 +70,9 @@ function createViewModel(overrides: Partial<TileDecorationEditorViewModel> = {})
     onModeChange: jest.fn(),
     defaultElements: createDefaultElementsState(),
     scenarioOptions: toScenarioOptions(),
+    artOptions: [{ id: 'default', label: 'Default' }],
+    artVariantId: 'default',
+    onArtVariantChange: jest.fn(),
     activeScenario: 'base',
     activeVariant: null,
     layouts: sampleDecorationLayoutsConfig.base,
@@ -110,6 +113,21 @@ function getSprites() {
 
 /** Gives the sprite's parent (the decoration overlay, which percentages are measured against) a
  *  200x200 box at the origin, and stubs the pointer-capture call jsdom does not implement. */
+/** The sprite's own box, centred on (centreX, centreY), so the grab offset is known in these tests. */
+function mockSpriteCentre(sprite: HTMLElement, centreX: number, centreY: number) {
+  jest.spyOn(sprite, 'getBoundingClientRect').mockReturnValue({
+    top: centreY - 20,
+    left: centreX - 20,
+    width: 40,
+    height: 40,
+    right: centreX + 20,
+    bottom: centreY + 20,
+    x: centreX - 20,
+    y: centreY - 20,
+    toJSON: () => ({}),
+  } as DOMRect);
+}
+
 function mockCanvasBox(sprite: HTMLElement) {
   const overlay = sprite.parentElement as HTMLElement;
   jest.spyOn(overlay, 'getBoundingClientRect').mockReturnValue({
@@ -185,12 +203,27 @@ describe('TileDecorationEditorView', () => {
       render(<TileDecorationEditorView {...viewModel} />);
       const sprite = getSprites()[0];
       mockCanvasBox(sprite);
+      mockSpriteCentre(sprite, 100, 100);
 
       firePointer(sprite, 'pointerdown', { clientX: 100, clientY: 100 });
       firePointer(sprite, 'pointermove', { clientX: 150, clientY: 50 });
       firePointer(sprite, 'pointerup', { clientX: 150, clientY: 50 });
 
       expect(viewModel.onDragInstance).toHaveBeenLastCalledWith(FIRST_BASE_INSTANCE_ID, 25, 75);
+    });
+
+    it('moves the decoration by the pointer distance when grabbed off its centre, without jumping', () => {
+      const viewModel = createViewModel();
+      render(<TileDecorationEditorView {...viewModel} />);
+      const sprite = getSprites()[0];
+      mockCanvasBox(sprite);
+      mockSpriteCentre(sprite, 100, 100);
+
+      // Grabbed 10px right of the centre: the centre should end up 10px right of the pointer.
+      firePointer(sprite, 'pointerdown', { clientX: 110, clientY: 100 });
+      firePointer(sprite, 'pointermove', { clientX: 150, clientY: 50 });
+
+      expect(viewModel.onDragInstance).toHaveBeenLastCalledWith(FIRST_BASE_INSTANCE_ID, 25, 70);
     });
 
     it('clamps a dragged decoration to the canvas edges', () => {
@@ -732,6 +765,7 @@ describe('TileDecorationEditorView', () => {
       render(<TileDecorationEditorView {...createViewModel({ mode: 'default-elements', defaultElements })} />);
       const sprite = screen.getAllByTestId('tile-decoration-editor-sprite')[trIndex];
       mockCanvasBox(sprite);
+      mockSpriteCentre(sprite, 100, 100);
 
       firePointer(sprite, 'pointerdown', { clientX: 100, clientY: 100 });
       firePointer(sprite, 'pointermove', { clientX: 150, clientY: 50 });

@@ -3,11 +3,30 @@ import type { DecorationInstance, DecorationLayout, DecorationLayoutsConfig, Dec
 import type { EditorScenarioOption } from './TileDecorationEditor.types';
 import { SPRITE_CENTER_TRANSFORM } from './TileDecorationEditor.styles';
 import { toFileName } from './TileDecorationEditor.display.map';
+import type { TileVariantType, TileVariantsConfig } from '@/modules/map/components/TileVariants/TileVariants.config';
 
 /** Deep-clones the statically-imported config so editing never mutates the shared JSON module. */
 export function cloneDecorationLayoutsConfig(config: DecorationLayoutsConfig): DecorationLayoutsConfig {
   return JSON.parse(JSON.stringify(config)) as DecorationLayoutsConfig;
 }
+
+/** The art-variant types a decoration scenario edits: resource scenarios cover every resource type. */
+export function toArtVariantTypes(outerKey: string): TileVariantType[] {
+  if (outerKey === 'resource') return ['resource-food', 'resource-wood', 'resource-gold'];
+  return [outerKey as TileVariantType];
+}
+
+/** The dropdown entries for a scenario: the default (built-in decorations) first, then that scenario's variants. */
+export function toArtOptions(outerKey: string, config: TileVariantsConfig): { id: string; label: string }[] {
+  const types = toArtVariantTypes(outerKey);
+  const variants = config.variants.filter((variant) => types.includes(variant.type));
+  return [
+    { id: DEFAULT_ART_ID, label: 'Default' },
+    ...variants.map((variant) => ({ id: variant.id, label: `${variant.name || 'Untitled'}${variant.color ? ` · ${variant.color}` : ''}` })),
+  ];
+}
+
+export const DEFAULT_ART_ID = 'default';
 
 export function toScenarioKey(outerKey: string, variant: DecorationScenarioKey | null): DecorationScenarioKey {
   return (variant ?? outerKey) as DecorationScenarioKey;
@@ -35,6 +54,17 @@ export function clampPercent(value: number): number {
 export function toPointerPercent(clientPos: number, boundingStart: number, boundingSize: number): number {
   if (boundingSize <= 0) return MIN_PERCENT;
   return clampPercent(((clientPos - boundingStart) / boundingSize) * MAX_PERCENT);
+}
+
+/** Centre of a dragged item, in percent of the canvas, given where the pointer is and where it grabbed
+ *  the item. Keeping the grab offset stops the item from jumping its centre under the pointer. */
+export function toGrabbedCenterPercent(
+  pointerPos: number,
+  grabOffsetPx: number,
+  boundingStart: number,
+  boundingSize: number,
+): number {
+  return toPointerPercent(pointerPos - grabOffsetPx, boundingStart, boundingSize);
 }
 
 /** A newly-added decoration: centered on the canvas, the spec's loose mid-range default

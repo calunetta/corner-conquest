@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { decorationLayoutsConfig } from '@/modules/map';
 import type { DecorationLayout, DecorationLayoutsConfig, DecorationScenarioKey } from '@/modules/map';
+import { useArtVariants } from './TileDecorationEditor.art.hook';
 import { useDefaultElementsEditor } from './TileDecorationEditor.defaultElements.hook';
 import { createId } from './TileDecorationEditor.ids';
 import { useLayoutActions } from './TileDecorationEditor.layouts.hook';
@@ -13,10 +14,10 @@ import {
   toScenarioKey,
   toScenarioOptions,
 } from './TileDecorationEditor.map';
-import { listDecorationImages, saveDecorationLayouts } from './TileDecorationEditor.service';
+import { listDecorationImages, saveDecorationLayouts, saveVariantDecorations } from './TileDecorationEditor.service';
+import { useDecorationSave } from './TileDecorationEditor.save.hook';
 import type { EditorMode, TileDecorationEditorViewModel } from './TileDecorationEditor.types';
 
-const SAVED_BADGE_DURATION_MS = 2000;
 const SCENARIO_OPTIONS = toScenarioOptions();
 
 /** Adapts the decoration-layouts config into the editor's view model: scenario/variant/layout
@@ -34,14 +35,7 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [isDirty, setIsDirty] = useState(false);
-  const [status, setStatus] = useState<TileDecorationEditorViewModel['status']>('idle');
-  const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latestConfigRef = useRef(config);
   const layouts = config[scenarioKey];
-
-  useEffect(() => {
-    latestConfigRef.current = config;
-  }, [config]);
 
   useEffect(() => {
     listDecorationImages()
@@ -52,9 +46,14 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
       });
   }, []);
 
-  useEffect(() => () => {
-    if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
-  }, []);
+  const { setTileConfig, selectedVariant, artOptions, artVariantId, onArtVariantChange } = useArtVariants({
+    activeScenario,
+    scenarioKey,
+    setConfig,
+    setActiveLayoutId,
+    setSelectedInstanceId,
+    setIsDirty,
+  });
 
   const layoutActions = useLayoutActions({
     scenarioKey,
@@ -118,28 +117,21 @@ export function useTileDecorationEditor(): TileDecorationEditorViewModel {
 
   const onModeChange = (nextMode: EditorMode) => { setMode(nextMode); setSelectedInstanceId(null); defaultElements.clearSelection(); };
 
-  const onSave = useCallback(() => {
-    const savedConfig = config;
-    setStatus('saving');
-    saveDecorationLayouts(savedConfig)
-      .then(() => {
-        // An edit made while the request was in flight is not in savedConfig, so the editor must stay dirty.
-        if (latestConfigRef.current === savedConfig) setIsDirty(false);
-        setStatus('saved');
-        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
-        savedTimeoutRef.current = setTimeout(() => setStatus('idle'), SAVED_BADGE_DURATION_MS);
-      })
-      .catch((error: unknown) => {
-        console.error('Failed to save decoration layouts', error);
-        setStatus('error');
-      });
-  }, [config]);
+  const saveTarget = useCallback(
+    (decorations: DecorationLayoutsConfig) =>
+      selectedVariant ? saveVariantDecorations(selectedVariant, decorations).then(setTileConfig) : saveDecorationLayouts(decorations),
+    [selectedVariant, setTileConfig],
+  );
+  const { status, onSave } = useDecorationSave({ config, saveTarget, setIsDirty });
 
   return {
     mode,
     onModeChange,
     defaultElements,
     scenarioOptions: SCENARIO_OPTIONS,
+    artOptions,
+    artVariantId,
+    onArtVariantChange,
     activeScenario,
     activeVariant,
     layouts,

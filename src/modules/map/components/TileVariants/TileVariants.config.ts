@@ -1,114 +1,107 @@
-// Pure config for tile art variants. No React or fs here, so the sync script and the game can share it.
+// Pure model for tile art variants. No React or fs here, so the sync script, the save route and the game share it.
+import { PlayerColor } from '@/lib/types';
+import type { DecorationLayout, DecorationScenarioKey } from '../../decoration-layouts.types';
 import tileVariantsConfig from './tile-variants.config.json';
-import { PlayerColor, type ResourceType } from '@/lib/types';
 
-/** Each folder under public/sprites/tile-variants/ is one type; the editor picks one variant per type. */
-export const TILE_VARIANT_TYPES = [
-  'base',
-  'special',
-  'monster',
-  'resource-food',
-  'resource-wood',
-  'resource-gold',
-] as const;
+/** Each type is one kind of tile art. A tile of that type draws one variant from that type's pool. */
+export const TILE_VARIANT_TYPES = ['base', 'special', 'monster', 'empty', 'resource-food', 'resource-wood', 'resource-gold'] as const;
 export type TileVariantType = (typeof TILE_VARIANT_TYPES)[number];
 
-export interface TileVariant {
+/** A picture found in public/sprites/tile-variants/<type>/. Written by the sync script. */
+export interface TileImage {
   id: string;
   type: TileVariantType;
-  /** File name without extension, as the artist named it. */
   name: string;
-  /** Public path of the image the game draws (the transparent copy for stills). */
+  /** Public path the game draws. */
   image: string;
-  /** Base variants only: the castle colour this image is for. Null until set in the editor. */
-  color: PlayerColor | null;
 }
 
 /**
- * A place on the map that can take a variant: a type, or one castle colour of the base.
- * `base-red` is the castle for red players; its selected variant must be a base variant with colour red.
+ * Where the image sits on the tile, in percent of the tile's size. x and y are the centre; size is
+ * the width (and height) of the image. Resource variants read x and y as an offset from each node's slot.
  */
-export type TileVariantSlot = TileVariantType | `base-${PlayerColor}`;
+export interface TileTransform {
+  x: number;
+  y: number;
+  size: number;
+}
 
-/** Every slot the editor shows, in display order. */
-export const TILE_VARIANT_SLOTS: TileVariantSlot[] = [
-  'special',
-  'monster',
-  'resource-food',
-  'resource-wood',
-  'resource-gold',
-  ...Object.values(PlayerColor).map((color) => `base-${color}` as const),
-];
+export const CENTRED_TRANSFORM: TileTransform = { x: 50, y: 50, size: 100 };
 
-/** Whether a variant can fill a slot: same type, and for a base slot also the same castle colour. */
-export function slotAccepts(slot: TileVariantSlot, variant: TileVariant): boolean {
-  if (slot.startsWith('base-')) {
-    return variant.type === 'base' && variant.color === slot.slice('base-'.length);
-  }
-  return variant.type === slot;
+/** A named look for one type. The `default` variants have no image: they keep the built-in art. */
+export interface TileVariant {
+  id: string;
+  type: TileVariantType;
+  name: string;
+  /** Public path of the image, or null for the built-in art. */
+  image: string | null;
+  transform: TileTransform;
+  /** Base variants only: the castle colour this variant is for. */
+  color: PlayerColor | null;
+  /**
+   * The decoration layouts this variant draws, per tile state (the same keys as decoration-layouts).
+   * Missing keys fall back to the default decorations, so a new variant starts looking like the default.
+   */
+  decorations?: Partial<Record<DecorationScenarioKey, DecorationLayout[]>>;
 }
 
 export interface TileVariantsConfig {
+  images: TileImage[];
   variants: TileVariant[];
-  /** Variant id chosen for each slot. A missing slot means the built-in art. */
-  selected: Partial<Record<TileVariantSlot, string>>;
 }
 
-/** The art the game draws for each slot, or null for the built-in art. */
-export interface TileArt {
-  special: string | null;
-  monster: string | null;
-  resources: Partial<Record<ResourceType, string>>;
-  base: Partial<Record<PlayerColor, string>>;
+const COLOR_VALUES = new Set<string>(Object.values(PlayerColor));
+
+function isTransform(value: unknown): value is TileTransform {
+  if (typeof value !== 'object' || value === null) return false;
+  const transform = value as Record<string, unknown>;
+  return ['x', 'y', 'size'].every((key) => typeof transform[key] === 'number' && Number.isFinite(transform[key]));
 }
 
 export function isTileVariantsConfig(value: unknown): value is TileVariantsConfig {
   if (typeof value !== 'object' || value === null) return false;
   const record = value as Record<string, unknown>;
-  if (!Array.isArray(record.variants)) return false;
-  return record.variants.every((entry) => {
-    if (typeof entry !== 'object' || entry === null) return false;
-    const variant = entry as Record<string, unknown>;
-    return (
-      typeof variant.id === 'string' &&
-      typeof variant.name === 'string' &&
-      typeof variant.image === 'string' &&
-      (TILE_VARIANT_TYPES as readonly string[]).includes(variant.type as string)
-    );
+  const typeOk = (type: unknown) => (TILE_VARIANT_TYPES as readonly unknown[]).includes(type);
+  const imagesOk =
+    Array.isArray(record.images) &&
+    record.images.every((image) => {
+      const entry = image as Record<string, unknown>;
+      return typeof entry.id === 'string' && typeOk(entry.type) && typeof entry.image === 'string';
+    });
+  const variantsOk =
+    Array.isArray(record.variants) &&
+    record.variants.every((variant) => {
+      const entry = variant as Record<string, unknown>;
+      return (
+        typeof entry.id === 'string' &&
+        typeOk(entry.type) &&
+        typeof entry.name === 'string' &&
+        (entry.image === null || typeof entry.image === 'string') &&
+        isTransform(entry.transform) &&
+        (entry.color === null || (typeof entry.color === 'string' && COLOR_VALUES.has(entry.color))) &&
+        (entry.decorations === undefined || (typeof entry.decorations === 'object' && entry.decorations !== null))
+      );
+    });
+  return imagesOk && variantsOk;
+}
+
+/** The variants a tile of this type can draw. Base tiles only draw castles of their owner's colour. */
+export function poolFor(config: TileVariantsConfig, type: TileVariantType, color?: PlayerColor): TileVariant[] {
+  return config.variants.filter((variant) => {
+    if (variant.type !== type) return false;
+    return type !== 'base' || variant.color === color;
   });
 }
 
-export function variantsOfType(config: TileVariantsConfig, type: TileVariantType): TileVariant[] {
-  return config.variants.filter((variant) => variant.type === type);
+/** Picks one variant from a pool with a stable hash of the tile's seed: random-looking, but the same on every render. */
+export function pickVariant(pool: TileVariant[], seed: number): TileVariant | null {
+  if (pool.length === 0) return null;
+  const hash = Math.imul(Math.trunc(seed), 2654435761) >>> 0;
+  return pool[hash % pool.length];
 }
 
-/** Image path selected for a slot, or null when the slot keeps the built-in art. */
-export function resolveVariantImage(config: TileVariantsConfig, slot: TileVariantSlot): string | null {
-  const id = config.selected[slot];
-  if (!id) return null;
-  return config.variants.find((variant) => variant.id === id)?.image ?? null;
-}
-
-export function resolveTileArt(config: TileVariantsConfig): TileArt {
-  return {
-    special: resolveVariantImage(config, 'special'),
-    monster: resolveVariantImage(config, 'monster'),
-    resources: {
-      food: resolveVariantImage(config, 'resource-food') ?? undefined,
-      wood: resolveVariantImage(config, 'resource-wood') ?? undefined,
-      gold: resolveVariantImage(config, 'resource-gold') ?? undefined,
-    },
-    base: {
-      blue: resolveVariantImage(config, 'base-blue') ?? undefined,
-      red: resolveVariantImage(config, 'base-red') ?? undefined,
-      purple: resolveVariantImage(config, 'base-purple') ?? undefined,
-      yellow: resolveVariantImage(config, 'base-yellow') ?? undefined,
-    },
-  };
-}
-
-/** Variants and selections from tile-variants.config.json, which the editor writes. */
-export const DEFAULT_TILE_VARIANTS: TileVariantsConfig = {
+/** The default variants (one per type, one per colour for base), created by the sync when they are missing. */
+export const DEFAULT_TILE_VARIANTS_CONFIG: TileVariantsConfig = {
+  images: tileVariantsConfig.images as TileImage[],
   variants: tileVariantsConfig.variants as TileVariant[],
-  selected: tileVariantsConfig.selected as TileVariantsConfig['selected'],
 };

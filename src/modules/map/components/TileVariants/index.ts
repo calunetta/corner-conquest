@@ -1,10 +1,12 @@
-export { TileVariantsProvider, useTileArt } from './TileVariants.context';
+export { TileVariantsProvider, useTileVariants } from './TileVariants.context';
+export { toDecorationLayoutsConfig, toOffsetSlotStyle, toPlacementStyle, toTileVariant } from './TileVariants.map';
+export { PlacedVariantImage } from './PlacedVariantImage';
 export {
-  DEFAULT_TILE_VARIANTS,
+  CENTRED_TRANSFORM,
+  DEFAULT_TILE_VARIANTS_CONFIG,
   TILE_VARIANT_TYPES,
   isTileVariantsConfig,
-  resolveTileArt,
-  resolveVariantImage,
-  variantsOfType,
+  pickVariant,
+  poolFor,
 } from './TileVariants.config';
-export type { TileArt, TileVariant, TileVariantSlot, TileVariantType, TileVariantsConfig } from './TileVariants.config';
+export type { TileImage, TileTransform, TileVariant, TileVariantType, TileVariantsConfig } from './TileVariants.config';

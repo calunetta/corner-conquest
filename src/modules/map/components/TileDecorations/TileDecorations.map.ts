@@ -37,10 +37,13 @@ export function toScenarioKey(island: Island, isBase: boolean): DecorationScenar
   return seed % 2 === 0 ? 'empty-2' : 'empty-3';
 }
 
+/** The default decoration layouts, shared by every variant that has none of its own. */
+export const DECORATION_LAYOUTS_DEFAULT = decorationLayoutsConfig as DecorationLayoutsConfig;
+
 export function toDecorationLayout(
   island: Island,
   isBase: boolean,
-  config: DecorationLayoutsConfig = decorationLayoutsConfig as DecorationLayoutsConfig,
+  config: DecorationLayoutsConfig = DECORATION_LAYOUTS_DEFAULT,
 ): DecorationLayout {
   const scenarioKey = toScenarioKey(island, isBase);
   const layouts = config[scenarioKey];

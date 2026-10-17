@@ -1,11 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { Home } from 'lucide-react';
 import { IslandType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { PLAYER_DATA } from '@/modules/game-rules';
 import { TileDecorations } from '../TileDecorations';
 import { TileResources } from '../TileResources';
 import { TileBoats } from '../TileBoats';
@@ -13,13 +11,14 @@ import { TileOccupants } from '../TileOccupants';
 import { DeathEffect } from '../DeathEffect';
 import { CardRevealEffect } from '../CardRevealEffect';
 import { TileFog, useFogSettings } from '../TileFog';
-import { useTileArt, type TileArt } from '../TileVariants';
+import { PlacedVariantImage, pickVariant, poolFor, toDecorationLayoutsConfig, toTileVariant, useTileVariants, type TileVariant } from '../TileVariants';
+import { DECORATION_LAYOUTS_DEFAULT } from '../TileDecorations/TileDecorations.map';
+import { BaseCrest } from './IslandTile.base';
 import { MonsterIcons } from './IslandTile.monsters';
 import { useIslandTile } from './IslandTile.hook';
 import {
   playerTileIndicatorShadow,
   styles,
-  toBaseCrestStyle,
   toBorderImageStyle,
   toBorderRowStyle,
   toRevealLayerStyle,
@@ -33,7 +32,15 @@ export const SPECIAL_ISLAND_IDLE_SPRITE = '/sprites/special_island_idle.png';
  * The tile's center feature: base crest, monster stack, special island art, or resources. Rendered
  * even while the tile is fogged (the reveal layer hides it), so the reveal fade has content to show.
  */
-function getTileCenterContent(viewModel: IslandTileViewModel, art: TileArt) {
+/** The variant each kind of tile draws, picked once per tile from the tile's seed. */
+interface TilePicks {
+  special: TileVariant | null;
+  monster: TileVariant | null;
+  base: TileVariant | null;
+  empty: TileVariant | null;
+}
+
+function getTileCenterContent(viewModel: IslandTileViewModel, picks: TilePicks) {
   const {
     island,
     isTileVisible,
@@ -48,26 +55,18 @@ function getTileCenterContent(viewModel: IslandTileViewModel, art: TileArt) {
     case IslandType.Base:
       return (
         <div className={styles.baseContent}>
-          {baseOwner?.color ? (
-            <div className={styles.baseImageWrapper} style={toBaseCrestStyle()} data-testid="base-crest">
-              <Image
-                src={art.base[baseOwner.color] ?? PLAYER_DATA[baseOwner.color].base}
-                alt={`${baseOwner.color} base`}
-                fill
-                className={styles.baseImage}
-                unoptimized
-              />
-            </div>
-          ) : (
-            <Home className={styles.baseFallbackIcon} />
-          )}
+          <BaseCrest color={baseOwner?.color} variant={picks.base} />
           <TileResources island={island} isBase />
         </div>
       );
     case IslandType.Monster:
       if (!island.monsters?.length || deathAnimationOnTile?.id.startsWith('monster-')) return null;
-      return <MonsterIcons monsters={island.monsters} backgroundSrc={art.monster} />;
-    case IslandType.Special:
+      return <MonsterIcons monsters={island.monsters} background={picks.monster} />;
+    case IslandType.Special: {
+      const showsReveal = isTileVisible && cardRevealAnimationOnTile && !prefersReducedMotion;
+      if (picks.special?.image && !showsReveal) {
+        return <PlacedVariantImage src={picks.special.image} transform={picks.special.transform} />;
+      }
       return (
         <div className={styles.specialContent} style={toSpecialIslandStyle()} data-testid="special-content">
           {isTileVisible && cardRevealAnimationOnTile && !prefersReducedMotion ? (
@@ -78,7 +77,7 @@ function getTileCenterContent(viewModel: IslandTileViewModel, art: TileArt) {
             />
           ) : (
             <Image
-              src={art.special ?? SPECIAL_ISLAND_IDLE_SPRITE}
+              src={SPECIAL_ISLAND_IDLE_SPRITE}
               alt="Special island"
               fill
               className={styles.specialImage}
@@ -87,9 +86,11 @@ function getTileCenterContent(viewModel: IslandTileViewModel, art: TileArt) {
           )}
         </div>
       );
+    }
     case IslandType.Resource:
       return <TileResources island={island} isBase={false} />;
     case IslandType.Empty:
+      return picks.empty?.image ? <PlacedVariantImage src={picks.empty.image} transform={picks.empty.transform} /> : null;
     default:
       return null;
   }
@@ -101,7 +102,16 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
     viewModel;
   const { isSelected, isPossibleMove, isTeleportTarget, isScoutTarget, isClickable, prefersReducedMotion } = viewModel;
   const { timing: fogTiming } = useFogSettings();
-  const tileArt = useTileArt();
+  const variants = useTileVariants();
+  const seed = island.x * 31 + island.y;
+  const ownerColor = viewModel.baseOwner?.color;
+  const picks: TilePicks = {
+    special: pickVariant(poolFor(variants, 'special'), seed),
+    monster: pickVariant(poolFor(variants, 'monster'), seed),
+    base: pickVariant(poolFor(variants, 'base', ownerColor), seed),
+    empty: pickVariant(poolFor(variants, 'empty'), seed),
+  };
+  const decorationLayouts = toDecorationLayoutsConfig(DECORATION_LAYOUTS_DEFAULT, toTileVariant(island, variants, seed, ownerColor));
 
   return (
     <TooltipProvider>
@@ -127,8 +137,8 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
           style={toRevealLayerStyle(fogTiming, prefersReducedMotion)}
           data-testid="tile-reveal-layer"
         >
-          <TileDecorations island={island} isBase={isBase} />
-          <div className={styles.centerContent}>{getTileCenterContent(viewModel, tileArt)}</div>
+          <TileDecorations island={island} isBase={isBase} layouts={decorationLayouts} />
+          <div className={styles.centerContent}>{getTileCenterContent(viewModel, picks)}</div>
         </div>
         <TileBoats island={island} />
         <TileFog

@@ -27,6 +27,10 @@ export interface TileDecorationEditorViewModel {
   images: string[];
   isDirty: boolean;
   status: EditorStatus;
+  /** The art variants this scenario can be decorated for; 'default' is the built-in decorations. */
+  artOptions: { id: string; label: string }[];
+  artVariantId: string;
+  onArtVariantChange: (id: string) => void;
   /** false when the active scenario/variant has only one layout — it can't be deleted. */
   canDeleteActiveLayout: boolean;
   onScenarioChange: (outerKey: string) => void;

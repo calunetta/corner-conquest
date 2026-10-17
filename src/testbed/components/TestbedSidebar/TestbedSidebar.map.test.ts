@@ -27,6 +27,16 @@ describe('TestbedSidebar.map', () => {
       expect(groups.map((group) => group.name)).toEqual(['Combat', 'Map']);
       expect(groups[1].previews.map((preview) => preview.title)).toEqual(['Fog overlay', 'Zoom bar']);
     });
+
+    it('puts the dev tools group first, ahead of alphabetical groups', () => {
+      const groups = groupPreviews([
+        createPreview('Dice tray', 'Combat'),
+        createPreview('Tile Editor', 'Dev tools'),
+        createPreview('Zoom bar', 'Map'),
+      ]);
+
+      expect(groups.map((group) => group.name)).toEqual(['Dev tools', 'Combat', 'Map']);
+    });
   });
 
   describe('isRowActive', () => {

@@ -1,84 +1,111 @@
 'use client';
 
 import { useState } from 'react';
-import { DEFAULT_TILE_VARIANTS, TILE_VARIANT_SLOTS, type TileVariantSlot, type TileVariantsConfig } from '@/modules/map/components/TileVariants/TileVariants.config';
-import { applyColors } from '@/modules/map/components/TileVariants/TileVariants.validate';
-import { TileVariantsProvider } from '@/modules/map/components/TileVariants';
-import type { PlayerColor } from '@/lib/types';
-import { BaseVariantRow, SlotRow } from './TileVariantEditor.rows';
-import { TileVariantSamples } from './TileVariantEditor.samples';
+import { DEFAULT_TILE_VARIANTS_CONFIG, TILE_VARIANT_TYPES, type TileVariant, type TileVariantsConfig, type TileVariantType } from '@/modules/map/components/TileVariants/TileVariants.config';
+import { toVariantId } from '@/modules/map/components/TileVariants/TileVariants.validate';
+import { deleteVariant, saveVariant, uploadImage } from './TileVariantEditor.api';
+import { newDraft, toListLabel } from './TileVariantEditor.draft';
+import { VariantForm } from './TileVariantEditor.form';
+import { PlacementPreview } from './TileVariantEditor.placement';
 
 const BUTTON_CLASS = 'rounded-md border border-border bg-secondary px-3 py-1.5 text-sm text-foreground disabled:opacity-50';
 
+interface EditorState {
+  draft: TileVariant | null;
+  isNew: boolean;
+}
+
+/**
+ * Creates and edits tile variants. Pick a type, then a variant or "New variant". Choose or upload an
+ * image, drag it on the preview or type its position and size, name it, and Save.
+ */
 export function TileVariantEditor() {
-  const [selected, setSelected] = useState<TileVariantsConfig['selected']>(DEFAULT_TILE_VARIANTS.selected);
-  const [colors, setColors] = useState<Record<string, PlayerColor | null>>({});
+  const [config, setConfig] = useState<TileVariantsConfig>(DEFAULT_TILE_VARIANTS_CONFIG);
+  const [type, setType] = useState<TileVariantType>('special');
+  const [{ draft, isNew }, setEditor] = useState<EditorState>({ draft: null, isNew: false });
   const [status, setStatus] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const variants = config.variants.filter((variant) => variant.type === type);
 
-  const effective: TileVariantsConfig = {
-    variants: applyColors(DEFAULT_TILE_VARIANTS.variants, colors),
-    selected,
-  };
-  const baseVariants = effective.variants.filter((variant) => variant.type === 'base');
+  const edit = (next: TileVariant) => setEditor((prev) => ({ ...prev, draft: next }));
 
-  const handleSlotChange = (slot: TileVariantSlot, id: string | undefined) => {
-    setStatus(null);
-    setSelected((prev) => ({ ...prev, [slot]: id }));
-  };
+  async function run<T>(action: () => Promise<{ ok: true; value: T } | { ok: false; message: string }>, onOk: (value: T) => void) {
+    setBusy(true);
+    const result = await action();
+    setBusy(false);
+    if (result.ok) onOk(result.value);
+    else setStatus(result.message);
+  }
 
-  const handleColorChange = (id: string, color: PlayerColor | null) => {
-    setStatus(null);
-    setColors((prev) => ({ ...prev, [id]: color }));
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    const response = await fetch('/api/tile-variants', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ edit: { selected, colors } }),
+  function handleSave() {
+    if (!draft) return;
+    const id = isNew ? toVariantId(draft.type, draft.color, draft.name) : draft.id;
+    run(() => saveVariant({ ...draft, id }, isNew), (saved) => {
+      setConfig(saved);
+      setEditor({ draft: { ...draft, id }, isNew: false });
+      setStatus('Saved. Reload the game to use it everywhere.');
     });
-    const body = (await response.json().catch(() => ({}))) as { error?: string };
-    setStatus(response.ok ? 'Saved. Reload the game to use it everywhere.' : (body.error ?? `Save failed (${response.status}).`));
-    setSaving(false);
-  };
+  }
+
+  function handleDelete() {
+    if (!draft || isNew) return;
+    run(() => deleteVariant(draft.id), (next) => {
+      setConfig(next);
+      setEditor({ draft: null, isNew: false });
+      setStatus('Deleted.');
+    });
+  }
+
+  function handleUpload(file: File) {
+    if (!draft) return;
+    run(() => uploadImage(draft.type, file), ({ config: next, imagePath }) => {
+      setConfig(next);
+      edit({ ...draft, image: imagePath });
+      setStatus('Uploaded and selected.');
+    });
+  }
 
   return (
-    <TileVariantsProvider value={effective}>
-      <div className="flex flex-col gap-5">
-        <section className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Slots</h3>
-          {TILE_VARIANT_SLOTS.map((slot) => (
-            <SlotRow
-              key={slot}
-              slot={slot}
-              variants={effective.variants}
-              selectedId={selected[slot]}
-              onChange={handleSlotChange}
-            />
+    <div className="flex flex-wrap gap-6">
+      <aside className="flex w-56 flex-col gap-2">
+        <select value={type} onChange={(event) => { setType(event.target.value as TileVariantType); setEditor({ draft: null, isNew: false }); }} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-sm text-foreground">
+          {TILE_VARIANT_TYPES.map((option) => (
+            <option key={option} value={option}>{option}</option>
           ))}
-        </section>
-
-        <section className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Base castle colours</h3>
-          {baseVariants.length === 0 && (
-            <p className="text-xs text-muted-foreground">No base variants yet. Add images to public/sprites/tile-variants/base/.</p>
-          )}
-          {baseVariants.map((variant) => (
-            <BaseVariantRow key={variant.id} variant={variant} color={variant.color} onColorChange={handleColorChange} />
+        </select>
+        <button type="button" onClick={() => setEditor({ draft: newDraft(type, null), isNew: true })} className={BUTTON_CLASS}>
+          New variant
+        </button>
+        <ul className="flex flex-col gap-1">
+          {variants.map((variant) => (
+            <li key={variant.id}>
+              <button type="button" onClick={() => setEditor({ draft: { ...variant }, isNew: false })} aria-pressed={draft?.id === variant.id} className="w-full rounded-md px-2 py-1.5 text-left text-sm text-foreground hover:bg-secondary">
+                {toListLabel(variant)}
+              </button>
+            </li>
           ))}
-        </section>
+        </ul>
+      </aside>
 
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={handleSave} disabled={saving} className={BUTTON_CLASS}>
-            Save
-          </button>
-          {status && <span className="text-sm text-muted-foreground">{status}</span>}
-        </div>
-
-        <TileVariantSamples />
-      </div>
-    </TileVariantsProvider>
+      {draft ? (
+        <>
+          <div className="flex w-72 flex-col gap-3">
+            <VariantForm draft={draft} isNew={isNew} images={config.images} onChange={edit} onUploadFile={handleUpload} />
+          </div>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={handleSave} disabled={busy} className={BUTTON_CLASS}>Save</button>
+              {!isNew && !draft.id.startsWith('default-') && (
+                <button type="button" onClick={handleDelete} disabled={busy} className={BUTTON_CLASS}>Delete</button>
+              )}
+              {status && <span className="text-sm text-muted-foreground">{status}</span>}
+            </div>
+            <PlacementPreview config={config} draft={draft} onMove={(x, y) => edit({ ...draft, transform: { ...draft.transform, x, y } })} />
+          </div>
+        </>
+      ) : (
+        <p className="text-sm text-muted-foreground">Pick a variant on the left, or click New variant.</p>
+      )}
+    </div>
   );
 }

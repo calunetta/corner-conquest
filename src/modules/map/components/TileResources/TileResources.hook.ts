@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { useGameBoard, useResourceGainEvents } from '@/modules/game-board';
 import { RESOURCE_GAIN_ANIMATION_MS, useTransientPulses } from '@/modules/shared';
-import { useTileArt } from '../TileVariants';
+import { pickVariant, poolFor, toOffsetSlotStyle, useTileVariants, type TileVariant } from '../TileVariants';
 import { toTileResourcesViewModel } from './TileResources.map';
 import type { TileResourcesProps, ResourceNodeViewModel } from './TileResources.types';
+import type { ResourceType } from '@/lib/types';
 
 export function useTileResources(props: TileResourcesProps): { nodes: ResourceNodeViewModel[] | null } {
   const { gameState } = useGameBoard();
@@ -21,9 +22,25 @@ export function useTileResources(props: TileResourcesProps): { nodes: ResourceNo
   );
   const gainPulses = useTransientPulses(pulseTriggers, RESOURCE_GAIN_ANIMATION_MS);
 
-  const tileArt = useTileArt();
+  const variants = useTileVariants();
+  const seed = props.island.x * 31 + props.island.y;
   const builtInNodes = toTileResourcesViewModel(props.island, props.isBase ?? false, gameState.players, gainPulses);
-  const nodes = builtInNodes?.map((node) => ({ ...node, spriteSrc: tileArt.resources[node.type] ?? node.spriteSrc })) ?? null;
+  const nodes = builtInNodes?.map((node) => applyResourceVariant(node, pickResourceVariant(variants, node.type, seed))) ?? null;
 
   return { nodes };
+}
+
+function pickResourceVariant(variants: ReturnType<typeof useTileVariants>, type: ResourceType, seed: number): TileVariant | null {
+  return pickVariant(poolFor(variants, `resource-${type}`), seed);
+}
+
+/** A resource variant replaces the sprite and size of every node of its type, and offsets each node from its slot. */
+function applyResourceVariant(node: ResourceNodeViewModel, variant: TileVariant | null): ResourceNodeViewModel {
+  if (!variant?.image) return node;
+  return {
+    ...node,
+    spriteSrc: variant.image,
+    nodeSize: `${variant.transform.size}%`,
+    slotStyle: toOffsetSlotStyle(node.slotStyle, variant.transform),
+  };
 }

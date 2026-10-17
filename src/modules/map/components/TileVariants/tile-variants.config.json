@@ -1,4 +1,125 @@
 {
-  "variants": [],
-  "selected": {}
+  "images": [],
+  "variants": [
+    {
+      "id": "default-base-blue",
+      "type": "base",
+      "name": "Default",
+      "image": null,
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 100
+      },
+      "color": "blue"
+    },
+    {
+      "id": "default-base-red",
+      "type": "base",
+      "name": "Default",
+      "image": null,
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 100
+      },
+      "color": "red"
+    },
+    {
+      "id": "default-base-purple",
+      "type": "base",
+      "name": "Default",
+      "image": null,
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 100
+      },
+      "color": "purple"
+    },
+    {
+      "id": "default-base-yellow",
+      "type": "base",
+      "name": "Default",
+      "image": null,
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 100
+      },
+      "color": "yellow"
+    },
+    {
+      "id": "default-special",
+      "type": "special",
+      "name": "Default",
+      "image": null,
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 100
+      },
+      "color": null
+    },
+    {
+      "id": "default-monster",
+      "type": "monster",
+      "name": "Default",
+      "image": null,
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 100
+      },
+      "color": null
+    },
+    {
+      "id": "default-resource-food",
+      "type": "resource-food",
+      "name": "Default",
+      "image": null,
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 100
+      },
+      "color": null
+    },
+    {
+      "id": "default-resource-wood",
+      "type": "resource-wood",
+      "name": "Default",
+      "image": null,
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 100
+      },
+      "color": null
+    },
+    {
+      "id": "default-resource-gold",
+      "type": "resource-gold",
+      "name": "Default",
+      "image": null,
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 100
+      },
+      "color": null
+    },
+    {
+      "id": "default-empty",
+      "type": "empty",
+      "name": "Default",
+      "image": null,
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 100
+      },
+      "color": null
+    }
+  ]
 }

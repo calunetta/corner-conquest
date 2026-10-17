@@ -74,7 +74,6 @@ export const styles = {
   specialContent: 'absolute',
   specialImage: 'object-contain',
   monsterStack: 'flex h-full w-full flex-col',
-  monsterBackground: 'absolute inset-0 z-0 object-contain',
   monsterSlot: 'relative h-1/2 w-full',
   // Bottom offset and each image's box are set inline from island-tile-slots.types.ts (see toBorderRowStyle/toBorderImageStyle below).
   borderRow: 'pointer-events-none absolute left-1/2 z-0 flex w-full -translate-x-1/2 justify-center',

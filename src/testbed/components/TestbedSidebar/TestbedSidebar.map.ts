@@ -3,7 +3,21 @@ import type { PreviewGroup } from './TestbedSidebar.types';
 
 const byName = (a: string, b: string) => a.localeCompare(b);
 
-/** Groups previews by their `group`, sorting groups and titles alphabetically for a stable catalog. */
+/** Groups shown above the rest, in this order, so the dev tools are always at the top of the sidebar. */
+export const PINNED_GROUPS = ['Dev tools'];
+
+function compareGroups(a: string, b: string): number {
+  const pinnedA = PINNED_GROUPS.indexOf(a);
+  const pinnedB = PINNED_GROUPS.indexOf(b);
+  if (pinnedA !== -1 || pinnedB !== -1) {
+    if (pinnedA === -1) return 1;
+    if (pinnedB === -1) return -1;
+    return pinnedA - pinnedB;
+  }
+  return byName(a, b);
+}
+
+/** Groups previews by their `group`: pinned groups first, then the rest alphabetically; titles are alphabetical. */
 export function groupPreviews(previews: ComponentPreview[]): PreviewGroup[] {
   const previewsByGroup = new Map<string, ComponentPreview[]>();
 
@@ -12,7 +26,7 @@ export function groupPreviews(previews: ComponentPreview[]): PreviewGroup[] {
     previewsByGroup.set(preview.group, [...groupPreviews, preview]);
   }
 
-  return [...previewsByGroup.keys()].sort(byName).map((name) => ({
+  return [...previewsByGroup.keys()].sort(compareGroups).map((name) => ({
     name,
     previews: [...(previewsByGroup.get(name) ?? [])].sort((a, b) => byName(a.title, b.title)),
   }));

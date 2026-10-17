@@ -10,6 +10,9 @@ import type { TileDecorationEditorViewModel } from './TileDecorationEditor.types
 export type TileDecorationEditorRailProps = Pick<
     TileDecorationEditorViewModel,
     | 'scenarioOptions'
+    | 'artOptions'
+    | 'artVariantId'
+    | 'onArtVariantChange'
     | 'activeScenario'
     | 'activeVariant'
     | 'layouts'
@@ -37,6 +40,19 @@ export function TileDecorationEditorRail(props: TileDecorationEditorRailProps) {
   return (
     <>
       <div className={styles.fieldRow}>
+        <span className={styles.label}>Art variant</span>
+        <Select value={props.artVariantId} onValueChange={props.onArtVariantChange}>
+          <SelectTrigger aria-label="Art variant">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {props.artOptions.map((option) => (
+              <SelectItem key={option.id} value={option.id}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <span className={styles.label}>Scenario</span>
         <Select value={activeScenario} onValueChange={props.onScenarioChange}>
           <SelectTrigger aria-label="Scenario">

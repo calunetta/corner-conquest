@@ -1,4 +1,5 @@
 import type { DecorationLayoutsConfig, IslandTileSlotsDraft } from '@/modules/map';
+import type { TileVariant, TileVariantsConfig } from '@/modules/map/components/TileVariants/TileVariants.config';
 import type { ListDecorationImagesResponseBody, SaveDecorationLayoutsRequestBody } from './TileDecorationEditor.types';
 import type { SaveDefaultElementsRequestBody } from './TileDecorationEditor.defaultElements.types';
 
@@ -29,6 +30,21 @@ export async function saveDecorationLayouts(config: DecorationLayoutsConfig): Pr
   if (!response.ok) {
     throw new Error(`Failed to save decoration layouts: ${response.status}`);
   }
+}
+
+/** Saves a variant's own decoration layouts through the tile-variant route, which validates the variant. */
+export async function saveVariantDecorations(variant: TileVariant, decorations: DecorationLayoutsConfig): Promise<TileVariantsConfig> {
+  const response = await fetch('/api/tile-variants', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ variant: { ...variant, decorations }, isNew: false }),
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `Failed to save variant decorations: ${response.status}`);
+  }
+  const { config } = (await response.json()) as { config: TileVariantsConfig };
+  return config;
 }
 
 /** POSTs the edited default-elements draft to the dev-only save route, which regenerates

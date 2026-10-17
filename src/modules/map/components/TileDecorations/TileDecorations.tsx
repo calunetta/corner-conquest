@@ -5,8 +5,8 @@ import { toDecorationLayout } from './TileDecorations.map';
 import { styles } from './TileDecorations.styles';
 import type { TileDecorationsProps } from './TileDecorations.types';
 
-export function TileDecorations({ island, isBase = false }: TileDecorationsProps) {
-  const layout = toDecorationLayout(island, isBase);
+export function TileDecorations({ island, isBase = false, layouts }: TileDecorationsProps) {
+  const layout = layouts ? toDecorationLayout(island, isBase, layouts) : toDecorationLayout(island, isBase);
 
   return (
     <div className={styles.container} data-testid="tile-decorations">
