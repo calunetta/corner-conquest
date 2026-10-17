@@ -135,14 +135,15 @@ describe('toMonster', () => {
     });
   });
 
-  it('falls back to the idle sprite for attack when the entry has no attack sprite', () => {
+  it('leaves attack undefined, not the idle path, when the entry has no attack sprite', () => {
     const monster = toMonster(entry('Mute Bear', 2, { attack: false }));
 
     expect(monster.sprite).toEqual({
       idle: '/monster/mute-bear-lvl2-idle.gif',
-      attack: '/monster/mute-bear-lvl2-idle.gif',
+      attack: undefined,
       death: SHARED_DEATH_SPRITE,
     });
+    expect(monster.sprite.attack).toBeUndefined();
   });
 
   it('does not carry isBoss onto the Monster and does not mutate the entry', () => {

@@ -86,7 +86,7 @@ function toMonsterTransform(wander: MonsterWanderState): string {
 
 export function toLobbyMonsterViewModel(monster: Monster, wander: MonsterWanderState): LobbyMonsterViewModel {
   return {
-    spriteSrc: wander.isAttacking ? monster.sprite.attack : monster.sprite.idle,
+    spriteSrc: wander.isAttacking ? (monster.sprite.attack ?? monster.sprite.idle) : monster.sprite.idle,
     style: {
       top: MONSTER_POSITION.top,
       left: MONSTER_POSITION.left,

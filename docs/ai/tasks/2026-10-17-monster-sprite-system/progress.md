@@ -18,14 +18,14 @@ Tier: L · Phases: 3 (Phase 1 detailed in plan.md; Phases 2-3 outlined only, to 
 - [x] committed: 6fcfc15
 
 ## Phase 2: Combat/rendering wiring for the optional attack
-- [ ] plan detailed and approved (architect-a, architect-b)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] docs-sync (systems-and-visuals.md: skip-attack-animation behavior)
-- [ ] final review (architect-b)
+- [x] plan detailed and approved (architect-a, architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify)
+- [x] docs-sync (game-mechanics.md:30,36 and systems-and-visuals.md:22: skip-attack-animation behavior)
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 3: Testbed uploader

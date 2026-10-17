@@ -181,7 +181,10 @@ describe('LobbyBackground.map', () => {
     });
 
     it.each(['idle', 'attack', 'death'] as const)('returns a %s sprite that exists under public/', (key) => {
-      expect(publicFileExists(createMonsterIslandMonster().sprite[key])).toBe(true);
+      const src = createMonsterIslandMonster().sprite[key];
+
+      expect(src).toBeDefined();
+      expect(publicFileExists(src as string)).toBe(true);
     });
   });
 
@@ -249,6 +252,18 @@ describe('LobbyBackground.map', () => {
 
       expect(view.spriteSrc).toBe(TEST_MONSTER.sprite.attack);
       expect(view.style.transform).toBe('');
+    });
+
+    it('falls back to the idle sprite while attacking when the monster has no attack sprite', () => {
+      const monsterWithoutAttack: Monster = {
+        ...TEST_MONSTER,
+        sprite: { idle: TEST_MONSTER.sprite.idle, death: TEST_MONSTER.sprite.death },
+      };
+
+      const view = toLobbyMonsterViewModel(monsterWithoutAttack, makeWander({ isAttacking: true, offsetPercent: 12 }));
+
+      expect(view.spriteSrc).toBe(TEST_MONSTER.sprite.idle);
+      expect(view.spriteSrc).toBeDefined();
     });
 
     it('keeps the facing while attacking so the monster does not turn around mid-pose', () => {

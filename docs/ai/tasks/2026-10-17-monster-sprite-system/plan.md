@@ -344,3 +344,264 @@ Re-checked all 5 findings against the resubmission:
 Extra check this round: re-ran a repo-wide grep for `MONSTER_DATA` outside the File plan's 5 listed consumers. Found one more hit, `src/modules/combat/components/MonsterSelectionDialog/MonsterSelectionDialog.fixtures.ts:5`, but it's a comment ("// MONSTER_DATA, not invented — a wrong path 404s silently in the preview"), not an import or usage — not a 6th consumer, no plan change needed. All other `MONSTER_DATA` hits are in `.claude/worktrees/*` (other tasks' isolated worktrees, not this repo's live tree).
 
 Status: APPROVED
+
+---
+
+# Plan: Filename-driven monster sprite system — Phase 2 (optional attack animation)
+
+Status: APPROVED
+Inputs: triage.md, game-design.md (Final spec), ui-design.md (Final spec — Phase 3's uploader spec; its "UI forward note" on the boss soft-warning is Phase 3, not used here), plan.md Phase 1 (Decisions, Verified context), progress.md
+
+## Goal and acceptance criteria
+- [ ] `Monster.sprite.attack` is genuinely optional (`attack?: string`); `toMonster()` no longer substitutes `idle` for a missing catalog `attack` — a monster assembled from an idle-only catalog entry has `sprite.attack === undefined`.
+- [ ] On the real map, `AnimatedMonster`'s wander/attack hook never rolls into (and never renders) the attack pose for a monster with no attack sprite: it always shows the idle sprite with normal sideways wander, every tick — no frozen, non-wandering "fake attack" tick.
+- [ ] On the lobby background, `useLobbyMonster`'s wander hook has the identical guarantee for a monster with no attack sprite (defense-in-depth: the real lobby monster is always a seed/fallback entry that has an attack sprite today, but the hook accepts any `Monster` and must not crash or render `undefined` into an `<Image src>` if that ever changes).
+- [ ] In `MonsterCombatDialog`, both the attack screen's monster picture and the results screen's "monster wins" pose show the monster's idle sprite when it has no attack sprite, instead of `undefined`.
+- [ ] `MonsterSelectionDialog.map.ts`, `MonsterAttackScreen.tsx`, `CombatDialog.map.ts` are unchanged — re-verified in this session that none of them reads `Monster.sprite.attack` (the first reads only `.sprite.idle`; the other two read `PLAYER_DATA[...].sprite.attack`, the player's sprite, a different and still-required type).
+- [ ] `npm run typecheck`, `npm run lint`, `npm test` pass full-repo.
+- [ ] New preview states for the "no attack sprite" case exist and are confirmed in the browser (skill `ui-verify`): `AnimatedMonster` ("No attack sprite") and `MonsterCombatDialog` ("Attack screen — no attack sprite").
+- [ ] `docs/architecture/game-mechanics.md:30,36` and `docs/architecture/systems-and-visuals.md:22` no longer describe "uses its idle sprite as the attack sprite" / an unconditional 25% attack-pose chance — they describe the skip (docs-sync, same phase, mandatory per CLAUDE.md).
+
+## Verified context
+| Symbol or file | Location | Why it matters |
+|---|---|---|
+| `Monster` type | `src/lib/types/monsters.ts:5-13` | `sprite.attack: string` today (Phase 1 kept it required) — becomes `attack?: string` this phase. |
+| `toMonster` | `src/modules/game-rules/monster-catalog.ts:30-40` | Line 36: `attack: entry.sprite.attack ?? entry.sprite.idle` — the Phase 1 fallback this phase removes, so a Monster's `sprite.attack` can be `undefined`. |
+| `MonsterCatalogEntry.sprite.attack` | `src/modules/game-rules/monster-catalog.types.ts:110-118` (Phase 1) | Already optional — pre-assembly shape is unchanged; only `toMonster`'s assembly step changes. |
+| `useAnimatedMonster` | `src/modules/map/components/AnimatedMonster/AnimatedMonster.hook.ts:1-57` | Line 20: `const currentlyAttacking = Math.random() < 0.25;` — unconditional, rolled every tick. Line 43: `monster.sprite.attack` read unconditionally as a `string`. Both change. |
+| `AnimatedMonster.hook.test.ts` | `src/modules/map/components/AnimatedMonster/AnimatedMonster.hook.test.ts:1-148` | `mockMonster` has both idle and attack; every existing test keeps passing unchanged (same `Math.random()` call count/order when an attack sprite exists) — new test added for the no-attack case. |
+| `useLobbyMonster`, `rollWander` | `src/modules/lobby/components/LobbyBackground/LobbyBackground.monster.hook.ts:1-51` | Line 17-21: `rollWander()` takes no args, unconditionally checks `Math.random() < MONSTER_ATTACK_CHANCE`. Called at line 43 inside the wander `setInterval` (mount-only, deps `[]`, line 41-48). |
+| `toLobbyMonsterViewModel` | `src/modules/lobby/components/LobbyBackground/LobbyBackground.map.ts:87-98` | Line 89: `spriteSrc: wander.isAttacking ? monster.sprite.attack : monster.sprite.idle` — reads the now-optional field unconditionally. |
+| `LobbyBackground.monster.hook.test.ts` | `src/modules/lobby/components/LobbyBackground/LobbyBackground.monster.hook.test.ts:1-187` | `queueRandomDraws` doc comment (lines 18-22) states the exact call order: "one draw for the wander interval on mount; per step, one draw for the attack roll and, when not attacking, one draw for the offset." Existing tests all use a `MONSTER` fixture with both sprites (lines 10-14) — unaffected. New test needed: with no attack sprite, a step consumes only the offset draw, never the attack-roll draw, and `isAttacking` is never true no matter how low the roll. |
+| `toMonsterCombatViewModel`, `toMonsterAttackViewModel`, `toMonsterResultsViewModel` | `src/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.map.ts:12-154` | Line 65 types its `monster` param `sprite: { attack: string }`; line 85 `sprite: monster.sprite.attack,`; line 99 types its `monster` param `sprite: { death: string; attack: string }`; line 114 `: monster.sprite.attack`. All four change. Line 71 (`attackerSprite = PLAYER_DATA[attacker.color].sprite.attack`) and line 109 (same, inside the results function) read the **player's** sprite — unaffected, re-verified by reading the file in this session. |
+| `MonsterCombatDialog.types.ts` | `src/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.types.ts:23-47` | `MonsterAttackViewModel.monster.sprite: string` and `MonsterResultsViewModel.monster.sprite: string \| null` are already plain, pre-resolved strings — **no change needed here**; only the internal param types inside `.map.ts` narrow to allow `attack?: string`. |
+| `MonsterAttackScreen.tsx:27`, `CombatDialog.map.ts:26-30` | read in full this session | Both read only `PLAYER_DATA[...].sprite.attack` (`PlayerSprite`, a separate always-required type) — confirmed no `Monster.sprite.attack` read. No change. |
+| `MonsterSelectionDialog.map.ts:13` | read in full this session | `sprite: monster.sprite.idle,` only. No change. |
+| `MonsterCombatDialog.fixtures.ts` | `src/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.fixtures.ts:1-123` | `baseMonster` (lines 68-71) has both sprites. New fixtures needed for the no-attack case, reused by `.map.test.ts` and the new preview state (DRY). |
+| `AnimatedMonster.preview.tsx` | `src/modules/map/components/AnimatedMonster/AnimatedMonster.preview.tsx:1-50` | 4 states today (Lancer/Bear/Ogre/Minotaur), all with both sprites, using pre-Phase-1 literal `/sprites/*_idle.gif` paths (unaffected — these are just preview literals, not the generated catalog). New state needed: a monster with no `attack` key in its `sprite` object. |
+| `MonsterCombatDialog.preview.tsx` | `src/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.preview.tsx:1-102` | 5 states today, all built from fixtures that have both sprites. New state needed, built from the new fixture. |
+| `combat-monster-resolve.reducer.ts:31` | read in full this session | `sprite: monster.sprite.death` only — the one other `game-rules` file touching `monster.sprite`, confirmed unaffected by this change. |
+| `eslint.config.mjs` | grepped this session | No `react-hooks/exhaustive-deps` rule configured — adding a `monster.sprite.attack` read inside an effect with `deps: []` in `AnimatedMonster.hook.ts`/`LobbyBackground.monster.hook.ts` raises no lint warning. |
+
+## Decisions
+- **`Monster.sprite.attack` becomes optional (`attack?: string`); `toMonster()` stops defaulting it to `idle`.** This is the real "no attack" signal Phase 1 deferred (plan.md Phase 1 Decisions: "make it optional in Phase 2"). Rejected: keep the Phase 1 fallback forever — it doesn't just fail to signal "skip," it actively produces a visible glitch on the map: `AnimatedMonster.hook.ts`'s attack-pose `styleTransform` drops `translateX` (line 47-51), so a monster whose `sprite.attack` silently resolves to its idle image would render that same idle image but **frozen in place** (no sideways wander) for one 3–5.5s tick whenever the 25% roll hits — a stutter, not a graceful skip. Confirmed by reading `AnimatedMonster.hook.ts:43-51` in this session.
+- **"Skip" means two different things per consumer, decided by whether the consumer is an animation loop or a single static picture:**
+  - **Animation loops (`AnimatedMonster.hook.ts`, `LobbyBackground.monster.hook.ts`):** skip the *roll* itself — a monster with no attack sprite never transitions into the attacking state, so it always wanders normally, every tick, forever. Implemented by short-circuiting the attack-chance `Math.random()` call with `canAttack &&`, not by rolling as before and discarding the result.
+  - **Static dialog pictures (`MonsterCombatDialog.map.ts`'s two view-model builders):** there is no animation to skip — these each render one fixed image per screen. "Skip the attack animation" here means "show the idle picture instead," i.e. `monster.sprite.attack ?? monster.sprite.idle` at the point each view model is built.
+  - Rejected: one uniform rule ("always fall back to idle, same as Phase 1") for every consumer — covered by the bullet above; it's indistinguishable from Phase 1's shipped behavior for the two static-picture consumers, but reintroduces the map stutter for both animation loops.
+- **The attack-chance `Math.random()` call is skipped entirely (not called and discarded) when the monster has no attack sprite**, in both `AnimatedMonster.hook.ts` and `LobbyBackground.monster.hook.ts`. This changes the random-draw count/order for a no-attack monster (one draw per tick instead of two) but leaves every existing test's draw sequence unchanged, because all of today's fixtures have both sprites. Rejected: always call `Math.random()` for the attack roll and ignore a `true` result when `!canAttack` — wastes a draw for no behavioral benefit and makes the no-attack test cases need to queue (and ignore) an extra draw per step for no reason.
+- **`canAttack` is computed once per mount, inside the existing `useEffect`, not added to its dependency array.** Both hooks' wander/animation timers are deliberately mount-only ("one interval drawn on mount," `systems-and-visuals.md:22`); the `monster` prop is built once per component instance in both call sites (`AnimatedMonster({ monster })`'s prop, and `LobbyBackground.tsx`'s `const MONSTER = createMonsterIslandMonster();`), so `canAttack` cannot change during the component's lifetime in current usage. Rejected: `[canAttack]` in the deps array — would restart the timer on a change that never happens in practice, and changes the documented "one interval drawn on mount" behavior for no reason.
+- **Implementation deviation (implementer-a): `canAttack` is computed at render time and the effect deps are `[canAttack]`, not `[]`.** `react-hooks/exhaustive-deps` is active in this repo (the Verified context row claiming it is not configured was wrong), so reading `monster.sprite.attack` inside a `[]` effect fails `eslint --max-warnings 0`. `canAttack` is a boolean that is constant for a component's lifetime, so the timer still starts once on mount; behaviour is unchanged. Applies to `AnimatedMonster.hook.ts` and `LobbyBackground.monster.hook.ts`.
+- **`MonsterCombatDialog.types.ts` is not touched.** `MonsterAttackViewModel.monster.sprite` and `MonsterResultsViewModel.monster.sprite` are already plain, already-resolved `string`/`string | null` — the optionality is resolved inside `.map.ts` before it reaches the view model, so the public contract the `.tsx` screens consume doesn't change. Rejected: propagate `attack?: string` into the view-model types and let `MonsterAttackScreen.tsx`/`MonsterResultsScreen.tsx` do the `?? idle` themselves — moves a map-layer concern into the view layer for no reason, and both `.tsx` files are otherwise untouched this phase (component-architecture: `.tsx` renders, it doesn't resolve fallbacks).
+- **New fixtures over new types.** `MonsterCombatDialog.fixtures.ts` gets one new `Monster` literal with no `attack` key and two new exported `GameState` fixtures built from it (one `phase: 'rolling'`, one `phase: 'results'`/monster-wins) — reused by `.map.test.ts` and the new preview state, instead of inlining a one-off object in each. Matches the existing fixture-per-scenario pattern already in the file.
+
+## File plan
+| File | New / Edit | Responsibility | Owner |
+|---|---|---|---|
+| `src/lib/types/monsters.ts` | edit | `Monster.sprite.attack` → `attack?: string` | implementer-a |
+| `src/modules/game-rules/monster-catalog.ts` | edit | `toMonster()`: `attack: entry.sprite.attack` (no `?? idle`); update its doc comment | implementer-a |
+| `src/modules/game-rules/monster-catalog.test.ts` | edit | Replace the "falls back to the idle sprite for attack" `toMonster` test with one asserting `sprite.attack` is `undefined` when the entry has none | tester-a |
+| `src/modules/map/components/AnimatedMonster/AnimatedMonster.hook.ts` | edit | Compute `canAttack` once per mount; short-circuit the attack roll; resolve `spriteSrc` with `?? monster.sprite.idle` | implementer-a |
+| `src/modules/map/components/AnimatedMonster/AnimatedMonster.hook.test.ts` | edit | New test: no-attack-sprite monster never shows the attack sprite and always has `translateX` in its transform, however low the mocked `Math.random()` value | tester-a |
+| `src/modules/lobby/components/LobbyBackground/LobbyBackground.monster.hook.ts` | edit | `rollWander(canAttack: boolean)`; compute `canAttack` once per mount inside the effect | implementer-a |
+| `src/modules/lobby/components/LobbyBackground/LobbyBackground.map.ts` | edit | `toLobbyMonsterViewModel`'s `spriteSrc` resolves with `?? monster.sprite.idle` | implementer-a |
+| `src/modules/lobby/components/LobbyBackground/LobbyBackground.monster.hook.test.ts` | edit | New test: with a no-attack monster, a step consumes only the offset draw (never the attack-roll draw) and `spriteSrc`/transform always stay in the idle/wander shape | tester-a |
+| `src/modules/lobby/components/LobbyBackground/LobbyBackground.map.test.ts` | edit | New test: `toLobbyMonsterViewModel` with `wander.isAttacking: true` and a monster with no attack sprite returns the idle sprite, not `undefined` | tester-a |
+| `src/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.map.ts` | edit | Widen `toMonsterAttackViewModel`'s and `toMonsterResultsViewModel`'s `monster` param types to `attack?: string` (add `idle: string`); resolve both read sites with `?? monster.sprite.idle` | implementer-a |
+| `src/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.fixtures.ts` | edit | Add `monsterWithNoAttackSprite` and two new exported `GameState` fixtures built from it (`attackScreenMonsterNoAttackSprite`, `resultsMonsterWinsNoAttackSprite`) | implementer-a |
+| `src/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.map.test.ts` | edit | New tests: attack screen's `monster.sprite` falls back to idle when no attack sprite; results screen's monster-wins `monster.sprite` falls back to idle when no attack sprite | tester-a |
+| `src/modules/map/components/AnimatedMonster/AnimatedMonster.preview.tsx` | edit | New state "No attack sprite" (sprite object with no `attack` key) | preview-a |
+| `src/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.preview.tsx` | edit | New state "Attack screen — no attack sprite", built from `attackScreenMonsterNoAttackSprite` | preview-a |
+| `docs/architecture/game-mechanics.md` | edit | Line 30: sprites "have a chance to play their attack animation" → gated on having one, skipped otherwise. Line 36: "A monster with no attack GIF uses its idle sprite as the attack sprite (`toMonster`)" → describe the skip instead | docs-sync |
+| `docs/architecture/systems-and-visuals.md` | edit | Line 22: the lobby monster's "25% chance ... to show the attack pose instead of wandering" gains "skipped entirely (always wanders) if the monster has no attack sprite" | docs-sync |
+
+No `implementer-b` work this phase: no `.tsx`/`.styles.ts` file changes — `AnimatedMonster.tsx`, `LobbyBackground.tsx`, `MonsterAttackScreen.tsx`, `MonsterResultsScreen.tsx` are all unchanged (they render already-resolved strings; the resolution happens in `.hook.ts`/`.map.ts`). No `tester-b` work: no view/e2e behavior changes to assert beyond what the new preview states make visually checkable.
+
+## Contracts
+```ts
+// ---------------------------------------------------------------------------
+// src/lib/types/monsters.ts (EDIT)
+// ---------------------------------------------------------------------------
+export type Monster = {
+  name: MonsterName;
+  level: number;
+  sprite: {
+    idle: string;
+    attack?: string; // undefined when the catalog entry has no uploaded attack.gif
+    death: string;
+  };
+};
+
+// ---------------------------------------------------------------------------
+// src/modules/game-rules/monster-catalog.ts (EDIT — toMonster only)
+// ---------------------------------------------------------------------------
+/** Passes the catalog's optional attack sprite through unresolved; callers decide how to
+ *  skip the attack step when it's absent (see AnimatedMonster.hook.ts, LobbyBackground
+ *  .monster.hook.ts/.map.ts, MonsterCombatDialog.map.ts). */
+export function toMonster(entry: MonsterCatalogEntry): Monster {
+  return {
+    name: entry.name,
+    level: entry.level,
+    sprite: {
+      idle: entry.sprite.idle,
+      attack: entry.sprite.attack, // no `?? entry.sprite.idle` fallback anymore
+      death: SHARED_DEATH_SPRITE,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// src/modules/map/components/AnimatedMonster/AnimatedMonster.hook.ts (EDIT)
+// ---------------------------------------------------------------------------
+// Inside the existing useEffect(() => { ... }, []):
+//   const canAttack = Boolean(monster.sprite.attack);
+//   const animationInterval = setInterval(() => {
+//     const currentlyAttacking = canAttack && Math.random() < 0.25;
+//     ... (unchanged branches below; `isAttacking` can now only ever become true when canAttack)
+//   }, Math.random() * 2500 + 3000);
+//
+// After the effect (render-time), unchanged signature, new body:
+//   const spriteSrc = state.isAttacking
+//     ? (monster.sprite.attack ?? monster.sprite.idle) // defense-in-depth; isAttacking implies attack is defined
+//     : monster.sprite.idle;
+// AnimatedMonsterState / useAnimatedMonster's exported signature is unchanged.
+
+// ---------------------------------------------------------------------------
+// src/modules/lobby/components/LobbyBackground/LobbyBackground.monster.hook.ts (EDIT)
+// ---------------------------------------------------------------------------
+function rollWander(canAttack: boolean): WanderRoll {
+  if (canAttack && Math.random() < MONSTER_ATTACK_CHANCE) return { isAttacking: true };
+  return { isAttacking: false, offsetPercent: Math.round(randomWithin(MONSTER_WANDER_OFFSET_RANGE)) };
+}
+
+export function useLobbyMonster(monster: Monster): LobbyMonsterViewModel {
+  const [wander, setWander] = useState<MonsterWanderState>(INITIAL_WANDER);
+
+  useEffect(() => {
+    const canAttack = Boolean(monster.sprite.attack);
+    const wanderTimer = setInterval(() => {
+      const roll = rollWander(canAttack);
+      setWander((previous) => applyWanderRoll(previous, roll));
+    }, randomWithin(MONSTER_WANDER_INTERVAL_MS));
+
+    return () => clearInterval(wanderTimer);
+  }, []); // unchanged deps array — see Decisions
+
+  return toLobbyMonsterViewModel(monster, wander);
+}
+
+// ---------------------------------------------------------------------------
+// src/modules/lobby/components/LobbyBackground/LobbyBackground.map.ts (EDIT — toLobbyMonsterViewModel only)
+// ---------------------------------------------------------------------------
+export function toLobbyMonsterViewModel(monster: Monster, wander: MonsterWanderState): LobbyMonsterViewModel {
+  return {
+    spriteSrc: wander.isAttacking ? (monster.sprite.attack ?? monster.sprite.idle) : monster.sprite.idle,
+    style: { /* unchanged */ },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// src/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.map.ts (EDIT — two internal functions only)
+// ---------------------------------------------------------------------------
+function toMonsterAttackViewModel(
+  attacker: { id: number; name: string; color: PlayerColor; attackPower: number },
+  monster: { name: string; level: number; sprite: { idle: string; attack?: string } } | undefined,
+  hasDecideCard: boolean,
+  hasOvercomeCard: boolean,
+  hasWarChiefCard: boolean,
+  canUseCard: boolean,
+): MonsterAttackViewModel {
+  // ...unchanged body except:
+  //   sprite: monster.sprite.attack ?? monster.sprite.idle,
+}
+
+function toMonsterResultsViewModel(
+  attacker: { id: number; name: string; color: PlayerColor },
+  monster: { name: string; sprite: { idle: string; death: string; attack?: string } } | undefined,
+  attackerRolls: number[],
+  monsterRolls: number[],
+  winnerId: number | null,
+): MonsterResultsViewModel {
+  // ...unchanged body except:
+  //   const monsterSprite = monster
+  //     ? isPlayerWinner
+  //       ? monster.sprite.death
+  //       : (monster.sprite.attack ?? monster.sprite.idle)
+  //     : null;
+}
+// MonsterCombatDialog.types.ts is NOT edited — MonsterAttackViewModel/MonsterResultsViewModel's
+// `monster.sprite` fields stay plain, already-resolved string/string|null.
+
+// ---------------------------------------------------------------------------
+// src/modules/combat/components/MonsterCombatDialog/MonsterCombatDialog.fixtures.ts (EDIT — additions only)
+// ---------------------------------------------------------------------------
+const monsterWithNoAttackSprite: Monster = {
+  name: MonsterName.Bear,
+  level: 2,
+  sprite: { idle: '/sprites/bear_idle.gif', death: '/sprites/death.gif' }, // no `attack` key
+};
+
+/** Attack screen — monster has no attack sprite; the shown picture must fall back to idle. */
+export const attackScreenMonsterNoAttackSprite: GameState /* = buildGameState({ ...,
+  monsterCombatState: { ...baseMonsterCombat, monster: monsterWithNoAttackSprite,
+    attackerRolls: [], monsterRolls: [], winnerId: null, phase: 'rolling' } }) */;
+
+/** Results — monster wins, no attack sprite; the "monster wins" pose must fall back to idle. */
+export const resultsMonsterWinsNoAttackSprite: GameState /* = buildGameState({ ...,
+  monsterCombatState: { ...baseMonsterCombat, monster: monsterWithNoAttackSprite,
+    attackerRolls: [2, 2, 1], monsterRolls: [5, 4, 3], winnerId: null, phase: 'results' } }) */;
+```
+
+## Phases
+### Phase 2: Optional attack animation (this plan, detailed)
+1. `src/lib/types/monsters.ts` — `Monster.sprite.attack` → optional. (implementer-a) — **sonnet** (type change ripples through typecheck across the repo; L-tier escalation already in effect per triage).
+2. `monster-catalog.ts`'s `toMonster()` rework + its test. (implementer-a, tester-a) — **sonnet**.
+3. `AnimatedMonster.hook.ts` rework + its hook test. (implementer-a, tester-a) — **sonnet**.
+4. `LobbyBackground.monster.hook.ts` + `LobbyBackground.map.ts` rework + both their tests. (implementer-a, tester-a) — **sonnet**.
+5. `MonsterCombatDialog.map.ts` rework + new fixtures + `.map.test.ts` additions. (implementer-a, tester-a) — **sonnet**.
+6. New preview states: `AnimatedMonster.preview.tsx` ("No attack sprite"), `MonsterCombatDialog.preview.tsx` ("Attack screen — no attack sprite", from the new fixture). (preview-a) — **sonnet** (triage override).
+7. `docs/architecture/game-mechanics.md:30,36` and `docs/architecture/systems-and-visuals.md:22` updated (mandatory, same phase — CLAUDE.md docs-sync rule). (docs-sync)
+8. Full-repo `npm run typecheck`, `npm run lint`, `npm test`; `ui-verify` screenshot of the two new preview states (`/testbed` → "Game map" → Animated Monster → "No attack sprite"; "Combat" → Monster Combat Dialog → "Attack screen — no attack sprite"), confirming the idle sprite renders where the attack sprite would have.
+
+Model escalation: all of steps 1-6 require sonnet (triage overrides `implementer-a=sonnet`, `tester-a=sonnet`, `preview-a=sonnet` for this task).
+
+## Test plan
+- tester-a (logic, first):
+  - `monster-catalog.test.ts`: `toMonster(entry without attack)` → `sprite.attack` is `undefined` (not the idle path); `toMonster(entry with attack)` unchanged (still returns that exact path).
+  - `AnimatedMonster.hook.test.ts`: new case — a monster with no `sprite.attack`, `Math.random()` mocked to always return `0` (would trigger "attacking" under the old unconditional roll): `spriteSrc` stays `monster.sprite.idle` across multiple interval fires, and `styleTransform` always contains `translateX` (never the flip-only attack-pose shape). All 7 existing cases (idle/attack switch, boundary, flip tracking, interval delay, unmount cleanup) keep passing unchanged since `mockMonster` has both sprites.
+  - `LobbyBackground.monster.hook.test.ts`: new case — a monster with no `sprite.attack`, queue a single low draw per step (`queueRandomDraws([0, 0.0], 0.5)`): `spriteSrc` stays idle and the transform keeps its wander offset (not the flip-only attack shape), proving the attack-roll draw was never consumed (one draw per step, not two — verified by the exact draw count needed to reach a specific offset). All 11 existing cases keep passing unchanged since `MONSTER` has both sprites.
+  - `LobbyBackground.map.test.ts`: new case — `toLobbyMonsterViewModel(monsterWithNoAttack, { isAttacking: true, ... })` returns `spriteSrc === monster.sprite.idle`, not `undefined`.
+  - `MonsterCombatDialog.map.test.ts`: new cases — `toMonsterCombatViewModel(attackScreenMonsterNoAttackSprite, ...)`'s attack screen has `screen.data.monster?.sprite === monsterWithNoAttackSprite.sprite.idle`; `toMonsterCombatViewModel(resultsMonsterWinsNoAttackSprite, ...)`'s results screen has `screen.data.monster?.sprite === monsterWithNoAttackSprite.sprite.idle` (the monster-wins pose). All existing cases (built from `baseMonster`, which has both sprites) keep passing unchanged.
+- tester-b (view and e2e): none this phase — no `.tsx` behavior changes to assert beyond the preview states, which are verified visually (`ui-verify`), not via RTL.
+
+## Preview states
+- `AnimatedMonster`: new state "No attack sprite" — a monster literal with `sprite: { idle: '/sprites/bear_idle.gif', death: '/sprites/death.gif' }` (no `attack` key). Visually: the sprite only ever wanders side to side, never freezes into the flip-only attack pose (give it time in the browser across a few wander ticks, or temporarily note the 3-5.5s interval when checking).
+- `MonsterCombatDialog`: new state "Attack screen — no attack sprite", rendered from `attackScreenMonsterNoAttackSprite`. Visually: the monster's picture in the attack screen is its idle sprite (not broken/missing).
+
+## Risks
+- **Random-draw-count change for the no-attack case is easy to get backwards in a test.** `AnimatedMonster.hook.test.ts`/`LobbyBackground.monster.hook.test.ts`'s new cases must queue exactly one `Math.random()` draw per step (the offset roll), not two — queuing an extra draw "for the attack roll that doesn't happen" will desync every subsequent queued value and produce a confusing, unrelated test failure. Cross-check against `LobbyBackground.monster.hook.test.ts`'s own `queueRandomDraws` doc comment (lines 18-22) when writing the new case.
+- **`MonsterCombatDialog.map.ts`'s two edited functions are internal (not exported) — tester-a must assert through the exported `toMonsterCombatViewModel`, not call them directly.** Matches how every existing test in that file already works (verified in this session: `MonsterCombatDialog.map.test.ts` never imports `toMonsterAttackViewModel`/`toMonsterResultsViewModel` directly).
+- **Scope creep into Phase 3.** The testbed uploader (`MonsterSpriteUploader`) is Phase 3, not this phase — nothing here should add upload UI or an API route, even though the fixtures/previews added here will make useful manual test data once Phase 3 exists.
+
+## Review (architect-b)
+VERDICT: APPROVED
+
+Verified every cited path/symbol/line against the repo: `src/lib/types/monsters.ts:5-13` (Monster type, matches exactly), `src/modules/game-rules/monster-catalog.ts:30-40` (`toMonster`, line 36 `attack: entry.sprite.attack ?? entry.sprite.idle` confirmed), `AnimatedMonster.hook.ts:1-57` (line 20 `Math.random() < 0.25` unconditional, line 43 `monster.sprite.attack` unconditional, lines 47-51 attack-pose transform), `AnimatedMonster.hook.test.ts` (7 `it(` cases, not 6 — fixed below), `LobbyBackground.monster.hook.ts:1-51` (`rollWander` lines 17-21, called inside the mount-only effect lines 41-48), `LobbyBackground.monster.hook.test.ts` (11 `it(` cases, not 10 — fixed below; `queueRandomDraws` doc comment at lines 18-22 matches exactly), `LobbyBackground.map.ts:62-98` (`createMonsterIslandMonster`, `toLobbyMonsterViewModel` line 89 unconditional `monster.sprite.attack`), `MonsterCombatDialog.map.ts:63-154` (line 65 `sprite: { attack: string }` param type, line 85 `monster.sprite.attack`, line 99 `sprite: { death: string; attack: string }`, line 114 `monster.sprite.attack`; lines 71 and 109 confirmed as `PLAYER_DATA[attacker.color].sprite.attack`, the player's sprite — correctly excluded from this phase's scope), `MonsterCombatDialog.types.ts:23-47` (view-model `sprite` fields are plain pre-resolved `string`/`string | null` — confirms the "types.ts not touched" decision), `MonsterAttackScreen.tsx:27` and `CombatDialog.map.ts:27,30` (both read only `PLAYER_DATA[...].sprite.attack`, unaffected), `MonsterSelectionDialog.map.ts:13` (`.sprite.idle` only, unaffected), `combat-monster-resolve.reducer.ts:31` (`monster.sprite.death` only, unaffected), `eslint.config.mjs` (no `react-hooks/exhaustive-deps` rule, confirming the deps-array decision raises no lint warning), `game-mechanics.md:30,36` and `systems-and-visuals.md:22` (text matches the plan's quotes exactly — "have a chance to play their attack animation", "A monster with no attack GIF uses its idle sprite as the attack sprite (`toMonster`)", "25% chance ... to show the attack pose instead of wandering"), `AnimatedMonster.preview.tsx` (4 states, confirmed), `MonsterCombatDialog.preview.tsx` (5 states, confirmed), `MonsterCombatDialog.fixtures.ts` (`baseMonster` at lines 69-72, one off from the cited "68-71" — trivial, not fixed, doesn't affect any decision). No invented paths found.
+
+Challenges addressed:
+- **`Monster.sprite.attack` optional**: correctly deferred from Phase 1 (plan.md:43) to here; the only consumers of the field are the ones in the File plan, verified above. No simpler option — the type must reflect that a monster can genuinely lack an attack sprite for every consumer to make a real (not fallback) decision.
+- **`canAttack` short-circuit instead of roll-and-discard**: reasonable and cheaper; verified it doesn't desync any *existing* test (all current fixtures have both sprites, so the draw count/order for those cases is unchanged) and the Risks section (plan.md:581) already flags the exact trap (queuing an extra draw for the no-attack case) for the builder.
+- **`monster.sprite.attack ?? monster.sprite.idle` in the two static dialog view-model builders**: correct call — these are one-shot picture renders, not animation loops, so "skip" only ever means "show idle instead." Matches `MonsterSelectionDialog`'s existing precedent of reading only `.sprite.idle` for monsters with no concept of an attack frame.
+- **Frozen-frame glitch claim (Decisions, plan.md:387)**: confirmed by reading `AnimatedMonster.hook.ts:43-51` myself. Under Phase 1's `toMonster` fallback (`attack: entry.sprite.attack ?? entry.sprite.idle`), a 25%-roll "attacking" tick for a no-attack-sprite monster sets `isAttacking: true`; `spriteSrc` (line 43) then resolves to the same idle image, but `styleTransform` (lines 47-51) drops `translateX` for that tick — the sprite stops wandering and shows a static (though not technically different-looking) frame for the tick's 3-5.5s duration, while every other tick moves it. The claim is accurate: it is a real freeze, not merely "the same picture."
+
+Findings:
+1. **Non-blocking, folded in**: `AnimatedMonster.hook.test.ts` has 7 `it(` cases, not "6" (Test plan, plan.md:570); `LobbyBackground.monster.hook.test.ts` has 11, not "10" (plan.md:571). Fixed directly in the Test plan section — counts don't change any test's content or the plan's design.
+2. **Non-blocking suggestion, not required**: the `monster.sprite.attack ?? monster.sprite.idle` fallback (or its mirror, `canAttack = Boolean(monster.sprite.attack)`) is repeated at 4 sites: `AnimatedMonster.hook.ts` (render-time), `LobbyBackground.map.ts:89`, and twice in `MonsterCombatDialog.map.ts` (attack + results view models). DRY's own threshold ("extract at the third copy") is technically crossed, but each occurrence is a one-line `??` with a different surrounding shape (prop default vs. object-literal field vs. ternary branch) and the four files don't share a natural import point without creating a cross-module dependency from `map`/`lobby`/`combat` onto a new shared one-liner. Leaving it inline is the simpler choice; implementer-a may extract a tiny shared helper (e.g. in `src/modules/shared`) if they find a cleaner shape while implementing, but the plan doesn't need to mandate it.
+3. **Not an issue (checked)**: `MonsterCombatDialog.map.ts`'s widened internal param types (`sprite: { idle: string; attack?: string }` for the attack view model, `sprite: { idle: string; death: string; attack?: string }` for the results one) correctly add `idle` even though today's narrower types omit it — both functions need it only once the fallback is added, and narrowing to a structural subset (not the full `Monster` type) matches this file's existing style and interface segregation.
+4. **Not an issue (checked)**: the deps-array decision (`canAttack` computed once per mount, not added to `[]`) is safe — both call sites build their `Monster` prop once per component instance (verified `AnimatedMonster({ monster })`'s prop and `LobbyBackground.tsx`'s module-level `const MONSTER = createMonsterIslandMonster();`), so `canAttack` cannot change mid-lifecycle today, and no `exhaustive-deps` lint rule is configured to flag the omission either way.
+5. **Not an issue (checked)**: `MonsterCombatDialog.types.ts` is correctly left untouched — its view-model `sprite` fields are already-resolved `string`/`string | null`, so the optionality is fully absorbed inside `.map.ts` before it reaches the `.tsx` screens, matching the view/map boundary.
+6. **Not an issue (checked)**: docs-sync rows match the current doc text exactly at `game-mechanics.md:30,36` and `systems-and-visuals.md:22` (re-read in this session, post Phase-1 edits).
+
+Phase sizing (15 files: 1 type, 2 hooks, 2 maps + 1 catalog function, 1 fixtures file, 5 test files, 2 previews, 2 docs; implementer-a/tester-a/preview-a only, correctly no implementer-b/tester-b since no `.tsx` changes) is appropriate for a mid-size L-tier phase and matches the "pure view vs. connected" guidance — nothing here renders JSX.
+
+Status: APPROVED

@@ -7,7 +7,7 @@ export type Monster = {
   level: number;
   sprite: {
     idle: string;
-    attack: string;
+    attack?: string; // undefined when the catalog entry has no uploaded attack.gif
     death: string;
   };
 };

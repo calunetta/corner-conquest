@@ -15,9 +15,11 @@ export function useAnimatedMonster(monster: Monster): AnimatedMonsterState {
 
   const offsetRef = useRef(0);
 
+  const canAttack = Boolean(monster.sprite.attack);
+
   useEffect(() => {
     const animationInterval = setInterval(() => {
-      const currentlyAttacking = Math.random() < 0.25;
+      const currentlyAttacking = canAttack && Math.random() < 0.25;
 
       if (currentlyAttacking) {
         setState((prev) => ({
@@ -38,9 +40,11 @@ export function useAnimatedMonster(monster: Monster): AnimatedMonsterState {
     }, Math.random() * 2500 + 3000);
 
     return () => clearInterval(animationInterval);
-  }, []);
+  }, [canAttack]);
 
-  const spriteSrc = state.isAttacking ? monster.sprite.attack : monster.sprite.idle;
+  const spriteSrc = state.isAttacking
+    ? (monster.sprite.attack ?? monster.sprite.idle)
+    : monster.sprite.idle;
 
   // Pre-branched styleTransform: when attacking, only flip (no translateX);
   // when idle, include both translateX and flip

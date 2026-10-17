@@ -14,8 +14,8 @@ type WanderRoll = { isAttacking: true } | { isAttacking: false; offsetPercent: n
 const INITIAL_WANDER: MonsterWanderState = { isAttacking: false, isFlipped: false, offsetPercent: 0 };
 
 // Random values are drawn here, outside the state updater, so the updater stays pure under StrictMode.
-function rollWander(): WanderRoll {
-  if (Math.random() < MONSTER_ATTACK_CHANCE) return { isAttacking: true };
+function rollWander(canAttack: boolean): WanderRoll {
+  if (canAttack && Math.random() < MONSTER_ATTACK_CHANCE) return { isAttacking: true };
 
   return { isAttacking: false, offsetPercent: Math.round(randomWithin(MONSTER_WANDER_OFFSET_RANGE)) };
 }
@@ -38,14 +38,16 @@ function applyWanderRoll(previous: MonsterWanderState, roll: WanderRoll): Monste
 export function useLobbyMonster(monster: Monster): LobbyMonsterViewModel {
   const [wander, setWander] = useState<MonsterWanderState>(INITIAL_WANDER);
 
+  const canAttack = Boolean(monster.sprite.attack);
+
   useEffect(() => {
     const wanderTimer = setInterval(() => {
-      const roll = rollWander();
+      const roll = rollWander(canAttack);
       setWander((previous) => applyWanderRoll(previous, roll));
     }, randomWithin(MONSTER_WANDER_INTERVAL_MS));
 
     return () => clearInterval(wanderTimer);
-  }, []);
+  }, [canAttack]);
 
   return toLobbyMonsterViewModel(monster, wander);
 }

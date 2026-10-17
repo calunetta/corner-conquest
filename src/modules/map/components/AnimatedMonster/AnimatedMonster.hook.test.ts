@@ -145,4 +145,75 @@ describe('useAnimatedMonster', () => {
 
     jest.spyOn(Math, 'random').mockRestore();
   });
+
+  describe('monster with no attack sprite', () => {
+    // Earlier tests in this file leave Math.random spied; start from the real one so call counts are exact.
+    beforeEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    const noAttackMonster: Monster = {
+      name: 'Bear',
+      level: 1,
+      sprite: { idle: '/sprites/bear_idle.gif', death: '/sprites/bear_death.gif' },
+    };
+
+    it('never enters the attack pose even when every Math.random draw is 0', () => {
+      jest.spyOn(Math, 'random').mockReturnValue(0); // would attack under an unconditional roll
+
+      const { result } = renderHook(() => useAnimatedMonster(noAttackMonster));
+
+      for (let step = 0; step < 4; step++) {
+        act(() => {
+          jest.advanceTimersByTime(3000);
+        });
+        expect(result.current.spriteSrc).toBe(noAttackMonster.sprite.idle);
+        expect(result.current.styleTransform).toContain('translateX');
+      }
+    });
+
+    it('draws Math.random once per step (offset only), after the one draw for the interval delay', () => {
+      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.9);
+
+      renderHook(() => useAnimatedMonster(noAttackMonster));
+      expect(randomSpy).toHaveBeenCalledTimes(1); // interval delay: 0.9 * 2500 + 3000 = 5250
+
+      act(() => {
+        jest.advanceTimersByTime(5250);
+      });
+      expect(randomSpy).toHaveBeenCalledTimes(2);
+
+      act(() => {
+        jest.advanceTimersByTime(5250);
+      });
+      expect(randomSpy).toHaveBeenCalledTimes(3);
+    });
+
+    it('still draws two numbers per step when an attack sprite exists (attack roll, then offset)', () => {
+      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.9);
+
+      renderHook(() => useAnimatedMonster(mockMonster));
+      act(() => {
+        jest.advanceTimersByTime(5250);
+      });
+
+      expect(randomSpy).toHaveBeenCalledTimes(3);
+    });
+
+    it('moves by the offset roll on each step', () => {
+      // delay draw 0.9 -> 5250ms; offset draw 1 -> round(0.5 * 30) = 15
+      jest.spyOn(Math, 'random').mockReturnValueOnce(0.9).mockReturnValue(1);
+
+      const { result } = renderHook(() => useAnimatedMonster(noAttackMonster));
+      act(() => {
+        jest.advanceTimersByTime(5250);
+      });
+
+      expect(result.current.styleTransform).toBe('translateX(15%) ');
+    });
+  });
 });

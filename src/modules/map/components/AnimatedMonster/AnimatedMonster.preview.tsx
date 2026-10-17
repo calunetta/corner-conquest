@@ -49,5 +49,15 @@ export const animatedMonsterPreview: ComponentPreview = {
         </TooltipProvider>
       ),
     },
+    {
+      name: 'No attack sprite',
+      render: () => (
+        <TooltipProvider>
+          <AnimatedMonster
+            monster={{ name: 'Bear', level: 2, sprite: { idle: '/sprites/bear_idle.gif', death: '/sprites/death.gif' } }}
+          />
+        </TooltipProvider>
+      ),
+    },
   ],
 };

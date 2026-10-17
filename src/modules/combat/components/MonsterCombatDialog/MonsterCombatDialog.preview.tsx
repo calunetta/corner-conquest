@@ -10,6 +10,8 @@ import {
   attackScreenAllCards,
   resultsPlayerWins,
   resultsMonsterWins,
+  attackScreenMonsterNoAttackSprite,
+  resultsMonsterWinsNoAttackSprite,
   spectatorWaiting,
 } from './MonsterCombatDialog.fixtures';
 
@@ -100,6 +102,28 @@ export const monsterCombatDialogPreview: ComponentPreview = {
           onRoll={(payload) => console.warn('onRoll', payload)}
           isMyTurn={false}
           localPlayerId={1}
+        />
+      ),
+    },
+    {
+      name: 'Attack screen — no attack sprite',
+      render: () => (
+        <InteractiveMonsterCombatDialog
+          gameState={attackScreenMonsterNoAttackSprite}
+          onRoll={(payload) => console.warn('onRoll', payload)}
+          isMyTurn={true}
+          localPlayerId={0}
+        />
+      ),
+    },
+    {
+      name: 'Results — monster wins, no attack sprite',
+      render: () => (
+        <InteractiveMonsterCombatDialog
+          gameState={resultsMonsterWinsNoAttackSprite}
+          onRoll={(payload) => console.warn('onRoll', payload)}
+          isMyTurn={true}
+          localPlayerId={0}
         />
       ),
     },

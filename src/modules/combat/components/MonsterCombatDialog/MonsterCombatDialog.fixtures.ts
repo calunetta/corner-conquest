@@ -72,6 +72,12 @@ const baseMonster: Monster = {
   sprite: { idle: '/sprites/bear_idle.gif', attack: '/sprites/bear_attack.gif', death: '/sprites/death.gif' },
 };
 
+const monsterWithNoAttackSprite: Monster = {
+  name: MonsterName.Bear,
+  level: 2,
+  sprite: { idle: '/sprites/bear_idle.gif', death: '/sprites/death.gif' },
+};
+
 const baseMonsterCombat = {
   attackerId: 0,
   attackerPosition: { x: 0, y: 0 },
@@ -120,4 +126,28 @@ export const resultsMonsterWins = buildGameState({
 export const spectatorWaiting = buildGameState({
   players: basePlayers.map(p => (p.id === 0 ? { ...p, specialCards: [CardName.Overcome] } : p)),
   monsterCombatState: { ...baseMonsterCombat, attackerRolls: [], monsterRolls: [], winnerId: null, phase: 'rolling' },
+});
+
+/** Attack screen — monster has no attack sprite; the shown picture must fall back to idle. */
+export const attackScreenMonsterNoAttackSprite = buildGameState({
+  monsterCombatState: {
+    ...baseMonsterCombat,
+    monster: monsterWithNoAttackSprite,
+    attackerRolls: [],
+    monsterRolls: [],
+    winnerId: null,
+    phase: 'rolling',
+  },
+});
+
+/** Results — monster wins, no attack sprite; the "monster wins" pose must fall back to idle. */
+export const resultsMonsterWinsNoAttackSprite = buildGameState({
+  monsterCombatState: {
+    ...baseMonsterCombat,
+    monster: monsterWithNoAttackSprite,
+    attackerRolls: [2, 2, 1],
+    monsterRolls: [5, 4, 3],
+    winnerId: null,
+    phase: 'results',
+  },
 });

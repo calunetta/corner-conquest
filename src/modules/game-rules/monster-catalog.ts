@@ -26,14 +26,15 @@ export function getFirstMonsterAtLevel(level: number): MonsterCatalogEntry | und
   return MONSTER_CATALOG.find((entry) => entry.level === level);
 }
 
-/** A missing attack sprite falls back to idle while Monster.sprite.attack is still required. */
+/** Passes the catalog's optional attack sprite through unresolved; callers decide how to
+ *  skip the attack step when it is absent. */
 export function toMonster(entry: MonsterCatalogEntry): Monster {
   return {
     name: entry.name,
     level: entry.level,
     sprite: {
       idle: entry.sprite.idle,
-      attack: entry.sprite.attack ?? entry.sprite.idle,
+      attack: entry.sprite.attack,
       death: SHARED_DEATH_SPRITE,
     },
   };

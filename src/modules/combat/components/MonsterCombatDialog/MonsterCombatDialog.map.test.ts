@@ -2,6 +2,8 @@ import { toMonsterCombatViewModel } from './MonsterCombatDialog.map';
 import {
   attackScreenNoCards,
   attackScreenAllCards,
+  attackScreenMonsterNoAttackSprite,
+  resultsMonsterWinsNoAttackSprite,
   resultsPlayerWins,
   resultsMonsterWins,
   spectatorWaiting,
@@ -371,6 +373,45 @@ describe('toMonsterCombatViewModel', () => {
       const result = toMonsterCombatViewModel(state, false, undefined);
       if (result?.screen.kind === 'spectator') {
         expect(result.screen.data.monsterLabel).toBe('the monster');
+      }
+    });
+  });
+
+  describe('monster with no attack sprite', () => {
+    const noAttackMonster = attackScreenMonsterNoAttackSprite.monsterCombatState?.monster;
+
+    it('fixtures use a monster without an attack sprite', () => {
+      expect(noAttackMonster).toBeDefined();
+      expect(noAttackMonster?.sprite.attack).toBeUndefined();
+      expect(noAttackMonster?.sprite.idle).toBeTruthy();
+    });
+
+    it('attack screen shows the idle sprite as the monster picture', () => {
+      const result = toMonsterCombatViewModel(attackScreenMonsterNoAttackSprite, true, 0);
+
+      expect(result?.screen.kind).toBe('attack');
+      if (result?.screen.kind === 'attack') {
+        expect(result.screen.data.monster?.sprite).toBe(noAttackMonster?.sprite.idle);
+      }
+    });
+
+    it('results screen shows the idle sprite when the monster wins', () => {
+      const result = toMonsterCombatViewModel(resultsMonsterWinsNoAttackSprite, true, 0);
+
+      expect(result?.screen.kind).toBe('results');
+      if (result?.screen.kind === 'results') {
+        expect(result.screen.data.isPlayerWinner).toBe(false);
+        expect(result.screen.data.monster?.sprite).toBe(noAttackMonster?.sprite.idle);
+      }
+    });
+
+    it('attack screen with an attack sprite still shows the attack sprite', () => {
+      const monster = attackScreenNoCards.monsterCombatState?.monster;
+      const result = toMonsterCombatViewModel(attackScreenNoCards, true, 0);
+
+      expect(monster?.sprite.attack).toBeTruthy();
+      if (result?.screen.kind === 'attack') {
+        expect(result.screen.data.monster?.sprite).toBe(monster?.sprite.attack);
       }
     });
   });

@@ -62,7 +62,7 @@ export function toMonsterCombatViewModel(
 
 function toMonsterAttackViewModel(
   attacker: { id: number; name: string; color: PlayerColor; attackPower: number },
-  monster: { name: string; level: number; sprite: { attack: string } } | undefined,
+  monster: { name: string; level: number; sprite: { idle: string; attack?: string } } | undefined,
   hasDecideCard: boolean,
   hasOvercomeCard: boolean,
   hasWarChiefCard: boolean,
@@ -82,7 +82,7 @@ function toMonsterAttackViewModel(
     monster: monster
       ? {
           name: monster.name,
-          sprite: monster.sprite.attack,
+          sprite: monster.sprite.attack ?? monster.sprite.idle,
           powerLabel: `Power: ${monsterPower} (${monsterPower === 1 ? '1 Die' : `${monsterPower} Dice`})`,
         }
       : null,
@@ -96,7 +96,7 @@ function toMonsterAttackViewModel(
 
 function toMonsterResultsViewModel(
   attacker: { id: number; name: string; color: PlayerColor },
-  monster: { name: string; sprite: { death: string; attack: string } } | undefined,
+  monster: { name: string; sprite: { idle: string; death: string; attack?: string } } | undefined,
   attackerRolls: number[],
   monsterRolls: number[],
   winnerId: number | null,
@@ -111,7 +111,7 @@ function toMonsterResultsViewModel(
   const monsterSprite = monster
     ? isPlayerWinner
       ? monster.sprite.death
-      : monster.sprite.attack
+      : (monster.sprite.attack ?? monster.sprite.idle)
     : null;
 
   const outcomeText = isPlayerWinner

@@ -178,6 +178,52 @@ describe('useLobbyMonster', () => {
     expect(jest.getTimerCount()).toBe(0);
   });
 
+  describe('monster with no attack sprite', () => {
+    const NO_ATTACK_MONSTER: Monster = {
+      name: MONSTER.name,
+      level: MONSTER.level,
+      sprite: { idle: MONSTER.sprite.idle, death: MONSTER.sprite.death },
+    };
+
+    it('never attacks: the low draw is consumed as the offset, so exactly one draw is used per step', () => {
+      // Interval draw 0, then one draw 0 per step. With the attack roll skipped, 0 maps to the offset -15.
+      queueRandomDraws([0, 0], 0.5);
+      const { result } = renderHook(() => useLobbyMonster(NO_ATTACK_MONSTER));
+
+      act(() => {
+        jest.advanceTimersByTime(INTERVAL_MS);
+      });
+
+      expect(result.current.spriteSrc).toBe(NO_ATTACK_MONSTER.sprite.idle);
+      expect(result.current.style.transform).toBe('translateX(-15%) scaleX(-1)');
+    });
+
+    it('never attacks across many steps when every draw is 0', () => {
+      jest.spyOn(Math, 'random').mockReturnValue(0);
+      const { result } = renderHook(() => useLobbyMonster(NO_ATTACK_MONSTER));
+
+      for (let step = 0; step < 5; step++) {
+        act(() => {
+          jest.advanceTimersByTime(INTERVAL_MS);
+        });
+        expect(result.current.spriteSrc).toBe(NO_ATTACK_MONSTER.sprite.idle);
+        expect(result.current.style.transform).toContain('translateX');
+      }
+    });
+
+    it('draws Math.random once per step', () => {
+      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
+      renderHook(() => useLobbyMonster(NO_ATTACK_MONSTER));
+      expect(randomSpy).toHaveBeenCalledTimes(1); // interval
+
+      act(() => {
+        jest.advanceTimersByTime(INTERVAL_MS);
+      });
+
+      expect(randomSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('does not import the real AnimatedMonster hook or component', () => {
     const source = fs.readFileSync(path.join(__dirname, 'LobbyBackground.monster.hook.ts'), 'utf8');
 
