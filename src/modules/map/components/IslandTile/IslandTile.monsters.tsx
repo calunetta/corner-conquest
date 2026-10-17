@@ -15,7 +15,7 @@ export function MonsterIcons({ monsters, background }: MonsterIconsProps) {
       {background?.image && <PlacedVariantImage src={background.image} transform={background.transform} />}
       <div className={styles.monsterStack}>
         {monsters.map((monster, i) => (
-          <div key={`${monster.name}-${i}`} className={styles.monsterSlot}>
+          <div key={`${monster.name}-${i}`} className={monsters.length === 1 ? styles.monsterSlotSingle : styles.monsterSlot}>
             <AnimatedMonster monster={monster} />
           </div>
         ))}

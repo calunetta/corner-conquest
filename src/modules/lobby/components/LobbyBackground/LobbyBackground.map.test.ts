@@ -141,6 +141,7 @@ describe('LobbyBackground.map', () => {
       expect(createMonsterIslandMonster()).toEqual({
         name: 'Minotaur',
         level: 4,
+        isBoss: true,
         sprite: {
           idle: '/monster/boss-minotaur-lvl4-idle.gif',
           attack: '/monster/boss-minotaur-lvl4-attack.gif',

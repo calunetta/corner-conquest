@@ -64,4 +64,20 @@ describe('AnimatedMonster Component', () => {
     expect(image).toBeInTheDocument();
     expect(image.getAttribute('src')).toMatch(/bear_(idle|attack)\.gif/);
   });
+
+  describe('sprite size', () => {
+    it('renders a non-boss monster at 64x64', () => {
+      render(<AnimatedMonster monster={mockMonster} />);
+      const image = screen.getByAltText('Lancer');
+      expect(image).toHaveAttribute('width', '64');
+      expect(image).toHaveAttribute('height', '64');
+    });
+
+    it('renders a boss monster at 96x96', () => {
+      render(<AnimatedMonster monster={{ ...mockMonster, isBoss: true }} />);
+      const image = screen.getByAltText('Lancer');
+      expect(image).toHaveAttribute('width', '96');
+      expect(image).toHaveAttribute('height', '96');
+    });
+  });
 });

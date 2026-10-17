@@ -5,10 +5,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAnimatedMonster } from './AnimatedMonster.hook';
 import { styles } from './AnimatedMonster.styles';
 import type { AnimatedMonsterProps } from './AnimatedMonster.types';
-import { MONSTER_SPRITE_SIZE_PX } from '../../island-tile-slots.types';
+import { BOSS_MONSTER_SCALE, MONSTER_SPRITE_SIZE_PX } from '../../island-tile-slots.types';
 
 export function AnimatedMonster({ monster }: AnimatedMonsterProps) {
   const { spriteSrc, styleTransform } = useAnimatedMonster(monster);
+  const spriteSizePx = monster.isBoss ? Math.round(MONSTER_SPRITE_SIZE_PX * BOSS_MONSTER_SCALE) : MONSTER_SPRITE_SIZE_PX;
 
   return (
     <Tooltip>
@@ -17,8 +18,8 @@ export function AnimatedMonster({ monster }: AnimatedMonsterProps) {
           <Image
             src={spriteSrc}
             alt={monster.name}
-            width={MONSTER_SPRITE_SIZE_PX}
-            height={MONSTER_SPRITE_SIZE_PX}
+            width={spriteSizePx}
+            height={spriteSizePx}
             className={styles.image}
             style={{ transform: styleTransform }}
             unoptimized

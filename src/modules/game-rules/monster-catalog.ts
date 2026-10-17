@@ -32,6 +32,7 @@ export function toMonster(entry: MonsterCatalogEntry): Monster {
   return {
     name: entry.name,
     level: entry.level,
+    isBoss: entry.isBoss,
     sprite: {
       idle: entry.sprite.idle,
       attack: entry.sprite.attack,

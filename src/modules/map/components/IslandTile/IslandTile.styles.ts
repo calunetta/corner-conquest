@@ -75,6 +75,8 @@ export const styles = {
   specialImage: 'object-contain',
   monsterStack: 'flex h-full w-full flex-col',
   monsterSlot: 'relative h-1/2 w-full',
+  // A lone monster gets the whole tile so it sits centered on the tile it lives on.
+  monsterSlotSingle: 'relative h-full w-full',
   // Bottom offset and each image's box are set inline from island-tile-slots.types.ts (see toBorderRowStyle/toBorderImageStyle below).
   borderRow: 'pointer-events-none absolute left-1/2 z-0 flex w-full -translate-x-1/2 justify-center',
   borderImageWrapper: 'relative',

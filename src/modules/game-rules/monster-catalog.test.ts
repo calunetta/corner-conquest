@@ -127,6 +127,7 @@ describe('toMonster', () => {
     expect(toMonster(entry('Bear', 2))).toEqual({
       name: 'Bear',
       level: 2,
+      isBoss: false,
       sprite: {
         idle: '/monster/bear-lvl2-idle.gif',
         attack: '/monster/bear-lvl2-attack.gif',
@@ -146,13 +147,13 @@ describe('toMonster', () => {
     expect(monster.sprite.attack).toBeUndefined();
   });
 
-  it('does not carry isBoss onto the Monster and does not mutate the entry', () => {
+  it('carries isBoss onto the Monster and does not mutate the entry', () => {
     const source = entry('Minotaur', 4, { isBoss: true });
     const snapshot = JSON.parse(JSON.stringify(source));
 
     const monster = toMonster(source);
 
-    expect(monster).not.toHaveProperty('isBoss');
+    expect(monster.isBoss).toBe(true);
     expect(source).toEqual(snapshot);
   });
 });
@@ -389,6 +390,7 @@ describe('pickBossMonster', () => {
     expect(pickBossMonster()).toEqual({
       name: 'Minotaur',
       level: 4,
+      isBoss: true,
       sprite: {
         idle: '/monster/boss-minotaur-lvl4-idle.gif',
         attack: '/monster/boss-minotaur-lvl4-attack.gif',
