@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef } from 'react';
-import Image from 'next/image';
 import { RegistryIcon } from '@/modules/shared';
 import {
   AlertDialog,
@@ -44,14 +43,7 @@ export function VictoryDialog({ winner, isLocalWinner, isExiting, onReturnToLobb
 
         <div className={styles.winnerRow}>
           <div className={cn(styles.avatarContainer, playerRingColors[vm.color])}>
-            <Image
-              src={vm.spriteSrc}
-              alt={`${vm.color} player`}
-              width={64}
-              height={64}
-              className={styles.avatarImage}
-              unoptimized
-            />
+            <RegistryIcon id={vm.iconId} alt={`${vm.color} player`} className={styles.avatarImage} />
           </div>
           <div className={styles.winnerInfo}>
             <div className={styles.winnerNameRow}>

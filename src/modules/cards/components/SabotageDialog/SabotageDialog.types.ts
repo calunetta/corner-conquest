@@ -9,7 +9,7 @@ export interface SabotageDialogProps {
 export interface SabotageTargetViewModel {
   id: number;
   name: string;
-  sprite: string;
+  iconId: string;
 }
 
 export interface SabotageDialogViewModel {

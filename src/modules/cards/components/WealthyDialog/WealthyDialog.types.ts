@@ -7,7 +7,7 @@ export interface WealthyDialogProps {
 
 export interface WealthyOptionViewModel {
   resource: ResourceType;
-  sprite: string;
+  iconId: string;
   displayName: string;
 }
 

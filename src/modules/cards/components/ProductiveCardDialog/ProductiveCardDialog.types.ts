@@ -9,7 +9,7 @@ export interface ProductiveCardDialogProps {
 export interface ProductiveOptionViewModel {
   resource: ResourceType;
   amount: number;
-  sprite: string;
+  iconId: string;
   displayName: string;
   isSelected: boolean;
 }

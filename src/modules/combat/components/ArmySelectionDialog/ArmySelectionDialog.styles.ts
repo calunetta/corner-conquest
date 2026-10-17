@@ -12,7 +12,7 @@ export const styles = {
   armyButtonSelectable: 'border-white/10 bg-black/40 hover:border-white/20 hover:bg-black/60 hover:scale-[1.02]',
   armyButtonDisabled: 'opacity-40 border-white/5 bg-black/20 cursor-not-allowed',
   spriteWrap: 'relative h-12 w-12 flex items-center justify-center mb-1',
-  sprite: 'object-contain drop-shadow',
+  sprite: 'h-10 w-10 drop-shadow',
   nameRow: 'flex items-center gap-1',
   name: 'text-xs font-bold text-foreground',
   activeBadge: 'bg-amber-500 text-black text-[9px] px-1 py-0 font-black',

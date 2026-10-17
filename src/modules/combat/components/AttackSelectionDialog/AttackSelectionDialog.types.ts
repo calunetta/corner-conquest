@@ -15,7 +15,7 @@ export type ArmyStatus = 'acted' | 'positioned' | 'ready';
 export interface AttackArmyOptionViewModel {
   id: number;
   status: ArmyStatus;
-  sprite: string;
+  iconId: string;
 }
 
 export interface AttackSelectionViewModel {

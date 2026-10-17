@@ -15,7 +15,7 @@ describe('toPositionDialogViewModel', () => {
         {
           type: ResourceType.Gold,
           amount: 2,
-          sprite: '/sprites/gold.gif',
+          iconId: 'resource-gold',
           displayName: 'Gold',
         },
       ],
@@ -39,12 +39,12 @@ describe('toPositionDialogViewModel', () => {
     expect(result.options[0]).toEqual({
       type: ResourceType.Food,
       amount: 3,
-      sprite: '/sprites/sheep.gif',
+      iconId: 'resource-food',
       displayName: 'Food',
     });
   });
 
-  it('falls back to the default sprite when a resource type has no entry in RESOURCE_SPRITES', () => {
+  it('falls back to the food icon when a resource type has no registry entry', () => {
     // RESOURCE_SPRITES is a complete Record<ResourceType, string> today (all 3 keys present),
     // so this fallback never actually triggers with real data. Exercise it with a value
     // outside the known ResourceType union, via a typed cast at the test boundary (not `any`).
@@ -53,7 +53,7 @@ describe('toPositionDialogViewModel', () => {
 
     const result = toPositionDialogViewModel(resources);
 
-    expect(result.options[0].sprite).toBe('/sprites/mine.png');
+    expect(result.options[0].iconId).toBe('resource-food');
   });
 
   it('does not mutate the input array', () => {

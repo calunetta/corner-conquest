@@ -18,11 +18,11 @@ describe('ProductiveCardDialog.map', () => {
       expect(food?.isSelected).toBe(false);
     });
 
-    it('resolves each option\'s sprite and display name', () => {
+    it('resolves each option\'s icon id and display name', () => {
       const viewModel = toProductiveCardDialogViewModel(productiveDialogState, null);
       const food = viewModel.options.find((o) => o.resource === ResourceType.Food);
 
-      expect(food?.sprite).toBe('/sprites/sheep.gif');
+      expect(food?.iconId).toBe('resource-food');
       expect(food?.displayName).toBe('Food');
     });
 

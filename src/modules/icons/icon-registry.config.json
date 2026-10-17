@@ -605,6 +605,62 @@
     "defaultSize": 100
   },
   {
+    "id": "army-blue",
+    "label": "Army (Blue)",
+    "module": "shared",
+    "defaultSource": { "kind": "image", "src": "/sprites/blue.gif" },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "army-red",
+    "label": "Army (Red)",
+    "module": "shared",
+    "defaultSource": { "kind": "image", "src": "/sprites/red.gif" },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "army-purple",
+    "label": "Army (Purple)",
+    "module": "shared",
+    "defaultSource": { "kind": "image", "src": "/sprites/purple.gif" },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "army-yellow",
+    "label": "Army (Yellow)",
+    "module": "shared",
+    "defaultSource": { "kind": "image", "src": "/sprites/yellow.gif" },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "resource-food",
+    "label": "Resource (Food)",
+    "module": "shared",
+    "defaultSource": { "kind": "image", "src": "/sprites/sheep.gif" },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "resource-wood",
+    "label": "Resource (Wood)",
+    "module": "shared",
+    "defaultSource": { "kind": "image", "src": "/sprites/tree.gif" },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "resource-gold",
+    "label": "Resource (Gold)",
+    "module": "shared",
+    "defaultSource": { "kind": "image", "src": "/sprites/gold.gif" },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
     "id": "collector-blue",
     "label": "Collector (Blue)",
     "module": "shared",

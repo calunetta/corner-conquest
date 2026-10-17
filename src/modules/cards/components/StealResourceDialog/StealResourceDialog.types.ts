@@ -9,14 +9,14 @@ export interface StealResourceDialogProps {
 export interface StealPlayerOptionViewModel {
   id: number;
   name: string;
-  sprite: string;
+  iconId: string;
   totalResources: number;
   isSelected: boolean;
 }
 
 export interface StealResourceOptionViewModel {
   resource: ResourceType;
-  sprite: string;
+  iconId: string;
   displayName: string;
   available: number;
   isAvailable: boolean;

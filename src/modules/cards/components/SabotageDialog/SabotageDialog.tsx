@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -44,14 +43,7 @@ export function SabotageDialog({ players, onSabotage, onClose }: SabotageDialogP
               className={styles.targetButton}
             >
               <div className={styles.spriteWrap}>
-                <Image
-                  src={target.sprite}
-                  alt={target.name}
-                  width={36}
-                  height={36}
-                  className={styles.sprite}
-                  unoptimized
-                />
+                <RegistryIcon id={target.iconId} alt={target.name} className={styles.sprite} />
               </div>
               <p className={styles.name}>{target.name}</p>
               <span className={styles.skipLabel}>

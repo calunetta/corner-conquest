@@ -12,7 +12,7 @@ export const styles = {
   armyButtonEnabled: 'border-white/10 bg-black/40 hover:border-red-500/40 hover:bg-red-500/10 hover:scale-105',
   armyButtonDisabled: 'opacity-40 border-white/5 bg-black/20 cursor-not-allowed',
   spriteWrap: 'relative h-12 w-12 flex items-center justify-center mb-1',
-  sprite: 'object-contain drop-shadow',
+  sprite: 'h-10 w-10 drop-shadow',
   name: 'text-xs font-bold text-foreground',
   statusRow: 'flex items-center gap-1 text-[11px] font-semibold mt-1',
   statusIcon: 'h-3.5 w-3.5',

@@ -10,7 +10,7 @@ export const styles = {
   targetButton:
     'flex flex-col items-center p-3 rounded-xl border border-white/10 bg-black/40 hover:border-red-500/40 hover:bg-red-500/10 hover:scale-105 transition-all duration-200',
   spriteWrap: 'relative h-10 w-10 mb-1 flex items-center justify-center',
-  sprite: 'object-contain drop-shadow',
+  sprite: 'h-9 w-9 drop-shadow',
   name: 'text-xs font-bold truncate max-w-full text-foreground',
   skipLabel: 'text-[10px] text-red-400 font-semibold mt-0.5 flex items-center gap-0.5',
   skipIcon: 'h-2.5 w-2.5',

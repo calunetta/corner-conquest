@@ -29,7 +29,7 @@ export const styles = {
   headerRow: 'flex items-center justify-between gap-2',
   avatarSection: 'flex items-center gap-2 min-w-0 flex-1',
   avatarContainer: 'relative h-9 w-9 shrink-0 rounded-xl bg-black/50 p-0.5 border border-white/15 overflow-hidden flex items-center justify-center ring-1',
-  avatarImage: 'object-contain',
+  avatarImage: 'h-9 w-9 object-contain',
   nameContainer: 'min-w-0 flex-1',
   nameTrigger: 'flex items-center gap-1.5 cursor-default',
   nameText: 'text-xs sm:text-sm font-extrabold truncate text-foreground tracking-tight',

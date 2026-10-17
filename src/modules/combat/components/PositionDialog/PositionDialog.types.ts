@@ -10,7 +10,7 @@ export interface PositionDialogProps {
 export interface PositionOptionViewModel {
   type: ResourceType;
   amount: number;
-  sprite: string;
+  iconId: string;
   displayName: string;
 }
 

@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -53,14 +52,7 @@ export function ProductiveCardDialog(props: ProductiveCardDialogProps) {
               )}
 
               <div className={styles.spriteWrap}>
-                <Image
-                  src={option.sprite}
-                  alt={option.displayName}
-                  width={44}
-                  height={44}
-                  className={styles.sprite}
-                  unoptimized
-                />
+                <RegistryIcon id={option.iconId} alt={option.displayName} className={styles.sprite} />
               </div>
 
               <div className={styles.nameRow}>

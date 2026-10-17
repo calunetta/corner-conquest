@@ -1,5 +1,5 @@
 import type { Army, ArmySelectionDialogState, Player } from '@/lib/types';
-import { toPlayerIdleSprite } from '@/modules/shared';
+import { toArmyIconId } from '@/modules/shared';
 import type { ArmyOptionViewModel, ArmySelectionViewModel, ArmyStatus } from './ArmySelectionDialog.types';
 
 function toArmyStatus(army: Army, player: Player): ArmyStatus {
@@ -22,7 +22,7 @@ export function toArmySelectionViewModel(
     status: toArmyStatus(army, player),
     isSelectable: (!army.hasActed || player.hasExtraMove) && isMyTurn,
     isSelected: selectedArmyId === army.id,
-    sprite: toPlayerIdleSprite(player.color),
+    iconId: toArmyIconId(player.color),
   }));
 
   return { x: state.x, y: state.y, armies };
