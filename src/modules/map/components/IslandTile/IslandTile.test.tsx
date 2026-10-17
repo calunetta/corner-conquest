@@ -19,6 +19,18 @@ import {
   uiStateFixture,
 } from './IslandTile.fixtures';
 import type { IslandTileContext } from './IslandTile.types';
+import { TileVariantsProvider } from '../TileVariants';
+import { DEFAULT_TILE_VARIANTS_CONFIG, type TileVariantsConfig } from '../TileVariants/TileVariants.config';
+
+// A special tile draws a picture variant picked from its pool, which would replace the built-in idle sprite.
+// These tests assert the idle sprite, so they use a pool that holds only the default special variant.
+const DEFAULT_SPECIAL_ONLY_CONFIG: TileVariantsConfig = {
+  ...DEFAULT_TILE_VARIANTS_CONFIG,
+  variants: DEFAULT_TILE_VARIANTS_CONFIG.variants.filter((variant) => variant.type !== 'special' || variant.id === 'default-special'),
+};
+
+const renderWithIdleSpecialArt = (ui: React.ReactElement) =>
+  render(<TileVariantsProvider value={DEFAULT_SPECIAL_ONLY_CONFIG}>{ui}</TileVariantsProvider>);
 
 // Helper to create a UI state context
 const makeUIState = (overrides = {}) => ({
@@ -163,7 +175,7 @@ describe('IslandTile Component', () => {
         onCardRevealHidden: jest.fn(),
       };
 
-      render(<IslandTileView {...enriched} />);
+      renderWithIdleSpecialArt(<IslandTileView {...enriched} />);
       const image = screen.getByAltText('Special island');
       expect(image).toBeInTheDocument();
       expect(image.getAttribute('src')).toMatch(/special_island_idle\.png/);
@@ -213,7 +225,7 @@ describe('IslandTile Component', () => {
         onCardRevealHidden: jest.fn(),
       };
 
-      render(<IslandTileView {...enriched} />);
+      renderWithIdleSpecialArt(<IslandTileView {...enriched} />);
       expect(screen.getByAltText('Special island')).toBeInTheDocument();
       expect(screen.queryByAltText('Card revealed')).not.toBeInTheDocument();
     });
@@ -285,7 +297,7 @@ describe('IslandTile Component', () => {
         onCardRevealHidden: jest.fn(),
       };
 
-      render(<IslandTileView {...enriched} />);
+      renderWithIdleSpecialArt(<IslandTileView {...enriched} />);
       // Idle art is rendered beneath the fog so it can fade in on reveal; the reveal effect is not.
       expect(screen.getByAltText('Special island')).toBeInTheDocument();
       expect(screen.queryByAltText('Card revealed')).not.toBeInTheDocument();
@@ -447,7 +459,7 @@ describe('IslandTile Component', () => {
       });
 
       try {
-        render(<IslandTile island={specialIsland} />);
+        renderWithIdleSpecialArt(<IslandTile island={specialIsland} />);
         expect(screen.getByAltText('Card revealed')).toBeInTheDocument();
         expect(screen.queryByAltText('Special island')).not.toBeInTheDocument();
 
