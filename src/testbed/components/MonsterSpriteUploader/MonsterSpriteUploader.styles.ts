@@ -43,5 +43,7 @@ export const styles = {
   catalogThumbnail: 'h-8 w-8 shrink-0 object-contain',
   catalogName: 'min-w-[8rem] flex-1 truncate',
   catalogBadges: 'flex shrink-0 items-center gap-1',
+  catalogControls: 'flex shrink-0 items-center gap-2',
+  catalogLevelTrigger: 'h-8 w-28 text-xs',
   bossBadge: 'border-accent/60 text-accent',
 } as const;

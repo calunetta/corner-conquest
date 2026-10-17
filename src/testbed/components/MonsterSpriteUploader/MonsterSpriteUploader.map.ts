@@ -14,13 +14,18 @@ const BOSS_POOL_LITTLE_LEVELS: Array<number | null> = [1, 2];
 
 export function toCatalogRowViewModels(catalog: MonsterCatalogEntry[]): MonsterCatalogRowViewModel[] {
   const seedKeys = new Set(SEED_MONSTER_CATALOG.map((seed) => toCatalogEntryKey(seed.name, seed.level)));
-  return catalog.map((entry) => ({
-    name: entry.name,
-    level: entry.level,
-    isBoss: entry.isBoss,
-    idleSprite: entry.sprite.idle,
-    isSeed: seedKeys.has(toCatalogEntryKey(entry.name, entry.level)),
-  }));
+  return catalog.map((entry) => {
+    const isSeed = seedKeys.has(toCatalogEntryKey(entry.name, entry.level));
+    return {
+      name: entry.name,
+      level: entry.level,
+      isBoss: entry.isBoss,
+      idleSprite: entry.sprite.idle,
+      isSeed,
+      isEditable: !isSeed,
+      levelOptions: getLevelOptions(entry.isBoss),
+    };
+  });
 }
 
 export function getLevelOptions(isBoss: boolean): LevelOption[] {

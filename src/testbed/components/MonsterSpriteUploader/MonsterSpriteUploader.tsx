@@ -14,7 +14,12 @@ export function MonsterSpriteUploaderView(viewModel: MonsterSpriteUploaderViewMo
       <div className={styles.panel}>
         <h2 className={styles.panelTitle}>Monster Sprite Uploader</h2>
         <MonsterSpriteUploaderForm {...viewModel} fileInputResetKey={viewModel.catalogRows.length} />
-        <MonsterSpriteUploaderCatalogList rows={viewModel.catalogRows} />
+        <MonsterSpriteUploaderCatalogList
+          rows={viewModel.catalogRows}
+          pendingCatalogKey={viewModel.pendingCatalogKey}
+          catalogEditError={viewModel.catalogEditError}
+          onCatalogEdit={viewModel.onCatalogEdit}
+        />
       </div>
     </div>
   );

@@ -10,6 +10,17 @@ export interface MonsterCatalogRowViewModel {
   isBoss: boolean;
   idleSprite: string;
   isSeed: boolean;
+  /** Uploaded monsters can change level and Boss; seed monsters are fixed. */
+  isEditable: boolean;
+  levelOptions: LevelOption[];
+}
+
+/** A level and/or Boss change to one catalog row, identified by its current name and level. */
+export interface CatalogEdit {
+  name: string;
+  level: MonsterLevel;
+  nextLevel: MonsterLevel;
+  nextIsBoss: boolean;
 }
 
 export interface LevelOption {
@@ -33,6 +44,10 @@ export interface MonsterSpriteUploaderViewModel {
   status: UploadStatus;
   fieldErrors: FieldErrors;
   catalogRows: MonsterCatalogRowViewModel[];
+  /** Key (see toCatalogEntryKey) of the row whose edit is in flight. */
+  pendingCatalogKey: string | null;
+  catalogEditError: string | null;
+  onCatalogEdit: (edit: CatalogEdit) => void;
   onNameChange: (name: string) => void;
   onLevelChange: (level: MonsterLevel) => void;
   onBossToggle: (isBoss: boolean) => void;
@@ -40,6 +55,9 @@ export interface MonsterSpriteUploaderViewModel {
   onAttackFileChange: (file: File | null) => void;
   onSubmit: () => void;
 }
+
+/** Body the PATCH route returns on success. */
+export type UpdateMonsterResponseBody = AddMonsterResponseBody;
 
 /** Body the POST route returns on success. */
 export interface AddMonsterResponseBody {

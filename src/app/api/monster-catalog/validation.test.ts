@@ -1,5 +1,5 @@
 import { MAX_UPLOAD_BYTES } from '../tile-fog-variants/upload';
-import { parseMonsterUploadFields, validateSpriteBytes } from './validation';
+import { parseMonsterEditBody, parseMonsterUploadFields, validateSpriteBytes } from './validation';
 import type { MonsterUploadFields, UploadFieldError } from './validation';
 
 const gif = (name = 'sprite.gif'): File => new File([new Uint8Array([0x47, 0x49, 0x46, 0x38])], name, { type: 'image/gif' });
@@ -104,5 +104,87 @@ describe('validateSpriteBytes', () => {
 
   it('reports the size error before the type error when both apply', () => {
     expect(validateSpriteBytes(new Uint8Array(MAX_UPLOAD_BYTES + 1), 'idle')?.status).toBe(413);
+  });
+});
+
+describe('parseMonsterEditBody', () => {
+  const validBody = { name: 'Fire Ogre', level: 2, nextLevel: 3, nextIsBoss: false };
+
+  it('returns the parsed edit for a valid body, trimming the name', () => {
+    expect(parseMonsterEditBody({ ...validBody, name: '  Fire Ogre  ' })).toEqual(validBody);
+  });
+
+  it.each([null, undefined, 'text', 5])('rejects the non-object body %p on the name field with status 400', (body) => {
+    expect(parseMonsterEditBody(body)).toEqual({
+      message: 'The request body is not a monster edit.',
+      field: 'name',
+      status: 400,
+    });
+  });
+
+  it.each([
+    { title: 'a missing name', patch: { name: undefined } },
+    { title: 'a non-string name', patch: { name: 7 } },
+    { title: 'a name with an empty slug', patch: { name: '!!!' } },
+  ])('rejects $title on the name field', ({ patch }) => {
+    expect(parseMonsterEditBody({ ...validBody, ...patch })).toEqual({
+      message: 'The name needs at least one letter or digit.',
+      field: 'name',
+      status: 400,
+    });
+  });
+
+  it.each([
+    { title: 'current level 0', patch: { level: 0 } },
+    { title: 'current level 5', patch: { level: 5 } },
+    { title: 'a non-integer current level', patch: { level: 1.5 } },
+    { title: 'a string current level', patch: { level: '2' } },
+  ])('rejects $title on the level field', ({ patch }) => {
+    const result = parseMonsterEditBody({ ...validBody, ...patch }) as UploadFieldError;
+    expect(result.field).toBe('level');
+    expect(result.status).toBe(400);
+    expect(result.message).toBe('Level must be a whole number from 1 to 4.');
+  });
+
+  it.each([
+    { title: 'next level 0', patch: { nextLevel: 0 } },
+    { title: 'next level 5', patch: { nextLevel: 5 } },
+    { title: 'a non-integer next level', patch: { nextLevel: 2.5 } },
+    { title: 'a string next level', patch: { nextLevel: '2' } },
+    { title: 'a missing next level', patch: { nextLevel: undefined } },
+  ])('rejects $title on the level field', ({ patch }) => {
+    expect(parseMonsterEditBody({ ...validBody, ...patch })).toEqual({
+      message: 'Non-boss monsters go up to level 3; boss monsters go up to level 4.',
+      field: 'level',
+      status: 400,
+    });
+  });
+
+  it.each([{ nextIsBoss: 'true' }, { nextIsBoss: 1 }, { nextIsBoss: undefined }])(
+    'rejects nextIsBoss %p because it is not a boolean',
+    (patch) => {
+      expect(parseMonsterEditBody({ ...validBody, ...patch })).toEqual({
+        message: 'Boss must be true or false.',
+        field: 'level',
+        status: 400,
+      });
+    },
+  );
+
+  it('rejects next level 4 when the target is not a boss', () => {
+    expect(parseMonsterEditBody({ ...validBody, nextLevel: 4, nextIsBoss: false })).toEqual({
+      message: 'Non-boss monsters go up to level 3; boss monsters go up to level 4.',
+      field: 'level',
+      status: 400,
+    });
+  });
+
+  it('accepts next level 4 when the target is a boss', () => {
+    expect(parseMonsterEditBody({ ...validBody, nextLevel: 4, nextIsBoss: true })).toEqual({
+      name: 'Fire Ogre',
+      level: 2,
+      nextLevel: 4,
+      nextIsBoss: true,
+    });
   });
 });

@@ -12,23 +12,33 @@ jest.mock('fs/promises', () => ({
   readdir: jest.fn(),
   mkdir: jest.fn(),
   writeFile: jest.fn(),
+  readFile: jest.fn(),
+  unlink: jest.fn(),
 }));
 
 import path from 'path';
-import type { mkdir as MkdirFn, readdir as ReaddirFn, writeFile as WriteFileFn } from 'fs/promises';
-import type { POST as PostFn } from './route';
+import type {
+  mkdir as MkdirFn,
+  readdir as ReaddirFn,
+  readFile as ReadFileFn,
+  unlink as UnlinkFn,
+  writeFile as WriteFileFn,
+} from 'fs/promises';
+import type { PATCH as PatchFn, POST as PostFn } from './route';
 import {
   buildMonsterCatalogEntries,
   renderMonsterCatalogSource,
   renderMonsterNameSource,
 } from '@/modules/game-rules/monster-catalog-generator';
 
-const { readdir, mkdir, writeFile } = require('fs/promises') as {
+const { readdir, mkdir, writeFile, readFile, unlink } = require('fs/promises') as {
   readdir: jest.Mock & typeof ReaddirFn;
   mkdir: jest.Mock & typeof MkdirFn;
   writeFile: jest.Mock & typeof WriteFileFn;
+  readFile: jest.Mock & typeof ReadFileFn;
+  unlink: jest.Mock & typeof UnlinkFn;
 };
-const { POST } = require('./route') as { POST: typeof PostFn };
+const { POST, PATCH } = require('./route') as { POST: typeof PostFn; PATCH: typeof PatchFn };
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 const SPRITE_DIR = path.join(process.cwd(), 'public/monster');
@@ -208,5 +218,179 @@ describe('POST /api/monster-catalog', () => {
 
     expect(response.status).toBe(200);
     expect(writeFile).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('PATCH /api/monster-catalog', () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+  const SEED_FILES = [
+    'lancer-lvl1-idle.gif',
+    'lancer-lvl1-attack.gif',
+    'bear-lvl2-idle.gif',
+    'bear-lvl2-attack.gif',
+    'ogre-lvl3-idle.gif',
+    'ogre-lvl3-attack.gif',
+    'boss-minotaur-lvl4-idle.gif',
+    'boss-minotaur-lvl4-attack.gif',
+  ];
+  const OGRE_FILES = ['fire-ogre-lvl2-idle.gif', 'fire-ogre-lvl2-attack.gif'];
+  const FILE_BYTES = Buffer.from('GIF89a');
+
+  function patch(body: unknown): Promise<Response> {
+    return PATCH({ json: async () => body } as unknown as Request);
+  }
+
+  const fireOgreEdit = { name: 'Fire Ogre', level: 2, nextLevel: 2, nextIsBoss: false };
+
+  function expectNothingChanged(): void {
+    expect(writeFile).not.toHaveBeenCalled();
+    expect(unlink).not.toHaveBeenCalled();
+  }
+
+  beforeEach(() => {
+    readdir.mockResolvedValue([...SEED_FILES, ...OGRE_FILES]);
+    readFile.mockResolvedValue(FILE_BYTES);
+    writeFile.mockResolvedValue(undefined);
+    unlink.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    setNodeEnv(originalNodeEnv);
+    jest.resetAllMocks();
+  });
+
+  it('returns 404 and writes nothing in production', async () => {
+    setNodeEnv('production');
+
+    const response = await patch({ ...fireOgreEdit, nextIsBoss: true });
+
+    expect(response.status).toBe(404);
+    expectNothingChanged();
+  });
+
+  it('returns 400 and writes nothing for an invalid body', async () => {
+    const response = await patch({ ...fireOgreEdit, nextLevel: 4 });
+    const body = (await response.json()) as { error: string; field: string };
+
+    expect(response.status).toBe(400);
+    expect(body.field).toBe('level');
+    expect(body.error).toBe('Non-boss monsters go up to level 3; boss monsters go up to level 4.');
+    expectNothingChanged();
+  });
+
+  it('returns 400 when the body is not valid JSON', async () => {
+    const response = await PATCH({
+      json: async () => {
+        throw new SyntaxError('bad json');
+      },
+    } as unknown as Request);
+
+    expect(response.status).toBe(400);
+    expectNothingChanged();
+  });
+
+  it('returns 404 when no monster has that name and level', async () => {
+    const response = await patch({ name: 'Ghost', level: 1, nextLevel: 2, nextIsBoss: false });
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(404);
+    expect(body.error).toBe('No monster named "Ghost" at level 1.');
+    expectNothingChanged();
+  });
+
+  it('returns 403 for a seed monster and writes nothing', async () => {
+    const response = await patch({ name: 'Lancer', level: 1, nextLevel: 2, nextIsBoss: false });
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(403);
+    expect(body.error).toBe("Lancer is a seed monster and can't be changed here.");
+    expectNothingChanged();
+  });
+
+  it('returns 200 with the unchanged entry and writes nothing when nothing changed', async () => {
+    const response = await patch(fireOgreEdit);
+    const body = (await response.json()) as { entry: unknown };
+
+    expect(response.status).toBe(200);
+    expect(body.entry).toEqual({
+      name: 'Fire Ogre',
+      level: 2,
+      isBoss: false,
+      sprite: { idle: '/monster/fire-ogre-lvl2-idle.gif', attack: '/monster/fire-ogre-lvl2-attack.gif' },
+    });
+    expectNothingChanged();
+  });
+
+  it('returns 409 and writes nothing when another entry already has the target name and level', async () => {
+    readdir.mockResolvedValue([...SEED_FILES, ...OGRE_FILES, 'fire-ogre-lvl3-idle.gif']);
+
+    const response = await patch({ ...fireOgreEdit, nextLevel: 3 });
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(409);
+    expect(body.error).toBe('A monster named "Fire Ogre" at level 3 already exists.');
+    expectNothingChanged();
+  });
+
+  it('moves both sprites to boss names when only Boss changes, then rewrites both sources', async () => {
+    const response = await patch({ ...fireOgreEdit, nextIsBoss: true });
+    const body = (await response.json()) as { entry: unknown };
+
+    const nextFilenames = [
+      ...SEED_FILES,
+      'boss-fire-ogre-lvl2-idle.gif',
+      'boss-fire-ogre-lvl2-attack.gif',
+    ].sort();
+    const expectedEntries = buildMonsterCatalogEntries(nextFilenames);
+    expect(response.status).toBe(200);
+    expect(readFile.mock.calls).toEqual([
+      [path.join(SPRITE_DIR, 'fire-ogre-lvl2-idle.gif')],
+      [path.join(SPRITE_DIR, 'fire-ogre-lvl2-attack.gif')],
+    ]);
+    expect(writeFile.mock.calls).toEqual([
+      [path.join(SPRITE_DIR, 'boss-fire-ogre-lvl2-idle.gif'), FILE_BYTES],
+      [path.join(SPRITE_DIR, 'boss-fire-ogre-lvl2-attack.gif'), FILE_BYTES],
+      [CATALOG_PATH, renderMonsterCatalogSource(expectedEntries)],
+      [NAMES_PATH, renderMonsterNameSource(expectedEntries.map((entry) => entry.name))],
+    ]);
+    expect(unlink.mock.calls).toEqual([
+      [path.join(SPRITE_DIR, 'fire-ogre-lvl2-idle.gif')],
+      [path.join(SPRITE_DIR, 'fire-ogre-lvl2-attack.gif')],
+    ]);
+    expect(body.entry).toEqual({
+      name: 'Fire Ogre',
+      level: 2,
+      isBoss: true,
+      sprite: {
+        idle: '/monster/boss-fire-ogre-lvl2-idle.gif',
+        attack: '/monster/boss-fire-ogre-lvl2-attack.gif',
+      },
+    });
+  });
+
+  it('moves both sprites to the new level when only the level changes', async () => {
+    const response = await patch({ ...fireOgreEdit, nextLevel: 3 });
+    const body = (await response.json()) as { entry: unknown };
+
+    const expectedEntries = buildMonsterCatalogEntries(
+      [...SEED_FILES, 'fire-ogre-lvl3-idle.gif', 'fire-ogre-lvl3-attack.gif'].sort(),
+    );
+    expect(response.status).toBe(200);
+    expect(writeFile.mock.calls).toEqual([
+      [path.join(SPRITE_DIR, 'fire-ogre-lvl3-idle.gif'), FILE_BYTES],
+      [path.join(SPRITE_DIR, 'fire-ogre-lvl3-attack.gif'), FILE_BYTES],
+      [CATALOG_PATH, renderMonsterCatalogSource(expectedEntries)],
+      [NAMES_PATH, renderMonsterNameSource(expectedEntries.map((entry) => entry.name))],
+    ]);
+    expect(unlink.mock.calls).toEqual([
+      [path.join(SPRITE_DIR, 'fire-ogre-lvl2-idle.gif')],
+      [path.join(SPRITE_DIR, 'fire-ogre-lvl2-attack.gif')],
+    ]);
+    expect(body.entry).toEqual({
+      name: 'Fire Ogre',
+      level: 3,
+      isBoss: false,
+      sprite: { idle: '/monster/fire-ogre-lvl3-idle.gif', attack: '/monster/fire-ogre-lvl3-attack.gif' },
+    });
   });
 });

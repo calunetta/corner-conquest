@@ -29,7 +29,21 @@ describe('toCatalogRowViewModels', () => {
       isBoss: false,
       idleSprite: '/monster/fire-ogre-lvl2-idle.gif',
       isSeed: false,
+      isEditable: true,
+      levelOptions: getLevelOptions(false),
     });
+  });
+
+  it('marks seed rows not editable and uploaded rows editable', () => {
+    const rows = toCatalogRowViewModels(sampleCatalog);
+    expect(rows.map((row) => row.isEditable)).toEqual([false, false, false, false, true]);
+  });
+
+  it('gives a boss row 4 level options and a non-boss row 3', () => {
+    const bossEntry = { ...extraMonsterEntry, name: 'Ice Dragon' as typeof extraMonsterEntry.name, level: 4 as const, isBoss: true };
+    const [nonBossRow, bossRow] = toCatalogRowViewModels([extraMonsterEntry, bossEntry]);
+    expect(nonBossRow.levelOptions.map((option) => option.value)).toEqual([1, 2, 3]);
+    expect(bossRow.levelOptions.map((option) => option.value)).toEqual([1, 2, 3, 4]);
   });
 
   it('treats a seed name at a different level as non-seed', () => {

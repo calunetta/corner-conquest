@@ -8,6 +8,7 @@ import {
 } from './MonsterSpriteUploader.fixtures';
 import { getLevelOptions, toCatalogRowViewModels } from './MonsterSpriteUploader.map';
 import { MonsterSpriteUploaderView } from './MonsterSpriteUploader';
+import type { MonsterCatalogEntry } from '@/modules/game-rules';
 import type { MonsterSpriteUploaderViewModel } from './MonsterSpriteUploader.types';
 
 jest.mock('./MonsterSpriteUploader.hook', () => ({ useMonsterSpriteUploader: jest.fn() }));
@@ -112,7 +113,7 @@ describe('MonsterSpriteUploaderView field errors', () => {
   it('links the level error to the Level trigger', () => {
     const message = 'Non-boss monsters go up to level 3; boss monsters go up to level 4.';
     renderView({ fieldErrors: { level: message }, status: 'error' });
-    const trigger = screen.getByRole('combobox');
+    const trigger = screen.getByRole('combobox', { name: 'Level' });
     const error = screen.getByText(message);
     expect(trigger).toHaveAttribute('aria-describedby', error.id);
   });
@@ -136,7 +137,7 @@ describe('MonsterSpriteUploaderView field errors', () => {
     expect(screen.getByLabelText('Name')).not.toHaveAttribute('aria-describedby');
     expect(screen.getByLabelText('Idle sprite')).not.toHaveAttribute('aria-describedby');
     expect(screen.getByLabelText('Attack sprite')).not.toHaveAttribute('aria-describedby');
-    expect(screen.getByRole('combobox')).not.toHaveAttribute('aria-describedby');
+    expect(screen.getByRole('combobox', { name: 'Level' })).not.toHaveAttribute('aria-describedby');
   });
 });
 
@@ -193,9 +194,9 @@ describe('MonsterSpriteUploaderView catalog rows', () => {
     const row = screen
       .getAllByTestId('monster-catalog-row')
       .find((candidate) => within(candidate).queryByText(extraMonsterEntry.name)) as HTMLElement;
-    expect(within(row).getByText(`Lvl ${extraMonsterEntry.level}`)).toBeInTheDocument();
+    expect(within(row).getByRole('combobox', { name: 'Level of Fire Ogre' })).toHaveTextContent('2 — Little');
     expect(within(row).queryByText('Seed')).not.toBeInTheDocument();
-    expect(within(row).queryByRole('button')).not.toBeInTheDocument();
+    expect(within(row).queryByRole('button', { name: /delete|remove/i })).not.toBeInTheDocument();
   });
 
   it('renders no delete control anywhere in the catalog', () => {
@@ -213,7 +214,7 @@ describe('MonsterSpriteUploaderView Level picker options', () => {
   });
 
   function openLevelPicker() {
-    const trigger = screen.getByRole('combobox');
+    const trigger = screen.getByRole('combobox', { name: 'Level' });
     fireEvent.keyDown(trigger, { key: 'Enter' });
     return screen.getByRole('listbox');
   }
@@ -268,5 +269,127 @@ describe('MonsterSpriteUploaderView file input reset', () => {
     const idleBefore = screen.getByLabelText('Idle sprite');
     rerenderView({ name: 'Fire Ogre' });
     expect(screen.getByLabelText('Idle sprite')).toBe(idleBefore);
+  });
+});
+
+describe('MonsterSpriteUploaderView catalog row editing', () => {
+  // Radix Select needs these jsdom gaps filled to open.
+  beforeAll(() => {
+    window.HTMLElement.prototype.scrollIntoView = jest.fn();
+    window.HTMLElement.prototype.hasPointerCapture = jest.fn();
+    window.HTMLElement.prototype.releasePointerCapture = jest.fn();
+  });
+
+  const bossOgre4: MonsterCatalogEntry = { ...extraMonsterEntry, level: 4, isBoss: true };
+  const otherUploaded: MonsterCatalogEntry = {
+    name: 'Ice Wisp' as MonsterCatalogEntry['name'],
+    level: 1,
+    isBoss: false,
+    sprite: { idle: '/monster/ice-wisp-lvl1-idle.gif' },
+  };
+
+  function rowFor(name: string): HTMLElement {
+    return screen
+      .getAllByTestId('monster-catalog-row')
+      .find((row) => within(row).queryByText(name)) as HTMLElement;
+  }
+
+  function openLevelPicker(name: string) {
+    fireEvent.keyDown(screen.getByRole('combobox', { name: `Level of ${name}` }), { key: 'Enter' });
+    return screen.getByRole('listbox');
+  }
+
+  it.each(SEED_MONSTER_CATALOG.map((seed) => [seed.name, seed.level] as const))(
+    'seed row %s (level %i) has no level select, no Boss switch, and keeps the Seed badge',
+    (name, level) => {
+      renderView();
+      const row = screen
+        .getAllByTestId('monster-catalog-row')
+        .find((candidate) => within(candidate).queryByText(name) && within(candidate).queryByText(`Lvl ${level}`)) as HTMLElement;
+      expect(within(row).getByText('Seed')).toBeInTheDocument();
+      expect(screen.queryByLabelText(`Level of ${name}`)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(`Boss ${name}`)).not.toBeInTheDocument();
+      expect(within(row).queryByRole('combobox')).not.toBeInTheDocument();
+      expect(within(row).queryByRole('switch')).not.toBeInTheDocument();
+    },
+  );
+
+  it('shows a level trigger and a Boss switch on the uploaded Fire Ogre row', () => {
+    renderView();
+    const row = rowFor('Fire Ogre');
+    expect(within(row).getByRole('combobox', { name: 'Level of Fire Ogre' })).toBeInTheDocument();
+    const bossSwitch = within(row).getByRole('switch', { name: 'Boss Fire Ogre' });
+    expect(bossSwitch).not.toBeChecked();
+    expect(within(row).queryByText('Seed')).not.toBeInTheDocument();
+  });
+
+  it('switching Boss on sends the same level with nextIsBoss true', () => {
+    const onCatalogEdit = jest.fn();
+    renderView({ onCatalogEdit });
+    fireEvent.click(screen.getByRole('switch', { name: 'Boss Fire Ogre' }));
+    expect(onCatalogEdit).toHaveBeenCalledTimes(1);
+    expect(onCatalogEdit).toHaveBeenCalledWith({ name: 'Fire Ogre', level: 2, nextLevel: 2, nextIsBoss: true });
+  });
+
+  it('switching a level 4 boss off clamps nextLevel to 3', () => {
+    const onCatalogEdit = jest.fn();
+    renderView({ catalogRows: toCatalogRowViewModels([...SEED_MONSTER_CATALOG, bossOgre4]), onCatalogEdit });
+    const bossSwitch = screen.getByRole('switch', { name: 'Boss Fire Ogre' });
+    expect(bossSwitch).toBeChecked();
+    fireEvent.click(bossSwitch);
+    expect(onCatalogEdit).toHaveBeenCalledTimes(1);
+    expect(onCatalogEdit).toHaveBeenCalledWith({ name: 'Fire Ogre', level: 4, nextLevel: 3, nextIsBoss: false });
+  });
+
+  it('changing the level select sends nextLevel and keeps nextIsBoss unchanged', () => {
+    const onCatalogEdit = jest.fn();
+    renderView({ onCatalogEdit });
+    fireEvent.click(within(openLevelPicker('Fire Ogre')).getByRole('option', { name: '3 — Big' }));
+    expect(onCatalogEdit).toHaveBeenCalledTimes(1);
+    expect(onCatalogEdit).toHaveBeenCalledWith({ name: 'Fire Ogre', level: 2, nextLevel: 3, nextIsBoss: false });
+  });
+
+  it('changing the level of a boss row keeps nextIsBoss true', () => {
+    const onCatalogEdit = jest.fn();
+    renderView({ catalogRows: toCatalogRowViewModels([...SEED_MONSTER_CATALOG, bossOgre4]), onCatalogEdit });
+    fireEvent.click(within(openLevelPicker('Fire Ogre')).getByRole('option', { name: '2 — Little' }));
+    expect(onCatalogEdit).toHaveBeenCalledWith({ name: 'Fire Ogre', level: 4, nextLevel: 2, nextIsBoss: true });
+  });
+
+  it('selecting the current level does not call onCatalogEdit', () => {
+    const onCatalogEdit = jest.fn();
+    renderView({ onCatalogEdit });
+    fireEvent.click(within(openLevelPicker('Fire Ogre')).getByRole('option', { name: '2 — Little' }));
+    expect(onCatalogEdit).not.toHaveBeenCalled();
+  });
+
+  it('disables only the pending row controls', () => {
+    const rows = toCatalogRowViewModels([...SEED_MONSTER_CATALOG, extraMonsterEntry, otherUploaded]);
+    renderView({ catalogRows: rows, pendingCatalogKey: 'Fire Ogre|2' });
+    const pending = rowFor('Fire Ogre');
+    const other = rowFor('Ice Wisp');
+    expect(within(pending).getByRole('combobox', { name: 'Level of Fire Ogre' })).toBeDisabled();
+    expect(within(pending).getByRole('switch', { name: 'Boss Fire Ogre' })).toBeDisabled();
+    expect(within(other).getByRole('combobox', { name: 'Level of Ice Wisp' })).toBeEnabled();
+    expect(within(other).getByRole('switch', { name: 'Boss Ice Wisp' })).toBeEnabled();
+  });
+
+  it('enables the controls when no row is pending', () => {
+    renderView({ pendingCatalogKey: null });
+    expect(screen.getByRole('combobox', { name: 'Level of Fire Ogre' })).toBeEnabled();
+    expect(screen.getByRole('switch', { name: 'Boss Fire Ogre' })).toBeEnabled();
+  });
+
+  it('renders catalogEditError as an alert after the catalog list', () => {
+    renderView({ catalogEditError: 'Could not update — see console.' });
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('Could not update — see console.');
+    const list = screen.getByRole('heading', { name: 'Catalog' }).parentElement?.querySelector('ul') as HTMLElement;
+    expect(list.compareDocumentPosition(alert) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('renders no catalog alert when catalogEditError is null', () => {
+    renderView({ catalogEditError: null });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

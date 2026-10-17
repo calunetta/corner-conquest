@@ -1,6 +1,11 @@
 // Pure helpers for the monster catalog upload route, kept out of route.ts so they can be unit
 // tested without fs, Request or File polyfills.
-import { getMaxLevelForBossFlag, MIN_LEVEL, toMonsterSpriteSlug } from '@/modules/game-rules/monster-catalog-generator';
+import {
+  getMaxLevelForBossFlag,
+  MAX_BOSS_LEVEL,
+  MIN_LEVEL,
+  toMonsterSpriteSlug,
+} from '@/modules/game-rules/monster-catalog-generator';
 import { isGifBytes, MAX_UPLOAD_BYTES } from '../tile-fog-variants/upload';
 
 export interface MonsterUploadFields {
@@ -50,6 +55,37 @@ export function parseMonsterUploadFields(formData: FormData): MonsterUploadField
   if (attack !== null && !isFile(attack)) return fieldError('attack', 'The attack sprite must be a GIF.');
 
   return { name: name.trim(), level, isBoss, idle, attack };
+}
+
+export interface MonsterEditRequest {
+  name: string;
+  /** The monster's current level, which identifies it in the catalog. */
+  level: number;
+  nextLevel: number;
+  nextIsBoss: boolean;
+}
+
+const LEVEL_RANGE_MESSAGE = `Level must be a whole number from ${MIN_LEVEL} to ${MAX_BOSS_LEVEL}.`;
+
+/** Reads the JSON body of PATCH /api/monster-catalog. Level caps follow the target Boss flag. */
+export function parseMonsterEditBody(body: unknown): MonsterEditRequest | UploadFieldError {
+  if (typeof body !== 'object' || body === null) return fieldError('name', 'The request body is not a monster edit.');
+  const { name, level, nextLevel, nextIsBoss } = body as Record<string, unknown>;
+
+  if (typeof name !== 'string' || toMonsterSpriteSlug(name) === '') {
+    return fieldError('name', 'The name needs at least one letter or digit.');
+  }
+  if (!isWholeNumberInRange(level, MIN_LEVEL, MAX_BOSS_LEVEL)) return fieldError('level', LEVEL_RANGE_MESSAGE);
+  if (typeof nextIsBoss !== 'boolean') return fieldError('level', 'Boss must be true or false.');
+  const maxNextLevel = getMaxLevelForBossFlag(nextIsBoss);
+  if (!isWholeNumberInRange(nextLevel, MIN_LEVEL, maxNextLevel)) {
+    return fieldError('level', 'Non-boss monsters go up to level 3; boss monsters go up to level 4.');
+  }
+  return { name: name.trim(), level, nextLevel, nextIsBoss };
+}
+
+function isWholeNumberInRange(value: unknown, min: number, max: number): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
 }
 
 /** Size (MAX_UPLOAD_BYTES) and GIF magic-byte checks for one already-read file. */

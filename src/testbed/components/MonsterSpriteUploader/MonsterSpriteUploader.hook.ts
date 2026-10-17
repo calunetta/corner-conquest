@@ -9,6 +9,7 @@ import {
   validateMonsterName,
   validateSpriteFile,
 } from './MonsterSpriteUploader.map';
+import { useCatalogEdit } from './MonsterSpriteUploader.catalogEdit.hook';
 import { AddMonsterError, addMonster } from './MonsterSpriteUploader.service';
 import type {
   FieldErrors,
@@ -59,6 +60,7 @@ export function useMonsterSpriteUploader(): MonsterSpriteUploaderViewModel {
   const [status, setStatus] = useState<UploadStatus>('idle');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [catalog, setCatalog] = useState<MonsterCatalogEntry[]>(MONSTER_CATALOG);
+  const catalogEdit = useCatalogEdit(setCatalog);
   const idlePreviewUrl = useObjectUrl(idleFile);
   const attackPreviewUrl = useObjectUrl(attackFile);
 
@@ -136,6 +138,7 @@ export function useMonsterSpriteUploader(): MonsterSpriteUploaderViewModel {
     status,
     fieldErrors,
     catalogRows: toCatalogRowViewModels(catalog),
+    ...catalogEdit,
     onNameChange,
     onLevelChange,
     onBossToggle,

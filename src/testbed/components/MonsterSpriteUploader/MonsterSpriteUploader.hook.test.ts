@@ -261,6 +261,12 @@ describe('useMonsterSpriteUploader', () => {
         isBoss: false,
         idleSprite: '/monster/fire-ogre-lvl2-idle.gif',
         isSeed: false,
+        isEditable: true,
+        levelOptions: [
+          { value: 1, label: '1 — Little' },
+          { value: 2, label: '2 — Little' },
+          { value: 3, label: '3 — Big' },
+        ],
       });
     });
 

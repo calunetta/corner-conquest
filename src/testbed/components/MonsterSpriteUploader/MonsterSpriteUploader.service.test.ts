@@ -1,4 +1,4 @@
-import { AddMonsterError, addMonster } from './MonsterSpriteUploader.service';
+import { AddMonsterError, addMonster, updateMonster } from './MonsterSpriteUploader.service';
 
 const entry = { name: 'Fire Ogre', level: 2, isBoss: false, sprite: { idle: '/monster/fire-ogre-lvl2-idle.gif' } };
 
@@ -60,5 +60,37 @@ describe('addMonster', () => {
     expect(error).toBeInstanceOf(AddMonsterError);
     expect((error as AddMonsterError).message).toBe('Failed to add monster: 500');
     expect((error as AddMonsterError).field).toBeUndefined();
+  });
+});
+
+describe('updateMonster', () => {
+  const edit = { name: 'Fire Ogre', level: 2, nextLevel: 3, nextIsBoss: true } as const;
+
+  it('PATCHes the edit as JSON to /api/monster-catalog and returns the entry', async () => {
+    const updated = { ...entry, level: 3, isBoss: true };
+    const fetchMock = mockFetch({ ok: true, status: 200, json: async () => ({ entry: updated }) });
+
+    const result = await updateMonster(edit);
+
+    expect(result).toEqual(updated);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/monster-catalog');
+    expect(init.method).toBe('PATCH');
+    expect(init.headers).toEqual({ 'Content-Type': 'application/json' });
+    expect(JSON.parse(init.body as string)).toEqual(edit);
+  });
+
+  it('throws AddMonsterError carrying the server message and field on a non-ok response', async () => {
+    mockFetch({
+      ok: false,
+      status: 409,
+      json: async () => ({ error: 'A monster named "Fire Ogre" at level 3 already exists.', field: 'level' }),
+    });
+
+    const error = await updateMonster(edit).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(AddMonsterError);
+    expect((error as AddMonsterError).message).toBe('A monster named "Fire Ogre" at level 3 already exists.');
+    expect((error as AddMonsterError).field).toBe('level');
   });
 });
