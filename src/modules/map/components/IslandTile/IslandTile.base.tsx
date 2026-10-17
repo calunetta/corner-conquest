@@ -1,8 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { Home } from 'lucide-react';
 import { PLAYER_DATA } from '@/modules/game-rules';
+import { RegistryIcon } from '@/modules/shared';
 import type { PlayerColor } from '@/lib/types';
 import { PlacedVariantImage, type TileVariant } from '../TileVariants';
 import { styles, toBaseCrestStyle } from './IslandTile.styles';
@@ -16,7 +16,7 @@ interface BaseCrestProps {
 
 export function BaseCrest({ color, variant }: BaseCrestProps) {
   if (variant?.image) return <PlacedVariantImage src={variant.image} transform={variant.transform} />;
-  if (!color) return <Home className={styles.baseFallbackIcon} />;
+  if (!color) return <RegistryIcon id="home" className={styles.baseFallbackIcon} />;
 
   return (
     <div className={styles.baseImageWrapper} style={toBaseCrestStyle()} data-testid="base-crest">

@@ -1,8 +1,8 @@
 'use client';
 
-import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { RegistryIcon } from '@/modules/shared';
 import { styles } from './MapZoomControls.styles';
 import type { MapZoomControlsProps } from './MapZoomControls.types';
 
@@ -29,7 +29,7 @@ export function MapZoomControls({
               data-testid="map-zoom-out"
               aria-label="Zoom out"
             >
-              <ZoomOut className={styles.zoomOutIcon} />
+              <RegistryIcon id="zoom-out" className={styles.zoomOutIcon} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -46,7 +46,7 @@ export function MapZoomControls({
               onClick={onResetZoom}
               data-testid="map-zoom-reset"
             >
-              <RotateCcw className={styles.zoomResetIcon} />
+              <RegistryIcon id="rotate-ccw" className={styles.zoomResetIcon} />
               {percentage}%
             </Button>
           </TooltipTrigger>
@@ -65,7 +65,7 @@ export function MapZoomControls({
               data-testid="map-zoom-in"
               aria-label="Zoom in"
             >
-              <ZoomIn className={styles.zoomInIcon} />
+              <RegistryIcon id="zoom-in" className={styles.zoomInIcon} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
