@@ -44,6 +44,19 @@ describe('revealIsland', () => {
     expect(player.victoryPoints).toBe(initialVp + game.settings.vpPerIslandDiscovery);
   });
 
+  it('logs a later discovery of an island another player already found', () => {
+    const player = game.players[0];
+    const targetTile = game.map.find((i) => i.type === IslandType.Resource && !player.revealedTiles.includes(i.id))!;
+    game.players.push({ ...player, id: player.id + 1, playerId: 'other-player', revealedTiles: [targetTile.id] });
+    const logCountBefore = game.log.length;
+
+    revealIsland(game, targetTile.x, targetTile.y);
+
+    expect(game.log.slice(logCountBefore)).toContainEqual(
+      expect.objectContaining({ message: `${player.name} explored a new island.`, category: 'economy' }),
+    );
+  });
+
   it('returns the state unchanged when the tile was already revealed (boundary)', () => {
     const player = game.players[0];
     const baseTileId = `0-0`; // pushed to revealedTiles at player creation (fogOfWar is on by default)

@@ -1,4 +1,4 @@
-import type { LogEntry, Player } from '@/lib/types';
+import type { LogEntry, Player, StructuredLogEntry } from '@/lib/types';
 import { playerTextColors } from '@/modules/shared';
 import type { LogEntryViewModel, LogMessageSegment } from './GameLog.types';
 
@@ -9,27 +9,40 @@ function toResolvedPlayer(playerId: string | undefined, players: Player[]) {
   return players.find((player) => player.playerId === playerId);
 }
 
-/** Reverses `logs` (newest first) and resolves each entry's display fields. */
-export function toLogEntryViewModels(logs: LogEntry[], players: Player[]): LogEntryViewModel[] {
-  return [...logs].reverse().map((entry) => {
+/**
+ * Reverses `logs` (newest first) and resolves each entry's display fields. `canRead` decides per
+ * entry whether the viewer gets the full `message`; otherwise the entry's `redactedMessage` is shown,
+ * and an entry with no redacted text is dropped.
+ */
+export function toLogEntryViewModels(
+  logs: LogEntry[],
+  players: Player[],
+  canRead: (entry: StructuredLogEntry) => boolean = () => true,
+): LogEntryViewModel[] {
+  return [...logs].reverse().flatMap((entry): LogEntryViewModel[] => {
     if (typeof entry === 'string') {
-      return { message: entry, category: null, isMilestone: false, isPassive: false, turn: null };
+      return [{ message: entry, category: null, isMilestone: false, isPassive: false, turn: null }];
     }
+
+    const message = canRead(entry) ? entry.message : entry.redactedMessage;
+    if (message === undefined) return [];
 
     const player = toResolvedPlayer(entry.playerId, players);
     const targetPlayer = toResolvedPlayer(entry.targetPlayerId, players);
 
-    return {
-      message: entry.message,
-      category: entry.category,
-      isMilestone: entry.isMilestone ?? false,
-      isPassive: entry.isPassive ?? false,
-      turn: entry.turn > PRE_GAME_TURN ? entry.turn : null,
-      playerName: player?.name,
-      playerColorClass: player && playerTextColors[player.color],
-      targetPlayerName: targetPlayer?.name,
-      targetPlayerColorClass: targetPlayer && playerTextColors[targetPlayer.color],
-    };
+    return [
+      {
+        message,
+        category: entry.category,
+        isMilestone: entry.isMilestone ?? false,
+        isPassive: entry.isPassive ?? false,
+        turn: entry.turn > PRE_GAME_TURN ? entry.turn : null,
+        playerName: player?.name,
+        playerColorClass: player && playerTextColors[player.color],
+        targetPlayerName: targetPlayer?.name,
+        targetPlayerColorClass: targetPlayer && playerTextColors[targetPlayer.color],
+      },
+    ];
   });
 }
 
