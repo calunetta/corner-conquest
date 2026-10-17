@@ -29,6 +29,9 @@ Part of the architecture & game-rules docs. Index and directives: [`docs/README.
 - **Control:** `GameBoardHeader` (`src/modules/hud/components/GameBoardHeader/`) renders a "Background" label with an image icon and a ShadCN `Switch` (`aria-label="Toggle sky background"`) at the start of its right-hand group, before the turn timer. The header is hidden only when `status === 'finished'`.
 - **Sharing:** `useBoardBackground()` (`use-board-background.ts`) returns `{ isBackgroundOn, setBackgroundOn }`. The board and the header both call it and subscribe to the same store, so a toggle takes effect on the board immediately.
 
+#### **Legal Pages (`/privacy`, `/terms`)**
+- **Routes:** `src/app/privacy/page.tsx` and `src/app/terms/page.tsx` are static server components with no session or provider dependency. Both carry a DRAFT banner (pending lawyer review, not legal advice). They use the dark theme inherited from `RootLayout` and a shadcn `Card` (`@/components/ui/card`) for the content.
+
 ## 6.8. Fog of War & Debug Mode
 
 -   **Fog of War (Enabled):** This is the default, tactical experience.

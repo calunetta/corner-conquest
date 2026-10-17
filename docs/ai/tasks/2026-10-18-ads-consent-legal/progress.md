@@ -13,7 +13,7 @@ Tier: L (sub-phase of the Phase 0 L-tier task, itself part of the XL epic) · Ph
 - [ ] previews (none planned — see phase-0a-plan.md "Preview states")
 - [ ] checks: typecheck, lint, unit tests
 - [ ] UI verified (ui-verify)
-- [ ] docs-sync: `docs/architecture/structure-and-state.md`, `docs/architecture/systems-and-visuals.md`
+- [x] docs-sync: `docs/architecture/structure-and-state.md`, `docs/architecture/systems-and-visuals.md`
 - [ ] final review (architect-b)
 - [ ] committed: <hash>
 

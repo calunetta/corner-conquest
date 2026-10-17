@@ -31,6 +31,7 @@ const IGNORED_PATHS = [
   'coverage/**',
   'test-results/**',
   'playwright-report/**',
+  '.claude/worktrees/**',
   'next-env.d.ts',
   'src/components/ui/**',
 ];
