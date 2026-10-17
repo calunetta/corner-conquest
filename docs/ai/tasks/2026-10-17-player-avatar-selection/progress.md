@@ -20,7 +20,7 @@ Tier: L · Phases: 3
 - [x] tests (tester-a, tester-b)
 - [x] checks: typecheck, lint, unit tests — typecheck clean, lint clean (0 warnings), `npx jest src/modules/avatars src/modules/hud/components/PlayerInfo src/modules/session src/modules/lobby src/modules/game-rules`: Test Suites 83 passed, Tests 1252 passed
 - [x] final review (architect-b) — APPROVED round 2, see review.md. Non-blocking: real session↔avatars import cycle (madge), recorded for a future cleanup
-- [x] committed: <hash>
+- [x] committed: 4649e7c
 
 ## Phase 3: Previews, docs, verification
 - [ ] previews (preview-a)
