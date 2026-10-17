@@ -1,4 +1,4 @@
-import { MonsterName } from '../../../src/lib/types/monsters';
+import type { MonsterName } from '../../../src/lib/types/monsters';
 import { MONSTER_LEVEL } from '../monster-levels';
 import { attackerWinProbabilityVsMonster } from '../combat-odds';
 import type { MatchResult } from '../engine';

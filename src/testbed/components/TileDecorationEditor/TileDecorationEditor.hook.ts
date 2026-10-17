@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { DecorationLayout, DecorationLayoutsConfig, DecorationScenarioKey } from '@/modules/map';
+import type { DecorationLayoutsConfig, DecorationScenarioKey } from '@/modules/map';
 import type { TileVariantsConfig } from '@/modules/map/components/TileVariants/TileVariants.config';
 import { useArtVariants } from './TileDecorationEditor.art.hook';
 import { usePreselectArtFromUrl } from './TileDecorationEditor.preselect.hook';
 import { useDefaultElementsEditor } from './TileDecorationEditor.defaultElements.hook';
-import { createId } from './TileDecorationEditor.ids';
 import { useLayoutActions } from './TileDecorationEditor.layouts.hook';
 import {
   cloneDecorationLayoutsConfig,
-  createInstance,
   firstVariantKey,
   nudgeInstance,
-  removeInstance,
   toScenarioKey,
   toScenarioOptions,
 } from './TileDecorationEditor.map';
@@ -23,20 +20,21 @@ import { useDecorationSave, useDecorationSaveTarget } from './TileDecorationEdit
 import { clampDecorationPosition } from '@/modules/map/decoration-bounds.map';
 import { useRemoveSelectedWithKeyboard } from './TileDecorationEditor.keyboard.hook';
 import { useDecorationImageDelete } from './TileDecorationEditor.imageDelete.hook';
+import { useInstanceEdits } from './TileDecorationEditor.instances.hook';
 import type { EditorMode, TileDecorationEditorViewModel } from './TileDecorationEditor.types';
 
 const SCENARIO_OPTIONS = toScenarioOptions();
 
-/** Adapts the decoration-layouts config into the editor's view model: scenario/variant/layout
- *  navigation, instance selection, and the drag/nudge/resize/relayer/save handlers. The config
- *  is edited entirely in memory; onSave is the only place it leaves the component. Layout-list
- *  CRUD (add/duplicate/rename/delete) lives in TileDecorationEditor.layouts.hook.ts. */
 /** The saved files the editor starts from, each with the sha its next save must send back. */
 export interface DecorationSnapshots {
   layouts: Snapshot<DecorationLayoutsConfig>;
   variants: Snapshot<TileVariantsConfig>;
 }
 
+/** Adapts the decoration-layouts config into the editor's view model: scenario/variant/layout
+ *  navigation, instance selection, and the drag/nudge/resize/relayer/save handlers. The config
+ *  is edited entirely in memory; onSave is the only place it leaves the component. Layout-list
+ *  CRUD lives in TileDecorationEditor.layouts.hook.ts; instance edits in TileDecorationEditor.instances.hook.ts. */
 export function useTileDecorationEditor(snapshots: DecorationSnapshots): TileDecorationEditorViewModel {
   const [mode, setMode] = useState<EditorMode>('decorations');
   const defaultElements = useDefaultElementsEditor();
@@ -83,28 +81,6 @@ export function useTileDecorationEditor(snapshots: DecorationSnapshots): TileDec
     setIsDirty,
   });
 
-  const updateActiveLayout = useCallback(
-    (updater: (layout: DecorationLayout) => DecorationLayout) => {
-      setConfig((previous) => ({
-        ...previous,
-        [scenarioKey]: previous[scenarioKey].map((layout) =>
-          layout.id === activeLayoutId ? updater(layout) : layout,
-        ),
-      }));
-      setIsDirty(true);
-    },
-    [activeLayoutId, scenarioKey],
-  );
-
-  const updateInstance = useCallback(
-    (instanceId: string, apply: (instance: DecorationLayout['instances'][number]) => DecorationLayout['instances'][number]) =>
-      updateActiveLayout((layout) => ({
-        ...layout,
-        instances: layout.instances.map((instance) => (instance.id === instanceId ? apply(instance) : instance)),
-      })),
-    [updateActiveLayout],
-  );
-
   const goToScenario = useCallback(
     (outerKey: string, variant: DecorationScenarioKey | null) => {
       const nextKey = toScenarioKey(outerKey, variant);
@@ -118,22 +94,13 @@ export function useTileDecorationEditor(snapshots: DecorationSnapshots): TileDec
 
   usePreselectArtFromUrl({ goToScenario, onArtVariantChange });
 
-  const onAddInstance = useCallback(
-    (image: string) => {
-      const instance = createInstance(createId(`${scenarioKey}-instance`), image);
-      updateActiveLayout((layout) => ({ ...layout, instances: [...layout.instances, instance] }));
-      setSelectedInstanceId(instance.id);
-    },
-    [scenarioKey, updateActiveLayout],
-  );
-
-  const onRemoveInstance = useCallback(
-    (instanceId: string) => {
-      updateActiveLayout((layout) => removeInstance(layout, instanceId));
-      setSelectedInstanceId((current) => (current === instanceId ? null : current));
-    },
-    [updateActiveLayout],
-  );
+  const { updateInstance, onAddInstance, onRemoveInstance } = useInstanceEdits({
+    scenarioKey,
+    activeLayoutId,
+    setConfig,
+    setIsDirty,
+    setSelectedInstanceId,
+  });
 
   useRemoveSelectedWithKeyboard(mode === 'decorations' && selectedInstanceId !== null, () => {
     if (selectedInstanceId) onRemoveInstance(selectedInstanceId);
