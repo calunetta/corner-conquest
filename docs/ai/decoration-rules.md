@@ -19,6 +19,7 @@ A new layout that breaks a rule fails that test. Change a rule there and here to
 
 ## Special island
 - The built-in special art is always drawn; decorations go around it. Moving the built-in art moves its card animation too.
+- No picture: the special island never takes a variant image (`usesBuiltInArtOnly` in `TileVariants.config.ts`). The editor hides the picture field, the upload route refuses uploads, and `validateVariant` refuses a saved image.
 - The ground is bare, grey and dark: ash (`ash-*.png`), dark fungus (`fungus-dark-*.png`), dark shrubs (`shrub-dark-*.gif`).
 - Standing structures are not allowed. Only ruins (`ruin-castle.png`, `ruin-tower.png`) may appear, at the player base's building size.
 - At most one skull stick (`skull-spike-*.png`) per layout.

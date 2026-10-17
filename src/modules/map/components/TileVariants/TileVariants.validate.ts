@@ -1,6 +1,6 @@
 // Pure checks for a variant saved from the testbed editor. Shared by the save route and its tests.
 import { PlayerColor } from '@/lib/types';
-import { TILE_VARIANT_TYPES, type TileVariant, type TileVariantType, type TileVariantsConfig, type TileTransform } from './TileVariants.config';
+import { TILE_VARIANT_TYPES, usesBuiltInArtOnly, type TileVariant, type TileVariantType, type TileVariantsConfig, type TileTransform } from './TileVariants.config';
 
 export const TRANSFORM_RANGES = {
   x: { min: 0, max: 100 },
@@ -47,6 +47,7 @@ export function variantsUsingImage(config: TileVariantsConfig, imagePath: string
 /** Returns an error message, or null when the variant can be saved. */
 export function validateVariant(config: TileVariantsConfig, variant: TileVariant, isNew: boolean): string | null {
   if (!(TILE_VARIANT_TYPES as readonly string[]).includes(variant.type)) return 'Pick a type.';
+  if (usesBuiltInArtOnly(variant.type) && variant.image !== null) return 'This island always uses the built-in art, so it cannot take a picture.';
   if (!variant.name.trim()) return 'Give the variant a name.';
   if (variant.name.trim().length > NAME_MAX_LENGTH) return `The name can be at most ${NAME_MAX_LENGTH} characters.`;
   if (!isTransformInRange(variant.transform)) return 'Position and size are out of range.';
