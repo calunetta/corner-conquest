@@ -1,6 +1,6 @@
 import type { ComponentPreview } from '@/testbed';
 import { LobbyGameRow } from './LobbyGameRow';
-import { openGame, fullGame, customGoalGame } from './LobbyGameRow.fixtures';
+import { openGame, fullGame, customGoalGame, mixedAvatarGame } from './LobbyGameRow.fixtures';
 
 export const lobbyGameRowPreview: ComponentPreview = {
   slug: 'lobby-game-row',
@@ -11,5 +11,6 @@ export const lobbyGameRowPreview: ComponentPreview = {
     { name: 'Joining', render: () => <LobbyGameRow game={openGame} isJoining={true} isAnyJoining={true} onJoin={() => {}} /> },
     { name: 'Full room', render: () => <LobbyGameRow game={fullGame} isJoining={false} isAnyJoining={false} onJoin={() => {}} /> },
     { name: 'Custom VP goal (45 VP)', render: () => <LobbyGameRow game={customGoalGame} isJoining={false} isAnyJoining={false} onJoin={() => {}} /> },
+    { name: 'Mixed avatars and fallback', render: () => <LobbyGameRow game={mixedAvatarGame} isJoining={false} isAnyJoining={false} onJoin={() => {}} /> },
   ],
 };

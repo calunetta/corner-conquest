@@ -44,6 +44,16 @@ export const victoryDialogPreview: ComponentPreview = {
       render: () => <InteractiveVictoryDialog winner={humanWinner} isLocalWinner={true} isExiting={false} />,
     },
     {
+      name: 'You won, chosen avatar',
+      render: () => (
+        <InteractiveVictoryDialog
+          winner={{ ...humanWinner, avatarId: 'human-03' }}
+          isLocalWinner={true}
+          isExiting={false}
+        />
+      ),
+    },
+    {
       name: 'Opponent won',
       render: () => <InteractiveVictoryDialog winner={humanWinner} isLocalWinner={false} isExiting={false} />,
     },

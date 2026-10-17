@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
@@ -29,7 +30,18 @@ export function PlayerInfoView(viewModel: PlayerInfoViewModel) {
           <div className={styles.headerRow}>
             <div className={styles.avatarSection}>
               <div className={cn(styles.avatarContainer, playerRingColors[viewModel.color])}>
+              {viewModel.avatarSrc ? (
+                <Image
+                  src={viewModel.avatarSrc}
+                  alt={`${viewModel.color} player`}
+                  width={36}
+                  height={36}
+                  className={styles.avatarImage}
+                  unoptimized
+                />
+              ) : (
                 <RegistryIcon id={viewModel.iconId} alt={`${viewModel.color} player`} className={styles.avatarImage} />
+              )}
               </div>
               <div className={styles.nameContainer}>
                 <Tooltip>

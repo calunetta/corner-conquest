@@ -101,6 +101,8 @@ Inputs: triage.md, ui-design.md (Final spec)
 | `src/modules/lobby/components/LobbyGameRow/LobbyGameRow.test.tsx` | edit | avatar-set and no-avatar cases | tester-b |
 | `src/modules/lobby/components/Lobby/Lobby.hook.ts` | edit | wire `avatarId` from `usePlayer()` into `creator`/`joinOpenGame` payloads; add `avatarPicker: useAvatarPickerButton()` to the returned view model | implementer-a |
 | `src/modules/lobby/components/Lobby/Lobby.types.ts` | edit | `LobbyViewModel` gains `avatarPicker: AvatarPickerButtonViewModel` | implementer-a |
+| `src/modules/lobby/components/Lobby/Lobby.fixtures.ts` | edit | adds a local `noAvatarPicker` literal (type-only import) so the required field typechecks; not exported from the avatars public API (architect-b round 1) | implementer-a |
+| `src/modules/lobby/components/Lobby/Lobby.hook.test.ts` | edit | join payload and creator seat carry `avatarId` | tester-a |
 | `src/modules/lobby/components/Lobby/Lobby.tsx` | edit | render `AvatarPickerButtonView` in `styles.headerRight` | implementer-b |
 | `src/modules/avatars/components/AvatarPickerButton/AvatarPickerButton.types.ts` | new | `AvatarCellViewModel`, `AvatarPickerButtonViewModel` | implementer-a |
 | `src/modules/avatars/components/AvatarPickerButton/AvatarPickerButton.map.ts` | new | `toAvatarCells(selectedId)` | implementer-a |

@@ -1,7 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { LobbyGameRow } from './LobbyGameRow';
-import { openGame, fullGame } from './LobbyGameRow.fixtures';
+import { AVATAR_CATALOG } from '@/modules/avatars';
+import { openGame, fullGame, mixedAvatarGame } from './LobbyGameRow.fixtures';
 
 describe('LobbyGameRow', () => {
   const renderWithTooltip = (component: React.ReactElement) => {
@@ -178,5 +179,48 @@ describe('LobbyGameRow', () => {
 
     // Check that the popover appears with the settings label
     expect(screen.getByText('Match Settings')).toBeInTheDocument();
+  });
+  describe('player avatars', () => {
+    const originalImage = window.Image;
+
+    // jsdom never loads images, so Radix's AvatarImage would stay unmounted; make every image "load".
+    beforeEach(() => {
+      class LoadingImage {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        referrerPolicy = '';
+        crossOrigin: string | null = null;
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.());
+        }
+      }
+      window.Image = LoadingImage as unknown as typeof window.Image;
+    });
+
+    afterEach(() => {
+      window.Image = originalImage;
+    });
+
+    it('renders the chosen avatar image for a player with an avatar id', async () => {
+      renderWithTooltip(<LobbyGameRow game={mixedAvatarGame} isJoining={false} isAnyJoining={false} onJoin={() => {}} />);
+
+      const image = await screen.findByRole('img', { name: 'Ada' });
+      expect(decodeURI(image.getAttribute('src') ?? '')).toBe(AVATAR_CATALOG['human-01'].src);
+    });
+
+    it('does not render an image for a player without an avatar id', async () => {
+      renderWithTooltip(<LobbyGameRow game={mixedAvatarGame} isJoining={false} isAnyJoining={false} onJoin={() => {}} />);
+
+      await screen.findByRole('img', { name: 'Ada' });
+      expect(screen.queryByRole('img', { name: 'Bo' })).not.toBeInTheDocument();
+    });
+
+    it('shows the first-letter fallback for a player without an avatar id', () => {
+      renderWithTooltip(<LobbyGameRow game={openGame} isJoining={false} isAnyJoining={false} onJoin={() => {}} />);
+
+      expect(screen.queryAllByRole('img')).toHaveLength(0);
+      expect(screen.getByText('A')).toBeInTheDocument();
+      expect(screen.getByText('B')).toBeInTheDocument();
+    });
   });
 });

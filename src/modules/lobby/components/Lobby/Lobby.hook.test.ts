@@ -184,6 +184,31 @@ describe('useLobby', () => {
       expect(onJoinGame).toHaveBeenCalledWith('new-game-id');
     });
 
+    it('seats the creator with the chosen avatarId', async () => {
+      mockUsePlayer.mockReturnValue({ playerId: 'player-1', username: 'Ada', avatarId: 'human-12', logout: jest.fn() });
+      const { result } = renderHook(() => useLobby({ onJoinGame: jest.fn() }));
+
+      await act(async () => {
+        await result.current.onCreateGame('My Game', 2, PlayerColor.Blue, 0, false, settings);
+      });
+
+      const [savedGame] = mockSaveGame.mock.calls[0] as [GameState];
+      expect(savedGame.players[0].playerId).toBe('player-1');
+      expect(savedGame.players[0].avatarId).toBe('human-12');
+    });
+
+    it('seats the creator without an avatar when none is chosen', async () => {
+      mockUsePlayer.mockReturnValue({ playerId: 'player-1', username: 'Ada', avatarId: null, logout: jest.fn() });
+      const { result } = renderHook(() => useLobby({ onJoinGame: jest.fn() }));
+
+      await act(async () => {
+        await result.current.onCreateGame('My Game', 2, PlayerColor.Blue, 0, false, settings);
+      });
+
+      const [savedGame] = mockSaveGame.mock.calls[0] as [GameState];
+      expect(savedGame.players[0].avatarId ?? null).toBeNull();
+    });
+
     it('toasts an error and returns false when saveGame rejects', async () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       mockSaveGame.mockRejectedValue(new Error('offline'));
@@ -239,6 +264,32 @@ describe('useLobby', () => {
 
       expect(mockJoinOpenGame).toHaveBeenCalledWith('game-1', { playerId: 'player-1', name: 'Ada' });
       expect(onJoinGame).toHaveBeenCalledWith('game-1');
+    });
+
+    it('passes the chosen avatarId in the join payload', async () => {
+      mockUsePlayer.mockReturnValue({ playerId: 'player-1', username: 'Ada', avatarId: 'human-09', logout: jest.fn() });
+      const { result } = renderHook(() => useLobby({ onJoinGame: jest.fn() }));
+
+      await act(async () => {
+        await result.current.onJoinGame('game-1');
+      });
+
+      expect(mockJoinOpenGame).toHaveBeenCalledWith('game-1', {
+        playerId: 'player-1',
+        name: 'Ada',
+        avatarId: 'human-09',
+      });
+    });
+
+    it('passes a null avatarId through when none is chosen', async () => {
+      mockUsePlayer.mockReturnValue({ playerId: 'player-1', username: 'Ada', avatarId: null, logout: jest.fn() });
+      const { result } = renderHook(() => useLobby({ onJoinGame: jest.fn() }));
+
+      await act(async () => {
+        await result.current.onJoinGame('game-1');
+      });
+
+      expect(mockJoinOpenGame).toHaveBeenCalledWith('game-1', { playerId: 'player-1', name: 'Ada', avatarId: null });
     });
 
     it('toasts the thrown message and clears isJoiningGame on failure', async () => {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { AVATAR_CATALOG } from '@/modules/avatars';
 import { VictoryDialog } from './VictoryDialog';
 import { botWinner, humanWinner } from './VictoryDialog.fixtures';
 
@@ -108,6 +109,28 @@ describe('VictoryDialog view', () => {
       fireEvent.keyDown(screen.getByRole('button', { name: 'Return to Lobby' }), { key: 'Escape' });
 
       expect(screen.getByRole('heading', { name: 'Victory!' })).toBeInTheDocument();
+    });
+  });
+  describe('winner avatar', () => {
+    const decodedSrc = (image: HTMLElement) => decodeURI(image.getAttribute('src') ?? '');
+
+    it('renders the chosen avatar image when the winner has an avatar id', () => {
+      render(
+        <VictoryDialog
+          winner={{ ...humanWinner, avatarId: 'human-12' }}
+          isLocalWinner
+          isExiting={false}
+          onReturnToLobby={jest.fn()}
+        />,
+      );
+
+      expect(decodedSrc(screen.getByRole('img', { name: 'blue player' }))).toBe(AVATAR_CATALOG['human-12'].src);
+    });
+
+    it('renders the color sprite when the winner has no avatar id', () => {
+      renderDialog();
+
+      expect(decodedSrc(screen.getByRole('img', { name: 'blue player' }))).not.toContain('Human Avatars');
     });
   });
 });

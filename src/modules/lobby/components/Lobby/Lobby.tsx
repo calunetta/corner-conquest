@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { AvatarPickerButtonView } from '@/modules/avatars';
 import { RegistryIcon } from '@/modules/shared';
 import { LinkGoogleAccountButtonView } from '@/modules/session';
 import { CreateGameDialog } from '../CreateGameDialog';
@@ -41,6 +42,7 @@ export function LobbyView(model: LobbyViewModel) {
                 <span className={styles.playerLabel}>Commander</span>
                 <span className={styles.playerGreeting}>Welcome, {model.username}!</span>
               </div>
+              <AvatarPickerButtonView {...model.avatarPicker} />
               {model.isGuest && <LinkGoogleAccountButtonView {...model.linkGoogleAccountButton} />}
               <Button variant="ghost" size="sm" onClick={model.onLogout} className={styles.logoutButton}>
                 <RegistryIcon id="power" className="h-4 w-4 mr-1.5" /> Logout

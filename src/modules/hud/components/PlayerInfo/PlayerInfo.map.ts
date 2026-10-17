@@ -1,5 +1,6 @@
 import { ResourceType } from '@/lib/types';
 import { RESOURCE_GAIN_SPRITES, toArmyIconId } from '@/modules/shared';
+import { AVATAR_CATALOG, isValidAvatarId } from '@/modules/avatars';
 import type { PulseState } from '@/modules/shared';
 import type { Player } from '@/lib/types';
 import type {
@@ -146,6 +147,7 @@ export function toPlayerInfoViewModel(
     isBot: player.isBot ?? false,
     isCurrentPlayer,
     iconId: toArmyIconId(player.color),
+    avatarSrc: isValidAvatarId(player.avatarId) ? AVATAR_CATALOG[player.avatarId].src : null,
     armyCount,
     positionedCount,
     victoryPoints,

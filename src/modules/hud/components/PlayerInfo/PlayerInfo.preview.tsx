@@ -1,5 +1,6 @@
 import type { ComponentPreview } from '@/testbed';
 import { RESOURCE_GAIN_SPRITES } from '@/modules/shared';
+import { AVATAR_CATALOG } from '@/modules/avatars';
 import { PlayerInfoView } from './PlayerInfo';
 import { currentPlayerWithBuffs, botPlayerNoBuffs, playerNearGoal } from './PlayerInfo.fixtures';
 import type { PlayerInfoViewModel } from './PlayerInfo.types';
@@ -16,6 +17,12 @@ const currentPlayerGoldGainActive: PlayerInfoViewModel = {
   ),
 };
 
+/** Same card as "Current player with buffs", with a chosen catalog avatar instead of the color sprite. */
+const currentPlayerChosenAvatar: PlayerInfoViewModel = {
+  ...currentPlayerWithBuffs,
+  avatarSrc: AVATAR_CATALOG['human-03'].src,
+};
+
 export const playerInfoPreview: ComponentPreview = {
   slug: 'hud-player-info',
   title: 'Player info',
@@ -23,6 +30,7 @@ export const playerInfoPreview: ComponentPreview = {
   states: [
     { name: 'Current player with buffs', render: () => <PlayerInfoView {...currentPlayerWithBuffs} /> },
     { name: 'Gold gain active', render: () => <PlayerInfoView {...currentPlayerGoldGainActive} /> },
+    { name: 'Chosen avatar', render: () => <PlayerInfoView {...currentPlayerChosenAvatar} /> },
     { name: 'Bot player, no buffs', render: () => <PlayerInfoView {...botPlayerNoBuffs} /> },
     { name: 'Near victory goal', render: () => <PlayerInfoView {...playerNearGoal} /> },
     {

@@ -48,6 +48,7 @@ import { lobbyGameRowPreview } from '@/modules/lobby/components/LobbyGameRow/Lob
 import { createGameDialogPreview } from '@/modules/lobby/components/CreateGameDialog/CreateGameDialog.preview';
 import { customSettingsSheetPreview } from '@/modules/lobby/components/CustomSettingsSheet/CustomSettingsSheet.preview';
 import { rejoinMatchPanelPreview } from '@/modules/lobby/components/RejoinMatchPanel/RejoinMatchPanel.preview';
+import { avatarPickerButtonPreview } from '@/modules/avatars/components/AvatarPickerButton/AvatarPickerButton.preview';
 import { tileDecorationEditorPreview } from '@/testbed/components/TileDecorationEditor/TileDecorationEditor.preview';
 import { monsterSpriteUploaderPreview } from '@/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.preview';
 import { tileVariantEditorPreview } from '@/testbed/components/TileVariantEditor/TileVariantEditor.preview';
@@ -105,6 +106,7 @@ export const previews: ComponentPreview[] = [
   lobbyPreview,
   lobbyBackgroundPreview,
   lobbyGameRowPreview,
+  avatarPickerButtonPreview,
   createGameDialogPreview,
   customSettingsSheetPreview,
   rejoinMatchPanelPreview,

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useAvatarPickerButton } from '@/modules/avatars';
 import { usePlayer, useLinkGoogleAccountButton } from '@/modules/session';
 import { useToast } from '@/modules/shared';
 import { handleSeatReclaim, initializeGame, startGame } from '@/modules/game-rules';
@@ -20,7 +21,7 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
   const [isJoiningGame, setIsJoiningGame] = useState<string | null>(null);
   const [vacantMatch, setVacantMatch] = useState<GameState | null>(null);
   const [isReclaiming, setIsReclaiming] = useState(false);
-  const { playerId, username, isGuest, logout } = usePlayer();
+  const { playerId, username, isGuest, logout, avatarId } = usePlayer();
   const linkGoogleAccountButton = useLinkGoogleAccountButton();
   const { toast } = useToast();
 
@@ -56,9 +57,7 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
   }, [playerId, toast]);
 
   useEffect(() => {
-    if (vacantMatch) {
-      setIsCreateDialogOpen(false);
-    }
+    if (vacantMatch) setIsCreateDialogOpen(false);
   }, [vacantMatch]);
 
   const handleCreateGame = useCallback(
@@ -73,7 +72,7 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
       if (!playerId || !username) return false;
 
       const newGameId = createGameId();
-      const creator = { playerId, name: username, color: playerColor };
+      const creator = { playerId, name: username, color: playerColor, avatarId };
       const newGame = initializeGame(newGameId, gameName, maxPlayers, creator, numBots, debugMode, settings);
 
       try {
@@ -96,7 +95,7 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
         return false;
       }
     },
-    [playerId, username, onJoinGame, toast],
+    [playerId, username, avatarId, onJoinGame, toast],
   );
 
   const handleJoinGame = useCallback(
@@ -105,7 +104,7 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
       setIsJoiningGame(gameId);
 
       try {
-        await joinOpenGame(gameId, { playerId, name: username });
+        await joinOpenGame(gameId, { playerId, name: username, avatarId });
         onJoinGame(gameId);
       } catch (error) {
         console.error('Error joining game: ', error);
@@ -118,7 +117,7 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
         setIsJoiningGame(null);
       }
     },
-    [playerId, username, onJoinGame, toast],
+    [playerId, username, avatarId, onJoinGame, toast],
   );
 
   const handleReclaimSeat = useCallback(async () => {
@@ -152,6 +151,7 @@ export function useLobby({ onJoinGame }: LobbyProps): LobbyViewModel {
     username,
     isGuest,
     linkGoogleAccountButton,
+    avatarPicker: useAvatarPickerButton(),
     games,
     isGamesLoading,
     isCreateDialogOpen,

@@ -34,6 +34,8 @@ export interface PlayerInfoViewModel {
   isBot: boolean;
   isCurrentPlayer: boolean;
   iconId: string;
+  /** The chosen avatar image; null when unset, so the view shows iconId. */
+  avatarSrc: string | null;
   armyCount: number;
   positionedCount: number;
   victoryPoints: number;

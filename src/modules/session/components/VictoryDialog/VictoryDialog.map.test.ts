@@ -1,5 +1,6 @@
 import { PlayerColor } from '@/lib/types';
 import type { Player } from '@/lib/types';
+import { AVATAR_CATALOG } from '@/modules/avatars';
 import { PLAYER_DATA } from '@/modules/game-rules';
 import { toArmyIconId } from '@/modules/shared';
 import { toVictoryViewModel } from './VictoryDialog.map';
@@ -69,6 +70,20 @@ describe('toVictoryViewModel', () => {
       const red = toVictoryViewModel(redHumanWinner, true).iconId;
 
       expect(blue).not.toBe(red);
+    });
+  });
+
+  describe('avatarSrc', () => {
+    it('uses the chosen avatar image when avatarId is set', () => {
+      const winner: Player = { ...humanWinner, avatarId: 'human-03' };
+
+      expect(toVictoryViewModel(winner, true).avatarSrc).toBe(AVATAR_CATALOG['human-03'].src);
+    });
+
+    it.each([null, 'human-99', ''])('is null for avatarId %p (null or invalid)', (avatarId) => {
+      const winner: Player = { ...humanWinner, avatarId };
+
+      expect(toVictoryViewModel(winner, true).avatarSrc).toBeNull();
     });
   });
 
