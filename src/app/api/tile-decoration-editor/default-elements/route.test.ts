@@ -1,3 +1,4 @@
+import { anonymousRequest, AUTHORIZED_HEADERS, TEST_DEV_TOOLS_PASSWORD } from '@/lib/dev-tools/access.test-utils';
 // jsdom (this project's default test environment) has no Web Request/Response/fetch globals,
 // which next/server's route handlers need. Polyfill from undici (already a transitive Next.js
 // dependency) before importing the route under test.
@@ -74,30 +75,24 @@ function buildValidDraft(): IslandTileSlotsDraft {
 
 function buildRequest(body: unknown): Request {
   return new Request('http://localhost/api/tile-decoration-editor/default-elements', {
+    headers: AUTHORIZED_HEADERS,
     method: 'POST',
     body: JSON.stringify(body),
   });
 }
 
-// @types/node types NODE_ENV as readonly; Object.defineProperty bypasses that for this test only.
-function setNodeEnv(value: string): void {
-  Object.defineProperty(process.env, 'NODE_ENV', { value, configurable: true });
-}
+process.env.DEV_TOOLS_PASSWORD = TEST_DEV_TOOLS_PASSWORD;
 
 describe('POST /api/tile-decoration-editor/default-elements', () => {
-  const originalNodeEnv = process.env.NODE_ENV;
 
   afterEach(() => {
-    setNodeEnv(originalNodeEnv);
     jest.clearAllMocks();
   });
 
-  it('returns 404 and never reads or writes in production', async () => {
-    setNodeEnv('production');
+  it('returns 401 without a token and never reads or writes', async () => {
+    const response = await POST(anonymousRequest());
 
-    const response = await POST(buildRequest({ draft: buildValidDraft() }));
-
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
     expect(mockReadFile).not.toHaveBeenCalled();
     expect(mockWriteFile).not.toHaveBeenCalled();
   });

@@ -43,6 +43,7 @@ const createMockFn = typeof jest !== 'undefined' ? jest.fn : () => noop;
 
 export const populatedMapGrid: MapGridViewModel = {
   map: [emptyIsland, baseIsland, resourceIsland],
+  variantAssignments: new Map(),
   cols: 3,
   rows: 3,
   isMobile: false,

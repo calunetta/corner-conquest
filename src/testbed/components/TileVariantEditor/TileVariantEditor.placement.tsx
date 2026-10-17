@@ -68,13 +68,14 @@ export function PlacementPreview({ config, draft, onMove }: PlacementPreviewProp
   );
 }
 
+/** The variant is edited as plain art: the tile's decorations are added later, per variant. */
 function SampleTile({ draft }: { draft: TileVariant }) {
   if (draft.type === 'base') {
     const colour = draft.color ?? PlayerColor.Blue;
     const owner = { ...localPlayerFixture, color: colour };
-    return <WithGameBoardContext viewModel={createBaseViewModel(baseIslandOwnedByLocalPlayer, owner)} />;
+    return <WithGameBoardContext viewModel={{ ...createBaseViewModel(baseIslandOwnedByLocalPlayer, owner), showDecorations: false }} />;
   }
   const island =
     draft.type === 'special' ? specialIsland : draft.type === 'monster' ? monsterIslandWithLivingMonster : resourceIslandWithThreeNodesAndThreeOccupants;
-  return <WithGameBoardContext viewModel={createViewModelWithState(island, {})} />;
+  return <WithGameBoardContext viewModel={{ ...createViewModelWithState(island, {}), showDecorations: false }} />;
 }

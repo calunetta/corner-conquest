@@ -386,7 +386,7 @@ describe('toTileResourcesViewModel', () => {
 describe('toTileResourcesViewModel band and Base slot positions', () => {
   it('places a single resource node centered in the middle band', () => {
     const result = toTileResourcesViewModel(resourceIslandWithFood, false, mockPlayers, {});
-    expect(result![0].slotStyle).toEqual({ top: '50%', left: '50%' });
+    expect(result![0].slotStyle).toEqual({ top: '50%', left: '57%' });
   });
 
   it('places a two-node island at distinct centers, not both in the top band', () => {
@@ -402,7 +402,7 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
     const result = toTileResourcesViewModel(resourceIslandWithDualResources, false, mockPlayers, {});
     expect(result).toHaveLength(3);
     expect(result!.map((n) => n.slotStyle)).toEqual([
-      { top: '20%', left: '45%' },
+      { top: '27%', left: '49%' },
       { top: '45%', left: '75%' },
       { top: '55%', left: '35%' },
     ]);
@@ -420,8 +420,8 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
   it('gives each Base node its resource slot center, with no explicit width or height', () => {
     const result = toTileResourcesViewModel(baseIslandWithResources, true, mockPlayers, {});
     expect(result!.map((n) => n.slotStyle)).toEqual([
-      { top: '60%', left: '20%' },
-      { top: '45%', right: '-17%' },
+      { top: '66%', left: '24%' },
+      { top: '40%', right: '-12%' },
     ]);
   });
 
@@ -429,9 +429,9 @@ describe('toTileResourcesViewModel band and Base slot positions', () => {
     const result = toTileResourcesViewModel(baseIslandWithThreeResources, true, mockPlayers, {});
     expect(result!.map((n) => n.type)).toEqual([ResourceType.Food, ResourceType.Wood, ResourceType.Gold]);
     expect(result!.map((n) => n.slotStyle)).toEqual([
-      { top: '60%', left: '20%' },
-      { top: '45%', right: '-17%' },
-      { top: '15%', left: '50%' },
+      { top: '66%', left: '24%' },
+      { top: '40%', right: '-12%' },
+      { top: '22%', left: '48%' },
     ]);
   });
 

@@ -102,16 +102,16 @@ describe('nudgeAnchoredStyle', () => {
   });
 
   // Required case (architect-b): one ArrowRight nudge (dLeft=1) on the real locked
-  // BASE_RESOURCE_SLOTS[1] = { top: '45%', right: '-17%', size: 30 } must move right from -17 to
-  // -18, not snap to 0 — proving the shared [-50,100] clamp never corrupts this real negative value.
-  it('moves BASE_RESOURCE_SLOTS[1].right from -17% to -18% on one ArrowRight nudge, never snapping to 0%', () => {
+  // BASE_RESOURCE_SLOTS[1] = { top: '40%', right: '-12%', size: 30 } must move right from -12 to
+  // -13, not snap to 0 — proving the shared [-50,100] clamp never corrupts this real negative value.
+  it('moves BASE_RESOURCE_SLOTS[1].right from -12% to -13% on one ArrowRight nudge, never snapping to 0%', () => {
     const slot = BASE_RESOURCE_SLOTS[1];
-    expect(slot).toEqual({ top: '45%', right: '-17%', size: 30 });
+    expect(slot).toEqual({ top: '40%', right: '-12%', size: 30 });
 
     const previousStyle = { top: slot.top, right: slot.right };
     const next = nudgeAnchoredStyle(previousStyle, 0, 1, clampAnchoredOffsetPercent);
 
-    expect(next.right).toBe('-18%');
+    expect(next.right).toBe('-13%');
     expect(next.right).not.toBe('0%');
   });
 });

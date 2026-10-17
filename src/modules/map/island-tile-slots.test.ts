@@ -65,7 +65,7 @@ describe('resource slot tables', () => {
   it('pins the single-node slot center in the middle band', () => {
     expect(SINGLE_RESOURCE_SLOT).toEqual({
       top: '50%',
-      left: '50%',
+      left: '57%',
       size: 40,
     });
   });
@@ -79,7 +79,7 @@ describe('resource slot tables', () => {
 
   it('pins the three-node slot centers', () => {
     expect(TRIPLE_RESOURCE_SLOTS).toEqual([
-      { top: '20%', left: '45%', size: 40 },
+      { top: '27%', left: '49%', size: 40 },
       { top: '45%', left: '75%', size: 40 },
       { top: '55%', left: '35%', size: 40 },
     ]);
@@ -96,9 +96,9 @@ describe('resource slot tables', () => {
 
   it('pins the three Base resource slot centers', () => {
     expect(BASE_RESOURCE_SLOTS).toEqual([
-      { top: '60%', left: '20%', size: 30 },
-      { top: '45%', right: '-17%', size: 30 },
-      { top: '15%', left: '50%', size: 30 },
+      { top: '66%', left: '24%', size: 30 },
+      { top: '40%', right: '-12%', size: 30 },
+      { top: '22%', left: '48%', size: 30 },
     ]);
   });
 });

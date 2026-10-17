@@ -1,264 +1,836 @@
 {
   "base": [
     {
-      "id": "base-default",
-      "name": "Default",
+      "id": "base-default-a",
+      "name": "Grove A",
       "instances": [
         {
-          "id": "base-default-0",
-          "image": "/sprites/decorations/pine_tree.gif",
-          "top": 36.5,
-          "left": 44.5,
-          "size": 15,
+          "id": "base-default-a-0",
+          "image": "/sprites/decorations/10.png",
+          "top": 8.6,
+          "left": 85,
+          "size": 11,
           "z": 10
         },
         {
-          "id": "base-default-1",
-          "image": "/sprites/decorations/spring_tree.gif",
-          "top": 37.5,
-          "left": 42.5,
-          "size": 15,
+          "id": "base-default-a-1",
+          "image": "/sprites/decorations/10.png",
+          "top": 18.7,
+          "left": 74.4,
+          "size": 11,
+          "z": 11
+        },
+        {
+          "id": "base-default-a-2",
+          "image": "/sprites/decorations/11.png",
+          "top": 21.4,
+          "left": 85,
+          "size": 11,
+          "z": 12
+        },
+        {
+          "id": "base-default-a-3",
+          "image": "/sprites/decorations/03.png",
+          "top": 25.7,
+          "left": 59.4,
+          "size": 10,
+          "z": 12
+        },
+        {
+          "id": "base-default-a-4",
+          "image": "/sprites/decorations/08.png",
+          "top": 31.5,
+          "left": 81.8,
+          "size": 11,
+          "z": 13
+        },
+        {
+          "id": "base-default-a-5",
+          "image": "/sprites/decorations/rock-1.png",
+          "top": 39.7,
+          "left": 74,
+          "size": 9,
+          "z": 13
+        },
+        {
+          "id": "base-default-a-6",
+          "image": "/sprites/decorations/tree-3.gif",
+          "top": 42,
+          "left": 21.2,
+          "size": 30,
+          "z": 14
+        },
+        {
+          "id": "base-default-a-7",
+          "image": "/sprites/decorations/bush-1.gif",
+          "top": 44,
+          "left": 85,
+          "size": 14,
+          "z": 14
+        },
+        {
+          "id": "base-default-a-8",
+          "image": "/sprites/decorations/11.png",
+          "top": 53.6,
+          "left": 78.2,
+          "size": 11,
+          "z": 15
+        },
+        {
+          "id": "base-default-a-9",
+          "image": "/sprites/decorations/02.png",
+          "top": 59.5,
+          "left": 25.7,
+          "size": 10,
+          "z": 15
+        },
+        {
+          "id": "base-default-a-10",
+          "image": "/sprites/decorations/07.png",
+          "top": 69.8,
+          "left": 20.4,
+          "size": 11,
+          "z": 16
+        },
+        {
+          "id": "base-default-a-11",
+          "image": "/sprites/decorations/08.png",
+          "top": 75.5,
+          "left": 47.6,
+          "size": 11,
+          "z": 17
+        },
+        {
+          "id": "base-default-a-12",
+          "image": "/sprites/decorations/01.png",
+          "top": 80.7,
+          "left": 26.5,
+          "size": 10,
+          "z": 18
+        },
+        {
+          "id": "base-default-a-13",
+          "image": "/sprites/decorations/rock-1.png",
+          "top": 85,
+          "left": 38.5,
+          "size": 9,
+          "z": 18
+        },
+        {
+          "id": "base-default-a-14",
+          "image": "/sprites/decorations/10.png",
+          "top": 85,
+          "left": 15.5,
+          "size": 11,
+          "z": 18
+        },
+        {
+          "id": "base-default-a-15",
+          "image": "/sprites/decorations/10.png",
+          "top": 85,
+          "left": 57.6,
+          "size": 11,
+          "z": 18
+        }
+      ]
+    },
+    {
+      "id": "base-default-b",
+      "name": "Grove B",
+      "instances": [
+        {
+          "id": "base-default-b-0",
+          "image": "/sprites/decorations/rock-2.png",
+          "top": 3,
+          "left": 28.2,
+          "size": 9,
           "z": 10
         },
         {
-          "id": "base-default-2",
-          "image": "/sprites/decorations/autmn_tree.gif",
-          "top": 37.5,
-          "left": 37.5,
-          "size": 15,
+          "id": "base-default-b-1",
+          "image": "/sprites/decorations/03.png",
+          "top": 7.2,
+          "left": 40,
+          "size": 10,
           "z": 10
         },
         {
-          "id": "base-default-3",
-          "image": "/sprites/decorations/tree.gif",
-          "top": 37.5,
-          "left": 31.5,
-          "size": 15,
+          "id": "base-default-b-2",
+          "image": "/sprites/decorations/02.png",
+          "top": 8.9,
+          "left": 19.9,
+          "size": 10,
           "z": 10
         },
         {
-          "id": "base-default-4",
-          "image": "/sprites/decorations/pine_tree.gif",
-          "top": 41.5,
-          "left": 42.5,
-          "size": 15,
+          "id": "base-default-b-3",
+          "image": "/sprites/decorations/11.png",
+          "top": 9.5,
+          "left": 51.5,
+          "size": 11,
           "z": 10
         },
         {
-          "id": "base-default-5",
-          "image": "/sprites/decorations/spring_tree.gif",
-          "top": 39.5,
-          "left": 34.5,
-          "size": 15,
-          "z": 10
+          "id": "base-default-b-4",
+          "image": "/sprites/decorations/rock-2.png",
+          "top": 15.5,
+          "left": 43.7,
+          "size": 9,
+          "z": 11
         },
         {
-          "id": "base-default-6",
-          "image": "/sprites/decorations/autmn_tree.gif",
-          "top": 36.5,
-          "left": 56.5,
-          "size": 15,
-          "z": 10
+          "id": "base-default-b-5",
+          "image": "/sprites/decorations/03.png",
+          "top": 16.4,
+          "left": 25.3,
+          "size": 10,
+          "z": 11
         },
         {
-          "id": "base-default-7",
-          "image": "/sprites/decorations/tree.gif",
-          "top": 39.5,
-          "left": 52.5,
-          "size": 15,
-          "z": 10
+          "id": "base-default-b-6",
+          "image": "/sprites/decorations/10.png",
+          "top": 21.4,
+          "left": 51.7,
+          "size": 11,
+          "z": 12
         },
         {
-          "id": "base-default-8",
-          "image": "/sprites/decorations/pine_tree.gif",
-          "top": 38.5,
-          "left": 52.5,
-          "size": 15,
-          "z": 10
+          "id": "base-default-b-7",
+          "image": "/sprites/decorations/rock-2.png",
+          "top": 22,
+          "left": 61.4,
+          "size": 9,
+          "z": 12
         },
         {
-          "id": "base-default-9",
-          "image": "/sprites/decorations/spring_tree.gif",
-          "top": 37.5,
-          "left": 67.5,
-          "size": 15,
-          "z": 10
+          "id": "base-default-b-8",
+          "image": "/sprites/decorations/bush-3.gif",
+          "top": 24.6,
+          "left": 35.2,
+          "size": 14,
+          "z": 12
         },
         {
-          "id": "base-default-10",
-          "image": "/sprites/decorations/autmn_tree.gif",
-          "top": 39.5,
-          "left": 47.5,
-          "size": 15,
-          "z": 10
+          "id": "base-default-b-9",
+          "image": "/sprites/decorations/rock-2.png",
+          "top": 24.8,
+          "left": 23.4,
+          "size": 9,
+          "z": 12
         },
         {
-          "id": "base-default-11",
-          "image": "/sprites/decorations/tree.gif",
-          "top": 39.5,
-          "left": 62.5,
-          "size": 15,
-          "z": 10
+          "id": "base-default-b-10",
+          "image": "/sprites/decorations/tree-4.gif",
+          "top": 42,
+          "left": 11.8,
+          "size": 30,
+          "z": 14
         },
         {
-          "id": "base-default-12",
-          "image": "/sprites/decorations/pine_tree.gif",
-          "top": 44.5,
-          "left": 52.5,
-          "size": 15,
-          "z": 10
+          "id": "base-default-b-11",
+          "image": "/sprites/decorations/09.png",
+          "top": 57.9,
+          "left": 22.3,
+          "size": 11,
+          "z": 15
         },
         {
-          "id": "base-default-13",
-          "image": "/sprites/decorations/spring_tree.gif",
-          "top": 46.5,
-          "left": 62.5,
-          "size": 15,
-          "z": 10
+          "id": "base-default-b-12",
+          "image": "/sprites/decorations/rock-1.png",
+          "top": 60.9,
+          "left": 13.8,
+          "size": 9,
+          "z": 16
         },
         {
-          "id": "base-default-14",
-          "image": "/sprites/decorations/autmn_tree.gif",
-          "top": 37.5,
-          "left": 52.5,
-          "size": 15,
-          "z": 10
+          "id": "base-default-b-13",
+          "image": "/sprites/decorations/01.png",
+          "top": 70.4,
+          "left": 18.1,
+          "size": 10,
+          "z": 17
+        },
+        {
+          "id": "base-default-b-14",
+          "image": "/sprites/decorations/10.png",
+          "top": 77.7,
+          "left": 8.6,
+          "size": 11,
+          "z": 17
+        },
+        {
+          "id": "base-default-b-15",
+          "image": "/sprites/decorations/01.png",
+          "top": 79.2,
+          "left": 27.8,
+          "size": 10,
+          "z": 17
         }
       ]
     }
   ],
   "special": [
     {
-      "id": "special-default",
-      "name": "Default",
+      "id": "special-default-a",
+      "name": "Dark grove A",
       "instances": [
         {
-          "id": "special-default-0",
-          "image": "/sprites/decorations/pine_tree.gif",
-          "top": 13,
+          "id": "special-default-a-0",
+          "image": "/sprites/decorations/fungus-dark-2.png",
+          "top": 9.2,
+          "left": 21.1,
+          "size": 10,
+          "z": 10
+        },
+        {
+          "id": "special-default-a-1",
+          "image": "/sprites/decorations/fungus-dark-1.png",
+          "top": 14.1,
+          "left": 10,
+          "size": 10,
+          "z": 11
+        },
+        {
+          "id": "special-default-a-2",
+          "image": "/sprites/decorations/fungus-dark-1.png",
+          "top": 15.6,
+          "left": 33.2,
+          "size": 10,
+          "z": 11
+        },
+        {
+          "id": "special-default-a-3",
+          "image": "/sprites/decorations/ash-1.png",
+          "top": 19.6,
+          "left": 16.7,
+          "size": 9,
+          "z": 11
+        },
+        {
+          "id": "special-default-a-4",
+          "image": "/sprites/decorations/fungus-dark-3.png",
+          "top": 19.7,
+          "left": 51.3,
+          "size": 10,
+          "z": 11
+        },
+        {
+          "id": "special-default-a-5",
+          "image": "/sprites/decorations/bones-1.png",
+          "top": 19.9,
+          "left": 42,
+          "size": 9,
+          "z": 11
+        },
+        {
+          "id": "special-default-a-6",
+          "image": "/sprites/decorations/fungus-dark-1.png",
+          "top": 26.8,
+          "left": 8.7,
+          "size": 10,
+          "z": 12
+        },
+        {
+          "id": "special-default-a-7",
+          "image": "/sprites/decorations/bones-3.png",
+          "top": 29.9,
+          "left": 17.7,
+          "size": 9,
+          "z": 12
+        },
+        {
+          "id": "special-default-a-8",
+          "image": "/sprites/decorations/skull-spike-1.png",
+          "top": 36.3,
+          "left": 8.9,
+          "size": 11,
+          "z": 13
+        },
+        {
+          "id": "special-default-a-9",
+          "image": "/sprites/decorations/ash-1.png",
+          "top": 38.9,
+          "left": 18.8,
+          "size": 9,
+          "z": 13
+        },
+        {
+          "id": "special-default-a-10",
+          "image": "/sprites/decorations/fungus-dark-1.png",
+          "top": 51.7,
+          "left": 18.5,
+          "size": 10,
+          "z": 15
+        },
+        {
+          "id": "special-default-a-11",
+          "image": "/sprites/decorations/fungus-dark-2.png",
+          "top": 53.1,
+          "left": 8.7,
+          "size": 10,
+          "z": 15
+        },
+        {
+          "id": "special-default-a-12",
+          "image": "/sprites/decorations/bones-3.png",
+          "top": 60.7,
+          "left": 14.3,
+          "size": 9,
+          "z": 16
+        }
+      ]
+    },
+    {
+      "id": "special-default-b",
+      "name": "Dark grove B",
+      "instances": [
+        {
+          "id": "special-default-b-0",
+          "image": "/sprites/decorations/shrub-dark-1.gif",
+          "top": 3.3,
+          "left": 49,
+          "size": 12,
+          "z": 10
+        },
+        {
+          "id": "special-default-b-1",
+          "image": "/sprites/decorations/fungus-dark-2.png",
+          "top": 6.2,
+          "left": 19.6,
+          "size": 10,
+          "z": 10
+        },
+        {
+          "id": "special-default-b-2",
+          "image": "/sprites/decorations/fungus-dark-3.png",
+          "top": 9.1,
+          "left": 30,
+          "size": 10,
+          "z": 10
+        },
+        {
+          "id": "special-default-b-3",
+          "image": "/sprites/decorations/shrub-dark-1.gif",
+          "top": 11.2,
+          "left": 40.3,
+          "size": 12,
+          "z": 11
+        },
+        {
+          "id": "special-default-b-4",
+          "image": "/sprites/decorations/skull-spike-1.png",
+          "top": 15.7,
+          "left": 18.3,
+          "size": 11,
+          "z": 11
+        },
+        {
+          "id": "special-default-b-5",
+          "image": "/sprites/decorations/ash-2.png",
+          "top": 19.3,
+          "left": 33.6,
+          "size": 9,
+          "z": 11
+        },
+        {
+          "id": "special-default-b-6",
+          "image": "/sprites/decorations/ash-2.png",
+          "top": 20,
+          "left": 44.3,
+          "size": 9,
+          "z": 12
+        },
+        {
+          "id": "special-default-b-7",
+          "image": "/sprites/decorations/bones-3.png",
+          "top": 21.5,
+          "left": 8.7,
+          "size": 9,
+          "z": 12
+        },
+        {
+          "id": "special-default-b-8",
+          "image": "/sprites/decorations/ash-1.png",
+          "top": 28.9,
+          "left": 18,
+          "size": 9,
+          "z": 12
+        },
+        {
+          "id": "special-default-b-9",
+          "image": "/sprites/decorations/ash-3.png",
+          "top": 42,
           "left": 8,
+          "size": 9,
+          "z": 14
+        },
+        {
+          "id": "special-default-b-10",
+          "image": "/sprites/decorations/bones-2.png",
+          "top": 43.1,
+          "left": 18.4,
+          "size": 9,
+          "z": 14
+        },
+        {
+          "id": "special-default-b-11",
+          "image": "/sprites/decorations/ash-3.png",
+          "top": 61.1,
+          "left": 20,
+          "size": 9,
+          "z": 16
+        },
+        {
+          "id": "special-default-b-12",
+          "image": "/sprites/decorations/bones-2.png",
+          "top": 80.1,
+          "left": 33.9,
+          "size": 9,
+          "z": 18
+        },
+        {
+          "id": "special-default-b-13",
+          "image": "/sprites/decorations/fungus-dark-2.png",
+          "top": 80.7,
+          "left": 13.8,
+          "size": 10,
+          "z": 18
+        },
+        {
+          "id": "special-default-b-14",
+          "image": "/sprites/decorations/fungus-dark-3.png",
+          "top": 84.1,
+          "left": 45.5,
+          "size": 10,
+          "z": 18
+        },
+        {
+          "id": "special-default-b-15",
+          "image": "/sprites/decorations/fungus-dark-3.png",
+          "top": 85,
+          "left": 25.4,
+          "size": 10,
+          "z": 18
+        }
+      ]
+    },
+    {
+      "id": "special-layout-mvc8ri1d-iojrgz",
+      "name": "second",
+      "instances": [
+        {
+          "id": "special-instance-mvc8ri1d-4hd18n",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 37.024095856741575,
+          "left": 43.82347261235955,
           "size": 16,
           "z": 10
         },
         {
-          "id": "special-default-1",
+          "id": "special-instance-mvc8ri1d-nvykd7",
           "image": "/sprites/decorations/spring_tree.gif",
-          "top": 15,
-          "left": 18,
+          "top": 50,
+          "left": 41,
           "size": 16,
           "z": 12
         },
         {
-          "id": "special-default-2",
+          "id": "special-instance-mvc8ri1d-emyvm8",
           "image": "/sprites/decorations/autmn_tree.gif",
-          "top": 18,
-          "left": 28,
-          "size": 16,
-          "z": 15
-        },
-        {
-          "id": "special-default-3",
-          "image": "/sprites/decorations/tree.gif",
-          "top": 13.6,
-          "left": 28,
-          "size": 16,
-          "z": 15
-        },
-        {
-          "id": "special-default-4",
-          "image": "/sprites/decorations/pine_tree.gif",
-          "top": 38,
-          "left": 28,
-          "size": 16,
-          "z": 15
-        },
-        {
-          "id": "special-default-5",
-          "image": "/sprites/decorations/spring_tree.gif",
-          "top": 38,
-          "left": 30,
-          "size": 16,
-          "z": 15
-        },
-        {
-          "id": "special-default-6",
-          "image": "/sprites/decorations/autmn_tree.gif",
-          "top": 13.6,
-          "left": 28,
-          "size": 16,
-          "z": 15
-        },
-        {
-          "id": "special-default-7",
-          "image": "/sprites/decorations/tree.gif",
-          "top": 13.6,
-          "left": 28,
-          "size": 16,
-          "z": 15
-        },
-        {
-          "id": "special-default-8",
-          "image": "/sprites/decorations/pine_tree.gif",
-          "top": 27.4,
-          "left": 21.9,
+          "top": 53,
+          "left": 75,
           "size": 16,
           "z": 20
+        },
+        {
+          "id": "special-instance-mvc8ri1d-x64l3g",
+          "image": "/sprites/decorations/tree.gif",
+          "top": 43.6,
+          "left": 74,
+          "size": 16,
+          "z": 15
+        },
+        {
+          "id": "special-instance-mvc8ri1d-mruxzo",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 35,
+          "left": 38,
+          "size": 16,
+          "z": 15
+        },
+        {
+          "id": "special-instance-mvc8ri1d-mr4vea",
+          "image": "/sprites/decorations/tree.gif",
+          "top": 35.03313728932585,
+          "left": 56.05999824438202,
+          "size": 16,
+          "z": 15
+        },
+        {
+          "id": "special-instance-mvc8ri1d-3yn8te",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 32.4,
+          "left": 46.9,
+          "size": 16,
+          "z": 1
+        },
+        {
+          "id": "special-instance-mvc8ri1d-1e31xn",
+          "image": "/sprites/decorations/pine_tree.gif",
+          "top": 34,
+          "left": 53,
+          "size": 25,
+          "z": 12
+        }
+      ]
+    },
+    {
+      "id": "special-layout-mvc8s7jf-fvr9qt",
+      "name": "second copy",
+      "instances": [
+        {
+          "id": "special-instance-mvc8shqj-nfdnxf",
+          "image": "/sprites/decorations/tree.gif",
+          "top": 35.18491046348314,
+          "left": 45.29274929775281,
+          "size": 47,
+          "z": 12
         }
       ]
     }
   ],
   "empty-2": [
     {
-      "id": "empty-2-default",
-      "name": "Default",
+      "id": "empty-2-default-a",
+      "name": "Grove A",
       "instances": [
         {
-          "id": "empty-2-default-0",
-          "image": "/sprites/decorations/pine_tree.gif",
-          "top": 32,
-          "left": 38,
-          "size": 28,
+          "id": "empty-2-default-a-0",
+          "image": "/sprites/decorations/rock-2.png",
+          "top": 39.4,
+          "left": 62.6,
+          "size": 9,
+          "z": 13
+        },
+        {
+          "id": "empty-2-default-a-1",
+          "image": "/sprites/decorations/09.png",
+          "top": 42.5,
+          "left": 49.6,
+          "size": 11,
+          "z": 14
+        },
+        {
+          "id": "empty-2-default-a-2",
+          "image": "/sprites/decorations/bush-3.gif",
+          "top": 50.6,
+          "left": 26,
+          "size": 14,
+          "z": 15
+        },
+        {
+          "id": "empty-2-default-a-3",
+          "image": "/sprites/decorations/07.png",
+          "top": 57.5,
+          "left": 67.8,
+          "size": 11,
+          "z": 15
+        },
+        {
+          "id": "empty-2-default-a-4",
+          "image": "/sprites/decorations/bush-1.gif",
+          "top": 60.4,
+          "left": 56.8,
+          "size": 14,
+          "z": 16
+        },
+        {
+          "id": "empty-2-default-a-5",
+          "image": "/sprites/decorations/rock-1.png",
+          "top": 63.1,
+          "left": 37.9,
+          "size": 9,
+          "z": 16
+        }
+      ]
+    },
+    {
+      "id": "empty-2-default-b",
+      "name": "Grove B",
+      "instances": [
+        {
+          "id": "empty-2-default-b-0",
+          "image": "/sprites/decorations/rock-2.png",
+          "top": 22.8,
+          "left": 48,
+          "size": 9,
           "z": 12
         },
         {
-          "id": "empty-2-default-1",
-          "image": "/sprites/decorations/spring_tree.gif",
-          "top": 38,
-          "left": 62,
-          "size": 28,
+          "id": "empty-2-default-b-1",
+          "image": "/sprites/decorations/02.png",
+          "top": 25.8,
+          "left": 29.6,
+          "size": 10,
+          "z": 12
+        },
+        {
+          "id": "empty-2-default-b-2",
+          "image": "/sprites/decorations/10.png",
+          "top": 35.2,
+          "left": 31.6,
+          "size": 11,
+          "z": 13
+        },
+        {
+          "id": "empty-2-default-b-3",
+          "image": "/sprites/decorations/tree-1.gif",
+          "top": 40.5,
+          "left": 85,
+          "size": 30,
           "z": 14
+        },
+        {
+          "id": "empty-2-default-b-4",
+          "image": "/sprites/decorations/03.png",
+          "top": 79.3,
+          "left": 47.2,
+          "size": 10,
+          "z": 17
+        },
+        {
+          "id": "empty-2-default-b-5",
+          "image": "/sprites/decorations/bush-4.gif",
+          "top": 85,
+          "left": 32,
+          "size": 14,
+          "z": 18
         }
       ]
     }
   ],
   "empty-3": [
     {
-      "id": "empty-3-default",
-      "name": "Default",
+      "id": "empty-3-default-a",
+      "name": "Grove A",
       "instances": [
         {
-          "id": "empty-3-default-0",
-          "image": "/sprites/decorations/pine_tree.gif",
-          "top": 32,
-          "left": 38,
-          "size": 28,
-          "z": 12
+          "id": "empty-3-default-a-0",
+          "image": "/sprites/decorations/tree-4.gif",
+          "top": 31.8,
+          "left": 62.7,
+          "size": 30,
+          "z": 13
         },
         {
-          "id": "empty-3-default-1",
-          "image": "/sprites/decorations/spring_tree.gif",
-          "top": 38,
-          "left": 62,
-          "size": 28,
+          "id": "empty-3-default-a-1",
+          "image": "/sprites/decorations/tree-4.gif",
+          "top": 42,
+          "left": 36.4,
+          "size": 30,
           "z": 14
         },
         {
-          "id": "empty-3-default-2",
-          "image": "/sprites/decorations/autmn_tree.gif",
-          "top": 60,
-          "left": 58,
-          "size": 28,
-          "z": 13
+          "id": "empty-3-default-a-2",
+          "image": "/sprites/decorations/bush-2.gif",
+          "top": 54.6,
+          "left": 56.2,
+          "size": 14,
+          "z": 15
+        },
+        {
+          "id": "empty-3-default-a-3",
+          "image": "/sprites/decorations/rock-1.png",
+          "top": 60.4,
+          "left": 71.7,
+          "size": 9,
+          "z": 16
+        },
+        {
+          "id": "empty-3-default-a-4",
+          "image": "/sprites/decorations/rock-1.png",
+          "top": 65.9,
+          "left": 54.2,
+          "size": 9,
+          "z": 16
+        },
+        {
+          "id": "empty-3-default-a-5",
+          "image": "/sprites/decorations/01.png",
+          "top": 66.3,
+          "left": 29.9,
+          "size": 10,
+          "z": 16
+        },
+        {
+          "id": "empty-3-default-a-6",
+          "image": "/sprites/decorations/rock-1.png",
+          "top": 82.2,
+          "left": 41.8,
+          "size": 9,
+          "z": 18
+        }
+      ]
+    },
+    {
+      "id": "empty-3-default-b",
+      "name": "Grove B",
+      "instances": [
+        {
+          "id": "empty-3-default-b-0",
+          "image": "/sprites/decorations/tree-1.gif",
+          "top": 42,
+          "left": 76.8,
+          "size": 30,
+          "z": 14
+        },
+        {
+          "id": "empty-3-default-b-1",
+          "image": "/sprites/decorations/rock-2.png",
+          "top": 46.8,
+          "left": 51.1,
+          "size": 9,
+          "z": 14
+        },
+        {
+          "id": "empty-3-default-b-2",
+          "image": "/sprites/decorations/09.png",
+          "top": 59.1,
+          "left": 63.5,
+          "size": 11,
+          "z": 15
+        },
+        {
+          "id": "empty-3-default-b-3",
+          "image": "/sprites/decorations/08.png",
+          "top": 73.2,
+          "left": 50.2,
+          "size": 11,
+          "z": 17
+        },
+        {
+          "id": "empty-3-default-b-4",
+          "image": "/sprites/decorations/09.png",
+          "top": 78.6,
+          "left": 70.7,
+          "size": 11,
+          "z": 17
+        },
+        {
+          "id": "empty-3-default-b-5",
+          "image": "/sprites/decorations/10.png",
+          "top": 80.1,
+          "left": 42.9,
+          "size": 11,
+          "z": 18
+        },
+        {
+          "id": "empty-3-default-b-6",
+          "image": "/sprites/decorations/rock-2.png",
+          "top": 85,
+          "left": 55.3,
+          "size": 9,
+          "z": 18
         }
       ]
     }
@@ -293,61 +865,308 @@
   ],
   "monster-alive": [
     {
-      "id": "monster-alive-default",
-      "name": "Default",
-      "instances": []
-    }
-  ],
-  "monster-cleared": [
-    {
-      "id": "monster-cleared-default-2trees",
-      "name": "Default (2 trees)",
+      "id": "monster-alive-default-a",
+      "name": "Lair A",
       "instances": [
         {
-          "id": "monster-cleared-default-2trees-0",
-          "image": "/sprites/decorations/pine_tree.gif",
-          "top": 32,
-          "left": 38,
-          "size": 28,
+          "id": "monster-alive-default-a-0",
+          "image": "/sprites/decorations/ash-1.png",
+          "top": 15.5,
+          "left": 21.1,
+          "size": 9,
+          "z": 11
+        },
+        {
+          "id": "monster-alive-default-a-1",
+          "image": "/sprites/decorations/skull-spike-1.png",
+          "top": 15.8,
+          "left": 68.9,
+          "size": 11,
+          "z": 11
+        },
+        {
+          "id": "monster-alive-default-a-2",
+          "image": "/sprites/decorations/tool-3.png",
+          "top": 25.6,
+          "left": 25.8,
+          "size": 9,
           "z": 12
         },
         {
-          "id": "monster-cleared-default-2trees-1",
-          "image": "/sprites/decorations/spring_tree.gif",
-          "top": 38,
-          "left": 62,
-          "size": 28,
+          "id": "monster-alive-default-a-3",
+          "image": "/sprites/decorations/ash-3.png",
+          "top": 32.1,
+          "left": 36.7,
+          "size": 9,
+          "z": 13
+        },
+        {
+          "id": "monster-alive-default-a-4",
+          "image": "/sprites/decorations/bones-2.png",
+          "top": 38.6,
+          "left": 67.7,
+          "size": 9,
+          "z": 13
+        },
+        {
+          "id": "monster-alive-default-a-5",
+          "image": "/sprites/decorations/ash-2.png",
+          "top": 44.4,
+          "left": 30.8,
+          "size": 9,
           "z": 14
+        },
+        {
+          "id": "monster-alive-default-a-6",
+          "image": "/sprites/decorations/tool-2.png",
+          "top": 55.9,
+          "left": 52,
+          "size": 9,
+          "z": 15
+        },
+        {
+          "id": "monster-alive-default-a-7",
+          "image": "/sprites/decorations/bones-1.png",
+          "top": 64.3,
+          "left": 71.7,
+          "size": 9,
+          "z": 16
         }
       ]
     },
     {
-      "id": "monster-cleared-default-3trees",
-      "name": "Default (3 trees)",
+      "id": "monster-alive-default-b",
+      "name": "Lair B",
       "instances": [
         {
-          "id": "monster-cleared-default-3trees-0",
-          "image": "/sprites/decorations/pine_tree.gif",
-          "top": 32,
-          "left": 38,
-          "size": 28,
+          "id": "monster-alive-default-b-0",
+          "image": "/sprites/decorations/ash-1.png",
+          "top": 6.3,
+          "left": 50.4,
+          "size": 9,
+          "z": 10
+        },
+        {
+          "id": "monster-alive-default-b-1",
+          "image": "/sprites/decorations/fungus-dark-2.png",
+          "top": 13.6,
+          "left": 57.3,
+          "size": 10,
+          "z": 11
+        },
+        {
+          "id": "monster-alive-default-b-2",
+          "image": "/sprites/decorations/bones-2.png",
+          "top": 19.6,
+          "left": 66.1,
+          "size": 9,
+          "z": 11
+        },
+        {
+          "id": "monster-alive-default-b-3",
+          "image": "/sprites/decorations/bones-2.png",
+          "top": 22.8,
+          "left": 39.8,
+          "size": 9,
           "z": 12
         },
         {
-          "id": "monster-cleared-default-3trees-1",
-          "image": "/sprites/decorations/spring_tree.gif",
-          "top": 38,
-          "left": 62,
-          "size": 28,
+          "id": "monster-alive-default-b-4",
+          "image": "/sprites/decorations/tool-4.png",
+          "top": 28.4,
+          "left": 49.5,
+          "size": 9,
+          "z": 12
+        },
+        {
+          "id": "monster-alive-default-b-5",
+          "image": "/sprites/decorations/rock-2.png",
+          "top": 29.1,
+          "left": 64.7,
+          "size": 9,
+          "z": 12
+        },
+        {
+          "id": "monster-alive-default-b-6",
+          "image": "/sprites/decorations/fungus-dark-1.png",
+          "top": 33,
+          "left": 78.5,
+          "size": 10,
+          "z": 13
+        },
+        {
+          "id": "monster-alive-default-b-7",
+          "image": "/sprites/decorations/tool-4.png",
+          "top": 57.5,
+          "left": 41.7,
+          "size": 9,
+          "z": 15
+        },
+        {
+          "id": "monster-alive-default-b-8",
+          "image": "/sprites/decorations/tool-3.png",
+          "top": 58.2,
+          "left": 49.3,
+          "size": 9,
+          "z": 15
+        }
+      ]
+    }
+  ],
+  "monster-cleared": [
+    {
+      "id": "monster-cleared-default-a",
+      "name": "Dead ground A",
+      "instances": [
+        {
+          "id": "monster-cleared-default-a-0",
+          "image": "/sprites/decorations/tool-2.png",
+          "top": 43.8,
+          "left": 55.9,
+          "size": 9,
           "z": 14
         },
         {
-          "id": "monster-cleared-default-3trees-2",
-          "image": "/sprites/decorations/autmn_tree.gif",
-          "top": 60,
-          "left": 58,
-          "size": 28,
+          "id": "monster-cleared-default-a-1",
+          "image": "/sprites/decorations/tool-1.png",
+          "top": 47.3,
+          "left": 42.3,
+          "size": 9,
+          "z": 14
+        },
+        {
+          "id": "monster-cleared-default-a-2",
+          "image": "/sprites/decorations/ash-2.png",
+          "top": 50.2,
+          "left": 84.3,
+          "size": 9,
+          "z": 15
+        },
+        {
+          "id": "monster-cleared-default-a-3",
+          "image": "/sprites/decorations/skull-spike-1.png",
+          "top": 53.8,
+          "left": 70.1,
+          "size": 11,
+          "z": 15
+        },
+        {
+          "id": "monster-cleared-default-a-4",
+          "image": "/sprites/decorations/ash-2.png",
+          "top": 57.7,
+          "left": 80.4,
+          "size": 9,
+          "z": 15
+        },
+        {
+          "id": "monster-cleared-default-a-5",
+          "image": "/sprites/decorations/rock-1.png",
+          "top": 63,
+          "left": 68.4,
+          "size": 9,
+          "z": 16
+        },
+        {
+          "id": "monster-cleared-default-a-6",
+          "image": "/sprites/decorations/ash-3.png",
+          "top": 68.2,
+          "left": 80.9,
+          "size": 9,
+          "z": 16
+        },
+        {
+          "id": "monster-cleared-default-a-7",
+          "image": "/sprites/decorations/tool-3.png",
+          "top": 71.6,
+          "left": 59.9,
+          "size": 9,
+          "z": 17
+        },
+        {
+          "id": "monster-cleared-default-a-8",
+          "image": "/sprites/decorations/rock-2.png",
+          "top": 76.1,
+          "left": 85,
+          "size": 9,
+          "z": 17
+        }
+      ]
+    },
+    {
+      "id": "monster-cleared-default-b",
+      "name": "Dead ground B",
+      "instances": [
+        {
+          "id": "monster-cleared-default-b-0",
+          "image": "/sprites/decorations/ash-1.png",
+          "top": 20,
+          "left": 45.6,
+          "size": 9,
+          "z": 12
+        },
+        {
+          "id": "monster-cleared-default-b-1",
+          "image": "/sprites/decorations/fungus-dark-2.png",
+          "top": 21.7,
+          "left": 36.4,
+          "size": 10,
+          "z": 12
+        },
+        {
+          "id": "monster-cleared-default-b-2",
+          "image": "/sprites/decorations/tool-3.png",
+          "top": 24.8,
+          "left": 52.9,
+          "size": 9,
+          "z": 12
+        },
+        {
+          "id": "monster-cleared-default-b-3",
+          "image": "/sprites/decorations/tool-3.png",
+          "top": 27.2,
+          "left": 23.4,
+          "size": 9,
+          "z": 12
+        },
+        {
+          "id": "monster-cleared-default-b-4",
+          "image": "/sprites/decorations/ash-1.png",
+          "top": 30.9,
+          "left": 31.3,
+          "size": 9,
           "z": 13
+        },
+        {
+          "id": "monster-cleared-default-b-5",
+          "image": "/sprites/decorations/fungus-dark-2.png",
+          "top": 33.6,
+          "left": 54.3,
+          "size": 10,
+          "z": 13
+        },
+        {
+          "id": "monster-cleared-default-b-6",
+          "image": "/sprites/decorations/ash-3.png",
+          "top": 44,
+          "left": 66.2,
+          "size": 9,
+          "z": 14
+        },
+        {
+          "id": "monster-cleared-default-b-7",
+          "image": "/sprites/decorations/tool-3.png",
+          "top": 51.1,
+          "left": 41.5,
+          "size": 9,
+          "z": 15
+        },
+        {
+          "id": "monster-cleared-default-b-8",
+          "image": "/sprites/decorations/fungus-dark-2.png",
+          "top": 66.9,
+          "left": 31.6,
+          "size": 10,
+          "z": 16
         }
       ]
     }

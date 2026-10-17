@@ -33,7 +33,7 @@ export interface IconModuleGroup {
   icons: IconRowViewModel[];
 }
 
-export type IconEditorStatus = 'idle' | 'saving' | 'saved' | 'error';
+export type IconEditorStatus = 'idle' | 'saving' | 'saved' | 'error' | 'conflict';
 
 export interface IconEditorViewModel {
   isLoading: boolean;

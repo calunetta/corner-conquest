@@ -1,3 +1,4 @@
+import { denyUnlessDevToolsAccess } from '@/lib/dev-tools/access';
 import { readFile } from 'fs/promises';
 import { NextResponse } from 'next/server';
 import { FRAME_DELAY_RANGE, type FogVariant } from '@/modules/map/components/TileFog/TileFog.config';
@@ -16,9 +17,8 @@ function isFrameDelay(value: unknown): value is number {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  if (process.env.NODE_ENV === 'production') {
-    return new Response(null, { status: 404 });
-  }
+  const denied = denyUnlessDevToolsAccess(request);
+  if (denied) return denied;
 
   const body = (await request.json()) as { id?: unknown; frameDelayMs?: unknown };
   if (typeof body.id !== 'string' || !isFrameDelay(body.frameDelayMs)) {

@@ -39,6 +39,11 @@ export function isTransformInRange(transform: TileTransform): boolean {
   );
 }
 
+/** The variants that draw this picture. A picture in use cannot be deleted until those variants stop using it. */
+export function variantsUsingImage(config: TileVariantsConfig, imagePath: string): TileVariant[] {
+  return config.variants.filter((variant) => variant.image === imagePath);
+}
+
 /** Returns an error message, or null when the variant can be saved. */
 export function validateVariant(config: TileVariantsConfig, variant: TileVariant, isNew: boolean): string | null {
   if (!(TILE_VARIANT_TYPES as readonly string[]).includes(variant.type)) return 'Pick a type.';

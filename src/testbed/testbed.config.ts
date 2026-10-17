@@ -1,9 +1,16 @@
+import type { ComponentPreview } from './testbed.types';
+
 /**
- * The testbed is a development tool: always on in `next dev`, and in a production
- * build only when NEXT_PUBLIC_ENABLE_TESTBED=true was set at build time.
+ * Component previews are a development tool: always on in `next dev`, never served by a production build.
  */
 export function isTestbedEnabled(): boolean {
-  return (
-    process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_ENABLE_TESTBED === 'true'
-  );
+  return process.env.NODE_ENV !== 'production';
+}
+
+/**
+ * Dev tools (the editors that write to the repo or the server) are the only previews a deployed site shows.
+ * They still need the dev-tools token; see `src/lib/dev-tools/access.ts`.
+ */
+export function isPreviewVisible(preview: ComponentPreview | undefined): boolean {
+  return isTestbedEnabled() || preview?.devTool === true;
 }

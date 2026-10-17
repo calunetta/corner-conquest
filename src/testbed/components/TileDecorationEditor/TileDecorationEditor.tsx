@@ -2,7 +2,8 @@
 
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { DecorationScenarioKey } from '@/modules/map';
-import { useTileDecorationEditor } from './TileDecorationEditor.hook';
+import { useDecorationSnapshots } from './TileDecorationEditor.snapshots.hook';
+import { useTileDecorationEditor, type DecorationSnapshots } from './TileDecorationEditor.hook';
 import { styles } from './TileDecorationEditor.styles';
 import type { TileDecorationEditorViewModel } from './TileDecorationEditor.types';
 import { TileDecorationEditorCanvas } from './TileDecorationEditorCanvas';
@@ -58,6 +59,9 @@ export function TileDecorationEditorView(viewModel: TileDecorationEditorViewMode
               onSelectInstance={viewModel.onSelectInstance}
               onDragInstance={viewModel.onDragInstance}
               onNudgeInstance={viewModel.onNudgeInstance}
+              onResizeInstance={viewModel.onResizeInstance}
+              artVariant={viewModel.artVariant}
+              artImages={viewModel.artImages}
             />
           ) : (
             <TileDecorationEditorDefaultElementsCanvas
@@ -79,6 +83,8 @@ export function TileDecorationEditorView(viewModel: TileDecorationEditorViewMode
             onResizeInstance={viewModel.onResizeInstance}
             onRelayerInstance={viewModel.onRelayerInstance}
             onRemoveInstance={viewModel.onRemoveInstance}
+            isDirty={viewModel.isDirty}
+            onDeleteImage={viewModel.onDeleteImage}
           />
         ) : (
           <TileDecorationEditorDefaultElementsInspector
@@ -95,7 +101,14 @@ export function TileDecorationEditorView(viewModel: TileDecorationEditorViewMode
   );
 }
 
-/** Connected component for the testbed: loads the config and image list through the editor hook. */
+/** Connected component for the testbed: loads the saved layouts and tile variants, then opens the editor on them. */
 export function TileDecorationEditor() {
-  return <TileDecorationEditorView {...useTileDecorationEditor()} />;
+  const snapshots = useDecorationSnapshots();
+  if (snapshots.status === 'loading') return <p role="status">Loading the saved decoration layouts…</p>;
+  if (snapshots.status === 'error') return <p role="alert">{snapshots.message}</p>;
+  return <LoadedTileDecorationEditor snapshots={snapshots.value} />;
+}
+
+function LoadedTileDecorationEditor({ snapshots }: { snapshots: DecorationSnapshots }) {
+  return <TileDecorationEditorView {...useTileDecorationEditor(snapshots)} />;
 }

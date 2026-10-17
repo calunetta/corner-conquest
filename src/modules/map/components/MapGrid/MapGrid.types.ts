@@ -3,6 +3,8 @@ import type { UseMapPanZoomResult } from './MapGrid.pan-zoom.hook';
 
 export interface MapGridViewModel {
   map: Island[];
+  /** The variant each tile draws, so look-alike tiles are kept apart. */
+  variantAssignments: ReadonlyMap<string, string>;
   cols: number;
   rows: number;
   isMobile: boolean;

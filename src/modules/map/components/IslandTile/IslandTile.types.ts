@@ -33,4 +33,6 @@ export interface IslandTileViewModel extends IslandTileStaticViewModel {
   borderImageSequence: [string, string, string];
   onClick: () => void;
   onCardRevealHidden: (id: string) => void;
+  /** False hides the tile's decorations, so a preview shows only the art. Defaults to true. */
+  showDecorations?: boolean;
 }

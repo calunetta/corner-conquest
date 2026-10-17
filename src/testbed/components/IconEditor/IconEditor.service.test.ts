@@ -1,4 +1,4 @@
-import { listIconUploads, saveIconOverrides, uploadIconImage } from './IconEditor.service';
+import { IconOverridesConflictError, listIconUploads, saveIconOverrides, uploadIconImage } from './IconEditor.service';
 
 const mockFetch = jest.fn();
 
@@ -60,22 +60,31 @@ describe('IconEditor.service', () => {
   });
 
   describe('saveIconOverrides', () => {
-    it('POSTs the overrides as JSON under an "overrides" key', async () => {
-      mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
+    it('POSTs the overrides and the sha the editor loaded, and returns the new sha', async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ ok: true, sha: 'next-sha' }));
 
-      await expect(saveIconOverrides({ swords: { rotation: 90 } })).resolves.toBeUndefined();
+      await expect(saveIconOverrides({ swords: { rotation: 90 } }, 'old-sha')).resolves.toEqual({ ok: true, sha: 'next-sha' });
 
       expect(mockFetch).toHaveBeenCalledWith('/api/icon-editor/overrides', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ overrides: { swords: { rotation: 90 } } }),
+        body: JSON.stringify({ overrides: { swords: { rotation: 90 } }, baseSha: 'old-sha' }),
       });
+    });
+
+    it('throws IconOverridesConflictError with the newer overrides on a 409', async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ overrides: { swords: { rotation: 10 } }, sha: 'live-sha' }, 409));
+
+      const error = await saveIconOverrides({}, 'stale').catch((caught: unknown) => caught);
+
+      expect(error).toBeInstanceOf(IconOverridesConflictError);
+      expect((error as IconOverridesConflictError).newer).toEqual({ overrides: { swords: { rotation: 10 } }, sha: 'live-sha' });
     });
 
     it('throws with the status code when the response is not ok', async () => {
       mockFetch.mockResolvedValue(emptyResponse(500));
 
-      await expect(saveIconOverrides({})).rejects.toThrow('Failed to save icon overrides: 500');
+      await expect(saveIconOverrides({}, 'sha')).rejects.toThrow('Failed to save icon overrides: 500');
     });
   });
 });

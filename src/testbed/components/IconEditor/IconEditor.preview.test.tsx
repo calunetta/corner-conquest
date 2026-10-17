@@ -1,7 +1,7 @@
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { iconEditorPreview } from './IconEditor.preview';
-import { listIconUploads, saveIconOverrides, uploadIconImage } from './IconEditor.service';
+import { listIconUploads, loadIconOverrides, saveIconOverrides, uploadIconImage } from './IconEditor.service';
 
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -13,6 +13,7 @@ jest.mock('next/image', () => ({
 
 jest.mock('./IconEditor.service', () => ({
   listIconUploads: jest.fn(),
+  loadIconOverrides: jest.fn(),
   saveIconOverrides: jest.fn(),
   uploadIconImage: jest.fn(),
 }));
@@ -38,7 +39,8 @@ describe('iconEditorPreview', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (listIconUploads as jest.Mock).mockResolvedValue([]);
-    (saveIconOverrides as jest.Mock).mockResolvedValue(undefined);
+    (loadIconOverrides as jest.Mock).mockResolvedValue({ overrides: {}, sha: 'base-sha' });
+    (saveIconOverrides as jest.Mock).mockResolvedValue({ sha: 'next-sha' });
     (uploadIconImage as jest.Mock).mockResolvedValue(UPLOADED_PATH);
   });
 

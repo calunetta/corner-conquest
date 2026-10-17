@@ -33,6 +33,7 @@ export const styles = {
         saving: 'text-muted-foreground opacity-100',
         saved: 'text-accent opacity-100',
         error: 'text-destructive opacity-100',
+        conflict: 'text-destructive opacity-100',
       },
     },
   }),
@@ -42,8 +43,10 @@ export const styles = {
   // z-[35]), so a decoration stays clickable/draggable in the editor even where it would render
   // behind an occupant/boat/resource in the live game.
   decorationOverlay: 'pointer-events-none absolute inset-0.5 z-[60]',
+  // Corner handle on the selected decoration; the pointer-events-auto keeps it grabbable above the drag layer.
+  resizeHandle: 'pointer-events-auto absolute h-4 w-4 cursor-nwse-resize touch-none rounded-sm border-2 border-primary bg-background shadow',
   sprite: cva(
-    'pointer-events-auto absolute cursor-grab touch-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing',
+    'pointer-events-auto absolute !cursor-move touch-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
     {
       variants: {
         isSelected: {
@@ -53,15 +56,19 @@ export const styles = {
       },
     },
   ),
-  spriteImage: 'object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]',
+  spriteImage: 'pointer-events-none select-none object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]',
   emptyHint: 'pointer-events-none absolute inset-0 z-[61] flex items-center justify-center rounded-lg border border-dashed border-white/30 p-4 text-center text-sm text-muted-foreground',
   imageGrid: 'grid grid-cols-4 gap-2',
+  imageButtonSelected: 'border-primary ring-2 ring-primary',
+  imageActions: 'mt-3 flex flex-col gap-2',
+  imageActionsName: 'truncate text-xs text-white/70',
   imageButton: 'relative aspect-square overflow-hidden rounded-md border border-white/10 bg-white/5 p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
   imageThumbnail: 'object-contain',
   fieldStack: 'flex flex-col gap-3',
   instanceFields: 'grid grid-cols-2 gap-2',
   icon: 'h-4 w-4',
   readout: 'font-mono text-xs text-muted-foreground',
+  sizeSlider: 'w-full accent-primary',
   emptyText: 'text-sm text-muted-foreground',
   inlineAnchor: 'inline-flex',
   srOnly: 'sr-only',

@@ -1,3 +1,8 @@
+import {
+  anonymousRequest,
+  authorizedRequest,
+  TEST_DEV_TOOLS_PASSWORD,
+} from '@/lib/dev-tools/access.test-utils';
 // Same harness as src/app/api/icon-editor/uploads/route.test.ts: jsdom lacks Request/Response/fetch,
 // which next/server needs, so polyfill from undici before the route loads (plain require, not import).
 /* eslint-disable @typescript-eslint/no-require-imports -- see comment above */
@@ -13,7 +18,7 @@ jest.mock('fs/promises', () => ({
   mkdir: jest.fn(),
   writeFile: jest.fn(),
   readFile: jest.fn(),
-  unlink: jest.fn(),
+  rm: jest.fn(),
 }));
 
 import path from 'path';
@@ -21,7 +26,6 @@ import type {
   mkdir as MkdirFn,
   readdir as ReaddirFn,
   readFile as ReadFileFn,
-  unlink as UnlinkFn,
   writeFile as WriteFileFn,
 } from 'fs/promises';
 import type { DELETE as DeleteFn, PATCH as PatchFn, POST as PostFn } from './route';
@@ -31,12 +35,12 @@ import {
   renderMonsterNameSource,
 } from '@/modules/game-rules/monster-catalog-generator';
 
-const { readdir, mkdir, writeFile, readFile, unlink } = require('fs/promises') as {
+const { readdir, mkdir, writeFile, readFile, rm } = require('fs/promises') as {
   readdir: jest.Mock & typeof ReaddirFn;
   mkdir: jest.Mock & typeof MkdirFn;
   writeFile: jest.Mock & typeof WriteFileFn;
   readFile: jest.Mock & typeof ReadFileFn;
-  unlink: jest.Mock & typeof UnlinkFn;
+  rm: jest.Mock;
 };
 const { POST, PATCH, DELETE } = require('./route') as {
   POST: typeof PostFn;
@@ -50,10 +54,6 @@ const CATALOG_PATH = path.join(process.cwd(), 'src/modules/game-rules/monster-ca
 const NAMES_PATH = path.join(process.cwd(), 'src/lib/types/monsters.generated.ts');
 const GIF_BYTES = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]);
 
-function setNodeEnv(value: string): void {
-  Object.defineProperty(process.env, 'NODE_ENV', { value, configurable: true });
-}
-
 function spriteFile(name: string, bytes: Uint8Array = GIF_BYTES): File {
   const file = new File([bytes], name, { type: 'image/gif' });
   Object.defineProperty(file, 'arrayBuffer', { value: async () => bytes.buffer });
@@ -66,7 +66,7 @@ function postUpload(fields: Record<string, FormDataEntryValue | undefined>): Pro
   for (const [key, value] of Object.entries(fields)) {
     if (value !== undefined) entries.set(key, value);
   }
-  const request = { formData: async () => ({ get: (key: string) => entries.get(key) ?? null }) as unknown as FormData } as unknown as Request;
+  const request = { ...authorizedRequest(), formData: async () => ({ get: (key: string) => entries.get(key) ?? null }) as unknown as FormData } as unknown as Request;
   return POST(request);
 }
 
@@ -77,26 +77,26 @@ const validFields = (): Record<string, FormDataEntryValue> => ({
   idle: spriteFile('idle.gif'),
 });
 
+process.env.DEV_TOOLS_PASSWORD = TEST_DEV_TOOLS_PASSWORD;
+
 describe('POST /api/monster-catalog', () => {
-  const originalNodeEnv = process.env.NODE_ENV;
 
   beforeEach(() => {
     readdir.mockResolvedValue([]);
+    readFile.mockImplementation(async (filePath: string) => (filePath.endsWith('.generated.ts') ? '' : GIF_BYTES));
     mkdir.mockResolvedValue(undefined);
+    rm.mockResolvedValue(undefined);
     writeFile.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
-    setNodeEnv(originalNodeEnv);
     jest.clearAllMocks();
   });
 
-  it('returns 404 and writes nothing in production', async () => {
-    setNodeEnv('production');
+  it('returns 401 without a token and writes nothing', async () => {
+    const response = await POST(anonymousRequest());
 
-    const response = await postUpload(validFields());
-
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
     expect(writeFile).not.toHaveBeenCalled();
     expect(mkdir).not.toHaveBeenCalled();
   });
@@ -226,7 +226,6 @@ describe('POST /api/monster-catalog', () => {
 });
 
 describe('PATCH /api/monster-catalog', () => {
-  const originalNodeEnv = process.env.NODE_ENV;
   const SEED_FILES = [
     'lancer-lvl1-idle.gif',
     'lancer-lvl1-attack.gif',
@@ -241,34 +240,31 @@ describe('PATCH /api/monster-catalog', () => {
   const FILE_BYTES = Buffer.from('GIF89a');
 
   function patch(body: unknown): Promise<Response> {
-    return PATCH({ json: async () => body } as unknown as Request);
+    return PATCH({ ...authorizedRequest(), json: async () => body } as unknown as Request);
   }
 
   const fireOgreEdit = { name: 'Fire Ogre', level: 2, nextLevel: 2, nextIsBoss: false };
 
   function expectNothingChanged(): void {
     expect(writeFile).not.toHaveBeenCalled();
-    expect(unlink).not.toHaveBeenCalled();
+    expect(rm).not.toHaveBeenCalled();
   }
 
   beforeEach(() => {
     readdir.mockResolvedValue([...SEED_FILES, ...OGRE_FILES]);
-    readFile.mockResolvedValue(FILE_BYTES);
+    readFile.mockImplementation(async (filePath: string) => (filePath.endsWith('.generated.ts') ? '' : GIF_BYTES));
     writeFile.mockResolvedValue(undefined);
-    unlink.mockResolvedValue(undefined);
+    rm.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
-    setNodeEnv(originalNodeEnv);
     jest.resetAllMocks();
   });
 
-  it('returns 404 and writes nothing in production', async () => {
-    setNodeEnv('production');
+  it('returns 401 without a token and writes nothing', async () => {
+    const response = await PATCH(anonymousRequest());
 
-    const response = await patch({ ...fireOgreEdit, nextIsBoss: true });
-
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
     expectNothingChanged();
   });
 
@@ -284,6 +280,7 @@ describe('PATCH /api/monster-catalog', () => {
 
   it('returns 400 when the body is not valid JSON', async () => {
     const response = await PATCH({
+      ...authorizedRequest(),
       json: async () => {
         throw new SyntaxError('bad json');
       },
@@ -347,7 +344,7 @@ describe('PATCH /api/monster-catalog', () => {
     ].sort();
     const expectedEntries = buildMonsterCatalogEntries(nextFilenames);
     expect(response.status).toBe(200);
-    expect(readFile.mock.calls).toEqual([
+    expect(readFile.mock.calls.filter(([filePath]: [string]) => filePath.includes('/public/monster/'))).toEqual([
       [path.join(SPRITE_DIR, 'fire-ogre-lvl2-idle.gif')],
       [path.join(SPRITE_DIR, 'fire-ogre-lvl2-attack.gif')],
     ]);
@@ -357,7 +354,7 @@ describe('PATCH /api/monster-catalog', () => {
       [CATALOG_PATH, renderMonsterCatalogSource(expectedEntries)],
       [NAMES_PATH, renderMonsterNameSource(expectedEntries.map((entry) => entry.name))],
     ]);
-    expect(unlink.mock.calls).toEqual([
+    expect(rm.mock.calls.map(([filePath]: [string]) => [filePath])).toEqual([
       [path.join(SPRITE_DIR, 'fire-ogre-lvl2-idle.gif')],
       [path.join(SPRITE_DIR, 'fire-ogre-lvl2-attack.gif')],
     ]);
@@ -386,7 +383,7 @@ describe('PATCH /api/monster-catalog', () => {
       [CATALOG_PATH, renderMonsterCatalogSource(expectedEntries)],
       [NAMES_PATH, renderMonsterNameSource(expectedEntries.map((entry) => entry.name))],
     ]);
-    expect(unlink.mock.calls).toEqual([
+    expect(rm.mock.calls.map(([filePath]: [string]) => [filePath])).toEqual([
       [path.join(SPRITE_DIR, 'fire-ogre-lvl2-idle.gif')],
       [path.join(SPRITE_DIR, 'fire-ogre-lvl2-attack.gif')],
     ]);
@@ -400,7 +397,6 @@ describe('PATCH /api/monster-catalog', () => {
 });
 
 describe('DELETE /api/monster-catalog', () => {
-  const originalNodeEnv = process.env.NODE_ENV;
   const SEED_FILES = [
     'lancer-lvl1-idle.gif',
     'lancer-lvl1-attack.gif',
@@ -414,31 +410,29 @@ describe('DELETE /api/monster-catalog', () => {
   const OGRE_FILES = ['fire-ogre-lvl2-idle.gif', 'fire-ogre-lvl2-attack.gif'];
 
   function remove(body: unknown): Promise<Response> {
-    return DELETE({ json: async () => body } as unknown as Request);
+    return DELETE({ ...authorizedRequest(), json: async () => body } as unknown as Request);
   }
 
   function expectNothingChanged(): void {
     expect(writeFile).not.toHaveBeenCalled();
-    expect(unlink).not.toHaveBeenCalled();
+    expect(rm).not.toHaveBeenCalled();
   }
 
   beforeEach(() => {
     readdir.mockResolvedValue([...SEED_FILES, ...OGRE_FILES]);
+    readFile.mockImplementation(async (filePath: string) => (filePath.endsWith('.generated.ts') ? '' : GIF_BYTES));
     writeFile.mockResolvedValue(undefined);
-    unlink.mockResolvedValue(undefined);
+    rm.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
-    setNodeEnv(originalNodeEnv);
     jest.resetAllMocks();
   });
 
-  it('returns 404 and writes and unlinks nothing in production', async () => {
-    setNodeEnv('production');
+  it('returns 401 without a token and writes and unlinks nothing', async () => {
+    const response = await DELETE(anonymousRequest());
 
-    const response = await remove({ name: 'Fire Ogre', level: 2 });
-
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
     expectNothingChanged();
   });
 
@@ -453,6 +447,7 @@ describe('DELETE /api/monster-catalog', () => {
 
   it('returns 400 when the body is not valid JSON', async () => {
     const response = await DELETE({
+      ...authorizedRequest(),
       json: async () => {
         throw new SyntaxError('bad json');
       },
@@ -486,12 +481,12 @@ describe('DELETE /api/monster-catalog', () => {
 
     const expectedEntries = buildMonsterCatalogEntries(SEED_FILES);
     expect(response.status).toBe(200);
-    expect(body).toEqual({ removed: true });
+    expect(body).toEqual(expect.objectContaining({ removed: true }));
     expect(writeFile.mock.calls).toEqual([
       [CATALOG_PATH, renderMonsterCatalogSource(expectedEntries)],
       [NAMES_PATH, renderMonsterNameSource(expectedEntries.map((entry) => entry.name))],
     ]);
-    expect(unlink.mock.calls).toEqual([
+    expect(rm.mock.calls.map(([filePath]: [string]) => [filePath])).toEqual([
       [path.join(SPRITE_DIR, 'fire-ogre-lvl2-idle.gif')],
       [path.join(SPRITE_DIR, 'fire-ogre-lvl2-attack.gif')],
     ]);
@@ -503,7 +498,7 @@ describe('DELETE /api/monster-catalog', () => {
     const response = await remove({ name: 'Fire Ogre', level: 2 });
 
     expect(response.status).toBe(200);
-    expect(unlink.mock.calls).toEqual([[path.join(SPRITE_DIR, 'fire-ogre-lvl2-idle.gif')]]);
+    expect(rm.mock.calls.map(([filePath]: [string]) => [filePath])).toEqual([[path.join(SPRITE_DIR, 'fire-ogre-lvl2-idle.gif')]]);
     expect(writeFile).toHaveBeenCalledTimes(2);
   });
 });

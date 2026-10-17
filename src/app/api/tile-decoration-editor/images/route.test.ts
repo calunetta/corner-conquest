@@ -1,3 +1,4 @@
+import { anonymousRequest, authorizedRequest, TEST_DEV_TOOLS_PASSWORD } from '@/lib/dev-tools/access.test-utils';
 // jsdom (this project's default test environment) has no Web Request/Response/fetch globals,
 // which next/server's route handlers need even for a GET with no request body. Polyfill from
 // undici (already a transitive Next.js dependency) before importing the route under test.
@@ -28,23 +29,18 @@ const { GET } = require('./route') as { GET: typeof GetFn };
 
 const mockReaddir = readdir as jest.Mock;
 
-// @types/node types NODE_ENV as readonly; Object.defineProperty bypasses that for this test only.
-function setNodeEnv(value: string): void {
-  Object.defineProperty(process.env, 'NODE_ENV', { value, configurable: true });
-}
+process.env.DEV_TOOLS_PASSWORD = TEST_DEV_TOOLS_PASSWORD;
 
 describe('GET /api/tile-decoration-editor/images', () => {
-  const originalNodeEnv = process.env.NODE_ENV;
 
   afterEach(() => {
-    setNodeEnv(originalNodeEnv);
     jest.clearAllMocks();
   });
 
   it('returns the discovered files, filtered to image extensions and prefixed with /sprites/decorations/', async () => {
     mockReaddir.mockResolvedValue(['tree.gif', 'notes.txt', 'pine.PNG', 'icon.webp']);
 
-    const response = await GET();
+    const response = await GET(authorizedRequest());
     const body = (await response.json()) as { images: string[] };
 
     expect(response.status).toBe(200);
@@ -58,19 +54,17 @@ describe('GET /api/tile-decoration-editor/images', () => {
   it('returns an empty list when the directory has no files', async () => {
     mockReaddir.mockResolvedValue([]);
 
-    const response = await GET();
+    const response = await GET(authorizedRequest());
     const body = (await response.json()) as { images: string[] };
 
     expect(response.status).toBe(200);
     expect(body.images).toEqual([]);
   });
 
-  it('returns 404 and never reads the filesystem in production', async () => {
-    setNodeEnv('production');
+  it('returns 401 without a token and never reads the filesystem', async () => {
+    const response = await GET(anonymousRequest());
 
-    const response = await GET();
-
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
     expect(mockReaddir).not.toHaveBeenCalled();
   });
 });

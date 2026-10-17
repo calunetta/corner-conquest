@@ -7,7 +7,7 @@ import { tileResourcesPreview } from '@/modules/map/components/TileResources/Til
 import { tileBoatsPreview } from '@/modules/map/components/TileBoats/TileBoats.preview';
 import { tileOccupantsPreview } from '@/modules/map/components/TileOccupants/TileOccupants.preview';
 import { islandTilePreview } from '@/modules/map/components/IslandTile/IslandTile.preview';
-import { tileFogPreview } from '@/modules/map/components/TileFog/TileFog.preview';
+import { tileFogEditorPreview, tileFogPreview } from '@/modules/map/components/TileFog/TileFog.preview';
 import { mapDecorationsPreview } from '@/modules/map/components/MapDecorations/MapDecorations.preview';
 import { mapGridPreview } from '@/modules/map/components/MapGrid/MapGrid.preview';
 import { combatDialogPreview } from '@/modules/combat/components/CombatDialog/CombatDialog.preview';
@@ -49,6 +49,7 @@ import { rejoinMatchPanelPreview } from '@/modules/lobby/components/RejoinMatchP
 import { tileDecorationEditorPreview } from '@/testbed/components/TileDecorationEditor/TileDecorationEditor.preview';
 import { monsterSpriteUploaderPreview } from '@/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.preview';
 import { tileVariantEditorPreview } from '@/testbed/components/TileVariantEditor/TileVariantEditor.preview';
+import { tileVariantGalleryPreview } from '@/testbed/components/TileVariantGallery/TileVariantGallery.preview';
 import { iconEditorPreview } from '@/testbed/components/IconEditor/IconEditor.preview';
 import type { ComponentPreview } from './testbed.types';
 
@@ -64,6 +65,7 @@ export const previews: ComponentPreview[] = [
   tileOccupantsPreview,
   islandTilePreview,
   tileFogPreview,
+  tileFogEditorPreview,
   mapDecorationsPreview,
   mapGridPreview,
   combatDialogPreview,
@@ -105,6 +107,7 @@ export const previews: ComponentPreview[] = [
   tileDecorationEditorPreview,
   monsterSpriteUploaderPreview,
   tileVariantEditorPreview,
+  tileVariantGalleryPreview,
   iconEditorPreview,
 ];
 

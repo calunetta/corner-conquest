@@ -8,6 +8,7 @@ export const iconEditorPreview: ComponentPreview = {
   slug: 'icon-editor',
   title: 'Icon Editor',
   group: 'Dev tools',
+  devTool: true,
   states: [
     { name: 'Editor', render: () => <IconEditor /> },
   ],

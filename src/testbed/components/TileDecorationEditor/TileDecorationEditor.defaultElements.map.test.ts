@@ -236,7 +236,7 @@ describe('toSlotsForRow', () => {
     expect(slots).toHaveLength(3);
     expect(slots.map((slot) => slot.id)).toEqual(['node-0', 'node-1', 'node-2']);
     expect(slots.every((slot) => slot.image !== '')).toBe(true);
-    expect(slots[1].style).toEqual({ top: '45%', right: '-17%' });
+    expect(slots[1].style).toEqual({ top: '40%', right: '-12%' });
     expect(slots[1].size).toBe(30);
   });
 

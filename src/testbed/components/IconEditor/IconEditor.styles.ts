@@ -15,6 +15,7 @@ export const styles = {
         saving: 'text-muted-foreground opacity-100',
         saved: 'text-accent opacity-100',
         error: 'text-destructive opacity-100',
+        conflict: 'text-destructive opacity-100',
       },
     },
   }),

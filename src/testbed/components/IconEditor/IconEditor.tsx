@@ -14,6 +14,7 @@ const STATUS_TEXT: Record<IconEditorStatus, string> = {
   saving: '',
   saved: 'Saved.',
   error: 'Could not save — see console.',
+  conflict: 'Changed elsewhere. Reload the page to load the saved overrides; unsaved edits will be lost.',
 };
 
 function IconEditorLoading() {

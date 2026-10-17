@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { IconOverridesConfig } from '@/modules/icons';
 import { useIconEditor } from './IconEditor.hook';
-import { listIconUploads, saveIconOverrides, uploadIconImage } from './IconEditor.service';
+import { listIconUploads, loadIconOverrides, saveIconOverrides, uploadIconImage } from './IconEditor.service';
 import type { IconEditorViewModel } from './IconEditor.types';
 
 // The hook calls structuredClone when it initialises its state; jsdom (this project's test
@@ -22,9 +22,13 @@ jest.mock('@/modules/icons', () => {
 
 jest.mock('./IconEditor.service', () => ({
   listIconUploads: jest.fn(),
+  loadIconOverrides: jest.fn(),
   uploadIconImage: jest.fn(),
   saveIconOverrides: jest.fn(),
+  IconOverridesConflictError: class IconOverridesConflictError extends Error {},
 }));
+
+const mockLoadIconOverrides = loadIconOverrides as jest.Mock;
 
 const mockListIconUploads = listIconUploads as jest.Mock;
 const mockUploadIconImage = uploadIconImage as jest.Mock;
@@ -61,7 +65,8 @@ describe('useIconEditor', () => {
   beforeEach(() => {
     mockListIconUploads.mockResolvedValue([]);
     mockUploadIconImage.mockResolvedValue(UPLOADED_PATH);
-    mockSaveIconOverrides.mockResolvedValue(undefined);
+    mockLoadIconOverrides.mockResolvedValue({ overrides: jest.requireActual('./IconEditor.fixtures').sampleSavedOverrides, sha: 'base-sha' });
+    mockSaveIconOverrides.mockResolvedValue({ sha: 'next-sha' });
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
@@ -72,26 +77,35 @@ describe('useIconEditor', () => {
   });
 
   describe('initial state', () => {
-    it('starts loading and stops once listIconUploads resolves', async () => {
-      let resolveList!: (images: string[]) => void;
-      mockListIconUploads.mockReturnValue(new Promise<string[]>((resolve) => { resolveList = resolve; }));
+    it('starts loading and stops once the saved overrides resolve', async () => {
+      let resolveLoad!: (snapshot: { overrides: IconOverridesConfig; sha: string }) => void;
+      mockLoadIconOverrides.mockReturnValue(new Promise((resolve) => { resolveLoad = resolve; }));
 
       const { result } = renderHook(() => useIconEditor());
       expect(result.current.isLoading).toBe(true);
 
       await act(async () => {
-        resolveList([]);
+        resolveLoad({ overrides: {}, sha: 'base-sha' });
       });
       expect(result.current.isLoading).toBe(false);
     });
 
-    it('stops loading and logs the error when listIconUploads rejects', async () => {
+    it('stops loading and logs the error when the saved overrides fail to load', async () => {
       const failure = new Error('network down');
-      mockListIconUploads.mockRejectedValue(failure);
+      mockLoadIconOverrides.mockRejectedValue(failure);
 
       const { result } = await renderEditor();
 
       expect(result.current.isLoading).toBe(false);
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to load icon overrides', failure);
+    });
+
+    it('logs the error when listIconUploads rejects', async () => {
+      const failure = new Error('network down');
+      mockListIconUploads.mockRejectedValue(failure);
+
+      await renderEditor();
+
       expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to list icon uploads', failure);
     });
 
@@ -246,7 +260,7 @@ describe('useIconEditor', () => {
         result.current.onSave();
       });
 
-      expect(mockSaveIconOverrides).toHaveBeenCalledWith({ info: { rotation: 45 }, swords: { rotation: 90 } });
+      expect(mockSaveIconOverrides).toHaveBeenCalledWith({ info: { rotation: 45 }, swords: { rotation: 90 } }, 'base-sha');
       expect(result.current.status).toBe('saved');
       expect(findIcon(result, 'swords')).toMatchObject({ hasSavedOverride: true, isDirty: false });
       expect(findIcon(result, 'info')).toMatchObject({ isDirty: false });
@@ -274,7 +288,7 @@ describe('useIconEditor', () => {
     });
 
     it('shows status "saving" while the request is in flight', async () => {
-      const pending = deferred<void>();
+      const pending = deferred<{ sha: string }>();
       mockSaveIconOverrides.mockReturnValue(pending.promise);
       const { result } = await renderEditor();
 
@@ -284,13 +298,13 @@ describe('useIconEditor', () => {
       expect(result.current.status).toBe('saving');
 
       await act(async () => {
-        pending.resolve();
+        pending.resolve({ sha: 'next-sha' });
       });
       expect(result.current.status).toBe('saved');
     });
 
     it('keeps a row edited while the save was in flight dirty after the save resolves', async () => {
-      const pending = deferred<void>();
+      const pending = deferred<{ sha: string }>();
       mockSaveIconOverrides.mockReturnValue(pending.promise);
       const { result } = await renderEditor();
 
@@ -305,7 +319,7 @@ describe('useIconEditor', () => {
       });
 
       await act(async () => {
-        pending.resolve();
+        pending.resolve({ sha: 'next-sha' });
       });
 
       expect(findIcon(result, 'swords')).toMatchObject({ rotation: 60, hasSavedOverride: true, isDirty: true });

@@ -1,14 +1,19 @@
 import type { MonsterCatalogEntry } from '@/modules/game-rules';
-import type {
-  AddMonsterErrorBody,
-  AddMonsterResponseBody,
-  CatalogEdit,
-  CatalogRemoval,
-  UpdateMonsterResponseBody,
-  UploadField,
-} from './MonsterSpriteUploader.types';
+import type { AddMonsterErrorBody, CatalogEdit, CatalogRemoval, UploadField } from './MonsterSpriteUploader.types';
 
 const ENDPOINT = '/api/monster-catalog';
+
+/** The catalog as the live copy has it, and the sha the next change must send back. */
+export interface CatalogSnapshot {
+  entries: MonsterCatalogEntry[];
+  sha: string;
+}
+
+/** What a saved change returns: the new catalog, its sha, and the pull request it landed in (null locally). */
+export interface CatalogSaveResult extends CatalogSnapshot {
+  entry?: MonsterCatalogEntry;
+  pullRequestUrl: string | null;
+}
 
 export interface AddMonsterRequest {
   name: string;
@@ -18,67 +23,69 @@ export interface AddMonsterRequest {
   attackFile: File | null;
 }
 
-/** Thrown by both the add and the edit call; `field` is set when the server names the bad input. */
+/**
+ * Thrown by every catalog call. `field` is set when the server names the bad input. `newer` is set on a
+ * conflict: the catalog changed elsewhere, and this is the saved version to reload.
+ */
 export class AddMonsterError extends Error {
   field?: UploadField;
+  newer?: CatalogSnapshot;
 
-  constructor(message: string, field?: UploadField) {
+  constructor(message: string, field?: UploadField, newer?: CatalogSnapshot) {
     super(message);
     this.name = 'AddMonsterError';
     this.field = field;
-  }
-}
-
-async function readErrorBody(response: Response): Promise<AddMonsterErrorBody | null> {
-  try {
-    return (await response.json()) as AddMonsterErrorBody;
-  } catch {
-    return null;
+    this.newer = newer;
   }
 }
 
 async function throwIfNotOk(response: Response): Promise<void> {
   if (response.ok) return;
-  const body = await readErrorBody(response);
-  throw new AddMonsterError(body?.error ?? `Failed to add monster: ${response.status}`, body?.field ?? undefined);
+  const body = (await response.json().catch(() => null)) as (AddMonsterErrorBody & Partial<CatalogSnapshot>) | null;
+  const newer = response.status === 409 && body?.entries && body.sha ? { entries: body.entries, sha: body.sha } : undefined;
+  throw new AddMonsterError(body?.error ?? `Failed to change the monster catalog: ${response.status}`, body?.field ?? undefined, newer);
 }
 
-/** POSTs the sprite files to the dev-only route, which also regenerates the catalog sources.
- *  Throws AddMonsterError (with `field` when the server named one) on a non-ok response. */
-export async function addMonster(request: AddMonsterRequest): Promise<MonsterCatalogEntry> {
+/** The saved catalog and its sha, for the editor's first load. */
+export async function loadCatalog(): Promise<CatalogSnapshot> {
+  const response = await fetch(ENDPOINT);
+  await throwIfNotOk(response);
+  return (await response.json()) as CatalogSnapshot;
+}
+
+/** POSTs the sprite files with the catalog sha the editor holds. */
+export async function addMonster(request: AddMonsterRequest, baseSha: string): Promise<CatalogSaveResult> {
   const formData = new FormData();
   formData.set('name', request.name);
   formData.set('level', String(request.level));
   formData.set('isBoss', String(request.isBoss));
   formData.set('idle', request.idleFile);
   if (request.attackFile) formData.set('attack', request.attackFile);
+  formData.set('baseSha', baseSha);
 
   const response = await fetch(ENDPOINT, { method: 'POST', body: formData });
   await throwIfNotOk(response);
-  const body = (await response.json()) as AddMonsterResponseBody;
-  return body.entry;
+  return (await response.json()) as CatalogSaveResult;
 }
 
-/** PATCHes a monster's level and Boss flag; the route moves its sprite files and regenerates the
- *  catalog. Throws AddMonsterError on a non-ok response. */
-export async function updateMonster(edit: CatalogEdit): Promise<MonsterCatalogEntry> {
+/** PATCHes a monster's level and Boss flag, with the catalog sha the editor holds. */
+export async function updateMonster(edit: CatalogEdit, baseSha: string): Promise<CatalogSaveResult> {
   const response = await fetch(ENDPOINT, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(edit),
+    body: JSON.stringify({ ...edit, baseSha }),
   });
   await throwIfNotOk(response);
-  const body = (await response.json()) as UpdateMonsterResponseBody;
-  return body.entry;
+  return (await response.json()) as CatalogSaveResult;
 }
 
-/** DELETEs an uploaded monster; the route removes its sprite file(s) and regenerates the catalog.
- *  Throws AddMonsterError on a non-ok response. */
-export async function deleteMonster(removal: CatalogRemoval): Promise<void> {
+/** DELETEs an uploaded monster, with the catalog sha the editor holds. */
+export async function deleteMonster(removal: CatalogRemoval, baseSha: string): Promise<CatalogSaveResult> {
   const response = await fetch(ENDPOINT, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(removal),
+    body: JSON.stringify({ ...removal, baseSha }),
   });
   await throwIfNotOk(response);
+  return (await response.json()) as CatalogSaveResult;
 }

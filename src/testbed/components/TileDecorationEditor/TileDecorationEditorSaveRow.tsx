@@ -10,6 +10,7 @@ const STATUS_TEXT: Record<EditorStatus, string> = {
   saving: '',
   saved: 'Saved.',
   error: 'Could not save — see console.',
+  conflict: 'Changed elsewhere. Reload the page to load the saved version; unsaved edits will be lost.',
 };
 
 interface TileDecorationEditorSaveRowProps {

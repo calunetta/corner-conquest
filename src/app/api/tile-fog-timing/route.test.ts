@@ -1,3 +1,4 @@
+import { AUTHORIZED_HEADERS, TEST_DEV_TOOLS_PASSWORD } from '@/lib/dev-tools/access.test-utils';
 // jsdom has no Web Request/Response globals; polyfill before importing the route (see the
 // tile-decoration-editor route tests for why this uses require).
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -13,6 +14,10 @@ import type { POST as PostFn } from './route';
 
 jest.mock('fs/promises', () => ({
   writeFile: jest.fn(),
+  mkdir: jest.fn(),
+  rm: jest.fn(),
+  readdir: jest.fn(),
+  readFile: jest.fn(),
 }));
 
 const { writeFile } = require('fs/promises') as { writeFile: jest.Mock & typeof WriteFileFn };
@@ -30,7 +35,9 @@ const validTiming = {
 };
 
 const postTiming = (body: unknown) =>
-  POST(new Request('http://localhost/api/tile-fog-timing', { method: 'POST', body: JSON.stringify(body) }));
+  POST(new Request('http://localhost/api/tile-fog-timing', { headers: AUTHORIZED_HEADERS, method: 'POST', body: JSON.stringify(body) }));
+
+process.env.DEV_TOOLS_PASSWORD = TEST_DEV_TOOLS_PASSWORD;
 
 describe('POST /api/tile-fog-timing', () => {
   beforeEach(() => {

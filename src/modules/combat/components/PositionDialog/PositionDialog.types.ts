@@ -1,7 +1,8 @@
-import type { IslandResource, ResourceType } from '@/lib/types';
+import type { IslandResource, PlayerColor, ResourceType } from '@/lib/types';
 
 export interface PositionDialogProps {
   resources: IslandResource[];
+  color: PlayerColor;
   onSelect: (resource: ResourceType) => void;
   onClose: () => void;
 }

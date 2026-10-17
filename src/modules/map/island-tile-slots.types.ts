@@ -66,7 +66,7 @@ export interface SlotDef {
 // values resolved to (top' = top + size/2, etc.) — unscaled (Wood/Gold) placement is unchanged.
 export const SINGLE_RESOURCE_SLOT: SlotDef = {
   top: '50%',
-  left: '50%',
+  left: '57%',
   size: 40,
 };
 
@@ -80,7 +80,7 @@ export const DUAL_RESOURCE_SLOTS: SlotDef[] = [
 // Slot 1's left corrected 12% -> 24% (same gap as above); slots 2-3 already clear by their
 // vertical offset (46%/70% fall outside the 0-22%/78-100% bands) and are unchanged.
 export const TRIPLE_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '20%', left: '45%', size: 40 },
+  { top: '27%', left: '49%', size: 40 },
   { top: '45%', left: '75%', size: 40 },
   { top: '55%', left: '35%', size: 40 },
 ];
@@ -114,17 +114,17 @@ export const BASE_CREST_MIN_PX = 18; // base crest's floor, so it stays legible 
 export const SPECIAL_ISLAND_SIZE = 35; // special island's idle-art box width/height, % of the tile's padded content box
 // Special island's center point, same top/left-is-center convention as the resource slots above
 // (consumer centers on it with transform: translate(-50%, -50%)). Currently dead center; edit to move it.
-export const SPECIAL_ISLAND_TOP = '40%';
-export const SPECIAL_ISLAND_LEFT = '50%';
+export const SPECIAL_ISLAND_TOP = '53%';
+export const SPECIAL_ISLAND_LEFT = '55%';
 export const BORDER_DECORATION_WIDTH_PX = 40; // each castle-border image's box width, px (fixed, not % of T)
 export const BORDER_DECORATION_HEIGHT_PX = 20; // each castle-border image's box height, px (fixed, not % of T)
 export const BORDER_DECORATION_BOTTOM_OFFSET_PX = -11; // border row's offset below the tile's bottom edge, px
 
 // Edge-midpoint slots keep clear of the boat and occupant corner anchors. Unchanged.
 export const BASE_RESOURCE_SLOTS: SlotDef[] = [
-  { top: '60%', left: '20%', size: 30 },
-  { top: '45%', right: '-17%', size: 30 },
-  { top: '15%', left: '50%', size: 30 },
+  { top: '66%', left: '24%', size: 30 },
+  { top: '40%', right: '-12%', size: 30 },
+  { top: '22%', left: '48%', size: 30 },
 ];
 
 /** The editable subset of this file's own exports: every value the Default-elements editor

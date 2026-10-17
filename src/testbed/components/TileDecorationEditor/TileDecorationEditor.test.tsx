@@ -20,6 +20,10 @@ jest.mock('next/image', () => ({
 }));
 
 jest.mock('./TileDecorationEditor.hook', () => ({ useTileDecorationEditor: jest.fn() }));
+jest.mock('./TileDecorationEditor.service', () => ({
+  loadDecorationLayouts: jest.fn(() => Promise.resolve({ config: {}, sha: 'layouts-sha' })),
+  loadTileVariants: jest.fn(() => Promise.resolve({ config: {}, sha: 'variants-sha' })),
+}));
 
 const BASE_IMAGE = sampleDecorationImages[0];
 const FIRST_BASE_INSTANCE_ID = 'base-default-0';
@@ -72,6 +76,8 @@ function createViewModel(overrides: Partial<TileDecorationEditorViewModel> = {})
     scenarioOptions: toScenarioOptions(),
     artOptions: [{ id: 'default', label: 'Default' }],
     artVariantId: 'default',
+    artVariant: null,
+    artImages: [],
     onArtVariantChange: jest.fn(),
     activeScenario: 'base',
     activeVariant: null,
@@ -96,6 +102,7 @@ function createViewModel(overrides: Partial<TileDecorationEditorViewModel> = {})
     onResizeInstance: jest.fn(),
     onRelayerInstance: jest.fn(),
     onRemoveInstance: jest.fn(),
+    onDeleteImage: jest.fn(),
     onSave: jest.fn(),
     ...overrides,
   };
@@ -302,26 +309,40 @@ describe('TileDecorationEditorView', () => {
   });
 
   describe('image picker and inspector', () => {
-    it('adds a decoration with the picked image when an image thumbnail is clicked', () => {
+    const inspector = () => screen.getByRole('complementary', { name: 'Decoration inspector' });
+
+    it('selects an image on click and adds it to the tile from the Add to tile button', () => {
       const viewModel = createViewModel();
       render(<TileDecorationEditorView {...viewModel} />);
 
-      fireEvent.click(screen.getByRole('button', { name: 'Add pine_tree.gif' }));
+      fireEvent.click(screen.getByRole('button', { name: 'pine_tree.gif' }));
+      expect(viewModel.onAddInstance).not.toHaveBeenCalled();
 
+      fireEvent.click(screen.getByRole('button', { name: 'Add to tile' }));
       expect(viewModel.onAddInstance).toHaveBeenCalledWith(BASE_IMAGE);
+    });
+
+    it('shows a red Delete decoration forever button only for the selected image', () => {
+      const viewModel = createViewModel();
+      render(<TileDecorationEditorView {...viewModel} />);
+      expect(screen.queryByRole('button', { name: 'Delete decoration forever' })).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'pine_tree.gif' }));
+
+      expect(screen.getByRole('button', { name: 'Delete decoration forever' })).toBeInTheDocument();
     });
 
     it('lists one thumbnail per discovered image', () => {
       render(<TileDecorationEditorView {...createViewModel()} />);
 
-      expect(screen.getAllByRole('button', { name: /^Add \S+\.gif$/ })).toHaveLength(sampleDecorationImages.length);
+      expect(within(inspector()).getAllByRole('button', { name: /\.gif$/ })).toHaveLength(sampleDecorationImages.length);
     });
 
     it('shows the no-images message when the image folder is empty', () => {
       render(<TileDecorationEditorView {...createViewModel({ images: [] })} />);
 
       expect(screen.getByText('No images in public/sprites/decorations/ yet.')).toBeInTheDocument();
-      expect(screen.queryAllByRole('button', { name: /^Add \S+\.gif$/ })).toHaveLength(0);
+      expect(within(inspector()).queryAllByRole('button', { name: /\.gif$/ })).toHaveLength(0);
     });
 
     it('shows the no-selection placeholder and no size or layer fields when nothing is selected', () => {
@@ -891,12 +912,12 @@ describe('TileDecorationEditorView', () => {
 });
 
 describe('TileDecorationEditor (connected)', () => {
-  it('renders the view with the hook output', () => {
+  it('renders the view with the hook output', async () => {
     jest.mocked(useTileDecorationEditor).mockReturnValue(createViewModel());
 
     render(<TileDecorationEditor />);
 
-    expect(screen.getByRole('combobox', { name: 'Scenario' })).toHaveTextContent('Base');
+    expect(await screen.findByRole('combobox', { name: 'Scenario' })).toHaveTextContent('Base');
     expect(screen.getAllByRole('button', { name: /^Decoration \d of 2, / })).toHaveLength(2);
   });
 });

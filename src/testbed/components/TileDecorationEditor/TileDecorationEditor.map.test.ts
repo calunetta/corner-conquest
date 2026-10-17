@@ -11,6 +11,8 @@ import {
   toGrabbedCenterPercent,
   toPointerPercent,
   toScenarioOptions,
+  toDraggedInstancePercent,
+  toResizedSize,
 } from './TileDecorationEditor.map';
 import type { DecorationInstance, DecorationLayout } from '@/modules/map';
 
@@ -73,14 +75,14 @@ describe('nudgeInstance', () => {
     expect(nudgeInstance(baseInstance, dTop, dLeft)).toEqual({ ...baseInstance, top: expectedTop, left: expectedLeft });
   });
 
-  it('clamps at the top/left=0 edge', () => {
-    const edgeInstance: DecorationInstance = { ...baseInstance, top: 2, left: 2 };
-    expect(nudgeInstance(edgeInstance, -5, -5)).toEqual({ ...edgeInstance, top: 0, left: 0 });
+  it('clamps at the top=3 / left=8 lower edge', () => {
+    const edgeInstance: DecorationInstance = { ...baseInstance, top: 4, left: 9 };
+    expect(nudgeInstance(edgeInstance, -5, -5)).toEqual({ ...edgeInstance, top: 3, left: 8 });
   });
 
-  it('clamps at the top/left=100 edge', () => {
-    const edgeInstance: DecorationInstance = { ...baseInstance, top: 98, left: 98 };
-    expect(nudgeInstance(edgeInstance, 5, 5)).toEqual({ ...edgeInstance, top: 100, left: 100 });
+  it('clamps at the top=85 / left=85 upper edge', () => {
+    const edgeInstance: DecorationInstance = { ...baseInstance, top: 83, left: 83 };
+    expect(nudgeInstance(edgeInstance, 5, 5)).toEqual({ ...edgeInstance, top: 85, left: 85 });
   });
 
   it('does not mutate the input instance', () => {
@@ -288,5 +290,36 @@ describe('toGrabbedCenterPercent', () => {
 
   it('matches the plain pointer position when the grab was at the centre', () => {
     expect(toGrabbedCenterPercent(180, 0, 100, 200)).toBeCloseTo(toPointerPercent(180, 100, 200));
+  });
+});
+
+describe('toDraggedInstancePercent', () => {
+  const start = { top: 40, left: 30, pointerX: 100, pointerY: 100 };
+  const box = { width: 200, height: 400 };
+
+  it('moves by the pointer travel as a share of the canvas', () => {
+    expect(toDraggedInstancePercent(start, { x: 120, y: 140 }, box)).toEqual({ top: 50, left: 40 });
+  });
+
+  it('keeps the position when the pointer has not moved', () => {
+    expect(toDraggedInstancePercent(start, { x: 100, y: 100 }, box)).toEqual({ top: 40, left: 30 });
+  });
+
+  it('clamps to the canvas', () => {
+    expect(toDraggedInstancePercent(start, { x: -1000, y: 1000 }, box)).toEqual({ top: 100, left: 0 });
+  });
+});
+
+describe('toResizedSize', () => {
+  it('grows so the corner follows the pointer: 20px of travel on a 200px canvas grows the size by 20%', () => {
+    expect(toResizedSize(20, 20, 20, 200)).toBe(40);
+  });
+
+  it('shrinks but never below the minimum', () => {
+    expect(toResizedSize(20, -1000, -1000, 200)).toBe(2);
+  });
+
+  it('caps at the full canvas', () => {
+    expect(toResizedSize(90, 1000, 1000, 200)).toBe(100);
   });
 });

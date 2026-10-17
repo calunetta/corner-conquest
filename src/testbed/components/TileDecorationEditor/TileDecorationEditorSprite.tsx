@@ -113,7 +113,7 @@ export function TileDecorationEditorSprite({
       onPointerCancel={endPointerGesture}
       onKeyDown={handleKeyDown}
     >
-      <Image src={image} alt="" fill className={styles.spriteImage} unoptimized />
+      <Image src={image} alt="" fill draggable={false} className={styles.spriteImage} unoptimized />
     </button>
   );
 }

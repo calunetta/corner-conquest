@@ -1,4 +1,4 @@
-import { toSlug, toVariantId, validateVariant } from './TileVariants.validate';
+import { toSlug, toVariantId, validateVariant, variantsUsingImage } from './TileVariants.validate';
 import type { TileVariant, TileVariantsConfig } from './TileVariants.config';
 
 const centred = { x: 50, y: 50, size: 100 };
@@ -54,5 +54,18 @@ describe('validateVariant', () => {
   it('rejects an image that is not in the folders or belongs to another type', () => {
     expect(validateVariant(config, draft({ image: '/sprites/other.png' }), true)).toMatch(/not in the tile-variant/);
     expect(validateVariant(config, draft({ image: config.images[1].image }), true)).toMatch(/another type/);
+  });
+});
+
+describe('variantsUsingImage', () => {
+  it('lists the variants that draw the picture', () => {
+    const picture = '/sprites/tile-variants/generated/special/a.png';
+    const withPicture = { ...draft(), id: 'special-uses-a', image: picture };
+    const using = variantsUsingImage({ ...config, variants: [...config.variants, withPicture] }, picture);
+    expect(using.map((variant) => variant.id)).toEqual(['special-uses-a']);
+  });
+
+  it('is empty when no variant draws the picture', () => {
+    expect(variantsUsingImage(config, '/sprites/tile-variants/generated/special/a.png')).toEqual([]);
   });
 });
