@@ -125,6 +125,342 @@
       "type": "base",
       "name": "yellow-tower",
       "image": "/sprites/tile-variants/generated/base/yellow-tower.png"
+    },
+    {
+      "id": "special-black-archer",
+      "type": "special",
+      "name": "black-archer",
+      "image": "/sprites/tile-variants/generated/special/black-archer.gif"
+    },
+    {
+      "id": "special-black-lancer",
+      "type": "special",
+      "name": "black-lancer",
+      "image": "/sprites/tile-variants/generated/special/black-lancer.gif"
+    },
+    {
+      "id": "special-black-monk",
+      "type": "special",
+      "name": "black-monk",
+      "image": "/sprites/tile-variants/generated/special/black-monk.gif"
+    },
+    {
+      "id": "special-black-pawn-axe",
+      "type": "special",
+      "name": "black-pawn-axe",
+      "image": "/sprites/tile-variants/generated/special/black-pawn-axe.gif"
+    },
+    {
+      "id": "special-black-pawn-hammer",
+      "type": "special",
+      "name": "black-pawn-hammer",
+      "image": "/sprites/tile-variants/generated/special/black-pawn-hammer.gif"
+    },
+    {
+      "id": "special-black-pawn-knife",
+      "type": "special",
+      "name": "black-pawn-knife",
+      "image": "/sprites/tile-variants/generated/special/black-pawn-knife.gif"
+    },
+    {
+      "id": "special-black-pawn-pickaxe",
+      "type": "special",
+      "name": "black-pawn-pickaxe",
+      "image": "/sprites/tile-variants/generated/special/black-pawn-pickaxe.gif"
+    },
+    {
+      "id": "special-black-warrior",
+      "type": "special",
+      "name": "black-warrior",
+      "image": "/sprites/tile-variants/generated/special/black-warrior.gif"
+    },
+    {
+      "id": "special-ruin-castle",
+      "type": "special",
+      "name": "ruin-castle",
+      "image": "/sprites/tile-variants/generated/special/ruin-castle.png"
+    },
+    {
+      "id": "special-ruin-tower",
+      "type": "special",
+      "name": "ruin-tower",
+      "image": "/sprites/tile-variants/generated/special/ruin-tower.png"
+    },
+    {
+      "id": "monster-ash-1",
+      "type": "monster",
+      "name": "ash-1",
+      "image": "/sprites/tile-variants/generated/monster/ash-1.png"
+    },
+    {
+      "id": "monster-ash-2",
+      "type": "monster",
+      "name": "ash-2",
+      "image": "/sprites/tile-variants/generated/monster/ash-2.png"
+    },
+    {
+      "id": "monster-ash-3",
+      "type": "monster",
+      "name": "ash-3",
+      "image": "/sprites/tile-variants/generated/monster/ash-3.png"
+    },
+    {
+      "id": "monster-bones-1",
+      "type": "monster",
+      "name": "bones-1",
+      "image": "/sprites/tile-variants/generated/monster/bones-1.png"
+    },
+    {
+      "id": "monster-bones-2",
+      "type": "monster",
+      "name": "bones-2",
+      "image": "/sprites/tile-variants/generated/monster/bones-2.png"
+    },
+    {
+      "id": "monster-bones-3",
+      "type": "monster",
+      "name": "bones-3",
+      "image": "/sprites/tile-variants/generated/monster/bones-3.png"
+    },
+    {
+      "id": "monster-fungus-dark-1",
+      "type": "monster",
+      "name": "fungus-dark-1",
+      "image": "/sprites/tile-variants/generated/monster/fungus-dark-1.png"
+    },
+    {
+      "id": "monster-fungus-dark-2",
+      "type": "monster",
+      "name": "fungus-dark-2",
+      "image": "/sprites/tile-variants/generated/monster/fungus-dark-2.png"
+    },
+    {
+      "id": "monster-fungus-dark-3",
+      "type": "monster",
+      "name": "fungus-dark-3",
+      "image": "/sprites/tile-variants/generated/monster/fungus-dark-3.png"
+    },
+    {
+      "id": "monster-skull-spike-1",
+      "type": "monster",
+      "name": "skull-spike-1",
+      "image": "/sprites/tile-variants/generated/monster/skull-spike-1.png"
+    },
+    {
+      "id": "empty-bush-1",
+      "type": "empty",
+      "name": "bush-1",
+      "image": "/sprites/tile-variants/generated/empty/bush-1.gif"
+    },
+    {
+      "id": "empty-bush-2",
+      "type": "empty",
+      "name": "bush-2",
+      "image": "/sprites/tile-variants/generated/empty/bush-2.gif"
+    },
+    {
+      "id": "empty-bush-3",
+      "type": "empty",
+      "name": "bush-3",
+      "image": "/sprites/tile-variants/generated/empty/bush-3.gif"
+    },
+    {
+      "id": "empty-bush-4",
+      "type": "empty",
+      "name": "bush-4",
+      "image": "/sprites/tile-variants/generated/empty/bush-4.gif"
+    },
+    {
+      "id": "empty-rock-1",
+      "type": "empty",
+      "name": "rock-1",
+      "image": "/sprites/tile-variants/generated/empty/rock-1.png"
+    },
+    {
+      "id": "empty-shrub-dark-1",
+      "type": "empty",
+      "name": "shrub-dark-1",
+      "image": "/sprites/tile-variants/generated/empty/shrub-dark-1.gif"
+    },
+    {
+      "id": "empty-stump-1",
+      "type": "empty",
+      "name": "stump-1",
+      "image": "/sprites/tile-variants/generated/empty/stump-1.png"
+    },
+    {
+      "id": "empty-stump-2",
+      "type": "empty",
+      "name": "stump-2",
+      "image": "/sprites/tile-variants/generated/empty/stump-2.png"
+    },
+    {
+      "id": "empty-tree-3",
+      "type": "empty",
+      "name": "tree-3",
+      "image": "/sprites/tile-variants/generated/empty/tree-3.gif"
+    },
+    {
+      "id": "empty-tree-4",
+      "type": "empty",
+      "name": "tree-4",
+      "image": "/sprites/tile-variants/generated/empty/tree-4.gif"
+    },
+    {
+      "id": "resource-food-bush-1",
+      "type": "resource-food",
+      "name": "bush-1",
+      "image": "/sprites/tile-variants/generated/resource-food/bush-1.gif"
+    },
+    {
+      "id": "resource-food-bush-2",
+      "type": "resource-food",
+      "name": "bush-2",
+      "image": "/sprites/tile-variants/generated/resource-food/bush-2.gif"
+    },
+    {
+      "id": "resource-food-bush-3",
+      "type": "resource-food",
+      "name": "bush-3",
+      "image": "/sprites/tile-variants/generated/resource-food/bush-3.gif"
+    },
+    {
+      "id": "resource-food-bush-4",
+      "type": "resource-food",
+      "name": "bush-4",
+      "image": "/sprites/tile-variants/generated/resource-food/bush-4.gif"
+    },
+    {
+      "id": "resource-food-fungus-dark-1",
+      "type": "resource-food",
+      "name": "fungus-dark-1",
+      "image": "/sprites/tile-variants/generated/resource-food/fungus-dark-1.png"
+    },
+    {
+      "id": "resource-food-fungus-dark-2",
+      "type": "resource-food",
+      "name": "fungus-dark-2",
+      "image": "/sprites/tile-variants/generated/resource-food/fungus-dark-2.png"
+    },
+    {
+      "id": "resource-food-fungus-dark-3",
+      "type": "resource-food",
+      "name": "fungus-dark-3",
+      "image": "/sprites/tile-variants/generated/resource-food/fungus-dark-3.png"
+    },
+    {
+      "id": "resource-food-sheep-idle",
+      "type": "resource-food",
+      "name": "sheep-idle",
+      "image": "/sprites/tile-variants/generated/resource-food/sheep-idle.gif"
+    },
+    {
+      "id": "resource-food-shrub-dark-1",
+      "type": "resource-food",
+      "name": "shrub-dark-1",
+      "image": "/sprites/tile-variants/generated/resource-food/shrub-dark-1.gif"
+    },
+    {
+      "id": "resource-wood-autmn_tree",
+      "type": "resource-wood",
+      "name": "autmn_tree",
+      "image": "/sprites/tile-variants/generated/resource-wood/autmn_tree.gif"
+    },
+    {
+      "id": "resource-wood-pine_tree",
+      "type": "resource-wood",
+      "name": "pine_tree",
+      "image": "/sprites/tile-variants/generated/resource-wood/pine_tree.gif"
+    },
+    {
+      "id": "resource-wood-spring_tree",
+      "type": "resource-wood",
+      "name": "spring_tree",
+      "image": "/sprites/tile-variants/generated/resource-wood/spring_tree.gif"
+    },
+    {
+      "id": "resource-wood-stump-1",
+      "type": "resource-wood",
+      "name": "stump-1",
+      "image": "/sprites/tile-variants/generated/resource-wood/stump-1.png"
+    },
+    {
+      "id": "resource-wood-stump-2",
+      "type": "resource-wood",
+      "name": "stump-2",
+      "image": "/sprites/tile-variants/generated/resource-wood/stump-2.png"
+    },
+    {
+      "id": "resource-wood-stump-3",
+      "type": "resource-wood",
+      "name": "stump-3",
+      "image": "/sprites/tile-variants/generated/resource-wood/stump-3.png"
+    },
+    {
+      "id": "resource-wood-tree-1",
+      "type": "resource-wood",
+      "name": "tree-1",
+      "image": "/sprites/tile-variants/generated/resource-wood/tree-1.gif"
+    },
+    {
+      "id": "resource-wood-tree-2",
+      "type": "resource-wood",
+      "name": "tree-2",
+      "image": "/sprites/tile-variants/generated/resource-wood/tree-2.gif"
+    },
+    {
+      "id": "resource-wood-tree-3",
+      "type": "resource-wood",
+      "name": "tree-3",
+      "image": "/sprites/tile-variants/generated/resource-wood/tree-3.gif"
+    },
+    {
+      "id": "resource-wood-tree-4",
+      "type": "resource-wood",
+      "name": "tree-4",
+      "image": "/sprites/tile-variants/generated/resource-wood/tree-4.gif"
+    },
+    {
+      "id": "resource-gold-gold-stone-1",
+      "type": "resource-gold",
+      "name": "gold-stone-1",
+      "image": "/sprites/tile-variants/generated/resource-gold/gold-stone-1.png"
+    },
+    {
+      "id": "resource-gold-gold-stone-2",
+      "type": "resource-gold",
+      "name": "gold-stone-2",
+      "image": "/sprites/tile-variants/generated/resource-gold/gold-stone-2.png"
+    },
+    {
+      "id": "resource-gold-gold-stone-3",
+      "type": "resource-gold",
+      "name": "gold-stone-3",
+      "image": "/sprites/tile-variants/generated/resource-gold/gold-stone-3.png"
+    },
+    {
+      "id": "resource-gold-rock-1",
+      "type": "resource-gold",
+      "name": "rock-1",
+      "image": "/sprites/tile-variants/generated/resource-gold/rock-1.png"
+    },
+    {
+      "id": "resource-gold-rock-2",
+      "type": "resource-gold",
+      "name": "rock-2",
+      "image": "/sprites/tile-variants/generated/resource-gold/rock-2.png"
+    },
+    {
+      "id": "resource-gold-rock-3",
+      "type": "resource-gold",
+      "name": "rock-3",
+      "image": "/sprites/tile-variants/generated/resource-gold/rock-3.png"
+    },
+    {
+      "id": "resource-gold-rock-4",
+      "type": "resource-gold",
+      "name": "rock-4",
+      "image": "/sprites/tile-variants/generated/resource-gold/rock-4.png"
     }
   ],
   "variants": [
@@ -28777,6 +29113,1206 @@
         ]
       },
       "id": "monster-blood-field"
+    },
+    {
+      "id": "base-blue-archery-set-1",
+      "type": "base",
+      "color": "blue",
+      "name": "Archery 1",
+      "image": "/sprites/tile-variants/generated/base/blue-archery.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 52
+      }
+    },
+    {
+      "id": "base-blue-archery-set-2",
+      "type": "base",
+      "color": "blue",
+      "name": "Archery 2",
+      "image": "/sprites/tile-variants/generated/base/blue-archery.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 52
+      }
+    },
+    {
+      "id": "base-blue-barracks-set-1",
+      "type": "base",
+      "color": "blue",
+      "name": "Barracks 1",
+      "image": "/sprites/tile-variants/generated/base/blue-barracks.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-blue-barracks-set-2",
+      "type": "base",
+      "color": "blue",
+      "name": "Barracks 2",
+      "image": "/sprites/tile-variants/generated/base/blue-barracks.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-blue-castle-set-1",
+      "type": "base",
+      "color": "blue",
+      "name": "Castle 1",
+      "image": "/sprites/tile-variants/generated/base/blue-castle.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      }
+    },
+    {
+      "id": "base-blue-castle-set-2",
+      "type": "base",
+      "color": "blue",
+      "name": "Castle 2",
+      "image": "/sprites/tile-variants/generated/base/blue-castle.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 60
+      }
+    },
+    {
+      "id": "base-blue-monastery-set-1",
+      "type": "base",
+      "color": "blue",
+      "name": "Monastery 1",
+      "image": "/sprites/tile-variants/generated/base/blue-monastery.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 50
+      }
+    },
+    {
+      "id": "base-blue-monastery-set-2",
+      "type": "base",
+      "color": "blue",
+      "name": "Monastery 2",
+      "image": "/sprites/tile-variants/generated/base/blue-monastery.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 50
+      }
+    },
+    {
+      "id": "base-blue-tower-set-1",
+      "type": "base",
+      "color": "blue",
+      "name": "Tower 1",
+      "image": "/sprites/tile-variants/generated/base/blue-tower.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-blue-tower-set-2",
+      "type": "base",
+      "color": "blue",
+      "name": "Tower 2",
+      "image": "/sprites/tile-variants/generated/base/blue-tower.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-red-archery-set-1",
+      "type": "base",
+      "color": "red",
+      "name": "Archery 1",
+      "image": "/sprites/tile-variants/generated/base/red-archery.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 52
+      }
+    },
+    {
+      "id": "base-red-archery-set-2",
+      "type": "base",
+      "color": "red",
+      "name": "Archery 2",
+      "image": "/sprites/tile-variants/generated/base/red-archery.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 52
+      }
+    },
+    {
+      "id": "base-red-barracks-set-1",
+      "type": "base",
+      "color": "red",
+      "name": "Barracks 1",
+      "image": "/sprites/tile-variants/generated/base/red-barracks.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-red-barracks-set-2",
+      "type": "base",
+      "color": "red",
+      "name": "Barracks 2",
+      "image": "/sprites/tile-variants/generated/base/red-barracks.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-red-castle-set-1",
+      "type": "base",
+      "color": "red",
+      "name": "Castle 1",
+      "image": "/sprites/tile-variants/generated/base/red-castle.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      }
+    },
+    {
+      "id": "base-red-castle-set-2",
+      "type": "base",
+      "color": "red",
+      "name": "Castle 2",
+      "image": "/sprites/tile-variants/generated/base/red-castle.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 60
+      }
+    },
+    {
+      "id": "base-red-monastery-set-1",
+      "type": "base",
+      "color": "red",
+      "name": "Monastery 1",
+      "image": "/sprites/tile-variants/generated/base/red-monastery.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 50
+      }
+    },
+    {
+      "id": "base-red-monastery-set-2",
+      "type": "base",
+      "color": "red",
+      "name": "Monastery 2",
+      "image": "/sprites/tile-variants/generated/base/red-monastery.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 50
+      }
+    },
+    {
+      "id": "base-red-tower-set-1",
+      "type": "base",
+      "color": "red",
+      "name": "Tower 1",
+      "image": "/sprites/tile-variants/generated/base/red-tower.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-red-tower-set-2",
+      "type": "base",
+      "color": "red",
+      "name": "Tower 2",
+      "image": "/sprites/tile-variants/generated/base/red-tower.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-purple-archery-set-1",
+      "type": "base",
+      "color": "purple",
+      "name": "Archery 1",
+      "image": "/sprites/tile-variants/generated/base/purple-archery.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 52
+      }
+    },
+    {
+      "id": "base-purple-archery-set-2",
+      "type": "base",
+      "color": "purple",
+      "name": "Archery 2",
+      "image": "/sprites/tile-variants/generated/base/purple-archery.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 52
+      }
+    },
+    {
+      "id": "base-purple-barracks-set-1",
+      "type": "base",
+      "color": "purple",
+      "name": "Barracks 1",
+      "image": "/sprites/tile-variants/generated/base/purple-barracks.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-purple-barracks-set-2",
+      "type": "base",
+      "color": "purple",
+      "name": "Barracks 2",
+      "image": "/sprites/tile-variants/generated/base/purple-barracks.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-purple-castle-set-1",
+      "type": "base",
+      "color": "purple",
+      "name": "Castle 1",
+      "image": "/sprites/tile-variants/generated/base/purple-castle.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      }
+    },
+    {
+      "id": "base-purple-castle-set-2",
+      "type": "base",
+      "color": "purple",
+      "name": "Castle 2",
+      "image": "/sprites/tile-variants/generated/base/purple-castle.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 60
+      }
+    },
+    {
+      "id": "base-purple-monastery-set-1",
+      "type": "base",
+      "color": "purple",
+      "name": "Monastery 1",
+      "image": "/sprites/tile-variants/generated/base/purple-monastery.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 50
+      }
+    },
+    {
+      "id": "base-purple-monastery-set-2",
+      "type": "base",
+      "color": "purple",
+      "name": "Monastery 2",
+      "image": "/sprites/tile-variants/generated/base/purple-monastery.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 50
+      }
+    },
+    {
+      "id": "base-purple-tower-set-1",
+      "type": "base",
+      "color": "purple",
+      "name": "Tower 1",
+      "image": "/sprites/tile-variants/generated/base/purple-tower.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-purple-tower-set-2",
+      "type": "base",
+      "color": "purple",
+      "name": "Tower 2",
+      "image": "/sprites/tile-variants/generated/base/purple-tower.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-yellow-archery-set-1",
+      "type": "base",
+      "color": "yellow",
+      "name": "Archery 1",
+      "image": "/sprites/tile-variants/generated/base/yellow-archery.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 52
+      }
+    },
+    {
+      "id": "base-yellow-archery-set-2",
+      "type": "base",
+      "color": "yellow",
+      "name": "Archery 2",
+      "image": "/sprites/tile-variants/generated/base/yellow-archery.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 52
+      }
+    },
+    {
+      "id": "base-yellow-barracks-set-1",
+      "type": "base",
+      "color": "yellow",
+      "name": "Barracks 1",
+      "image": "/sprites/tile-variants/generated/base/yellow-barracks.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-yellow-barracks-set-2",
+      "type": "base",
+      "color": "yellow",
+      "name": "Barracks 2",
+      "image": "/sprites/tile-variants/generated/base/yellow-barracks.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-yellow-castle-set-1",
+      "type": "base",
+      "color": "yellow",
+      "name": "Castle 1",
+      "image": "/sprites/tile-variants/generated/base/yellow-castle.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      }
+    },
+    {
+      "id": "base-yellow-castle-set-2",
+      "type": "base",
+      "color": "yellow",
+      "name": "Castle 2",
+      "image": "/sprites/tile-variants/generated/base/yellow-castle.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 60
+      }
+    },
+    {
+      "id": "base-yellow-monastery-set-1",
+      "type": "base",
+      "color": "yellow",
+      "name": "Monastery 1",
+      "image": "/sprites/tile-variants/generated/base/yellow-monastery.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 50
+      }
+    },
+    {
+      "id": "base-yellow-monastery-set-2",
+      "type": "base",
+      "color": "yellow",
+      "name": "Monastery 2",
+      "image": "/sprites/tile-variants/generated/base/yellow-monastery.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 50
+      }
+    },
+    {
+      "id": "base-yellow-tower-set-1",
+      "type": "base",
+      "color": "yellow",
+      "name": "Tower 1",
+      "image": "/sprites/tile-variants/generated/base/yellow-tower.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 56
+      }
+    },
+    {
+      "id": "base-yellow-tower-set-2",
+      "type": "base",
+      "color": "yellow",
+      "name": "Tower 2",
+      "image": "/sprites/tile-variants/generated/base/yellow-tower.png",
+      "transform": {
+        "x": 47,
+        "y": 52,
+        "size": 56
+      }
+    },
+    {
+      "id": "special-ruin-castle-set-1",
+      "type": "special",
+      "name": "Special ruin-castle 1",
+      "image": "/sprites/tile-variants/special/ruin-castle.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      },
+      "color": null
+    },
+    {
+      "id": "special-ruin-tower-set-2",
+      "type": "special",
+      "name": "Special ruin-tower 2",
+      "image": "/sprites/tile-variants/special/ruin-tower.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 50
+      },
+      "color": null
+    },
+    {
+      "id": "special-black-archer-set-3",
+      "type": "special",
+      "name": "Special black-archer 3",
+      "image": "/sprites/tile-variants/special/black-archer.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      },
+      "color": null
+    },
+    {
+      "id": "special-black-lancer-set-4",
+      "type": "special",
+      "name": "Special black-lancer 4",
+      "image": "/sprites/tile-variants/special/black-lancer.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      },
+      "color": null
+    },
+    {
+      "id": "special-black-monk-set-5",
+      "type": "special",
+      "name": "Special black-monk 5",
+      "image": "/sprites/tile-variants/special/black-monk.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      },
+      "color": null
+    },
+    {
+      "id": "special-black-warrior-set-6",
+      "type": "special",
+      "name": "Special black-warrior 6",
+      "image": "/sprites/tile-variants/special/black-warrior.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      },
+      "color": null
+    },
+    {
+      "id": "special-black-pawn-axe-set-7",
+      "type": "special",
+      "name": "Special black-pawn-axe 7",
+      "image": "/sprites/tile-variants/special/black-pawn-axe.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      },
+      "color": null
+    },
+    {
+      "id": "special-black-pawn-hammer-set-8",
+      "type": "special",
+      "name": "Special black-pawn-hammer 8",
+      "image": "/sprites/tile-variants/special/black-pawn-hammer.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      },
+      "color": null
+    },
+    {
+      "id": "special-black-pawn-knife-set-9",
+      "type": "special",
+      "name": "Special black-pawn-knife 9",
+      "image": "/sprites/tile-variants/special/black-pawn-knife.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      },
+      "color": null
+    },
+    {
+      "id": "special-black-pawn-pickaxe-set-10",
+      "type": "special",
+      "name": "Special black-pawn-pickaxe 10",
+      "image": "/sprites/tile-variants/special/black-pawn-pickaxe.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 60
+      },
+      "color": null
+    },
+    {
+      "id": "monster-bones-1-set-1",
+      "type": "monster",
+      "name": "Monster bones-1 1",
+      "image": "/sprites/tile-variants/monster/bones-1.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "monster-bones-2-set-2",
+      "type": "monster",
+      "name": "Monster bones-2 2",
+      "image": "/sprites/tile-variants/monster/bones-2.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "monster-bones-3-set-3",
+      "type": "monster",
+      "name": "Monster bones-3 3",
+      "image": "/sprites/tile-variants/monster/bones-3.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "monster-ash-1-set-4",
+      "type": "monster",
+      "name": "Monster ash-1 4",
+      "image": "/sprites/tile-variants/monster/ash-1.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "monster-ash-2-set-5",
+      "type": "monster",
+      "name": "Monster ash-2 5",
+      "image": "/sprites/tile-variants/monster/ash-2.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "monster-ash-3-set-6",
+      "type": "monster",
+      "name": "Monster ash-3 6",
+      "image": "/sprites/tile-variants/monster/ash-3.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "monster-fungus-dark-1-set-7",
+      "type": "monster",
+      "name": "Monster fungus-dark-1 7",
+      "image": "/sprites/tile-variants/monster/fungus-dark-1.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "monster-fungus-dark-2-set-8",
+      "type": "monster",
+      "name": "Monster fungus-dark-2 8",
+      "image": "/sprites/tile-variants/monster/fungus-dark-2.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "monster-fungus-dark-3-set-9",
+      "type": "monster",
+      "name": "Monster fungus-dark-3 9",
+      "image": "/sprites/tile-variants/monster/fungus-dark-3.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "monster-skull-spike-1-set-10",
+      "type": "monster",
+      "name": "Monster skull-spike-1 10",
+      "image": "/sprites/tile-variants/monster/skull-spike-1.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "empty-bush-1-set-1",
+      "type": "empty",
+      "name": "Empty bush-1 1",
+      "image": "/sprites/tile-variants/empty/bush-1.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "empty-bush-2-set-2",
+      "type": "empty",
+      "name": "Empty bush-2 2",
+      "image": "/sprites/tile-variants/empty/bush-2.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "empty-bush-3-set-3",
+      "type": "empty",
+      "name": "Empty bush-3 3",
+      "image": "/sprites/tile-variants/empty/bush-3.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "empty-bush-4-set-4",
+      "type": "empty",
+      "name": "Empty bush-4 4",
+      "image": "/sprites/tile-variants/empty/bush-4.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "empty-shrub-dark-1-set-5",
+      "type": "empty",
+      "name": "Empty shrub-dark-1 5",
+      "image": "/sprites/tile-variants/empty/shrub-dark-1.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 25
+      },
+      "color": null
+    },
+    {
+      "id": "empty-tree-3-set-6",
+      "type": "empty",
+      "name": "Empty tree-3 6",
+      "image": "/sprites/tile-variants/empty/tree-3.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 30
+      },
+      "color": null
+    },
+    {
+      "id": "empty-tree-4-set-7",
+      "type": "empty",
+      "name": "Empty tree-4 7",
+      "image": "/sprites/tile-variants/empty/tree-4.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 30
+      },
+      "color": null
+    },
+    {
+      "id": "empty-rock-1-set-8",
+      "type": "empty",
+      "name": "Empty rock-1 8",
+      "image": "/sprites/tile-variants/empty/rock-1.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 20
+      },
+      "color": null
+    },
+    {
+      "id": "empty-stump-1-set-9",
+      "type": "empty",
+      "name": "Empty stump-1 9",
+      "image": "/sprites/tile-variants/empty/stump-1.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 20
+      },
+      "color": null
+    },
+    {
+      "id": "empty-stump-2-set-10",
+      "type": "empty",
+      "name": "Empty stump-2 10",
+      "image": "/sprites/tile-variants/empty/stump-2.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 20
+      },
+      "color": null
+    },
+    {
+      "id": "resource-food-sheep-idle-set-1",
+      "type": "resource-food",
+      "name": "Food sheep-idle 1",
+      "image": "/sprites/tile-variants/resource-food/sheep-idle.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-food-bush-1-set-2",
+      "type": "resource-food",
+      "name": "Food bush-1 2",
+      "image": "/sprites/tile-variants/resource-food/bush-1.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-food-bush-2-set-3",
+      "type": "resource-food",
+      "name": "Food bush-2 3",
+      "image": "/sprites/tile-variants/resource-food/bush-2.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-food-bush-3-set-4",
+      "type": "resource-food",
+      "name": "Food bush-3 4",
+      "image": "/sprites/tile-variants/resource-food/bush-3.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-food-bush-4-set-5",
+      "type": "resource-food",
+      "name": "Food bush-4 5",
+      "image": "/sprites/tile-variants/resource-food/bush-4.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-food-shrub-dark-1-set-6",
+      "type": "resource-food",
+      "name": "Food shrub-dark-1 6",
+      "image": "/sprites/tile-variants/resource-food/shrub-dark-1.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-food-fungus-dark-1-set-7",
+      "type": "resource-food",
+      "name": "Food fungus-dark-1 7",
+      "image": "/sprites/tile-variants/resource-food/fungus-dark-1.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-food-fungus-dark-2-set-8",
+      "type": "resource-food",
+      "name": "Food fungus-dark-2 8",
+      "image": "/sprites/tile-variants/resource-food/fungus-dark-2.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-food-fungus-dark-3-set-9",
+      "type": "resource-food",
+      "name": "Food fungus-dark-3 9",
+      "image": "/sprites/tile-variants/resource-food/fungus-dark-3.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-food-bush-1-set-10",
+      "type": "resource-food",
+      "name": "Food bush-1 10",
+      "image": "/sprites/tile-variants/resource-food/bush-1.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 20
+      },
+      "color": null
+    },
+    {
+      "id": "resource-wood-tree-1-set-1",
+      "type": "resource-wood",
+      "name": "Wood tree-1 1",
+      "image": "/sprites/tile-variants/resource-wood/tree-1.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 30
+      },
+      "color": null
+    },
+    {
+      "id": "resource-wood-tree-2-set-2",
+      "type": "resource-wood",
+      "name": "Wood tree-2 2",
+      "image": "/sprites/tile-variants/resource-wood/tree-2.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 30
+      },
+      "color": null
+    },
+    {
+      "id": "resource-wood-tree-3-set-3",
+      "type": "resource-wood",
+      "name": "Wood tree-3 3",
+      "image": "/sprites/tile-variants/resource-wood/tree-3.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 26
+      },
+      "color": null
+    },
+    {
+      "id": "resource-wood-tree-4-set-4",
+      "type": "resource-wood",
+      "name": "Wood tree-4 4",
+      "image": "/sprites/tile-variants/resource-wood/tree-4.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 26
+      },
+      "color": null
+    },
+    {
+      "id": "resource-wood-pine_tree-set-5",
+      "type": "resource-wood",
+      "name": "Wood pine_tree 5",
+      "image": "/sprites/tile-variants/resource-wood/pine_tree.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 30
+      },
+      "color": null
+    },
+    {
+      "id": "resource-wood-spring_tree-set-6",
+      "type": "resource-wood",
+      "name": "Wood spring_tree 6",
+      "image": "/sprites/tile-variants/resource-wood/spring_tree.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 26
+      },
+      "color": null
+    },
+    {
+      "id": "resource-wood-autmn_tree-set-7",
+      "type": "resource-wood",
+      "name": "Wood autmn_tree 7",
+      "image": "/sprites/tile-variants/resource-wood/autmn_tree.gif",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 26
+      },
+      "color": null
+    },
+    {
+      "id": "resource-wood-stump-1-set-8",
+      "type": "resource-wood",
+      "name": "Wood stump-1 8",
+      "image": "/sprites/tile-variants/resource-wood/stump-1.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-wood-stump-2-set-9",
+      "type": "resource-wood",
+      "name": "Wood stump-2 9",
+      "image": "/sprites/tile-variants/resource-wood/stump-2.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-wood-stump-3-set-10",
+      "type": "resource-wood",
+      "name": "Wood stump-3 10",
+      "image": "/sprites/tile-variants/resource-wood/stump-3.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-gold-gold-stone-1-set-1",
+      "type": "resource-gold",
+      "name": "Gold gold-stone-1 1",
+      "image": "/sprites/tile-variants/resource-gold/gold-stone-1.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-gold-gold-stone-2-set-2",
+      "type": "resource-gold",
+      "name": "Gold gold-stone-2 2",
+      "image": "/sprites/tile-variants/resource-gold/gold-stone-2.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-gold-gold-stone-3-set-3",
+      "type": "resource-gold",
+      "name": "Gold gold-stone-3 3",
+      "image": "/sprites/tile-variants/resource-gold/gold-stone-3.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 18
+      },
+      "color": null
+    },
+    {
+      "id": "resource-gold-rock-1-set-4",
+      "type": "resource-gold",
+      "name": "Gold rock-1 4",
+      "image": "/sprites/tile-variants/resource-gold/rock-1.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 14
+      },
+      "color": null
+    },
+    {
+      "id": "resource-gold-rock-2-set-5",
+      "type": "resource-gold",
+      "name": "Gold rock-2 5",
+      "image": "/sprites/tile-variants/resource-gold/rock-2.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-gold-rock-3-set-6",
+      "type": "resource-gold",
+      "name": "Gold rock-3 6",
+      "image": "/sprites/tile-variants/resource-gold/rock-3.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 14
+      },
+      "color": null
+    },
+    {
+      "id": "resource-gold-rock-4-set-7",
+      "type": "resource-gold",
+      "name": "Gold rock-4 7",
+      "image": "/sprites/tile-variants/resource-gold/rock-4.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 16
+      },
+      "color": null
+    },
+    {
+      "id": "resource-gold-gold-stone-1-set-8",
+      "type": "resource-gold",
+      "name": "Gold gold-stone-1 8",
+      "image": "/sprites/tile-variants/resource-gold/gold-stone-1.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 20
+      },
+      "color": null
+    },
+    {
+      "id": "resource-gold-gold-stone-2-set-9",
+      "type": "resource-gold",
+      "name": "Gold gold-stone-2 9",
+      "image": "/sprites/tile-variants/resource-gold/gold-stone-2.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 20
+      },
+      "color": null
+    },
+    {
+      "id": "resource-gold-gold-stone-3-set-10",
+      "type": "resource-gold",
+      "name": "Gold gold-stone-3 10",
+      "image": "/sprites/tile-variants/resource-gold/gold-stone-3.png",
+      "transform": {
+        "x": 50,
+        "y": 50,
+        "size": 22
+      },
+      "color": null
     }
   ]
 }
