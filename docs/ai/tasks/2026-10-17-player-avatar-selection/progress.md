@@ -28,7 +28,7 @@ Tier: L · Phases: 3
 - [x] checks: typecheck, lint, unit tests — typecheck clean, lint 0 warnings, jest 114 suites / 1833 tests passed
 - [x] UI verified (ui-verify) — preview-report.md: all 4 testbed URLs pass desktop+mobile, 0 console errors, avatar images load. Non-blocking: mobile picker dialog is edge-to-edge (no 16px gutter)
 - [x] final review (architect-b) — APPROVED, see review.md
-- [x] committed: <hash>
+- [x] committed: 6306a5b
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
