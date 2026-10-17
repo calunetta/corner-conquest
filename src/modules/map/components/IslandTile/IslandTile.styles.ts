@@ -61,7 +61,8 @@ export const styles = {
   // Holds the tile's decorations and center content. Hidden (not unmounted) while fogged so the
   // reveal can fade the content in beneath the fog layer (TileFog).
   revealLayer: 'absolute inset-0 z-20 flex items-center justify-center transition-opacity ease-out',
-  revealLayerCovered: 'opacity-0',
+  // Covered content must not receive hover or click, or its tooltips leak what the fog hides.
+  revealLayerCovered: 'pointer-events-none opacity-0',
   centerContent: 'z-20 h-full w-full p-1',
   // Absolute so its box is the tile's padding box, not the p-1 centerContent inset: TileResources'
   // percent slot sizes resolve against this box, and the inset shrank them to ~6px at T=46.

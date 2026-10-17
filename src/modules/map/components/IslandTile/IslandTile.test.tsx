@@ -242,6 +242,30 @@ describe('IslandTile Component', () => {
       expect(screen.getByTestId('tile-fog')).toHaveAttribute('data-phase', 'covered');
     });
 
+    it('does not mount a death effect or make the covered reveal layer hoverable while fogged', () => {
+      const context: IslandTileContext = {
+        gameState: gameStateFixture,
+        localPlayer: { ...localPlayerFixture, revealedTiles: [] },
+        uiState: makeUIState(),
+        selectedArmy: null,
+      };
+      const viewModel = toIslandTileViewModel(hiddenFogIsland, context);
+      const enriched = {
+        ...viewModel,
+        island: hiddenFogIsland,
+        deathAnimationOnTile: { id: 'army-p1-1', x: 4, y: 0, sprite: 'death-test-sprite.png' },
+        cardRevealAnimationOnTile: undefined,
+        prefersReducedMotion: false,
+        borderImageSequence: ['', '', ''] as [string, string, string],
+        onClick: jest.fn(),
+        onCardRevealHidden: jest.fn(),
+      };
+
+      const { container } = render(<IslandTileView {...enriched} />);
+      expect(container.innerHTML).not.toContain('death-test-sprite.png');
+      expect(screen.getByTestId('tile-reveal-layer')).toHaveClass('pointer-events-none');
+    });
+
     it('keeps the special island art beneath the fog and never mounts the reveal animation while fogged', () => {
       const context: IslandTileContext = {
         gameState: gameStateFixture,

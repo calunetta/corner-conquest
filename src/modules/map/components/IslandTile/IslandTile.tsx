@@ -121,7 +121,8 @@ export function IslandTileView(viewModel: IslandTileViewModel) {
         data-testid={`island-tile-${island.x}-${island.y}`}
       >
         <div className={styles.terrain} style={toTerrainStyle(island)} />
-        {deathAnimationOnTile && (
+        {/* Fogged tiles show no death effect: the fog layer hides what happened on a tile the player cannot see. */}
+        {deathAnimationOnTile && isTileVisible && (
           <DeathEffect
             sprite={deathAnimationOnTile.sprite}
             id={deathAnimationOnTile.id}

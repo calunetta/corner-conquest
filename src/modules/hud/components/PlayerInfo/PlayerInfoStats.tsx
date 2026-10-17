@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { ResourceIcon, FightIcon, RegistryIcon } from '@/modules/shared';
+import { HAND_LIMIT } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { styles } from './PlayerInfo.styles';
 import type { PlayerInfoViewModel } from './PlayerInfo.types';
@@ -69,11 +70,13 @@ export function PlayerInfoStats({
           <TooltipTrigger asChild>
             <div className={styles.statChip} data-testid="player-info-cards" aria-label="Cards in hand">
               <RegistryIcon id="album" className={cn(styles.statIcon, 'text-purple-400')} />
-              <span className={styles.statValue}>{specialCardsCount}/3</span>
+              <span className={styles.statValue}>
+                {specialCardsCount}/{HAND_LIMIT}
+              </span>
             </div>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Special Cards: {specialCardsCount} in hand</p>
+            <p>Special Cards: {specialCardsCount} in hand (max {HAND_LIMIT})</p>
             {specialCards && specialCards.length > 0 && (
               <p className="text-xs text-purple-300 mt-0.5">{specialCards.join(', ')}</p>
             )}
