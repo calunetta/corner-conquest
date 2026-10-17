@@ -5,7 +5,7 @@ import { access, readFile, rm, writeFile } from 'fs/promises';
 import path from 'path';
 import { promisify } from 'util';
 import { NextResponse } from 'next/server';
-import { isTileVariantsConfig, TILE_VARIANT_TYPES, type TileVariantsConfig, type TileVariantType } from '@/modules/map/components/TileVariants/TileVariants.config';
+import { isTileVariantsConfig, TILE_VARIANT_TYPES, usesBuiltInArtOnly, type TileVariantsConfig, type TileVariantType } from '@/modules/map/components/TileVariants/TileVariants.config';
 import { toSlug, variantsUsingImage } from '@/modules/map/components/TileVariants/TileVariants.validate';
 import { isGifBytes, isPngBytes, MAX_UPLOAD_BYTES } from '../../tile-fog-variants/upload';
 
@@ -39,6 +39,9 @@ export async function POST(request: Request): Promise<Response> {
   const file = form.get('file');
   if (typeof type !== 'string' || !(TILE_VARIANT_TYPES as readonly string[]).includes(type) || !(file instanceof File)) {
     return NextResponse.json({ error: 'Upload needs a type and a PNG or GIF file.' }, { status: 400 });
+  }
+  if (usesBuiltInArtOnly(type as TileVariantType)) {
+    return NextResponse.json({ error: 'This island always uses the built-in art, so it takes no pictures.' }, { status: 400 });
   }
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (bytes.byteLength > MAX_UPLOAD_BYTES) {
