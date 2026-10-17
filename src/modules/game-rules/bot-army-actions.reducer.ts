@@ -1,15 +1,61 @@
 import type { Army, GameState } from '@/lib/types';
-import { GameAction, IslandType } from '@/lib/types';
+import { GameAction } from '@/lib/types';
 import type { BotAction } from './bot-helpers';
 import { findAvailableResourceSpot, isArmyEligibleToPosition } from './army-position-eligibility';
 import { getPossibleMoves } from './movement.reducer';
 import { handleGameAction } from './game-rules.reducer';
+import { choosePlayerCombatCards, chooseMonsterCombatCards } from './bot-combat-cards';
+import {
+  RESOURCE_SPOT_PRIORITY,
+  isOwnBaseTile,
+  scoreMonsterAttack,
+  scoreMove,
+  scorePlayerAttack,
+} from './bot-action-scoring';
 
-const POSITION_PRIORITY = 6;
+/** Rolls the active bot's pending combat (player or monster), spending the cards it chose. */
+function resolvePendingCombat(state: GameState): GameState {
+  let currentState = state;
+  const bot = currentState.players[currentState.currentPlayerIndex];
+
+  if (currentState.monsterCombatState && currentState.monsterCombatState.monster) {
+    const { monster, attackerPosition } = currentState.monsterCombatState;
+    const onOwnBase = isOwnBaseTile(currentState, bot, attackerPosition.x, attackerPosition.y);
+    const cards = chooseMonsterCombatCards(bot, monster, onOwnBase);
+    const rollRes = handleGameAction({
+      action: GameAction.MonsterCombatRoll,
+      gameState: currentState,
+      payload: { monster, useDecideCard: cards.useDecideCard, decidedValue: 6, useOvercomeCard: cards.useOvercomeCard, useWarChief: cards.useWarChief },
+    });
+    if (rollRes.state) {
+      const closeRes = handleGameAction({ action: GameAction.CloseMonsterCombat, gameState: rollRes.state });
+      if (closeRes.state) currentState = closeRes.state;
+    }
+  } else if (currentState.combatState) {
+    const combat = currentState.combatState;
+    const defender = currentState.players.find((p) => p.id === combat.defenderId);
+    const attackingArmy = bot.armies.find((a) => a.id === combat.attackingArmyId);
+    if (defender && attackingArmy) {
+      const onOwnBase = isOwnBaseTile(currentState, bot, attackingArmy.position.x, attackingArmy.position.y);
+      const cards = choosePlayerCombatCards(bot, defender, onOwnBase);
+      const rollRes = handleGameAction({
+        action: GameAction.CombatRoll,
+        gameState: currentState,
+        payload: { useWarChief: cards.useWarChief, useOvercome: cards.useOvercome },
+      });
+      if (rollRes.state) {
+        const closeRes = handleGameAction({ action: GameAction.CloseCombat, gameState: rollRes.state });
+        if (closeRes.state) currentState = closeRes.state;
+      }
+    }
+  }
+
+  return currentState;
+}
 
 /**
  * Iterates through the active bot's unacted armies, scoring every possible action (attack,
- * resource positioning, move) and executing the single highest-priority one per loop, until no
+ * resource positioning, move) and executing the single highest-scoring one per loop, until no
  * army has an unacted possible move left. Auto-resolves any combat the chosen action triggers.
  */
 export function applyBotArmyActions(state: GameState): GameState {
@@ -28,14 +74,15 @@ export function applyBotArmyActions(state: GameState): GameState {
     for (const army of unactedArmies) {
       const currentTile = currentState.map[army.position.y * cols + army.position.x];
       const enemyOnTile = currentTile.occupants.find((o) => o.playerId !== activeBot.id);
-      const monsterOnTile = currentTile.monsters && currentTile.monsters.length > 0;
+      const monsterOnTile = currentTile.monsters && currentTile.monsters.length > 0 ? currentTile.monsters[0] : null;
+      const onOwnBase = isOwnBaseTile(currentState, activeBot, army.position.x, army.position.y);
 
       if (enemyOnTile) {
         const enemyPlayer = currentState.players.find((p) => p.id === enemyOnTile.playerId);
         if (enemyPlayer) {
           possibleActions.push({
             name: `attack-player-${army.id}`,
-            priority: 8 + (activeBot.attackPower - enemyPlayer.attackPower),
+            priority: scorePlayerAttack(activeBot, enemyPlayer, onOwnBase),
             action: GameAction.InitiateCombat,
             payload: {
               attackingArmyId: army.id,
@@ -45,12 +92,12 @@ export function applyBotArmyActions(state: GameState): GameState {
         }
       }
 
-      if (monsterOnTile && currentTile.monsters && currentTile.monsters.length > 0) {
+      if (monsterOnTile) {
         possibleActions.push({
           name: `attack-monster-${army.id}`,
-          priority: 7,
+          priority: scoreMonsterAttack(activeBot, monsterOnTile),
           action: GameAction.InitiateCombat,
-          payload: { attackingArmyId: army.id, target: { type: 'monster', monsterName: currentTile.monsters[0].name } },
+          payload: { attackingArmyId: army.id, target: { type: 'monster', monsterName: monsterOnTile.name } },
         });
       }
 
@@ -59,28 +106,17 @@ export function applyBotArmyActions(state: GameState): GameState {
         if (availableResource) {
           possibleActions.push({
             name: `position-${army.id}`,
-            priority: POSITION_PRIORITY,
+            priority: RESOURCE_SPOT_PRIORITY,
             action: GameAction.SelectResourcePosition,
             payload: { resource: availableResource.type, armyId: army.id },
           });
         }
       }
 
-      const validMoves = getPossibleMoves(currentState, army);
-      for (const move of validMoves) {
-        const targetTile = currentState.map[move.y * cols + move.x];
-        let priority = 2;
-        if (currentState.settings.fogOfWar && !activeBot.revealedTiles.includes(targetTile.id)) {
-          priority = 6;
-        } else if ((targetTile.type === IslandType.Resource || targetTile.type === IslandType.Base) && targetTile.resources.length > 0 && targetTile.occupants.length === 0 && (!targetTile.monsters || targetTile.monsters.length === 0)) {
-          priority = 4;
-        } else if (targetTile.type === IslandType.Special) {
-          priority = 3;
-        }
-
+      for (const move of getPossibleMoves(currentState, army)) {
         possibleActions.push({
           name: `move-${army.id}-to-${move.x},${move.y}`,
-          priority,
+          priority: scoreMove(currentState, activeBot, move.x, move.y),
           action: GameAction.Move,
           payload: { x: move.x, y: move.y, army },
         });
@@ -94,30 +130,7 @@ export function applyBotArmyActions(state: GameState): GameState {
 
     const actionRes = handleGameAction({ action: bestAction.action, gameState: currentState, payload: bestAction.payload });
     if (actionRes.state) {
-      currentState = actionRes.state;
-
-      if (currentState.monsterCombatState && currentState.monsterCombatState.monster) {
-        const monster = currentState.monsterCombatState.monster;
-        const rollRes = handleGameAction({
-          action: GameAction.MonsterCombatRoll,
-          gameState: currentState,
-          payload: { monster, useDecideCard: false, decidedValue: 6, useOvercomeCard: false, useWarChief: false },
-        });
-        if (rollRes.state) {
-          const closeRes = handleGameAction({ action: GameAction.CloseMonsterCombat, gameState: rollRes.state });
-          if (closeRes.state) currentState = closeRes.state;
-        }
-      } else if (currentState.combatState) {
-        const rollRes = handleGameAction({
-          action: GameAction.CombatRoll,
-          gameState: currentState,
-          payload: { useWarChief: false, useOvercome: false },
-        });
-        if (rollRes.state) {
-          const closeRes = handleGameAction({ action: GameAction.CloseCombat, gameState: rollRes.state });
-          if (closeRes.state) currentState = closeRes.state;
-        }
-      }
+      currentState = resolvePendingCombat(actionRes.state);
     } else {
       const firstUnacted = activeBot.armies.find((a) => !a.hasActed);
       if (firstUnacted) firstUnacted.hasActed = true;

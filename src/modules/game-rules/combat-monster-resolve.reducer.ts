@@ -3,7 +3,7 @@ import { GameStatus, IslandType, ResourceType as ResourceTypeValue } from '@/lib
 import { PLAYER_DATA } from './player-data';
 import { pushLogEntry } from './log-entry';
 
-const MONSTER_VICTORY_POINTS_BY_LEVEL = [0, 2, 5, 7, 10];
+export const MONSTER_VICTORY_POINTS_BY_LEVEL = [0, 2, 5, 7, 10];
 const TWO_RESOURCE_TYPES_CHANCE = 0.4;
 const DOUBLE_AMOUNT_CHANCE = 0.5;
 

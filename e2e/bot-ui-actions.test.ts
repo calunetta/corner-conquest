@@ -148,6 +148,8 @@ describe('planNextStep', () => {
     // The bot's own base tile is Base type with open resource spots and no monster; every
     // neighboring tile is Empty, so getPossibleMoves returns nothing (same setup as
     // bot-army-actions.reducer.test.ts's "re-positions when its only option..." case).
+    // Fog off: unrevealed tiles would be exploration moves (priority 6) that beat a position (4).
+    game.settings = { ...game.settings, fogOfWar: false };
 
     const result = planNextStep(game, BOT_SEAT, 'armyActions');
 
@@ -169,7 +171,8 @@ describe('planNextStep', () => {
     const botArmy = bot.armies[0];
     const humanArmy = human.armies[0];
 
-    // Put the human's army on the bot's own tile, so attack (priority 8+) outranks positioning.
+    // Attack power 3 makes the shared-tile fight favourable, so the attack outscores positioning.
+    bot.attackPower = 3;
     humanArmy.position = { ...botArmy.position };
     const sharedTile = game.map[botArmy.position.y * game.settings.gridSize.cols + botArmy.position.x];
     sharedTile.occupants.push({ playerId: human.id, armyId: humanArmy.id });

@@ -23,12 +23,11 @@ describe('Acceptance #3: faithfulness (real matches, not fixtures)', () => {
     return results;
   }
 
+  // Overcome, War Chief and Decide Dice Roll are played in combat by bot-combat-cards.ts, so they are
+  // deliberately not on this list (see docs/ai/tasks/2026-10-17-bot-decision-logic/game-design.md).
   const NEVER_CONSUMED_BY_BOTS: CardName[] = [
     CardName.Productive,
     CardName.Sabotage,
-    CardName.Overcome,
-    CardName.WarChief,
-    CardName.DecideDiceRoll,
     CardName.ExtraMove,
     CardName.StealResource,
     CardName.Scout,

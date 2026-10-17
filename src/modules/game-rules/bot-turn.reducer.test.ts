@@ -39,6 +39,8 @@ describe('decideBotTurn', () => {
     const humanArmy = human.armies[0];
     const sharedPosition = { x: 2, y: 2 };
 
+    // Attack power 3 makes the shared-tile fight favourable (see game-design.md, Final spec).
+    bot.attackPower = 3;
     botArmy.position = { ...sharedPosition };
     humanArmy.position = { ...sharedPosition };
     const tile = game.map[sharedPosition.y * game.settings.gridSize.cols + sharedPosition.x];
