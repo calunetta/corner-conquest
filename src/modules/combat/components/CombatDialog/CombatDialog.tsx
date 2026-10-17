@@ -1,6 +1,5 @@
 'use client';
 
-import { Loader2, Trophy, Skull, Sparkles, Dices } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -12,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { FightIcon } from '@/modules/shared';
+import { FightIcon, RegistryIcon } from '@/modules/shared';
 import { cn } from '@/lib/utils';
 import { styles } from './CombatDialog.styles';
 import { CombatantCard } from './CombatantCard';
@@ -49,7 +48,7 @@ export function CombatDialog(props: CombatDialogProps) {
         {phase === 'rolling' && canPerformAction && canSelectCard && (
           <div className={styles.tacticalCardBlock}>
             <div className={styles.tacticalCardLabel}>
-              <Sparkles className={styles.tacticalCardLabelIcon} />
+              <RegistryIcon id="sparkles" className={styles.tacticalCardLabelIcon} />
               <span>Tactical Combat Card</span>
             </div>
             <RadioGroup value={selectedCard} onValueChange={onSelectCard} className={styles.radioGroup}>
@@ -95,14 +94,14 @@ export function CombatDialog(props: CombatDialogProps) {
             <div className={styles.outcomeBannerContent}>
               {winner ? (
                 <>
-                  <Trophy className={styles.trophyIcon} />
+                  <RegistryIcon id="trophy" className={styles.trophyIcon} />
                   <span className={styles.victoryText} style={{ color: winner.color }}>
                     {winner.name} Victorious!
                   </span>
                 </>
               ) : (
                 <>
-                  <Skull className={styles.skullIcon} />
+                  <RegistryIcon id="skull" className={styles.skullIcon} />
                   <span className={styles.drawText}>Draw - No Victor</span>
                 </>
               )}
@@ -115,12 +114,12 @@ export function CombatDialog(props: CombatDialogProps) {
             <>
               {canPerformAction ? (
                 <Button onClick={onRollClick} disabled={isRolling} className={styles.rollButton}>
-                  {isRolling ? <Loader2 className={styles.dicesIcon} /> : <Dices className={styles.dicesIcon} />}
+                  {isRolling ? <RegistryIcon id="loader-2" className={styles.dicesIcon} /> : <RegistryIcon id="dices" className={styles.dicesIcon} />}
                   Roll for Battle!
                 </Button>
               ) : (
                 <div className={styles.waitingText}>
-                  <Loader2 className={styles.loaderIcon} />
+                  <RegistryIcon id="loader-2" className={styles.loaderIcon} />
                   <span>Waiting for attacker to roll...</span>
                 </div>
               )}

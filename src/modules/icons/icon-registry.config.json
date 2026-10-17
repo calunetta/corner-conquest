@@ -231,6 +231,17 @@
     "defaultSize": 100
   },
   {
+    "id": "anchor",
+    "label": "Anchor",
+    "module": "combat",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Anchor"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
     "id": "refresh-cw",
     "label": "Refresh Cw",
     "module": "game-board",

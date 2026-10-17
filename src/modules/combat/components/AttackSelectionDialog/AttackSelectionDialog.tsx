@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import { Anchor, CheckCircle, Crosshair } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -12,14 +11,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { RegistryIcon } from '@/modules/shared';
 import { toAttackSelectionViewModel } from './AttackSelectionDialog.map';
 import { styles } from './AttackSelectionDialog.styles';
 import type { AttackArmyOptionViewModel, AttackSelectionDialogProps, ArmyStatus } from './AttackSelectionDialog.types';
 
-const STATUS_ICON: Record<ArmyStatus, typeof CheckCircle> = {
-  acted: CheckCircle,
-  positioned: Anchor,
-  ready: Crosshair,
+const STATUS_ICON_ID: Record<ArmyStatus, string> = {
+  acted: 'check-circle',
+  positioned: 'anchor',
+  ready: 'crosshair',
 };
 
 const STATUS_LABEL: Record<ArmyStatus, string> = {
@@ -39,7 +39,7 @@ export function AttackSelectionDialog({ state, onSelectTarget, onClose, isMyTurn
         <AlertDialogHeader className={styles.header}>
           <div className={styles.headerRow}>
             <div className={styles.iconWrap}>
-              <Crosshair className={styles.icon} />
+              <RegistryIcon id="crosshair" className={styles.icon} />
             </div>
             <div>
               <AlertDialogTitle className={styles.title}>Select Enemy Target</AlertDialogTitle>
@@ -52,7 +52,7 @@ export function AttackSelectionDialog({ state, onSelectTarget, onClose, isMyTurn
 
         <div className={styles.grid}>
           {viewModel.armies.map((army: AttackArmyOptionViewModel) => {
-            const StatusIcon = STATUS_ICON[army.status];
+            const statusIconId = STATUS_ICON_ID[army.status];
             return (
               <button
                 key={army.id}
@@ -73,7 +73,7 @@ export function AttackSelectionDialog({ state, onSelectTarget, onClose, isMyTurn
                 </div>
                 <p className={styles.name}>Enemy Squad {army.id + 1}</p>
                 <div className={cn(styles.statusRow, styles.statusColor[army.status])}>
-                  <StatusIcon className={styles.statusIcon} />
+                  <RegistryIcon id={statusIconId} className={styles.statusIcon} />
                   <span>{STATUS_LABEL[army.status]}</span>
                 </div>
               </button>

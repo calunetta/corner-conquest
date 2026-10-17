@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { Skull, Swords } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { cn } from '@/lib/utils';
 import { styles } from './MonsterCombatDialog.styles';
 import { MonsterCombatCardSelector } from './MonsterCombatCardSelector';
@@ -31,7 +31,7 @@ export function MonsterAttackScreen({
       <AlertDialogHeader className={styles.header}>
         <div className="flex items-center gap-2">
           <div className={styles.headerIcon}>
-            <Skull className="h-5 w-5" />
+            <RegistryIcon id="skull" className="h-5 w-5" />
           </div>
           <div>
             <AlertDialogTitle className={styles.title}>{data.title}</AlertDialogTitle>
@@ -62,7 +62,7 @@ export function MonsterAttackScreen({
 
         <div className={styles.vsContainer}>
           <div className={styles.vsIcon}>
-            <Swords className="h-4 w-4 text-red-400" />
+            <RegistryIcon id="swords" className="h-4 w-4 text-red-400" />
           </div>
           <span className={styles.vsLabel}>VS</span>
         </div>
@@ -100,7 +100,7 @@ export function MonsterAttackScreen({
           Cancel
         </Button>
         <Button onClick={onAttack} disabled={!data.canAttack} className={styles.attackButton}>
-          <Swords className="mr-1.5 h-3.5 w-3.5" />
+          <RegistryIcon id="swords" className="mr-1.5 h-3.5 w-3.5" />
           Attack Monster!
         </Button>
       </AlertDialogFooter>

@@ -8,7 +8,7 @@ import {
   AlertDialogDescription,
 } from '@/components/ui/alert-dialog';
 import Image from 'next/image';
-import { Skull, Trophy, Swords } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { cn } from '@/lib/utils';
 import { styles } from './MonsterCombatDialog.styles';
 import type { MonsterResultsScreenProps } from './MonsterCombatDialog.types';
@@ -28,11 +28,11 @@ function renderDice(rolls: number[], isWinner: boolean) {
 export function MonsterResultsScreen({ data, onContinue }: MonsterResultsScreenProps) {
   const headerIcon = data.isPlayerWinner ? (
     <div className="h-9 w-9 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center">
-      <Trophy className="h-5 w-5" />
+      <RegistryIcon id="trophy" className="h-5 w-5" />
     </div>
   ) : (
     <div className="h-9 w-9 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 flex items-center justify-center">
-      <Skull className="h-5 w-5" />
+      <RegistryIcon id="skull" className="h-5 w-5" />
     </div>
   );
 
@@ -76,7 +76,7 @@ export function MonsterResultsScreen({ data, onContinue }: MonsterResultsScreenP
 
         <div className={styles.vsContainer}>
           <div className={styles.vsIcon}>
-            <Swords className="h-4 w-4 text-red-400" />
+            <RegistryIcon id="swords" className="h-4 w-4 text-red-400" />
           </div>
           <span className={styles.vsLabel}>VS</span>
         </div>
@@ -106,12 +106,12 @@ export function MonsterResultsScreen({ data, onContinue }: MonsterResultsScreenP
         <h2 className={cn(styles.outcomeText, data.isPlayerWinner ? styles.outcomeWin : styles.outcomeLoss)}>
           {data.isPlayerWinner ? (
             <>
-              <Trophy className="h-4 w-4" />
+              <RegistryIcon id="trophy" className="h-4 w-4" />
               {data.outcomeText}
             </>
           ) : (
             <>
-              <Skull className="h-4 w-4" />
+              <RegistryIcon id="skull" className="h-4 w-4" />
               {data.outcomeText}
             </>
           )}

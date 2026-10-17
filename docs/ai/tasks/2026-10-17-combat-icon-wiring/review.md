@@ -30,3 +30,38 @@ Out of scope, flagged for awareness only (not this task's doing): the working tr
 
 ## Docs
 - `docs-sync`: ran, updated `docs/architecture/systems-and-visuals.md`'s "Icon resolver" bullet (line 184 before edit) to match the new `resolveIcon`/`RegistryIcon`/`getLucideGlyph` contract.
+
+---
+
+# Final review: Lucide-capable icon resolver and combat icon wiring, phase 2
+
+VERDICT: APPROVED (UI verification still pending — see below)
+
+## Re-review note
+Previous round (CHANGES REQUESTED) flagged the `positioned`-status icon being swapped for an unrelated in-flight collector-sprite feature, with unauthorized edits to `AttackSelectionDialog.map.ts`/`.map.test.ts`/`.types.ts`. Since then:
+- `anchor` was registered in `src/modules/icons/icon-registry.config.json` (`id: "anchor"`, `module: "combat"`, verified at line 234) and mapped in `src/modules/icons/lucide-glyphs.ts:4,63` (`['Anchor', Anchor]`).
+- `ArmySelectionDialog.tsx` and `AttackSelectionDialog.tsx` now use `STATUS_ICON_ID: Record<ArmyStatus, string> = { acted: 'check-circle', positioned: 'anchor', ready: 'clock' | 'crosshair' }`, rendered via `<RegistryIcon id={statusIconId} className={styles.statusIcon} />` — same pattern as `acted`/`ready`, same `className`, `lucide-react` import dropped. This is now a complete, uniform port of all three statuses, matching the acceptance criterion ("same visible icon... as before": `anchor` is the same lucide glyph, same size/color classes, now routed through the registry like every other combat icon).
+- The sprite-swap (`toCollectorIdleSprite`, `Image`, `aria-hidden` branch) is fully removed from both files; `git diff` on `AttackSelectionDialog.map.ts`, `AttackSelectionDialog.types.ts`, `AttackSelectionDialog.map.test.ts` is empty — byte-identical to `HEAD`, no residual hunks from the unrelated feature or from this task.
+- `docs/architecture/systems-and-visuals.md`'s diff is unchanged from the prior round (3 lines: the Icon resolver bullet plus the pre-existing, unrelated dev-tools-password wording) — still accurate, no update needed since the `positioned` case is now a normal registry id like the others, nothing new to document beyond what the bullet already says ("for example `skull`, `swords`, ... `crosshair`").
+
+## Checks run (this round)
+- `npx tsc --noEmit`: clean, no errors.
+- `npx eslint --max-warnings 0` on the 8 Phase 2 combat `.tsx` files plus `src/modules/icons/lucide-glyphs.ts`: 0 errors, 0 warnings.
+- `npx jest --testPathPatterns="^src/modules/combat"` (anchored — the unanchored `src/modules/combat` pattern also matches `.claude/worktrees/*/src/modules/combat/...` from unrelated parallel sessions and gives false failures, do not use it): `Test Suites: 20 passed, 20 total`, `Tests: 292 passed, 292 total` (one fewer than the prior round's 293 — the reverted `defendingPlayerColor` test is gone, as expected).
+- `npx jest --testPathPatterns="^src/modules/icons/lucide-glyphs"`: `Test Suites: 1 passed, 1 total`, `Tests: 60 passed, 60 total` (guards the new `anchor` map entry).
+- Registry ids confirmed present: `check-circle`, `clock`, `crosshair`, `anchor` all found exactly once each in `icon-registry.config.json`.
+- Repo-wide `npm run lint`/`npm test` intentionally not run per instructions.
+
+## Plan adherence
+All 8 Phase 2 files plus `ArmySelectionDialog.tsx`/`AttackSelectionDialog.tsx`'s `STATUS_ICON_ID` maps now match `plan.md`'s File plan and Contracts. `PositionDialog.tsx` remains untouched by this phase (confirmed in the prior round by mtime, unchanged since). No out-of-scope files remain touched.
+
+## Findings
+None blocking.
+
+**Still open, not blocking this verdict:** the `animate-spin` class (`CombatDialog.styles.ts:58` `loaderIcon`) now sits on `RegistryIcon`'s outer wrapper `<span>` instead of directly on the `<svg>` (`CombatDialog.tsx:106,123`) — pre-approved by plan.md's Risks section as a mechanical, same-effect change. The browser check is still blocked by an unrelated build error in `src/modules/game-board/game-board.animation-cleanup.hook.ts` (not this task's file). Given the plan's explicit pre-approval, Phase 1's prior visual verification of `RegistryIcon`'s wrapper markup at other call sites, and the purely mechanical nature of this change (wrapping, not re-flowing), this is low enough risk not to withhold approval of the code change itself. However: do not tick `progress.md`'s "UI verified" box and do not commit Phase 2 until (a) the unrelated build error is fixed and (b) one combat dialog with `isRolling: true` and `MonsterSpectatorScreen`'s loader are checked in a browser.
+
+## Owner routing
+- Whoever fixes `game-board.animation-cleanup.hook.ts`'s build error (separate, unrelated task) unblocks preview-b's ui-verify step for this task; then preview-b/architect-b confirm the spin and the `anchor` glyph visually before commit.
+
+## Docs
+- `docs-sync`'s Phase 2 edit to `docs/architecture/systems-and-visuals.md`'s Icon resolver bullet remains accurate; no further change needed for the `anchor` fix.

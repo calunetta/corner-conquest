@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Skull } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -26,7 +26,7 @@ export function MonsterSelectionDialog({ state, onSelectTarget, onClose, isMyTur
         <AlertDialogHeader className={styles.header}>
           <div className={styles.headerRow}>
             <div className={styles.iconWrap}>
-              <Skull className={styles.icon} />
+              <RegistryIcon id="skull" className={styles.icon} />
             </div>
             <div>
               <AlertDialogTitle className={styles.title}>Select Wild Monster</AlertDialogTitle>

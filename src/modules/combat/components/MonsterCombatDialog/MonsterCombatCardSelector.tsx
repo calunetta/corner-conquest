@@ -4,7 +4,7 @@ import { CardName } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Slider } from '@/components/ui/slider';
-import { Dices, Sparkles } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { styles } from './MonsterCombatDialog.styles';
 import type { MonsterCombatCardSelection, MonsterAttackViewModel } from './MonsterCombatDialog.types';
 
@@ -24,7 +24,7 @@ export function MonsterCombatCardSelector({
   return (
     <div className={styles.tacticalCardsContainer}>
       <div className={styles.tacticalCardsHeader}>
-        <Sparkles className="h-3.5 w-3.5" />
+        <RegistryIcon id="sparkles" className="h-3.5 w-3.5" />
         <span>Tactical Combat Card</span>
       </div>
       <RadioGroup value={selectedCard} onValueChange={onSelectCard} className={styles.radioGroup}>
@@ -62,7 +62,7 @@ export function MonsterCombatCardSelector({
               <div className={styles.decidedValueContainer}>
                 <div className="flex justify-between items-center">
                   <div className={styles.decidedValueLabel}>
-                    <Dices className="h-3.5 w-3.5 text-blue-400" />
+                    <RegistryIcon id="dices" className="h-3.5 w-3.5 text-blue-400" />
                     <span>Chosen Value:</span>
                   </div>
                   <span className={styles.decidedValueDisplay}>{decidedValue}</span>

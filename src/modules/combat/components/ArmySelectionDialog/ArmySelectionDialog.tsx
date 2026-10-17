@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import { Anchor, CheckCircle, Clock } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -13,15 +12,15 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { FightIcon } from '@/modules/shared';
+import { FightIcon, RegistryIcon } from '@/modules/shared';
 import { toArmySelectionViewModel } from './ArmySelectionDialog.map';
 import { styles } from './ArmySelectionDialog.styles';
 import type { ArmyOptionViewModel, ArmySelectionDialogProps, ArmyStatus } from './ArmySelectionDialog.types';
 
-const STATUS_ICON: Record<ArmyStatus, typeof CheckCircle> = {
-  acted: CheckCircle,
-  positioned: Anchor,
-  ready: Clock,
+const STATUS_ICON_ID: Record<ArmyStatus, string> = {
+  acted: 'check-circle',
+  positioned: 'anchor',
+  ready: 'clock',
 };
 
 const STATUS_LABEL: Record<ArmyStatus, string> = {
@@ -62,7 +61,7 @@ export function ArmySelectionDialog({
 
         <div className={styles.grid}>
           {viewModel.armies.map((army: ArmyOptionViewModel) => {
-            const StatusIcon = STATUS_ICON[army.status];
+            const statusIconId = STATUS_ICON_ID[army.status];
             return (
               <button
                 key={army.id}
@@ -93,7 +92,7 @@ export function ArmySelectionDialog({
                   {army.isSelected && <Badge className={styles.activeBadge}>ACTIVE</Badge>}
                 </div>
                 <div className={cn(styles.statusRow, styles.statusColor[army.status])}>
-                  <StatusIcon className={styles.statusIcon} />
+                  <RegistryIcon id={statusIconId} className={styles.statusIcon} />
                   <span>{STATUS_LABEL[army.status]}</span>
                 </div>
               </button>

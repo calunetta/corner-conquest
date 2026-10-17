@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   Album,
+  Anchor,
   ArrowLeft,
   Award,
   Ban,
@@ -59,6 +60,7 @@ import {
 const LUCIDE_GLYPHS = new Map<string, LucideIcon>([
   ['AlertTriangle', AlertTriangle],
   ['Album', Album],
+  ['Anchor', Anchor],
   ['ArrowLeft', ArrowLeft],
   ['Award', Award],
   ['Ban', Ban],

@@ -19,13 +19,13 @@ Tier: L · Phases: 2
 
 ## Phase 2: combat dialogs wired to the registry
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-b)
-- [ ] tests (tester-b)
+- [x] implementation (implementer-b)
+- [x] tests (tester-b)
 - [ ] previews (preview-a, preview-b) — none planned, skip
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] docs updated (docs-sync)
-- [ ] final review (architect-b)
+- [x] checks: typecheck, lint, unit tests
+- [ ] UI verified (ui-verify) — blocked by unrelated build error in game-board.animation-cleanup.hook.ts; must run before commit
+- [x] docs updated (docs-sync)
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Log
