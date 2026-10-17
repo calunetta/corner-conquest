@@ -18,6 +18,7 @@ export { createPlayer } from './player-factory';
 export { defaultGameSettings, initializeGame, startGame } from './game-setup.reducer';
 export { addPlayerToGame, BASE_TILE_SIZE } from './player-join.reducer';
 export { hasPlayerRemainingActions } from './turn-progression';
+export { canViewerReadLogEntry } from './log-visibility';
 export { handleInitiateCombatAction } from './combat-initiate.reducer';
 export { handleCombatRoll } from './combat-player-roll.reducer';
 export { handleCloseCombat } from './combat-player-resolve.reducer';

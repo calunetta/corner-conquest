@@ -33,6 +33,13 @@ export function revealIsland(state: GameState, x: number, y: number, isScout: bo
         isMilestone: true,
       });
     }
+  } else if (!isScout) {
+    // Later discoveries of an island someone else already found still count as activity for the log.
+    pushLogEntry(state, {
+      category: 'economy',
+      message: `${player.name} explored a new island.`,
+      playerId: player.playerId,
+    });
   }
 
   if (tile.type === IslandType.Special && !isScout) {
@@ -67,6 +74,8 @@ export function revealIsland(state: GameState, x: number, y: number, isScout: bo
           category: 'economy',
           message: `${player.name} discovered a special island and found a card: "${drawnCardResult}"!`,
           playerId: player.playerId,
+          visibility: { scope: 'owner' },
+          redactedMessage: `${player.name} discovered a special island and found a card.`,
         });
       }
     } else {

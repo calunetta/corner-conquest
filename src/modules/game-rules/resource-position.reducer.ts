@@ -41,6 +41,8 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
       category: 'economy',
       message: `${player.name} used their Extra Move to position Army #${selectedArmy.id + 1} on ${resource}.`,
       playerId: player.playerId,
+      visibility: { scope: 'tiles', tileIds: [tile.id] },
+      redactedMessage: `${player.name} used their Extra Move to position an army.`,
     });
   } else {
     selectedArmy.hasActed = true;
@@ -48,6 +50,8 @@ export function handleSelectResourceForPosition(state: GameState, resource: Reso
       category: 'economy',
       message: `${player.name} positioned an army on ${resource}.`,
       playerId: player.playerId,
+      visibility: { scope: 'tiles', tileIds: [tile.id] },
+      redactedMessage: `${player.name} positioned an army.`,
     });
   }
 

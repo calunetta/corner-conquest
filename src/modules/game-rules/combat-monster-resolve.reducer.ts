@@ -68,6 +68,8 @@ export function handleCloseMonsterCombat(state: GameState): GameState {
         category: 'combat',
         message: `The defeated monster revealed new resources on the island: ${resourceNames}!`,
         playerId: attacker.playerId,
+        visibility: { scope: 'tiles', tileIds: [currentTile.id] },
+        redactedMessage: 'The defeated monster revealed new resources on an island.',
       });
     }
   } else {

@@ -177,6 +177,37 @@ describe('handleMoveAction', () => {
     );
   });
 
+  it('logs a plain move of an unpositioned army as a public entry with no tile detail', () => {
+    const army = game.players[0].armies[0];
+    const targetMove = getPossibleMoves(game, army)[0];
+    const logCountBefore = game.log.length;
+
+    const nextState = handleMoveAction(game, targetMove.x, targetMove.y, army);
+
+    const newEntries = nextState.log.slice(logCountBefore);
+    expect(newEntries).toContainEqual(
+      expect.objectContaining({ message: `${game.players[0].name} moved an army.` }),
+    );
+  });
+
+  it('gates the origin-tile detail of a positioned army move to that tile and redacts it for others', () => {
+    const player = game.players[0];
+    const army = player.armies[0];
+    const targetMove = getPossibleMoves(game, army)[0];
+    const oldTile = game.map[army.position.y * game.settings.gridSize.cols + army.position.x];
+    oldTile.positionedBy = [{ playerId: player.id, resource: ResourceType.Food }];
+    player.positions = [{ x: army.position.x, y: army.position.y, resource: ResourceType.Food, armyId: army.id }];
+    const logCountBefore = game.log.length;
+
+    const nextState = handleMoveAction(game, targetMove.x, targetMove.y, army);
+
+    expect(nextState.log.slice(logCountBefore)).toContainEqual(expect.objectContaining({
+      message: `${player.name} moved an army off ${ResourceType.Food}.`,
+      visibility: { scope: 'tiles', tileIds: [oldTile.id] },
+      redactedMessage: `${player.name} moved an army.`,
+    }));
+  });
+
   it('consumes the extra move instead of marking hasActed when the player has one', () => {
     const player = game.players[0];
     const army = player.armies[0];

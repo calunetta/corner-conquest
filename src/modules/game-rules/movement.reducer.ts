@@ -83,7 +83,8 @@ export function handleMoveAction(
   oldTile.occupants = oldTile.occupants.filter((o) => o.playerId !== player.id || o.armyId !== armyInState.id);
 
   const positionIndex = player.positions.findIndex((p) => p.armyId === armyInState.id);
-  if (positionIndex > -1) {
+  const wasPositioned = positionIndex > -1;
+  if (wasPositioned) {
     const removedPosition = player.positions.splice(positionIndex, 1)[0];
     if (oldTile.positionedBy) {
       oldTile.positionedBy = oldTile.positionedBy.filter(
@@ -94,6 +95,8 @@ export function handleMoveAction(
       category: 'economy',
       message: `${player.name} moved an army off ${removedPosition.resource}.`,
       playerId: player.playerId,
+      visibility: { scope: 'tiles', tileIds: [oldTile.id] },
+      redactedMessage: `${player.name} moved an army.`,
     });
   }
 
@@ -112,6 +115,9 @@ export function handleMoveAction(
     });
   } else {
     armyInState.hasActed = true;
+    if (!wasPositioned) {
+      pushLogEntry(state, { category: 'economy', message: `${player.name} moved an army.`, playerId: player.playerId });
+    }
   }
 
   const isFirstDiscovery = !player.revealedTiles.includes(targetTile.id);

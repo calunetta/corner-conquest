@@ -59,6 +59,8 @@ export function handleBuyCardAction(state: GameState): GameState {
     category: 'cards',
     message: `${player.name} bought a special card: "${drawnCard}"!`,
     playerId: player.playerId,
+    visibility: { scope: 'owner' },
+    redactedMessage: `${player.name} bought a special card.`,
   });
 
   return state;
@@ -136,6 +138,8 @@ export function handleRollOnSpecialIsland(
           category: 'cards',
           message: `${player.name} rolled a ${roll} and found a card: "${cardDrawn}"!`,
           playerId: player.playerId,
+          visibility: { scope: 'owner' },
+          redactedMessage: `${player.name} rolled a ${roll} and found a card.`,
         });
       }
     } else {

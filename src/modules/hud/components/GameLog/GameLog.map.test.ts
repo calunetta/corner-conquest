@@ -211,3 +211,36 @@ describe('toMessageSegments', () => {
     expect(toMessageSegments(entry)).toEqual([{ text: 'Island event: gained 5 Gold', colorClass: null }]);
   });
 });
+
+describe('toLogEntryViewModels visibility', () => {
+  const hiddenDetail: StructuredLogEntry = {
+    kind: 'structured',
+    turn: 2,
+    category: 'economy',
+    message: 'Ada moved an army off Wood.',
+    playerId: 'p-blue',
+    visibility: { scope: 'tiles', tileIds: ['island-7'] },
+    redactedMessage: 'Ada moved an army.',
+  };
+
+  it('shows the full message to a viewer who can read the entry', () => {
+    const [entry] = toLogEntryViewModels([hiddenDetail], players, () => true);
+
+    expect(entry.message).toBe('Ada moved an army off Wood.');
+  });
+
+  it('shows the redacted message to a viewer who cannot read the entry', () => {
+    const [entry] = toLogEntryViewModels([hiddenDetail], players, () => false);
+
+    expect(entry.message).toBe('Ada moved an army.');
+    expect(entry.playerName).toBe('Ada');
+    expect(entry.category).toBe('economy');
+  });
+
+  it('drops an unreadable entry that has no redacted message', () => {
+    const withoutRedaction = { ...hiddenDetail, redactedMessage: undefined };
+
+    expect(toLogEntryViewModels([withoutRedaction], players, () => false)).toEqual([]);
+  });
+});
+

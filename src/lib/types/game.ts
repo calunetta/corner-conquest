@@ -36,6 +36,11 @@ export type ResourceGainLogEntry = {
   tileIds?: string[];
 };
 
+/** Who may read a structured entry's full `message`. Absent on an entry = public (every player reads it).
+ *  `owner`: only the entry's `playerId`. `tiles`: the `playerId` plus any viewer who can see one of
+ *  `tileIds` (see `canViewerReadLogEntry` in `src/modules/game-rules/log-visibility.ts`). */
+export type LogVisibility = { scope: 'owner' } | { scope: 'tiles'; tileIds: string[] };
+
 export type StructuredLogEntry = {
   kind: 'structured';
   turn: number; // GameState.turn at push time; 0 = pre-game (lobby)
@@ -52,6 +57,10 @@ export type StructuredLogEntry = {
    *  animation feature. `playerId` is always the gainer. Independent of `resourcesCollected`
    *  (toast-only) — adding this never changes which entries toast. */
   resourceGain?: ResourceGainLogEntry[];
+  visibility?: LogVisibility; // who may read `message`; absent = public
+  /** Shown instead of `message` to viewers `visibility` excludes. Required whenever `visibility` is set,
+   *  so every player still learns that the event happened without learning the hidden detail. */
+  redactedMessage?: string;
 };
 
 export type LogEntry = string | StructuredLogEntry;
