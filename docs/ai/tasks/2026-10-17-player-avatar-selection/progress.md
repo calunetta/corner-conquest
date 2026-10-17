@@ -13,7 +13,7 @@ Tier: L · Phases: 3
 - [x] checks: typecheck, lint, unit tests — typecheck clean, lint clean (0 warnings), `npx jest src/modules/avatars src/modules/game-rules src/modules/session src/modules/lobby`: Test Suites 77 passed, Tests 1110 passed
 - [ ] checks: test:rules (Firestore emulator) — not run: "Unable to locate a Java Runtime" in this environment; rules reviewed by reading only. Must run before deploy (Java 21 machine).
 - [x] final review (architect-b) — APPROVED, see review.md
-- [x] committed: <hash>
+- [x] committed: d22526f
 
 ## Phase 2: Lobby, HUD, victory rendering + header picker
 - [ ] implementation (implementer-a, implementer-b)
