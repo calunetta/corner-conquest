@@ -605,3 +605,387 @@ Findings:
 Phase sizing (15 files: 1 type, 2 hooks, 2 maps + 1 catalog function, 1 fixtures file, 5 test files, 2 previews, 2 docs; implementer-a/tester-a/preview-a only, correctly no implementer-b/tester-b since no `.tsx` changes) is appropriate for a mid-size L-tier phase and matches the "pure view vs. connected" guidance — nothing here renders JSX.
 
 Status: APPROVED
+
+---
+
+# Plan: Filename-driven monster sprite system — Phase 3 (testbed uploader)
+
+Status: APPROVED
+Inputs: triage.md, game-design.md (Final spec), ui-design.md (Final spec and Spec sections, plus this plan's amendment below), plan.md Phase 1/2 (Decisions, Verified context), progress.md
+
+## Goal and acceptance criteria
+Carries forward every acceptance criterion in ui-design.md's "Acceptance criteria" section (unchanged by this plan except the Level-picker ones, amended below), plus:
+
+- [ ] `/testbed/monster-sprite-uploader` renders under "Dev tools", next to "Tile Decoration Editor" (ui-design.md, confirmed registry pattern below).
+- [ ] The Level select offers only levels valid for the current Boss toggle: 1-3 when Boss is off, 1-4 when Boss is on (amends ui-design.md's "1-4 always" — see ui-design.md amendment below and Decisions).
+- [ ] A single `POST /api/monster-catalog` multipart request writes the idle (+ optional attack) GIF into `public/monster/`, rescans the directory, and rewrites both generated files (`monster-catalog.generated.ts`, `monsters.generated.ts`) — no second network call for regeneration (ui-design.md Final spec point 1, resolved here as the single-call shape).
+- [ ] A submit with a name+level pair that already exists in the catalog (seed or previously uploaded) is rejected with `409` and the inline duplicate error under Name; nothing is written to disk.
+- [ ] The four seed rows are always present, carry a "Seed" badge, and render no delete control; this is true with zero code change beyond reading the existing `MONSTER_CATALOG`/`SEED_MONSTER_CATALOG` exports — no new "is this a seed" data needs inventing.
+- [ ] `npm run typecheck`, `npm run lint` and `npm test` pass full-repo.
+- [ ] `ui-verify` screenshots of the live `/testbed/monster-sprite-uploader` page confirm: the empty state's dashed-border placeholders, a picked idle GIF looping in its preview box, the boss+level-1/2 soft warning appearing/disappearing, and a successful add appending a new Catalog row with correct badges.
+- [ ] `docs/architecture/systems-and-visuals.md` gains a bullet for the new tool (docs-sync, same phase) alongside its existing Icon Editor / Testbed editor bullets. `docs/architecture/game-mechanics.md` needs **no edit**: re-read in this session, `game-mechanics.md:36` already documents the level caps ("Levels are capped at 1–3 for non-boss and 1–4 for boss; a higher level is skipped with a console warning") from Phase 1's build — this phase only adds a UI/route path to reach that already-documented rule, not a new rule.
+
+## Verified context
+| Symbol or file | Location | Why it matters |
+|---|---|---|
+| `parseMonsterSpriteFilename`, `MONSTER_SPRITE_FILENAME` regex, `MIN_LEVEL`/`MAX_NON_BOSS_LEVEL`/`MAX_BOSS_LEVEL` | `src/modules/game-rules/monster-catalog-generator.ts:4-58` | Level caps (non-boss ≤3, boss ≤4) are **already implemented** here (module-local consts, not yet exported) — built during Phase 1's implementation, ahead of the plan text. This phase exports them instead of re-deriving them. |
+| `SEED_MONSTER_CATALOG` | `monster-catalog-generator.ts:14-19` | The 4 non-deletable rows; reused directly for the Catalog list's "Seed" badge (no new seed-tracking data needed). |
+| `buildMonsterCatalogEntries`, `renderMonsterCatalogSource`, `renderMonsterNameSource` | `monster-catalog-generator.ts:94-137` | Reused verbatim by the new route, exactly as `scripts/generate-monster-catalog.ts` already reuses them — this phase's route is a second caller of the same pure functions, not a reimplementation. |
+| `toEntryKey` | `monster-catalog-generator.ts:60` | Module-local today (`${name}|${level}`); needed by the route's duplicate check and the Catalog list's seed lookup — exported and renamed `toCatalogEntryKey` (Decisions). |
+| `MonsterCatalogEntry` | `src/modules/game-rules/monster-catalog.types.ts:3-12` | `sprite.attack` already optional — the uploader's optional Attack file maps straight onto it, no type change needed. |
+| `MONSTER_CATALOG`, `getFirstMonsterAtLevel`, `toMonster` | `src/modules/game-rules/monster-catalog.ts:1-6` (re-exported) and `index.ts:4-5` | `MONSTER_CATALOG` is the catalog's initial client-side state (static import, no fetch — see Decisions); already public. |
+| `scripts/generate-monster-catalog.ts` | full file, 27 lines | `listGifFilenames` (sync `readdirSync`, lines 14-21) and the two `writeFileSync` calls (lines 25-26) are the shape the new async route repeats with `fs/promises` — see Decisions on why these aren't merged into one shared fs helper. |
+| `src/app/api/tile-fog-variants/route.ts` (63 lines), `upload.ts` (31 lines) | full files | Single-`POST` precedent: parse multipart fields, validate, write asset(s), append/rewrite config, return `NextResponse.json`. `MAX_UPLOAD_BYTES` (upload.ts:4) and `isGifBytes` (upload.ts:19-21) are reused directly (see next row), not re-copied. |
+| `src/app/api/tile-variants/images/route.ts:8` | `import { isGifBytes, isPngBytes, MAX_UPLOAD_BYTES } from '../../tile-fog-variants/upload';` | **Confirmed existing precedent for cross-route reuse of `upload.ts`'s byte-check helpers** — a second route already imports them instead of duplicating the GIF/PNG magic-byte check. The new `/api/monster-catalog` route follows this, not the (also-existing, but separately-justified) duplicated-`toSlug`-per-module pattern below. |
+| `src/modules/map/components/TileVariants/TileVariants.validate.ts:16-22` (`toSlug`) vs. `src/app/api/tile-fog-variants/upload.ts:24-30` (`toVariantId`'s inline slug body) | both read in full | **Confirmed existing precedent that an identical slug-normalizing function body is duplicated per module/route** (not extracted to a shared `@/lib` helper) — justifies this phase's own `toMonsterSpriteSlug` living in `monster-catalog-generator.ts` rather than reaching into either of these unrelated domains (map vs. fog) or inventing a new shared slug module no existing code asked for. |
+| `src/app/api/icon-editor/uploads/route.ts` (66 lines) + its `route.test.ts` (204 lines) | full files | Precedent for a `File`-accepting multipart `POST` route **and** its test harness: `request.formData()` stubbed as a `Map<string, FormDataEntryValue>` cast to `FormData` (route.test.ts:41-47), `File.arrayBuffer` polyfilled with `Object.defineProperty` (route.test.ts:50-55) since jsdom's `File` lacks it. This phase's `route.test.ts` copies this harness instead of attempting undici's real multipart parser (route.test.ts:37-40 explains why that fails under jsdom). |
+| `src/app/api/tile-decoration-editor/default-elements/route.ts` (67 lines) + `regenerate-source.ts` (95 lines) + `regenerate-source.test.ts` | full files | Precedent for splitting a route into "pure validate/transform" (unit-testable without fs/`Request` polyfills) + "route owns fs I/O" — this phase's `validation.ts`/`route.ts` split mirrors it. |
+| `ISLAND_TILE_SLOTS_PATH` | `src/modules/map/island-tile-slots.types.ts` (exported, consumed at `default-elements/route.ts:4,60`) | Precedent for a **shared, exported path constant** reused by both a generator-adjacent module and its route, instead of each hardcoding the path string — this phase adds the equivalent `MONSTER_CATALOG_GENERATED_PATH`/`MONSTER_NAMES_GENERATED_PATH`/`MONSTER_SPRITE_PUBLIC_DIRECTORY_FS` constants, reused by both the (edited) script and the (new) route. |
+| `src/testbed/registry.ts` | 112 lines; `tileDecorationEditorPreview` imported at line 49, listed at line 104 (ui-design.md cites `:49,102` — off by 2 lines from an edit since that doc was written; non-blocking, folded in below) | Import-and-list pattern for a new preview; this phase adds `monsterSpriteUploaderPreview` the same way. |
+| `src/testbed/testbed.types.ts:1-17` | `PreviewState { name; render }`, `ComponentPreview { slug; title; group; states }` | The preview's exact shape. |
+| `src/testbed/components/TileDecorationEditor/TileDecorationEditor.preview.tsx` (11 lines) and `src/testbed/components/IconEditor/IconEditor.preview.tsx` (67 lines) | both read in full | **Confirmed precedent: a stateful dev-tool's preview registers exactly one state** ("Editor") rendering the real connected component (`TileDecorationEditor`) or a locally-faked stand-in that avoids the real network route (`IconEditorPreviewEditor`, which never calls `IconEditor()`/the real hook/service — see `IconEditor.preview.tsx:14-17`'s own comment). This phase follows the `TileDecorationEditor` variant: `/testbed/monster-sprite-uploader` **is** this tool's real entry point (the dev-only route already 404s in production, same gate as every other such route), so the preview renders the real connected `MonsterSpriteUploader`, not a faked stand-in — see Decisions. |
+| `src/testbed/components/TileDecorationEditor/TileDecorationEditorSaveRow.tsx:12` | `error: 'Could not save — see console.',` | Confirms ui-design.md's corrected citation (`:12`, not `:13`) and the generic-error copy pattern this phase's "Could not add — see console." mirrors. |
+| `src/modules/map/components/AnimatedMonster/AnimatedMonster.tsx:8,20-21` | `import { MONSTER_SPRITE_SIZE_PX } from '../../island-tile-slots.types'; ... width={MONSTER_SPRITE_SIZE_PX} height={MONSTER_SPRITE_SIZE_PX}` | ui-design.md cites `:9,19-20` — off by one line (non-blocking, folded in below). Confirms the constant's import path and that it is a plain number (sizes the two live preview boxes). |
+| `src/components/ui/select.tsx`, `switch.tsx`, `badge.tsx`, `input.tsx`, `label.tsx`, `button.tsx` | all exist, confirmed by `ls` | Standard shadcn primitives: `Select`/`SelectTrigger`/`SelectContent`/`SelectItem` (controlled via `value`/`onValueChange`, both strings), `Switch` (`checked`/`onCheckedChange`), `Badge` (`variant`: `default`\|`secondary`\|`destructive`\|`outline`). No new primitive needed. |
+| `docs/architecture/systems-and-visuals.md:180-181` | `- **Icon Editor (...):** ...` / `- **Status: testbed-only.** ...` | Exact insertion point and the bullet format every other testbed tool follows (name+route+group, then what it writes and which dev-only route(s) it calls, then "All N routes return 404 in production"). |
+| `docs/architecture/game-mechanics.md:36` | `Levels are capped at 1–3 for non-boss and 1–4 for boss; a higher level is skipped with a console warning.` | Re-read in this session: **already accurate**, written during Phase 1's build. No edit needed — confirms the Goal/acceptance-criteria line above. |
+| `eslint.config.mjs:12,38,65-69,107` | `LEGACY_PATHS` (line 12; no `src/testbed/**` or `src/app/api/**` entry), `MODULE_FILES = 'src/modules/**/*.{ts,tsx}'` (line 38; does not match either folder), `no-explicit-any`/`consistent-type-imports`/`no-console: warn`/`max-lines: 150` (lines 65-69, general rules, apply to both folders), `scripts/**/*.{js,mjs}` console exemption (line 107; does not cover this phase's `.ts` edit to the script, already noted in Phase 1's Risks) | Confirms: `src/testbed/**` and `src/app/api/**` get the general rules (150-line cap, `no-console` warn) but none of `src/modules`' import-boundary restrictions — a route may import `@/modules/game-rules/...` by a deep path exactly as `scripts/generate-monster-catalog.ts` already does, with no lint violation. |
+| `src/testbed/components/IconEditor/{IconEditor.tsx,.hook.ts,.types.ts,.fixtures.ts,.preview.tsx}` | full files | Structural precedent followed for `MonsterSpriteUploader`'s own file split: `View`/connected split in `.tsx` (`IconEditor.tsx:53,88-90`), hook owns all state/handlers and returns a flat view model (`IconEditor.hook.ts`), `.types.ts` holds the view model and per-row types, `.fixtures.ts` holds deterministic sample data reused by tests. |
+
+## ui-design.md amendment (architect-a)
+The Level-cap decision (triage.md, "Resolved with the user (2026-10-17): level caps") postdates ui-design.md's lock (its Final spec still says Level is always 1-4). Appended to the end of `ui-design.md`, not rewritten in place, so the approved review trail stays intact:
+
+> ## Amendment (architect-a, Phase 3 planning — level caps)
+> Triage's level-cap decision (non-boss 1-3, boss 1-4; no level 5) was resolved after this doc's Final spec was locked. Three changes, nothing else:
+> 1. **Level select is Boss-dependent, not always 1-4.** Options: "1 — Little", "2 — Little", "3 — Big" when Boss is off; add "4 — Big" when Boss is on. Toggling Boss off while Level 4 is selected clamps the selection down to 3 (the picker can never show an invalid combination — same category as the dashed-border preview placeholders, a UI-level guard, not a validation error the user has to notice and fix).
+> 2. **"Name/level/boss filled, ready" state** (Spec line 22) now reads: "Submit button ('Add monster') becomes enabled once Name is non-blank, Level is 1-3 (non-boss) or 1-4 (boss), and an idle file is present." (was: "Level is 1-4").
+> 3. **New error copy, defense-in-depth only (unreachable via the Level select itself, same category as the existing "missing idle" error):** "Non-boss monsters go up to level 3; boss monsters go up to level 4." — inline under the Level field, `aria-describedby`-associated like the other blocking field errors.
+>
+> No other state, copy, token, interaction, accessibility note or acceptance criterion changes.
+
+## Decisions
+- **One `POST /api/monster-catalog`, not upload-then-regenerate.** Resolves ui-design.md's open point (Final spec item 1). Matches the `tile-fog-variants` precedent (`route.ts` does the file write and the config update in one handler) and triage's locked "regenerated on upload" wording (singular action). Rejected: two calls — no stated reason to split, and it would need the client to hold an uncommitted upload across two round-trips for no benefit.
+- **The route reuses the Phase 1 generator's pure functions verbatim** (`buildMonsterCatalogEntries`, `renderMonsterCatalogSource`, `renderMonsterNameSource`), exactly as `scripts/generate-monster-catalog.ts` already does — a second caller of code that was already written to be fs-free and reusable (Phase 1's own Decisions: "Phase 3's upload route reuses them verbatim instead of re-implementing filename parsing"). No duplication introduced.
+- **No shared fs helper between the script and the route.** Both do "readdir `public/monster`, filter+sort `.gif`, build entries, write 2 generated files" — about 5-8 lines each — but one runs synchronously via a `tsx` CLI invocation and the other asynchronously inside a Next route handler; no existing precedent in this codebase unifies a CLI script and a route handler's fs calls into one shared function (`tile-decoration-editor`'s `regenerate-source.ts` is purely the *string-transform* half, not the fs half, which stays separately written in each of that domain's own route). Rejected: extracting a shared `regenerateMonsterCatalog()` fs helper — below DRY's "two copies, different runtime contexts, no precedent" bar; would also need an async/sync dual API for one call site each, adding a layer with no reuse benefit.
+- **Shared path constants, not re-hardcoded strings.** `MONSTER_CATALOG_GENERATED_PATH`, `MONSTER_NAMES_GENERATED_PATH`, `MONSTER_SPRITE_PUBLIC_DIRECTORY_FS` are added as exports of `monster-catalog-generator.ts` and used by both the (edited) script and the (new) route — mirrors the `ISLAND_TILE_SLOTS_PATH` precedent (exported from the types file, imported by its route) instead of each fs-touching file inventing its own path string.
+- **Filename building is the exact inverse of `parseMonsterSpriteFilename`, in the same file.** `toMonsterSpriteSlug` (new) normalizes the submitted name into the regex's `[a-z0-9]+(?:-[a-z0-9]+)*` slug shape; `buildMonsterSpriteFilename(name, level, isBoss, kind)` assembles `<boss->-<slug>-lvl<N>-<kind>.gif`. Kept in `monster-catalog-generator.ts` alongside the regex and `parseMonsterSpriteFilename`, not duplicated from `TileVariants.validate.ts`'s or `tile-fog-variants/upload.ts`'s own slug functions — see the Verified-context row on the confirmed existing precedent of per-domain slug duplication; borrowing either of those would cross an unrelated domain boundary (map/fog) for no shared benefit.
+- **The route never computes the display (Title Case) name itself.** After writing the sprite file(s) under their slug-built filename, the route re-scans the directory and calls `buildMonsterCatalogEntries` again — the exact same function that turns every other filename's slug into its Title Case `name` via `parseMonsterSpriteFilename`'s `toTitleCase`. The newly written entry is then looked up from that fresh scan by `(slug, level)`, guaranteeing its `name` is produced by the identical code path as every other catalog entry (seed or previously uploaded) — not a second, possibly-diverging Title-Case implementation in the route.
+- **Two separate lookups, not one, because they compare different kinds of names.** `toEntryKey` is exported and renamed `toCatalogEntryKey`, body unchanged — it still does exact-string `${name}|${level}` matching, used only where both sides are already-canonical catalog names from the same generator (unchanged inside `groupFilenamesIntoEntries`/`buildMonsterCatalogEntries`, and newly reused by the Catalog list's seed-badge check, `toCatalogRowViewModels`). A new `findMonsterEntry(catalog, name, level)` is added for the route's two lookups (pre-write duplicate check, post-write response lookup), both of which compare a raw, arbitrary user-submitted `name` against the catalog — it normalizes both sides through `toMonsterSpriteSlug` instead of exact string matching, so "fire ogre" correctly collides with an existing "Fire Ogre". Rejected: reusing `toCatalogEntryKey` for the route's lookups too — it would silently treat "fire ogre" and "Fire Ogre" as different monsters, defeating the duplicate check's purpose.
+- **The uploader's initial Catalog list comes from the static `MONSTER_CATALOG` import, not a fetch.** Resolves ui-design.md's second open point (Final spec item 2): the generated catalog is a build-time artifact (Phase 1's model), so `useMonsterSpriteUploader` seeds its list state from `MONSTER_CATALOG` (already a public `game-rules` export) and appends the server's returned `entry` on success — no `GET` route needed at all. Matches ui-design.md's "optimistic, not a re-fetch" requirement exactly, and is simpler than adding a list endpoint.
+- **The POST response carries the written entry (`{ entry: MonsterCatalogEntry }`), not just `{ ok: true }`.** The client doesn't know the server-computed Title-Case name or the exact sprite paths before the request resolves (both are server-derived from the slug), so the optimistic Catalog row needs them from the response. Rejected: `{ ok: true }` (matches `tile-decoration-editor/default-elements`'s shape) — insufficient here because that route never changes what `name` means, it only overwrites numeric/string style values the caller already knows.
+- **Errors carry an optional `field` tag (`'name' | 'level' | 'idle' | 'attack'`).** Lets the hook route a validation failure to the right inline error slot (ui-design.md's per-field error states) without string-matching the message. An error with no `field` (network failure, unexpected 500) falls through to the generic "Could not add — see console." status line, matching ui-design.md's last two error rows.
+- **The route is split into `validation.ts` (pure: parse/validate form fields and sprite bytes) and `route.ts` (fs I/O and orchestration), mirroring `tile-decoration-editor/default-elements`'s `regenerate-source.ts`/`route.ts` split and `tile-fog-variants`'s `upload.ts`/`route.ts` split.** Keeps `route.ts` under the 150-line lint cap and makes the validation logic testable without the `Request`/`File`/fs polyfill ceremony `route.test.ts` otherwise needs for every case.
+- **GIF byte/size checks are imported from `tile-fog-variants/upload.ts` (`isGifBytes`, `MAX_UPLOAD_BYTES`), not re-copied.** Confirmed existing precedent: `tile-variants/images/route.ts:8` already cross-imports the same two from that file. Rejected: a third copy of the GIF-magic-byte check — the codebase already has one accepted cross-route reuse of this exact pair; duplicating a third time when a precedent for reuse exists would be the wrong call, unlike the slug-function case above where no reuse precedent exists.
+- **The preview registers one state, "Uploader", rendering the real connected `MonsterSpriteUploader`** (not a faked stand-in). This tool's `/testbed` page is its real, only entry point — same as `TileDecorationEditor`'s preview — and the dev-only route already 404s outside development, so there is no "real network call in a preview" risk beyond what `TileDecorationEditor` already accepts today. Every other ui-design.md state (idle picked, soft warning, validating, success, each error) is exercised by interacting with this one live state in the browser (`ui-verify`), not by separate static preview states — matching `TileDecorationEditor.preview.tsx`'s and `IconEditor.preview.tsx`'s own "Editor"-only precedent (the latter fakes the network, the former doesn't; this phase follows the former since, unlike `IconEditor`, there's no separate "editing mode" to protect from accidental real saves — adding a monster via the preview *is* the feature working).
+- **Boss toggle clamps the Level selection instead of leaving it invalid.** When Boss flips off while Level is 4, the hook sets Level to 3 (the new max) rather than leaving 4 selected and relying on the disabled-submit/inline-error path. Keeps the picker always representable by its own options list, matching the ui-design.md amendment above. Rejected: leave Level at 4 and disable submit until the user manually changes it — reachable through completely ordinary use (toggle Boss off), unlike the "missing idle" error's documented drag-drop-then-clear edge case; clamping is the smaller surprise.
+- **Duplicate-name check is server-side only (`409`), never client-side.** Matches ui-design.md's Error-duplicate row verbatim ("Server rejects (409)"). The client's `MONSTER_CATALOG`-seeded local state could theoretically pre-check, but doing so would require the hook to re-implement the exact same `(slug, level)` match the server already performs authoritatively against the just-rescanned disk state — redundant, and could drift if another browser tab adds a monster first (single-dev-only tool, but still the authoritative source is the filesystem, not the client's stale copy).
+- **Status (`idle`/`submitting`/`success`/`error`) persists until the next submit, not auto-cleared by a timer or by editing a field.** Matches `TileDecorationEditorSaveRow`'s non-timed `saved`/`error` states (its own `statusText` cva has no timeout), not `IconEditor`'s 2-second auto-revert (`SAVED_BADGE_DURATION_MS`) — ui-design.md's Success/Error rows describe no timer, and "form fields remain filled so the user can retry" (Error row) implies the message should still be visible when the user looks back at it, not auto-dismissed.
+
+## File plan
+| File | New / Edit | Responsibility | Owner |
+|---|---|---|---|
+| `src/modules/game-rules/monster-catalog-generator.ts` | edit | Export `MIN_LEVEL`, `MAX_NON_BOSS_LEVEL`, `MAX_BOSS_LEVEL`, `MONSTER_CATALOG_GENERATED_PATH`, `MONSTER_NAMES_GENERATED_PATH`, `MONSTER_SPRITE_PUBLIC_DIRECTORY_FS` (new path consts); export `toCatalogEntryKey` (renamed from `toEntryKey`); add `toMonsterSpriteSlug`, `buildMonsterSpriteFilename`, `getMaxLevelForBossFlag`, `findMonsterEntry` | implementer-a |
+| `src/modules/game-rules/monster-catalog-generator.test.ts` | edit | Tests for the 4 new functions: slug normalization, filename round-trip against `parseMonsterSpriteFilename`, `getMaxLevelForBossFlag`, `findMonsterEntry` hit/miss | tester-a |
+| `scripts/generate-monster-catalog.ts` | edit | Use the newly-exported path constants instead of its own `path.join` string literals; behavior unchanged | implementer-a |
+| `src/modules/game-rules/index.ts` | edit | Re-export `SEED_MONSTER_CATALOG`, `toCatalogEntryKey`, `toMonsterSpriteSlug`, `buildMonsterSpriteFilename`, `getMaxLevelForBossFlag`, `findMonsterEntry`, `MIN_LEVEL`, `MAX_NON_BOSS_LEVEL`, `MAX_BOSS_LEVEL` | implementer-a |
+| `src/app/api/monster-catalog/validation.ts` | new | Pure: parse multipart fields into `MonsterUploadFields` or a `FieldError`; validate sprite bytes (size + GIF magic, via imported `isGifBytes`/`MAX_UPLOAD_BYTES`) | implementer-a |
+| `src/app/api/monster-catalog/validation.test.ts` | new | Field-parsing and byte-validation unit tests | tester-a |
+| `src/app/api/monster-catalog/route.ts` | new | `POST`: 404-in-production guard, call `validation.ts`, duplicate check, write sprite file(s), rescan, write both generated files, return `{ entry }` or `{ error, field? }` | implementer-a |
+| `src/app/api/monster-catalog/route.test.ts` | new | Route-level tests with fs/undici polyfills, mirroring `icon-editor/uploads/route.test.ts`'s harness | tester-a |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.types.ts` | new | `MonsterCatalogRowViewModel`, `LevelOption`, `MonsterSpriteUploaderViewModel`, `UploadStatus`, `FieldErrors` | implementer-a |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.map.ts` | new | Pure: `toCatalogRowViewModels`, `getLevelOptions`, `showsBossSoftWarning`, `clampLevelForBossFlag`, `validateMonsterName`, `isGifFile` | implementer-a |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.map.test.ts` | new | Unit tests for every function above | tester-a |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.service.ts` | new | `addMonster(request): Promise<MonsterCatalogEntry>`, throws `AddMonsterError` on failure | implementer-a |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.hook.ts` | new | `useMonsterSpriteUploader()`: all form/catalog state, object-URL lifecycle, submit flow | implementer-a |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.hook.test.ts` | new | Hook behavior: clamping, soft warning, submit success/error paths, object-URL cleanup | tester-a |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.fixtures.ts` | new | Deterministic sample catalog (seeds + one extra entry) and a fake `File` builder, reused by tests and the preview | implementer-a |
+| `src/testbed/components/MonsterSpriteUploader/index.ts` | new | Public export: `MonsterSpriteUploader` | implementer-a |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.styles.ts` | new | Every Tailwind class/token the view uses, reusing `TileDecorationEditor.styles.ts`'s token names where identical | implementer-b |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.tsx` | new | `MonsterSpriteUploaderView(viewModel)` (pure) + `MonsterSpriteUploader()` (connected, one line) | implementer-b |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploaderForm.tsx` | new | Name/Level/Boss/Idle/Attack fields, the two live previews, soft warning, submit button, status line | implementer-b |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploaderCatalogList.tsx` | new | Read-only catalog rows (thumbnail, name, level badge, Seed/Boss badges) | implementer-b |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.test.tsx` | new | RTL tests against `MonsterSpriteUploaderView` with fixtures: disabled submit, soft warning show/hide, error rendering, catalog rows (seed badges, no delete control) | tester-b |
+| `src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.preview.tsx` | new | One state, "Uploader", rendering the real connected `MonsterSpriteUploader` | preview-a |
+| `src/testbed/registry.ts` | edit | Import and list `monsterSpriteUploaderPreview` | preview-a |
+| `docs/architecture/systems-and-visuals.md` | edit | New bullet after line 181 (after the Icon Editor "Status: testbed-only" line), same format as the Icon Editor/Testbed-editor bullets: tool name, route, group, what it writes (`public/monster/`, the two generated files), the dev-only route, 404-in-production note | docs-sync |
+| `docs/architecture/game-mechanics.md` | **no edit** | Already documents the level caps (line 36) from Phase 1's build — re-verified this session | — |
+
+## Contracts
+```ts
+// ---------------------------------------------------------------------------
+// src/modules/game-rules/monster-catalog-generator.ts (EDIT — additions only)
+// ---------------------------------------------------------------------------
+export const MIN_LEVEL = 1;            // already a local const; now exported, value unchanged
+export const MAX_NON_BOSS_LEVEL = 3;   // already a local const; now exported, value unchanged
+export const MAX_BOSS_LEVEL = 4;       // already a local const; now exported, value unchanged
+
+export const MONSTER_CATALOG_GENERATED_PATH = 'src/modules/game-rules/monster-catalog.generated.ts';
+export const MONSTER_NAMES_GENERATED_PATH = 'src/lib/types/monsters.generated.ts';
+/** Filesystem-relative path (joined with process.cwd()), distinct from MONSTER_SPRITE_DIRECTORY
+ *  (the public URL prefix '/monster' already used in every rendered sprite path). */
+export const MONSTER_SPRITE_PUBLIC_DIRECTORY_FS = 'public/monster';
+
+/** Renamed from the existing module-local toEntryKey; same body, now exported. */
+export function toCatalogEntryKey(name: string, level: number): string;
+
+/** Lowercase, hyphenated, [a-z0-9]+ only — mirrors parseMonsterSpriteFilename's slug half. */
+export function toMonsterSpriteSlug(name: string): string;
+
+/** "<boss->-<slug>-lvl<level>-<kind>.gif" — the exact inverse of parseMonsterSpriteFilename. */
+export function buildMonsterSpriteFilename(
+  name: string,
+  level: number,
+  isBoss: boolean,
+  kind: 'idle' | 'attack',
+): string;
+
+export function getMaxLevelForBossFlag(isBoss: boolean): number; // MAX_BOSS_LEVEL or MAX_NON_BOSS_LEVEL
+
+/** Finds the entry matching (name, level), comparing by toMonsterSpriteSlug(entry.name) rather
+ *  than entry.name directly, so a raw user-submitted "fire ogre" matches the catalog's canonical
+ *  "Fire Ogre" (case/spacing-insensitive). Deliberately does NOT use toCatalogEntryKey (exact
+ *  string match) — that function is for same-provenance comparisons only (both sides already
+ *  canonical catalog names, e.g. the seed-badge check), not for arbitrary user input. Used both
+ *  as the route's pre-write duplicate check and its post-write response lookup. */
+export function findMonsterEntry(
+  catalog: MonsterCatalogEntry[],
+  name: string,
+  level: number,
+): MonsterCatalogEntry | undefined;
+
+// ---------------------------------------------------------------------------
+// src/app/api/monster-catalog/validation.ts (NEW — pure, no fs, no Next imports)
+// ---------------------------------------------------------------------------
+export interface MonsterUploadFields {
+  name: string;
+  level: number;
+  isBoss: boolean;
+  idle: File;
+  attack: File | null;
+}
+
+export interface UploadFieldError {
+  message: string;
+  field: 'name' | 'level' | 'idle' | 'attack';
+  status: 400 | 413;
+}
+
+/** Reads name/level/isBoss/idle/attack off FormData; validates presence, name normalizes to a
+ *  non-empty slug, and level is within getMaxLevelForBossFlag(isBoss)'s range. Does not read
+ *  file bytes (async; see validateSpriteBytes). */
+export function parseMonsterUploadFields(formData: FormData): MonsterUploadFields | UploadFieldError;
+
+/** Size (MAX_UPLOAD_BYTES, imported from tile-fog-variants/upload) and GIF magic-byte
+ *  (isGifBytes, same import) checks for one already-read file's bytes. */
+export function validateSpriteBytes(bytes: Uint8Array, field: 'idle' | 'attack'): UploadFieldError | null;
+
+// ---------------------------------------------------------------------------
+// src/app/api/monster-catalog/route.ts (NEW)
+// ---------------------------------------------------------------------------
+// export async function POST(request: Request): Promise<Response>
+//
+// 1. NODE_ENV === 'production' -> 404 (same guard every other dev-only route uses).
+// 2. formData = await request.formData(); fields = parseMonsterUploadFields(formData);
+//    if fields is an UploadFieldError -> NextResponse.json({ error: fields.message, field: fields.field }, { status: fields.status })
+// 3. idleBytes = new Uint8Array(await fields.idle.arrayBuffer()); validateSpriteBytes(idleBytes, 'idle') -> 400/413 if it returns an error.
+//    attackBytes = fields.attack ? new Uint8Array(await fields.attack.arrayBuffer()) : null; validateSpriteBytes if present.
+// 4. currentFilenames = scan MONSTER_SPRITE_PUBLIC_DIRECTORY_FS (readdir, catch ENOENT -> []), filter+sort *.gif.
+//    currentCatalog = buildMonsterCatalogEntries(currentFilenames);
+//    if (findMonsterEntry(currentCatalog, fields.name, fields.level)) -> 409 { error: `A monster named "${fields.name}" at level ${fields.level} already exists.`, field: 'name' }
+// 5. idleFilename = buildMonsterSpriteFilename(fields.name, fields.level, fields.isBoss, 'idle'); write it under public/monster/.
+//    attackFilename = fields.attack ? buildMonsterSpriteFilename(..., 'attack') : null; write it if present.
+// 6. nextFilenames = [...currentFilenames, idleFilename, attackFilename].filter(Boolean).sort();
+//    nextEntries = buildMonsterCatalogEntries(nextFilenames);
+//    write MONSTER_CATALOG_GENERATED_PATH <- renderMonsterCatalogSource(nextEntries)
+//    write MONSTER_NAMES_GENERATED_PATH <- renderMonsterNameSource(nextEntries.map(e => e.name))
+// 7. entry = findMonsterEntry(nextEntries, fields.name, fields.level); // guaranteed present
+//    return NextResponse.json({ entry });
+
+// ---------------------------------------------------------------------------
+// src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.types.ts (NEW)
+// ---------------------------------------------------------------------------
+import type { MonsterCatalogEntry } from '@/modules/game-rules';
+
+export interface MonsterCatalogRowViewModel {
+  name: string;
+  level: 1 | 2 | 3 | 4;
+  isBoss: boolean;
+  idleSprite: string;
+  isSeed: boolean;
+}
+
+export interface LevelOption {
+  value: 1 | 2 | 3 | 4;
+  label: string;
+}
+
+export type UploadStatus = 'idle' | 'submitting' | 'success' | 'error';
+
+export interface FieldErrors {
+  name?: string;
+  level?: string;
+  idle?: string;
+  attack?: string;
+}
+
+export interface MonsterSpriteUploaderViewModel {
+  name: string;
+  level: 1 | 2 | 3 | 4 | null;
+  isBoss: boolean;
+  levelOptions: LevelOption[];
+  idlePreviewUrl: string | null;
+  attackPreviewUrl: string | null;
+  showsBossSoftWarning: boolean;
+  canSubmit: boolean;
+  status: UploadStatus;
+  fieldErrors: FieldErrors;
+  catalogRows: MonsterCatalogRowViewModel[];
+  onNameChange: (name: string) => void;
+  onLevelChange: (level: 1 | 2 | 3 | 4) => void;
+  onBossToggle: (isBoss: boolean) => void;
+  onIdleFileChange: (file: File | null) => void;
+  onAttackFileChange: (file: File | null) => void;
+  onSubmit: () => void;
+}
+
+/** Body the POST route returns on success. */
+export interface AddMonsterResponseBody {
+  entry: MonsterCatalogEntry;
+}
+
+/** Body the POST route returns on a 400/409/413. */
+export interface AddMonsterErrorBody {
+  error: string;
+  field?: 'name' | 'level' | 'idle' | 'attack';
+}
+
+// ---------------------------------------------------------------------------
+// src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.map.ts (NEW — pure)
+// ---------------------------------------------------------------------------
+export function toCatalogRowViewModels(catalog: MonsterCatalogEntry[]): MonsterCatalogRowViewModel[];
+// isSeed per row: SEED_MONSTER_CATALOG.some(seed => toCatalogEntryKey(seed.name, seed.level) === toCatalogEntryKey(entry.name, entry.level))
+
+export function getLevelOptions(isBoss: boolean): LevelOption[];
+// [1,2,3].concat(isBoss ? [4] : []) mapped to { value, label: '<n> — Little'|'<n> — Big' }
+
+export function showsBossSoftWarning(isBoss: boolean, level: number | null): boolean;
+// isBoss && (level === 1 || level === 2)
+
+export function clampLevelForBossFlag(level: 1 | 2 | 3 | 4 | null, isBoss: boolean): 1 | 2 | 3 | 4 | null;
+// level === null ? null : Math.min(level, getMaxLevelForBossFlag(isBoss)) as 1|2|3|4
+
+export function validateMonsterName(name: string): string | null;
+// toMonsterSpriteSlug(name) === '' ? 'Name needs at least one letter or digit.' : null
+
+export function isGifFile(file: File): boolean;
+// file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif')
+
+// ---------------------------------------------------------------------------
+// src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.service.ts (NEW)
+// ---------------------------------------------------------------------------
+export interface AddMonsterRequest {
+  name: string;
+  level: number;
+  isBoss: boolean;
+  idleFile: File;
+  attackFile: File | null;
+}
+
+export class AddMonsterError extends Error {
+  field?: 'name' | 'level' | 'idle' | 'attack';
+}
+
+/** POSTs multipart/form-data to /api/monster-catalog; throws AddMonsterError (with .field, when
+ *  the server supplied one) on a non-ok response. */
+export async function addMonster(request: AddMonsterRequest): Promise<MonsterCatalogEntry>;
+
+// ---------------------------------------------------------------------------
+// src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.hook.ts (NEW)
+// ---------------------------------------------------------------------------
+import { MONSTER_CATALOG } from '@/modules/game-rules';
+
+export function useMonsterSpriteUploader(): MonsterSpriteUploaderViewModel;
+// State: name, level, isBoss, idleFile/attackFile, idlePreviewUrl/attackPreviewUrl (object URLs,
+// created on file pick, revoked on replacement/unmount), status, fieldErrors, catalog (seeded
+// from MONSTER_CATALOG, appended with the response's `entry` on success — see Decisions).
+// onBossToggle(next) also calls setLevel(clampLevelForBossFlag(level, next)).
+// onSubmit(): client-side guards only (validateMonsterName, idle file present, isGifFile on
+// both files) — duplicate-name is server-only (see Decisions); on service success, append the
+// returned entry to catalog and set status 'success' and clear every field back to its initial
+// value; on AddMonsterError, set fieldErrors[error.field] = error.message when field is present,
+// else set status 'error' and console.error(error).
+```
+
+## Phases
+### Phase 3: Testbed uploader (this plan, detailed)
+1. `monster-catalog-generator.ts` additions (exports + 4 new pure functions) + test additions; `scripts/generate-monster-catalog.ts` edit to use the new path constants; `game-rules/index.ts` re-exports. (implementer-a, tester-a) — **sonnet** (triage override; touches the generator Phase 1/2 already hardened).
+2. `src/app/api/monster-catalog/validation.ts` + its test. (implementer-a, tester-a) — **sonnet**.
+3. `src/app/api/monster-catalog/route.ts` + its test (fs/undici-polyfilled, mirroring `icon-editor/uploads/route.test.ts`). (implementer-a, tester-a) — **sonnet** (writes two checked-in generated source files; a bug here corrupts the catalog for every later game, same risk class as Phase 1's generator work).
+4. `MonsterSpriteUploader.types.ts`, `.map.ts` (+ test), `.service.ts`, `.fixtures.ts`. (implementer-a, tester-a) — **sonnet**.
+5. `MonsterSpriteUploader.hook.ts` + its test (object-URL lifecycle, clamp behavior, submit success/error paths). (implementer-a, tester-a) — **sonnet**.
+6. `MonsterSpriteUploader.styles.ts`, `.tsx`, `MonsterSpriteUploaderForm.tsx`, `MonsterSpriteUploaderCatalogList.tsx`, `.test.tsx`. (implementer-b, tester-b) — **sonnet** (triage override).
+7. `MonsterSpriteUploader.preview.tsx`, `src/testbed/registry.ts` edit. (preview-a) — **sonnet**.
+8. `docs/architecture/systems-and-visuals.md` new bullet (mandatory, same phase — CLAUDE.md docs-sync rule; `game-mechanics.md` confirmed to need no edit). (docs-sync)
+9. `ui-design.md` amendment (architect-a, already applied above — not a builder step).
+10. Full-repo `npm run typecheck`, `npm run lint`, `npm test`; `ui-verify` on `/testbed/monster-sprite-uploader`: empty state, idle-GIF-picked preview, soft warning show/hide, a full successful add (confirm the new Catalog row and, ideally, that `public/monster/` and the two generated files actually changed on disk), and the duplicate-name 409 path.
+
+Model escalation: all of steps 1-7 require sonnet (triage overrides `implementer-a=sonnet`, `implementer-b=sonnet`, `tester-a=sonnet`, `tester-b=sonnet`, `preview-a=sonnet` for this task).
+
+## Test plan
+- tester-a (logic, first):
+  - `monster-catalog-generator.test.ts`: `toMonsterSpriteSlug` — lowercases, hyphenates, strips invalid chars, trims leading/trailing dashes, empty on punctuation-only input; `buildMonsterSpriteFilename` — round-trips through `parseMonsterSpriteFilename` for every (isBoss, kind) combination, including a multi-word name; `getMaxLevelForBossFlag(true) === 4`, `(false) === 3`; `findMonsterEntry` — hits an existing seed by exact name, hits case/spacing-insensitively (e.g. "lancer" finds "Lancer"), misses a different level, misses a different name.
+  - `validation.test.ts`: `parseMonsterUploadFields` — valid fields returns `MonsterUploadFields`; missing name/idle/level each returns the right `UploadFieldError`; a name that normalizes to an empty slug returns the bad-name error; level 4 with `isBoss=false` and level 5 with `isBoss=true` both return the level-cap error (the two cases the triage task calls out explicitly). `validateSpriteBytes` — oversized bytes (> `MAX_UPLOAD_BYTES`) returns the size error with `status: 413`; non-GIF magic bytes returns the type error; valid GIF bytes under the size cap returns `null`.
+  - `route.test.ts` (fs + `fs/promises` mocked, undici polyfill per the `icon-editor/uploads` precedent): 404 in production, writes nothing; 400 and writes nothing for each `validation.ts` rejection; 409 and writes nothing when `findMonsterEntry` on the rescanned directory already has the name+level; happy path — writes the idle file (and the attack file when present) under the built filename, writes both generated files with `renderMonsterCatalogSource`/`renderMonsterNameSource`'s output, returns `200` with `{ entry }` whose `sprite.idle`/`sprite.attack` match the written public paths.
+  - `MonsterSpriteUploader.map.test.ts`: `toCatalogRowViewModels` marks all 4 seeds `isSeed: true` and a fixture extra entry `isSeed: false`; `getLevelOptions(false)` has exactly 3 options (no "4"), `getLevelOptions(true)` has 4; `showsBossSoftWarning` true only for `isBoss && level in {1,2}`; `clampLevelForBossFlag(4, false) === 3`, `clampLevelForBossFlag(2, false) === 2` (no-op below the cap), `clampLevelForBossFlag(null, true) === null`; `validateMonsterName('!!!')` returns the bad-name message, `validateMonsterName('Fire Ogre')` returns `null`; `isGifFile` true for `type: 'image/gif'` or a `.gif`-suffixed name, false otherwise.
+  - `MonsterSpriteUploader.hook.test.ts` (service mocked): toggling Boss off while Level is 4 clamps the view model's `level` to 3; picking an idle file sets `idlePreviewUrl` to an object URL and revokes the previous one on replacement/unmount (spy on `URL.createObjectURL`/`revokeObjectURL`); `canSubmit` is false with no idle file or blank name, true once both plus a valid level are set; `onSubmit` success path appends the mocked service's returned entry to `catalogRows` and resets every field; `onSubmit` with a mocked `AddMonsterError` carrying `field: 'name'` sets `fieldErrors.name` and leaves the form filled; one with no `field` sets `status: 'error'`.
+- tester-b (view and e2e):
+  - `MonsterSpriteUploader.test.tsx` (against `MonsterSpriteUploaderView` with fixtures, no providers): submit button is `disabled` with no fields filled; becomes enabled once name/level/idle are all set (fixture view model); the soft-warning text renders only when `showsBossSoftWarning` is true in the view model; each field error renders under its field and is `aria-describedby`-linked; the 4 seed catalog rows render a "Seed" badge and no delete button/control; a non-seed row renders no "Seed" badge.
+  - No new e2e spec: this is a dev-only testbed tool with no gameplay path, same as Phase 1/2 and every prior testbed-tool task; `ui-verify` (browser screenshots) is this phase's end-to-end check, per the step list above.
+
+## Preview states
+- `MonsterSpriteUploader`: one state, "Uploader", rendering the real connected `MonsterSpriteUploader` — see Decisions for why this isn't a per-ui-design-state set of fixtures. Every ui-design.md state (empty, idle-picked, attack-picked, soft warning, submitting, success, each error) is exercised live in the browser against this one state.
+
+## Risks
+- **The route writes two checked-in generated `.ts` files from an HTTP request.** A bug in `validation.ts`/`route.ts` corrupts `monster-catalog.generated.ts`/`monsters.generated.ts` for every subsequent map generation, not just the testbed session — same blast radius Phase 1's generator script already carries, now reachable without running a CLI command. Mitigated by reusing Phase 1's already-tested pure functions verbatim (this phase adds no new catalog-building logic, only a new caller) and by `route.test.ts`'s happy-path assertion that the written source text matches `renderMonsterCatalogSource`/`renderMonsterNameSource`'s actual output.
+- **Clamping Level on Boss-toggle must not fight the user mid-typing.** `clampLevelForBossFlag` only ever lowers a now-too-high level; it must never raise one (e.g. toggling Boss on while Level is 2 must leave it at 2, not bump it to anything) — the hook test above pins this with an explicit no-op case.
+- **jsdom's `File` has no `arrayBuffer()`.** Every `route.test.ts` case that constructs a `File` for `idle`/`attack` needs the same `Object.defineProperty(file, 'arrayBuffer', ...)` polyfill `icon-editor/uploads/route.test.ts:50-55` already uses — easy to forget and get a confusing "undefined is not a function" failure instead of the intended assertion.
+- **Scope creep: do not add a delete/edit control for uploaded (non-seed) entries.** Out of scope per triage and ui-design.md's Final spec (adding only); if a builder adds one anyway, architect-b's final review rejects it.
+
+## Review (architect-b)
+VERDICT: APPROVED
+
+Verified every cited path/symbol/line against the repo in this session:
+- `src/modules/game-rules/monster-catalog-generator.ts` — `MIN_LEVEL`/`MAX_NON_BOSS_LEVEL`/`MAX_BOSS_LEVEL` (lines 7-9), `MONSTER_SPRITE_FILENAME` regex (line 10), `SEED_MONSTER_CATALOG` exported (lines 14-19), `parseMonsterSpriteFilename` enforcing the level cap with a `console.warn` (lines 36-58), local `toEntryKey` (line 60, not yet exported — matches the plan's rename-to-`toCatalogEntryKey` premise), `buildMonsterCatalogEntries`/`renderMonsterCatalogSource`/`renderMonsterNameSource` all exported (lines 94, 110, 127). All match the plan's Verified-context and Contracts claims.
+- `scripts/generate-monster-catalog.ts` — 28 lines, hardcodes `catalogOutput`/`namesOutput`/`monsterDirectory` via `path.join` (lines 10-12), confirming the plan's "edit to use the new path constants" premise is real, not invented work.
+- `docs/architecture/game-mechanics.md:36` — exact text confirmed: "Levels are capped at 1–3 for non-boss and 1–4 for boss; a higher level is skipped with a console warning." The plan's "no edit needed" claim for this file is correct.
+- `docs/architecture/systems-and-visuals.md:180-181` — Icon Editor bullet and its "Status: testbed-only" line confirmed verbatim; insertion point ("new bullet after line 181") is correct.
+- `src/modules/game-rules/index.ts:4-5` — already exports `MONSTER_CATALOG, getFirstMonsterAtLevel, toMonster` and `type MonsterCatalogEntry`. This means the Phase 1 Contracts' "Note on the `MonsterCatalogEntry` type import" (plan.md:256-257, since resolved) is stale but harmless: Phase 3's File plan row for `index.ts` only adds the *new* re-exports (`SEED_MONSTER_CATALOG`, `toCatalogEntryKey`, etc.), it doesn't redundantly re-add `MonsterCatalogEntry`. No fix needed.
+- `src/modules/game-rules/monster-catalog.types.ts` — `sprite.attack?: string` already optional, confirmed verbatim, matching the plan's "no type change needed" claim.
+- `src/app/api/tile-fog-variants/upload.ts` (`MAX_UPLOAD_BYTES` line 4, `isGifBytes` lines 19-21) and `route.ts` (single `POST` doing validate → duplicate-check → write asset(s) → write config → respond, lines 15-63) — confirms the single-`POST` precedent the new `/api/monster-catalog` route follows is real and matches its exact shape, not a loose analogy.
+- `src/app/api/tile-variants/images/route.ts:8` — `import { isGifBytes, isPngBytes, MAX_UPLOAD_BYTES } from '../../tile-fog-variants/upload';` confirmed verbatim: a second route already cross-imports these two helpers, so the new route's cross-import is precedented reuse, not a new boundary-crossing pattern.
+- `src/modules/map/components/TileVariants/TileVariants.validate.ts:16-22` (`toSlug`) vs. `src/app/api/tile-fog-variants/upload.ts:24-30` (`toVariantId`) — both bodies are near-identical normalize-to-slug functions, confirmed duplicated across the map and fog domains. This genuinely supports the Decisions' claim that per-domain slug duplication is accepted practice here, so `toMonsterSpriteSlug` living in `monster-catalog-generator.ts` (a third copy, in a third domain) is consistent rather than a new violation.
+- `src/modules/map/island-tile-slots.types.ts:10` (`ISLAND_TILE_SLOTS_PATH`) and its use at `tile-decoration-editor/default-elements/route.ts:4,60` — confirms the shared-path-constant precedent for `MONSTER_CATALOG_GENERATED_PATH`/`MONSTER_NAMES_GENERATED_PATH`/`MONSTER_SPRITE_PUBLIC_DIRECTORY_FS`.
+- `eslint.config.mjs` — `MODULE_FILES = 'src/modules/**/*.{ts,tsx}'` (line 38) does not match `src/testbed/**` or `src/app/api/**`; `max-lines: ['error', { max: 150, skipBlankLines: true, skipComments: true }]` (line 69) applies generally and is turned off only for `**/*.test.{ts,tsx}` (lines 110-115); `scripts/**/*.{js,mjs}` console exemption (line 107) does not cover the `.ts` script, matching Phase 1's already-recorded risk. Confirms the `validation.ts`/`route.ts` split is necessary to stay under the 150-line cap and is not optional ceremony.
+- `src/app/api/icon-editor/uploads/route.test.ts` — `jest.mock('fs/promises', ...)` (lines 13-17), the `postUpload` hand-built `FormData`-shaped `Map` (lines 41-47), and the `File.arrayBuffer` `Object.defineProperty` polyfill (lines 50-55) all confirmed verbatim; this is a real, working harness for a multipart `POST` route under jsdom, not a hypothetical one, so Phase 3's `route.test.ts` has a concrete harness to copy.
+- `src/testbed/components/TileDecorationEditor/TileDecorationEditor.preview.tsx` (11 lines, one state "Editor" rendering the real connected `<TileDecorationEditor />`) and `IconEditor.preview.tsx` (66 lines, not "67" — trivial, folded in below) — confirms the single-real-connected-state preview precedent this phase's `MonsterSpriteUploader.preview.tsx` follows.
+- `src/testbed/registry.ts:49,104` — import at line 49, listed at line 104 (ui-design.md's own citation of `:49,102` is off by 2, already flagged and folded in by this plan at plan.md:644; the plan's own citation is correct).
+- `AnimatedMonster.tsx:8,20-21` — `MONSTER_SPRITE_SIZE_PX` import is at line 8 (plan says 8, correct) and the two usages are at lines 20-21, not "19-20" as the plan states at plan.md:648. Trivial off-by-one, folded in below, no decision depends on it.
+- `src/modules/game-rules/monster-catalog.generated.ts` is unaffected by this phase (confirmed: only `monster-catalog-generator.ts`, the script, and the new route touch generation logic).
+
+Design points challenged:
+- **Single `POST /api/monster-catalog` vs. the `tile-fog-variants` precedent:** confirmed identical shape (validate → duplicate check → write file(s) → write config/catalog → return the created entity). No deviation; this is the right call, not a new pattern needing justification.
+- **Cross-import of `isGifBytes`/`MAX_UPLOAD_BYTES` from `tile-fog-variants/upload.ts`:** precedented by `tile-variants/images/route.ts:8`, a second route already doing exactly this. Correct reuse, not a new cross-domain coupling.
+- **`toMonsterSpriteSlug`/`buildMonsterSpriteFilename`/`getMaxLevelForBossFlag`/`findMonsterEntry` in `monster-catalog-generator.ts`:** all four are pure, filename-domain functions that belong next to `parseMonsterSpriteFilename` and the level-cap consts they mirror/invert — correct placement, no file-boundary violation. `findMonsterEntry` vs. reusing `toCatalogEntryKey`: verified the reasoning holds — `toEntryKey`'s existing call sites (`groupFilenamesIntoEntries`, `buildMonsterCatalogEntries`) only ever compare two sides that are *both* already-canonical catalog names produced by the same `toTitleCase(slug)` path, so exact-string matching is safe there; the route's two lookups compare a raw, unnormalized user-submitted `name` against canonical catalog names, where exact-string matching would wrongly treat "fire ogre" and "Fire Ogre" as different monsters. Two distinct comparison semantics justify two functions; collapsing them would either break the seed-badge/grouping logic's performance-free exact match or silently fail to catch a real-world duplicate submission. No simpler option found.
+- **Level caps already implemented and documented:** confirmed both halves independently — the code (`monster-catalog-generator.ts:7-9,45-50`) and the doc (`game-mechanics.md:36`) already state non-boss ≤3 / boss ≤4 with a console warning on violation, from Phase 1's build. This phase correctly scopes itself to exporting the existing constants and adding a UI/route path to reach the rule, not re-deriving or restating it — and correctly marks `game-mechanics.md` "no edit" rather than manufacturing docs-sync busywork.
+- **ui-design.md Amendment (level picker boss-dependent, 3 options when non-boss):** read in full at the end of `ui-design.md`. Matches `getMaxLevelForBossFlag`/`getLevelOptions`/`clampLevelForBossFlag`'s contracts exactly (1-3 non-boss, 1-4 boss, clamp-down-only on Boss-off). The amendment is appended rather than rewriting the locked Final spec in place, preserving the review trail — correct per the pattern already used for Phase 1/2's own plan amendments.
+- **Phase 3 docs-sync scope:** `systems-and-visuals.md` gets a new bullet (File plan row, Owner: docs-sync); `game-mechanics.md` is explicitly marked "no edit" with the reason given and independently re-verified above. `progress.md:38` already has a docs-sync checkbox for this phase ("if upload route shape or convention needs recording") — matches, since the route shape is now decided and the bullet is scoped. No missing docs-sync item found.
+- **File plan completeness:** every file touched by the Contracts block, the Decisions, and the Phase steps list (monster-catalog-generator.ts, scripts/generate-monster-catalog.ts, game-rules/index.ts, the 4 new `api/monster-catalog/*` files, the 13 new `MonsterSpriteUploader/*` files, `src/testbed/registry.ts`, the 2 doc files) has a row in the File plan table with an owner. No orphaned file found; no file plan row lacks a corresponding step in the Phases list.
+- **Phase size:** ~20 new/edited files across 2 builder pairs (implementer-a/tester-a for logic+route, implementer-b/tester-b for the 4 view files) plus preview-a — large for one phase but consistent with how Phase 1/2 were sized and with triage's 3-phase, L-tier split; no further split suggested.
+
+Findings (non-blocking, folded in directly — no plan redesign needed):
+1. `IconEditor.preview.tsx` is 66 lines, not "67" (plan.md:646).
+2. `AnimatedMonster.tsx`'s two `MONSTER_SPRITE_SIZE_PX` usages are at lines 20-21, not "19-20" (plan.md:648).
+
+Both are citation-only drift with no effect on any decision, contract or acceptance criterion.
+
+Status: APPROVED

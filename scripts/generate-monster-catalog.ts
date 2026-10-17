@@ -1,15 +1,18 @@
 import { readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
+  MONSTER_CATALOG_GENERATED_PATH,
+  MONSTER_NAMES_GENERATED_PATH,
+  MONSTER_SPRITE_PUBLIC_DIRECTORY_FS,
   buildMonsterCatalogEntries,
   renderMonsterCatalogSource,
   renderMonsterNameSource,
 } from '../src/modules/game-rules/monster-catalog-generator';
 
 const projectRoot = path.resolve(__dirname, '..');
-const monsterDirectory = path.join(projectRoot, 'public', 'monster');
-const catalogOutput = path.join(projectRoot, 'src/modules/game-rules/monster-catalog.generated.ts');
-const namesOutput = path.join(projectRoot, 'src/lib/types/monsters.generated.ts');
+const monsterDirectory = path.join(projectRoot, MONSTER_SPRITE_PUBLIC_DIRECTORY_FS);
+const catalogOutput = path.join(projectRoot, MONSTER_CATALOG_GENERATED_PATH);
+const namesOutput = path.join(projectRoot, MONSTER_NAMES_GENERATED_PATH);
 
 function listGifFilenames(): string[] {
   try {

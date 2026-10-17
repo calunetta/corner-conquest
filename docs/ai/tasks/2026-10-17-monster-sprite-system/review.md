@@ -109,3 +109,30 @@ VERDICT: CHANGES REQUESTED
 Logic, types, and test coverage for the optional-attack-sprite behavior are solid and match the approved contracts closely, including the trickier draw-count assertions the plan's Risks section called out. Two things block sign-off: (1) a real regression — the new `MonsterCombatDialog` preview states were inserted mid-array and broke an existing, unmodified test (`MonsterCombatDialog.preview.test.tsx:30`) via a hardcoded index; fix is to append instead of insert. (2) `ui-verify` hasn't been run yet for the two new preview states, which the plan requires before this phase is done. Non-blocking: both wander hooks' effect deps arrays were changed to `[canAttack]` against the plan's explicit, reasoned decision to leave them `[]` — harmless in current usage but should be reverted or re-justified. Route Finding #1 to preview-a, Finding #2 to implementer-a, re-run `npm test` and `ui-verify` after both land, then re-review.
 
 DONE
+
+## Phase 3 review
+
+### Checks run
+- `npx jest src/testbed/components/MonsterSpriteUploader src/app/api/monster-catalog src/modules/game-rules` -> `Test Suites: 216 passed, 216 total`, `Tests: 2600 passed, 2600 total`.
+- `npm run typecheck` -> `tsc --noEmit` exit clean, no errors.
+- Full-repo `npm run lint` / `npm test` not run, per instructions (`.claude/worktrees` copies). Scoped lint exit 0 and view tests/preview APPROVED taken from the progress.md log, not re-run.
+
+### Required checks
+- Route writes only inside `public/monster` and the two generated files: met. `src/app/api/monster-catalog/route.ts:62-81` writes only to `MONSTER_SPRITE_PUBLIC_DIRECTORY_FS` (`public/monster`), `MONSTER_CATALOG_GENERATED_PATH` and `MONSTER_NAMES_GENERATED_PATH` (`monster-catalog-generator.ts:10-13`). Filenames come from `buildMonsterSpriteFilename` (`monster-catalog-generator.ts:76-83`), built from a `[a-z0-9-]` slug, so no path traversal is possible from the name field.
+- 404 in production: met. `route.ts:43-45` returns 404 before reading the body; `route.test.ts:80-85` asserts 404 and no writes.
+- No delete/edit control for seed or uploaded entries: met. `MonsterSpriteUploaderCatalogList.tsx` renders read-only rows (thumbnail, name, badges); grep for delete/remove/edit across the component finds only the doc comment and a styles import.
+- Level picker: met. `MonsterSpriteUploader.map.ts:26-32` `getLevelOptions` filters 1..`getMaxLevelForBossFlag(isBoss)` (3 non-boss, 4 boss); the server enforces the same cap (`validation.ts:41-44`). Toggling boss off clamps the level (`MonsterSpriteUploader.map.ts:41-43`).
+- Docs: `docs/architecture/systems-and-visuals.md:182` documents the uploader and route.
+
+### Non-blocking observations
+1. `MonsterSpriteUploaderCatalogList.tsx` name span truncates "Minotaur" on mobile widths (cosmetic, accepted).
+2. `MonsterSpriteUploaderForm.tsx:56` file-input reset key is `catalogRows.length`; correct because the catalog only grows on success. It would break only if rows could be removed, which no control allows.
+3. `MonsterSpriteUploader.service.ts` `addMonster` (fetch) has no unit test; the plan did not require one. Hook tests cover it through a mocked service.
+4. `progress.md` Phase 3 boxes (tests, previews, etc.) are still unticked in the file at review time; the coordinator updates them.
+
+### Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| none | | | | |
+
+VERDICT: APPROVED

@@ -132,3 +132,12 @@ All three fixes from the Review are folded into the Spec (ui-designer-a) section
 3. **Citation fixed:** `TileDecorationEditorSaveRow.tsx:13` → `:12` (the `error:` string is on line 12).
 
 No other changes. Placement, states, tokens, copy, interactions, accessibility and acceptance criteria are otherwise approved as written.
+
+## Amendment (architect-a, Phase 3 planning — level caps)
+Triage's level-cap decision (non-boss 1-3, boss 1-4; no level 5) was resolved with the user on 2026-10-17, after this doc's Final spec above was locked. The code already enforces this (`src/modules/game-rules/monster-catalog-generator.ts`'s `MAX_NON_BOSS_LEVEL`/`MAX_BOSS_LEVEL`, built during Phase 1). Three changes to this doc, nothing else:
+
+1. **Level select is Boss-dependent, not always 1-4.** Options: "1 — Little", "2 — Little", "3 — Big" when Boss is off; add "4 — Big" when Boss is on. Toggling Boss off while Level 4 is selected clamps the selection down to 3 (the picker can never show an invalid combination — a UI-level guard, not a validation error the user has to notice and fix).
+2. **"Name/level/boss filled, ready" state** (Spec line 22) now reads: "Submit button ('Add monster') becomes enabled once Name is non-blank, Level is 1-3 (non-boss) or 1-4 (boss), and an idle file is present." (was: "Level is 1-4").
+3. **New error copy, defense-in-depth only (unreachable via the Level select itself, same category as the existing "missing idle" error):** "Non-boss monsters go up to level 3; boss monsters go up to level 4." — inline under the Level field, `aria-describedby`-associated like the other blocking field errors.
+
+No other state, copy, token, interaction, accessibility note or acceptance criterion changes. Full detail (route shape, file plan, contracts) is in `plan.md`'s Phase 3 section.

@@ -3,9 +3,13 @@ import path from 'path';
 import {
   SEED_MONSTER_CATALOG,
   buildMonsterCatalogEntries,
+  buildMonsterSpriteFilename,
+  findMonsterEntry,
+  getMaxLevelForBossFlag,
   parseMonsterSpriteFilename,
   renderMonsterCatalogSource,
   renderMonsterNameSource,
+  toMonsterSpriteSlug,
 } from './monster-catalog-generator';
 
 const MONSTER_DIRECTORY = path.join(process.cwd(), 'public', 'monster');
@@ -249,5 +253,81 @@ describe('render helpers', () => {
     expect(source).toContain("FireOgre: 'Fire Ogre',");
     expect(source.match(/FireOgre:/g)).toHaveLength(1);
     expect(source).toContain("Bear: 'Bear',");
+  });
+});
+
+describe('toMonsterSpriteSlug', () => {
+  it.each([
+    { input: 'Fire Ogre', expected: 'fire-ogre' },
+    { input: 'LANCER', expected: 'lancer' },
+    { input: '  Ice   Dragon  ', expected: 'ice-dragon' },
+    { input: "Imp's Lair!", expected: 'imp-s-lair' },
+    { input: '--Bear--', expected: 'bear' },
+    { input: 'Imp2', expected: 'imp2' },
+    { input: '!!!', expected: '' },
+    { input: '', expected: '' },
+    { input: '   ', expected: '' },
+  ])('turns "$input" into "$expected"', ({ input, expected }) => {
+    expect(toMonsterSpriteSlug(input)).toBe(expected);
+  });
+});
+
+describe('getMaxLevelForBossFlag', () => {
+  it('allows level 4 for bosses and level 3 otherwise', () => {
+    expect(getMaxLevelForBossFlag(true)).toBe(4);
+    expect(getMaxLevelForBossFlag(false)).toBe(3);
+  });
+});
+
+describe('buildMonsterSpriteFilename', () => {
+  it.each([
+    { name: 'Fire Ogre', level: 2, isBoss: false, kind: 'idle', expected: 'fire-ogre-lvl2-idle.gif' },
+    { name: 'Fire Ogre', level: 2, isBoss: false, kind: 'attack', expected: 'fire-ogre-lvl2-attack.gif' },
+    { name: 'Fire Ogre', level: 3, isBoss: true, kind: 'idle', expected: 'boss-fire-ogre-lvl3-idle.gif' },
+    { name: 'Minotaur', level: 4, isBoss: true, kind: 'attack', expected: 'boss-minotaur-lvl4-attack.gif' },
+  ] as const)('builds $expected', ({ name, level, isBoss, kind, expected }) => {
+    expect(buildMonsterSpriteFilename(name, level, isBoss, kind)).toBe(expected);
+  });
+
+  it.each([
+    { name: 'Lancer', level: 1 },
+    { name: 'Ice Dragon', level: 3 },
+    { name: 'Three Word Name', level: 2 },
+  ])('round-trips "$name" level $level through parseMonsterSpriteFilename for every boss/kind combination', ({ name, level }) => {
+    for (const isBoss of [false, true]) {
+      for (const kind of ['idle', 'attack'] as const) {
+        const filename = buildMonsterSpriteFilename(name, level, isBoss, kind);
+        expect(parseMonsterSpriteFilename(filename)).toEqual({ name, level, isBoss, kind });
+      }
+    }
+  });
+
+  it('round-trips a level 4 boss', () => {
+    const filename = buildMonsterSpriteFilename('Minotaur', 4, true, 'idle');
+    expect(parseMonsterSpriteFilename(filename)).toEqual({ name: 'Minotaur', level: 4, isBoss: true, kind: 'idle' });
+  });
+});
+
+describe('findMonsterEntry', () => {
+  const catalog = SEED_MONSTER_CATALOG;
+
+  it('finds a seed by exact name and level', () => {
+    expect(findMonsterEntry(catalog, 'Lancer', 1)).toBe(catalog[0]);
+  });
+
+  it.each(['lancer', 'LANCER', '  Lancer  '])('finds the seed case/spacing-insensitively for "%s"', (name) => {
+    expect(findMonsterEntry(catalog, name, 1)).toBe(catalog[0]);
+  });
+
+  it('misses the same name at a different level', () => {
+    expect(findMonsterEntry(catalog, 'Lancer', 2)).toBeUndefined();
+  });
+
+  it('misses a different name at the same level', () => {
+    expect(findMonsterEntry(catalog, 'Goblin', 1)).toBeUndefined();
+  });
+
+  it('returns undefined for an empty catalog', () => {
+    expect(findMonsterEntry([], 'Lancer', 1)).toBeUndefined();
   });
 });

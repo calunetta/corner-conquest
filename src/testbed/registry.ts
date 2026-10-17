@@ -47,6 +47,7 @@ import { createGameDialogPreview } from '@/modules/lobby/components/CreateGameDi
 import { customSettingsSheetPreview } from '@/modules/lobby/components/CustomSettingsSheet/CustomSettingsSheet.preview';
 import { rejoinMatchPanelPreview } from '@/modules/lobby/components/RejoinMatchPanel/RejoinMatchPanel.preview';
 import { tileDecorationEditorPreview } from '@/testbed/components/TileDecorationEditor/TileDecorationEditor.preview';
+import { monsterSpriteUploaderPreview } from '@/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.preview';
 import { tileVariantEditorPreview } from '@/testbed/components/TileVariantEditor/TileVariantEditor.preview';
 import { iconEditorPreview } from '@/testbed/components/IconEditor/IconEditor.preview';
 import type { ComponentPreview } from './testbed.types';
@@ -102,6 +103,7 @@ export const previews: ComponentPreview[] = [
   customSettingsSheetPreview,
   rejoinMatchPanelPreview,
   tileDecorationEditorPreview,
+  monsterSpriteUploaderPreview,
   tileVariantEditorPreview,
   iconEditorPreview,
 ];

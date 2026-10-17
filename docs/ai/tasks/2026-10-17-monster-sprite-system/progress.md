@@ -29,14 +29,14 @@ Tier: L · Phases: 3 (Phase 1 detailed in plan.md; Phases 2-3 outlined only, to 
 - [x] committed: 1f47fb0
 
 ## Phase 3: Testbed uploader
-- [ ] plan detailed and approved (architect-a, architect-b)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] docs-sync (if upload route shape or convention needs recording)
-- [ ] final review (architect-b)
+- [x] plan detailed and approved (architect-a, architect-b)
+- [x] implementation (implementer-a, implementer-b) — hook.ts written by implementer-a; route/validation/view files found from an earlier session, verified and cross-reviewed; revisions applied (per-field GIF copy, pick-time size check, remount fix)
+- [x] tests (tester-a, tester-b) — logic 187 pass across 4 files; view 31 pass; generator tests added. Not covered: `addMonster` fetch (not in plan's test list)
+- [x] previews (preview-a) — `monster-sprite-uploader` registered under Dev tools
+- [x] checks: typecheck, lint, unit tests — typecheck clean; scoped eslint exit 0; scoped jest 2603 pass. Not run: full-repo `npm run lint`/`npm test` — they fail on other tasks' `.claude/worktrees/` copies and on uncommitted TileResources/TileDecorationEditor work, none from this phase
+- [x] UI verified (ui-verify) — preview-b APPROVED; desktop + mobile screenshots under test-results/ui-verify/. Not exercised: boss warning line, clamp on Boss-off, file picks, submit paths (not submitted to avoid writing public/)
+- [x] docs-sync — `systems-and-visuals.md:182` bullet; game-mechanics.md unchanged (already documents caps)
+- [x] final review (architect-b) — APPROVED, review.md "Phase 3 review"
 - [ ] committed: <hash>
 
 ## Log

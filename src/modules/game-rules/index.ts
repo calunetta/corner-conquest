@@ -2,6 +2,17 @@ export { BASE_CARDS, SPECIAL_CARD_DESCRIPTIONS, USABLE_CARDS } from './card-data
 export { isArmyEligibleToPosition } from './army-position-eligibility';
 export { PLAYER_COLORS, PLAYER_DATA } from './player-data';
 export { MONSTER_CATALOG, getFirstMonsterAtLevel, toMonster } from './monster-catalog';
+export {
+  MAX_BOSS_LEVEL,
+  MAX_NON_BOSS_LEVEL,
+  MIN_LEVEL,
+  SEED_MONSTER_CATALOG,
+  buildMonsterSpriteFilename,
+  findMonsterEntry,
+  getMaxLevelForBossFlag,
+  toCatalogEntryKey,
+  toMonsterSpriteSlug,
+} from './monster-catalog-generator';
 export type { MonsterCatalogEntry } from './monster-catalog.types';
 export { createPlayer } from './player-factory';
 export { defaultGameSettings, initializeGame, startGame } from './game-setup.reducer';
