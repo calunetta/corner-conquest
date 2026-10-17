@@ -21,12 +21,12 @@ Tier: L · Phases: 2
 - [x] plan approved (architect-b)
 - [x] implementation (implementer-b)
 - [x] tests (tester-b)
-- [ ] previews (preview-a, preview-b) — none planned, skip
+- [x] previews (preview-a, preview-b) — none planned, skip
 - [x] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify) — blocked by unrelated build error in game-board.animation-cleanup.hook.ts; must run before commit
+- [x] UI verified (ui-verify): testbed Combat Dialog, rolling state, spinner renders; the blocking build error was fixed in 859e061
 - [x] docs updated (docs-sync)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 1c54f01
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
