@@ -26,7 +26,7 @@ Tier: L · Phases: 3 (Phase 1 detailed in plan.md; Phases 2-3 outlined only, to 
 - [x] UI verified (ui-verify)
 - [x] docs-sync (game-mechanics.md:30,36 and systems-and-visuals.md:22: skip-attack-animation behavior)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 1f47fb0
 
 ## Phase 3: Testbed uploader
 - [ ] plan detailed and approved (architect-a, architect-b)
