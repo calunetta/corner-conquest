@@ -14,6 +14,6 @@ export const defaultGameSettings: GameSettings = {
   availableCards: [...BASE_CARDS],
   availableAbilities: [AbilityName.Explorer, AbilityName.Collector],
   fogOfWar: true,
-  neutralFog: false,
+  neutralFog: true,
   gridSize: { rows: MAP_ROWS, cols: MAP_COLS },
 };
