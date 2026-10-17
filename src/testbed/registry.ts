@@ -40,6 +40,7 @@ import { victoryDialogPreview } from '@/modules/session/components/VictoryDialog
 import { googleIconPreview } from '@/modules/session/components/GoogleIcon/GoogleIcon.preview';
 import { linkGoogleAccountButtonPreview } from '@/modules/session/components/LinkGoogleAccountButton/LinkGoogleAccountButton.preview';
 import { loginPreview } from '@/modules/session/components/Login/Login.preview';
+import { adSlotPreview } from '@/modules/ads/components/AdSlot/AdSlot.preview';
 import { lobbyPreview } from '@/modules/lobby/components/Lobby/Lobby.preview';
 import { lobbyBackgroundPreview } from '@/modules/lobby/components/LobbyBackground/LobbyBackground.preview';
 import { lobbyGameRowPreview } from '@/modules/lobby/components/LobbyGameRow/LobbyGameRow.preview';
@@ -98,6 +99,7 @@ export const previews: ComponentPreview[] = [
   googleIconPreview,
   linkGoogleAccountButtonPreview,
   loginPreview,
+  adSlotPreview,
   lobbyPreview,
   lobbyBackgroundPreview,
   lobbyGameRowPreview,

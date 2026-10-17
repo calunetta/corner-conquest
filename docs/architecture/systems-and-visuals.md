@@ -35,7 +35,8 @@ Part of the architecture & game-rules docs. Index and directives: [`docs/README.
 #### **Consent (Google Funding Choices, `src/modules/consent/`)**
 - **Loader:** `FundingChoicesLoader` is mounted in `RootLayout` (`src/app/layout.tsx`) before `<Toaster />`. It loads Google Funding Choices' script only when `NEXT_PUBLIC_FUNDING_CHOICES_SCRIPT_SRC` is set; otherwise it renders nothing. This env var is not set in any environment yet, so production use needs the publisher's script URL before the script loads.
 - **No app banner:** the app renders no consent UI of its own.
-- **Signal:** `useConsentSignal()` mirrors the CMP's `__tcfapi` signal in memory (`status`, `gdprApplies`, `tcString`). Nothing in `src` consumes it yet.
+- **Signal:** `useConsentSignal()` mirrors the CMP's `__tcfapi` signal in memory (`status`, `gdprApplies`, `tcString`). Only the ad slot (below) consumes it.
+- **Ad slot (`AdSlot`, `src/modules/ads/`):** behind the `NEXT_PUBLIC_ADS_ENABLED === 'true'` flag (off by default) and the consent gate in `useAdSlot()`. It is not mounted on any page. Its view renders a labelled dev placeholder outside production and nothing in production; no ad network or live ad is wired.
 
 ## 6.8. Fog of War & Debug Mode
 
