@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, Coins, Info, Layers, Swords, Trophy } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
@@ -14,24 +14,23 @@ import type {
   LogMessageSegment,
 } from './GameLog.types';
 
-const CATEGORY_ICONS: Record<LogCategory, typeof Swords> = {
-  combat: Swords,
-  economy: Coins,
-  cards: Layers,
-  turn: Clock,
-  system: Info,
+const CATEGORY_ICON_IDS: Record<LogCategory, string> = {
+  combat: 'swords',
+  economy: 'coins',
+  cards: 'layers',
+  turn: 'clock',
+  system: 'info',
 };
 
 /** Category icon for a routine entry, or the trophy accent for a milestone. Legacy entries (`category: null`) get no icon. */
 function EntryIcon({ entry }: { entry: DisplayedLogEntry }) {
   if (entry.isMilestone) {
-    return <Trophy className={styles.milestoneIcon} aria-hidden="true" />;
+    return <RegistryIcon id="trophy" className={styles.milestoneIcon} aria-hidden />;
   }
   if (!entry.category) {
     return null;
   }
-  const Icon = CATEGORY_ICONS[entry.category];
-  return <Icon className={styles.entryIcon} aria-hidden="true" />;
+  return <RegistryIcon id={CATEGORY_ICON_IDS[entry.category]} className={styles.entryIcon} aria-hidden />;
 }
 
 /** Renders a message as colored player-name substrings plus plain-text runs. */

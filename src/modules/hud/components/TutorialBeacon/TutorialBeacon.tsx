@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
-import { InfoIcon } from '@/modules/shared';
+import { InfoIcon, RegistryIcon } from '@/modules/shared';
 import { cn } from '@/lib/utils';
 import { styles } from './TutorialBeacon.styles';
 import type { TutorialBeaconProps } from './TutorialBeacon.types';
@@ -62,7 +61,7 @@ export function TutorialBeacon({
             className={styles.closeButton}
             onClick={() => handleOpenChange(false)}
           >
-            <X className="h-4 w-4" />
+            <RegistryIcon id="x" className="h-4 w-4" />
           </Button>
           <h4 className={styles.title}>{title}</h4>
           <div className={styles.description}>{description}</div>

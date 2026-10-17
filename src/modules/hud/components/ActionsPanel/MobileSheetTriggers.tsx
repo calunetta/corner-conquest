@@ -1,7 +1,7 @@
 'use client';
 
-import { ChevronUp, ScrollText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { RegistryIcon } from '@/modules/shared';
 import { styles } from './MobileActionsBar.styles';
 
 export interface MobileSheetTriggersProps {
@@ -29,7 +29,7 @@ export function MobileSheetTriggers({
         aria-label="Open event log"
         data-testid="actions-panel-log"
       >
-        <ScrollText className={styles.logButtonIcon} aria-hidden="true" />
+        <RegistryIcon id="scroll-text" className={styles.logButtonIcon} aria-hidden />
         Log
       </Button>
       <Button
@@ -41,7 +41,7 @@ export function MobileSheetTriggers({
         data-testid="actions-panel-more-actions"
       >
         More Actions
-        <ChevronUp className="h-3.5 w-3.5" />
+        <RegistryIcon id="chevron-up" className="h-3.5 w-3.5" />
       </Button>
     </div>
   );
