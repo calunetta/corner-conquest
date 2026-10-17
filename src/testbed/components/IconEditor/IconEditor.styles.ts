@@ -1,0 +1,54 @@
+import { cva } from 'class-variance-authority';
+
+export const styles = {
+  panel: 'flex w-full flex-col rounded-xl border border-white/10 bg-black/60 backdrop-blur-md',
+  header:
+    'sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-t-xl border-b border-white/10 bg-black/60 p-3 backdrop-blur-md',
+  headerText: 'flex flex-col gap-1',
+  title: 'text-sm font-semibold uppercase tracking-widest text-muted-foreground',
+  hint: 'text-xs text-muted-foreground',
+  saveRow: 'flex flex-wrap items-center gap-2',
+  statusText: cva('text-xs transition-opacity duration-200 motion-reduce:transition-none', {
+    variants: {
+      status: {
+        idle: 'opacity-0',
+        saving: 'text-muted-foreground opacity-100',
+        saved: 'text-accent opacity-100',
+        error: 'text-destructive opacity-100',
+      },
+    },
+  }),
+  spinner: 'h-4 w-4 animate-spin motion-reduce:animate-none',
+  icon: 'h-4 w-4',
+  loading: 'flex items-center justify-center gap-2 p-6 text-sm text-muted-foreground',
+  accordionItem: 'border-white/10',
+  accordionTrigger: 'px-3',
+  triggerLabel: 'flex flex-wrap items-center gap-2',
+  overriddenCount: 'text-accent',
+  rowStack: 'flex flex-col gap-3 px-3',
+  row: 'flex flex-col gap-3 rounded-lg border border-white/10 p-3 md:flex-row md:items-start',
+  rowHeader: 'flex flex-wrap items-center gap-2',
+  rowLabel: 'text-sm font-semibold text-foreground',
+  badgeRow: 'flex flex-wrap items-center gap-2',
+  overriddenBadge: 'text-accent',
+  unsavedBadge: 'text-accent',
+  thumbnailFrame:
+    'relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/10 bg-white/5',
+  thumbnailTransform: 'relative flex h-10 w-10 items-center justify-center',
+  thumbnailGlyph: 'h-10 w-10 text-foreground',
+  thumbnailImage: 'object-contain',
+  controls: 'flex min-w-0 flex-1 flex-col gap-3',
+  uploadRow: 'flex flex-wrap items-center gap-2',
+  uploadButton: 'focus-within:ring-2 focus-within:ring-ring',
+  fileInput: 'sr-only',
+  uploadError: 'text-xs text-destructive',
+  field: 'flex flex-col gap-2',
+  fieldHeader: 'flex items-center justify-between gap-2',
+  fieldLabel: 'text-xs font-medium text-muted-foreground',
+  numberInput: 'h-8 w-20 text-sm',
+  sliderRoot: 'relative flex w-full touch-none select-none items-center',
+  sliderTrack: 'relative h-2 w-full grow overflow-hidden rounded-full bg-secondary',
+  sliderRange: 'absolute h-full bg-primary',
+  sliderThumb:
+    'block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+} as const;

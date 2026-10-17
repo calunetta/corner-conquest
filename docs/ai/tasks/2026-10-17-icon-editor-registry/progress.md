@@ -18,13 +18,13 @@ Tier: L · Phases: 2
 
 ## Phase 2: View layer — styles, view, row, preview, registry wiring
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-b)
-- [ ] tests (tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify, 1280x720 and 390x844)
-- [ ] docs-sync: systems-and-visuals.md note added
-- [ ] final review (architect-b)
+- [x] implementation (implementer-b)
+- [x] tests (tester-b)
+- [x] previews (preview-a)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify, 1280x720 and 390x844)
+- [x] docs-sync: systems-and-visuals.md note added
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Log

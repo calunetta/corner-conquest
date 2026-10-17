@@ -47,7 +47,7 @@ describe('IconEditor.service', () => {
       expect(init.method).toBe('POST');
       const sent = init.body as FormData;
       expect(sent.get('iconId')).toBe('swords');
-      expect(sent.get('file')).toBeTruthy();
+      expect((sent.get('file') as File).name).toBe('sword.png');
     });
 
     it('throws with the status code when the response is not ok', async () => {

@@ -48,6 +48,7 @@ import { customSettingsSheetPreview } from '@/modules/lobby/components/CustomSet
 import { rejoinMatchPanelPreview } from '@/modules/lobby/components/RejoinMatchPanel/RejoinMatchPanel.preview';
 import { tileDecorationEditorPreview } from '@/testbed/components/TileDecorationEditor/TileDecorationEditor.preview';
 import { tileVariantEditorPreview } from '@/testbed/components/TileVariantEditor/TileVariantEditor.preview';
+import { iconEditorPreview } from '@/testbed/components/IconEditor/IconEditor.preview';
 import type { ComponentPreview } from './testbed.types';
 
 /** Every preview shown in the testbed. Register new previews here (skill: testbed-preview). */
@@ -102,6 +103,7 @@ export const previews: ComponentPreview[] = [
   rejoinMatchPanelPreview,
   tileDecorationEditorPreview,
   tileVariantEditorPreview,
+  iconEditorPreview,
 ];
 
 export function findPreview(slug: string): ComponentPreview | undefined {
