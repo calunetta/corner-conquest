@@ -84,7 +84,7 @@ describe('ResourceIcon', () => {
 
     beforeEach(() => {
       mockResolveIcon.mockImplementation((id: string) => ({
-        src: `/uploads/${id}-custom.png`,
+        source: { kind: 'image', src: `/uploads/${id}-custom.png` },
         transform: OVERRIDE_TRANSFORM,
       }));
     });

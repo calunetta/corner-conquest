@@ -75,7 +75,10 @@ describe('InfoIcon', () => {
     const OVERRIDE_TRANSFORM = 'rotate(90deg) scale(2)';
 
     beforeEach(() => {
-      mockResolveIcon.mockReturnValue({ src: OVERRIDE_SRC, transform: OVERRIDE_TRANSFORM });
+      mockResolveIcon.mockReturnValue({
+        source: { kind: 'image', src: OVERRIDE_SRC },
+        transform: OVERRIDE_TRANSFORM,
+      });
     });
 
     it('asks the resolver for the info icon id', () => {

@@ -1,21 +1,5 @@
-import Image from 'next/image';
-import { resolveIcon } from '@/modules/icons';
-import { cn } from '@/lib/utils';
+import { RegistryIcon } from './registry-icon';
 
 export function FightIcon({ className }: { className?: string }) {
-  const { src, transform } = resolveIcon('icon-fight');
-  return (
-    <span className={cn('relative inline-flex items-center justify-center shrink-0', className)}>
-      <span className="relative flex h-full w-full items-center justify-center" style={{ transform }}>
-        <Image
-          src={src}
-          alt="Fight"
-          width={32}
-          height={32}
-          className="h-full w-full object-contain select-none"
-          unoptimized
-        />
-      </span>
-    </span>
-  );
+  return <RegistryIcon id="icon-fight" alt="Fight" className={className} />;
 }

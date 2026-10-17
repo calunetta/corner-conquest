@@ -1,11 +1,12 @@
 import iconRegistryJson from './icon-registry.config.json';
 import iconOverridesJson from './icon-overrides.config.json';
-import type { IconOverridesConfig, IconRegistryEntry } from './icon-registry.types';
+import type { IconDefaultSource, IconOverridesConfig, IconRegistryEntry } from './icon-registry.types';
 
 export interface ResolvedIcon {
-  /** Public path to render, e.g. "/sprites/icon_fight.png" or an uploaded override's path. */
-  src: string;
-  /** CSS transform to apply to the element that wraps the <Image>, e.g. "rotate(0deg) scale(1)". */
+  /** What to render: an uploaded override's image src if one is saved for this id, else the
+   *  registry's own default (a lucide glyph name or an image src). */
+  source: IconDefaultSource;
+  /** CSS transform for the element that wraps the rendered icon, e.g. "rotate(0deg) scale(1)". */
   transform: string;
 }
 
@@ -28,26 +29,24 @@ function findRegistryEntry(id: string): IconRegistryEntry {
 }
 
 /**
- * Looks up `id` in `iconRegistry`, applies any matching entry in `iconOverridesConfig`
- * (src/rotation/size override the registry default when present), and returns the resolved
- * image src and CSS transform.
+ * Looks up `id` in `iconRegistry` and applies any matching entry in `iconOverridesConfig`
+ * (src/rotation/size override the registry default when present). An uploaded `src` replaces
+ * the default source whatever its kind, so a lucide entry can be replaced by an image.
  *
- * Throws if `id` is not in `iconRegistry`, or if the matching entry's `defaultSource.kind`
- * is `'lucide'` (this resolver only resolves image icons; the three current call sites are
- * all image-kind registry entries).
+ * Throws only if `id` is not in `iconRegistry`.
  */
 export function resolveIcon(id: string): ResolvedIcon {
   const entry = findRegistryEntry(id);
-  if (entry.defaultSource.kind !== 'image') {
-    throw new Error(`Icon "${id}" is a lucide icon; resolveIcon only resolves image icons`);
-  }
 
   const override = iconOverrides[id];
   const rotation = override?.rotation ?? entry.defaultRotation;
   const size = override?.size ?? entry.defaultSize;
+  const source: IconDefaultSource = override?.src
+    ? { kind: 'image', src: override.src }
+    : entry.defaultSource;
 
   return {
-    src: override?.src ?? entry.defaultSource.src,
+    source,
     transform: toIconTransform(rotation, size),
   };
 }

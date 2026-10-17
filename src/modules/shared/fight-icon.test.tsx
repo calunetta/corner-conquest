@@ -75,7 +75,10 @@ describe('FightIcon', () => {
     const OVERRIDE_TRANSFORM = 'rotate(45deg) scale(0.5)';
 
     beforeEach(() => {
-      mockResolveIcon.mockReturnValue({ src: OVERRIDE_SRC, transform: OVERRIDE_TRANSFORM });
+      mockResolveIcon.mockReturnValue({
+        source: { kind: 'image', src: OVERRIDE_SRC },
+        transform: OVERRIDE_TRANSFORM,
+      });
     });
 
     it('asks the resolver for the fight icon id', () => {

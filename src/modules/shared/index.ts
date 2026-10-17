@@ -8,5 +8,7 @@ export { getResourceDisplayName, RESOURCE_SPRITES, RESOURCE_GAIN_SPRITES, RESOUR
 export { useTransientPulses } from './use-transient-pulses';
 export type { PulseState } from './use-transient-pulses';
 export { ResourceIcon } from './resource-icon';
+export { RegistryIcon } from './registry-icon';
+export type { RegistryIconProps } from './registry-icon';
 export { FightIcon } from './fight-icon';
 export { InfoIcon } from './info-icon';

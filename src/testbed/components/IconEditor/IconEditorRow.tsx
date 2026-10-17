@@ -3,10 +3,9 @@
 import type { ChangeEvent } from 'react';
 import Image from 'next/image';
 import * as LucideIcons from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { toIconTransform, type IconDefaultSource } from '@/modules/icons';
+import { getLucideGlyph, toIconTransform, type IconDefaultSource } from '@/modules/icons';
 import { styles } from './IconEditor.styles';
 import type { IconRowViewModel } from './IconEditor.types';
 import { IconField } from './IconEditorField';
@@ -16,16 +15,12 @@ const SIZE_RANGE = { min: 25, max: 200, step: 5 } as const;
 const IMAGE_ACCEPT = 'image/png,image/jpeg,image/gif,image/webp';
 const UPLOAD_ERROR_TEXT = 'Could not upload — check the file type and try again.';
 
-// lucide-react exports components by name but has no typed name lookup; registry entries name
-// their glyph by its export name, so the namespace is indexed by that name.
-const lucideGlyphsByName = LucideIcons as unknown as Record<string, LucideIcon | undefined>;
-
 function IconGlyph({ source }: { source: IconDefaultSource }) {
   if (source.kind === 'image') {
     return <Image src={source.src} alt="" fill unoptimized className={styles.thumbnailImage} />;
   }
 
-  const Glyph = lucideGlyphsByName[source.name];
+  const Glyph = getLucideGlyph(source.name);
   if (!Glyph) return null;
   return <Glyph aria-hidden className={styles.thumbnailGlyph} />;
 }

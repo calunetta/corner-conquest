@@ -12,6 +12,8 @@ const mutableOverrides = overridesConfig as Record<string, IconOverride>;
 const REGISTRY_IMAGE_ID = 'icon-fight';
 const REGISTRY_IMAGE_SRC = '/sprites/icon_fight.png';
 const REGISTRY_LUCIDE_ID = 'loader-2';
+const REGISTRY_LUCIDE_NAME = 'Loader2';
+const UPLOADED_SRC = '/uploads/icon-custom.png';
 const DEFAULT_TRANSFORM = 'rotate(0deg) scale(1)';
 
 function setOverride(id: string, override: IconOverride): void {
@@ -37,22 +39,25 @@ describe('toIconTransform', () => {
 });
 
 describe('resolveIcon', () => {
-  describe('known image id, no override', () => {
-    it('returns the registry default src and the default transform', () => {
+  describe('image entry, no override', () => {
+    it('returns the registry image source and the default transform', () => {
       expect(resolveIcon(REGISTRY_IMAGE_ID)).toEqual({
-        src: REGISTRY_IMAGE_SRC,
+        source: { kind: 'image', src: REGISTRY_IMAGE_SRC },
         transform: DEFAULT_TRANSFORM,
       });
     });
   });
 
-  describe('known image id, override with rotation and size only', () => {
+  describe('image entry, override with rotation and size only', () => {
     beforeEach(() => {
       setOverride(REGISTRY_IMAGE_ID, { rotation: 45, size: 50 });
     });
 
-    it('keeps the registry default src', () => {
-      expect(resolveIcon(REGISTRY_IMAGE_ID).src).toBe(REGISTRY_IMAGE_SRC);
+    it('keeps the registry image source', () => {
+      expect(resolveIcon(REGISTRY_IMAGE_ID).source).toEqual({
+        kind: 'image',
+        src: REGISTRY_IMAGE_SRC,
+      });
     });
 
     it('applies the override rotation and size to the transform', () => {
@@ -60,15 +65,13 @@ describe('resolveIcon', () => {
     });
   });
 
-  describe('known image id, override with src only', () => {
-    const UPLOADED_SRC = '/uploads/icon-fight-custom.png';
-
+  describe('image entry, override with src only', () => {
     beforeEach(() => {
       setOverride(REGISTRY_IMAGE_ID, { src: UPLOADED_SRC });
     });
 
-    it('returns the override src instead of the registry default', () => {
-      expect(resolveIcon(REGISTRY_IMAGE_ID).src).toBe(UPLOADED_SRC);
+    it('returns the override src as an image source instead of the registry default', () => {
+      expect(resolveIcon(REGISTRY_IMAGE_ID).source).toEqual({ kind: 'image', src: UPLOADED_SRC });
     });
 
     it('falls back to the registry default transform', () => {
@@ -76,18 +79,69 @@ describe('resolveIcon', () => {
     });
   });
 
-  describe('known image id, override with src, rotation and size', () => {
-    const UPLOADED_SRC = '/uploads/icon-fight-custom.png';
-
+  describe('image entry, override with src, rotation and size', () => {
     beforeEach(() => {
       setOverride(REGISTRY_IMAGE_ID, { src: UPLOADED_SRC, rotation: 270, size: 125 });
     });
 
     it('returns the override src and the override transform together', () => {
       expect(resolveIcon(REGISTRY_IMAGE_ID)).toEqual({
-        src: UPLOADED_SRC,
+        source: { kind: 'image', src: UPLOADED_SRC },
         transform: 'rotate(270deg) scale(1.25)',
       });
+    });
+  });
+
+  describe('image entry, override with an empty src', () => {
+    beforeEach(() => {
+      setOverride(REGISTRY_IMAGE_ID, { src: '' });
+    });
+
+    it('treats the empty src as no upload and keeps the registry image source', () => {
+      expect(resolveIcon(REGISTRY_IMAGE_ID).source).toEqual({
+        kind: 'image',
+        src: REGISTRY_IMAGE_SRC,
+      });
+    });
+  });
+
+  describe('lucide entry, no override', () => {
+    it('returns the registry lucide name as the source and the default transform', () => {
+      expect(resolveIcon(REGISTRY_LUCIDE_ID)).toEqual({
+        source: { kind: 'lucide', name: REGISTRY_LUCIDE_NAME },
+        transform: DEFAULT_TRANSFORM,
+      });
+    });
+  });
+
+  describe('lucide entry, override with rotation and size only', () => {
+    beforeEach(() => {
+      setOverride(REGISTRY_LUCIDE_ID, { rotation: 90, size: 200 });
+    });
+
+    it('keeps the registry lucide source', () => {
+      expect(resolveIcon(REGISTRY_LUCIDE_ID).source).toEqual({
+        kind: 'lucide',
+        name: REGISTRY_LUCIDE_NAME,
+      });
+    });
+
+    it('applies the override rotation and size to the transform', () => {
+      expect(resolveIcon(REGISTRY_LUCIDE_ID).transform).toBe('rotate(90deg) scale(2)');
+    });
+  });
+
+  describe('lucide entry, override with src only', () => {
+    beforeEach(() => {
+      setOverride(REGISTRY_LUCIDE_ID, { src: UPLOADED_SRC });
+    });
+
+    it('replaces the lucide default with the uploaded image source', () => {
+      expect(resolveIcon(REGISTRY_LUCIDE_ID).source).toEqual({ kind: 'image', src: UPLOADED_SRC });
+    });
+
+    it('falls back to the registry default transform', () => {
+      expect(resolveIcon(REGISTRY_LUCIDE_ID).transform).toBe(DEFAULT_TRANSFORM);
     });
   });
 
@@ -95,16 +149,9 @@ describe('resolveIcon', () => {
     it.each([
       ['an id absent from the registry', 'icon-does-not-exist'],
       ['the empty string', ''],
+      ['an inherited Object property name', 'constructor'],
     ])('throws for %s', (_label, id) => {
       expect(() => resolveIcon(id)).toThrow(`Unknown icon id "${id}"`);
-    });
-  });
-
-  describe('registry entry of kind lucide', () => {
-    it('throws because this resolver only resolves image icons', () => {
-      expect(() => resolveIcon(REGISTRY_LUCIDE_ID)).toThrow(
-        `Icon "${REGISTRY_LUCIDE_ID}" is a lucide icon; resolveIcon only resolves image icons`,
-      );
     });
   });
 });
