@@ -1,5 +1,5 @@
 import { PlayerColor, AbilityName, GameAction, HAND_LIMIT } from '@/lib/types';
-import type { GameState } from '@/lib/types';
+import type { CardName, GameState } from '@/lib/types';
 import { initializeGame, startGame, defaultGameSettings } from '@/modules/game-rules';
 import {
   handleBuyAbility,
@@ -7,6 +7,7 @@ import {
   handleCloseSpecialIslandDialog,
   handleRollOnSpecialIsland,
 } from './card-acquisition.reducer';
+import { chooseSpecialIslandCard } from './special-island-card';
 import { toLogMessage } from './log-entry';
 
 function buildGame(): GameState {
@@ -217,3 +218,49 @@ describe('handleCloseSpecialIslandDialog', () => {
     expect(handleCloseSpecialIslandDialog(game)).toBe(game);
   });
 });
+
+describe('chooseSpecialIslandCard and the roll payload', () => {
+  let game: GameState;
+
+  beforeEach(() => {
+    game = buildGame();
+  });
+
+  it('returns a card from the deck when one is available', () => {
+    game.specialCardsDeck = ['Scout'];
+    game.discardPile = ['Sabotage'];
+    expect(chooseSpecialIslandCard(game)).toBe('Scout');
+  });
+
+  it('returns a card from the discard pile when the deck is empty', () => {
+    game.specialCardsDeck = [];
+    game.discardPile = ['Sabotage'];
+    expect(chooseSpecialIslandCard(game)).toBe('Sabotage');
+  });
+
+  it('returns null when the hand is full and not in debug mode', () => {
+    game.players[0].specialCards = new Array(HAND_LIMIT).fill('Scout');
+    expect(chooseSpecialIslandCard(game)).toBeNull();
+  });
+
+  it('returns null when nothing can be drawn', () => {
+    game.specialCardsDeck = [];
+    game.discardPile = [];
+    expect(chooseSpecialIslandCard(game)).toBeNull();
+  });
+
+  it('draws exactly the card named in the payload, so every replica adds the same card', () => {
+    game.specialCardsDeck = ['Scout', 'Sabotage', 'Wealthy'] as CardName[];
+    const nextState = handleRollOnSpecialIsland(game, { roll: 3, x: 2, y: 3, cardDrawn: 'Sabotage' });
+    expect(nextState.players[0].specialCards).toEqual(['Sabotage']);
+    expect(nextState.specialCardsDeck).not.toContain('Sabotage');
+  });
+
+  it('draws the named card after reshuffling the discard pile into an empty deck', () => {
+    game.specialCardsDeck = [];
+    game.discardPile = ['Scout'];
+    const nextState = handleRollOnSpecialIsland(game, { roll: 6, x: 2, y: 3, cardDrawn: 'Scout' });
+    expect(nextState.players[0].specialCards).toEqual(['Scout']);
+  });
+});
+

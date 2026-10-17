@@ -24,6 +24,7 @@ import {
 } from '@/modules/cards';
 import { ConfirmExitDialog, HostLeaveDialog, VictoryDialog } from '@/modules/session';
 import { ConnectionWarningDialog } from '@/modules/game-board';
+import { chooseSpecialIslandCard } from '@/modules/game-rules';
 
 export function GameDialogManager() {
   const {
@@ -126,19 +127,14 @@ export function GameDialogManager() {
           state={dialogs.specialIslandRoll}
           onRoll={async () => {
             const roll = Math.floor(Math.random() * 6) + 1;
-            let cardDrawn: CardName | null = null;
+            // Choose the card once here and send it, so the dialog shows exactly what the reducer adds.
+            const cardDrawn: CardName | null = roll === 3 || roll === 6 ? chooseSpecialIslandCard(gameState) : null;
             if (roll === 3 || roll === 6) {
-              const currentDeck = gameState?.specialCardsDeck || [];
-              const currentDiscard = gameState?.discardPile || [];
-              if (currentDeck.length > 0) {
-                cardDrawn = currentDeck[0];
-              } else if (currentDiscard.length > 0) {
-                cardDrawn = currentDiscard[0];
-              }
               await onAction(GameAction.RollOnSpecialIsland, {
                 roll,
                 x: dialogs.specialIslandRoll!.x,
                 y: dialogs.specialIslandRoll!.y,
+                cardDrawn: cardDrawn ?? undefined,
               });
             }
             dispatch({

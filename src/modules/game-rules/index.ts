@@ -30,6 +30,7 @@ export {
   handleCloseSpecialIslandDialog,
   handleRollOnSpecialIsland,
 } from './card-acquisition.reducer';
+export { chooseSpecialIslandCard } from './special-island-card';
 export { handleScoutAction, handleUseCard, handleUseProductiveCard } from './card-effects.reducer';
 export { handleGainWealth, handleSabotagePlayer, handleStealResource } from './card-targeted-effects.reducer';
 export { handleCancelAction, handleDeployAction, handleUpgradeAction } from './player-actions.reducer';

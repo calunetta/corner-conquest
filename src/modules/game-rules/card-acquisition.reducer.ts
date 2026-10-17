@@ -1,6 +1,7 @@
 import type { AbilityName, CardName, GameState } from '@/lib/types';
 import { GameAction, HAND_LIMIT } from '@/lib/types';
 import { pushLogEntry } from './log-entry';
+import { takeCardFromDeck } from './special-island-card';
 
 /** Spends 10 gold to draw a special card, reshuffling the discard pile into the deck if it's empty. */
 export function handleBuyCardAction(state: GameState): GameState {
@@ -86,10 +87,10 @@ export function handleBuyAbility(state: GameState, abilityName: AbilityName): Ga
   return state;
 }
 
-/** Rolls for a bonus card on a special island tile; a 3 or 6 draws, reshuffling the discard pile if needed. */
+/** Rolls for a bonus card on a special island tile; a 3 or 6 draws `cardDrawn` (see chooseSpecialIslandCard). */
 export function handleRollOnSpecialIsland(
   state: GameState,
-  payload?: { roll?: number; x: number; y: number },
+  payload?: { roll?: number; x: number; y: number; cardDrawn?: CardName },
 ): GameState {
   const player = state.players[state.currentPlayerIndex];
 
@@ -119,8 +120,7 @@ export function handleRollOnSpecialIsland(
         state.discardPile = [];
       }
       if (state.specialCardsDeck.length > 0) {
-        const cardIndex = Math.floor(Math.random() * state.specialCardsDeck.length);
-        const drawnCardResult = state.specialCardsDeck.splice(cardIndex, 1)[0];
+        const drawnCardResult = takeCardFromDeck(state.specialCardsDeck, payload?.cardDrawn);
         player.specialCards.push(drawnCardResult);
         cardDrawn = drawnCardResult;
         if (payload) {

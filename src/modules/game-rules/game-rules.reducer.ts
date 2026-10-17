@@ -114,7 +114,10 @@ export function handleGameAction({ action, gameState, payload }: HandleActionPar
         state = handleStealResource(state, payload as { targetPlayerId: number; resource: ResourceType });
         break;
       case GameAction.RollOnSpecialIsland:
-        state = handleRollOnSpecialIsland(state, payload as { roll?: number; x: number; y: number } | undefined);
+        state = handleRollOnSpecialIsland(
+          state,
+          payload as { roll?: number; x: number; y: number; cardDrawn?: CardName } | undefined,
+        );
         break;
       case GameAction.CloseSpecialIslandDialog:
         state = handleCloseSpecialIslandDialog(state);
