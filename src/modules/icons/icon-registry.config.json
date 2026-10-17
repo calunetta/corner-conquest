@@ -1,0 +1,618 @@
+[
+  {
+    "id": "loader-2",
+    "label": "Loader2",
+    "module": "legacy",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Loader2"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "chevron-down",
+    "label": "Chevron Down",
+    "module": "legacy",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "ChevronDown"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "chevron-up",
+    "label": "Chevron Up",
+    "module": "legacy",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "ChevronUp"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "trophy",
+    "label": "Trophy",
+    "module": "legacy",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Trophy"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "check-circle",
+    "label": "Check Circle",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "CheckCircle"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "award",
+    "label": "Award",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Award"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "sparkles",
+    "label": "Sparkles",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Sparkles"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "zap",
+    "label": "Zap",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Zap"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "shield",
+    "label": "Shield",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Shield"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "play",
+    "label": "Play",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Play"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "trending-up",
+    "label": "Trending Up",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "TrendingUp"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "check",
+    "label": "Check",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Check"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "ban",
+    "label": "Ban",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Ban"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "dices",
+    "label": "Dices",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Dices"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "x-circle",
+    "label": "X Circle",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "XCircle"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "hand-metal",
+    "label": "Hand Metal",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "HandMetal"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "arrow-left",
+    "label": "Arrow Left",
+    "module": "cards",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "ArrowLeft"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "clock",
+    "label": "Clock",
+    "module": "combat",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Clock"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "crosshair",
+    "label": "Crosshair",
+    "module": "combat",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Crosshair"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "skull",
+    "label": "Skull",
+    "module": "combat",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Skull"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "swords",
+    "label": "Swords",
+    "module": "combat",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Swords"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "refresh-cw",
+    "label": "Refresh Cw",
+    "module": "game-board",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "RefreshCw"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "wifi-off",
+    "label": "Wifi Off",
+    "module": "game-board",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "WifiOff"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "shopping-cart",
+    "label": "Shopping Cart",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "ShoppingCart"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "album",
+    "label": "Album",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Album"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "university",
+    "label": "University",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "University"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "scroll-text",
+    "label": "Scroll Text",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "ScrollText"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "timer",
+    "label": "Timer",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Timer"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "image-icon",
+    "label": "Image Icon",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "ImageIcon"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "coins",
+    "label": "Coins",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Coins"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "info",
+    "label": "Info",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Info"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "layers",
+    "label": "Layers",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Layers"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "hourglass",
+    "label": "Hourglass",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Hourglass"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "forward",
+    "label": "Forward",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Forward"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "compass",
+    "label": "Compass",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Compass"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "shield-check",
+    "label": "Shield Check",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "ShieldCheck"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "hammer",
+    "label": "Hammer",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Hammer"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "x",
+    "label": "X",
+    "module": "hud",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "X"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "bot",
+    "label": "Bot",
+    "module": "lobby",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Bot"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "crown",
+    "label": "Crown",
+    "module": "lobby",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Crown"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "users",
+    "label": "Users",
+    "module": "lobby",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Users"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "help-circle",
+    "label": "Help Circle",
+    "module": "lobby",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "HelpCircle"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "settings",
+    "label": "Settings",
+    "module": "lobby",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Settings"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "book-open",
+    "label": "Book Open",
+    "module": "lobby",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "BookOpen"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "power",
+    "label": "Power",
+    "module": "lobby",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Power"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "home",
+    "label": "Home",
+    "module": "map",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "Home"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "zoom-in",
+    "label": "Zoom In",
+    "module": "map",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "ZoomIn"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "zoom-out",
+    "label": "Zoom Out",
+    "module": "map",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "ZoomOut"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "rotate-ccw",
+    "label": "Rotate Ccw",
+    "module": "map",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "RotateCcw"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "alert-triangle",
+    "label": "Alert Triangle",
+    "module": "session",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "AlertTriangle"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "log-out",
+    "label": "Log Out",
+    "module": "session",
+    "defaultSource": {
+      "kind": "lucide",
+      "name": "LogOut"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "icon-meat",
+    "label": "Icon Meat",
+    "module": "shared",
+    "defaultSource": {
+      "kind": "image",
+      "src": "/sprites/icon_meat.png"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "icon-wood",
+    "label": "Icon Wood",
+    "module": "shared",
+    "defaultSource": {
+      "kind": "image",
+      "src": "/sprites/icon_wood.png"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "icon-gold",
+    "label": "Icon Gold",
+    "module": "shared",
+    "defaultSource": {
+      "kind": "image",
+      "src": "/sprites/icon_gold.png"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "icon-fight",
+    "label": "Icon Fight",
+    "module": "shared",
+    "defaultSource": {
+      "kind": "image",
+      "src": "/sprites/icon_fight.png"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "icon-info",
+    "label": "Icon Info",
+    "module": "shared",
+    "defaultSource": {
+      "kind": "image",
+      "src": "/sprites/icon_info.png"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  }
+]
