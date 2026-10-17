@@ -2,8 +2,8 @@
 
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { XCircle, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RegistryIcon } from '@/modules/shared';
 import { ActionButton } from './ActionButton';
 import { MobileActionsSheet } from './MobileActionsSheet';
 import { MobileEventLogSheet } from './MobileEventLogSheet';
@@ -18,6 +18,7 @@ export function MobileActionsBar({
   mainActions,
   alwaysAvailableActions,
   secondaryActions,
+  localPlayerColor,
   deckCount,
   isMyTurn,
   hasSelectedArmy,
@@ -54,7 +55,7 @@ export function MobileActionsBar({
               onClick={onCancelAction}
               data-testid="actions-panel-cancel"
             >
-              <XCircle className="mr-1 h-3.5 w-3.5" />
+              <RegistryIcon id="x-circle" className="mr-1 h-3.5 w-3.5" />
               Cancel
             </Button>
           )}
@@ -66,13 +67,13 @@ export function MobileActionsBar({
               onClick={onDeselectArmy}
               data-testid="actions-panel-deselect"
             >
-              <XCircle className="mr-1 h-3.5 w-3.5" />
+              <RegistryIcon id="x-circle" className="mr-1 h-3.5 w-3.5" />
               Deselect
             </Button>
           )}
           {isMyTurn && hasExtraMoveBanner && (
             <div className={styles.extraMoveBanner} data-testid="extra-move-banner">
-              <Zap className="h-4 w-4 text-amber-400 shrink-0" />
+              <RegistryIcon id="zap" className="h-4 w-4 text-amber-400 shrink-0" />
               <span>Extra Move active! Select a soldier on the map to continue.</span>
             </div>
           )}
@@ -91,20 +92,12 @@ export function MobileActionsBar({
             hasSelectedArmy && styles.row2Active,
           )}
         >
-          {mainActions.map((action) => (
+          {[...mainActions, ...alwaysAvailableActions].map((action) => (
             <ActionButton
               key={action.id}
               action={action}
               isMain
-              disabledReasonVisible
-              onActionClick={onActionClick}
-            />
-          ))}
-          {alwaysAvailableActions.map((action) => (
-            <ActionButton
-              key={action.id}
-              action={action}
-              isMain
+              localPlayerColor={localPlayerColor}
               disabledReasonVisible
               onActionClick={onActionClick}
             />
@@ -143,6 +136,7 @@ export function MobileActionsBar({
         open={isSheetOpen}
         onOpenChange={onSheetOpenChange}
         secondaryActions={secondaryActions}
+        localPlayerColor={localPlayerColor}
         deckCount={deckCount}
         infoBeacon={infoBeacon}
         onActionClick={onActionClick}

@@ -22,6 +22,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: myTurnNoSelection.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: myTurnNoSelection.deckCount,
         onActionClick: jest.fn(),
       };
@@ -35,6 +36,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: myTurnNoSelection.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: myTurnNoSelection.deckCount,
         infoBeacon,
         onActionClick: jest.fn(),
@@ -48,6 +50,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: myTurnNoSelection.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: myTurnNoSelection.deckCount,
         onActionClick: jest.fn(),
       };
@@ -60,6 +63,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: myTurnNoSelection.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: 18,
         onActionClick: jest.fn(),
       };
@@ -74,6 +78,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: myTurnNoSelection.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: myTurnNoSelection.deckCount,
         onActionClick: jest.fn(),
       };
@@ -88,6 +93,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: myTurnNoSelection.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: myTurnNoSelection.deckCount,
         onActionClick: jest.fn(),
       };
@@ -104,6 +110,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: cardActionInProgress.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: cardActionInProgress.deckCount,
         onActionClick: jest.fn(),
       };
@@ -118,6 +125,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: myTurnNoSelection.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: myTurnNoSelection.deckCount,
         onActionClick: jest.fn(),
       };
@@ -136,6 +144,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: notMyTurn.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: notMyTurn.deckCount,
         onActionClick: jest.fn(),
       };
@@ -153,6 +162,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: notMyTurn.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: notMyTurn.deckCount,
         onActionClick: jest.fn(),
       };
@@ -171,6 +181,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: myTurnNoSelection.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: myTurnNoSelection.deckCount,
         onActionClick,
       };
@@ -189,6 +200,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: cardActionInProgress.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: cardActionInProgress.deckCount,
         onActionClick,
       };
@@ -211,6 +223,7 @@ describe('MobileActionsSheet', () => {
         open: false,
         onOpenChange: jest.fn(),
         secondaryActions: myTurnNoSelection.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: myTurnNoSelection.deckCount,
         onActionClick: jest.fn(),
       };
@@ -232,6 +245,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: myTurnNoSelection.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: myTurnNoSelection.deckCount,
         onActionClick: jest.fn(),
       };
@@ -246,6 +260,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange,
         secondaryActions: myTurnNoSelection.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: myTurnNoSelection.deckCount,
         onActionClick: jest.fn(),
       };
@@ -269,6 +284,7 @@ describe('MobileActionsSheet', () => {
         open: true,
         onOpenChange: jest.fn(),
         secondaryActions: myTurnNoSelection.secondaryActions,
+        localPlayerColor: myTurnNoSelection.localPlayerColor,
         deckCount: myTurnNoSelection.deckCount,
         onActionClick: jest.fn(),
       };

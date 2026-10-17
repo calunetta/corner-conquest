@@ -1,4 +1,4 @@
-import { GameAction } from '@/lib/types';
+import { GameAction, PlayerColor } from '@/lib/types';
 import type { ActionsPanelViewModel } from './ActionsPanel.types';
 
 export const myTurnNoSelection: ActionsPanelViewModel = {
@@ -71,6 +71,7 @@ export const myTurnNoSelection: ActionsPanelViewModel = {
       isPendingMatch: false,
     },
   ],
+  localPlayerColor: PlayerColor.Blue,
   deckCount: 18,
   isMyTurn: true,
   hasSelectedArmy: false,
@@ -139,10 +140,7 @@ export const notMyTurn: ActionsPanelViewModel = {
   isMyTurn: false,
   hasExtraMoveBanner: false,
   isCancellableActionInProgress: false,
-  mainActions: [
-    { ...myTurnNoSelection.mainActions[0], disabled: true, disabledReason: "It's not your turn." },
-    { ...myTurnNoSelection.mainActions[1], disabled: true, disabledReason: "It's not your turn." },
-  ],
+  mainActions: myTurnNoSelection.mainActions.map(a => ({ ...a, disabled: true, disabledReason: "It's not your turn." })),
   alwaysAvailableActions: [
     { ...myTurnNoSelection.alwaysAvailableActions[0], disabled: true, disabledReason: "It's not your turn." },
   ],

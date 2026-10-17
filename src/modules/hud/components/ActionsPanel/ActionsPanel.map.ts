@@ -151,6 +151,7 @@ export function toActionsPanelData(input: ActionsPanelMapInput): ActionsPanelDat
     mainActions,
     alwaysAvailableActions,
     secondaryActions,
+    localPlayerColor: localPlayer.color,
     deckCount: specialCardsDeck.length,
     isMyTurn,
     hasSelectedArmy: !!selectedArmy,

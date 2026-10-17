@@ -14,6 +14,7 @@ export function MobileActionsSheet({
   open,
   onOpenChange,
   secondaryActions,
+  localPlayerColor,
   deckCount,
   infoBeacon,
   onActionClick,
@@ -56,6 +57,7 @@ export function MobileActionsSheet({
               key={action.id}
               action={action}
               isMain={false}
+              localPlayerColor={localPlayerColor}
               disabledReasonVisible
               onActionClick={onActionClick}
             />

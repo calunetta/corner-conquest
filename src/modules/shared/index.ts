@@ -1,4 +1,5 @@
 export { toPlayerIdleSprite } from './player-sprite';
+export { toCollectorIdleSprite } from './collector-sprite';
 export { playerTextColors } from './player-text-colors';
 export { useToast, toast } from './use-toast';
 export { useIsMobile } from './use-is-mobile';
@@ -7,8 +8,8 @@ export { SKY_GRADIENT_CLASS } from './sky-gradient';
 export { getResourceDisplayName, RESOURCE_SPRITES, RESOURCE_GAIN_SPRITES, RESOURCE_GAIN_ANIMATION_MS } from './resource-display';
 export { useTransientPulses } from './use-transient-pulses';
 export type { PulseState } from './use-transient-pulses';
-export { ResourceIcon } from './resource-icon';
 export { RegistryIcon } from './registry-icon';
 export type { RegistryIconProps } from './registry-icon';
+export { ResourceIcon } from './resource-icon';
 export { FightIcon } from './fight-icon';
 export { InfoIcon } from './info-icon';

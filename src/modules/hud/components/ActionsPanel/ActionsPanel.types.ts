@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { GameAction } from '@/lib/types';
+import type { GameAction, PlayerColor } from '@/lib/types';
 
 export type ActionIcon = 'position' | 'attack' | 'deploy' | 'upgrade' | 'buy-card' | 'show-cards' | 'abilities-shop';
 
@@ -17,6 +17,7 @@ export interface ActionsPanelData {
   mainActions: ActionViewModel[];
   alwaysAvailableActions: ActionViewModel[];
   secondaryActions: ActionViewModel[];
+  localPlayerColor: PlayerColor;
   deckCount: number;
   isMyTurn: boolean;
   hasSelectedArmy: boolean;
@@ -47,6 +48,7 @@ export interface MobileActionsSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   secondaryActions: ActionViewModel[];
+  localPlayerColor: PlayerColor;
   deckCount: number;
   infoBeacon?: ReactNode;
   onActionClick: (id: GameAction) => void;

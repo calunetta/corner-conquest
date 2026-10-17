@@ -4,9 +4,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { XCircle, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/modules/shared';
+import { RegistryIcon, useIsMobile } from '@/modules/shared';
 import { ActionButton } from './ActionButton';
 import { MobileActionsBar } from './MobileActionsBar';
 import { useActionsPanel } from './ActionsPanel.hook';
@@ -18,6 +17,7 @@ export function ActionsPanelView({
   mainActions,
   alwaysAvailableActions,
   secondaryActions,
+  localPlayerColor,
   deckCount,
   isMyTurn,
   hasSelectedArmy,
@@ -50,7 +50,7 @@ export function ActionsPanelView({
               onClick={onCancelAction}
               data-testid="actions-panel-cancel"
             >
-              <XCircle className="mr-1 h-3.5 w-3.5" />
+              <RegistryIcon id="x-circle" className="mr-1 h-3.5 w-3.5" />
               Cancel
             </Button>
           )}
@@ -62,7 +62,7 @@ export function ActionsPanelView({
               onClick={onDeselectArmy}
               data-testid="actions-panel-deselect"
             >
-              <XCircle className="mr-1 h-3.5 w-3.5" />
+              <RegistryIcon id="x-circle" className="mr-1 h-3.5 w-3.5" />
               Deselect
             </Button>
           )}
@@ -93,7 +93,7 @@ export function ActionsPanelView({
         </div>
         {isMyTurn && hasExtraMoveBanner && (
           <div className={styles.extraMoveBanner} data-testid="extra-move-banner">
-            <Zap className="h-4 w-4 text-amber-400 shrink-0" />
+            <RegistryIcon id="zap" className="h-4 w-4 text-amber-400 shrink-0" />
             <span>Extra Move active! Select a soldier on the map to continue.</span>
           </div>
         )}
@@ -101,16 +101,34 @@ export function ActionsPanelView({
       <CardContent className={styles.content}>
         <div className={cn(styles.mainGrid, hasSelectedArmy && styles.mainGridActive)}>
           {mainActions.map((action) => (
-            <ActionButton key={action.id} action={action} isMain onActionClick={onActionClick} />
+            <ActionButton
+              key={action.id}
+              action={action}
+              isMain
+              localPlayerColor={localPlayerColor}
+              onActionClick={onActionClick}
+            />
           ))}
           {alwaysAvailableActions.map((action) => (
-            <ActionButton key={action.id} action={action} isMain onActionClick={onActionClick} />
+            <ActionButton
+              key={action.id}
+              action={action}
+              isMain
+              localPlayerColor={localPlayerColor}
+              onActionClick={onActionClick}
+            />
           ))}
         </div>
         <Separator className={styles.separator} />
         <div className={styles.secondaryGrid}>
           {secondaryActions.map((action) => (
-            <ActionButton key={action.id} action={action} isMain={false} onActionClick={onActionClick} />
+            <ActionButton
+              key={action.id}
+              action={action}
+              isMain={false}
+              localPlayerColor={localPlayerColor}
+              onActionClick={onActionClick}
+            />
           ))}
         </div>
       </CardContent>
