@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { AbilityName, CardName } from '@/lib/types';
+import { AbilityName, CardName, type GameSettings } from '@/lib/types';
 import { defaultGameSettings } from '@/modules/game-rules';
 import { useCustomSettingsSheet } from './CustomSettingsSheet.hook';
 
@@ -35,6 +35,29 @@ describe('useCustomSettingsSheet', () => {
     });
 
     expect(result.current.settings.fogOfWar).toBe(false);
+  });
+
+  it('onNeutralFogChange sets neutralFog and leaves fogOfWar alone', () => {
+    const { result } = renderHook(() =>
+      useCustomSettingsSheet({ onSave: jest.fn(), initialSettings: defaultGameSettings }),
+    );
+
+    act(() => {
+      result.current.onNeutralFogChange(true);
+    });
+
+    expect(result.current.settings.neutralFog).toBe(true);
+    expect(result.current.settings.fogOfWar).toBe(defaultGameSettings.fogOfWar);
+  });
+
+  it('treats a settings object saved without neutralFog as off', () => {
+    const legacySettings: GameSettings = { ...defaultGameSettings };
+    delete legacySettings.neutralFog;
+    const { result } = renderHook(() =>
+      useCustomSettingsSheet({ onSave: jest.fn(), initialSettings: legacySettings }),
+    );
+
+    expect(result.current.settings.neutralFog).toBeUndefined();
   });
 
   it('onCardToggle(true) adds the card', () => {

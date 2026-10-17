@@ -19,6 +19,8 @@ export interface IslandTileStaticViewModel {
   isTeleportTarget: boolean;
   isScoutTarget: boolean;
   isTileVisible: boolean;
+  /** Covered tiles fog over a plain grey instead of their terrain colour (settings.neutralFog). */
+  isNeutralFog: boolean;
   isBase: boolean;
   baseOwner: Player | null;
   tilePlayerColor: PlayerColor | null;

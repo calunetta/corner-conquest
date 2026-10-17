@@ -29,6 +29,7 @@ export type CustomSettingsSheetViewModel = {
   settings: GameSettings;
   onSliderChange: (key: SliderFieldKey, value: number) => void;
   onFogOfWarChange: (checked: boolean) => void;
+  onNeutralFogChange: (checked: boolean) => void;
   onCardToggle: (cardName: CardName, checked: boolean) => void;
   onAbilityToggle: (abilityName: AbilityName, checked: boolean) => void;
   onSave: () => void;

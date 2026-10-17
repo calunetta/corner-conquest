@@ -22,6 +22,8 @@ export type GameSettings = {
   availableCards: CardName[];
   availableAbilities: AbilityName[];
   fogOfWar: boolean;
+  /** Covered tiles hide their terrain colour under a neutral grey fog. Missing (games saved before the setting) means off. */
+  neutralFog?: boolean;
   gridSize: { rows: number; cols: number };
 };
 

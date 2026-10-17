@@ -12,11 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BASE_CARDS } from '@/modules/game-rules';
 import { GENERAL_SLIDERS, COST_SLIDERS, ALL_ABILITIES, toSliderDisplayValue } from './CustomSettingsSheet.map';
 import { useCustomSettingsSheet } from './CustomSettingsSheet.hook';
+import { NeutralFogRow } from './NeutralFogRow';
 import { styles } from './CustomSettingsSheet.styles';
 import type { CustomSettingsSheetProps } from './CustomSettingsSheet.types';
 
 export function CustomSettingsSheet(props: CustomSettingsSheetProps) {
-  const { settings, onSliderChange, onFogOfWarChange, onCardToggle, onAbilityToggle, onSave } =
+  const { settings, onSliderChange, onFogOfWarChange, onNeutralFogChange, onCardToggle, onAbilityToggle, onSave } =
     useCustomSettingsSheet(props);
 
   return (
@@ -46,6 +47,11 @@ export function CustomSettingsSheet(props: CustomSettingsSheetProps) {
                   </div>
                   <Switch checked={settings.fogOfWar} onCheckedChange={onFogOfWarChange} />
                 </div>
+                <NeutralFogRow
+                  checked={settings.neutralFog === true}
+                  disabled={!settings.fogOfWar}
+                  onCheckedChange={onNeutralFogChange}
+                />
                 <Separator />
                 {GENERAL_SLIDERS.map((config) => (
                   <div key={config.key} className={styles.sliderGroup}>

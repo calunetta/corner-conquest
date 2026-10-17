@@ -35,6 +35,8 @@ export function toIslandTileViewModel(island: Island, context: IslandTileContext
   const baseOwner = isBase && island.owner !== undefined ? (players.find((p) => p.id === island.owner) ?? null) : null;
 
   const isTileVisible = toIsTileVisible(island, { debugMode, fogOfWar, isPersonallyRevealed, players });
+  // `=== true` so games saved before the setting existed (field missing) keep the terrain-coloured fog.
+  const isNeutralFog = settings.neutralFog === true;
 
   const tilePlayerColor = toTilePlayerColor(island, players, localPlayer, isTileVisible);
 
@@ -50,6 +52,7 @@ export function toIslandTileViewModel(island: Island, context: IslandTileContext
     isTeleportTarget,
     isScoutTarget,
     isTileVisible,
+    isNeutralFog,
     isBase,
     baseOwner,
     tilePlayerColor,

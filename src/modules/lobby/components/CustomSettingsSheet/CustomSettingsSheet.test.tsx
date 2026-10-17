@@ -47,6 +47,35 @@ describe('CustomSettingsSheet', () => {
     expect(screen.getByText('Fog of War')).toBeInTheDocument();
   });
 
+  it('shows the neutral fog switch off by default and passes the change to the hook', () => {
+    const onSave = jest.fn();
+    render(
+      <CustomSettingsSheet open onOpenChange={mockOnOpenChange} onSave={onSave} initialSettings={defaultGameSettings} />,
+    );
+
+    const neutralFogSwitch = screen.getByRole('switch', { name: 'Neutral fog colour' });
+    expect(neutralFogSwitch).toHaveAttribute('aria-checked', 'false');
+    expect(neutralFogSwitch).toBeEnabled();
+
+    fireEvent.click(neutralFogSwitch);
+    fireEvent.click(screen.getByRole('button', { name: /save settings/i }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ neutralFog: true }));
+  });
+
+  it('disables the neutral fog switch while fog of war is off', () => {
+    render(
+      <CustomSettingsSheet
+        open
+        onOpenChange={mockOnOpenChange}
+        onSave={mockOnSave}
+        initialSettings={{ ...defaultGameSettings, fogOfWar: false }}
+      />,
+    );
+
+    expect(screen.getByRole('switch', { name: 'Neutral fog colour' })).toBeDisabled();
+  });
+
   it('renders slider for victory point goal', () => {
     render(
       <CustomSettingsSheet

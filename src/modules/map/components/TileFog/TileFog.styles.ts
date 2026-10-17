@@ -7,6 +7,8 @@ export const styles = {
   layer: 'pointer-events-none absolute inset-0 z-[50]',
   layerFadingOut: 'opacity-0 transition-opacity ease-linear',
   layerCleared: 'invisible opacity-0',
+  // The neutral backing is a square box, so it takes the tile's rounded corners.
+  layerNeutral: 'rounded-lg',
   image: 'object-contain',
 } as const;
 

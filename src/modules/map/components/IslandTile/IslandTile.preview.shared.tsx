@@ -21,6 +21,7 @@ export const createViewModel = (island: IslandTileViewModel['island']): IslandTi
   isTeleportTarget: false,
   isScoutTarget: false,
   isTileVisible: true,
+  isNeutralFog: false,
   isBase: island.type === 'base',
   baseOwner: null,
   tilePlayerColor: null,
