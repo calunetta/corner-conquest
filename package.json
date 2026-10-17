@@ -6,6 +6,7 @@
     "predev": "node scripts/fog-variants/sync-fog-variants.mjs && node scripts/tile-variants/sync-tile-variants.mjs && node scripts/decorations/sync-decorations.mjs",
     "dev": "next dev --turbopack -p 9002",
     "prebuild": "node scripts/fog-variants/sync-fog-variants.mjs && node scripts/tile-variants/sync-tile-variants.mjs && node scripts/decorations/sync-decorations.mjs",
+    "generate:monster-catalog": "tsx scripts/generate-monster-catalog.ts",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "next build",

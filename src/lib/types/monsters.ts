@@ -1,10 +1,6 @@
-export const MonsterName = {
-  Lancer: 'Lancer',
-  Bear: 'Bear',
-  Ogre: 'Ogre',
-  Minotaur: 'Minotaur',
-} as const;
-export type MonsterName = (typeof MonsterName)[keyof typeof MonsterName];
+import type { MonsterName } from './monsters.generated';
+
+export { MonsterName } from './monsters.generated';
 
 export type Monster = {
   name: MonsterName;

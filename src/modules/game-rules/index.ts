@@ -1,7 +1,8 @@
 export { BASE_CARDS, SPECIAL_CARD_DESCRIPTIONS, USABLE_CARDS } from './card-data';
 export { isArmyEligibleToPosition } from './army-position-eligibility';
 export { PLAYER_COLORS, PLAYER_DATA } from './player-data';
-export { MONSTER_DATA } from './monster-catalog';
+export { MONSTER_CATALOG, getFirstMonsterAtLevel, toMonster } from './monster-catalog';
+export type { MonsterCatalogEntry } from './monster-catalog.types';
 export { createPlayer } from './player-factory';
 export { defaultGameSettings, initializeGame, startGame } from './game-setup.reducer';
 export { addPlayerToGame, BASE_TILE_SIZE } from './player-join.reducer';

@@ -26,7 +26,7 @@ jest.mock('./LobbyBackground.hook', () => ({
 const BASE_CASTLE_SRC = '/sprites/castle_blue.png';
 const KNIGHT_SRC = '/sprites/blue.gif';
 const RESOURCE_SPRITE_SRCS = ['/sprites/sheep.gif', '/sprites/tree.gif', '/sprites/mine.png'];
-const MONSTER_IDLE_SRC = '/sprites/minotaur_idle.gif';
+const MONSTER_IDLE_SRC = '/monster/boss-minotaur-lvl4-idle.gif';
 // Base castle, base knight, three resource nodes and the monster.
 const ISLAND_IMAGE_COUNT = 1 + 1 + RESOURCE_SPRITE_SRCS.length + 1;
 

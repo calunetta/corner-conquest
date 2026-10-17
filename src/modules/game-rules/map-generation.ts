@@ -1,6 +1,28 @@
 import type { Island, GameSettings, IslandResource } from '@/lib/types';
 import { IslandType, ResourceType, MAP_COLS, MAP_ROWS } from '@/lib/types';
-import { MONSTER_DATA, generateMonsters } from './monster-catalog';
+import { generateMonsters, pickBossMonster } from './monster-catalog';
+
+function generateTileResources(distance: number, baseResourceAmount: number): IslandResource[] {
+  const resourceTypes: ResourceType[] = [ResourceType.Food, ResourceType.Wood, ResourceType.Gold];
+  const availableResources = [...resourceTypes];
+
+  const numResourceTypes = (distance <= 3 && Math.random() < 0.4) ? 2 : 1;
+  const islandResources: IslandResource[] = [];
+
+  if (numResourceTypes === 1) {
+    const randomIndex = Math.floor(Math.random() * availableResources.length);
+    const selectedResourceType = availableResources[randomIndex];
+    islandResources.push({ type: selectedResourceType, amount: 2 * baseResourceAmount });
+  } else {
+    for (let i = 0; i < numResourceTypes; i++) {
+      const randomIndex = Math.floor(Math.random() * availableResources.length);
+      const selectedResourceType = availableResources.splice(randomIndex, 1)[0];
+      const amount = (Math.random() < 0.5 ? 1 : 2) * baseResourceAmount;
+      islandResources.push({ type: selectedResourceType, amount });
+    }
+  }
+  return islandResources;
+}
 
 export function generateIslandTerrain(map2D: Island[][], settings: GameSettings): Island[][] {
   const center = { x: Math.floor(MAP_COLS / 2), y: Math.floor(MAP_ROWS / 2) };
@@ -14,12 +36,9 @@ export function generateIslandTerrain(map2D: Island[][], settings: GameSettings)
 
       if (x === center.x && y === center.y) {
         islandType = IslandType.Monster;
-        const bossMonsterData = MONSTER_DATA[4];
-        map2D[y][x].monsters = [{
-          name: bossMonsterData.name,
-          level: 4,
-          sprite: bossMonsterData.sprite,
-        }];
+        // Falls back to a regular roll if the boss pool is ever empty; the center's own distance is 0.
+        const bossMonster = pickBossMonster();
+        map2D[y][x].monsters = bossMonster ? [bossMonster] : generateMonsters(x, y);
         map2D[y][x].type = islandType;
         continue;
       }
@@ -40,27 +59,16 @@ export function generateIslandTerrain(map2D: Island[][], settings: GameSettings)
       map2D[y][x].type = islandType;
 
       if (islandType === IslandType.Resource) {
-        const resourceTypes: ResourceType[] = [ResourceType.Food, ResourceType.Wood, ResourceType.Gold];
-        const availableResources = [...resourceTypes];
-
-        const numResourceTypes = (distance <= 3 && Math.random() < 0.4) ? 2 : 1;
-        const islandResources: IslandResource[] = [];
-
-        if (numResourceTypes === 1) {
-          const randomIndex = Math.floor(Math.random() * availableResources.length);
-          const selectedResourceType = availableResources[randomIndex];
-          islandResources.push({ type: selectedResourceType, amount: 2 * settings.baseResourceAmount });
-        } else {
-          for (let i = 0; i < numResourceTypes; i++) {
-            const randomIndex = Math.floor(Math.random() * availableResources.length);
-            const selectedResourceType = availableResources.splice(randomIndex, 1)[0];
-            const amount = (Math.random() < 0.5 ? 1 : 2) * settings.baseResourceAmount;
-            islandResources.push({ type: selectedResourceType, amount });
-          }
-        }
-        map2D[y][x].resources = islandResources;
+        map2D[y][x].resources = generateTileResources(distance, settings.baseResourceAmount);
       } else if (islandType === IslandType.Monster) {
-        map2D[y][x].monsters = generateMonsters(x, y);
+        const monsters = generateMonsters(x, y);
+        if (monsters.length === 0) {
+          // No monster could be spawned for this slot, so the tile is a regular Resource tile.
+          map2D[y][x].type = IslandType.Resource;
+          map2D[y][x].resources = generateTileResources(distance, settings.baseResourceAmount);
+        } else {
+          map2D[y][x].monsters = monsters;
+        }
       }
     }
   }

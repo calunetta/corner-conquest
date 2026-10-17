@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { PlayerColor, ResourceType } from '@/lib/types';
 import type { Monster } from '@/lib/types';
-import { MONSTER_DATA, PLAYER_DATA } from '@/modules/game-rules';
+import { PLAYER_DATA, getFirstMonsterAtLevel } from '@/modules/game-rules';
 import {
   CLOUD_SIZE,
   KNIGHT_POSITION,
@@ -137,23 +137,47 @@ describe('LobbyBackground.map', () => {
   });
 
   describe('createMonsterIslandMonster', () => {
-    it('returns the Minotaur at level 4 with its MONSTER_DATA sprites', () => {
+    it('returns the Minotaur at level 4 with its catalog sprites and the shared death sprite', () => {
       expect(createMonsterIslandMonster()).toEqual({
         name: 'Minotaur',
         level: 4,
         sprite: {
-          idle: '/sprites/minotaur_idle.gif',
-          attack: '/sprites/minotaur_attack.gif',
+          idle: '/monster/boss-minotaur-lvl4-idle.gif',
+          attack: '/monster/boss-minotaur-lvl4-attack.gif',
           death: '/sprites/death.gif',
         },
       });
     });
 
-    it('matches the MONSTER_DATA entry for level 4 rather than a copied literal', () => {
+    it('no longer points at the removed /sprites/minotaur_*.gif files', () => {
+      const { idle, attack } = createMonsterIslandMonster().sprite;
+
+      expect(idle).not.toContain('/sprites/minotaur_');
+      expect(attack).not.toContain('/sprites/minotaur_');
+    });
+
+    it('is deterministic: Math.random is never called and every call returns the same value', () => {
+      const randomSpy = jest.spyOn(Math, 'random');
+
+      const results = Array.from({ length: 10 }, () => createMonsterIslandMonster());
+
+      expect(randomSpy).not.toHaveBeenCalled();
+      results.forEach((result) => expect(result).toEqual(results[0]));
+      randomSpy.mockRestore();
+    });
+
+    it('matches the first level-4 catalog entry rather than a copied literal', () => {
+      const entry = getFirstMonsterAtLevel(4);
       const monster = createMonsterIslandMonster();
 
-      expect(monster.name).toBe(MONSTER_DATA[4].name);
-      expect(monster.sprite).toEqual(MONSTER_DATA[4].sprite);
+      expect(entry).toBeDefined();
+      expect(monster.name).toBe(entry?.name);
+      expect(monster.sprite.idle).toBe(entry?.sprite.idle);
+      expect(monster.sprite.attack).toBe(entry?.sprite.attack);
+    });
+
+    it('returns fresh objects on every call', () => {
+      expect(createMonsterIslandMonster()).not.toBe(createMonsterIslandMonster());
     });
 
     it.each(['idle', 'attack', 'death'] as const)('returns a %s sprite that exists under public/', (key) => {

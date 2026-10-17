@@ -1,7 +1,8 @@
 import type { CSSProperties } from 'react';
 import type { Monster } from '@/lib/types';
 import { PlayerColor, ResourceType } from '@/lib/types';
-import { MONSTER_DATA, PLAYER_DATA } from '@/modules/game-rules';
+import { PLAYER_DATA, getFirstMonsterAtLevel, toMonster } from '@/modules/game-rules';
+import type { MonsterCatalogEntry } from '@/modules/game-rules';
 import { RESOURCE_SPRITES } from '@/modules/map';
 import {
   CLOUD_SIZE,
@@ -13,8 +14,15 @@ import {
 } from './LobbyBackground.layout';
 import type { CloudViewModel, LobbyMonsterViewModel, MonsterWanderState } from './LobbyBackground.types';
 
-/** Level 4 in MONSTER_DATA is the Minotaur. */
 const MONSTER_ISLAND_LEVEL = 4;
+
+/** Defense in depth: used only if the catalog has no level-4 entry, so decorative art can never crash the login screen. */
+const LOBBY_MONSTER_FALLBACK: MonsterCatalogEntry = {
+  name: 'Minotaur',
+  level: 4,
+  isBoss: true,
+  sprite: { idle: '/monster/boss-minotaur-lvl4-idle.gif', attack: '/monster/boss-minotaur-lvl4-attack.gif' },
+};
 
 /** Owner of the base island's castle; the knight standing beside it uses the same colour. */
 export const BASE_OWNER_COLOR = PlayerColor.Blue;
@@ -52,9 +60,7 @@ export function createResourceIslandNodes(): Array<{ key: string; src: string; s
 }
 
 export function createMonsterIslandMonster(): Monster {
-  const { name, sprite } = MONSTER_DATA[MONSTER_ISLAND_LEVEL];
-
-  return { name, level: MONSTER_ISLAND_LEVEL, sprite };
+  return toMonster(getFirstMonsterAtLevel(MONSTER_ISLAND_LEVEL) ?? LOBBY_MONSTER_FALLBACK);
 }
 
 /** The knight on the base island, drawn in the base owner's idle sprite. */

@@ -1,68 +1,107 @@
-import type { Monster, MonsterName } from '@/lib/types';
-import { MAP_COLS, MAP_ROWS, MonsterName as MonsterNameEnum } from '@/lib/types';
+import type { Monster } from '@/lib/types';
+import { MAP_COLS, MAP_ROWS } from '@/lib/types';
+import { MONSTER_CATALOG } from './monster-catalog.generated';
+import type { MonsterCatalogEntry } from './monster-catalog.types';
 
-export const MONSTER_DATA: Record<number, { name: MonsterName; sprite: { idle: string; attack: string; death: string } }> = {
-  1: { name: MonsterNameEnum.Lancer, sprite: { idle: '/sprites/lancer_idle.gif', attack: '/sprites/lancer_attack.gif', death: '/sprites/death.gif' } },
-  2: { name: MonsterNameEnum.Bear, sprite: { idle: '/sprites/bear_idle.gif', attack: '/sprites/bear_attack.gif', death: '/sprites/death.gif' } },
-  3: { name: MonsterNameEnum.Ogre, sprite: { idle: '/sprites/ogre_idle.gif', attack: '/sprites/ogre_attack.gif', death: '/sprites/death.gif' } },
-  4: { name: MonsterNameEnum.Minotaur, sprite: { idle: '/sprites/minotaur_idle.gif', attack: '/sprites/minotaur_attack.gif', death: '/sprites/death.gif' } },
-};
+export { MONSTER_CATALOG };
 
+/** Every monster shares one death sprite; the filename convention has no death variant. */
+const SHARED_DEATH_SPRITE = '/sprites/death.gif';
+
+const BIG_MONSTER_CHANCE = 0.3;
+const LEVEL_FOUR_CHANCE = 0.25;
+const LEVEL_ONE_CHANCE = 0.6;
+const SINGLE_LITTLE_MONSTER_CHANCE = 0.7;
+
+export function getNonBossCandidatesByLevel(level: number): MonsterCatalogEntry[] {
+  return MONSTER_CATALOG.filter((entry) => entry.level === level && !entry.isBoss);
+}
+
+export function getBossCandidates(): MonsterCatalogEntry[] {
+  return MONSTER_CATALOG.filter((entry) => entry.isBoss);
+}
+
+/** First catalog entry at `level`, in catalog order. Deterministic, for decorative consumers. */
+export function getFirstMonsterAtLevel(level: number): MonsterCatalogEntry | undefined {
+  return MONSTER_CATALOG.find((entry) => entry.level === level);
+}
+
+/** A missing attack sprite falls back to idle while Monster.sprite.attack is still required. */
+export function toMonster(entry: MonsterCatalogEntry): Monster {
+  return {
+    name: entry.name,
+    level: entry.level,
+    sprite: {
+      idle: entry.sprite.idle,
+      attack: entry.sprite.attack ?? entry.sprite.idle,
+      death: SHARED_DEATH_SPRITE,
+    },
+  };
+}
+
+function pickRandom<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+/** Picks a monster at `level`, or at one of `fallbackLevels` in order when that level has no candidate. */
+function pickMonsterAtLevel(level: number, fallbackLevels: number[]): Monster | undefined {
+  for (const candidateLevel of [level, ...fallbackLevels]) {
+    const candidates = getNonBossCandidatesByLevel(candidateLevel);
+    if (candidates.length > 0) return toMonster(pickRandom(candidates));
+  }
+  return undefined;
+}
+
+function toPossibleLevels(distance: number): number[] {
+  if (distance <= 1) return [3, 4];
+  if (distance <= 3) return [1, 2, 3];
+  return [1, 2];
+}
+
+function rollBigMonster(possibleLevels: number[]): Monster | undefined {
+  const rolledLevel = possibleLevels.includes(4) && Math.random() < LEVEL_FOUR_CHANCE ? 4 : 3;
+  const siblingLevel = rolledLevel === 4 ? 3 : 4;
+  // The sibling level only applies where this tile's distance allows it.
+  return pickMonsterAtLevel(rolledLevel, possibleLevels.includes(siblingLevel) ? [siblingLevel] : []);
+}
+
+function rollLittleMonster(level: number): Monster | undefined {
+  return pickMonsterAtLevel(level, [level === 1 ? 2 : 1]);
+}
+
+function rollLittleMonsters(possibleLevels: number[]): Array<Monster | undefined> {
+  const numMonsters = Math.random() < SINGLE_LITTLE_MONSTER_CHANCE ? 1 : 2;
+  let littleLevels = possibleLevels.filter((level) => level <= 2);
+  if (littleLevels.length === 0) littleLevels = [1];
+
+  return Array.from({ length: numMonsters }, () => rollLittleMonster(pickRandom(littleLevels)));
+}
+
+/** May return an empty array when no level has a candidate; the caller decides what the tile becomes. */
 export function generateMonsters(x: number, y: number): Monster[] {
-  const monsters: Monster[] = [];
-  const center = { x: Math.floor(MAP_COLS / 2), y: Math.floor(MAP_ROWS / 2) };
-  const distance = Math.abs(x - center.x) + Math.abs(y - center.y);
+  const centerX = Math.floor(MAP_COLS / 2);
+  const centerY = Math.floor(MAP_ROWS / 2);
+  const distance = Math.abs(x - centerX) + Math.abs(y - centerY);
+  const possibleLevels = toPossibleLevels(distance);
 
-  let possibleLevels: number[] = [];
-  if (distance <= 1) { // Center
-    possibleLevels = [3, 4];
-  } else if (distance <= 3) { // Mid-ring
-    possibleLevels = [1, 2, 3];
-  } else { // Outer ring
-    possibleLevels = [1, 2];
-  }
-
-  const hasBigMonster = possibleLevels.includes(3) || possibleLevels.includes(4) ? Math.random() < 0.3 : false;
-
-  if (hasBigMonster) {
-    const bigMonsterLevel = possibleLevels.includes(4) && Math.random() < 0.25 ? 4 : 3;
-    const bigMonsterData = MONSTER_DATA[bigMonsterLevel];
-    monsters.push({
-      name: bigMonsterData.name,
-      level: bigMonsterLevel,
-      sprite: bigMonsterData.sprite,
-    });
-
-    const littleMonsterLevel = Math.random() < 0.6 ? 1 : 2;
-    const littleMonsterData = MONSTER_DATA[littleMonsterLevel];
-    monsters.push({
-      name: littleMonsterData.name,
-      level: littleMonsterLevel,
-      sprite: littleMonsterData.sprite,
-    });
-  } else {
-    const numMonsters = Math.random() < 0.7 ? 1 : 2;
-    let availableLevels = possibleLevels.filter((l) => l <= 2);
-    if (availableLevels.length === 0) availableLevels = [1];
-
-    for (let i = 0; i < numMonsters; i++) {
-      const level = availableLevels[Math.floor(Math.random() * availableLevels.length)];
-      const monsterData = MONSTER_DATA[level];
-      monsters.push({
-        name: monsterData.name,
-        level,
-        sprite: monsterData.sprite,
-      });
-    }
-  }
+  const hasBigMonster = possibleLevels.includes(3) && Math.random() < BIG_MONSTER_CHANCE;
+  const rolled = hasBigMonster
+    ? [rollBigMonster(possibleLevels), rollLittleMonster(Math.random() < LEVEL_ONE_CHANCE ? 1 : 2)]
+    : rollLittleMonsters(possibleLevels);
 
   // Prevent duplicate monsters on the same tile
-  const uniqueMonsters = monsters.reduce((acc, current) => {
-    if (!acc.find((item) => item.name === current.name)) {
-      acc.push(current);
+  const uniqueMonsters: Monster[] = [];
+  for (const monster of rolled) {
+    if (monster && !uniqueMonsters.some((existing) => existing.name === monster.name)) {
+      uniqueMonsters.push(monster);
     }
-    return acc;
-  }, [] as Monster[]);
-
+  }
   return uniqueMonsters;
+}
+
+/** Uniform pick among boss candidates; undefined when the pool is empty. */
+export function pickBossMonster(): Monster | undefined {
+  const bosses = getBossCandidates();
+  if (bosses.length === 0) return undefined;
+  return toMonster(pickRandom(bosses));
 }
