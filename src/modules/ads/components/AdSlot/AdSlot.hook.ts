@@ -4,6 +4,9 @@ import { useConsentSignal } from '@/modules/consent';
 import type { ConsentSignal } from '@/modules/consent';
 import { isAdPlaceholderVisible, isAdsEnabled } from '../../ads.config';
 
+/** Consent state as shown on the dev placeholder. */
+export type AdConsentLabel = 'unknown' | 'gdpr applies' | 'gdpr does not apply';
+
 /** What AdSlot should do, decided before any ad network exists. */
 export interface AdSlotDecision {
   /**
@@ -12,8 +15,13 @@ export interface AdSlotDecision {
    * this is true, in every environment.
    */
   canRequestAd: boolean;
-  /** canRequestAd && isAdPlaceholderVisible(): stands in for the real ad until Phase 1B. */
+  /**
+   * Flag on and not a production build. Ignores consent: no real ad is requested yet, so there is
+   * nothing for consent to gate. The placeholder shows consentLabel instead.
+   */
   showDevPlaceholder: boolean;
+  /** Consent state, shown on the placeholder so the team can see how consent resolves. */
+  consentLabel: AdConsentLabel;
   /** Always 'non-personalized'. Phase 1B's ad loader reads this field. */
   requestMode: 'non-personalized';
 }
@@ -26,14 +34,19 @@ function allowsNonPersonalizedRequest(signal: ConsentSignal): boolean {
   return signal.status === 'ready' && signal.gdprApplies === false;
 }
 
-/** Decides whether AdSlot may request (or, today, placeholder-render) a non-personalized ad. */
+function toConsentLabel(signal: ConsentSignal): AdConsentLabel {
+  if (signal.status !== 'ready' || signal.gdprApplies === undefined) return 'unknown';
+  return signal.gdprApplies ? 'gdpr applies' : 'gdpr does not apply';
+}
+
+/** Decides whether AdSlot may request an ad, and whether the dev placeholder shows. */
 export function useAdSlot(): AdSlotDecision {
   const consentSignal = useConsentSignal();
-  const canRequestAd = isAdsEnabled() && allowsNonPersonalizedRequest(consentSignal);
 
   return {
-    canRequestAd,
-    showDevPlaceholder: canRequestAd && isAdPlaceholderVisible(),
+    canRequestAd: isAdsEnabled() && allowsNonPersonalizedRequest(consentSignal),
+    showDevPlaceholder: isAdsEnabled() && isAdPlaceholderVisible(),
+    consentLabel: toConsentLabel(consentSignal),
     requestMode: 'non-personalized',
   };
 }

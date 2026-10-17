@@ -2,22 +2,33 @@ import { render } from '@testing-library/react';
 import { AdSlotView } from './AdSlot';
 import {
   adsDisabledDecision,
-  consentDeniedDecision,
-  consentGrantedDecision,
   consentUnknownDecision,
+  gdprAppliesDecision,
+  gdprDoesNotApplyDecision,
+  productionDecision,
 } from './AdSlot.fixtures';
 
 describe('AdSlotView', () => {
-  it('renders the labelled placeholder when allowed', () => {
-    const { getByText } = render(<AdSlotView {...consentGrantedDecision} />);
+  it('renders the placeholder with consent unknown', () => {
+    const { getByTestId } = render(<AdSlotView {...consentUnknownDecision} />);
 
-    expect(getByText('Ad slot (dev placeholder — non-personalized)')).toBeInTheDocument();
+    expect(getByTestId('ad-slot-placeholder')).toHaveTextContent(
+      'Ad slot (dev placeholder — non-personalized) · consent: unknown',
+    );
+  });
+
+  it.each([
+    ['GDPR applies', gdprAppliesDecision, 'consent: gdpr applies'],
+    ['GDPR does not apply', gdprDoesNotApplyDecision, 'consent: gdpr does not apply'],
+  ])('shows the consent state when %s', (_label, decision, expectedText) => {
+    const { getByTestId } = render(<AdSlotView {...decision} />);
+
+    expect(getByTestId('ad-slot-placeholder')).toHaveTextContent(expectedText);
   });
 
   it.each([
     ['flag off', adsDisabledDecision],
-    ['consent unknown', consentUnknownDecision],
-    ['consent denied', consentDeniedDecision],
+    ['production build', productionDecision],
   ])('renders nothing when %s', (_label, decision) => {
     const { container } = render(<AdSlotView {...decision} />);
 

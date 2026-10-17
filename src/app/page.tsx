@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { GameBoard } from '@/features/game/components/GameBoard';
+import { AdSlot } from '@/modules/ads';
 import { Lobby, LobbyBackground } from '@/modules/lobby';
 import { Login, usePlayer } from '@/modules/session';
 
@@ -22,7 +23,16 @@ export default function Home() {
     if (activeGameId) {
       return <GameBoard gameId={activeGameId} onExit={handleExitGame} />;
     }
-    return <Lobby onJoinGame={setActiveGameId} />;
+    return (
+      <>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <Lobby onJoinGame={setActiveGameId} />
+        </div>
+        <div className="shrink-0">
+          <AdSlot />
+        </div>
+      </>
+    );
   };
 
   // One return for every screen: LobbyBackground keeps the same position among these children,

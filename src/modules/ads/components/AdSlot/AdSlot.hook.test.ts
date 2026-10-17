@@ -26,7 +26,7 @@ describe('useAdSlot', () => {
     setNodeEnv(originalNodeEnv ?? 'test');
   });
 
-  it('never requests an ad with the flag off, even with passing consent', () => {
+  it('never shows the placeholder or requests an ad with the flag off', () => {
     expect(decide(gdprExempt)).toMatchObject({ canRequestAd: false, showDevPlaceholder: false });
   });
 
@@ -35,25 +35,34 @@ describe('useAdSlot', () => {
       process.env.NEXT_PUBLIC_ADS_ENABLED = 'true';
     });
 
-    it('fails closed while consent is unknown', () => {
+    it('shows the placeholder while consent is unknown', () => {
+      expect(decide(unknown)).toMatchObject({ showDevPlaceholder: true, consentLabel: 'unknown' });
+    });
+
+    it('shows the placeholder when GDPR applies, labelled with that state', () => {
+      expect(decide(gdprApplies)).toMatchObject({ showDevPlaceholder: true, consentLabel: 'gdpr applies' });
+    });
+
+    it('shows the placeholder when GDPR does not apply', () => {
+      expect(decide(gdprExempt)).toMatchObject({
+        showDevPlaceholder: true,
+        consentLabel: 'gdpr does not apply',
+      });
+    });
+
+    it('fails closed for ad requests while consent is unknown', () => {
       expect(decide(unknown).canRequestAd).toBe(false);
     });
 
-    it('fails closed when GDPR applies', () => {
+    it('fails closed for ad requests when GDPR applies', () => {
       expect(decide(gdprApplies).canRequestAd).toBe(false);
     });
 
-    it('allows a request when GDPR does not apply', () => {
+    it('allows an ad request when GDPR does not apply', () => {
       expect(decide(gdprExempt).canRequestAd).toBe(true);
     });
 
-    it('shows the dev placeholder outside production', () => {
-      setNodeEnv('development');
-
-      expect(decide(gdprExempt).showDevPlaceholder).toBe(true);
-    });
-
-    it('never shows the dev placeholder in production', () => {
+    it('never shows the placeholder in production', () => {
       setNodeEnv('production');
 
       expect(decide(gdprExempt)).toMatchObject({ canRequestAd: true, showDevPlaceholder: false });

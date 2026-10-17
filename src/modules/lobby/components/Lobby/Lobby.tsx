@@ -9,6 +9,7 @@ import { LinkGoogleAccountButtonView } from '@/modules/session';
 import { CreateGameDialog } from '../CreateGameDialog';
 import { RejoinMatchPanel } from '../RejoinMatchPanel';
 import { LobbyGameRow } from '../LobbyGameRow';
+import { TacticalFieldGuide } from '../TacticalFieldGuide';
 import { useLobby } from './Lobby.hook';
 import { styles } from './Lobby.styles';
 import type { LobbyProps, LobbyViewModel } from './Lobby.types';
@@ -69,26 +70,7 @@ export function LobbyView(model: LobbyViewModel) {
                     Create New Game
                   </Button>
                 </div>
-                <div className={styles.tacticalGuide}>
-                  <div className={styles.tacticalHeader}>
-                    <RegistryIcon id="book-open" className={styles.tacticalHeaderIcon} />
-                    <span>Tactical Field Guide</span>
-                  </div>
-                  <div className={styles.tacticalContent}>
-                    <div className={styles.tacticalItem}>
-                      <RegistryIcon id="trophy" className={`${styles.tacticalItemIcon} text-yellow-400`} />
-                      <p><strong className="text-foreground">Victory Point Goal:</strong> Earn VP by discovering islands, upgrading armies, and winning battles.</p>
-                    </div>
-                    <div className={styles.tacticalItem}>
-                      <RegistryIcon id="shield" className={`${styles.tacticalItemIcon} text-blue-400`} />
-                      <p><strong className="text-foreground">Positioning:</strong> Position armies on resource islands to gather food, wood, and gold — re-position each turn to keep collecting.</p>
-                    </div>
-                    <div className={styles.tacticalItem}>
-                      <RegistryIcon id="sparkles" className={`${styles.tacticalItemIcon} text-purple-400`} />
-                      <p><strong className="text-foreground">Special Cards:</strong> Teleport across the sea, scout unknown fog, or sabotage opponent armies.</p>
-                    </div>
-                  </div>
-                </div>
+                <TacticalFieldGuide />
               </div>
               <div className={styles.rightColumn}>
                 <div className={styles.roomsHeader}>

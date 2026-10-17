@@ -2,9 +2,10 @@ import type { ComponentPreview } from '@/testbed';
 import { AdSlotView } from './AdSlot';
 import {
   adsDisabledDecision,
-  consentDeniedDecision,
-  consentGrantedDecision,
   consentUnknownDecision,
+  gdprAppliesDecision,
+  gdprDoesNotApplyDecision,
+  productionDecision,
 } from './AdSlot.fixtures';
 
 export const adSlotPreview: ComponentPreview = {
@@ -13,14 +14,9 @@ export const adSlotPreview: ComponentPreview = {
   group: 'Ads',
   states: [
     { name: 'Flag off (renders nothing)', render: () => <AdSlotView {...adsDisabledDecision} /> },
-    { name: 'Flag on, consent unknown (renders nothing)', render: () => <AdSlotView {...consentUnknownDecision} /> },
-    {
-      name: 'Flag on, consent denied (GDPR applies, renders nothing)',
-      render: () => <AdSlotView {...consentDeniedDecision} />,
-    },
-    {
-      name: 'Flag on, consent granted (GDPR does not apply)',
-      render: () => <AdSlotView {...consentGrantedDecision} />,
-    },
+    { name: 'Flag on, consent unknown', render: () => <AdSlotView {...consentUnknownDecision} /> },
+    { name: 'Flag on, GDPR applies', render: () => <AdSlotView {...gdprAppliesDecision} /> },
+    { name: 'Flag on, GDPR does not apply', render: () => <AdSlotView {...gdprDoesNotApplyDecision} /> },
+    { name: 'Production build (renders nothing)', render: () => <AdSlotView {...productionDecision} /> },
   ],
 };
