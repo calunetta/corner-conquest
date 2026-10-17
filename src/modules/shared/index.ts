@@ -1,5 +1,5 @@
 export { toPlayerIdleSprite } from './player-sprite';
-export { toCollectorIdleSprite } from './collector-sprite';
+export { toCollectorIconId } from './collector-sprite';
 export { playerTextColors } from './player-text-colors';
 export { useToast, toast } from './use-toast';
 export { useIsMobile } from './use-is-mobile';

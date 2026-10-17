@@ -1,10 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import type { GameAction, PlayerColor } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { FightIcon, RegistryIcon, toCollectorIdleSprite } from '@/modules/shared';
+import { FightIcon, RegistryIcon, toCollectorIconId } from '@/modules/shared';
 import { styles } from './ActionsPanel.styles';
 import type { ActionViewModel } from './ActionsPanel.types';
 
@@ -38,7 +37,7 @@ export function ActionButton({
 }: ActionButtonProps) {
   const icon =
     action.icon === 'position' ? (
-      <Image src={toCollectorIdleSprite(localPlayerColor)} alt="" aria-hidden width={16} height={16} unoptimized />
+      <RegistryIcon id={toCollectorIconId(localPlayerColor)} aria-hidden className="h-4 w-4" />
     ) : (
       staticActionIconMap[action.icon]
     );

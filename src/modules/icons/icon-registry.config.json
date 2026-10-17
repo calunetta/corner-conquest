@@ -605,6 +605,50 @@
     "defaultSize": 100
   },
   {
+    "id": "collector-blue",
+    "label": "Collector (Blue)",
+    "module": "shared",
+    "defaultSource": {
+      "kind": "image",
+      "src": "/sprites/collector_blue_idle.gif"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "collector-red",
+    "label": "Collector (Red)",
+    "module": "shared",
+    "defaultSource": {
+      "kind": "image",
+      "src": "/sprites/collector_red_idle.gif"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "collector-purple",
+    "label": "Collector (Purple)",
+    "module": "shared",
+    "defaultSource": {
+      "kind": "image",
+      "src": "/sprites/collector_purple_idle.gif"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
+    "id": "collector-yellow",
+    "label": "Collector (Yellow)",
+    "module": "shared",
+    "defaultSource": {
+      "kind": "image",
+      "src": "/sprites/collector_yellow_idle.gif"
+    },
+    "defaultRotation": 0,
+    "defaultSize": 100
+  },
+  {
     "id": "icon-fight",
     "label": "Icon Fight",
     "module": "shared",
