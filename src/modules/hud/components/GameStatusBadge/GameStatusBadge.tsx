@@ -1,6 +1,6 @@
 'use client';
 
-import { Timer, Hourglass } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { Badge } from '@/components/ui/badge';
 import { useGameStatusBadge } from './GameStatusBadge.hook';
 import { styles } from './GameStatusBadge.styles';
@@ -19,7 +19,7 @@ export function GameStatusBadgeView({
     <div className={styles.root}>
       {isWaiting ? (
         <div className={styles.waitingWrapper}>
-          <Hourglass className={styles.hourglassIcon} />
+          <RegistryIcon id="hourglass" className={styles.hourglassIcon} />
           <span>Waiting for players ({playerCount}/{maxPlayers})</span>
         </div>
       ) : (
@@ -28,7 +28,7 @@ export function GameStatusBadgeView({
 
           {isMyTurn && (
             <Badge variant="outline" data-testid="turn-countdown-timer" className={styles.countdownBadge({ isExpiring })}>
-              <Timer className={styles.countdownIcon({ isExpiring })} />
+              <RegistryIcon id="timer" className={styles.countdownIcon({ isExpiring })} />
               {formattedTime}
             </Badge>
           )}

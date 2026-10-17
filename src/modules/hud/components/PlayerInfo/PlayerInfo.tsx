@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
-import { Trophy } from 'lucide-react';
+import { RegistryIcon } from '@/modules/shared';
 import { cn } from '@/lib/utils';
 import { buffIconMap } from './BuffIcons';
 import { PlayerInfoStats } from './PlayerInfoStats';
@@ -83,7 +83,7 @@ export function PlayerInfoView(viewModel: PlayerInfoViewModel) {
           <div className={styles.vpSection}>
             <div className={styles.vpLabel}>
               <span className={styles.vpLabelText}>
-                <Trophy className="h-3.5 w-3.5" />
+                <RegistryIcon id="trophy" className="h-3.5 w-3.5" />
                 <span>Victory Points</span>
               </span>
               <span className={styles.vpLabelValue}>

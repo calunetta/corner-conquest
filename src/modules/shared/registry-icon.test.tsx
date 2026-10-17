@@ -142,4 +142,18 @@ describe('RegistryIcon', () => {
       expect(container.firstChild).toHaveClass('custom-class');
     });
   });
+
+  describe('aria-hidden', () => {
+    it('is forwarded to the outer span when given', () => {
+      const { container } = render(<RegistryIcon id="swords" aria-hidden />);
+
+      expect(container.firstChild).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('is absent from the outer span when omitted', () => {
+      const { container } = render(<RegistryIcon id="swords" />);
+
+      expect(container.firstChild).not.toHaveAttribute('aria-hidden');
+    });
+  });
 });

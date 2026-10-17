@@ -2,8 +2,7 @@
 
 import Image from 'next/image';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { ResourceIcon, FightIcon } from '@/modules/shared';
-import { Anchor, Album, Zap } from 'lucide-react';
+import { ResourceIcon, FightIcon, RegistryIcon } from '@/modules/shared';
 import { cn } from '@/lib/utils';
 import { styles } from './PlayerInfo.styles';
 import type { PlayerInfoViewModel } from './PlayerInfo.types';
@@ -38,7 +37,7 @@ export function PlayerInfoStats({
               <span className={styles.statValue}>{armyCount}/5</span>
               {positionedCount > 0 && (
                 <span className={styles.positionedIndicator}>
-                  <Anchor className="h-2.5 w-2.5 ml-0.5" />
+                  <RegistryIcon id="anchor" className="h-2.5 w-2.5 ml-0.5" />
                   {positionedCount}
                 </span>
               )}
@@ -56,7 +55,7 @@ export function PlayerInfoStats({
         <Tooltip>
           <TooltipTrigger asChild>
             <div className={styles.statChip} data-testid="player-info-attack" aria-label="Attack power bonus">
-              <Zap className={cn(styles.statIcon, 'text-yellow-400')} />
+              <RegistryIcon id="zap" className={cn(styles.statIcon, 'text-yellow-400')} />
               <span className={styles.statValue}>+{attackPower} AP</span>
             </div>
           </TooltipTrigger>
@@ -69,7 +68,7 @@ export function PlayerInfoStats({
         <Tooltip>
           <TooltipTrigger asChild>
             <div className={styles.statChip} data-testid="player-info-cards" aria-label="Cards in hand">
-              <Album className={cn(styles.statIcon, 'text-purple-400')} />
+              <RegistryIcon id="album" className={cn(styles.statIcon, 'text-purple-400')} />
               <span className={styles.statValue}>{specialCardsCount}/3</span>
             </div>
           </TooltipTrigger>

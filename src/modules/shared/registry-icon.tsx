@@ -9,13 +9,18 @@ export interface RegistryIconProps {
   className?: string;
   /** Accessible text for image icons. Omitted means a decorative image (alt=""). */
   alt?: string;
+  /** Hides a decorative icon from assistive tech. Omitted leaves the attribute off. */
+  'aria-hidden'?: boolean;
 }
 
 /** Renders any registry icon (image or lucide) with its resolved override and transform. */
-export function RegistryIcon({ id, className, alt = '' }: RegistryIconProps) {
+export function RegistryIcon({ id, className, alt = '', 'aria-hidden': ariaHidden }: RegistryIconProps) {
   const { source, transform } = resolveIcon(id);
   return (
-    <span className={cn('relative inline-flex items-center justify-center shrink-0', className)}>
+    <span
+      className={cn('relative inline-flex items-center justify-center shrink-0', className)}
+      aria-hidden={ariaHidden}
+    >
       <span className="relative flex h-full w-full items-center justify-center" style={{ transform }}>
         <RegistryIconGlyph source={source} alt={alt} />
       </span>

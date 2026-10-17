@@ -1,9 +1,8 @@
 'use client';
 
-import { ArrowLeft, Play, Trophy, Loader2, Timer, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { ResourceIcon } from '@/modules/shared';
+import { RegistryIcon, ResourceIcon } from '@/modules/shared';
 import { useGameBoardHeader } from './GameBoardHeader.hook';
 import { styles } from './GameBoardHeader.styles';
 import type { GameBoardHeaderViewProps } from './GameBoardHeader.types';
@@ -33,12 +32,16 @@ export function GameBoardHeaderView({
           disabled={isExiting}
           data-testid="gameboard-exit-btn"
         >
-          {isExiting ? <Loader2 className={styles.exitButtonLoader} /> : <ArrowLeft className={styles.exitButtonArrow} />}
+          {isExiting ? (
+            <RegistryIcon id="loader-2" className={styles.exitButtonLoader} />
+          ) : (
+            <RegistryIcon id="arrow-left" className={styles.exitButtonArrow} />
+          )}
         </Button>
         <h1 className={styles.title}>{gameName}</h1>
         {isPlaying && (
           <div className={styles.vpGoalBadge}>
-            <Trophy className={styles.vpGoalIcon} />
+            <RegistryIcon id="trophy" className={styles.vpGoalIcon} />
             <span>VP Goal: {victoryPointGoal}</span>
           </div>
         )}
@@ -56,7 +59,7 @@ export function GameBoardHeaderView({
 
       <div className={styles.rightGroup}>
         <div className={styles.turnIndicatorWrapper}>
-          <ImageIcon className={styles.backgroundIcon} aria-hidden="true" />
+          <RegistryIcon id="image-icon" className={styles.backgroundIcon} aria-hidden />
           <span className={styles.turnLabel}>Background</span>
           <Switch
             checked={isBackgroundOn}
@@ -67,7 +70,7 @@ export function GameBoardHeaderView({
 
         {isPlaying && (
           <div className={styles.turnIndicatorWrapper}>
-            <Timer className={styles.turnTimerIcon({ isExpiring: turnTimer.isExpiring })} />
+            <RegistryIcon id="timer" className={styles.turnTimerIcon({ isExpiring: turnTimer.isExpiring })} />
             <span className={styles.turnLabel}>Turn:</span>
             <span className={styles.playerName}>{turnPlayerName}</span>
             {isMyTurn && <span className={styles.countdown({ isExpiring: turnTimer.isExpiring })}>({turnTimer.formattedTime})</span>}
@@ -76,7 +79,7 @@ export function GameBoardHeaderView({
 
         {canStartGame && (
           <Button onClick={onStartGame} className={styles.startGameButton}>
-            <Play className={styles.startGameIcon} /> Start Game
+            <RegistryIcon id="play" className={styles.startGameIcon} /> Start Game
           </Button>
         )}
       </div>
