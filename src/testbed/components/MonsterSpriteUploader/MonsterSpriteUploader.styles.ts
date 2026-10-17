@@ -39,9 +39,9 @@ export const styles = {
   spinner: editorStyles.spinner,
   catalogSection: 'flex flex-col gap-2 border-t border-white/10 pt-3',
   catalogList: 'flex max-h-64 flex-col gap-1.5 overflow-y-auto',
-  catalogRow: 'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground',
+  catalogRow: 'flex w-full flex-wrap items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground',
   catalogThumbnail: 'h-8 w-8 shrink-0 object-contain',
-  catalogName: 'flex-1 truncate',
-  catalogBadges: 'flex items-center gap-1',
+  catalogName: 'min-w-[8rem] flex-1 truncate',
+  catalogBadges: 'flex shrink-0 items-center gap-1',
   bossBadge: 'border-accent/60 text-accent',
 } as const;
