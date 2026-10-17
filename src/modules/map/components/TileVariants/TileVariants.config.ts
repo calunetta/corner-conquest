@@ -7,6 +7,13 @@ import tileVariantsConfig from './tile-variants.config.json';
 export const TILE_VARIANT_TYPES = ['base', 'special', 'monster', 'empty', 'resource-food', 'resource-wood', 'resource-gold'] as const;
 export type TileVariantType = (typeof TILE_VARIANT_TYPES)[number];
 
+/** These islands always draw the built-in art, so no variant of them may take a picture. */
+const BUILT_IN_ART_TYPES: readonly TileVariantType[] = ['special', 'resource-food', 'resource-wood', 'resource-gold'];
+
+export function usesBuiltInArtOnly(type: TileVariantType): boolean {
+  return BUILT_IN_ART_TYPES.includes(type);
+}
+
 /** A picture found in public/sprites/tile-variants/<type>/. Written by the sync script. */
 export interface TileImage {
   id: string;

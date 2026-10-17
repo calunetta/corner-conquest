@@ -31171,7 +31171,7 @@
       "type": "special",
       "name": "Ashen Court",
       "color": null,
-      "image": "/sprites/tile-variants/generated/special/black-archer.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -31241,7 +31241,7 @@
       "type": "special",
       "name": "Cinder Watch",
       "color": null,
-      "image": "/sprites/tile-variants/generated/special/black-lancer.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -31319,7 +31319,7 @@
       "type": "special",
       "name": "Dusk Vigil",
       "color": null,
-      "image": "/sprites/tile-variants/generated/special/black-monk.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -31405,7 +31405,7 @@
       "type": "special",
       "name": "Grey Muster",
       "color": null,
-      "image": "/sprites/tile-variants/generated/special/black-pawn-axe.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -31475,7 +31475,7 @@
       "type": "special",
       "name": "Pale Gate",
       "color": null,
-      "image": "/sprites/tile-variants/generated/special/black-pawn-hammer.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -31553,7 +31553,7 @@
       "type": "special",
       "name": "Smoke Reach",
       "color": null,
-      "image": "/sprites/tile-variants/generated/special/black-pawn-knife.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -31639,7 +31639,7 @@
       "type": "special",
       "name": "Ember Hold",
       "color": null,
-      "image": "/sprites/tile-variants/generated/special/black-pawn-pickaxe.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -31709,7 +31709,7 @@
       "type": "special",
       "name": "Charred Field",
       "color": null,
-      "image": "/sprites/tile-variants/generated/special/black-warrior.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -31787,7 +31787,7 @@
       "type": "special",
       "name": "Hushed Ruin",
       "color": null,
-      "image": "/sprites/tile-variants/generated/special/ruin-castle.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -31873,7 +31873,7 @@
       "type": "special",
       "name": "Soot Crown",
       "color": null,
-      "image": "/sprites/tile-variants/generated/special/ruin-tower.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -34543,7 +34543,7 @@
       "type": "resource-food",
       "name": "Sheep Pasture",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-food/bush-1.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -34749,7 +34749,7 @@
       "type": "resource-food",
       "name": "Pumpkin Patch",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-food/bush-2.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -34987,7 +34987,7 @@
       "type": "resource-food",
       "name": "Berry Ridge",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-food/bush-3.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -35257,7 +35257,7 @@
       "type": "resource-food",
       "name": "Grazing Lea",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-food/bush-4.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -35463,7 +35463,7 @@
       "type": "resource-food",
       "name": "Meadow Bounty",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-food/fungus-dark-1.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -35701,7 +35701,7 @@
       "type": "resource-food",
       "name": "Crooked Field",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-food/fungus-dark-2.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -35971,7 +35971,7 @@
       "type": "resource-food",
       "name": "Hedgerow Plot",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-food/fungus-dark-3.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -36177,7 +36177,7 @@
       "type": "resource-food",
       "name": "Fallow Hill",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-food/sheep-idle.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -36415,7 +36415,7 @@
       "type": "resource-food",
       "name": "Sprout Bank",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-food/shrub-dark-1.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -36685,7 +36685,7 @@
       "type": "resource-food",
       "name": "Harvest Mead",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-food/bush-1.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -36891,7 +36891,7 @@
       "type": "resource-wood",
       "name": "Pine Grove",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-wood/autmn_tree.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -37097,7 +37097,7 @@
       "type": "resource-wood",
       "name": "Autumn Copse",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-wood/pine_tree.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -37335,7 +37335,7 @@
       "type": "resource-wood",
       "name": "Spring Wood",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-wood/spring_tree.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -37605,7 +37605,7 @@
       "type": "resource-wood",
       "name": "Timber Edge",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-wood/stump-1.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -37811,7 +37811,7 @@
       "type": "resource-wood",
       "name": "Log Yard",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-wood/stump-2.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -38049,7 +38049,7 @@
       "type": "resource-wood",
       "name": "Stump Row",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-wood/stump-3.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -38319,7 +38319,7 @@
       "type": "resource-wood",
       "name": "Forest Rim",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-wood/tree-1.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -38525,7 +38525,7 @@
       "type": "resource-wood",
       "name": "Axe Glade",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-wood/tree-2.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -38763,7 +38763,7 @@
       "type": "resource-wood",
       "name": "Tall Pines",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-wood/tree-3.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -39033,7 +39033,7 @@
       "type": "resource-wood",
       "name": "Cutover",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-wood/tree-4.gif",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -39239,7 +39239,7 @@
       "type": "resource-gold",
       "name": "Gilded Pit",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-gold/gold-stone-1.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -39445,7 +39445,7 @@
       "type": "resource-gold",
       "name": "Ore Shelf",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-gold/gold-stone-2.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -39683,7 +39683,7 @@
       "type": "resource-gold",
       "name": "Glint Quarry",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-gold/gold-stone-3.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -39953,7 +39953,7 @@
       "type": "resource-gold",
       "name": "Nugget Ridge",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-gold/rock-1.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -40159,7 +40159,7 @@
       "type": "resource-gold",
       "name": "Vein Scar",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-gold/rock-2.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -40397,7 +40397,7 @@
       "type": "resource-gold",
       "name": "Rich Stone",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-gold/rock-3.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -40667,7 +40667,7 @@
       "type": "resource-gold",
       "name": "Shining Seam",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-gold/rock-4.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -40873,7 +40873,7 @@
       "type": "resource-gold",
       "name": "Bedrock Cut",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-gold/gold-stone-1.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -41111,7 +41111,7 @@
       "type": "resource-gold",
       "name": "Mine Mouth",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-gold/gold-stone-2.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,
@@ -41381,7 +41381,7 @@
       "type": "resource-gold",
       "name": "Bright Ledge",
       "color": null,
-      "image": "/sprites/tile-variants/generated/resource-gold/gold-stone-3.png",
+      "image": null,
       "transform": {
         "x": 50,
         "y": 50,

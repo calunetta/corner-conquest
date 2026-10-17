@@ -1,7 +1,7 @@
 'use client';
 
 import { PlayerColor, type PlayerColor as PlayerColorType } from '@/lib/types';
-import { TILE_VARIANT_TYPES, type TileImage, type TileTransform, type TileVariant, type TileVariantType } from '@/modules/map/components/TileVariants/TileVariants.config';
+import { TILE_VARIANT_TYPES, usesBuiltInArtOnly, type TileImage, type TileTransform, type TileVariant, type TileVariantType } from '@/modules/map/components/TileVariants/TileVariants.config';
 import { TRANSFORM_RANGES, NAME_MAX_LENGTH } from '@/modules/map/components/TileVariants/TileVariants.validate';
 
 const INPUT_CLASS = 'rounded-md border border-border bg-secondary px-2 py-1.5 text-sm text-foreground';
@@ -75,6 +75,9 @@ export function VariantForm({ draft, isNew, images, onChange, onUploadFile }: Va
         </label>
       )}
 
+      {usesBuiltInArtOnly(draft.type) ? (
+        <p className="text-xs text-muted-foreground">This island always uses the built-in art, so it takes no picture.</p>
+      ) : (
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1">Image</legend>
         <div className="flex flex-wrap gap-2">
@@ -102,6 +105,7 @@ export function VariantForm({ draft, isNew, images, onChange, onUploadFile }: Va
           />
         </label>
       </fieldset>
+      )}
 
       <fieldset className="grid grid-cols-3 gap-3">
         <legend className="col-span-3 mb-1">Position and size (% of the tile)</legend>
