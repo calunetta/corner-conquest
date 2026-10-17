@@ -73,11 +73,11 @@ describe('AnimatedMonster Component', () => {
       expect(image).toHaveAttribute('height', '64');
     });
 
-    it('renders a boss monster at 960x960', () => {
+    it('renders a boss monster at 192x192', () => {
       render(<AnimatedMonster monster={{ ...mockMonster, isBoss: true }} />);
       const image = screen.getByAltText('Lancer');
-      expect(image).toHaveAttribute('width', '960');
-      expect(image).toHaveAttribute('height', '960');
+      expect(image).toHaveAttribute('width', '192');
+      expect(image).toHaveAttribute('height', '192');
     });
   });
 });
