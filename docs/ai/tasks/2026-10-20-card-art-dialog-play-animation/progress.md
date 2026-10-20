@@ -35,7 +35,7 @@ Tier: L · Phases: 3
 - [x] UI verified (ui-verify)
 - [x] docs-sync (docs/architecture/special-cards.md)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: cd28ce2
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
