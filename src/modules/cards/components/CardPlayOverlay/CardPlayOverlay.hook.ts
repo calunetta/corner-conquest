@@ -33,8 +33,14 @@ export function useCardPlay(): {
 /**
  * Seeds on first run (never replays history). Queues new local card-use log entries, deduped by
  * turn and card name, and starts one when nothing is blocking and no play is active.
+ * A Teleport/Scout `selectionPlay` is queued once on selection under the same key, so its later log entry is skipped.
  */
-export function useCardPlayTrigger({ log, localPlayerId, isBlocked }: CardPlayTriggerArgs): {
+export function useCardPlayTrigger({
+  log,
+  localPlayerId,
+  isBlocked,
+  selectionPlay,
+}: CardPlayTriggerArgs): {
   play: CardPlay | null;
   endPlay: () => void;
 } {
@@ -56,6 +62,16 @@ export function useCardPlayTrigger({ log, localPlayerId, isBlocked }: CardPlayTr
     });
     if (fresh.length > 0) setQueue((current) => [...current, ...fresh.map((entry) => entry.cardName)]);
   }, [log, localPlayerId]);
+
+  const selectionCard = selectionPlay?.cardName ?? null;
+  const selectionTurn = selectionPlay?.turn ?? null;
+  useEffect(() => {
+    if (selectionCard === null || selectionTurn === null) return;
+    const key = `${selectionTurn}:${selectionCard}`;
+    if (queuedKeys.current.has(key)) return;
+    queuedKeys.current.add(key);
+    setQueue((current) => [...current, selectionCard]);
+  }, [selectionCard, selectionTurn]);
 
   useEffect(() => {
     if (isBlocked || play || queue.length === 0) return;

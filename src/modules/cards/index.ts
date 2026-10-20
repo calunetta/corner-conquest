@@ -9,5 +9,10 @@ export { CARD_ART, ABILITY_ART } from './card-art';
 export type { CardArt } from './card-art';
 export { CardFace } from './components/CardFace';
 export type { CardFaceProps, CardFaceSize } from './components/CardFace';
-export { CardPlayOverlay, useCardPlayTrigger } from './components/CardPlayOverlay';
-export type { CardPlay, CardPlayOverlayProps, CardPlayTriggerArgs } from './components/CardPlayOverlay';
+export { CardPlayOverlay, useCardPlayTrigger, toSelectionPlay } from './components/CardPlayOverlay';
+export type {
+  CardPlay,
+  CardPlayOverlayProps,
+  CardPlayTriggerArgs,
+  SelectionPlay,
+} from './components/CardPlayOverlay';

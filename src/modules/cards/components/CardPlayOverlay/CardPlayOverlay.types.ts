@@ -24,6 +24,13 @@ export interface LoggedCardPlay {
   turn: number;
 }
 
+/** A card whose play starts when it is selected, before its targeting step ends. */
+export interface SelectionPlay {
+  cardName: CardName;
+  /** gameState.turn at selection; with cardName it is the dedupe key. */
+  turn: number;
+}
+
 export interface CardPlayTriggerArgs {
   /** gameState.log (displayed state, local buffer on my turn). */
   log: GameState['log'];
@@ -31,4 +38,6 @@ export interface CardPlayTriggerArgs {
   localPlayerId: string;
   /** True while any dialog, pending step or combat is open; a detected play is held until false. */
   isBlocked: boolean;
+  /** Teleport/Scout pending action: play now, not after the last target. Omit or null for none. */
+  selectionPlay?: SelectionPlay | null;
 }

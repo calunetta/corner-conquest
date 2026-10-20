@@ -21,6 +21,7 @@ import {
   SabotageDialog,
   SpecialIslandRollDialog,
   StealResourceDialog,
+  toSelectionPlay,
   useCardPlayTrigger,
   WealthyDialog,
 } from '@/modules/cards';
@@ -45,6 +46,7 @@ export function GameDialogManager() {
     log: gameState.log,
     localPlayerId: localPlayer.playerId,
     isBlocked: isCardPlayBlocked(uiState, gameState),
+    selectionPlay: toSelectionPlay(uiState.pendingAction, gameState.turn),
   });
 
   const { dialogs, selectedArmyId } = uiState;

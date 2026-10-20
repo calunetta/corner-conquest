@@ -161,28 +161,28 @@ describe('useCardPlayTrigger', () => {
   }
 
   it('does not play for history already in the log on first render (seed)', () => {
-    const { result } = setup([entry(CardName.WarChief)]);
+    const { result } = setup([entry(CardName.Reinforce)]);
     expect(result.current.play).toBeNull();
   });
 
   it('plays an appended local entry when not blocked', () => {
     const { result, rerender } = setup([]);
-    rerender({ log: [entry(CardName.WarChief)], localPlayerId: localId, isBlocked: false });
-    expect(result.current.play).toEqual({ cardName: CardName.WarChief, playId: 1 });
+    rerender({ log: [entry(CardName.Reinforce)], localPlayerId: localId, isBlocked: false });
+    expect(result.current.play).toEqual({ cardName: CardName.Reinforce, playId: 1 });
   });
 
   it('holds a play while blocked and starts it when unblocked', () => {
     const { result, rerender } = setup([]);
-    const log = [entry(CardName.WarChief)];
+    const log = [entry(CardName.Reinforce)];
     rerender({ log, localPlayerId: localId, isBlocked: true });
     expect(result.current.play).toBeNull();
     rerender({ log, localPlayerId: localId, isBlocked: false });
-    expect(result.current.play).toEqual({ cardName: CardName.WarChief, playId: 1 });
+    expect(result.current.play).toEqual({ cardName: CardName.Reinforce, playId: 1 });
   });
 
   it('ignores entries by another player', () => {
     const { result, rerender } = setup([]);
-    rerender({ log: [entry(CardName.WarChief, 1, '2')], localPlayerId: localId, isBlocked: false });
+    rerender({ log: [entry(CardName.Reinforce, 1, '2')], localPlayerId: localId, isBlocked: false });
     expect(result.current.play).toBeNull();
   });
 
@@ -217,11 +217,11 @@ describe('useCardPlayTrigger', () => {
   it('queues two cards from one update: second starts only after endPlay', () => {
     const { result, rerender } = setup([]);
     rerender({
-      log: [entry(CardName.WarChief), entry(CardName.ExtraMove)],
+      log: [entry(CardName.Reinforce), entry(CardName.ExtraMove)],
       localPlayerId: localId,
       isBlocked: false,
     });
-    expect(result.current.play).toEqual({ cardName: CardName.WarChief, playId: 1 });
+    expect(result.current.play).toEqual({ cardName: CardName.Reinforce, playId: 1 });
     act(() => result.current.endPlay());
     expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 2 });
     act(() => result.current.endPlay());
@@ -229,7 +229,7 @@ describe('useCardPlayTrigger', () => {
   });
 
   it('after a shrink, old entries do not replay and a new local entry plays', () => {
-    const old = entry(CardName.WarChief, 1);
+    const old = entry(CardName.Reinforce, 1);
     const { result, rerender } = setup([old, entry(CardName.Scout, 1, '2')]);
     rerender({ log: [], localPlayerId: localId, isBlocked: false });
     expect(result.current.play).toBeNull();
@@ -241,8 +241,93 @@ describe('useCardPlayTrigger', () => {
 
   it('endPlay clears the play', () => {
     const { result, rerender } = setup([]);
-    rerender({ log: [entry(CardName.WarChief)], localPlayerId: localId, isBlocked: false });
+    rerender({ log: [entry(CardName.Reinforce)], localPlayerId: localId, isBlocked: false });
     act(() => result.current.endPlay());
     expect(result.current.play).toBeNull();
+  });
+
+  it.each([CardName.Overcome, CardName.WarChief, CardName.DecideDiceRoll])(
+    'never plays a local %s log entry',
+    (cardName) => {
+      const { result, rerender } = setup([]);
+      rerender({ log: [entry(cardName)], localPlayerId: localId, isBlocked: false });
+      expect(result.current.play).toBeNull();
+    },
+  );
+
+  describe('selectionPlay', () => {
+    const teleport2 = { cardName: CardName.Teleport, turn: 2 };
+    const props = (over: Partial<Args>): Args => ({ log: [], localPlayerId: localId, isBlocked: false, ...over });
+
+    it('starts a play for the selected card with no log change', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ selectionPlay: teleport2 }));
+      expect(result.current.play).toEqual({ cardName: CardName.Teleport, playId: 1 });
+    });
+
+    it('waits while blocked and starts when unblocked', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ selectionPlay: teleport2, isBlocked: true }));
+      expect(result.current.play).toBeNull();
+      rerender(props({ selectionPlay: teleport2, isBlocked: false }));
+      expect(result.current.play).toEqual({ cardName: CardName.Teleport, playId: 1 });
+    });
+
+    it('does not replay when the later log entry of the same turn and card arrives', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ selectionPlay: teleport2 }));
+      act(() => result.current.endPlay());
+      rerender(props({ selectionPlay: null, log: [entry(CardName.Teleport, 2)] }));
+      expect(result.current.play).toBeNull();
+    });
+
+    it('plays the same card again on a later turn', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ selectionPlay: teleport2 }));
+      act(() => result.current.endPlay());
+      rerender(props({ selectionPlay: { cardName: CardName.Teleport, turn: 3 } }));
+      expect(result.current.play).toEqual({ cardName: CardName.Teleport, playId: 2 });
+    });
+
+    it('does not enqueue again for a new selectionPlay object with the same card and turn', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ selectionPlay: { ...teleport2 } }));
+      act(() => result.current.endPlay());
+      rerender(props({ selectionPlay: { ...teleport2 } }));
+      expect(result.current.play).toBeNull();
+    });
+
+    it('plays Scout once for its selection and its later log entry', () => {
+      const scout = { cardName: CardName.Scout, turn: 4 };
+      const { result, rerender } = setup([]);
+      rerender(props({ selectionPlay: scout }));
+      expect(result.current.play).toEqual({ cardName: CardName.Scout, playId: 1 });
+      act(() => result.current.endPlay());
+      rerender(props({ selectionPlay: scout, log: [entry(CardName.Scout, 4)] }));
+      expect(result.current.play).toBeNull();
+    });
+
+    it('does not replay when selectionPlay goes null and returns with the same value', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ selectionPlay: teleport2 }));
+      act(() => result.current.endPlay());
+      rerender(props({ selectionPlay: null }));
+      rerender(props({ selectionPlay: teleport2 }));
+      expect(result.current.play).toBeNull();
+    });
+
+    it('plays nothing for a null selectionPlay', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ selectionPlay: null }));
+      expect(result.current.play).toBeNull();
+    });
+
+    it('a selection whose key was already played from the log does not replay', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ log: [entry(CardName.Teleport, 2)] }));
+      act(() => result.current.endPlay());
+      rerender(props({ log: [entry(CardName.Teleport, 2)], selectionPlay: teleport2 }));
+      expect(result.current.play).toBeNull();
+    });
   });
 });

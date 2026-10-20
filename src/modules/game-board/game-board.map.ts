@@ -22,7 +22,10 @@ export function isCardPlayBlocked(
   uiState: GameBoardUIState,
   gameState: Pick<GameState, 'combatState' | 'monsterCombatState' | 'productiveDialogState'>,
 ): boolean {
-  if (hasActiveDialogOrPendingAction(uiState)) return true;
+  const type = uiState.pendingAction?.type;
+  const isMapTargeting = type === 'teleport' || type === 'scout';
+  const dialogState = isMapTargeting ? { ...uiState, pendingAction: null } : uiState;
+  if (hasActiveDialogOrPendingAction(dialogState)) return true;
   if (uiState.dialogs.confirmExit || uiState.dialogs.hostLeave) return true;
   return !!gameState.combatState || !!gameState.monsterCombatState || !!gameState.productiveDialogState;
 }

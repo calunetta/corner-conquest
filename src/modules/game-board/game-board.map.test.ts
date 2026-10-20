@@ -1,4 +1,5 @@
 import type { GameState, Player } from '@/lib/types';
+import type { PendingAction } from '@/lib/types/dialogs';
 import { hasActiveDialogOrPendingAction, isCardPlayBlocked } from './game-board.map';
 import { initialUIState } from './game-board.types';
 import type { GameBoardUIState } from './game-board.types';
@@ -190,9 +191,49 @@ describe('isCardPlayBlocked', () => {
 
   it.each<[string, GameBoardUIState, Slice]>([
     [
-      'a pending action',
-      { ...initialUIState, pendingAction: { type: 'teleport', cardName: 'Teleport' } },
+      'a pending extra-move',
+      { ...initialUIState, pendingAction: { type: 'extra-move', cardName: 'Extra Move' } },
       idle,
+    ],
+    [
+      'a runtime-only sabotage pending action',
+      {
+        ...initialUIState,
+        pendingAction: { type: 'sabotage', cardName: 'Sabotage' } as unknown as PendingAction,
+      },
+      idle,
+    ],
+    [
+      'a pending teleport with armySelection open',
+      {
+        ...initialUIState,
+        pendingAction: { type: 'teleport', cardName: 'Teleport' },
+        dialogs: { ...initialUIState.dialogs, armySelection: { armies: [], x: 0, y: 0 } },
+      },
+      idle,
+    ],
+    [
+      'a pending teleport with the cards dialog open',
+      {
+        ...initialUIState,
+        pendingAction: { type: 'teleport', cardName: 'Teleport' },
+        dialogs: { ...initialUIState.dialogs, cardsPlayerId: 0 },
+      },
+      idle,
+    ],
+    [
+      'a pending scout with confirmExit open',
+      {
+        ...initialUIState,
+        pendingAction: { type: 'scout', cardName: 'Scout', count: 3, scoutedTiles: [] },
+        dialogs: { ...initialUIState.dialogs, confirmExit: true },
+      },
+      idle,
+    ],
+    [
+      'a pending teleport during combat',
+      { ...initialUIState, pendingAction: { type: 'teleport', cardName: 'Teleport' } },
+      { ...idle, combatState: someCombat },
     ],
     ['confirmExit', { ...initialUIState, dialogs: { ...initialUIState.dialogs, confirmExit: true } }, idle],
     ['hostLeave', { ...initialUIState, dialogs: { ...initialUIState.dialogs, hostLeave: true } }, idle],
@@ -205,5 +246,29 @@ describe('isCardPlayBlocked', () => {
     ],
   ])('is true for %s', (_name, uiState, gameState) => {
     expect(isCardPlayBlocked(uiState, gameState)).toBe(true);
+  });
+
+  it.each<[string, PendingAction]>([
+    ['teleport', { type: 'teleport', cardName: 'Teleport' }],
+    ['scout', { type: 'scout', cardName: 'Scout', count: 3, scoutedTiles: [] }],
+  ])('is false while only a %s pending action (map targeting) is set', (_name, pendingAction) => {
+    expect(isCardPlayBlocked({ ...initialUIState, pendingAction }, idle)).toBe(false);
+  });
+
+  it('keeps hasActiveDialogOrPendingAction true for a pending teleport (not changed)', () => {
+    const uiState: GameBoardUIState = {
+      ...initialUIState,
+      pendingAction: { type: 'teleport', cardName: 'Teleport' },
+    };
+    expect(hasActiveDialogOrPendingAction(uiState)).toBe(true);
+  });
+
+  it('does not mutate uiState', () => {
+    const uiState: GameBoardUIState = {
+      ...initialUIState,
+      pendingAction: { type: 'teleport', cardName: 'Teleport' },
+    };
+    isCardPlayBlocked(uiState, idle);
+    expect(uiState.pendingAction).toEqual({ type: 'teleport', cardName: 'Teleport' });
   });
 });
