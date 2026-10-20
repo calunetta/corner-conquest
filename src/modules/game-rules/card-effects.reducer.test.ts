@@ -240,3 +240,51 @@ describe('handleScoutAction', () => {
     expect(nextState.players[0].revealedTiles.filter((t) => t === '3-3')).toHaveLength(1);
   });
 });
+
+function cardNamesLogged(state: GameState): (CardName | undefined)[] {
+  return state.log.filter((entry) => typeof entry !== 'string' && entry.cardName !== undefined).map((entry) => (entry as { cardName: CardName }).cardName);
+}
+
+describe('card-use log entries carry cardName', () => {
+  let game: GameState;
+
+  beforeEach(() => {
+    game = buildGame();
+  });
+
+  it.each([CardName.Reinforce, CardName.Efficient, CardName.MasterBuilder])(
+    'activating %s logs exactly one entry with that cardName',
+    (cardName) => {
+      game.players[0].specialCards = [cardName];
+      const nextState = handleUseCard(game, { cardName });
+      expect(cardNamesLogged(nextState)).toEqual([cardName]);
+    },
+  );
+
+  it('Extra Move logs CardName.ExtraMove', () => {
+    game.players[0].specialCards = [CardName.ExtraMove];
+    expect(cardNamesLogged(handleUseCard(game, { cardName: CardName.ExtraMove }))).toEqual([CardName.ExtraMove]);
+  });
+
+  it('a Scout-flagged card logs its own cardName', () => {
+    game.players[0].specialCards = [CardName.Scout];
+    expect(cardNamesLogged(handleUseCard(game, { cardName: CardName.Scout, isScout: true }))).toEqual([CardName.Scout]);
+  });
+
+  it('a no-op card use (stays in hand) logs no cardName', () => {
+    game.players[0].specialCards = [CardName.Overcome];
+    expect(cardNamesLogged(handleUseCard(game, { cardName: CardName.Overcome }))).toEqual([]);
+  });
+
+  it('Productive logs CardName.Productive on the collection entry', () => {
+    const player = game.players[0];
+    player.specialCards = [CardName.Productive];
+    player.resources = { food: 0, wood: 0, gold: 0 };
+    player.positions = [{ x: 0, y: 0, resource: ResourceType.Food, armyId: 0 }];
+    game.map[0].positionedBy = [{ playerId: player.id, resource: ResourceType.Food }];
+
+    const nextState = handleUseProductiveCard(game, ResourceType.Food);
+
+    expect(cardNamesLogged(nextState)).toEqual([CardName.Productive]);
+  });
+});

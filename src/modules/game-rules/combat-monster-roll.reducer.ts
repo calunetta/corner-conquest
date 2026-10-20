@@ -57,6 +57,7 @@ export function handleMonsterCombatRoll(
         category: 'combat',
         message: `${attacker.name} used the '${CardName.Overcome}' card to win automatically!`,
         playerId: attacker.playerId,
+        cardName: CardName.Overcome,
       });
       discardPile.push(attacker.specialCards.splice(cardIndex, 1)[0]);
     } else {
@@ -76,6 +77,7 @@ export function handleMonsterCombatRoll(
           category: 'combat',
           message: `${attacker.name} used '${CardName.WarChief}' for +2 to combat score!`,
           playerId: attacker.playerId,
+          cardName: CardName.WarChief,
         });
         discardPile.push(attacker.specialCards.splice(cardIndex, 1)[0]);
       }
@@ -90,6 +92,7 @@ export function handleMonsterCombatRoll(
           category: 'combat',
           message: `${attacker.name} used the '${CardName.DecideDiceRoll}' card!`,
           playerId: attacker.playerId,
+          cardName: CardName.DecideDiceRoll,
         });
         discardPile.push(attacker.specialCards.splice(cardIndex, 1)[0]);
       } else {

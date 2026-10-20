@@ -10,6 +10,7 @@ export interface LogEntryViewModel {
   playerColorClass?: string; // playerTextColors[player.color], paired with playerName
   targetPlayerName?: string;
   targetPlayerColorClass?: string;
+  cardIconSrc?: string; // CARD_ART[entry.cardName].icon; only when the viewer may read the entry and the card is known
 }
 
 export interface LogMessageSegment {

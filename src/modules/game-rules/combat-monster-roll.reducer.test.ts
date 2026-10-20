@@ -229,3 +229,43 @@ describe('handleMonsterCombatRoll', () => {
     expect(nextState.players[0].armies[0].hasActed).toBe(true);
   });
 });
+
+describe('handleMonsterCombatRoll card-use log entries carry cardName', () => {
+  let game: GameState;
+  let monster: Monster;
+
+  beforeEach(() => {
+    game = buildGame();
+    monster = { name: MonsterName.Bear, level: 2, sprite: { idle: '', attack: '', death: '' } };
+    const { attackingArmy } = placeMonsterOnArmyTile(game, monster);
+    game = handleInitiateCombatAction(game, {
+      attackingArmyId: attackingArmy.id,
+      target: { type: 'monster', monsterName: monster.name },
+    });
+  });
+
+  function cardNamesLogged(state: GameState): CardName[] {
+    return state.log.flatMap((entry) => (typeof entry !== 'string' && entry.cardName ? [entry.cardName] : []));
+  }
+
+  it.each([
+    ['Overcome', CardName.Overcome, { useOvercomeCard: true, useWarChief: false, useDecideCard: false }],
+    ['War Chief', CardName.WarChief, { useOvercomeCard: false, useWarChief: true, useDecideCard: false }],
+    ['Decide Dice Roll', CardName.DecideDiceRoll, { useOvercomeCard: false, useWarChief: false, useDecideCard: true }],
+  ])('%s logs its own cardName', (_label, cardName, flags) => {
+    game.players[0].specialCards = [cardName];
+    const nextState = handleMonsterCombatRoll(game, { monster, decidedValue: 4, ...flags });
+    expect(cardNamesLogged(nextState)).toEqual([cardName]);
+  });
+
+  it('a plain roll with no card logs no cardName', () => {
+    const nextState = handleMonsterCombatRoll(game, {
+      monster,
+      useWarChief: false,
+      useOvercomeCard: false,
+      useDecideCard: false,
+      decidedValue: 0,
+    });
+    expect(cardNamesLogged(nextState)).toEqual([]);
+  });
+});

@@ -247,3 +247,32 @@ describe('handleMoveAction', () => {
     }
   });
 });
+
+describe('Teleport log entry carries cardName', () => {
+  it('logs CardName.Teleport on the teleport entry', () => {
+    const game = startGame(
+      initializeGame('game_test', 'Teleport Log', 1, { playerId: 'p1', name: 'P1', color: PlayerColor.Blue }, 0, false, defaultGameSettings),
+      'P1',
+    );
+    game.players[0].specialCards = [CardName.Teleport];
+
+    const nextState = handleMoveAction(game, 4, 4, game.players[0].armies[0], true);
+
+    const cardNames = nextState.log.flatMap((entry) => (typeof entry !== 'string' && entry.cardName ? [entry.cardName] : []));
+    expect(cardNames).toEqual([CardName.Teleport]);
+  });
+
+  it('a plain move logs no cardName', () => {
+    const game = startGame(
+      initializeGame('game_test', 'Move Log', 1, { playerId: 'p1', name: 'P1', color: PlayerColor.Blue }, 0, false, defaultGameSettings),
+      'P1',
+    );
+    const army = game.players[0].armies[0];
+    const move = getPossibleMoves(game, army)[0];
+
+    const nextState = handleMoveAction(game, move.x, move.y, army);
+
+    const cardNames = nextState.log.flatMap((entry) => (typeof entry !== 'string' && entry.cardName ? [entry.cardName] : []));
+    expect(cardNames).toEqual([]);
+  });
+});

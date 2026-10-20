@@ -65,7 +65,7 @@ export function handleMoveAction(
     if (cardIndex > -1) {
       discardPile.push(player.specialCards.splice(cardIndex, 1)[0]);
       player.actionsThisTurn.push(GameAction.UseCard);
-      pushLogEntry(state, { category: 'economy', message: `${player.name} teleported an army!`, playerId: player.playerId });
+      pushLogEntry(state, { category: 'economy', message: `${player.name} teleported an army!`, playerId: player.playerId, cardName: CardName.Teleport });
     } else {
       throw new Error('Teleport card not found, but was attempted to be used.');
     }

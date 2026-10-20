@@ -21,7 +21,7 @@ export function handleUseCard(state: GameState, payload: { cardName: CardName; i
     if (cardName === CardName.Reinforce) player.reinforceActive = true;
     if (cardName === CardName.Efficient) player.efficientActive = true;
     if (cardName === CardName.MasterBuilder) player.masterBuilderActive = true;
-    pushLogEntry(state, { category: 'cards', message: `${player.name} activated '${cardName}'.`, playerId: player.playerId });
+    pushLogEntry(state, { category: 'cards', message: `${player.name} activated '${cardName}'.`, playerId: player.playerId, cardName });
   } else if (cardName === CardName.ExtraMove) {
     player.hasExtraMove = true;
     player.actionsThisTurn.push(GameAction.UseCard);
@@ -31,6 +31,7 @@ export function handleUseCard(state: GameState, payload: { cardName: CardName; i
       category: 'cards',
       message: `${player.name} activated 'Extra Move' - select any soldier on the map for 1 bonus action.`,
       playerId: player.playerId,
+      cardName: CardName.ExtraMove,
     });
   } else if (isScout) {
     player.actionsThisTurn.push(GameAction.UseCard);
@@ -38,6 +39,7 @@ export function handleUseCard(state: GameState, payload: { cardName: CardName; i
       category: 'cards',
       message: `${player.name} used the '${cardName}' card to scout ahead.`,
       playerId: player.playerId,
+      cardName,
     });
     const usedCard = player.specialCards.splice(cardIndex, 1)[0];
     discardPile.push(usedCard);
@@ -95,6 +97,7 @@ export function handleUseProductiveCard(state: GameState, selectedResource: Reso
       category: 'cards',
       message: `${player.name} collected ${collectedStrings.join(', ')}${doubledResourceString}.`,
       playerId: player.playerId,
+      cardName: CardName.Productive,
       resourcesCollected: collectedResources,
       resourceGain: toResourceGainEntries(collectedResources, collectedTileIds),
     });

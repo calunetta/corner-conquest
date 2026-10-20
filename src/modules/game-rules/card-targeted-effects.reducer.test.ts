@@ -176,3 +176,42 @@ describe('handleStealResource', () => {
     expect(nextState.players[0].specialCards).toContain(CardName.StealResource);
   });
 });
+
+function cardNamesLogged(state: GameState): CardName[] {
+  return state.log.flatMap((entry) => (typeof entry !== 'string' && entry.cardName ? [entry.cardName] : []));
+}
+
+describe('targeted card-use log entries carry cardName', () => {
+  let game: GameState;
+
+  beforeEach(() => {
+    game = buildGame();
+  });
+
+  it('Sabotage logs CardName.Sabotage', () => {
+    game.players[0].specialCards = [CardName.Sabotage];
+    const nextState = handleSabotagePlayer(game, game.players[1].id);
+    expect(cardNamesLogged(nextState)).toEqual([CardName.Sabotage]);
+  });
+
+  it('Wealthy logs CardName.Wealthy', () => {
+    game.players[0].specialCards = [CardName.Wealthy];
+    const nextState = handleGainWealth(game, ResourceType.Gold);
+    expect(cardNamesLogged(nextState)).toEqual([CardName.Wealthy]);
+  });
+
+  it.each([
+    ['successful steal', 10],
+    ['"had none" steal', 0],
+  ])('Steal Resource logs CardName.StealResource on a %s', (_label, targetWood) => {
+    game.players[0].specialCards = [CardName.StealResource];
+    game.players[1].resources.wood = targetWood;
+    const nextState = handleStealResource(game, { targetPlayerId: game.players[1].id, resource: ResourceType.Wood });
+    expect(cardNamesLogged(nextState)).toEqual([CardName.StealResource]);
+  });
+
+  it('an invalid Sabotage target logs no cardName (invalid input)', () => {
+    game.players[0].specialCards = [CardName.Sabotage];
+    expect(cardNamesLogged(handleSabotagePlayer(game, 9999))).toEqual([]);
+  });
+});

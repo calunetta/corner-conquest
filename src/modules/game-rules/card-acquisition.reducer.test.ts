@@ -264,3 +264,14 @@ describe('chooseSpecialIslandCard and the roll payload', () => {
   });
 });
 
+
+describe('handleBuyCardAction log entry', () => {
+  it('does not carry cardName (buying is not using)', () => {
+    const game = buildGame();
+    game.players[0].resources.gold = 20;
+
+    const nextState = handleBuyCardAction(game);
+
+    expect(nextState.log.some((entry) => typeof entry !== 'string' && entry.cardName !== undefined)).toBe(false);
+  });
+});

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { RegistryIcon } from '@/modules/shared';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -22,15 +23,40 @@ const CATEGORY_ICON_IDS: Record<LogCategory, string> = {
   system: 'info',
 };
 
-/** Category icon for a routine entry, or the trophy accent for a milestone. Legacy entries (`category: null`) get no icon. */
-function EntryIcon({ entry }: { entry: DisplayedLogEntry }) {
+const CARD_ICON_SIZE_PX = 20;
+
+function EntryIconGlyph({ entry }: { entry: DisplayedLogEntry }) {
   if (entry.isMilestone) {
     return <RegistryIcon id="trophy" className={styles.milestoneIcon} aria-hidden />;
+  }
+  if (entry.cardIconSrc) {
+    return (
+      <Image
+        src={entry.cardIconSrc}
+        alt=""
+        width={CARD_ICON_SIZE_PX}
+        height={CARD_ICON_SIZE_PX}
+        className={styles.cardIcon}
+        data-testid="log-card-icon"
+      />
+    );
   }
   if (!entry.category) {
     return null;
   }
   return <RegistryIcon id={CATEGORY_ICON_IDS[entry.category]} className={styles.entryIcon} aria-hidden />;
+}
+
+/** Fixed-size slot so every icon kind aligns the message text at the same x and never grows the row. Legacy entries (`category: null`) get no slot. */
+function EntryIcon({ entry }: { entry: DisplayedLogEntry }) {
+  if (!entry.isMilestone && !entry.cardIconSrc && !entry.category) {
+    return null;
+  }
+  return (
+    <span className={styles.iconSlot}>
+      <EntryIconGlyph entry={entry} />
+    </span>
+  );
 }
 
 /** Renders a message as colored player-name substrings plus plain-text runs. */

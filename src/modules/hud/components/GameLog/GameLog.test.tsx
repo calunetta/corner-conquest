@@ -1,6 +1,10 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { CardName } from '@/lib/types';
+import type { Player, StructuredLogEntry } from '@/lib/types';
 import { GameLogView } from './GameLog';
+import { toLogEntryViewModels, toMessageSegments } from './GameLog.map';
 import {
+  cardUseLog,
   declutterOffLog,
   declutterOnLog,
   emptyLog,
@@ -188,6 +192,59 @@ describe('GameLogView', () => {
       fireEvent.click(screen.getByRole('switch'));
 
       expect(onToggle).toHaveBeenCalledTimes(1);
+    });
+  });
+  describe('card icons', () => {
+    it('shows the card icon on each card-use entry, matched by file name, and none on the bought-card entry', () => {
+      render(<GameLogView {...cardUseLog} />);
+      const entries = within(screen.getByTestId('game-log-scroll')).getAllByRole('paragraph');
+
+      // newest-first: bought card, Reinforce, War Chief
+      expect(entries).toHaveLength(3);
+      expect(within(entries[0]).queryByTestId('log-card-icon')).not.toBeInTheDocument();
+      expect(within(entries[0]).getByTestId('registry-icon-layers')).toBeInTheDocument();
+      expect(within(entries[1]).getByTestId('log-card-icon').getAttribute('src')).toContain('reinforce');
+      expect(within(entries[2]).getByTestId('log-card-icon').getAttribute('src')).toContain('war-chief-icon');
+      expect(within(entries[2]).queryByTestId('registry-icon-swords')).not.toBeInTheDocument();
+    });
+
+    it('marks the card icon decorative (empty alt)', () => {
+      render(<GameLogView {...cardUseLog} />);
+
+      screen.getAllByTestId('log-card-icon').forEach((icon) => expect(icon).toHaveAttribute('alt', ''));
+    });
+
+    it('renders the redacted message with no card icon and no card name when the viewer cannot read the entry', () => {
+      const players = [{ playerId: 'p-blue', name: 'Ada', color: 'blue' }] as Player[];
+      const entry: StructuredLogEntry = {
+        kind: 'structured',
+        turn: 1,
+        category: 'cards',
+        message: "Ada used 'Sabotage'.",
+        redactedMessage: 'Ada used a card.',
+        visibility: { scope: 'owner' },
+        playerId: 'p-blue',
+        cardName: CardName.Sabotage,
+      };
+      const entries = toLogEntryViewModels([entry], players, () => false).map((vm) => ({
+        ...vm,
+        segments: toMessageSegments(vm),
+        turnDividerLabel: null,
+      }));
+
+      render(<GameLogView entries={entries} showRoutineActivity={false} onToggleShowRoutineActivity={() => {}} />);
+
+      const [paragraph] = within(screen.getByTestId('game-log-scroll')).getAllByRole('paragraph');
+      expect(paragraph).toHaveTextContent('Ada used a card.');
+      expect(paragraph).not.toHaveTextContent('Sabotage');
+      expect(screen.queryByTestId('log-card-icon')).not.toBeInTheDocument();
+      expect(within(paragraph).getByTestId('registry-icon-layers')).toBeInTheDocument();
+    });
+
+    it('shows no card icon for legacy string entries', () => {
+      render(<GameLogView {...legacyOnlyLog} />);
+
+      expect(screen.queryByTestId('log-card-icon')).not.toBeInTheDocument();
     });
   });
 });

@@ -1,4 +1,5 @@
 import type { LogEntry, Player, StructuredLogEntry } from '@/lib/types';
+import { CARD_ART } from '@/modules/cards';
 import { playerTextColors } from '@/modules/shared';
 import type { LogEntryViewModel, LogMessageSegment } from './GameLog.types';
 
@@ -24,7 +25,8 @@ export function toLogEntryViewModels(
       return [{ message: entry, category: null, isMilestone: false, isPassive: false, turn: null }];
     }
 
-    const message = canRead(entry) ? entry.message : entry.redactedMessage;
+    const canReadEntry = canRead(entry);
+    const message = canReadEntry ? entry.message : entry.redactedMessage;
     if (message === undefined) return [];
 
     const player = toResolvedPlayer(entry.playerId, players);
@@ -41,6 +43,7 @@ export function toLogEntryViewModels(
         playerColorClass: player && playerTextColors[player.color],
         targetPlayerName: targetPlayer?.name,
         targetPlayerColorClass: targetPlayer && playerTextColors[targetPlayer.color],
+        cardIconSrc: canReadEntry && entry.cardName ? CARD_ART[entry.cardName]?.icon : undefined,
       },
     ];
   });

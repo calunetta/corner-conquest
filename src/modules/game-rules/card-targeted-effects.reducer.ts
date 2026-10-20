@@ -17,6 +17,7 @@ export function handleSabotagePlayer(state: GameState, targetPlayerId: number): 
       category: 'cards',
       message: `${player.name} sabotaged ${targetPlayer.name}! They will miss their next turn.`,
       playerId: player.playerId,
+      cardName: CardName.Sabotage,
       targetPlayerId: targetPlayer.playerId,
     });
 
@@ -43,6 +44,7 @@ export function handleGainWealth(state: GameState, resource: ResourceType): Game
     category: 'cards',
     message: `${player.name} used 'Wealthy' to gain ${WEALTHY_GAIN_AMOUNT} ${resource}.`,
     playerId: player.playerId,
+    cardName: CardName.Wealthy,
     resourceGain: toResourceGainEntries({ [resource]: WEALTHY_GAIN_AMOUNT }),
   });
 
@@ -78,6 +80,7 @@ export function handleStealResource(
       category: 'cards',
       message: `${currentPlayer.name} stole ${stolenAmount} ${payload.resource} from ${targetPlayer.name}!`,
       playerId: currentPlayer.playerId,
+      cardName: CardName.StealResource,
       targetPlayerId: targetPlayer.playerId,
       resourceGain: toResourceGainEntries({ [payload.resource]: stolenAmount }),
     });
@@ -86,6 +89,7 @@ export function handleStealResource(
       category: 'cards',
       message: `${currentPlayer.name} tried to steal ${payload.resource} from ${targetPlayer.name}, but they had none.`,
       playerId: currentPlayer.playerId,
+      cardName: CardName.StealResource,
       targetPlayerId: targetPlayer.playerId,
     });
   }

@@ -1,4 +1,5 @@
-import type { LogEntry, Player } from '@/lib/types';
+import { CardName } from '@/lib/types';
+import type { LogEntry, Player, StructuredLogEntry } from '@/lib/types';
 import { filterVisibleEntries, toLogEntryViewModels, toMessageSegments, withTurnDividers } from './GameLog.map';
 import type { GameLogViewModel } from './GameLog.types';
 
@@ -9,8 +10,12 @@ const redPlayer = { playerId: 'p-red', name: 'Bo', color: 'red' } as Player;
 const players: Player[] = [bluePlayer, redPlayer];
 
 /** Composes the same pipeline `useGameLog` runs, so fixtures stay in sync with real behavior. */
-function toFixture(logs: LogEntry[], showRoutineActivity: boolean): GameLogViewModel {
-  const raw = toLogEntryViewModels(logs, players);
+function toFixture(
+  logs: LogEntry[],
+  showRoutineActivity: boolean,
+  canRead?: (entry: StructuredLogEntry) => boolean,
+): GameLogViewModel {
+  const raw = toLogEntryViewModels(logs, players, canRead);
   const visible = filterVisibleEntries(raw, showRoutineActivity);
   const divided = withTurnDividers(visible);
 
@@ -87,6 +92,30 @@ const withMilestoneLogs: LogEntry[] = [
 ];
 
 export const withMilestoneLog: GameLogViewModel = toFixture(withMilestoneLogs, false);
+
+const cardUseLogs: LogEntry[] = [
+  { kind: 'structured', turn: 1, category: 'combat', message: "Ada used 'War Chief' for +2 to combat score!", playerId: 'p-blue', cardName: CardName.WarChief },
+  { kind: 'structured', turn: 1, category: 'cards', message: "Bo activated 'Reinforce'.", playerId: 'p-red', cardName: CardName.Reinforce },
+  { kind: 'structured', turn: 1, category: 'cards', message: 'Ada bought a card', playerId: 'p-blue' },
+];
+
+export const cardUseLog: GameLogViewModel = toFixture(cardUseLogs, false);
+
+const redactedCardUseLogs: LogEntry[] = [
+  {
+    kind: 'structured',
+    turn: 1,
+    category: 'cards',
+    message: "Ada used 'Sabotage' on Bo.",
+    redactedMessage: 'Ada used a card.',
+    visibility: { scope: 'owner' },
+    playerId: 'p-blue',
+    cardName: CardName.Sabotage,
+  },
+];
+
+// The viewer is not allowed to read the entry, so the card icon must fall back to the category icon.
+export const redactedCardUseLog: GameLogViewModel = toFixture(redactedCardUseLogs, false, () => false);
 
 const declutterLogs: LogEntry[] = [
   { kind: 'structured', turn: 1, category: 'economy', message: 'Ada collected resources', playerId: 'p-blue', isPassive: true },

@@ -1,4 +1,6 @@
+import { CardName } from '@/lib/types';
 import type { LogEntry, Player, StructuredLogEntry } from '@/lib/types';
+import { CARD_ART } from '@/modules/cards';
 import {
   filterVisibleEntries,
   toLogEntryViewModels,
@@ -244,3 +246,57 @@ describe('toLogEntryViewModels visibility', () => {
   });
 });
 
+
+describe('toLogEntryViewModels cardIconSrc', () => {
+  const cardUse = structured({
+    category: 'combat',
+    message: "Ada used 'War Chief' for +2 to combat score!",
+    playerId: 'p-blue',
+    cardName: CardName.WarChief,
+  });
+
+  it('sets the card icon when the viewer can read the entry', () => {
+    const [entry] = toLogEntryViewModels([cardUse], players, () => true);
+
+    expect(entry.cardIconSrc).toBe(CARD_ART[CardName.WarChief].icon);
+  });
+
+  it('sets the card icon when no canRead is passed (default readable)', () => {
+    const [entry] = toLogEntryViewModels([cardUse], players);
+
+    expect(entry.cardIconSrc).toBe(CARD_ART[CardName.WarChief].icon);
+  });
+
+  it('withholds the card icon from a viewer who cannot read the entry', () => {
+    const redacted = { ...cardUse, visibility: { scope: 'owner' as const }, redactedMessage: 'Ada used a card.' };
+
+    const [entry] = toLogEntryViewModels([redacted], players, () => false);
+
+    expect(entry.message).toBe('Ada used a card.');
+    expect(entry.cardIconSrc).toBeUndefined();
+  });
+
+  it('has no card icon on an entry without cardName', () => {
+    const [entry] = toLogEntryViewModels([structured()], players, () => true);
+
+    expect(entry.cardIconSrc).toBeUndefined();
+  });
+
+  it('has no card icon for an unknown card name (invalid input)', () => {
+    const [entry] = toLogEntryViewModels([structured({ cardName: 'Nope' as CardName })], players, () => true);
+
+    expect(entry.cardIconSrc).toBeUndefined();
+  });
+
+  it('has no card icon on a legacy string entry', () => {
+    const [entry] = toLogEntryViewModels(["Ada used 'War Chief'"], players, () => true);
+
+    expect(entry.cardIconSrc).toBeUndefined();
+  });
+
+  it.each(Object.values(CardName))('resolves an icon for %s', (cardName) => {
+    const [entry] = toLogEntryViewModels([structured({ cardName })], players, () => true);
+
+    expect(entry.cardIconSrc).toBe(CARD_ART[cardName].icon);
+  });
+});

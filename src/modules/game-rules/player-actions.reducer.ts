@@ -47,7 +47,7 @@ export function handleDeployAction(state: GameState): GameState {
   });
 
   if (isEfficientUsed) {
-    pushLogEntry(state, { category: 'economy', message: `${player.name} used 'Efficient' to deploy!`, playerId: player.playerId });
+    pushLogEntry(state, { category: 'economy', message: `${player.name} used 'Efficient' to deploy!`, playerId: player.playerId, cardName: CardName.Efficient });
     player.efficientActive = false;
     const cardIndex = player.specialCards.indexOf(CardName.Efficient);
     if (cardIndex > -1) {
@@ -58,7 +58,7 @@ export function handleDeployAction(state: GameState): GameState {
   }
 
   if (isReinforceUsed) {
-    pushLogEntry(state, { category: 'economy', message: `${player.name} used 'Reinforce' to deploy for free!`, playerId: player.playerId });
+    pushLogEntry(state, { category: 'economy', message: `${player.name} used 'Reinforce' to deploy for free!`, playerId: player.playerId, cardName: CardName.Reinforce });
     player.reinforceActive = false;
     const cardIndex = player.specialCards.indexOf(CardName.Reinforce);
     if (cardIndex > -1) {

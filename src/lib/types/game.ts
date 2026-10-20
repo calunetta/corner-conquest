@@ -63,6 +63,8 @@ export type StructuredLogEntry = {
   /** Shown instead of `message` to viewers `visibility` excludes. Required whenever `visibility` is set,
    *  so every player still learns that the event happened without learning the hidden detail. */
   redactedMessage?: string;
+  /** Set on log entries that record a special card being used; GameLog shows that card's icon. Absent on every other entry and on old documents. */
+  cardName?: CardName;
 };
 
 export type LogEntry = string | StructuredLogEntry;

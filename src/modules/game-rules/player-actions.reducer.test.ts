@@ -219,3 +219,28 @@ describe('handleCancelAction', () => {
     expect(nextState.players[0].specialCards).not.toContain(CardName.Efficient); // nothing to restore
   });
 });
+
+describe('handleDeployAction card-use log entries carry cardName', () => {
+  function cardNamesLogged(state: GameState): CardName[] {
+    return state.log.flatMap((entry) => (typeof entry !== 'string' && entry.cardName ? [entry.cardName] : []));
+  }
+
+  it.each([
+    [CardName.Reinforce, 'reinforceActive'],
+    [CardName.Efficient, 'efficientActive'],
+  ] as const)('deploying with %s logs that cardName', (cardName, flag) => {
+    const game = buildGame();
+    const player = game.players[0];
+    player.resources.food = 10;
+    player[flag] = true;
+    player.specialCards = [cardName];
+
+    expect(cardNamesLogged(handleDeployAction(game))).toEqual([cardName]);
+  });
+
+  it('a plain deploy logs no cardName', () => {
+    const game = buildGame();
+    game.players[0].resources.food = 10;
+    expect(cardNamesLogged(handleDeployAction(game))).toEqual([]);
+  });
+});
