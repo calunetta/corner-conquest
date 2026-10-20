@@ -4,6 +4,14 @@ export interface CardPlay {
   cardName: CardName;
   /** Increments on every start; React key and timer dependency. */
   playId: number;
+  /** Set to true only for a card found on a special island; absent for a used card. */
+  isFound?: true;
+}
+
+/** A play waiting for the gate. */
+export interface QueuedPlay {
+  cardName: CardName;
+  isFound?: true;
 }
 
 export interface CardPlayOverlayProps {
@@ -40,4 +48,9 @@ export interface CardPlayTriggerArgs {
   isBlocked: boolean;
   /** Teleport/Scout pending action: play now, not after the last target. Omit or null for none. */
   selectionPlay?: SelectionPlay | null;
+  /**
+   * Card drawn by the local player's special-island roll (SpecialIslandRollDialogState.cardDrawn).
+   * Queues one found play each time it changes to a non-null card. Omit or null for none.
+   */
+  foundCard?: CardName | null;
 }

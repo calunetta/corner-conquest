@@ -47,6 +47,7 @@ export function GameDialogManager() {
     localPlayerId: localPlayer.playerId,
     isBlocked: isCardPlayBlocked(uiState, gameState),
     selectionPlay: toSelectionPlay(uiState.pendingAction, gameState.turn),
+    foundCard: uiState.dialogs.specialIslandRoll?.cardDrawn ?? null,
   });
 
   const { dialogs, selectedArmyId } = uiState;

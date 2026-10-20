@@ -35,6 +35,18 @@ describe('useCardPlay', () => {
     expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 2 });
   });
 
+  it('startPlay with isFound sets isFound true', () => {
+    const { result } = renderHook(() => useCardPlay());
+    act(() => result.current.startPlay(CardName.WarChief, true));
+    expect(result.current.play).toEqual({ cardName: CardName.WarChief, playId: 1, isFound: true });
+  });
+
+  it('startPlay without isFound has no isFound key', () => {
+    const { result } = renderHook(() => useCardPlay());
+    act(() => result.current.startPlay(CardName.WarChief));
+    expect(result.current.play).not.toHaveProperty('isFound');
+  });
+
   it('endPlay clears the play and the counter keeps increasing', () => {
     const { result } = renderHook(() => useCardPlay());
     act(() => result.current.startPlay(CardName.WarChief));
@@ -327,6 +339,77 @@ describe('useCardPlayTrigger', () => {
       rerender(props({ log: [entry(CardName.Teleport, 2)] }));
       act(() => result.current.endPlay());
       rerender(props({ log: [entry(CardName.Teleport, 2)], selectionPlay: teleport2 }));
+      expect(result.current.play).toBeNull();
+    });
+  });
+
+  describe('foundCard', () => {
+    const props = (over: Partial<Args>): Args => ({ log: [], localPlayerId: localId, isBlocked: false, ...over });
+
+    it('plays a found combat card (not filtered by NO_PLAY_CARDS)', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ foundCard: CardName.Overcome }));
+      expect(result.current.play).toEqual({ cardName: CardName.Overcome, playId: 1, isFound: true });
+    });
+
+    it('waits while blocked and starts only when unblocked', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ foundCard: CardName.WarChief, isBlocked: true }));
+      expect(result.current.play).toBeNull();
+      rerender(props({ foundCard: CardName.WarChief, isBlocked: false }));
+      expect(result.current.play).toEqual({ cardName: CardName.WarChief, playId: 1, isFound: true });
+    });
+
+    it('starts after the dialog closes (blocked while foundCard set, then null and unblocked)', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ foundCard: CardName.ExtraMove, isBlocked: true }));
+      rerender(props({ foundCard: null, isBlocked: true }));
+      expect(result.current.play).toBeNull();
+      rerender(props({ foundCard: null, isBlocked: false }));
+      expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 1, isFound: true });
+    });
+
+    it('does not play when a log use entry exists at mount and foundCard is null', () => {
+      const { result } = setup([entry(CardName.ExtraMove)]);
+      expect(result.current.play).toBeNull();
+    });
+
+    it('plays nothing when foundCard stays null', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ foundCard: null }));
+      rerender(props({ foundCard: undefined }));
+      expect(result.current.play).toBeNull();
+    });
+
+    it('find then use the same card the same turn plays twice, the use play without isFound', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ foundCard: CardName.ExtraMove }));
+      expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 1, isFound: true });
+      act(() => result.current.endPlay());
+      rerender(props({ foundCard: null }));
+      rerender(props({ foundCard: null, log: [entry(CardName.ExtraMove, 1)] }));
+      expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 2 });
+      expect(result.current.play).not.toHaveProperty('isFound');
+    });
+
+    it('queues two finds of the same card (card, null, card) in order', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ foundCard: CardName.ExtraMove, isBlocked: true }));
+      rerender(props({ foundCard: null, isBlocked: true }));
+      rerender(props({ foundCard: CardName.ExtraMove, isBlocked: true }));
+      rerender(props({ foundCard: null, isBlocked: false }));
+      expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 1, isFound: true });
+      act(() => result.current.endPlay());
+      expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 2, isFound: true });
+      act(() => result.current.endPlay());
+      expect(result.current.play).toBeNull();
+    });
+
+    it('does not re-queue when rerendered with the same foundCard', () => {
+      const { result, rerender } = setup([]);
+      rerender(props({ foundCard: CardName.WarChief }));
+      act(() => result.current.endPlay());
+      rerender(props({ foundCard: CardName.WarChief }));
       expect(result.current.play).toBeNull();
     });
   });

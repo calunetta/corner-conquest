@@ -129,4 +129,39 @@ describe('useCardPlaySandbox', () => {
     act(() => result.current.handleUseCard(CardName.Teleport));
     expect(result.current.play).toEqual({ cardName: CardName.Teleport, playId: 2 });
   });
+
+  it('handleFindCard opens the roll dialog with the card and blocks the gate; no play yet', () => {
+    const { result } = setup();
+    act(() => result.current.handleFindCard(CardName.WarChief));
+    expect(result.current.uiState.dialogs.specialIslandRoll).toEqual({
+      isOpen: true,
+      roll: 6,
+      cardDrawn: CardName.WarChief,
+      x: 0,
+      y: 0,
+    });
+    expect(result.current.isBlocked).toBe(true);
+    expect(result.current.play).toBeNull();
+  });
+
+  it('handleCloseFoundCard plays the found card and leaves the game log untouched', () => {
+    const { result } = setup();
+    const logBefore = [...result.current.game.log];
+    act(() => result.current.handleFindCard(CardName.WarChief));
+    act(() => result.current.handleCloseFoundCard());
+    expect(result.current.uiState.dialogs.specialIslandRoll).toBeNull();
+    expect(result.current.isBlocked).toBe(false);
+    expect(result.current.play).toEqual({ cardName: CardName.WarChief, playId: 1, isFound: true });
+    expect(result.current.game.log).toEqual(logBefore);
+    expect(result.current.localPlayer.specialCards).toEqual(SANDBOX_STARTING_HAND);
+  });
+
+  it('finding then using Extra Move plays twice', () => {
+    const { result } = setup();
+    act(() => result.current.handleFindCard(CardName.ExtraMove));
+    act(() => result.current.handleCloseFoundCard());
+    act(() => result.current.endPlay());
+    act(() => result.current.handleUseCard(CardName.ExtraMove));
+    expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 2 });
+  });
 });

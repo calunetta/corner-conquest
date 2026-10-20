@@ -135,6 +135,52 @@ describe('CardPlaySandbox', () => {
       expect(status()).toBeEmptyDOMElement();
     });
 
+    it('Find War Chief announces the find only after the roll dialog closes, then clears', () => {
+      renderDesktop();
+      fireEvent.click(screen.getByRole('button', { name: 'Find War Chief' }));
+
+      expect(screen.getByRole('alertdialog')).toHaveTextContent('Card Acquired');
+      expect(screen.getByRole('alertdialog')).toHaveTextContent('War Chief');
+      expect(status()).toBeEmptyDOMElement();
+      expect(screen.getByTestId('sandbox-gate')).toHaveTextContent('blocked');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+      expect(screen.getByTestId('sandbox-gate')).toHaveTextContent('open');
+      expect(status()).toHaveTextContent('You found War Chief.');
+      expect(screen.getByText('No log entries yet.')).toBeInTheDocument();
+      act(() => {
+        jest.advanceTimersByTime(ANIMATION_MS);
+      });
+      expect(status()).toBeEmptyDOMElement();
+    });
+
+    it('Escape on the roll dialog also releases the found play', () => {
+      renderDesktop();
+      fireEvent.click(screen.getByRole('button', { name: 'Find Extra Move' }));
+      expect(status()).toBeEmptyDOMElement();
+
+      fireEvent.keyDown(screen.getByRole('alertdialog'), { key: 'Escape' });
+
+      expect(status()).toHaveTextContent('You found Extra Move.');
+    });
+
+    it('finding Extra Move then using it still announces "played" for the use', () => {
+      renderDesktop();
+      fireEvent.click(screen.getByRole('button', { name: 'Find Extra Move' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      expect(status()).toHaveTextContent('You found Extra Move.');
+      act(() => {
+        jest.advanceTimersByTime(ANIMATION_MS);
+      });
+
+      openCards();
+      useCard('Extra Move');
+
+      expect(status()).toHaveTextContent('You played Extra Move.');
+    });
+
     it('Wealthy plays only after a resource is confirmed', () => {
       renderDesktop();
       openCards();

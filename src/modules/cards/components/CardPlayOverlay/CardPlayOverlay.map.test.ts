@@ -37,6 +37,20 @@ describe('toStatusText', () => {
     expect(toStatusText({ cardName, playId: 1 })).toBe(expected);
   });
 
+  it.each([
+    [CardName.ExtraMove, 'You found Extra Move.'],
+    [CardName.WarChief, 'You found War Chief.'],
+    [CardName.Overcome, 'You found Overcome.'],
+  ])('announces a found %s', (cardName, expected) => {
+    expect(toStatusText({ cardName, playId: 1, isFound: true })).toBe(expected);
+  });
+
+  it('does not mutate a found play', () => {
+    const play = { cardName: CardName.WarChief, playId: 3, isFound: true as const };
+    toStatusText(play);
+    expect(play).toEqual({ cardName: CardName.WarChief, playId: 3, isFound: true });
+  });
+
   it('does not mutate the play', () => {
     const play = { cardName: CardName.WarChief, playId: 3 };
     toStatusText(play);

@@ -1,6 +1,13 @@
 'use client';
 
-import { CardPlayOverlay, CardsDialog, SabotageDialog, StealResourceDialog, WealthyDialog } from '@/modules/cards';
+import {
+  CardPlayOverlay,
+  CardsDialog,
+  SabotageDialog,
+  SpecialIslandRollDialog,
+  StealResourceDialog,
+  WealthyDialog,
+} from '@/modules/cards';
 import type { CardPlaySandboxState } from './CardPlaySandbox.types';
 
 /** The real card dialogs and overlay, wired to the sandbox handlers the way GameDialogManager wires them. */
@@ -32,6 +39,13 @@ export function CardPlaySandboxDialogs({ state }: { state: CardPlaySandboxState 
           players={state.opponents}
           onSteal={() => state.handleResolveCard()}
           onClose={state.handleCancelCard}
+        />
+      )}
+      {dialogs.specialIslandRoll?.isOpen && (
+        <SpecialIslandRollDialog
+          state={dialogs.specialIslandRoll}
+          onRoll={() => undefined}
+          onClose={state.handleCloseFoundCard}
         />
       )}
       <CardPlayOverlay play={state.play} onFinished={state.endPlay} />

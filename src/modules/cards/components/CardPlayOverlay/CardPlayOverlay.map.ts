@@ -14,7 +14,8 @@ export function toPlayDurationMs(isReducedMotion: boolean): number {
 }
 
 export function toStatusText(play: CardPlay | null): string {
-  return play ? `You played ${play.cardName}.` : '';
+  if (!play) return '';
+  return play.isFound ? `You found ${play.cardName}.` : `You played ${play.cardName}.`;
 }
 
 /** Local player's card-use entries in `log.slice(sinceIndex)`, in log order. */

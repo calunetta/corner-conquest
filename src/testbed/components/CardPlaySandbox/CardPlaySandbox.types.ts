@@ -41,4 +41,8 @@ export interface CardPlaySandboxState {
   handleCancelCard: () => void;
   handleLogCombatCard: (cardName: CardName) => void;
   handleNextTurn: () => void;
+  /** Opens the special-island dialog already rolled with that card. */
+  handleFindCard: (cardName: CardName) => void;
+  /** Closes it; the found play starts after this. */
+  handleCloseFoundCard: () => void;
 }

@@ -5,17 +5,18 @@ import type { ComponentPreview } from '@/testbed';
 import { Button } from '@/components/ui/button';
 import { CardPlayOverlayView } from './CardPlayOverlay';
 import { toPlayDurationMs } from './CardPlayOverlay.map';
-import { warChiefPlay } from './CardPlayOverlay.fixtures';
+import { foundExtraMovePlay, warChiefPlay } from './CardPlayOverlay.fixtures';
 import type { CardPlay } from './CardPlayOverlay.types';
 
 interface OverlayDemoProps {
+  basePlay: CardPlay;
   isMobile: boolean;
   isReducedMotion: boolean;
 }
 
 /** Plays the overlay view with forced flags; Replay bumps playId and re-arms the end timer. */
-function OverlayDemo({ isMobile, isReducedMotion }: OverlayDemoProps) {
-  const [play, setPlay] = useState<CardPlay | null>(warChiefPlay);
+function OverlayDemo({ basePlay, isMobile, isReducedMotion }: OverlayDemoProps) {
+  const [play, setPlay] = useState<CardPlay | null>(basePlay);
   const playId = play?.playId;
   const endPlay = useCallback(() => setPlay(null), []);
 
@@ -25,7 +26,7 @@ function OverlayDemo({ isMobile, isReducedMotion }: OverlayDemoProps) {
     return () => clearTimeout(timer);
   }, [playId, isReducedMotion, endPlay]);
 
-  const replay = () => setPlay((current) => ({ ...warChiefPlay, playId: (current?.playId ?? 0) + 1 }));
+  const replay = () => setPlay((current) => ({ ...basePlay, playId: (current?.playId ?? 0) + 1 }));
 
   return (
     <div className="relative min-h-[400px] p-4">
@@ -49,8 +50,12 @@ export const cardPlayOverlayPreview: ComponentPreview = {
   title: 'Card play overlay',
   group: 'Cards',
   states: [
-    { name: 'Full motion', render: () => <OverlayDemo isMobile={false} isReducedMotion={false} /> },
-    { name: 'Reduced motion', render: () => <OverlayDemo isMobile={false} isReducedMotion /> },
-    { name: 'Mobile size', render: () => <OverlayDemo isMobile isReducedMotion={false} /> },
+    { name: 'Full motion', render: () => <OverlayDemo basePlay={warChiefPlay} isMobile={false} isReducedMotion={false} /> },
+    { name: 'Reduced motion', render: () => <OverlayDemo basePlay={warChiefPlay} isMobile={false} isReducedMotion /> },
+    { name: 'Mobile size', render: () => <OverlayDemo basePlay={warChiefPlay} isMobile isReducedMotion={false} /> },
+    {
+      name: 'Found card',
+      render: () => <OverlayDemo basePlay={foundExtraMovePlay} isMobile={false} isReducedMotion={false} />,
+    },
   ],
 };

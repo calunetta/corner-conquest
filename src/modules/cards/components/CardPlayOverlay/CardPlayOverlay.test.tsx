@@ -2,7 +2,7 @@ import React from 'react';
 import { act, render, screen, within } from '@testing-library/react';
 import { CardName } from '@/lib/types';
 import { CardPlayOverlay, CardPlayOverlayView } from './CardPlayOverlay';
-import { extraMovePlay, warChiefPlay } from './CardPlayOverlay.fixtures';
+import { extraMovePlay, foundExtraMovePlay, warChiefPlay } from './CardPlayOverlay.fixtures';
 
 function renderView(props: Partial<React.ComponentProps<typeof CardPlayOverlayView>> = {}) {
   return render(
@@ -23,6 +23,13 @@ describe('CardPlayOverlayView', () => {
     renderView();
 
     expect(screen.getByRole('status')).toHaveTextContent('You played War Chief.');
+  });
+
+  it('announces a found card in the status region', () => {
+    renderView({ play: foundExtraMovePlay });
+
+    expect(screen.getByRole('status')).toHaveTextContent('You found Extra Move.');
+    expect(screen.getByRole('status')).not.toHaveTextContent('You played');
   });
 
   it('shows the card face and the card name in the stage', () => {

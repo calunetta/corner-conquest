@@ -17,6 +17,8 @@ export const SANDBOX_STARTING_HAND: CardName[] = [
 
 export const SANDBOX_COMBAT_CARDS: CardName[] = [CardName.Overcome, CardName.WarChief, CardName.DecideDiceRoll];
 
+export const SANDBOX_FOUND_CARDS: CardName[] = [CardName.ExtraMove, CardName.WarChief];
+
 export const SANDBOX_OPPONENTS: Player[] = [
   buildPlayer({
     id: 1,

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { GameAction } from '@/lib/types';
 import { MobileActionsBar } from '@/modules/hud/components/ActionsPanel/MobileActionsBar';
 import { myTurnNoSelection } from '@/modules/hud/components/ActionsPanel/ActionsPanel.fixtures';
-import { SANDBOX_COMBAT_CARDS } from './CardPlaySandbox.fixtures';
+import { SANDBOX_COMBAT_CARDS, SANDBOX_FOUND_CARDS } from './CardPlaySandbox.fixtures';
 import { useCardPlaySandbox } from './CardPlaySandbox.hook';
 import { styles } from './CardPlaySandbox.styles';
 import type { CardPlaySandboxProps } from './CardPlaySandbox.types';
@@ -63,6 +63,17 @@ export function CardPlaySandbox({ variant }: CardPlaySandboxProps) {
           {SANDBOX_COMBAT_CARDS.map((cardName) => (
             <Button key={cardName} variant="outline" onClick={() => state.handleLogCombatCard(cardName)}>
               Log {cardName}
+            </Button>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.panel} aria-label="Special island">
+        <h3 className={styles.panelTitle}>Special island finds (always animate)</h3>
+        <div className={styles.buttonRow}>
+          {SANDBOX_FOUND_CARDS.map((cardName) => (
+            <Button key={cardName} variant="outline" onClick={() => state.handleFindCard(cardName)}>
+              Find {cardName}
             </Button>
           ))}
         </div>

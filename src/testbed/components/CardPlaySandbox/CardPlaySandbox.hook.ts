@@ -11,6 +11,8 @@ import { toFollowUpDialogAction, toPendingActionForCard, toSandboxPlayer } from 
 import { sandboxGameReducer } from './CardPlaySandbox.reducer';
 import type { CardPlaySandboxState } from './CardPlaySandbox.types';
 
+/** Any rolled value shows the dialog's result state. */
+const FOUND_CARD_ROLL = 6;
 const NO_COMBAT = { combatState: null, monsterCombatState: null, productiveDialogState: null };
 
 export function useCardPlaySandbox(): CardPlaySandboxState {
@@ -23,6 +25,7 @@ export function useCardPlaySandbox(): CardPlaySandboxState {
     localPlayerId: SANDBOX_LOCAL_PLAYER_ID,
     isBlocked,
     selectionPlay: toSelectionPlay(uiState.pendingAction, game.turn),
+    foundCard: uiState.dialogs.specialIslandRoll?.cardDrawn ?? null,
   });
 
   const localPlayer = useMemo(
@@ -69,6 +72,19 @@ export function useCardPlaySandbox(): CardPlaySandboxState {
     clearPendingStep();
   }, [clearPendingStep]);
 
+  const handleFindCard = useCallback(
+    (cardName: CardName) =>
+      dispatchUi({
+        type: 'SET_SPECIAL_ISLAND_ROLL_DIALOG',
+        state: { isOpen: true, roll: FOUND_CARD_ROLL, cardDrawn: cardName, x: 0, y: 0 },
+      }),
+    [],
+  );
+  const handleCloseFoundCard = useCallback(
+    () => dispatchUi({ type: 'SET_SPECIAL_ISLAND_ROLL_DIALOG', state: null }),
+    [],
+  );
+
   return {
     localPlayer,
     opponents: SANDBOX_OPPONENTS,
@@ -84,5 +100,7 @@ export function useCardPlaySandbox(): CardPlaySandboxState {
     handleCancelCard: clearPendingStep,
     handleLogCombatCard,
     handleNextTurn,
+    handleFindCard,
+    handleCloseFoundCard,
   };
 }

@@ -7,6 +7,7 @@ import type {
   CardPlayOverlayProps,
   CardPlayOverlayViewProps,
   CardPlayTriggerArgs,
+  QueuedPlay,
 } from './CardPlayOverlay.types';
 
 export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
@@ -14,15 +15,15 @@ export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 /** Local-only state owner. startPlay replaces any current play (new playId). */
 export function useCardPlay(): {
   play: CardPlay | null;
-  startPlay: (cardName: CardName) => void;
+  startPlay: (cardName: CardName, isFound?: true) => void;
   endPlay: () => void;
 } {
   const [play, setPlay] = useState<CardPlay | null>(null);
   const lastPlayId = useRef(0);
 
-  const startPlay = useCallback((cardName: CardName) => {
+  const startPlay = useCallback((cardName: CardName, isFound?: true) => {
     lastPlayId.current += 1;
-    setPlay({ cardName, playId: lastPlayId.current });
+    setPlay({ cardName, playId: lastPlayId.current, ...(isFound && { isFound }) });
   }, []);
 
   const endPlay = useCallback(() => setPlay(null), []);
@@ -34,18 +35,20 @@ export function useCardPlay(): {
  * Seeds on first run (never replays history). Queues new local card-use log entries, deduped by
  * turn and card name, and starts one when nothing is blocking and no play is active.
  * A Teleport/Scout `selectionPlay` is queued once on selection under the same key, so its later log entry is skipped.
+ * A `foundCard` is queued each time it becomes a card, outside that key, so finding then using a card plays twice.
  */
 export function useCardPlayTrigger({
   log,
   localPlayerId,
   isBlocked,
   selectionPlay,
+  foundCard,
 }: CardPlayTriggerArgs): {
   play: CardPlay | null;
   endPlay: () => void;
 } {
   const { play, startPlay, endPlay } = useCardPlay();
-  const [queue, setQueue] = useState<CardName[]>([]);
+  const [queue, setQueue] = useState<QueuedPlay[]>([]);
   const seenLogLength = useRef<number | null>(null);
   const queuedKeys = useRef(new Set<string>());
 
@@ -60,7 +63,7 @@ export function useCardPlayTrigger({
       queuedKeys.current.add(key);
       return !isSeeding;
     });
-    if (fresh.length > 0) setQueue((current) => [...current, ...fresh.map((entry) => entry.cardName)]);
+    if (fresh.length > 0) setQueue((current) => [...current, ...fresh.map(({ cardName }) => ({ cardName }))]);
   }, [log, localPlayerId]);
 
   const selectionCard = selectionPlay?.cardName ?? null;
@@ -70,12 +73,18 @@ export function useCardPlayTrigger({
     const key = `${selectionTurn}:${selectionCard}`;
     if (queuedKeys.current.has(key)) return;
     queuedKeys.current.add(key);
-    setQueue((current) => [...current, selectionCard]);
+    setQueue((current) => [...current, { cardName: selectionCard }]);
   }, [selectionCard, selectionTurn]);
 
   useEffect(() => {
+    if (!foundCard) return;
+    setQueue((current) => [...current, { cardName: foundCard, isFound: true }]);
+  }, [foundCard]);
+
+  useEffect(() => {
     if (isBlocked || play || queue.length === 0) return;
-    startPlay(queue[0]);
+    const next = queue[0];
+    startPlay(next.cardName, next.isFound);
     setQueue((current) => current.slice(1));
   }, [queue, isBlocked, play, startPlay]);
 
