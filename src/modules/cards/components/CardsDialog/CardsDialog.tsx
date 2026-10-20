@@ -8,11 +8,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RegistryIcon } from '@/modules/shared';
+import { CardFace } from '../CardFace';
 import { toCardsDialogViewModel } from './CardsDialog.map';
 import { styles } from './CardsDialog.styles';
 import type { CardsDialogProps } from './CardsDialog.types';
@@ -42,31 +43,32 @@ export function CardsDialog({ player, onClose, onUseCard, canUseCards }: CardsDi
             {viewModel.cards.length > 0 ? (
               viewModel.cards.map((card) => (
                 <Card key={card.name} className={styles.card}>
-                  <CardHeader className={styles.cardHeader}>
-                    <div className={styles.cardTitleRow}>
-                      <RegistryIcon id="zap" className={styles.zapIcon} />
-                      <CardTitle className={styles.cardTitle}>{card.name}</CardTitle>
-                    </div>
-                    <div className={styles.badgeRow}>
-                      <Badge variant="outline" className={styles.countBadge}>
-                        x{card.count}
-                      </Badge>
+                  <div className={styles.tile}>
+                    <CardFace cardName={card.name} size="tile" />
+                    <div className={styles.tileBody}>
+                      <div className={styles.nameRow}>
+                        <CardTitle className={styles.cardTitle}>{card.name}</CardTitle>
+                        <Badge variant="outline" className={styles.countBadge}>
+                          x{card.count}
+                        </Badge>
+                      </div>
+                      <p className={styles.descriptionText}>{card.description}</p>
                       {card.isUsable && (
-                        <Button
-                          size="sm"
-                          onClick={() => onUseCard(card.name)}
-                          disabled={!viewModel.canUseCardAbility}
-                          className={styles.useButton}
-                        >
-                          <RegistryIcon id="play" className={styles.playIcon} />
-                          Use
-                        </Button>
+                        <div className={styles.useRow}>
+                          <Button
+                            size="sm"
+                            aria-label={card.useLabel}
+                            onClick={() => onUseCard(card.name)}
+                            disabled={!viewModel.canUseCardAbility}
+                            className={styles.useButton}
+                          >
+                            <RegistryIcon id="play" className={styles.playIcon} />
+                            Use
+                          </Button>
+                        </div>
                       )}
                     </div>
-                  </CardHeader>
-                  <CardContent className={styles.cardContent}>
-                    <p className={styles.descriptionText}>{card.description}</p>
-                  </CardContent>
+                  </div>
                 </Card>
               ))
             ) : (

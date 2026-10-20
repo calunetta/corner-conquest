@@ -17,6 +17,7 @@ export function toCardsDialogViewModel(player: Player, canUseCards: boolean): Ca
     count: cardCounts[name],
     description: SPECIAL_CARD_DESCRIPTIONS[name] || NO_DESCRIPTION,
     isUsable: USABLE_CARDS.includes(name),
+    useLabel: `Use ${name}`,
   }));
 
   return {

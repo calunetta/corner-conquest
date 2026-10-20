@@ -1,0 +1,44 @@
+# Progress: Card art in CardsDialog, card-play animation, card icons in the game log
+
+Tier: L · Phases: 3
+
+<!-- architect-a creates one block per phase. The coordinator ticks boxes as stage
+     reports arrive; architect-b (final review) confirms them. The SessionStart hook
+     lists every unticked box, so a new session knows where to resume. -->
+
+## Phase 1: CardFace + CardsDialog tile layout (also commits the card-art prerequisites: card-art.ts, card-art.test.ts, cards index export, public/sprites/cards, scripts/art)
+- [x] plan approved (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a, preview-b)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify)
+- [x] final review (architect-b)
+- [ ] committed: <hash>
+
+## Phase 2: CardPlayOverlay + local trigger on Use (reduced-motion fallback)
+- [x] plan approved (architect-b)
+- [ ] implementation (implementer-a, implementer-b)
+- [ ] tests (tester-a, tester-b)
+- [ ] previews (preview-a, preview-b)
+- [ ] checks: typecheck, lint, unit tests
+- [ ] UI verified (ui-verify)
+- [ ] final review (architect-b)
+- [ ] committed: <hash>
+
+## Phase 3: `cardName` on card-use log entries + GameLog card icon + docs-sync
+- [x] plan approved (architect-b)
+- [ ] implementation (implementer-a, implementer-b)
+- [ ] tests (tester-a, tester-b)
+- [ ] previews (preview-a, preview-b)
+- [ ] checks: typecheck, lint, unit tests
+- [ ] UI verified (ui-verify)
+- [ ] docs-sync (docs/architecture/systems-and-visuals.md)
+- [ ] final review (architect-b)
+- [ ] committed: <hash>
+
+## Log
+<!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
+2026-10-20 architect-a: DONE, plan.md (3 phases) and progress.md drafted
+2026-10-20 architect-b: DONE, plan reviewed, APPROVED (2 wording/contract fixes folded in)
+- 2026-10-20 phase 1: build/tests/previews approved; typecheck, lint, jest 303 suites / 4109 tests pass; preview-b screenshots in test-results/ui-verify; final review APPROVED. e2e: none planned for this phase.

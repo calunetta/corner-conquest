@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { fireEvent } from '@testing-library/react';
 import { CardsDialog } from './CardsDialog';
 import { CardName, GameAction } from '@/lib/types';
@@ -77,5 +77,54 @@ describe('CardsDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /close/i }));
 
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('renders one card face per distinct card', () => {
+    render(
+      <CardsDialog player={playerWithSeveralCards} onClose={jest.fn()} onUseCard={jest.fn()} canUseCards={true} />,
+    );
+
+    const faces = screen.getAllByTestId('card-face');
+    expect(faces.map((f) => f.getAttribute('data-card'))).toEqual([
+      CardName.StealResource,
+      CardName.Sabotage,
+      CardName.Overcome,
+    ]);
+  });
+
+  it('no longer renders the zap icon', () => {
+    render(
+      <CardsDialog player={playerWithSeveralCards} onClose={jest.fn()} onUseCard={jest.fn()} canUseCards={true} />,
+    );
+
+    expect(screen.queryByTestId('registry-icon-zap')).not.toBeInTheDocument();
+  });
+
+  it('labels each Use button with the card name', () => {
+    render(
+      <CardsDialog player={playerWithSeveralCards} onClose={jest.fn()} onUseCard={jest.fn()} canUseCards={true} />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Use Steal Resource' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Use Sabotage' })).toBeInTheDocument();
+  });
+
+  it('shows the art but no Use button for a non-usable card', () => {
+    render(
+      <CardsDialog player={playerWithSeveralCards} onClose={jest.fn()} onUseCard={jest.fn()} canUseCards={true} />,
+    );
+
+    const faces = screen.getAllByTestId('card-face').map((face) => face.getAttribute('data-card'));
+    expect(faces).toContain(CardName.Overcome);
+    expect(screen.queryByRole('button', { name: 'Use Overcome' })).not.toBeInTheDocument();
+  });
+
+  it('places the count badge in the same row as the card name', () => {
+    render(
+      <CardsDialog player={playerWithSeveralCards} onClose={jest.fn()} onUseCard={jest.fn()} canUseCards={true} />,
+    );
+
+    const row = screen.getByText(CardName.StealResource).parentElement as HTMLElement;
+    expect(within(row).getByText('x2')).toBeInTheDocument();
   });
 });

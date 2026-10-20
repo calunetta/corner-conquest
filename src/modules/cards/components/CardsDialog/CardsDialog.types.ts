@@ -12,6 +12,7 @@ export interface SpecialCardViewModel {
   count: number;
   description: string;
   isUsable: boolean;
+  useLabel: string;
 }
 
 export interface CardsDialogViewModel {

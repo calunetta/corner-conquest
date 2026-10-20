@@ -5,3 +5,7 @@ export { AbilitiesDialog } from './components/AbilitiesDialog';
 export { SabotageDialog } from './components/SabotageDialog';
 export { WealthyDialog } from './components/WealthyDialog';
 export { StealResourceDialog } from './components/StealResourceDialog';
+export { CARD_ART, ABILITY_ART } from './card-art';
+export type { CardArt } from './card-art';
+export { CardFace } from './components/CardFace';
+export type { CardFaceProps, CardFaceSize } from './components/CardFace';

@@ -44,3 +44,18 @@ export const playerWhoUsedACardThisTurn = buildPlayer({
   specialCards: [CardName.Sabotage],
   actionsThisTurn: [GameAction.UseCard],
 });
+
+/** Enough distinct cards to make the dialog scroll. */
+export const playerWithManyCards = buildPlayer({
+  id: 3,
+  playerId: 'p3',
+  name: 'Di',
+  specialCards: [
+    CardName.StealResource,
+    CardName.Sabotage,
+    CardName.Overcome,
+    CardName.WarChief,
+    CardName.ExtraMove,
+    CardName.Wealthy,
+  ],
+});

@@ -42,6 +42,17 @@ describe('CardsDialog.map', () => {
       expect(overcome?.isUsable).toBe(false);
     });
 
+    it('sets useLabel to "Use {name}" for usable and non-usable cards', () => {
+      const viewModel = toCardsDialogViewModel(playerWithSeveralCards, true);
+      const labels = Object.fromEntries(viewModel.cards.map((c) => [c.name, c.useLabel]));
+
+      expect(labels).toEqual({
+        [CardName.StealResource]: 'Use Steal Resource',
+        [CardName.Sabotage]: 'Use Sabotage',
+        [CardName.Overcome]: 'Use Overcome',
+      });
+    });
+
     it('fills in a fallback description when none is defined for the card', () => {
       const playerWithUnknownCard = {
         ...playerWithNoCards,

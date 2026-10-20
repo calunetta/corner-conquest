@@ -4,7 +4,12 @@ import { useState } from 'react';
 import type { ComponentPreview } from '@/testbed';
 import { Button } from '@/components/ui/button';
 import { CardsDialog } from './CardsDialog';
-import { playerWithNoCards, playerWithSeveralCards, playerWhoUsedACardThisTurn } from './CardsDialog.fixtures';
+import {
+  playerWithManyCards,
+  playerWithNoCards,
+  playerWithSeveralCards,
+  playerWhoUsedACardThisTurn,
+} from './CardsDialog.fixtures';
 
 /**
  * Wired to local state so the dialog can always be closed and reopened.
@@ -67,6 +72,16 @@ export const cardsDialogPreview: ComponentPreview = {
       render: () => (
         <InteractiveCardsDialog
           player={playerWhoUsedACardThisTurn}
+          onUseCard={() => console.warn('onUseCard')}
+          canUseCards={true}
+        />
+      ),
+    },
+    {
+      name: 'Many cards (scroll)',
+      render: () => (
+        <InteractiveCardsDialog
+          player={playerWithManyCards}
           onUseCard={() => console.warn('onUseCard')}
           canUseCards={true}
         />
