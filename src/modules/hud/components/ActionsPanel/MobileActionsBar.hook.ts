@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import type { GameAction } from '@/lib/types';
 
 export interface MobileActionsBarState {
   /** Attach to the fixed bar's own root element (not the spacer). */
@@ -11,6 +12,8 @@ export interface MobileActionsBarState {
   onSheetOpenChange: (open: boolean) => void;
   isLogSheetOpen: boolean;
   onLogSheetOpenChange: (open: boolean) => void;
+  /** Closes the actions sheet, then forwards the click. */
+  onSheetActionClick: (id: GameAction) => void;
 }
 
 /**
@@ -18,7 +21,7 @@ export interface MobileActionsBarState {
  * and the open/closed state of the actions sheet and the event log sheet.
  * The two sheets never stack: opening one closes the other.
  */
-export function useMobileActionsBar(): MobileActionsBarState {
+export function useMobileActionsBar(onActionClick: (id: GameAction) => void): MobileActionsBarState {
   const barRef = useRef<HTMLDivElement>(null);
   const [barHeightPx, setBarHeightPx] = useState(0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -33,6 +36,14 @@ export function useMobileActionsBar(): MobileActionsBarState {
     setIsLogSheetOpen(open);
     if (open) setIsSheetOpen(false);
   }, []);
+
+  const onSheetActionClick = useCallback(
+    (id: GameAction) => {
+      setIsSheetOpen(false);
+      onActionClick(id);
+    },
+    [onActionClick],
+  );
 
   useLayoutEffect(() => {
     const element = barRef.current;
@@ -58,5 +69,6 @@ export function useMobileActionsBar(): MobileActionsBarState {
     onSheetOpenChange,
     isLogSheetOpen,
     onLogSheetOpenChange,
+    onSheetActionClick,
   };
 }

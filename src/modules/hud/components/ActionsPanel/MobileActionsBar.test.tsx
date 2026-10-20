@@ -189,6 +189,37 @@ describe('MobileActionsBar', () => {
     });
   });
 
+  describe('tapping a sheet action', () => {
+    const cardsAction = myTurnNoSelection.secondaryActions[2];
+
+    it('forwards the action id to onActionClick and closes the actions sheet', async () => {
+      const onActionClick = jest.fn();
+      renderWithTooltip(<MobileActionsBar {...myTurnNoSelection} onActionClick={onActionClick} />);
+      fireEvent.click(screen.getByTestId('actions-panel-more-actions'));
+      expect(screen.getByRole('dialog', { name: 'Actions' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId(`action-button-${cardsAction.id}`));
+
+      expect(onActionClick).toHaveBeenCalledTimes(1);
+      expect(onActionClick).toHaveBeenCalledWith(cardsAction.id);
+      await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Actions' })).not.toBeInTheDocument());
+    });
+
+    it('clicking a main action leaves the actions sheet closed and still forwards the click', () => {
+      const onActionClick = jest.fn();
+      renderWithTooltip(<MobileActionsBar {...myTurnNoSelection} onActionClick={onActionClick} />);
+      const mainAction = [...myTurnNoSelection.mainActions, ...myTurnNoSelection.alwaysAvailableActions].find(
+        (a) => !a.disabled,
+      );
+      if (!mainAction) throw new Error('fixture has no enabled main action');
+
+      fireEvent.click(screen.getByTestId(`action-button-${mainAction.id}`));
+
+      expect(onActionClick).toHaveBeenCalledWith(mainAction.id);
+      expect(screen.queryByRole('dialog', { name: 'Actions' })).not.toBeInTheDocument();
+    });
+  });
+
   describe('End Turn button rendering and styling', () => {
     it('renders End Turn with full label and timer', () => {
       renderWithTooltip(<MobileActionsBar {...myTurnNoSelection} />);

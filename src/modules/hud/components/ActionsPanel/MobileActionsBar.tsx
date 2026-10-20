@@ -32,7 +32,15 @@ export function MobileActionsBar({
   onEndTurn,
   infoBeacon,
 }: ActionsPanelViewProps) {
-  const { barRef, barHeightPx, isSheetOpen, onSheetOpenChange, isLogSheetOpen, onLogSheetOpenChange } = useMobileActionsBar();
+  const {
+    barRef,
+    barHeightPx,
+    isSheetOpen,
+    onSheetOpenChange,
+    onSheetActionClick,
+    isLogSheetOpen,
+    onLogSheetOpenChange,
+  } = useMobileActionsBar(onActionClick);
   const moreActionsButtonRef = useRef<HTMLButtonElement>(null);
   const logButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -139,7 +147,7 @@ export function MobileActionsBar({
         localPlayerColor={localPlayerColor}
         deckCount={deckCount}
         infoBeacon={infoBeacon}
-        onActionClick={onActionClick}
+        onActionClick={onSheetActionClick}
         triggerRef={moreActionsButtonRef}
       />
 

@@ -1,4 +1,5 @@
 export { gameBoardReducer } from './game-board.reducer';
+export { isCardPlayBlocked } from './game-board.map';
 export { initialUIState } from './game-board.types';
 export type {
   GameBoardContextType,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { renderHook, act } from '@testing-library/react';
+import { GameAction } from '@/lib/types';
 import { useMobileActionsBar } from './MobileActionsBar.hook';
 
 // Store all ResizeObserver instances and their callbacks so we can invoke them in tests
@@ -27,7 +28,7 @@ function HookTestComponent({
 }: {
   onStateChange?: (state: ReturnType<typeof useMobileActionsBar>) => void;
 }) {
-  const state = useMobileActionsBar();
+  const state = useMobileActionsBar(jest.fn());
 
   React.useEffect(() => {
     onStateChange?.(state);
@@ -47,7 +48,7 @@ describe('useMobileActionsBar', () => {
   });
 
   it('returns initial state with zero height and sheet closed', () => {
-    const { result } = renderHook(() => useMobileActionsBar());
+    const { result } = renderHook(() => useMobileActionsBar(jest.fn()));
 
     expect(result.current.barHeightPx).toBe(0);
     expect(result.current.isSheetOpen).toBe(false);
@@ -104,7 +105,7 @@ describe('useMobileActionsBar', () => {
   });
 
   it('toggles sheet open/closed state with onSheetOpenChange', () => {
-    const { result } = renderHook(() => useMobileActionsBar());
+    const { result } = renderHook(() => useMobileActionsBar(jest.fn()));
 
     expect(result.current.isSheetOpen).toBe(false);
 
@@ -246,14 +247,14 @@ describe('useMobileActionsBar', () => {
 
   describe('event log sheet', () => {
     it('starts with the log sheet closed', () => {
-      const { result } = renderHook(() => useMobileActionsBar());
+      const { result } = renderHook(() => useMobileActionsBar(jest.fn()));
 
       expect(result.current.isLogSheetOpen).toBe(false);
       expect(result.current.onLogSheetOpenChange).toBeDefined();
     });
 
     it('opens the log sheet and closes the open actions sheet', () => {
-      const { result } = renderHook(() => useMobileActionsBar());
+      const { result } = renderHook(() => useMobileActionsBar(jest.fn()));
 
       act(() => {
         result.current.onSheetOpenChange(true);
@@ -269,7 +270,7 @@ describe('useMobileActionsBar', () => {
     });
 
     it('opens the actions sheet and closes the open log sheet', () => {
-      const { result } = renderHook(() => useMobileActionsBar());
+      const { result } = renderHook(() => useMobileActionsBar(jest.fn()));
 
       act(() => {
         result.current.onLogSheetOpenChange(true);
@@ -285,7 +286,7 @@ describe('useMobileActionsBar', () => {
     });
 
     it('opening the log sheet leaves a closed actions sheet closed', () => {
-      const { result } = renderHook(() => useMobileActionsBar());
+      const { result } = renderHook(() => useMobileActionsBar(jest.fn()));
 
       act(() => {
         result.current.onLogSheetOpenChange(true);
@@ -296,7 +297,7 @@ describe('useMobileActionsBar', () => {
     });
 
     it('closing the log sheet while the actions sheet is open keeps the actions sheet open', () => {
-      const { result } = renderHook(() => useMobileActionsBar());
+      const { result } = renderHook(() => useMobileActionsBar(jest.fn()));
 
       act(() => {
         result.current.onSheetOpenChange(true);
@@ -311,7 +312,7 @@ describe('useMobileActionsBar', () => {
     });
 
     it('closing the actions sheet while the log sheet is open keeps the log sheet open', () => {
-      const { result } = renderHook(() => useMobileActionsBar());
+      const { result } = renderHook(() => useMobileActionsBar(jest.fn()));
 
       act(() => {
         result.current.onLogSheetOpenChange(true);
@@ -326,7 +327,7 @@ describe('useMobileActionsBar', () => {
     });
 
     it('closes the log sheet with onLogSheetOpenChange(false)', () => {
-      const { result } = renderHook(() => useMobileActionsBar());
+      const { result } = renderHook(() => useMobileActionsBar(jest.fn()));
 
       act(() => {
         result.current.onLogSheetOpenChange(true);
@@ -373,6 +374,30 @@ describe('useMobileActionsBar', () => {
 
       expect(capturedState?.isLogSheetOpen).toBe(true);
       expect(capturedState?.barHeightPx).toBe(85);
+    });
+  });
+
+  describe('onSheetActionClick', () => {
+    it('closes the open actions sheet and forwards the action once', () => {
+      const onActionClick = jest.fn();
+      const { result } = renderHook(() => useMobileActionsBar(onActionClick));
+      act(() => result.current.onSheetOpenChange(true));
+      expect(result.current.isSheetOpen).toBe(true);
+
+      act(() => result.current.onSheetActionClick(GameAction.BuyCard));
+
+      expect(result.current.isSheetOpen).toBe(false);
+      expect(onActionClick).toHaveBeenCalledTimes(1);
+      expect(onActionClick).toHaveBeenCalledWith(GameAction.BuyCard);
+    });
+
+    it('stays referentially stable across rerenders with the same onActionClick', () => {
+      const onActionClick = jest.fn();
+      const { result, rerender } = renderHook(() => useMobileActionsBar(onActionClick));
+      const first = result.current.onSheetActionClick;
+      expect(first).toEqual(expect.any(Function));
+      rerender();
+      expect(result.current.onSheetActionClick).toBe(first);
     });
   });
 });

@@ -21,15 +21,14 @@ import {
   SabotageDialog,
   SpecialIslandRollDialog,
   StealResourceDialog,
-  useCardPlay,
+  useCardPlayTrigger,
   WealthyDialog,
 } from '@/modules/cards';
 import { ConfirmExitDialog, HostLeaveDialog, VictoryDialog } from '@/modules/session';
-import { ConnectionWarningDialog } from '@/modules/game-board';
+import { ConnectionWarningDialog, isCardPlayBlocked } from '@/modules/game-board';
 import { chooseSpecialIslandCard } from '@/modules/game-rules';
 
 export function GameDialogManager() {
-  const { play: cardPlay, startPlay: startCardPlay, endPlay: endCardPlay } = useCardPlay();
   const {
     uiState,
     dispatch,
@@ -41,6 +40,12 @@ export function GameDialogManager() {
     handleConfirmExit,
     handleConfirmHostLeave,
   } = useGameBoard();
+
+  const { play: cardPlay, endPlay: endCardPlay } = useCardPlayTrigger({
+    log: gameState.log,
+    localPlayerId: localPlayer.playerId,
+    isBlocked: isCardPlayBlocked(uiState, gameState),
+  });
 
   const { dialogs, selectedArmyId } = uiState;
   const isProductiveDialogActive = gameState.productiveDialogState?.playerId === localPlayer.id;
@@ -282,7 +287,6 @@ export function GameDialogManager() {
           onClose={() => dispatch({ type: 'TOGGLE_CARDS_DIALOG', playerId: null })}
           onUseCard={(cardName: CardName) => {
             dispatch({ type: 'TOGGLE_CARDS_DIALOG', playerId: null });
-            startCardPlay(cardName);
             onLocalAction(GameAction.local_UseCard, { cardName });
           }}
           canUseCards={isMyTurn && isViewingOwnCards}

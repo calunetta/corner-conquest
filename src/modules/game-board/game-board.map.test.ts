@@ -1,5 +1,5 @@
-import type { Player } from '@/lib/types';
-import { hasActiveDialogOrPendingAction } from './game-board.map';
+import type { GameState, Player } from '@/lib/types';
+import { hasActiveDialogOrPendingAction, isCardPlayBlocked } from './game-board.map';
 import { initialUIState } from './game-board.types';
 import type { GameBoardUIState } from './game-board.types';
 
@@ -175,5 +175,35 @@ describe('hasActiveDialogOrPendingAction', () => {
       },
     };
     expect(hasActiveDialogOrPendingAction(state)).toBe(false);
+  });
+});
+
+describe('isCardPlayBlocked', () => {
+  type Slice = Parameters<typeof isCardPlayBlocked>[1];
+  const idle: Slice = { combatState: null, monsterCombatState: null, productiveDialogState: null };
+  const someCombat = {} as unknown as GameState['combatState'];
+  const someMonsterCombat = {} as unknown as GameState['monsterCombatState'];
+
+  it('is false for initialUIState with no combat or productive dialog', () => {
+    expect(isCardPlayBlocked(initialUIState, idle)).toBe(false);
+  });
+
+  it.each<[string, GameBoardUIState, Slice]>([
+    [
+      'a pending action',
+      { ...initialUIState, pendingAction: { type: 'teleport', cardName: 'Teleport' } },
+      idle,
+    ],
+    ['confirmExit', { ...initialUIState, dialogs: { ...initialUIState.dialogs, confirmExit: true } }, idle],
+    ['hostLeave', { ...initialUIState, dialogs: { ...initialUIState.dialogs, hostLeave: true } }, idle],
+    ['combatState', initialUIState, { ...idle, combatState: someCombat }],
+    ['monsterCombatState', initialUIState, { ...idle, monsterCombatState: someMonsterCombat }],
+    [
+      'productiveDialogState',
+      initialUIState,
+      { ...idle, productiveDialogState: { playerId: 0 } as unknown as GameState['productiveDialogState'] },
+    ],
+  ])('is true for %s', (_name, uiState, gameState) => {
+    expect(isCardPlayBlocked(uiState, gameState)).toBe(true);
   });
 });

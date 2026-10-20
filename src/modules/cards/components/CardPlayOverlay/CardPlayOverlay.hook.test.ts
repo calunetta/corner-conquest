@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { CardName } from '@/lib/types';
-import { useCardPlay, useCardPlayOverlay } from './CardPlayOverlay.hook';
+import type { GameState, StructuredLogEntry } from '@/lib/types';
+import { useCardPlay, useCardPlayOverlay, useCardPlayTrigger } from './CardPlayOverlay.hook';
 import type { CardPlay } from './CardPlayOverlay.types';
 
 function mockMatchMedia(isReduced: boolean) {
@@ -142,5 +143,106 @@ describe('useCardPlayOverlay', () => {
     setInnerWidth(width);
     const { result } = renderHook(() => useCardPlayOverlay({ play: null, onFinished: jest.fn() }));
     expect(result.current.isMobile).toBe(expected);
+  });
+});
+
+describe('useCardPlayTrigger', () => {
+  const localId = '1';
+  type Args = Parameters<typeof useCardPlayTrigger>[0];
+
+  function entry(cardName: CardName, turn = 1, playerId = localId): StructuredLogEntry {
+    return { kind: 'structured', turn, category: 'cards', message: 'used', playerId, cardName };
+  }
+
+  function setup(log: GameState['log'], isBlocked = false) {
+    return renderHook((props: Args) => useCardPlayTrigger(props), {
+      initialProps: { log, localPlayerId: localId, isBlocked } as Args,
+    });
+  }
+
+  it('does not play for history already in the log on first render (seed)', () => {
+    const { result } = setup([entry(CardName.WarChief)]);
+    expect(result.current.play).toBeNull();
+  });
+
+  it('plays an appended local entry when not blocked', () => {
+    const { result, rerender } = setup([]);
+    rerender({ log: [entry(CardName.WarChief)], localPlayerId: localId, isBlocked: false });
+    expect(result.current.play).toEqual({ cardName: CardName.WarChief, playId: 1 });
+  });
+
+  it('holds a play while blocked and starts it when unblocked', () => {
+    const { result, rerender } = setup([]);
+    const log = [entry(CardName.WarChief)];
+    rerender({ log, localPlayerId: localId, isBlocked: true });
+    expect(result.current.play).toBeNull();
+    rerender({ log, localPlayerId: localId, isBlocked: false });
+    expect(result.current.play).toEqual({ cardName: CardName.WarChief, playId: 1 });
+  });
+
+  it('ignores entries by another player', () => {
+    const { result, rerender } = setup([]);
+    rerender({ log: [entry(CardName.WarChief, 1, '2')], localPlayerId: localId, isBlocked: false });
+    expect(result.current.play).toBeNull();
+  });
+
+  it('plays once for the same card on the same turn (activation then deploy)', () => {
+    const first = entry(CardName.Efficient, 2);
+    const { result, rerender } = setup([]);
+    rerender({ log: [first], localPlayerId: localId, isBlocked: false });
+    act(() => result.current.endPlay());
+    rerender({ log: [first, entry(CardName.Efficient, 2)], localPlayerId: localId, isBlocked: false });
+    expect(result.current.play).toBeNull();
+  });
+
+  it('does not play a card whose turn+card key was already in the log at seed (reload mid-turn)', () => {
+    const { result, rerender } = setup([entry(CardName.Efficient, 2)]);
+    rerender({
+      log: [entry(CardName.Efficient, 2), entry(CardName.Efficient, 2)],
+      localPlayerId: localId,
+      isBlocked: false,
+    });
+    expect(result.current.play).toBeNull();
+  });
+
+  it('plays the same card again on a different turn', () => {
+    const first = entry(CardName.Efficient, 2);
+    const { result, rerender } = setup([]);
+    rerender({ log: [first], localPlayerId: localId, isBlocked: false });
+    act(() => result.current.endPlay());
+    rerender({ log: [first, entry(CardName.Efficient, 3)], localPlayerId: localId, isBlocked: false });
+    expect(result.current.play).toEqual({ cardName: CardName.Efficient, playId: 2 });
+  });
+
+  it('queues two cards from one update: second starts only after endPlay', () => {
+    const { result, rerender } = setup([]);
+    rerender({
+      log: [entry(CardName.WarChief), entry(CardName.ExtraMove)],
+      localPlayerId: localId,
+      isBlocked: false,
+    });
+    expect(result.current.play).toEqual({ cardName: CardName.WarChief, playId: 1 });
+    act(() => result.current.endPlay());
+    expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 2 });
+    act(() => result.current.endPlay());
+    expect(result.current.play).toBeNull();
+  });
+
+  it('after a shrink, old entries do not replay and a new local entry plays', () => {
+    const old = entry(CardName.WarChief, 1);
+    const { result, rerender } = setup([old, entry(CardName.Scout, 1, '2')]);
+    rerender({ log: [], localPlayerId: localId, isBlocked: false });
+    expect(result.current.play).toBeNull();
+    rerender({ log: [old], localPlayerId: localId, isBlocked: false });
+    expect(result.current.play).toBeNull();
+    rerender({ log: [old, entry(CardName.ExtraMove, 2)], localPlayerId: localId, isBlocked: false });
+    expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 1 });
+  });
+
+  it('endPlay clears the play', () => {
+    const { result, rerender } = setup([]);
+    rerender({ log: [entry(CardName.WarChief)], localPlayerId: localId, isBlocked: false });
+    act(() => result.current.endPlay());
+    expect(result.current.play).toBeNull();
   });
 });
