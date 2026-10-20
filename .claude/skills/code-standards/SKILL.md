@@ -35,7 +35,7 @@ The bar: a senior front-end engineer reads the code once and understands it. Mat
 - App Router. Route files (`page.tsx`, `layout.tsx`) stay thin and compose module components.
 - Server components by default; `'use client'` only where hooks, state or browser APIs are used. Functions can't be passed from server to client components as props.
 - Dynamic route `params` and `searchParams` are Promises: `const { slug } = await params;`.
-- Images via `next/image`; animated sprite GIFs need `unoptimized` (see `src/features/game/components/DeathEffect.tsx`).
+- Images via `next/image`; animated sprite GIFs need `unoptimized` (see `src/modules/map/components/IslandTile/IslandTile.tsx`).
 - Client environment variables must start with `NEXT_PUBLIC_`.
 
 ## Tailwind and shadcn/ui
@@ -46,3 +46,6 @@ The bar: a senior front-end engineer reads the code once and understands it. Mat
 - Only services touch Firestore. Keep the write economics in `docs/architecture/systems-and-visuals.md` §6.10: human actions are buffered locally and written once per turn; never add a write per click.
 - Catch I/O errors at the service or hook boundary and tell the player through `useToast` (`@/modules/shared`); never swallow an error silently.
 - `firestore.rules` allows public read and write today. Raise it before building anything that relies on secrecy or ownership.
+
+## Changelog
+- 2026-10-19: changelog added; no rule changed.

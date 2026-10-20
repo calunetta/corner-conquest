@@ -50,6 +50,7 @@ Verified at bootstrap; check `package.json` before relying on a version.
 
 ## Workflow
 - Every feature, component, bug fix or refactor starts with skill `triage` (`/triage <request>`). It sizes the task XS–XL and picks the agent pairs and their models.
+- Agent protocol (read order, DoD, report format): `.claude/skills/agent-protocol/SKILL.md`. Lessons every agent reads before work: `docs/ai/lessons-learned.md`.
 - Skill `swarm` runs the pipeline. Agents live in `.claude/agents/`: planners (`game-designer-*`, `ui-designer-*`, `architect-*`) run on claude-sonnet-5; builders (`implementer-*`, `tester-*`, `preview-*`, `docs-sync`) run on haiku and are escalated to sonnet by triage when needed. `docs-sync` is mandatory, not optional, whenever game rules, architecture, or a documented bug's behavior changed.
 - Each task has a record folder `docs/ai/tasks/<YYYY-MM-DD>-<slug>/` built from `docs/ai/templates/`. It is the handoff between agents and the trail for tracing bugs later. Commit it with the code.
 - Every sub-agent ends its final message with a line that contains only `DONE` or `BLOCKER`. Wait for that line before starting the next stage. On `BLOCKER`, stop and report to the user.

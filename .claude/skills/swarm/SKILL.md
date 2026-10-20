@@ -69,7 +69,7 @@ For each phase of `plan.md`:
 
 ## Escalation
 - An agent call fails with a transient infra error (rate limit / `429`, a stream stall, "no progress for Ns") rather than a reported BLOCKER: retry the same spawn once, same model and prompt, before treating it as anything else. Only escalate or treat it as a real BLOCKER if the retry also fails.
-- A haiku builder returns a genuine BLOCKER (not an infra failure) twice on the same step: re-spawn it with `model: sonnet`.
+- A haiku builder returns a genuine BLOCKER (not an infra failure) twice on the same step: re-spawn it with `model: claude-sonnet-5-5`.
 - A sonnet builder is blocked: ask `architect-a` (revise mode) whether the plan is wrong; still blocked, ask the user.
 - Don't silently fix an agent's work yourself. If you take over a small fix, record it in `progress.md`.
 

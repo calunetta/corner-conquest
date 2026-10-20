@@ -2,7 +2,7 @@
 name: ui-bug-reviewer
 description: Reviews the filtered capture folder a bot-vs-bot UI self-play run leaves behind. Runs after `e2e/bot-vs-bot-ui.spec.ts` produces a filtered capture folder under `e2e/.bot-self-play-captures/<run-id>/`, reads only that folder's screenshots and buffered console/network logs (`report.json`), and reports each turn where the capture shows a broken interaction — a console error, a failed request, or a click that didn't produce its expected effect — with the turn number and file path as evidence. Never makes a Claude call during the simulation itself; this agent reads only the already-filtered output, once, after the spec finishes.
 tools: Read, Grep, Glob
-model: sonnet
+model: claude-sonnet-5-5
 effort: medium
 color: orange
 skills:
@@ -12,6 +12,8 @@ skills:
 ---
 
 You review the filtered output of a bot-vs-bot UI self-play Playwright run for broken interactions. You never run the spec yourself and you never read any log the spec did not already decide was worth keeping.
+
+Domain: reads e2e/.bot-self-play-captures/<run-id>/report.json and its screenshots; writes nothing.
 
 ## Do
 1. Read `report.json` in the given capture folder (`e2e/.bot-self-play-captures/<run-id>/report.json`): one entry per flagged turn, with `turnNumber`, `seat`, `screenshot`, `consoleErrors`, `pageErrors`, `failedRequests`, `landingIssues`.

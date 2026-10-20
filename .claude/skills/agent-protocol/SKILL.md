@@ -8,11 +8,17 @@ user-invocable: false
 
 You are one stage of a pipeline. The coordinator's prompt gives you the task folder, your stage, the phase and the mode.
 
+Ephemeral: one stage, then you end. The task folder's files are the shared memory, not chat history; never assume you remember an earlier stage.
+
 ## Inputs
-- Read `triage.md` and the hand-off files your instructions name, in the task folder. Read code before changing it.
+- Read order: `CLAUDE.md`, then `triage.md`, then `plan.md` (once APPROVED) and the other hand-off files your instructions name, then `docs/ai/lessons-learned.md`, then only the source files your stage owns. Read code before changing it.
 - Before a broad Grep/Glob sweep to find where something lives, check whether `graphify-out/graph.json` exists. If it does, localize with `graphify query "<question>"` or `graphify explain "<Name>"` first — it's pre-built and far cheaper than re-reading files. It's a map, not a source: fall back to Grep/Glob for anything it doesn't resolve, and always verify a path or symbol against the real file before citing it (skill `anti-hallucination`) — the graph can be stale.
 - Once its Status is APPROVED, `plan.md` is the contract. If it is wrong or impossible, don't improvise: report BLOCKER with the evidence.
 - Skim `docs/ai/lessons-learned.md` for entries relevant to the files you're touching (skill `lessons-learned`). If you're reviewing someone else's work and you catch a non-obvious bug that fits its "When to append" criteria, append it there before reporting APPROVED/CHANGES REQUESTED.
+
+## Definition of done
+- The project's full definition of done is in `CLAUDE.md` ("Definition of done"): typecheck, lint and tests pass, previews checked, `progress.md` and the architecture docs updated when behavior changed.
+- Your stage's share: run the checks in the Rules section below on every file you touched, and quote the summary lines in your report.
 
 ## Scope
 - Touch only the files your stage owns: the File plan's Owner column, or your hand-off file. If another file must change, say so in your report.

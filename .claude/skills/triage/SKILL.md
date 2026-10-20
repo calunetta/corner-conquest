@@ -43,10 +43,10 @@ Add or drop stages:
 - **Never drop `docs-sync`** at S or above when the diff touches game rules, architecture, or fixes a bug whose old behavior is documented in `docs/README.md` or `docs/architecture/*.md` (skill `docs-sync`). Drop it only when the task is purely style/config with no documented behavior affected — at that point it's usually tier XS anyway.
 
 ## 4. Pick the models
-- Planners (`game-designer-*`, `ui-designer-*`, `architect-*`) run on claude-sonnet-5, from their files.
-- Builders (`implementer-*`, `tester-*`, `preview-*`) run on haiku, from their files.
-- Escalate a builder to sonnet in `Overrides:` when its work touches game-rule reducers, Firestore writes or transactions, timers or concurrency, or a cross-module refactor, and for every builder in L tasks.
-- At run time, a haiku builder that returns BLOCKER twice on the same step is re-run on sonnet (skill `swarm`).
+- Planners (`game-designer-*`, `ui-designer-*`, `architect-*`) run on `claude-sonnet-5-5`, from their files.
+- Builders (`implementer-*`, `tester-*`, `preview-*`, `docs-sync`) run on `claude-haiku-5-5`, from their files.
+- Escalate a builder to `claude-sonnet-5-5` in `Overrides:` when its work touches game-rule reducers, Firestore writes or transactions, timers or concurrency, or a cross-module refactor, and for every builder in L tasks.
+- At run time, a haiku builder that returns BLOCKER twice on the same step is re-run on `claude-sonnet-5-5` (skill `swarm`).
 
 ## 5. Phases
 One phase if the task fits in about 6 files and one sitting; otherwise estimate the count here and let architect-a cut the phases (one layer or about 6 files each).

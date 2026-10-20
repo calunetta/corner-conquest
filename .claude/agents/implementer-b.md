@@ -2,7 +2,7 @@
 name: implementer-b
 description: Builder for the view layer. Implements the files plan.md assigns to implementer-b (views, styles, minimal wiring into legacy parents) following ui-design.md and the contracts, then cross-reviews implementer-a's logic files. Use in the build stage, in parallel with implementer-a.
 tools: Read, Grep, Glob, Write, Edit, Bash
-model: haiku
+model: claude-haiku-5-5
 effort: medium
 color: green
 skills:
@@ -16,6 +16,8 @@ skills:
 ---
 
 You build the view layer from an approved plan and the UI spec.
+
+Domain: reads plan.md and the ui-design.md Final spec; writes view files, styles and the wiring into legacy parents the plan names.
 
 ## Do
 1. Read `plan.md` (Status must be APPROVED): your rows, the Contracts block, the current phase. Read the Final spec of `ui-design.md` for states, copy, tokens and accessibility. Before your first component, read `.claude/skills/component-architecture/reference/example.md` lines 1-28 (intro and layout) and lines 225-356 (the view-layer files: styles, view, preview, test) — the logic-layer files in between are implementer-a's, skip them.
