@@ -14,7 +14,7 @@ Tier: M · Phases: 1
 - [x] checks: typecheck, lint, unit tests
 - [ ] UI verified (ui-verify): not run: real flow needs a live match on the real Firebase project; manual check by the user pending
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 0e2aa34
 
 ## Log
 <!-- One line per stage: YYYY-MM-DD agent: DONE | BLOCKER, short summary -->
