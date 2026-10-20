@@ -15,11 +15,13 @@ import {
 } from '@/modules/combat';
 import {
   AbilitiesDialog,
+  CardPlayOverlay,
   CardsDialog,
   ProductiveCardDialog,
   SabotageDialog,
   SpecialIslandRollDialog,
   StealResourceDialog,
+  useCardPlay,
   WealthyDialog,
 } from '@/modules/cards';
 import { ConfirmExitDialog, HostLeaveDialog, VictoryDialog } from '@/modules/session';
@@ -27,6 +29,7 @@ import { ConnectionWarningDialog } from '@/modules/game-board';
 import { chooseSpecialIslandCard } from '@/modules/game-rules';
 
 export function GameDialogManager() {
+  const { play: cardPlay, startPlay: startCardPlay, endPlay: endCardPlay } = useCardPlay();
   const {
     uiState,
     dispatch,
@@ -279,11 +282,14 @@ export function GameDialogManager() {
           onClose={() => dispatch({ type: 'TOGGLE_CARDS_DIALOG', playerId: null })}
           onUseCard={(cardName: CardName) => {
             dispatch({ type: 'TOGGLE_CARDS_DIALOG', playerId: null });
+            startCardPlay(cardName);
             onLocalAction(GameAction.local_UseCard, { cardName });
           }}
           canUseCards={isMyTurn && isViewingOwnCards}
         />
       )}
+
+      <CardPlayOverlay play={cardPlay} onFinished={endCardPlay} />
     </>
   );
 }

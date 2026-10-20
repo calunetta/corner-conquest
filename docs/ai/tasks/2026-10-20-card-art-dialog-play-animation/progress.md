@@ -18,12 +18,12 @@ Tier: L · Phases: 3
 
 ## Phase 2: CardPlayOverlay + local trigger on Use (reduced-motion fallback)
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a, preview-b)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a, preview-b)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify)
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 3: `cardName` on card-use log entries + GameLog card icon + docs-sync
@@ -42,3 +42,4 @@ Tier: L · Phases: 3
 2026-10-20 architect-a: DONE, plan.md (3 phases) and progress.md drafted
 2026-10-20 architect-b: DONE, plan reviewed, APPROVED (2 wording/contract fixes folded in)
 - 2026-10-20 phase 1: build/tests/previews approved; typecheck, lint, jest 303 suites / 4109 tests pass; preview-b screenshots in test-results/ui-verify; final review APPROVED. e2e: none planned for this phase.
+- 2026-10-20 phase 2: build/tests/previews approved; preview-b measured overlay gone by 1196/1040/1163 ms, click-through OK; typecheck, lint, jest 306 suites / 4140 tests pass; final review APPROVED. GameDialogManager wiring has no unit test (legacy file, accepted).

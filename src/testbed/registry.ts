@@ -28,6 +28,7 @@ import { actionsPanelPreview } from '@/modules/hud/components/ActionsPanel/Actio
 import { mobileActionsBarPreview } from '@/modules/hud/components/ActionsPanel/MobileActionsBar.preview';
 import { mobileEventLogSheetPreview } from '@/modules/hud/components/ActionsPanel/MobileEventLogSheet.preview';
 import { cardFacePreview } from '@/modules/cards/components/CardFace/CardFace.preview';
+import { cardPlayOverlayPreview } from '@/modules/cards/components/CardPlayOverlay/CardPlayOverlay.preview';
 import { cardsDialogPreview } from '@/modules/cards/components/CardsDialog/CardsDialog.preview';
 import { productiveCardDialogPreview } from '@/modules/cards/components/ProductiveCardDialog/ProductiveCardDialog.preview';
 import { specialIslandRollDialogPreview } from '@/modules/cards/components/SpecialIslandRollDialog/SpecialIslandRollDialog.preview';
@@ -91,6 +92,7 @@ export const previews: ComponentPreview[] = [
   mobileEventLogSheetPreview,
   cardFacePreview,
   cardsDialogPreview,
+  cardPlayOverlayPreview,
   productiveCardDialogPreview,
   specialIslandRollDialogPreview,
   abilitiesDialogPreview,

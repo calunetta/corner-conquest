@@ -104,6 +104,37 @@ export default {
           '15%, 85%': { opacity: '1' },
           '100%': { transform: 'translateX(60px)', opacity: '0' },
         },
+        'card-play': {
+          '0%': { opacity: '0', transform: 'translateY(40px) scale(0.85)' },
+          '27%': {
+            opacity: '1',
+            transform: 'translateY(0) scale(1)',
+            filter: 'drop-shadow(0 0 0 hsl(var(--primary) / 0))',
+          },
+          '50%': {
+            opacity: '1',
+            transform: 'translateY(0) scale(1)',
+            filter: 'drop-shadow(0 0 24px hsl(var(--primary) / 0.8))',
+          },
+          '73%': {
+            opacity: '1',
+            transform: 'translateY(0) scale(1)',
+            filter: 'drop-shadow(0 0 0 hsl(var(--primary) / 0))',
+          },
+          '100%': { opacity: '0', transform: 'translateY(-20px) scale(1.08)' },
+        },
+        'card-play-vignette': {
+          '0%': { opacity: '0' },
+          '27%': { opacity: '1' },
+          '73%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
+        'card-play-fade': {
+          '0%': { opacity: '0' },
+          '15%': { opacity: '1' },
+          '85%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -111,6 +142,9 @@ export default {
         'gradient-shift': 'gradient-shift 15s ease infinite',
         'float': 'float 6s ease-in-out infinite',
         'cloud-drift': 'cloud-drift linear forwards',
+        'card-play': 'card-play 1100ms ease-out forwards',
+        'card-play-vignette': 'card-play-vignette 1100ms linear forwards',
+        'card-play-fade': 'card-play-fade 1000ms linear forwards',
       },
     },
   },
