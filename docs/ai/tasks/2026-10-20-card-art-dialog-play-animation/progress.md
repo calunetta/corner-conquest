@@ -14,7 +14,7 @@ Tier: L · Phases: 3
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 6f2d373
 
 ## Phase 2: CardPlayOverlay + local trigger on Use (reduced-motion fallback)
 - [x] plan approved (architect-b)
