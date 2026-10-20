@@ -24,7 +24,7 @@ Tier: L · Phases: 3
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify)
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: a2fc4ff
 
 ## Phase 3: `cardName` on card-use log entries + GameLog card icon + docs-sync
 - [x] plan approved (architect-b)
