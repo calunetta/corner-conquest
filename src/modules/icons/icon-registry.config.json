@@ -4,8 +4,8 @@
     "label": "Loader2",
     "module": "legacy",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Loader2"
+      "kind": "image",
+      "src": "/sprites/icons-generated/loader-2.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -15,8 +15,8 @@
     "label": "Chevron Down",
     "module": "legacy",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "ChevronDown"
+      "kind": "image",
+      "src": "/sprites/icons-generated/chevron-down.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -26,8 +26,8 @@
     "label": "Chevron Up",
     "module": "legacy",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "ChevronUp"
+      "kind": "image",
+      "src": "/sprites/icons-generated/chevron-up.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -37,8 +37,8 @@
     "label": "Trophy",
     "module": "legacy",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Trophy"
+      "kind": "image",
+      "src": "/sprites/icons-generated/trophy.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -48,8 +48,8 @@
     "label": "Check Circle",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "CheckCircle"
+      "kind": "image",
+      "src": "/sprites/icons-generated/check-circle.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -59,8 +59,8 @@
     "label": "Award",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Award"
+      "kind": "image",
+      "src": "/sprites/icons-generated/award.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -70,8 +70,8 @@
     "label": "Sparkles",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Sparkles"
+      "kind": "image",
+      "src": "/sprites/icons-generated/sparkles.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -81,8 +81,8 @@
     "label": "Zap",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Zap"
+      "kind": "image",
+      "src": "/sprites/icons-generated/zap.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -92,8 +92,8 @@
     "label": "Shield",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Shield"
+      "kind": "image",
+      "src": "/sprites/icons-generated/shield.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -103,8 +103,8 @@
     "label": "Play",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Play"
+      "kind": "image",
+      "src": "/sprites/icons-generated/play.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -114,8 +114,8 @@
     "label": "Trending Up",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "TrendingUp"
+      "kind": "image",
+      "src": "/sprites/icons-generated/trending-up.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -125,8 +125,8 @@
     "label": "Check",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Check"
+      "kind": "image",
+      "src": "/sprites/icons-generated/check.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -136,8 +136,8 @@
     "label": "Ban",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Ban"
+      "kind": "image",
+      "src": "/sprites/icons-generated/ban.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -147,8 +147,8 @@
     "label": "Dices",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Dices"
+      "kind": "image",
+      "src": "/sprites/icons-generated/dices.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -158,8 +158,8 @@
     "label": "X Circle",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "XCircle"
+      "kind": "image",
+      "src": "/sprites/icons-generated/x-circle.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -169,8 +169,8 @@
     "label": "Hand Metal",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "HandMetal"
+      "kind": "image",
+      "src": "/sprites/icons-generated/hand-metal.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -180,8 +180,8 @@
     "label": "Arrow Left",
     "module": "cards",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "ArrowLeft"
+      "kind": "image",
+      "src": "/sprites/icons-generated/arrow-left.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -191,8 +191,8 @@
     "label": "Clock",
     "module": "combat",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Clock"
+      "kind": "image",
+      "src": "/sprites/icons-generated/clock.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -202,8 +202,8 @@
     "label": "Crosshair",
     "module": "combat",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Crosshair"
+      "kind": "image",
+      "src": "/sprites/icons-generated/crosshair.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -213,8 +213,8 @@
     "label": "Skull",
     "module": "combat",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Skull"
+      "kind": "image",
+      "src": "/sprites/icons-generated/skull.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -224,8 +224,8 @@
     "label": "Swords",
     "module": "combat",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Swords"
+      "kind": "image",
+      "src": "/sprites/icons-generated/swords.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -235,8 +235,8 @@
     "label": "Anchor",
     "module": "combat",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Anchor"
+      "kind": "image",
+      "src": "/sprites/icons-generated/anchor.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -246,8 +246,8 @@
     "label": "Refresh Cw",
     "module": "game-board",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "RefreshCw"
+      "kind": "image",
+      "src": "/sprites/icons-generated/refresh-cw.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -257,8 +257,8 @@
     "label": "Wifi Off",
     "module": "game-board",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "WifiOff"
+      "kind": "image",
+      "src": "/sprites/icons-generated/wifi-off.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -268,8 +268,8 @@
     "label": "Shopping Cart",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "ShoppingCart"
+      "kind": "image",
+      "src": "/sprites/icons-generated/shopping-cart.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -279,8 +279,8 @@
     "label": "Album",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Album"
+      "kind": "image",
+      "src": "/sprites/icons-generated/album.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -290,8 +290,8 @@
     "label": "University",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "University"
+      "kind": "image",
+      "src": "/sprites/icons-generated/university.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -301,8 +301,8 @@
     "label": "Scroll Text",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "ScrollText"
+      "kind": "image",
+      "src": "/sprites/icons-generated/scroll-text.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -312,8 +312,8 @@
     "label": "Timer",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Timer"
+      "kind": "image",
+      "src": "/sprites/icons-generated/timer.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -323,8 +323,8 @@
     "label": "Image Icon",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "ImageIcon"
+      "kind": "image",
+      "src": "/sprites/icons-generated/image-icon.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -334,8 +334,8 @@
     "label": "Coins",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Coins"
+      "kind": "image",
+      "src": "/sprites/icons-generated/coins.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -345,8 +345,8 @@
     "label": "Info",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Info"
+      "kind": "image",
+      "src": "/sprites/icons-generated/info.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -356,8 +356,8 @@
     "label": "Layers",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Layers"
+      "kind": "image",
+      "src": "/sprites/icons-generated/layers.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -367,8 +367,8 @@
     "label": "Hourglass",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Hourglass"
+      "kind": "image",
+      "src": "/sprites/icons-generated/hourglass.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -378,8 +378,8 @@
     "label": "Forward",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Forward"
+      "kind": "image",
+      "src": "/sprites/icons-generated/forward.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -389,8 +389,8 @@
     "label": "Compass",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Compass"
+      "kind": "image",
+      "src": "/sprites/icons-generated/compass.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -400,8 +400,8 @@
     "label": "Shield Check",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "ShieldCheck"
+      "kind": "image",
+      "src": "/sprites/icons-generated/shield-check.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -411,8 +411,8 @@
     "label": "Hammer",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Hammer"
+      "kind": "image",
+      "src": "/sprites/icons-generated/hammer.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -422,8 +422,8 @@
     "label": "X",
     "module": "hud",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "X"
+      "kind": "image",
+      "src": "/sprites/icons-generated/x.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -433,8 +433,8 @@
     "label": "Bot",
     "module": "lobby",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Bot"
+      "kind": "image",
+      "src": "/sprites/icons-generated/bot.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -444,8 +444,8 @@
     "label": "Crown",
     "module": "lobby",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Crown"
+      "kind": "image",
+      "src": "/sprites/icons-generated/crown.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -455,8 +455,8 @@
     "label": "Users",
     "module": "lobby",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Users"
+      "kind": "image",
+      "src": "/sprites/icons-generated/users.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -466,8 +466,8 @@
     "label": "Help Circle",
     "module": "lobby",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "HelpCircle"
+      "kind": "image",
+      "src": "/sprites/icons-generated/help-circle.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -477,8 +477,8 @@
     "label": "Settings",
     "module": "lobby",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Settings"
+      "kind": "image",
+      "src": "/sprites/icons-generated/settings.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -488,8 +488,8 @@
     "label": "Book Open",
     "module": "lobby",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "BookOpen"
+      "kind": "image",
+      "src": "/sprites/icons-generated/book-open.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -499,8 +499,8 @@
     "label": "Power",
     "module": "lobby",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Power"
+      "kind": "image",
+      "src": "/sprites/icons-generated/power.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -510,8 +510,8 @@
     "label": "Home",
     "module": "map",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "Home"
+      "kind": "image",
+      "src": "/sprites/icons-generated/home.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -521,8 +521,8 @@
     "label": "Zoom In",
     "module": "map",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "ZoomIn"
+      "kind": "image",
+      "src": "/sprites/icons-generated/zoom-in.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -532,8 +532,8 @@
     "label": "Zoom Out",
     "module": "map",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "ZoomOut"
+      "kind": "image",
+      "src": "/sprites/icons-generated/zoom-out.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -543,8 +543,8 @@
     "label": "Rotate Ccw",
     "module": "map",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "RotateCcw"
+      "kind": "image",
+      "src": "/sprites/icons-generated/rotate-ccw.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -554,8 +554,8 @@
     "label": "Alert Triangle",
     "module": "session",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "AlertTriangle"
+      "kind": "image",
+      "src": "/sprites/icons-generated/alert-triangle.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -565,8 +565,8 @@
     "label": "Log Out",
     "module": "session",
     "defaultSource": {
-      "kind": "lucide",
-      "name": "LogOut"
+      "kind": "image",
+      "src": "/sprites/icons-generated/log-out.png"
     },
     "defaultRotation": 0,
     "defaultSize": 100

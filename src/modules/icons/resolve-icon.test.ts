@@ -7,11 +7,25 @@ import type { IconOverride } from './icon-registry.types';
 // "no override" cases independent of whatever a user saves later.
 jest.mock('./icon-overrides.config.json', () => ({}));
 
+// Every real registry entry defaults to an image today; a fixture lucide entry keeps the lucide
+// branch covered, since an entry can still be switched back to a glyph.
+jest.mock('./icon-registry.config.json', () => [
+  ...jest.requireActual('./icon-registry.config.json'),
+  {
+    id: 'test-lucide',
+    label: 'Test Lucide',
+    module: 'legacy',
+    defaultSource: { kind: 'lucide', name: 'Loader2' },
+    defaultRotation: 0,
+    defaultSize: 100,
+  },
+]);
+
 const mutableOverrides = overridesConfig as Record<string, IconOverride>;
 
 const REGISTRY_IMAGE_ID = 'icon-fight';
 const REGISTRY_IMAGE_SRC = '/sprites/icon_fight.png';
-const REGISTRY_LUCIDE_ID = 'loader-2';
+const REGISTRY_LUCIDE_ID = 'test-lucide';
 const REGISTRY_LUCIDE_NAME = 'Loader2';
 const UPLOADED_SRC = '/uploads/icon-custom.png';
 const DEFAULT_TRANSFORM = 'rotate(0deg) scale(1)';

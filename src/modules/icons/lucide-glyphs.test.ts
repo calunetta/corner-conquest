@@ -30,9 +30,12 @@ describe('getLucideGlyph', () => {
 
   // Guard: a new `kind: 'lucide'` entry in icon-registry.config.json must also be added to the
   // static map in lucide-glyphs.ts, or the editor and the game render nothing for it.
-  it.each(registryLucideNames())('resolves the registry lucide name "%s" to its real export', (name) => {
-    expect(lucide[name as keyof typeof lucide]).toBeDefined();
-    expect(getLucideGlyph(name)).toBe(lucide[name as keyof typeof lucide]);
+  // A plain loop, not it.each: the list is empty while every registry entry defaults to an image.
+  it('resolves every registry lucide name to its real export', () => {
+    for (const name of registryLucideNames()) {
+      expect(lucide[name as keyof typeof lucide]).toBeDefined();
+      expect(getLucideGlyph(name)).toBe(lucide[name as keyof typeof lucide]);
+    }
   });
 });
 

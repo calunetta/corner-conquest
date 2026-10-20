@@ -51,6 +51,12 @@ describe('RegistryIcon', () => {
       expect(mockResolveIcon).toHaveBeenCalledWith('icon-fight');
     });
 
+    it('tags the wrapper with a test id built from the registry id', () => {
+      const { container } = render(<RegistryIcon id="icon-fight" />);
+
+      expect(screen.getByTestId('registry-icon-icon-fight')).toContainElement(container.querySelector('img'));
+    });
+
     it('renders an img with the resolved src and the given alt', () => {
       render(<RegistryIcon id="icon-fight" alt="Fight" />);
 

@@ -14,8 +14,8 @@ const openPicker = (overrides: Partial<AvatarPickerButtonViewModel> = {}): Avata
   ...overrides,
 });
 
-// The jest icon mock renders every lucide icon as <span data-testid="lucide-icon-<name>">.
-const SPINNER_TEST_ID = 'lucide-icon-loader2';
+// RegistryIcon tags its wrapper with data-testid="registry-icon-<id>", whatever the icon's source.
+const SPINNER_TEST_ID = 'registry-icon-loader-2';
 
 const TRIGGER_NAME = /change (your )?avatar/i;
 
@@ -42,10 +42,13 @@ describe('AvatarPickerButtonView', () => {
     });
 
     it('shows the chosen avatar thumbnail only when an avatar is selected', () => {
+      // The placeholder is a registry icon, which may itself render as an <img>; tell them apart
+      // by the placeholder's test id.
       const { container, rerender } = render(<AvatarPickerButtonView {...noAvatarPicker} />);
-      expect(container.querySelector('button img')).not.toBeInTheDocument();
+      expect(screen.getByTestId('registry-icon-users')).toBeInTheDocument();
 
       rerender(<AvatarPickerButtonView {...chosenAvatarPicker} />);
+      expect(screen.queryByTestId('registry-icon-users')).not.toBeInTheDocument();
       expect(container.querySelector('button img')).toBeInTheDocument();
     });
 

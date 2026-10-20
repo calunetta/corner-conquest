@@ -20,6 +20,7 @@ export function RegistryIcon({ id, className, alt = '', 'aria-hidden': ariaHidde
     <span
       className={cn('relative inline-flex items-center justify-center shrink-0', className)}
       aria-hidden={ariaHidden}
+      data-testid={`registry-icon-${id}`}
     >
       <span className="relative flex h-full w-full items-center justify-center" style={{ transform }}>
         <RegistryIconGlyph source={source} alt={alt} />

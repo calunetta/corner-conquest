@@ -50,7 +50,7 @@ describe('ConnectionWarningDialogView', () => {
     it('shows the wifi-off icon next to the title', () => {
       render(<ConnectionWarningDialogView {...openWarningViewModel} />);
 
-      expect(screen.getByTestId('lucide-icon-wifioff')).toBeInTheDocument();
+      expect(screen.getByTestId('registry-icon-wifi-off')).toBeInTheDocument();
     });
 
     it('offers a single enabled "I\'m back" button with the refresh icon', () => {
@@ -58,7 +58,7 @@ describe('ConnectionWarningDialogView', () => {
 
       const button = screen.getByRole('button', { name: "I'm back" });
       expect(button).toBeEnabled();
-      expect(within(button).getByTestId('lucide-icon-refreshcw')).toBeInTheDocument();
+      expect(within(button).getByTestId('registry-icon-refresh-cw')).toBeInTheDocument();
       expect(screen.getAllByRole('button')).toHaveLength(1);
     });
 
@@ -76,7 +76,7 @@ describe('ConnectionWarningDialogView', () => {
 
       const button = screen.getByRole('button', { name: 'Checking…' });
       expect(button).toBeDisabled();
-      expect(within(button).getByTestId('lucide-icon-loader2')).toBeInTheDocument();
+      expect(within(button).getByTestId('registry-icon-loader-2')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: "I'm back" })).not.toBeInTheDocument();
     });
 

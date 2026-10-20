@@ -221,10 +221,10 @@ describe('CreateGameDialog', () => {
     const threePlayersCard = screen.getByText('3 Players').closest('button')!;
     const fourPlayersCard = screen.getByText('4 Players').closest('button')!;
 
-    expect(soloCard.querySelector('[data-testid="lucide-icon-bot"]')).toBeInTheDocument();
-    expect(twoPlayersCard.querySelector('[data-testid="lucide-icon-swords"]')).toBeInTheDocument();
-    expect(threePlayersCard.querySelector('[data-testid="lucide-icon-users"]')).toBeInTheDocument();
-    expect(fourPlayersCard.querySelector('[data-testid="lucide-icon-crown"]')).toBeInTheDocument();
+    expect(soloCard.querySelector('[data-testid="registry-icon-bot"]')).toBeInTheDocument();
+    expect(twoPlayersCard.querySelector('[data-testid="registry-icon-swords"]')).toBeInTheDocument();
+    expect(threePlayersCard.querySelector('[data-testid="registry-icon-users"]')).toBeInTheDocument();
+    expect(fourPlayersCard.querySelector('[data-testid="registry-icon-crown"]')).toBeInTheDocument();
   });
 
   it('does not render Select placeholder text after replacement', () => {
