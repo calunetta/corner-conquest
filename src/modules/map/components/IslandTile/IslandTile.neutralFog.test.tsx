@@ -57,7 +57,7 @@ describe('IslandTileView neutral fog', () => {
   it('draws a covered tile in neutral grey with its real ground hidden', () => {
     renderFoggedTile(true);
 
-    expect(screen.getByTestId('tile-neutral-ground')).toBeInTheDocument();
+    expect(screen.getByTestId('tile-neutral-ground')).toHaveClass('bg-terrain-neutral');
     expect(screen.getByTestId('tile-terrain')).toHaveStyle({ opacity: '0' });
     expect(screen.getByTestId('tile-fog')).toBeInTheDocument();
   });

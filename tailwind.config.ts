@@ -15,6 +15,7 @@ export default {
       backgroundImage: {
         'water-pattern': "url('/sprites/water.png')",
         'terrain': "url('/sprites/terrain.png')",
+        'terrain-neutral': "url('/sprites/terrain-neutral.png')",
       },
       fontFamily: {
         body: ['var(--font-outfit)', 'Outfit', 'sans-serif'],

@@ -58,8 +58,8 @@ export const styles = {
     },
   ),
   terrain: 'absolute inset-0 z-10 rounded-lg bg-terrain bg-cover bg-center bg-no-repeat',
-  // Under the real ground while a covered tile is neutral; the real ground fades in over it on reveal.
-  neutralGround: 'absolute inset-0 z-10 rounded-lg',
+  // Grey island art under the real ground while a covered tile is neutral; the real ground fades in over it on reveal.
+  neutralGround: 'absolute inset-0 z-10 rounded-lg bg-terrain-neutral bg-cover bg-center bg-no-repeat',
   // Holds the tile's decorations and center content. Hidden (not unmounted) while fogged so the
   // reveal can fade the content in beneath the fog layer (TileFog).
   revealLayer: 'absolute inset-0 z-20 flex items-center justify-center transition-opacity ease-out',
