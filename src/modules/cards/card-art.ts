@@ -11,7 +11,7 @@ export interface CardArt {
 const ART_DIR = '/sprites/cards';
 
 function artFor(slug: string): CardArt {
-  return { icon: `${ART_DIR}/${slug}-icon.png`, card: `${ART_DIR}/${slug}-card.png` };
+  return { icon: `${ART_DIR}/${slug}-icon.webp`, card: `${ART_DIR}/${slug}-card.webp` };
 }
 
 /** Typed by CardName, so a new card fails typecheck until it has art. */

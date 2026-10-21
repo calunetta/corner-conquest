@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { CardName } from '@/lib/types';
+import { CARD_ART } from '../../card-art';
 import { CardFace } from './CardFace';
 
 describe('CardFace', () => {
@@ -11,6 +12,16 @@ describe('CardFace', () => {
     expect(img).not.toBeNull();
     expect(decodeURIComponent(img!.getAttribute('src') ?? '')).toContain('war-chief-card');
     expect(img).toHaveAttribute('alt', '');
+  });
+
+  it('serves the card art file directly and loads it eagerly', () => {
+    render(<CardFace cardName={CardName.WarChief} size="tile" />);
+
+    const img = screen.getByTestId('card-face').querySelector('img')!;
+    // jsdom resolves the img src against http://localhost, so compare the path.
+    expect(new URL(img.src).pathname).toBe(CARD_ART[CardName.WarChief].card);
+    expect(img.src).not.toContain('_next/image');
+    expect(img).toHaveAttribute('loading', 'eager');
   });
 
   it('uses the given alt text', () => {

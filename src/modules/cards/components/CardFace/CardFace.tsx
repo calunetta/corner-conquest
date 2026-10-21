@@ -29,6 +29,8 @@ export function CardFace({ cardName, size, alt, className }: CardFaceProps) {
           alt={alt ?? ''}
           width={width}
           height={height}
+          unoptimized
+          loading="eager"
           className={styles.image}
           onError={onError}
         />

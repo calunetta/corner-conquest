@@ -208,6 +208,17 @@ describe('GameLogView', () => {
       expect(within(entries[2]).queryByTestId('registry-icon-swords')).not.toBeInTheDocument();
     });
 
+    it('serves each card icon as a .webp file directly, not through the image optimizer', () => {
+      render(<GameLogView {...cardUseLog} />);
+
+      const icons = screen.getAllByTestId('log-card-icon');
+      expect(icons).toHaveLength(2);
+      icons.forEach((icon) => {
+        expect(icon.getAttribute('src')).toMatch(/\.webp$/);
+        expect(icon.getAttribute('src')).not.toContain('_next/image');
+      });
+    });
+
     it('marks the card icon decorative (empty alt)', () => {
       render(<GameLogView {...cardUseLog} />);
 

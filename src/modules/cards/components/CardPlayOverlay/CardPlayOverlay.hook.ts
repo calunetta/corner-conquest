@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CardName } from '@/lib/types';
 import { useIsMobile } from '@/modules/shared';
+import { preloadCardArt } from '../../card-preload';
 import { findNewCardPlays, toPlayDurationMs } from './CardPlayOverlay.map';
 import type {
   CardPlay,
@@ -84,8 +85,15 @@ export function useCardPlayTrigger({
   useEffect(() => {
     if (isBlocked || play || queue.length === 0) return;
     const next = queue[0];
-    startPlay(next.cardName, next.isFound);
-    setQueue((current) => current.slice(1));
+    let isCancelled = false;
+    void preloadCardArt(next.cardName).then(() => {
+      if (isCancelled) return;
+      startPlay(next.cardName, next.isFound);
+      setQueue((current) => current.slice(1));
+    });
+    return () => {
+      isCancelled = true;
+    };
   }, [queue, isBlocked, play, startPlay]);
 
   return { play, endPlay };

@@ -4,7 +4,7 @@ Usage: python3 scripts/art/generate-registry-icons.py RAW_DIR [id ...] [--jobs 6
   RAW_DIR         where raw model output is kept (outside the repo is fine)
   id ...          only these registry ids; default: every entry in SUBJECTS
   --process-only  skip generation, re-run the key/crop/resize step on existing raw files
-Writes public/sprites/icons-generated/<id>.png (128x128, transparent, soft edges).
+Writes public/sprites/icons-generated/<id>.webp (128x128, transparent, soft edges).
 Reads GEMINI_API_KEY from the environment (via scripts/art/gen_image.py).
 Style references and keying: scripts/art/art_pipeline.py.
 """
@@ -14,7 +14,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from art_pipeline import KEY_TEXT, PUBLIC, build_style_refs, cut_out, fit_on_canvas, generate
+from art_pipeline import KEY_TEXT, PUBLIC, build_style_refs, cut_out, fit_on_canvas, generate, save_webp
 
 OUT_DIR = PUBLIC / "sprites/icons-generated"
 ICON_PX = 128
@@ -102,7 +102,7 @@ def process(icon_id: str, raw_dir: Path) -> str:
     if image is None:
         return f"{icon_id}: empty after keying"
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    fit_on_canvas(image, (ICON_PX, ICON_PX), MARGIN_PX).save(OUT_DIR / f"{icon_id}.png")
+    save_webp(fit_on_canvas(image, (ICON_PX, ICON_PX), MARGIN_PX), OUT_DIR / f"{icon_id}.webp")
     return f"{icon_id}: saved"
 
 

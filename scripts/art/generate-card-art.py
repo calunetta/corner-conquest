@@ -4,7 +4,7 @@ Usage: python3 scripts/art/generate-card-art.py RAW_DIR [slug ...] [--jobs 6] [-
   RAW_DIR         where raw model output is kept (outside the repo is fine)
   slug ...        only these subjects (e.g. extra-move collector); default: all
   --process-only  skip generation, re-run the key/crop/resize step on existing raw files
-Writes public/sprites/cards/<slug>-icon.png (128x128) and <slug>-card.png (400x600), transparent.
+Writes public/sprites/cards/<slug>-icon.webp (128x128) and <slug>-card.webp (400x600), transparent.
 The cards carry no text: the game draws names and descriptions in its own font.
 Reads GEMINI_API_KEY from the environment (via scripts/art/gen_image.py).
 Slugs and paths are mirrored in src/modules/cards/card-art.ts.
@@ -15,7 +15,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from art_pipeline import KEY_TEXT, PUBLIC, REFERENCE_RULES, STYLE, build_style_refs, cut_out, fit_on_canvas, generate
+from art_pipeline import KEY_TEXT, PUBLIC, REFERENCE_RULES, STYLE, build_style_refs, cut_out, fit_on_canvas, generate, save_webp
 
 OUT_DIR = PUBLIC / "sprites/cards"
 ICON_SIZE = (128, 128)
@@ -89,7 +89,7 @@ def process(slug: str, raw_dir: Path) -> list[str]:
             lines.append(f"{raw.stem}: empty after keying")
             continue
         OUT_DIR.mkdir(parents=True, exist_ok=True)
-        fit_on_canvas(image, size, margin).save(OUT_DIR / f"{slug}-{variant}.png")
+        save_webp(fit_on_canvas(image, size, margin), OUT_DIR / f"{slug}-{variant}.webp")
         lines.append(f"{raw.stem}: saved")
     return lines
 

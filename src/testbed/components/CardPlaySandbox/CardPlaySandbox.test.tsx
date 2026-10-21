@@ -6,6 +6,9 @@ import {
 } from '@/modules/hud/components/ActionsPanel/MobileEventLogSheet.preview';
 import { CardPlaySandbox } from './CardPlaySandbox';
 
+// jsdom never loads images; the real preload would wait for its 1500 ms fallback.
+jest.mock('@/modules/cards/card-preload', () => ({ preloadCardArt: jest.fn(() => Promise.resolve()) }));
+
 const ANIMATION_MS = 1100;
 
 function mockMatchMedia() {
@@ -33,6 +36,8 @@ function useCard(name: string) {
   fireEvent.click(screen.getByRole('button', { name: `Use ${name}` }));
 }
 
+const flush = () => act(async () => {});
+
 const status = () => screen.getByRole('status');
 
 describe('CardPlaySandbox', () => {
@@ -56,12 +61,13 @@ describe('CardPlaySandbox', () => {
   });
 
   describe('desktop', () => {
-    it('Extra Move announces the play after the Cards dialog closes, then clears', () => {
+    it('Extra Move announces the play after the Cards dialog closes, then clears', async () => {
       renderDesktop();
       openCards();
       expect(screen.getByRole('alertdialog')).toBeInTheDocument();
 
       useCard('Extra Move');
+      await flush();
 
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
       expect(status()).toHaveTextContent('You played Extra Move.');
@@ -71,7 +77,7 @@ describe('CardPlaySandbox', () => {
       expect(status()).toBeEmptyDOMElement();
     });
 
-    it('Sabotage plays nothing while blocked and when cancelled, and plays after a target is picked', () => {
+    it('Sabotage plays nothing while blocked and when cancelled, and plays after a target is picked', async () => {
       renderDesktop();
       openCards();
       useCard('Sabotage');
@@ -89,14 +95,16 @@ describe('CardPlaySandbox', () => {
       openCards();
       useCard('Sabotage');
       fireEvent.click(screen.getByRole('button', { name: /Red/ }));
+      await flush();
 
       expect(status()).toHaveTextContent('You played Sabotage.');
     });
 
-    it('Teleport plays on selection and does not replay when the step is finished', () => {
+    it('Teleport plays on selection and does not replay when the step is finished', async () => {
       renderDesktop();
       openCards();
       useCard('Teleport');
+      await flush();
 
       expect(screen.getByTestId('sandbox-finish-step')).toBeVisible();
       expect(status()).toHaveTextContent('You played Teleport.');
@@ -111,10 +119,11 @@ describe('CardPlaySandbox', () => {
       expect(status()).toBeEmptyDOMElement();
     });
 
-    it('Scout plays on selection and does not replay when the step is finished', () => {
+    it('Scout plays on selection and does not replay when the step is finished', async () => {
       renderDesktop();
       openCards();
       useCard('Scout');
+      await flush();
 
       expect(status()).toHaveTextContent('You played Scout.');
       act(() => {
@@ -124,7 +133,7 @@ describe('CardPlaySandbox', () => {
       expect(status()).toBeEmptyDOMElement();
     });
 
-    it.each(['Overcome', 'War Chief', 'Decide Dice Roll'])('combat card %s logs but never animates', (name) => {
+    it.each(['Overcome', 'War Chief', 'Decide Dice Roll'])('combat card %s logs but never animates', async (name) => {
       renderDesktop();
       fireEvent.click(screen.getByRole('button', { name: `Log ${name}` }));
 
@@ -135,7 +144,7 @@ describe('CardPlaySandbox', () => {
       expect(status()).toBeEmptyDOMElement();
     });
 
-    it('Find War Chief announces the find only after the roll dialog closes, then clears', () => {
+    it('Find War Chief announces the find only after the roll dialog closes, then clears', async () => {
       renderDesktop();
       fireEvent.click(screen.getByRole('button', { name: 'Find War Chief' }));
 
@@ -145,6 +154,7 @@ describe('CardPlaySandbox', () => {
       expect(screen.getByTestId('sandbox-gate')).toHaveTextContent('blocked');
 
       fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      await flush();
 
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
       expect(screen.getByTestId('sandbox-gate')).toHaveTextContent('open');
@@ -156,20 +166,22 @@ describe('CardPlaySandbox', () => {
       expect(status()).toBeEmptyDOMElement();
     });
 
-    it('Escape on the roll dialog also releases the found play', () => {
+    it('Escape on the roll dialog also releases the found play', async () => {
       renderDesktop();
       fireEvent.click(screen.getByRole('button', { name: 'Find Extra Move' }));
       expect(status()).toBeEmptyDOMElement();
 
       fireEvent.keyDown(screen.getByRole('alertdialog'), { key: 'Escape' });
+      await flush();
 
       expect(status()).toHaveTextContent('You found Extra Move.');
     });
 
-    it('finding Extra Move then using it still announces "played" for the use', () => {
+    it('finding Extra Move then using it still announces "played" for the use', async () => {
       renderDesktop();
       fireEvent.click(screen.getByRole('button', { name: 'Find Extra Move' }));
       fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      await flush();
       expect(status()).toHaveTextContent('You found Extra Move.');
       act(() => {
         jest.advanceTimersByTime(ANIMATION_MS);
@@ -177,21 +189,23 @@ describe('CardPlaySandbox', () => {
 
       openCards();
       useCard('Extra Move');
+      await flush();
 
       expect(status()).toHaveTextContent('You played Extra Move.');
     });
 
-    it('Wealthy plays only after a resource is confirmed', () => {
+    it('Wealthy plays only after a resource is confirmed', async () => {
       renderDesktop();
       openCards();
       useCard('Wealthy');
 
       expect(status()).toBeEmptyDOMElement();
       fireEvent.click(screen.getByTestId('wealthy-resource-gold'));
+      await flush();
       expect(status()).toHaveTextContent('You played Wealthy.');
     });
 
-    it('Steal Resource plays only after the steal is confirmed', () => {
+    it('Steal Resource plays only after the steal is confirmed', async () => {
       renderDesktop();
       openCards();
       useCard('Steal Resource');
@@ -201,12 +215,13 @@ describe('CardPlaySandbox', () => {
       fireEvent.click(screen.getByTestId('steal-resource-gold'));
       expect(status()).toBeEmptyDOMElement();
       fireEvent.click(screen.getByRole('button', { name: /^Steal 2/ }));
+      await flush();
       expect(status()).toHaveTextContent('You played Steal Resource.');
     });
   });
 
   describe('mobile', () => {
-    it('tapping Cards in the actions sheet closes the sheet and opens the Cards dialog', () => {
+    it('tapping Cards in the actions sheet closes the sheet and opens the Cards dialog', async () => {
       render(
         <TooltipProvider>
           <WithEventLogBoard gameState={emptyEventLogGameState}>

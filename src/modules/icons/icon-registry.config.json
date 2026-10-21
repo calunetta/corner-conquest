@@ -5,7 +5,7 @@
     "module": "legacy",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/loader-2.png"
+      "src": "/sprites/icons-generated/loader-2.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -16,7 +16,7 @@
     "module": "legacy",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/chevron-down.png"
+      "src": "/sprites/icons-generated/chevron-down.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -27,7 +27,7 @@
     "module": "legacy",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/chevron-up.png"
+      "src": "/sprites/icons-generated/chevron-up.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -38,7 +38,7 @@
     "module": "legacy",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/trophy.png"
+      "src": "/sprites/icons-generated/trophy.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -49,7 +49,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/check-circle.png"
+      "src": "/sprites/icons-generated/check-circle.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -60,7 +60,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/award.png"
+      "src": "/sprites/icons-generated/award.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -71,7 +71,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/sparkles.png"
+      "src": "/sprites/icons-generated/sparkles.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -82,7 +82,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/zap.png"
+      "src": "/sprites/icons-generated/zap.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -93,7 +93,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/shield.png"
+      "src": "/sprites/icons-generated/shield.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -104,7 +104,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/play.png"
+      "src": "/sprites/icons-generated/play.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -115,7 +115,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/trending-up.png"
+      "src": "/sprites/icons-generated/trending-up.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -126,7 +126,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/check.png"
+      "src": "/sprites/icons-generated/check.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -137,7 +137,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/ban.png"
+      "src": "/sprites/icons-generated/ban.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -148,7 +148,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/dices.png"
+      "src": "/sprites/icons-generated/dices.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -159,7 +159,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/x-circle.png"
+      "src": "/sprites/icons-generated/x-circle.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -170,7 +170,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/hand-metal.png"
+      "src": "/sprites/icons-generated/hand-metal.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -181,7 +181,7 @@
     "module": "cards",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/arrow-left.png"
+      "src": "/sprites/icons-generated/arrow-left.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -192,7 +192,7 @@
     "module": "combat",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/clock.png"
+      "src": "/sprites/icons-generated/clock.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -203,7 +203,7 @@
     "module": "combat",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/crosshair.png"
+      "src": "/sprites/icons-generated/crosshair.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -214,7 +214,7 @@
     "module": "combat",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/skull.png"
+      "src": "/sprites/icons-generated/skull.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -225,7 +225,7 @@
     "module": "combat",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/swords.png"
+      "src": "/sprites/icons-generated/swords.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -236,7 +236,7 @@
     "module": "combat",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/anchor.png"
+      "src": "/sprites/icons-generated/anchor.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -247,7 +247,7 @@
     "module": "game-board",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/refresh-cw.png"
+      "src": "/sprites/icons-generated/refresh-cw.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -258,7 +258,7 @@
     "module": "game-board",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/wifi-off.png"
+      "src": "/sprites/icons-generated/wifi-off.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -269,7 +269,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/shopping-cart.png"
+      "src": "/sprites/icons-generated/shopping-cart.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -280,7 +280,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/album.png"
+      "src": "/sprites/icons-generated/album.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -291,7 +291,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/university.png"
+      "src": "/sprites/icons-generated/university.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -302,7 +302,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/scroll-text.png"
+      "src": "/sprites/icons-generated/scroll-text.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -313,7 +313,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/timer.png"
+      "src": "/sprites/icons-generated/timer.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -324,7 +324,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/image-icon.png"
+      "src": "/sprites/icons-generated/image-icon.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -335,7 +335,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/coins.png"
+      "src": "/sprites/icons-generated/coins.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -346,7 +346,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/info.png"
+      "src": "/sprites/icons-generated/info.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -357,7 +357,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/layers.png"
+      "src": "/sprites/icons-generated/layers.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -368,7 +368,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/hourglass.png"
+      "src": "/sprites/icons-generated/hourglass.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -379,7 +379,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/forward.png"
+      "src": "/sprites/icons-generated/forward.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -390,7 +390,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/compass.png"
+      "src": "/sprites/icons-generated/compass.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -401,7 +401,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/shield-check.png"
+      "src": "/sprites/icons-generated/shield-check.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -412,7 +412,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/hammer.png"
+      "src": "/sprites/icons-generated/hammer.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -423,7 +423,7 @@
     "module": "hud",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/x.png"
+      "src": "/sprites/icons-generated/x.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -434,7 +434,7 @@
     "module": "lobby",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/bot.png"
+      "src": "/sprites/icons-generated/bot.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -445,7 +445,7 @@
     "module": "lobby",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/crown.png"
+      "src": "/sprites/icons-generated/crown.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -456,7 +456,7 @@
     "module": "lobby",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/users.png"
+      "src": "/sprites/icons-generated/users.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -467,7 +467,7 @@
     "module": "lobby",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/help-circle.png"
+      "src": "/sprites/icons-generated/help-circle.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -478,7 +478,7 @@
     "module": "lobby",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/settings.png"
+      "src": "/sprites/icons-generated/settings.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -489,7 +489,7 @@
     "module": "lobby",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/book-open.png"
+      "src": "/sprites/icons-generated/book-open.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -500,7 +500,7 @@
     "module": "lobby",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/power.png"
+      "src": "/sprites/icons-generated/power.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -511,7 +511,7 @@
     "module": "map",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/home.png"
+      "src": "/sprites/icons-generated/home.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -522,7 +522,7 @@
     "module": "map",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/zoom-in.png"
+      "src": "/sprites/icons-generated/zoom-in.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -533,7 +533,7 @@
     "module": "map",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/zoom-out.png"
+      "src": "/sprites/icons-generated/zoom-out.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -544,7 +544,7 @@
     "module": "map",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/rotate-ccw.png"
+      "src": "/sprites/icons-generated/rotate-ccw.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -555,7 +555,7 @@
     "module": "session",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/alert-triangle.png"
+      "src": "/sprites/icons-generated/alert-triangle.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100
@@ -566,7 +566,7 @@
     "module": "session",
     "defaultSource": {
       "kind": "image",
-      "src": "/sprites/icons-generated/log-out.png"
+      "src": "/sprites/icons-generated/log-out.webp"
     },
     "defaultRotation": 0,
     "defaultSize": 100

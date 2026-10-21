@@ -36,6 +36,7 @@ function EntryIconGlyph({ entry }: { entry: DisplayedLogEntry }) {
         alt=""
         width={CARD_ICON_SIZE_PX}
         height={CARD_ICON_SIZE_PX}
+        unoptimized
         className={styles.cardIcon}
         data-testid="log-card-icon"
       />

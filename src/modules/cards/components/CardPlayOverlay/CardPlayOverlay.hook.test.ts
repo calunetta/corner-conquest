@@ -3,6 +3,18 @@ import { CardName } from '@/lib/types';
 import type { GameState, StructuredLogEntry } from '@/lib/types';
 import { useCardPlay, useCardPlayOverlay, useCardPlayTrigger } from './CardPlayOverlay.hook';
 import type { CardPlay } from './CardPlayOverlay.types';
+import { preloadCardArt } from '../../card-preload';
+
+jest.mock('../../card-preload', () => ({ preloadCardArt: jest.fn(() => Promise.resolve()) }));
+
+function deferredPreload() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  jest.mocked(preloadCardArt).mockReturnValueOnce(promise);
+  return resolve;
+}
 
 function mockMatchMedia(isReduced: boolean) {
   Object.defineProperty(window, 'matchMedia', {
@@ -166,50 +178,144 @@ describe('useCardPlayTrigger', () => {
     return { kind: 'structured', turn, category: 'cards', message: 'used', playerId, cardName };
   }
 
-  function setup(log: GameState['log'], isBlocked = false) {
-    return renderHook((props: Args) => useCardPlayTrigger(props), {
-      initialProps: { log, localPlayerId: localId, isBlocked } as Args,
-    });
+  /** Preload resolves in a microtask, so every state change needs a flush before asserting. */
+  const flush = () => act(async () => {});
+
+  async function endPlay(result: { current: { endPlay: () => void } }) {
+    act(() => result.current.endPlay());
+    await flush();
   }
 
-  it('does not play for history already in the log on first render (seed)', () => {
+  function setup(log: GameState['log'], isBlocked = false) {
+    const hook = renderHook((props: Args) => useCardPlayTrigger(props), {
+      initialProps: { log, localPlayerId: localId, isBlocked } as Args,
+    });
+    const rerender = async (props: Args) => {
+      hook.rerender(props);
+      await flush();
+    };
+    return { ...hook, rerender };
+  }
+
+  describe('image preload gate', () => {
+    const appended = (cardName: CardName, isBlocked = false): Args => ({
+      log: [entry(cardName)],
+      localPlayerId: localId,
+      isBlocked,
+    });
+
+    beforeEach(() => jest.mocked(preloadCardArt).mockClear());
+
+    it('keeps play null until the card image preload resolves, then starts play 1', async () => {
+      const resolvePreload = deferredPreload();
+      const { result, rerender } = setup([]);
+      await rerender(appended(CardName.Reinforce));
+      expect(result.current.play).toBeNull();
+      resolvePreload();
+      await flush();
+      expect(result.current.play).toEqual({ cardName: CardName.Reinforce, playId: 1 });
+    });
+
+    it('preloads the art of the queued card', async () => {
+      const { rerender } = setup([]);
+      await rerender(appended(CardName.ExtraMove));
+      expect(preloadCardArt).toHaveBeenCalledWith(CardName.ExtraMove);
+    });
+
+    it('does not preload while nothing is queued', async () => {
+      setup([]);
+      await flush();
+      expect(preloadCardArt).not.toHaveBeenCalled();
+    });
+
+    it('a blocked flip while the preload is pending starts exactly one play with playId 1', async () => {
+      const resolveFirst = deferredPreload();
+      const { result, rerender } = setup([]);
+      await rerender(appended(CardName.Reinforce));
+      await rerender(appended(CardName.Reinforce, true));
+      await rerender(appended(CardName.Reinforce, false));
+      resolveFirst();
+      await flush();
+      expect(result.current.play).toEqual({ cardName: CardName.Reinforce, playId: 1 });
+      await endPlay(result);
+      expect(result.current.play).toBeNull();
+    });
+
+    it('a stale preload resolving while blocked does not start a play', async () => {
+      const resolvePreload = deferredPreload();
+      const { result, rerender } = setup([]);
+      await rerender(appended(CardName.Reinforce));
+      await rerender(appended(CardName.Reinforce, true));
+      resolvePreload();
+      await flush();
+      expect(result.current.play).toBeNull();
+    });
+
+    it('unmounting while the preload is pending ignores the later resolve without warning', async () => {
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const resolvePreload = deferredPreload();
+      const { result, rerender, unmount } = setup([]);
+      await rerender(appended(CardName.Reinforce));
+      unmount();
+      resolvePreload();
+      await flush();
+      expect(result.current.play).toBeNull();
+      expect(errorSpy).not.toHaveBeenCalled();
+      errorSpy.mockRestore();
+    });
+
+    it('preloads the second queued card only after the first play ends', async () => {
+      const { result, rerender } = setup([]);
+      await rerender({
+        log: [entry(CardName.Reinforce), entry(CardName.ExtraMove)],
+        localPlayerId: localId,
+        isBlocked: false,
+      });
+      expect(jest.mocked(preloadCardArt).mock.calls).toEqual([[CardName.Reinforce]]);
+      await endPlay(result);
+      expect(jest.mocked(preloadCardArt).mock.calls).toEqual([[CardName.Reinforce], [CardName.ExtraMove]]);
+      expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 2 });
+    });
+  });
+
+  it('does not play for history already in the log on first render (seed)', async () => {
     const { result } = setup([entry(CardName.Reinforce)]);
     expect(result.current.play).toBeNull();
   });
 
-  it('plays an appended local entry when not blocked', () => {
+  it('plays an appended local entry when not blocked', async () => {
     const { result, rerender } = setup([]);
-    rerender({ log: [entry(CardName.Reinforce)], localPlayerId: localId, isBlocked: false });
+    await rerender({ log: [entry(CardName.Reinforce)], localPlayerId: localId, isBlocked: false });
     expect(result.current.play).toEqual({ cardName: CardName.Reinforce, playId: 1 });
   });
 
-  it('holds a play while blocked and starts it when unblocked', () => {
+  it('holds a play while blocked and starts it when unblocked', async () => {
     const { result, rerender } = setup([]);
     const log = [entry(CardName.Reinforce)];
-    rerender({ log, localPlayerId: localId, isBlocked: true });
+    await rerender({ log, localPlayerId: localId, isBlocked: true });
     expect(result.current.play).toBeNull();
-    rerender({ log, localPlayerId: localId, isBlocked: false });
+    await rerender({ log, localPlayerId: localId, isBlocked: false });
     expect(result.current.play).toEqual({ cardName: CardName.Reinforce, playId: 1 });
   });
 
-  it('ignores entries by another player', () => {
+  it('ignores entries by another player', async () => {
     const { result, rerender } = setup([]);
-    rerender({ log: [entry(CardName.Reinforce, 1, '2')], localPlayerId: localId, isBlocked: false });
+    await rerender({ log: [entry(CardName.Reinforce, 1, '2')], localPlayerId: localId, isBlocked: false });
     expect(result.current.play).toBeNull();
   });
 
-  it('plays once for the same card on the same turn (activation then deploy)', () => {
+  it('plays once for the same card on the same turn (activation then deploy)', async () => {
     const first = entry(CardName.Efficient, 2);
     const { result, rerender } = setup([]);
-    rerender({ log: [first], localPlayerId: localId, isBlocked: false });
-    act(() => result.current.endPlay());
-    rerender({ log: [first, entry(CardName.Efficient, 2)], localPlayerId: localId, isBlocked: false });
+    await rerender({ log: [first], localPlayerId: localId, isBlocked: false });
+    await endPlay(result);
+    await rerender({ log: [first, entry(CardName.Efficient, 2)], localPlayerId: localId, isBlocked: false });
     expect(result.current.play).toBeNull();
   });
 
-  it('does not play a card whose turn+card key was already in the log at seed (reload mid-turn)', () => {
+  it('does not play a card whose turn+card key was already in the log at seed (reload mid-turn)', async () => {
     const { result, rerender } = setup([entry(CardName.Efficient, 2)]);
-    rerender({
+    await rerender({
       log: [entry(CardName.Efficient, 2), entry(CardName.Efficient, 2)],
       localPlayerId: localId,
       isBlocked: false,
@@ -217,52 +323,52 @@ describe('useCardPlayTrigger', () => {
     expect(result.current.play).toBeNull();
   });
 
-  it('plays the same card again on a different turn', () => {
+  it('plays the same card again on a different turn', async () => {
     const first = entry(CardName.Efficient, 2);
     const { result, rerender } = setup([]);
-    rerender({ log: [first], localPlayerId: localId, isBlocked: false });
-    act(() => result.current.endPlay());
-    rerender({ log: [first, entry(CardName.Efficient, 3)], localPlayerId: localId, isBlocked: false });
+    await rerender({ log: [first], localPlayerId: localId, isBlocked: false });
+    await endPlay(result);
+    await rerender({ log: [first, entry(CardName.Efficient, 3)], localPlayerId: localId, isBlocked: false });
     expect(result.current.play).toEqual({ cardName: CardName.Efficient, playId: 2 });
   });
 
-  it('queues two cards from one update: second starts only after endPlay', () => {
+  it('queues two cards from one update: second starts only after endPlay', async () => {
     const { result, rerender } = setup([]);
-    rerender({
+    await rerender({
       log: [entry(CardName.Reinforce), entry(CardName.ExtraMove)],
       localPlayerId: localId,
       isBlocked: false,
     });
     expect(result.current.play).toEqual({ cardName: CardName.Reinforce, playId: 1 });
-    act(() => result.current.endPlay());
+    await endPlay(result);
     expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 2 });
-    act(() => result.current.endPlay());
+    await endPlay(result);
     expect(result.current.play).toBeNull();
   });
 
-  it('after a shrink, old entries do not replay and a new local entry plays', () => {
+  it('after a shrink, old entries do not replay and a new local entry plays', async () => {
     const old = entry(CardName.Reinforce, 1);
     const { result, rerender } = setup([old, entry(CardName.Scout, 1, '2')]);
-    rerender({ log: [], localPlayerId: localId, isBlocked: false });
+    await rerender({ log: [], localPlayerId: localId, isBlocked: false });
     expect(result.current.play).toBeNull();
-    rerender({ log: [old], localPlayerId: localId, isBlocked: false });
+    await rerender({ log: [old], localPlayerId: localId, isBlocked: false });
     expect(result.current.play).toBeNull();
-    rerender({ log: [old, entry(CardName.ExtraMove, 2)], localPlayerId: localId, isBlocked: false });
+    await rerender({ log: [old, entry(CardName.ExtraMove, 2)], localPlayerId: localId, isBlocked: false });
     expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 1 });
   });
 
-  it('endPlay clears the play', () => {
+  it('endPlay clears the play', async () => {
     const { result, rerender } = setup([]);
-    rerender({ log: [entry(CardName.Reinforce)], localPlayerId: localId, isBlocked: false });
-    act(() => result.current.endPlay());
+    await rerender({ log: [entry(CardName.Reinforce)], localPlayerId: localId, isBlocked: false });
+    await endPlay(result);
     expect(result.current.play).toBeNull();
   });
 
   it.each([CardName.Overcome, CardName.WarChief, CardName.DecideDiceRoll])(
     'never plays a local %s log entry',
-    (cardName) => {
+    async (cardName) => {
       const { result, rerender } = setup([]);
-      rerender({ log: [entry(cardName)], localPlayerId: localId, isBlocked: false });
+      await rerender({ log: [entry(cardName)], localPlayerId: localId, isBlocked: false });
       expect(result.current.play).toBeNull();
     },
   );
@@ -271,74 +377,74 @@ describe('useCardPlayTrigger', () => {
     const teleport2 = { cardName: CardName.Teleport, turn: 2 };
     const props = (over: Partial<Args>): Args => ({ log: [], localPlayerId: localId, isBlocked: false, ...over });
 
-    it('starts a play for the selected card with no log change', () => {
+    it('starts a play for the selected card with no log change', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ selectionPlay: teleport2 }));
+      await rerender(props({ selectionPlay: teleport2 }));
       expect(result.current.play).toEqual({ cardName: CardName.Teleport, playId: 1 });
     });
 
-    it('waits while blocked and starts when unblocked', () => {
+    it('waits while blocked and starts when unblocked', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ selectionPlay: teleport2, isBlocked: true }));
+      await rerender(props({ selectionPlay: teleport2, isBlocked: true }));
       expect(result.current.play).toBeNull();
-      rerender(props({ selectionPlay: teleport2, isBlocked: false }));
+      await rerender(props({ selectionPlay: teleport2, isBlocked: false }));
       expect(result.current.play).toEqual({ cardName: CardName.Teleport, playId: 1 });
     });
 
-    it('does not replay when the later log entry of the same turn and card arrives', () => {
+    it('does not replay when the later log entry of the same turn and card arrives', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ selectionPlay: teleport2 }));
-      act(() => result.current.endPlay());
-      rerender(props({ selectionPlay: null, log: [entry(CardName.Teleport, 2)] }));
+      await rerender(props({ selectionPlay: teleport2 }));
+      await endPlay(result);
+      await rerender(props({ selectionPlay: null, log: [entry(CardName.Teleport, 2)] }));
       expect(result.current.play).toBeNull();
     });
 
-    it('plays the same card again on a later turn', () => {
+    it('plays the same card again on a later turn', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ selectionPlay: teleport2 }));
-      act(() => result.current.endPlay());
-      rerender(props({ selectionPlay: { cardName: CardName.Teleport, turn: 3 } }));
+      await rerender(props({ selectionPlay: teleport2 }));
+      await endPlay(result);
+      await rerender(props({ selectionPlay: { cardName: CardName.Teleport, turn: 3 } }));
       expect(result.current.play).toEqual({ cardName: CardName.Teleport, playId: 2 });
     });
 
-    it('does not enqueue again for a new selectionPlay object with the same card and turn', () => {
+    it('does not enqueue again for a new selectionPlay object with the same card and turn', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ selectionPlay: { ...teleport2 } }));
-      act(() => result.current.endPlay());
-      rerender(props({ selectionPlay: { ...teleport2 } }));
+      await rerender(props({ selectionPlay: { ...teleport2 } }));
+      await endPlay(result);
+      await rerender(props({ selectionPlay: { ...teleport2 } }));
       expect(result.current.play).toBeNull();
     });
 
-    it('plays Scout once for its selection and its later log entry', () => {
+    it('plays Scout once for its selection and its later log entry', async () => {
       const scout = { cardName: CardName.Scout, turn: 4 };
       const { result, rerender } = setup([]);
-      rerender(props({ selectionPlay: scout }));
+      await rerender(props({ selectionPlay: scout }));
       expect(result.current.play).toEqual({ cardName: CardName.Scout, playId: 1 });
-      act(() => result.current.endPlay());
-      rerender(props({ selectionPlay: scout, log: [entry(CardName.Scout, 4)] }));
+      await endPlay(result);
+      await rerender(props({ selectionPlay: scout, log: [entry(CardName.Scout, 4)] }));
       expect(result.current.play).toBeNull();
     });
 
-    it('does not replay when selectionPlay goes null and returns with the same value', () => {
+    it('does not replay when selectionPlay goes null and returns with the same value', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ selectionPlay: teleport2 }));
-      act(() => result.current.endPlay());
-      rerender(props({ selectionPlay: null }));
-      rerender(props({ selectionPlay: teleport2 }));
+      await rerender(props({ selectionPlay: teleport2 }));
+      await endPlay(result);
+      await rerender(props({ selectionPlay: null }));
+      await rerender(props({ selectionPlay: teleport2 }));
       expect(result.current.play).toBeNull();
     });
 
-    it('plays nothing for a null selectionPlay', () => {
+    it('plays nothing for a null selectionPlay', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ selectionPlay: null }));
+      await rerender(props({ selectionPlay: null }));
       expect(result.current.play).toBeNull();
     });
 
-    it('a selection whose key was already played from the log does not replay', () => {
+    it('a selection whose key was already played from the log does not replay', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ log: [entry(CardName.Teleport, 2)] }));
-      act(() => result.current.endPlay());
-      rerender(props({ log: [entry(CardName.Teleport, 2)], selectionPlay: teleport2 }));
+      await rerender(props({ log: [entry(CardName.Teleport, 2)] }));
+      await endPlay(result);
+      await rerender(props({ log: [entry(CardName.Teleport, 2)], selectionPlay: teleport2 }));
       expect(result.current.play).toBeNull();
     });
   });
@@ -346,70 +452,70 @@ describe('useCardPlayTrigger', () => {
   describe('foundCard', () => {
     const props = (over: Partial<Args>): Args => ({ log: [], localPlayerId: localId, isBlocked: false, ...over });
 
-    it('plays a found combat card (not filtered by NO_PLAY_CARDS)', () => {
+    it('plays a found combat card (not filtered by NO_PLAY_CARDS)', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ foundCard: CardName.Overcome }));
+      await rerender(props({ foundCard: CardName.Overcome }));
       expect(result.current.play).toEqual({ cardName: CardName.Overcome, playId: 1, isFound: true });
     });
 
-    it('waits while blocked and starts only when unblocked', () => {
+    it('waits while blocked and starts only when unblocked', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ foundCard: CardName.WarChief, isBlocked: true }));
+      await rerender(props({ foundCard: CardName.WarChief, isBlocked: true }));
       expect(result.current.play).toBeNull();
-      rerender(props({ foundCard: CardName.WarChief, isBlocked: false }));
+      await rerender(props({ foundCard: CardName.WarChief, isBlocked: false }));
       expect(result.current.play).toEqual({ cardName: CardName.WarChief, playId: 1, isFound: true });
     });
 
-    it('starts after the dialog closes (blocked while foundCard set, then null and unblocked)', () => {
+    it('starts after the dialog closes (blocked while foundCard set, then null and unblocked)', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ foundCard: CardName.ExtraMove, isBlocked: true }));
-      rerender(props({ foundCard: null, isBlocked: true }));
+      await rerender(props({ foundCard: CardName.ExtraMove, isBlocked: true }));
+      await rerender(props({ foundCard: null, isBlocked: true }));
       expect(result.current.play).toBeNull();
-      rerender(props({ foundCard: null, isBlocked: false }));
+      await rerender(props({ foundCard: null, isBlocked: false }));
       expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 1, isFound: true });
     });
 
-    it('does not play when a log use entry exists at mount and foundCard is null', () => {
+    it('does not play when a log use entry exists at mount and foundCard is null', async () => {
       const { result } = setup([entry(CardName.ExtraMove)]);
       expect(result.current.play).toBeNull();
     });
 
-    it('plays nothing when foundCard stays null', () => {
+    it('plays nothing when foundCard stays null', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ foundCard: null }));
-      rerender(props({ foundCard: undefined }));
+      await rerender(props({ foundCard: null }));
+      await rerender(props({ foundCard: undefined }));
       expect(result.current.play).toBeNull();
     });
 
-    it('find then use the same card the same turn plays twice, the use play without isFound', () => {
+    it('find then use the same card the same turn plays twice, the use play without isFound', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ foundCard: CardName.ExtraMove }));
+      await rerender(props({ foundCard: CardName.ExtraMove }));
       expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 1, isFound: true });
-      act(() => result.current.endPlay());
-      rerender(props({ foundCard: null }));
-      rerender(props({ foundCard: null, log: [entry(CardName.ExtraMove, 1)] }));
+      await endPlay(result);
+      await rerender(props({ foundCard: null }));
+      await rerender(props({ foundCard: null, log: [entry(CardName.ExtraMove, 1)] }));
       expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 2 });
       expect(result.current.play).not.toHaveProperty('isFound');
     });
 
-    it('queues two finds of the same card (card, null, card) in order', () => {
+    it('queues two finds of the same card (card, null, card) in order', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ foundCard: CardName.ExtraMove, isBlocked: true }));
-      rerender(props({ foundCard: null, isBlocked: true }));
-      rerender(props({ foundCard: CardName.ExtraMove, isBlocked: true }));
-      rerender(props({ foundCard: null, isBlocked: false }));
+      await rerender(props({ foundCard: CardName.ExtraMove, isBlocked: true }));
+      await rerender(props({ foundCard: null, isBlocked: true }));
+      await rerender(props({ foundCard: CardName.ExtraMove, isBlocked: true }));
+      await rerender(props({ foundCard: null, isBlocked: false }));
       expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 1, isFound: true });
-      act(() => result.current.endPlay());
+      await endPlay(result);
       expect(result.current.play).toEqual({ cardName: CardName.ExtraMove, playId: 2, isFound: true });
-      act(() => result.current.endPlay());
+      await endPlay(result);
       expect(result.current.play).toBeNull();
     });
 
-    it('does not re-queue when rerendered with the same foundCard', () => {
+    it('does not re-queue when rerendered with the same foundCard', async () => {
       const { result, rerender } = setup([]);
-      rerender(props({ foundCard: CardName.WarChief }));
-      act(() => result.current.endPlay());
-      rerender(props({ foundCard: CardName.WarChief }));
+      await rerender(props({ foundCard: CardName.WarChief }));
+      await endPlay(result);
+      await rerender(props({ foundCard: CardName.WarChief }));
       expect(result.current.play).toBeNull();
     });
   });

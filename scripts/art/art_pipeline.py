@@ -16,6 +16,7 @@ from PIL import Image, ImageDraw
 REPO = Path(__file__).resolve().parents[2]
 PUBLIC = REPO / "public"
 GEN_IMAGE = REPO / "scripts/art/gen_image.py"
+WEBP_QUALITY = 90
 OUTLINE_RGB = (30, 26, 28)  # colour under transparent pixels, so resize fringes read as ink
 
 STYLE = (
@@ -171,3 +172,8 @@ def fit_on_canvas(image: Image.Image, canvas_size: tuple[int, int], margin: int)
     canvas = Image.new("RGBA", canvas_size, (0, 0, 0, 0))
     canvas.paste(image, ((width - size[0]) // 2, (height - size[1]) // 2), image)
     return canvas
+
+
+def save_webp(image: Image.Image, path: Path) -> None:
+    """Shipped art: lossy WebP with alpha. `image` is RGBA."""
+    image.convert("RGBA").save(path, "WEBP", quality=WEBP_QUALITY, method=6)
