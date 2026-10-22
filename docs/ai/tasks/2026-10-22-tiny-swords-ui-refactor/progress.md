@@ -18,7 +18,7 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e (see plan.md)
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify): `/testbed/slice-frame`, 400% zoom, no seams
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [ ] committed: 25880b9
 
 ## Phase 1c: Ribbon and PixelPanel
 - [ ] implementation (implementer-a, implementer-b)
