@@ -9,7 +9,7 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e (see plan.md)
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify): `/`, `/testbed/session-login`, `/testbed/lobby-main`, body font Pixelify Sans
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [ ] committed: 66250b3
 
 ## Phase 1b: slice engine (types, asset-url, slice.map, SliceFrame/NineSlice/ThreeSlice, barrel)
 - [ ] implementation (implementer-a, implementer-b)
