@@ -21,12 +21,12 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e (see plan.md)
 - [ ] committed: 25880b9
 
 ## Phase 1c: Ribbon and PixelPanel
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a, preview-b)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify): 5 variants, 3 sizes, ribbon contrast, two-tone focus ring on paper and wood
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a, preview-b)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify): 5 variants, 3 sizes, ribbon contrast, two-tone focus ring on paper and wood
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 1d: PixelBar and PixelIcon
@@ -114,3 +114,4 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e (see plan.md)
 2026-10-22 coordinator: plan agreed with the user; triage.md written; waiting for "continue" to start Phase 1.
 2026-10-22 architect-a: Phase 1 plan.md drafted (DRAFT), split into 1a-1e; progress blocks created for all phases.
 2026-10-22 coordinator: applied two non-blocking 1b review notes myself (slice.map.ts reuse isThreeSlice; preview contentClassName gets flex).
+2026-10-22 architect-b (1c final review): RIBBON_INSET tuned { top: 6, right: 56, bottom: 12, left: 56 } -> { top: 14, right: 56, bottom: 12, left: 56 } (text centred on ribbon face rows 3-44). Carved panel min 96 -> 126 and tone light -> ink, inline-padding inner div, Ribbon truncation classes accepted and recorded in plan.md.

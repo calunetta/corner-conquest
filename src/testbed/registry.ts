@@ -59,11 +59,15 @@ import { tileVariantEditorPreview } from '@/testbed/components/TileVariantEditor
 import { tileVariantGalleryPreview } from '@/testbed/components/TileVariantGallery/TileVariantGallery.preview';
 import { iconEditorPreview } from '@/testbed/components/IconEditor/IconEditor.preview';
 import { sliceFramePreview } from '@/modules/pixel-ui/components/SliceFrame/SliceFrame.preview';
+import { ribbonPreview } from '@/modules/pixel-ui/components/Ribbon/Ribbon.preview';
+import { pixelPanelPreview } from '@/modules/pixel-ui/components/PixelPanel/PixelPanel.preview';
 import type { ComponentPreview } from './testbed.types';
 
 /** Every preview shown in the testbed. Register new previews here (skill: testbed-preview). */
 export const previews: ComponentPreview[] = [
   sliceFramePreview,
+  ribbonPreview,
+  pixelPanelPreview,
   mapZoomControlsPreview,
   animatedMonsterPreview,
   deathEffectPreview,

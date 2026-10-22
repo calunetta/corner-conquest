@@ -50,3 +50,36 @@ VERDICT: APPROVED
 
 ## Docs
 - `docs-sync` scheduled for 1e per plan. No lessons-learned entry needed.
+
+---
+
+# Final review: Phase 1c (Ribbon, PixelPanel)
+
+VERDICT: APPROVED
+
+## Checks run
+- `npm run typecheck`: clean (tsc --noEmit, no output)
+- `npm run lint`: clean (eslint . --max-warnings 0, no output)
+- `npm test`: Test Suites: 321 passed, 321 total; Tests: 4556 passed, 4556 total (re-run after my `RIBBON_INSET` edit)
+- Screenshots read: `test-results/ui-verify/testbed-pixel-ui-ribbon-state-Yellow--desktop.png` (before tune), `.../testbed-pixel-ui-panel-state-Titled-20paper--desktop.png`, `.../testbed-pixel-ui-panel-state-Variant-20carved--mobile.png`, and my re-capture of Yellow after the tune (scratchpad).
+
+## Plan adherence
+- Files match the File plan; `index.ts` exports `Ribbon`, `PixelPanel` and their types; registry has two new imports and entries (`ribbonPreview`, `pixelPanelPreview`).
+- Spans, sheet sizes, urls and min sizes match Contracts apart from the four deviations below.
+
+## The four verification changes
+1. Padding on an inner div: OK. `SliceFrame.tsx` writes the inset as inline `padding` on the content wrapper, so a Tailwind `p-*` on the same element never applies. Inner div is the correct fix; plan Contracts and Test plan updated.
+2. Carved min 126x126: OK. The 9-slice cannot render below corner sizes (62+63 by 63+63); a 96 floor would crush the art. Spans (fixed) unchanged. Plan updated.
+3. Carved textTone ink: OK. Light text on tan fails contrast (screenshot: ink text readable). Plan updated (tone list now ink for banner/paper/carved, light for wood/special).
+4. Ribbon `max-w-full` / `min-w-0` / `truncate`: OK. Required for the truncation criterion inside a flex chain; plan updated.
+
+## Ribbon vertical centring (tuned here)
+Cause: the SliceFrame content wrapper is not stretched to the 61 px ribbon height, so `items-center` is a no-op and the text sat at `inset.top + half line` = 16 px; the ribbon face (Ribbon_Yellow, column 96) spans rows 3-44, centre 23.5. Fix: `RIBBON_INSET.top` 6 -> 14 in `Ribbon.map.ts:9`; `bottom` stays 12 (no effect on position, kept as is). Re-captured Yellow: text centred on the face. Final values `{ top: 14, right: 56, bottom: 12, left: 56 }`. `Ribbon.map.test.ts` asserts shape only, still green.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | src/modules/pixel-ui/components/Ribbon/Ribbon.map.ts:9 | `bottom: 12` is dead for a 61 px fixed-height frame (content auto height). Harmless; revisit if SliceFrame content ever stretches | none | no |
+
+## Docs
+- `docs-sync` stays in 1e per plan. Lessons-learned entry appended (inline inset padding beats Tailwind classes on SliceFrame content).

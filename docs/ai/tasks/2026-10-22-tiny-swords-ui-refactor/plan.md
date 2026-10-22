@@ -227,12 +227,12 @@ export interface RibbonProps {
   children: string;           // one line; also set as the `title` attribute of the text span
 }
 // Ribbon.map.ts
-export const RIBBON_INSET: FrameInset; // tunable. Initial { top: 6, right: 56, bottom: 12, left: 56 }
+export const RIBBON_INSET: FrameInset; // tunable. Initial { top: 6, right: 56, bottom: 12, left: 56 }; final after 1c ui-verify { top: 14, right: 56, bottom: 12, left: 56 } (content div is not stretched to the 61 px ribbon height, so `top` alone positions the text; face band is rows 3-44, centre 23.5)
 export function toRibbonSheet(color: RibbonColor): ThreeSliceSheet;
 // url assetUrl(`UI/Ribbons/Ribbon_${Blue|Red|Yellow}_3Slides.png`), width 192, height 64,
 // cols [{start:3,size:61},{start:64,size:64},{start:128,size:61}], rows [{start:0,size:61}], inset RIBBON_INSET.
-// DOM: ThreeSlice (inline-block, minWidth 192) > contentClassName 'flex items-center justify-center gap-2' > {icon} + <As title={children} className=text-classes + ' block'>{children}</As>. The `as` element IS the text element (a heading cannot be the div root), so `heading` role wraps only the text.
-// Ribbon styles: text 'text-xl font-bold leading-none truncate'; blue/red add 'text-foreground [text-shadow:0_1px_0_hsl(var(--ink))]'; yellow 'text-ink'. min width 192 via ThreeSlice minWidth={192}.
+// DOM: ThreeSlice (inline-block max-w-full, minWidth 192) > contentClassName 'flex min-w-0 items-center justify-center gap-2' > {icon} + <As title={children} className=text-classes + ' block'>{children}</As>. The `as` element IS the text element (a heading cannot be the div root), so `heading` role wraps only the text.
+// Ribbon styles: text 'block min-w-0 truncate text-xl font-bold leading-none'; blue/red add 'text-foreground [text-shadow:0_1px_0_hsl(var(--ink))]'; yellow 'text-ink'. min width 192 via ThreeSlice minWidth={192}.
 
 // ---------- PixelPanel ----------
 export type PanelVariant = 'wood' | 'banner' | 'paper' | 'special' | 'carved';
@@ -256,11 +256,12 @@ export function toPanelSpec(variant: PanelVariant): PanelSpec;
 //  special 'UI Elements/UI Elements/Papers/SpecialPaper.png' 320x320
 //          cols [{9,55},{128,64},{256,55}] rows [{20,44},{128,64},{256,43}] inset 16 all min 128x128 tone 'light'
 //  carved  'UI/Banners/Carved_9Slides.png' 192x192
-//          cols [{2,62},{64,64},{128,63}] rows [{1,63},{64,64},{128,63}] inset 12 all min 96x96 tone 'light'
+//          cols [{2,62},{64,64},{128,63}] rows [{1,63},{64,64},{128,63}] inset 12 all min 126x126 (art-driven floor: corners 62+63 wide, 63+63 tall cannot render smaller) tone 'ink' (light text is unreadable on the tan art)
 // ({a,b} = {start,size}.)
 // DOM: <div className={styles.root(titled)}  // 'relative', titled adds 'mt-8'
 //        {title && <div className={styles.titleSlot}><Ribbon as color>{title}</Ribbon></div>}  // 'absolute left-1/2 -top-[30px] z-10 max-w-full -translate-x-1/2'
-//        <NineSlice sheet minWidth minHeight className="block" contentClassName={cn(textTone class, padding class, titled && 'pt-8')} {...rest}>{children}</NineSlice>
+//        <NineSlice sheet minWidth minHeight className="block" contentClassName={textTone class} {...rest}><div className={cn(padding class, titled && 'pt-8')}>{children}</div></NineSlice>
+// Padding lives on an inner div: SliceFrame sets the frame inset as inline `padding` on the content wrapper, which beats Tailwind padding classes on the same element.
 // textTone class: ink -> 'text-ink', light -> 'text-foreground'.
 
 // ---------- PixelBar ----------
@@ -396,7 +397,7 @@ Model escalation: sonnet for `slice.map.ts`, `SliceFrame.tsx`, `Ribbon.tsx`, `Pi
   - `asset-url.test.ts`: spaces encoded (`'UI Elements/UI Elements/Wood Table/WoodTable.png'` gives `/tiny-swords/UI%20Elements/UI%20Elements/Wood%20Table/WoodTable.png`); plain path unchanged apart from prefix.
   - `slice.map.test.ts`: 9-slice WoodTable at scale 1 -> `columns '84px 1fr 84px'`, `rows '85px 1fr 103px'`, 9 cells row-major keys `r0c0..r2c2`, `minWidth 168`, `minHeight 188`, `fixedHeight null`; cell r0c0 `backgroundSize '533.33...% 527.06...%'` (448/84, 448/85) and `backgroundPosition` `44/(448-84)*100` and `43/(448-85)*100`; middle cell position `192/(448-64)*100 = 50`; scale 2 doubles px and mins but not percents; 3-slice ribbon: `rows '61px'`, `fixedHeight 61`, 3 cells, vertical position `0%`; `total === size` gives `0%` (no NaN/Infinity).
   - `Ribbon.map.test.ts`: color to url for 3 colours; geometry constants; spans inside sheet.
-  - `PixelPanel.map.test.ts`: all 5 variants: spans ordered, non-overlapping, within sheet width/height; min sizes (256/256/128/128/96); textTone ink for banner and paper; light for wood, special, carved. Every `sheet.url` decodes to a file that exists under `public/` (`fs.existsSync(path.join('public', decodeURI(url)))`).
+  - `PixelPanel.map.test.ts`: all 5 variants: spans ordered, non-overlapping, within sheet width/height; min sizes (256/256/128/128/126); textTone ink for banner, paper and carved; light for wood and special. Every `sheet.url` decodes to a file that exists under `public/` (`fs.existsSync(path.join('public', decodeURI(url)))`).
   - `PixelBar.map.test.ts`: `toBarFill(7,10)` fraction 0.7; `(0,10)` 0; `(10,10)` 1; `(15,10)` fraction 1 and valueNow 10; `(-3,10)` 0; `(5,0)` fraction 0, valueNow 0, valueMax 0; `(NaN,10)` 0. BAR_ART urls exist on disk.
   - `PixelIcon.map.test.ts`: 9 colour names map to the listed Icon_NN; `size` gives px 32/64; grey names: regular/pressed/disabled gives `Regular_/Pressed_/Disable_`; colour name ignores state; unknown name (cast) returns null; every produced url exists on disk.
   - `PixelButton.map.test.ts`: 2 variants x 2 slice sizes: urls per visual as in Contracts (hover/disabled shared by tones); icon sizes: regular/hover/disabled -> Regular url, pressed -> Pressed url; every url exists on disk.
@@ -404,7 +405,7 @@ Model escalation: sonnet for `slice.map.ts`, `SliceFrame.tsx`, `Ribbon.tsx`, `Pi
 - tester-b (view and e2e):
   - `SliceFrame.test.tsx`: NineSlice renders 9 cells and ThreeSlice 3, art layer `aria-hidden`, children visible, content padding equals inset x scale, root forwards `className` and `data-testid`.
   - `Ribbon.test.tsx`: text rendered; `title` attribute equals text; `as="h2"` renders `heading` level 2; icon rendered before text; yellow uses `text-ink`.
-  - `PixelPanel.test.tsx`: each variant renders children; with `title` a heading (level 2 default, 3 with `titleAs`) exists; without title no heading; `padding` classes.
+  - `PixelPanel.test.tsx`: each variant renders children; with `title` a heading (level 2 default, 3 with `titleAs`) exists; without title no heading; `padding` classes sit on the inner wrapper that is the direct parent of the children (sm and md differ; md default; titled adds the extra top padding there).
   - `PixelBar.test.tsx`: `role="progressbar"` with `aria-valuenow/min/max` for 7/10, 15/10 (valuenow 10), max 0; `aria-label` present; label text visible; fill width `70%`.
   - `PixelIcon.test.tsx`: no `label` -> `aria-hidden`, no role; with label -> `role="img"` named; 32 and 64 px sizes in style; unknown name renders nothing (`container.firstChild` null).
   - `PixelButton.test.tsx`: renders `button` with label; click calls `onClick`; disabled click does not call it and keyboard Enter does not either (`fireEvent`; `@testing-library/user-event` is not installed); `loading` -> `disabled`, `aria-busy="true"`, label still in DOM; four state layers present; the current layer is `visible` and the others `invisible`; hover/pointer-down change which layer is visible; icon size renders no text sheet layer; focus-visible classes present on root.
