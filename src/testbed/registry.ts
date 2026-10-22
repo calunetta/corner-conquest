@@ -63,6 +63,8 @@ import { ribbonPreview } from '@/modules/pixel-ui/components/Ribbon/Ribbon.previ
 import { pixelPanelPreview } from '@/modules/pixel-ui/components/PixelPanel/PixelPanel.preview';
 import { pixelBarPreview } from '@/modules/pixel-ui/components/PixelBar/PixelBar.preview';
 import { pixelIconPreview } from '@/modules/pixel-ui/components/PixelIcon/PixelIcon.preview';
+import { pixelButtonPreview } from '@/modules/pixel-ui/components/PixelButton/PixelButton.preview';
+import { pixelTypographyPreview } from '@/modules/pixel-ui/components/PixelTypography/PixelTypography.preview';
 import type { ComponentPreview } from './testbed.types';
 
 /** Every preview shown in the testbed. Register new previews here (skill: testbed-preview). */
@@ -72,6 +74,8 @@ export const previews: ComponentPreview[] = [
   pixelPanelPreview,
   pixelBarPreview,
   pixelIconPreview,
+  pixelButtonPreview,
+  pixelTypographyPreview,
   mapZoomControlsPreview,
   animatedMonsterPreview,
   deathEffectPreview,

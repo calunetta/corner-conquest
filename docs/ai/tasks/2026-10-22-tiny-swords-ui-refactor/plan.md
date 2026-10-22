@@ -7,7 +7,7 @@ Scope: Phase 1 only, split into sub-phases 1a-1e (see Phases). Phases 2-7 stay a
 
 ## Goal and acceptance criteria
 - [ ] `src/modules/pixel-ui/` exports `NineSlice`, `ThreeSlice`, `Ribbon`, `PixelButton`, `PixelPanel`, `PixelBar`, `PixelIcon` from `src/modules/pixel-ui/index.ts`.
-- [ ] Every component has a preview registered in `src/testbed/registry.ts`, group `Pixel UI`; one extra preview `pixel-typography`.
+- [ ] Every component has a preview registered in `src/testbed/registry.ts`, group `Pixel UI`; one extra preview `pixel-ui-typography`.
 - [ ] Panels: 5 variants render with fixed-size corners, stretched edges/center, no seams; 3 sizes shown.
 - [ ] Ribbon blue/red/yellow; long text truncates, full text in `title` attribute.
 - [ ] PixelButton `primary` and `danger` show Regular, Hover, Pressed, Focus-visible, Disabled; disabled cannot be activated.
@@ -141,7 +141,7 @@ Phase 1e: PixelButton, typography, docs
 | `PixelButton.map.test.ts`, `PixelButton.hook.test.ts` | new | Logic tests | tester-a |
 | `PixelButton.test.tsx` | new | View test | tester-b |
 | `PixelButton.preview.tsx` | new | Button states preview | preview-a |
-| `src/modules/pixel-ui/PixelTypography.preview.tsx` | new | Preview-only: Pixelify vs Outfit at 12/14/16 px on paper, banner, card | preview-a |
+| `src/modules/pixel-ui/components/PixelTypography/PixelTypography.preview.tsx` (built path) | new | Preview-only: Pixelify vs Outfit at 12/14/16 px on paper, banner, card | preview-a |
 | `index.ts`, `registry.ts` | edit | Export + register | implementer-a / preview-a |
 | `docs/architecture/systems-and-visuals.md`, `docs/architecture/structure-and-state.md` (§2 module list) | edit | New module, fonts, tokens | docs-sync |
 
@@ -274,7 +274,7 @@ export interface PixelBarProps {
   'aria-label': string;       // required
   className?: string;
 }
-export interface BarArt { sheet: ThreeSliceSheet; fillUrl: string; trackHeight: number } // built: the *_Base sheets are 3-slice sheets with transparent gaps, so the frame is a ThreeSlice and the track is a box inside its inset
+export interface BarArt { sheet: ThreeSliceSheet; fillUrl: string; trackHeight: number; fillSheetHeight: number; fillOffsetY: number } // 1e: fill offset moved into BAR_ART data (fillSheetHeight 64, fillOffsetY = floor((64 - trackHeight)/2)); built: the *_Base sheets are 3-slice sheets with transparent gaps, so the frame is a ThreeSlice and the track is a box inside its inset
 export const BAR_ART: Record<PixelBarSize, BarArt>;
 // big:   sheet BigBar_Base.png (320x64) cols [40/24, 128/64, 256/24] rows [9/51] inset { top: 11, right: 11, bottom: 16, left: 11 } trackHeight 24 // tunable (tuned in 1d)
 // small: sheet SmallBar_Base.png cols [49/15, 128/64, 256/15] rows [22/19] inset { top: 8, right: 10, bottom: 8, left: 10 } trackHeight 3 // tunable (tuned in 1d)
@@ -288,7 +288,7 @@ export function toBarFill(value: number, max: number): BarFill;
 //          <div className='h-full w-full overflow-hidden'><span data-testid="pixel-bar-fill" className='block h-full bg-no-repeat pixelated'
 //             style={{width: `${fraction*100}%`, backgroundImage: fill, backgroundSize: '100% 64px', backgroundPosition: `0 -${floor((64 - trackHeight)/2)}px`}} /></div>
 //          {label && <span className='absolute inset-0 flex items-center justify-center text-sm font-semibold text-foreground [text-shadow:0_1px_0_hsl(var(--ink))]'>{label}</span>}</div></ThreeSlice>
-// The fill sheet is 64 px tall; only its centred band shows over the track (FILL_SHEET_HEIGHT in PixelBar.tsx, to move to BAR_ART data in 1e).
+// The fill sheet is 64 px tall; only its centred band shows over the track (`fillSheetHeight` / `fillOffsetY` in BAR_ART, done in 1e).
 
 // ---------- PixelIcon ----------
 export type PixelIconColorName = 'hammer' | 'wood' | 'gold' | 'food' | 'attack' | 'close' | 'settings' | 'info' | 'music';
@@ -311,7 +311,7 @@ export function toIconSource(name: PixelIconName, size: PixelIconSize, state: Pi
 export type PixelButtonVariant = 'primary' | 'danger';
 export type PixelButtonSize = 'default' | 'large' | 'icon-round' | 'icon-square';
 export type PixelButtonVisual = 'regular' | 'hover' | 'pressed' | 'disabled';
-type HookedHandlers = 'onPointerEnter' | 'onPointerLeave' | 'onPointerDown' | 'onPointerUp' | 'onKeyDown' | 'onKeyUp' | 'onBlur';
+type HookedHandlers = 'onPointerEnter' | 'onPointerLeave' | 'onPointerDown' | 'onPointerUp' | 'onPointerCancel' | 'onKeyDown' | 'onKeyUp' | 'onBlur'; // built: onPointerCancel added (acts like pointerleave); the hook supplies 7 of these, onKeyUp is only reserved
 export interface PixelButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, HookedHandlers> {
   variant?: PixelButtonVariant;  // default 'primary'
   size?: PixelButtonSize;        // default 'default'
@@ -413,14 +413,14 @@ Model escalation: sonnet for `slice.map.ts`, `SliceFrame.tsx`, `Ribbon.tsx`, `Pi
   - e2e: none (no screen is wired; ui-verify covers the visual checks).
 
 ## Preview states
-Group `Pixel UI`. Slugs (kebab, unique): `slice-frame`, `ribbon`, `pixel-panel`, `pixel-bar`, `pixel-icon`, `pixel-button`, `pixel-typography`.
+Group `Pixel UI`. Slugs (kebab, unique): `slice-frame`, `ribbon`, `pixel-panel`, `pixel-bar`, `pixel-icon`, `pixel-ui-button`, `pixel-ui-typography` (built slugs are prefixed `pixel-ui-` like the others; PixelButton root carries `data-visual`).
 - SliceFrame (`slice-frame`): "NineSlice small", "NineSlice medium", "NineSlice large" (WoodTable at 256x256, 480x320, 720x400 inside `max-w-full` wrappers; mobile shows the 256 one), "ThreeSlice ribbon width 192 / 320".
 - Ribbon (`ribbon`): "Blue", "Red", "Yellow" ("Turn 14 - Your move"), "With icon" (gold PixelIcon not available until 1d: use a plain `<span>12</span>` as the icon node), "Long text truncated" (container 220 px).
 - PixelPanel (`pixel-panel`): one state per variant ("Wood", "Banner", "Paper", "Special", "Carved") with title "Event Log" and lines "Mia moved to (3,2)", "Kai found a card"; "Paper untitled", "Paper sizes" (small 128, medium 240, large 360 px wide), "Focus ring on paper" and "Focus ring on wood" (a focusable `<button className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">` inside).
 - PixelBar (slug `pixel-ui-bar`, built): states "big with label", "big without label", "small with label", "small without label", each showing 0%, 50%, 100%. Over-max is covered by unit tests.
 - PixelIcon (slug `pixel-ui-icon`): "Colour 32 px" (9 icons), "Colour 64 px", "Grey regular", "Grey pressed", "Grey disabled" (all 10).
 - PixelButton (`pixel-button`): "Primary default", "Danger default", "Primary large", "Danger large", "Icon round blue/red", "Icon square blue/red", "Disabled", "Loading", "Mobile width 390" (a w-full flex row of three default buttons "Move", "Attack", "Cards"). Hover, Pressed and Focus-visible are checked by interaction in ui-verify (spec states them as real interaction states).
-- PixelTypography (`pixel-typography`): "Event log lines", "Card body" at 12, 14, 16 px, Pixelify (`font-body`) vs Outfit (`font-readable`), each on `bg-paper text-ink`, banner panel and `bg-card`.
+- PixelTypography (`pixel-ui-typography`): "Event log lines", "Card body" at 12, 14, 16 px, Pixelify (`font-body`) vs Outfit (`font-readable`), each on `bg-paper text-ink`, banner panel and `bg-card`.
 - Fixtures: the sample strings from ui-design.md "Copy". Put shared strings in `src/modules/pixel-ui/pixel-ui.fixtures.ts` only if two previews or tests need the same constant (implementer-a, optional). No invented asset paths: previews use only the components.
 
 ## Risks

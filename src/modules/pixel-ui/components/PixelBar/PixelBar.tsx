@@ -5,12 +5,9 @@ import { styles } from './PixelBar.styles';
 import type { PixelBarProps } from './PixelBar.types';
 
 const FULL_PERCENT = 100;
-// Fill sheets are 64 px tall with the opaque band centred; show only that band over the track.
-const FILL_SHEET_HEIGHT = 64;
 
 export function PixelBar({ value, max, size = 'big', label, className, ...rest }: PixelBarProps) {
   const art = BAR_ART[size];
-  const fillBandOffset = Math.floor((FILL_SHEET_HEIGHT - art.trackHeight) / 2);
   const { fraction, valueNow, valueMax } = toBarFill(value, max);
 
   return (
@@ -31,8 +28,8 @@ export function PixelBar({ value, max, size = 'big', label, className, ...rest }
             style={{
               width: `${fraction * FULL_PERCENT}%`,
               backgroundImage: `url("${art.fillUrl}")`,
-              backgroundSize: `100% ${FILL_SHEET_HEIGHT}px`,
-              backgroundPosition: `0 -${fillBandOffset}px`,
+              backgroundSize: `100% ${art.fillSheetHeight}px`,
+              backgroundPosition: `0 -${art.fillOffsetY}px`,
             }}
           />
         </div>

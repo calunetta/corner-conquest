@@ -17,3 +17,9 @@ export type {
   PixelIconSize,
   PixelIconState,
 } from './components/PixelIcon/PixelIcon.types';
+export { PixelButton } from './components/PixelButton/PixelButton';
+export type {
+  PixelButtonProps,
+  PixelButtonSize,
+  PixelButtonVariant,
+} from './components/PixelButton/PixelButton.types';

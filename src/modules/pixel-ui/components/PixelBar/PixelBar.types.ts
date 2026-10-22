@@ -12,12 +12,16 @@ export interface PixelBarProps {
   className?: string;
 }
 
-/** The base sheet is a 3-slice frame; `inset` (sheet px) is where the fill track starts inside it. */
+/** The base sheet is a 3-slice frame; its `inset` is the frame padding around the track box that holds the fill. */
 export interface BarArt {
   sheet: ThreeSliceSheet;
   fillUrl: string;
   /** Height in px at 1x of the fill/track band. */
   trackHeight: number;
+  /** Height in px of the fill sheet image. */
+  fillSheetHeight: number;
+  /** Px to shift the 64 px fill sheet up so its centred opaque band sits in the track. */
+  fillOffsetY: number;
 }
 
 export interface BarFill {

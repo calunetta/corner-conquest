@@ -119,3 +119,38 @@ Move it. 64 is a fact of the fill asset, like `BAR_SHEET_SIZE` in `PixelBar.map.
 ## Docs
 - `docs-sync` stays in 1e. Lessons-learned entry appended (3-slice sheets with gaps; stale dev server).
 
+
+---
+
+# Final review: Phase 1e (PixelButton, typography preview, PixelBar cleanup, docs)
+
+VERDICT: APPROVED
+
+## Checks run
+- `npm run typecheck`: clean (tsc --noEmit, no output)
+- `npm run lint`: clean (eslint . --max-warnings 0, no output)
+- `npm test`: Test Suites: 328 passed, 328 total; Tests: 4798 passed, 4798 total (this run had no failures; the two earlier failures, `IconEditor.preview.test.tsx` and `MonsterSpriteUploader.catalogEdit.hook.test.ts`, are in untouched code and pass in isolation: judged load-sensitive flakes, not blocking. Second unexplained flake in Phase 1 after the one logged in 1d; both appear only on a full parallel run.)
+- Screenshots: not re-read; relied on coordinator ui-verify and preview-a measurements (contrast, 48x48 hit box, no 404s).
+
+## Plan adherence
+- `PixelButton.{types,map,hook,styles,tsx,preview}` and tests match the File plan and Contracts (sheets, inset, tone, art urls, `KEY_PRESS_MS` = 100, `data-visual` on the root `button`).
+- PixelBar cleanup done: `BAR_ART` carries `fillSheetHeight` and `fillOffsetY` (`PixelBar.map.ts`), `PixelBar.tsx` has no constant; BarArt doc reworded (1d findings 1 and 2 closed).
+- Deviations, now recorded in plan.md (I edited): `HookedHandlers` gained `onPointerCancel`; `BarArt` gained `fillSheetHeight`/`fillOffsetY`; slugs are `pixel-ui-button` / `pixel-ui-typography`; typography preview lives at `components/PixelTypography/`.
+- Carved 125 vs 126: the code comment in `PixelPanel.map.ts:83` is arithmetically right (62+63 = 125 wide, 63+63 = 126 tall); `minWidth: 126` rounds the width up to a square. The docs sentence wrongly called the spec minimum "the corner floor"; I fixed it in `docs/architecture/pixel-ui.md`. No code change.
+- Docs: `pixel-ui.md` (new), `docs/README.md` index row, `structure-and-state.md` module line, `systems-and-visuals.md` §6.10 pointer. Matches code. I fixed "eight handlers" to seven (the hook supplies seven; `onKeyUp` is only omitted from props).
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | docs/ai/tasks/2026-10-22-tiny-swords-ui-refactor/progress.md (Log) | Typography verdict is NOT recorded. Add: "1e preview-a: Pixelify Sans not good enough at 14 px for logs/card text (l/I/1, 0/O ambiguous, parentheses read as angle brackets); use it for headings, buttons, labels; use Outfit (`font-readable`) for event log, card body, digits and ids." Box left unticked until added | coordinator | no (gates the box) |
+| 2 | src/modules/pixel-ui/components/PixelButton/PixelButton.types.ts:15 | `onKeyUp` is omitted from props but the hook never supplies it, so consumers lose a handler for nothing | implementer-a | no; drop from `HookedHandlers` in a later phase or leave |
+| 3 | src/modules/pixel-ui/components/PixelButton/PixelButton.tsx:46 | Line exceeds ~100 chars, unformatted (also `PixelButton.map.ts` `toIconFile` signature split across lines). Cosmetic | implementer-b | no |
+
+## Phase 1 close-out
+- Exports (`src/modules/pixel-ui/index.ts`): `NineSlice`, `ThreeSlice`, `Ribbon`, `PixelPanel`, `PixelBar`, `PixelIcon`, `PixelButton` and their types. Every export has a preview and a doc entry; `SliceFrame` internals are not exported. No screen imports them yet.
+- Dead code: none found. `RIBBON_INSET.bottom` (1c finding) remains harmless. `onKeyUp` omission noted above.
+- File sizes: largest source files are `SliceFrame.tsx` 70, `PixelButton.map.ts` 94, `PixelPanel.map.ts` 94 lines (limit 150, lint-enforced and clean). Tests up to 253 lines (test files are exempt as lint passes).
+- Previews: `slice-frame`, `pixel-ui-ribbon`, `pixel-ui-panel`, `pixel-ui-bar`, `pixel-ui-icon`, `pixel-ui-button`, `pixel-ui-typography` registered in `src/testbed/registry.ts`.
+- Phase 1 theme: warm dark tokens + Pixelify/Outfit pairing in place; typography rule recorded in `pixel-ui.md` §6.18.
+- Open items for later phases: small PixelBar with label overflows the 3 px track (use unlabelled or revisit in Phase 5); disabled label contrast 3.81 accepted (WCAG-exempt); light `:root` tokens stale (dark-only app).
+- Commit hashes for 1a-1e boxes are the coordinator's.

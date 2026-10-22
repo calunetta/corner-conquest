@@ -5,6 +5,12 @@ const BARS_DIR = 'UI Elements/UI Elements/Bars';
 
 const BAR_SHEET_SIZE = { width: 320, height: 64 } as const;
 
+// Fill sheets are 64 px tall with the opaque band centred; only that band shows over the track.
+const FILL_SHEET_HEIGHT = 64;
+
+const toFillOffsetY = (trackHeight: number): number =>
+  Math.floor((FILL_SHEET_HEIGHT - trackHeight) / 2);
+
 // Spans measured with PIL: opaque caps and the tileable centre; gaps between are transparent.
 export const BAR_ART: Record<PixelBarSize, BarArt> = {
   big: {
@@ -21,6 +27,8 @@ export const BAR_ART: Record<PixelBarSize, BarArt> = {
     },
     fillUrl: assetUrl(`${BARS_DIR}/BigBar_Fill.png`),
     trackHeight: 24, // tunable
+    fillSheetHeight: FILL_SHEET_HEIGHT,
+    fillOffsetY: toFillOffsetY(24),
   },
   small: {
     sheet: {
@@ -36,6 +44,8 @@ export const BAR_ART: Record<PixelBarSize, BarArt> = {
     },
     fillUrl: assetUrl(`${BARS_DIR}/SmallBar_Fill.png`),
     trackHeight: 3, // tunable
+    fillSheetHeight: FILL_SHEET_HEIGHT,
+    fillOffsetY: toFillOffsetY(3),
   },
 };
 
