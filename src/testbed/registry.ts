@@ -44,6 +44,7 @@ import { googleIconPreview } from '@/modules/session/components/GoogleIcon/Googl
 import { linkGoogleAccountButtonPreview } from '@/modules/session/components/LinkGoogleAccountButton/LinkGoogleAccountButton.preview';
 import { deleteAccountButtonPreview } from '@/modules/session/components/DeleteAccountButton/DeleteAccountButton.preview';
 import { loginPreview } from '@/modules/session/components/Login/Login.preview';
+import { siteFooterPreview } from '@/modules/site-footer/components/SiteFooter/SiteFooter.preview';
 import { adSlotPreview } from '@/modules/ads/components/AdSlot/AdSlot.preview';
 import { lobbyPreview } from '@/modules/lobby/components/Lobby/Lobby.preview';
 import { lobbyBackgroundPreview } from '@/modules/lobby/components/LobbyBackground/LobbyBackground.preview';
@@ -109,6 +110,7 @@ export const previews: ComponentPreview[] = [
   deleteAccountButtonPreview,
   loginPreview,
   adSlotPreview,
+  siteFooterPreview,
   lobbyPreview,
   lobbyBackgroundPreview,
   lobbyGameRowPreview,

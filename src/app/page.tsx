@@ -5,6 +5,7 @@ import { GameBoard } from '@/features/game/components/GameBoard';
 import { AdSlot } from '@/modules/ads';
 import { Lobby, LobbyBackground } from '@/modules/lobby';
 import { Login, usePlayer } from '@/modules/session';
+import { SiteFooter } from '@/modules/site-footer';
 
 export default function Home() {
   const { playerId, username } = usePlayer();
@@ -18,7 +19,14 @@ export default function Home() {
 
   const renderScreen = () => {
     if (!isSignedIn) {
-      return <Login />;
+      return (
+        <>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <Login />
+          </div>
+          <SiteFooter />
+        </>
+      );
     }
     if (activeGameId) {
       return <GameBoard gameId={activeGameId} onExit={handleExitGame} />;
@@ -31,6 +39,7 @@ export default function Home() {
         <div className="shrink-0">
           <AdSlot />
         </div>
+        <SiteFooter />
       </>
     );
   };
