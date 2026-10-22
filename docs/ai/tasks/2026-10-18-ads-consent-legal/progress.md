@@ -19,25 +19,25 @@ Tier: L (sub-phases of the Phase 0 and Phase 1 L-tier tasks, themselves part of 
 
 ## Phase 2: Consent — Funding Choices loader (phase-0b-plan.md Phase 1)
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-b)
-- [ ] previews (none planned — see phase-0b-plan.md "Preview states")
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify) — limited: confirms no change with the env var unset; a real script load needs the user's actual Funding Choices URL (see phase-0b-plan.md "Open questions — blocking")
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-b)
+- [x] previews (none planned — see phase-0b-plan.md "Preview states")
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify) — limited: confirms no change with the env var unset; a real script load needs the user's actual Funding Choices URL (see phase-0b-plan.md "Open questions — blocking")
 - [x] docs-sync: `docs/architecture/structure-and-state.md`, `docs/architecture/systems-and-visuals.md`
 - [ ] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 60eea43
 
 ## Phase 3: Consent — signal reader for Phase 1 ads (phase-0b-plan.md Phase 2)
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-a)
-- [ ] tests (tester-a)
-- [ ] previews (none planned — no UI consumes the reader yet, see phase-0b-plan.md "Preview states")
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify) — not applicable, no visual change in this phase
+- [x] implementation (implementer-a)
+- [x] tests (tester-a)
+- [x] previews (none planned — no UI consumes the reader yet, see phase-0b-plan.md "Preview states")
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify) — not applicable, no visual change in this phase
 - [x] docs-sync: `docs/architecture/structure-and-state.md`
 - [ ] final review (architect-b)
-- [ ] committed: <hash>
+- [x] committed: 60eea43
 
 ## Phase 4: Account deletion — Firestore rules + service (phase-0c-plan.md Phase 1)
 - [x] plan approved (architect-b)
