@@ -27,7 +27,7 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e (see plan.md)
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify): 5 variants, 3 sizes, ribbon contrast, two-tone focus ring on paper and wood
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [ ] committed: a414fb0
 
 ## Phase 1d: PixelBar and PixelIcon
 - [ ] implementation (implementer-a, implementer-b)
