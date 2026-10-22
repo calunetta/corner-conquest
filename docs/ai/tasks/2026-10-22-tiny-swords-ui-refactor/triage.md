@@ -30,3 +30,16 @@ Restyle the whole app with the Tiny Swords UI pack (`public/tiny-swords/UI`, `pu
 - 128px corners of `WoodTable`/`Banner` are heavy on mobile: use Carved/Paper for small panels.
 - Pixel font readability in logs and card text: check at mobile size.
 - shadcn bridge touches every dialog: run the full test suite and ui-verify per phase.
+
+## Pipeline
+Phase 1: ui-designer-a → ui-designer-b → architect-a → architect-b → implementer-a ∥ implementer-b → tester-a → tester-b → preview-a → preview-b → docs-sync → architect-b (final-review).
+No game-designer stages (no rule change).
+
+## Overrides
+- planners (ui-designer-*, architect-*): sonnet per project config.
+- builders: haiku by default; implementer-b and preview-a on `claude-sonnet-5-5` (pixel 9-slice rendering needs care).
+
+## Constraints for every agent
+- Map rendering is untouched. HUD structure/layout is untouched; only skins change (Phase 5).
+- Assets live in `public/tiny-swords`; do not copy or modify them. Sheet slicing: 64px cells, corner/edge/corner at the first, middle and last non-empty cells (WoodTable/Banner 448px: cols 0-128, 192-256, 320-448; Papers 320px: 0-64, 128-192, 256-320). 3-slice ribbons/buttons: 192x64 split in thirds.
+- Phase 1 delivers components, previews, font and tokens only; no screen is rewired yet.
