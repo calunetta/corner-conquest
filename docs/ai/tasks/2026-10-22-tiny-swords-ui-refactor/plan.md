@@ -1,7 +1,8 @@
 # Plan: Tiny Swords UI refactor, Phase 1 (pixel-ui foundation)
 
-Status: APPROVED
-Inputs: triage.md, ui-design.md (Final spec)
+Status: APPROVED (Phase 1)
+Phase 2 status: APPROVED (architect-b, 2026-10-23; see "Phase 2 plan" at the end of this file; architect-b approves)
+Inputs: triage.md, ui-design.md (Final spec; Phase 2 Final spec)
 
 Scope: Phase 1 only, split into sub-phases 1a-1e (see Phases). Phases 2-7 stay as in triage.md. No screen is rewired. Map and HUD untouched.
 
@@ -449,3 +450,470 @@ Folded in by me (no re-plan needed):
 7. Tunable list extended to PixelButton insets, with reporting location (`progress.md` log).
 
 Non-blocking notes: `PixelButton` omits `onKeyDown`/`onBlur`/pointer handlers from its props, so consumers cannot attach them; revisit when Phase 2 designs the shadcn bridge (compose handlers in the hook). Focus ring sits on the 64 px button box while the plate is 56 px tall; accept unless ui-verify shows it looks wrong.
+
+---
+
+# Phase 2 plan: shadcn bridge (draft by architect-a, 2026-10-23)
+
+Phase 2 status: APPROVED by architect-b (see "P2 Review"). Inputs: `ui-design.md` "Phase 2 Final spec" (it wins over "Phase 2 spec" where they conflict), `triage.md`, `docs/ai/lessons-learned.md` ("Slice frames" entries), `docs/architecture/pixel-ui.md`.
+Sub-phases 2a-2h (see Phases). No screen is rewritten; only `src/components/ui/*` internals, the pixel-ui prerequisites, three one-line HUD size edits and one one-line `variant` edit. Map and HUD structure untouched.
+
+## P2 Goal and acceptance criteria
+All items of ui-design.md "Phase 2 spec / Acceptance criteria" as amended by "Phase 2 Final spec" items 1-11 apply verbatim. Plan-level checklist (observable):
+- [ ] `PixelButton` is `forwardRef`, calls consumer pointer/key/blur handlers then its own, has variant `neutral` (rest + hover + pressed = `Button_Hover_*`, disabled = `Button_Disable_*`, hover `brightness-110`, pressed `brightness-90`).
+- [ ] `Ribbon` accepts `ReactNode` children, forwards a ref to its text element, spreads extra HTML props on it; `title` attribute only for string children.
+- [ ] `PixelPanel` has `padding="none"` and `rootClassName`.
+- [ ] `Button`: sprite tier for `default`/`lg` x `default|destructive|outline|secondary`; plate tier for `sm`, `icon`, new `plate`, `asChild`; plain for `ghost`/`link`.
+- [ ] `Dialog`, `AlertDialog`, `Sheet` render the `special` frame, dark field, ribbon title, (Dialog, Sheet) round close button; Radix semantics unchanged.
+- [ ] `Card`, `Input`, `Badge`, `Progress`, `Tooltip`, `Popover`, `Tabs`, `Toast`, `Switch`, `Checkbox`, `RadioGroup`, `Slider`, `Separator`, `ScrollArea`, `Avatar`, `Label`, `Textarea` use the plate recipe.
+- [ ] Testbed preview `shadcn-bridge` (group `Pixel UI`) shows every state listed under P2 Preview states.
+- [ ] Migration-debt report (P2 Migration debt) is written to `progress.md` log in 2h and re-checked by grep.
+- [ ] `npm run typecheck`, `npm run lint`, `npm test` (328+ suites, 4798+ tests) pass after every sub-phase; e2e dialog flows pass in 2h.
+
+## P2 Verified context
+| Symbol or file | Location | Why it matters |
+|---|---|---|
+| `PixelButton` is a plain function, spreads `{...rest}` then `{...handlers}` (consumer handlers overwritten) | `src/modules/pixel-ui/components/PixelButton/PixelButton.tsx:14-35` | Needs `forwardRef` + composition. |
+| `HookedHandlers` omitted from `PixelButtonProps` | `PixelButton.types.ts:9-24` | Remove the `Omit`, keep the union for the hook typing. |
+| `usePixelButtonVisual(isDisabled)` returns 7 handlers (no `onKeyUp`) | `PixelButton.hook.ts:10-64` | Gains a second param. |
+| `TONE` record, `toSliceFile(visual, tone, slides)`, `toButtonArt` | `PixelButton.map.ts:15,27,78` | Neutral art goes here. |
+| `styles.artStack(isPressed)`, `styles.label`, `rootBase` | `PixelButton.styles.ts:32-43,19,4` | Tint + label flex go here. |
+| `Ribbon` children typed `string`, `title={children}`, `className` goes to the frame, no ref, no rest | `Ribbon.tsx:9-23`, `Ribbon.types.ts:6-14` | Widen. |
+| `PixelPanel`: `{...rest}` and `className` go to `NineSlice`; outer div has no class hook; `PanelPadding = 'sm' \| 'md'` | `PixelPanel.tsx:8-42`, `PixelPanel.types.ts:6-16`, `PixelPanel.styles.ts:3-18` | `rootClassName`, `'none'`. |
+| `SliceFrame` writes the frame inset as inline padding on the content wrapper; root has `relative`; no `display` | `SliceFrame.tsx:52-58`, `SliceFrame.styles.ts` | Lessons-learned: consumer padding goes on an inner div, never on `contentClassName`. |
+| `special` sheet: `SpecialPaper.png` 320x320, spans trimmed (cols `{9,55},{128,64},{256,55}`), inset 16 all, min 128x128, tone light | `PixelPanel.map.ts` (Phase 1 plan Contracts) | The frame box has NO transparent margin (spans are trimmed), so ui-designer-b's "9/20/21 transparent px" is already absorbed. See Decision D2. |
+| Barrel exports: `NineSlice, ThreeSlice, Ribbon, PixelPanel, PixelBar, PixelIcon, PixelButton` + types; `toPanelSpec`/`toButtonArt` NOT exported | `src/modules/pixel-ui/index.ts:1-25` | The bridge uses only the barrel. `RibbonColor` (line 5), `PanelVariant` (line 8) and `PixelButtonVariant` (line 24) are already exported; no barrel edit in Phase 2. |
+| shadcn `Button`: forwardRef, `Slot` for `asChild`, `buttonVariants` exported, sizes `default sm lg icon` | `src/components/ui/button.tsx:8-57` | Rewritten. |
+| `buttonVariants` consumers: `alert-dialog.tsx:7,107,120` and `calendar.tsx:8,29,41` | grep this session | Keep the export and the cva signature (`variant`, `size`, `className`). |
+| `dialog.tsx` (Content: `grid ... border bg-background p-6 shadow-lg`, Close with lucide `X`), `alert-dialog.tsx` (Action/Cancel are `Primitive.Action/Cancel` + `buttonVariants`), `sheet.tsx` (`sheetVariants` cva, `side`, Close) | `src/components/ui/{dialog,alert-dialog,sheet}.tsx` | Rewritten. |
+| `card.tsx`, `input.tsx`, `badge.tsx` (`badgeVariants`, `BadgeProps` extends div attrs), `progress.tsx` (indicator `translateX(-${100-value}%)`) | `src/components/ui/*.tsx` | Rewritten as plates. |
+| `src/components/ui/**` is in `IGNORED_PATHS`; `RESTRICTED_IMPORTS` apply only under `src/modules` | `eslint.config.mjs:30-41,49-55` | `@/modules/pixel-ui` (barrel) can be imported from `src/components/ui` with no lint change. No `eslint.config.mjs` edit. |
+| Jest: `lucide-react` is mocked globally (every icon is `<span data-testid="lucide-icon-<name>">`) | `jest.setup.js` | Dialog close `X` renders as a span in tests. |
+| No test file exists under `src/components/ui` | `find src -path '*components/ui*' -name '*.test.*'` (empty) | New tests are new files. |
+| Four tests mock `@/components/ui/tooltip` | `IslandTile.test.tsx:55`, `IslandTile.neutralFog.test.tsx:19`, `IslandTile.monsters.test.tsx:19`, `AnimatedMonster.test.tsx:21` | Unaffected by the Tooltip class change. |
+| Registry: `previews` array, imports one `*Preview` per file; `registry.test.ts` needs unique kebab slug and unique state names per preview | `src/testbed/registry.ts:1-120`, `src/testbed/registry.test.ts` | Preview registration. |
+| Preview of non-module code lives in `src/testbed/components/<Name>/<Name>.preview.tsx` and imports `ComponentPreview` from `@/testbed` or `./testbed.types` | `src/testbed/components/TileVariantGallery/TileVariantGallery.preview.tsx` (listing), `registry.ts:36-40` | Path for the new preview: `src/testbed/components/ShadcnBridge/`. |
+| Existing preview already imports `Button` | `src/modules/pixel-ui/components/PixelPanel/PixelPanel.preview.tsx:2` | `<Button size="sm">` stays plate; no change needed. |
+| `ActionButton` default-size `Button` with HUD layout classes (`h-auto min-h-12 ... p-2`, `h-16` when main) | `src/modules/hud/components/ActionsPanel/ActionButton.tsx:48-55`, `ActionsPanel.styles.ts:29-43` | Would become a sprite button and change HUD size. Fixed by `size="plate"` (D4). |
+| `GameBoardHeader` default-size `Button`s | `src/modules/hud/components/GameBoardHeader/GameBoardHeader.tsx:83,89` | Same. |
+| `DeleteAccountButton` `AlertDialogAction className={styles.confirmAction}` with `bg-destructive ...` | `src/modules/session/components/DeleteAccountButton/DeleteAccountButton.tsx:71-75` | Destructive confirm must stay red: pass `variant="destructive"`. |
+| `AlertDialogTitle`/`DialogTitle`/`SheetTitle` call sites (33) | grep `<(Dialog\|AlertDialog\|Sheet)Title` this session | Titles keep `className` (goes to the ribbon frame). Special cases in P2 Migration debt. |
+| E2E selectors on dialogs: `getByRole('dialog'\|'alertdialog')`, `getByRole('button', { name })`, `ancestor::div[.//button][1]` | `e2e/bot-ui-actions.ts:176-200`, `e2e/*.spec.ts` | Role/name based; labels remain accessible names; no DOM-structure assumption broken by the frame. Verified by running e2e in 2h. |
+
+## P2 Decisions
+- **D1 Where the bridge lives**: `src/components/ui/*.tsx` import `PixelButton`, `PixelPanel`, `Ribbon` from `@/modules/pixel-ui` (barrel). No reverse import. Rejected: dialog-local ribbon on `ThreeSlice` (Final spec item 9 widens `Ribbon`).
+- **D2 Insets** (Final spec item 3 translated to our engine): `special` spans are already trimmed, so the frame box equals the visible art. Spec result "310 px usable at 374 px" = 32 px of horizontal space between frame edge and text: 16 (sheet inset, fixed by `SliceFrame`) + 16 (`px-4` on the dark field). Vertical: 16 + 8 (`py-2`) = 24 px. `PixelPanel padding="none"`; the dark field div carries `px-4 py-2`. Tunable list for 2d: `px-4 py-2` of `DIALOG_FIELD`, `max-h-[calc(100dvh-3rem)]` (= 16 shell margin + 2x16 inset), close `right-4 top-6`. Rejected: per-side inset option in `PixelPanel`/`SliceFrame` (not needed once padding lives on an inner div; SliceFrame inset stays 16).
+- **D3 Sprite className neutraliser**: `className` from callers is applied to the sprite root. Colour, border, radius, shadow and gradient classes would paint a rectangle behind the art, and `h-*`/`min-w-*` would let the 61/64 px art overflow the box. `Button` therefore appends the constant `SPRITE_LOCK` after the caller classes: `'!h-16 !min-w-[128px] !rounded-none !border-0 !bg-transparent !bg-none !shadow-none'` (`lg`: `!min-w-[192px] px-8` instead of `!min-w-[128px]`). Tailwind `!` utilities win over any caller class and any `hover:` variant. Layout classes (`w-full`, `flex-*`, `self-*`, margins, `gap-*`, `hidden sm:inline-flex`) keep working. The spec said these overrides are "not supported" and only listed; this keeps the old gradient buttons from rendering as a broken rectangle between Phase 2 and Phase 6. Rejected: stripping classes from the string (fragile); migrating 20 call sites now (Phases 3-6 own them).
+- **D4 New `Button` size `plate`**: dimensions of the old default (`h-10 px-4 py-2`), plate tier, never sprite. Needed because three in-game call sites use the default size and carry HUD layout classes; sprite default (64 px tall) would change HUD structure, which the triage forbids. Edits: `ActionButton.tsx` and `GameBoardHeader.tsx` get `size="plate"` (one prop each, 3 tags). Deviation from the Final spec (it lists sizes `default lg sm icon`); needs architect-b sign-off. Rejected: `size="sm"` at those sites (changes height 40 to 36 and horizontal padding 16 to 12 in the HUD).
+- **D5 `asChild`**: always plate/plain tier (Final spec). `Slot` receives class + props; `plate` and sprite sizes collapse to `h-10 px-4 py-2`.
+- **D6 PixelButton handler composition lives in the hook**: `usePixelButtonVisual(isDisabled, consumer?)` returns already-composed handlers (consumer first, then own). Existing hook tests call it with one argument and keep passing. Rejected: a separate `compose` util file (no second user); `@radix-ui/primitive` `composeEventHandlers` (transitive dependency, not in `package.json` verified? unverified, so not relied on). Consumer `preventDefault` does NOT skip the visual update (visuals are cosmetic).
+- **D7 Neutral on icon sizes**: the pack has no neutral icon sheet; `neutral` + `icon-round|icon-square` falls back to the Blue icon sheets (documented in `TONE`). Not used by the bridge.
+- **D8 PixelButton label layout**: label span becomes `inline-flex items-center gap-2` so call sites that put an icon plus text inside a button (Login, Lobby, CreateGameDialog, GameBoardHeader use `RegistryIcon` + text) keep the spacing the caller's `gap-*` class used to give the root. Additive, no test asserts the label classes.
+- **D9 Card `frame` mode**: renders `PixelPanel variant={frame} padding="none" className={className} {...props}`; no `ref` (PixelPanel has no ref; grep `<Card ... ref=` found none) and a `title` attribute cannot be used in frame mode because `PixelPanel` reads `title` as ribbon text (documented in the file comment). Plate stays the default.
+- **D10 Popover stays plate** (Final spec item 6). **Progress** keeps Radix, plate skin (spec section 8), `bg-accent` indicator.
+- **D11 DialogHeader/SheetHeader text alignment** unchanged: spec wording ("remove the split; keep as is") is contradictory; layout is behaviour, so `text-center sm:text-left` stays. Footers: `flex flex-col-reverse gap-2 sm:flex-row sm:justify-end` (drop `sm:space-x-2`); they stack below `sm` as today; the "two buttons side by side fit" criterion is shown in the preview by a plain `flex` row of two `default` buttons inside a 310 px column.
+- **D12 Shared dialog parts** in one new file `src/components/ui/dialog-frame.tsx` (frame, close button, class constants) used by `dialog.tsx`, `alert-dialog.tsx` and `sheet.tsx` (DRY: the three had copy-pasted overlay/content/footer code). Radix wrappers stay in their own files. Rejected: a `PixelDialog` module component (would import Radix into `pixel-ui`; Phase 6 may move it).
+- **D13 Title ribbon preset**: `TITLE_RIBBON = 'mx-auto block max-w-[calc(100%-6rem)]'` (`block` replaces Ribbon's `inline-block`; 6rem = the spec's `mx-12` clear space each side, so the close button never overlaps the title). Titles are `<Primitive.Title asChild><Ribbon as="h2" ...>`.
+- **D14 Sheet geometry** (Final spec item 5, adapted to the engine): shell = Radix Content, `fixed`, `overflow-hidden`, `flex flex-col`, transparent. Two children: (1) a decorative frame layer `PixelPanel` (`aria-hidden`, `padding="none"`, no children) positioned `absolute` with 64 px (`-16` Tailwind unit) negative insets on the edges that touch the viewport; (2) the field layer (`relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-black/50 p-4`) with a 16 px margin on the inner edge only (so the 16 px frame band shows). Because the field is not under any bleed, no padding compensation is needed. Close button for sheets: `right-6 top-6` (24 px clears the 16 px band on every side). Caller classes (`h-[75vh] max-h-[85vh] flex flex-col p-0`, `w-full sm:max-w-lg`) apply to the shell; `p-0` is appended last.
+- **D15 Test location**: tests for `src/components/ui/*` sit beside the file (`button.test.tsx`, ...), jsdom, owner tester-b (view) since there is no pure logic. Logic tests (tester-a) cover the pixel-ui `.map.ts` and `.hook.ts` changes only.
+
+## P2 File plan
+All paths below are relative to the repo root.
+
+### 2a: PixelButton prerequisites (`src/modules/pixel-ui/components/PixelButton/`)
+| File | New / Edit | Responsibility | Owner |
+|---|---|---|---|
+| `PixelButton.types.ts` | edit | `PixelButtonVariant` += `'neutral'`; `PixelButtonProps` no longer omits handlers; new `ConsumerHandlers` | implementer-a |
+| `PixelButton.map.ts` | edit | `TONE.neutral`, `toSliceFile(visual, variant, slides)` neutral rules | implementer-a |
+| `PixelButton.hook.ts` | edit | `usePixelButtonVisual(isDisabled, consumer?)` composes handlers (sonnet) | implementer-a |
+| `PixelButton.styles.ts` | edit | `artTint`, label `inline-flex items-center gap-2` | implementer-b |
+| `PixelButton.tsx` | edit | `forwardRef`, hook gets `rest`, `data-variant`, tint class (sonnet) | implementer-b |
+| `PixelButton.map.test.ts`, `PixelButton.hook.test.ts` | edit | Neutral art; composition | tester-a |
+| `PixelButton.test.tsx` | edit | ref, composed handlers, neutral tint, label flex | tester-b |
+| `PixelButton.preview.tsx` | edit | Add states "Neutral default" and "Neutral disabled" (existing states stay) | preview-a |
+
+### 2b: Ribbon and PixelPanel prerequisites (`src/modules/pixel-ui/components/`)
+| File | New / Edit | Responsibility | Owner |
+|---|---|---|---|
+| `Ribbon/Ribbon.types.ts` | edit | `children: ReactNode`; props extend heading attributes | implementer-a |
+| `Ribbon/Ribbon.tsx` | edit | `forwardRef`, rest spread on text element, conditional `title` (sonnet) | implementer-b |
+| `PixelPanel/PixelPanel.types.ts` | edit | `PanelPadding` += `'none'`; `rootClassName?: string` | implementer-a |
+| `PixelPanel/PixelPanel.styles.ts` | edit | `paddingClass.none = ''` | implementer-b |
+| `PixelPanel/PixelPanel.tsx` | edit | Apply `rootClassName` with `cn` on the outer div | implementer-b |
+| `Ribbon/Ribbon.test.tsx`, `PixelPanel/PixelPanel.test.tsx` | edit | New cases | tester-b |
+| `Ribbon/Ribbon.preview.tsx` | edit | State "Node children" (icon + `<span>` in children) | preview-a |
+| `src/modules/pixel-ui/index.ts` | no change needed (exports exist; `RibbonColor`, `PanelVariant` already exported) | | |
+
+### 2c: Button bridge and HUD size wiring
+| File | New / Edit | Responsibility | Owner |
+|---|---|---|---|
+| `src/components/ui/button.tsx` | edit | Sprite / plate / plain tiers (sonnet) | implementer-b |
+| `src/modules/hud/components/ActionsPanel/ActionButton.tsx` | edit | Add `size="plate"` to the `<Button` at line 48 (only edit) | implementer-b |
+| `src/modules/hud/components/GameBoardHeader/GameBoardHeader.tsx` | edit | Add `size="plate"` to the two `<Button` tags at lines 83 and 89 (only edit) | implementer-b |
+| `src/components/ui/button.test.tsx` | new | Tier selection, ref, asChild, lock classes | tester-b |
+| `src/testbed/components/ShadcnBridge/ShadcnBridgeButtons.tsx` | new | Button matrix + Tooltip triggers (sonnet) | preview-a |
+| `src/testbed/components/ShadcnBridge/ShadcnBridge.preview.tsx` + `src/testbed/registry.ts` | new / edit | `shadcnBridgePreview` (group `Pixel UI`, slug `shadcn-bridge`) + registration after `pixelTypographyPreview` | preview-a |
+
+### 2d: Dialog family
+| File | New / Edit | Responsibility | Owner |
+|---|---|---|---|
+| `src/components/ui/dialog-frame.tsx` | new | `DialogFrame`, `DialogCloseButton`, shared class constants (sonnet) | implementer-b |
+| `src/components/ui/dialog.tsx` | edit | Transparent shell, frame, ribbon title, close, footer (sonnet) | implementer-b |
+| `src/components/ui/alert-dialog.tsx` | edit | Same shell; Action/Cancel as `asChild` `Button`; `variant` on Action (sonnet) | implementer-b |
+| `src/components/ui/sheet.tsx` | edit | Edge-bleed frame layer, field, ribbon title, close (sonnet) | implementer-b |
+| `src/modules/session/components/DeleteAccountButton/DeleteAccountButton.tsx` | edit | Add `variant="destructive"` to the `AlertDialogAction` at line 71 (only edit; keep `className`) | implementer-b |
+| `src/components/ui/dialog.test.tsx`, `src/components/ui/sheet.test.tsx` | new | Dialog + AlertDialog in one file; Sheet | tester-b |
+| `src/testbed/components/ShadcnBridge/ShadcnBridgeDialogs.tsx` | new | Dialog, AlertDialog, Sheet(right/left/bottom), CombatDialog-style hybrid (sonnet) | preview-a |
+| `ShadcnBridge.preview.tsx` | edit | Append dialog states | preview-a |
+
+### 2e: Card, Input, Textarea, Label, Badge, Progress
+| File | New / Edit | Responsibility | Owner |
+|---|---|---|---|
+| `src/components/ui/card.tsx` | edit | Plate default; `frame?: PanelVariant` (sonnet) | implementer-b |
+| `src/components/ui/input.tsx`, `textarea.tsx`, `label.tsx` | edit | Input / Textarea plate recipe; Label `font-pixel` | implementer-b |
+| `src/components/ui/badge.tsx` | edit | Flat chip variants | implementer-b |
+| `src/components/ui/progress.tsx` | edit | Plate track, `bg-accent` indicator | implementer-b |
+| `src/components/ui/plates.test.tsx` | new | Card, Input, Badge, Progress | tester-b |
+| `ShadcnBridgePlates.tsx` + `ShadcnBridge.preview.tsx` | new / edit | Card, Input, Badge, Progress states | preview-a |
+
+### 2f: Overlay and navigation plates
+| File | New / Edit | Responsibility | Owner |
+|---|---|---|---|
+| `src/components/ui/tooltip.tsx`, `popover.tsx`, `tabs.tsx`, `toast.tsx` | edit | Class strings only | implementer-b |
+| `src/components/ui/overlays.test.tsx` | new | Tooltip on `Button asChild` and on sprite Button (hover, focus, leave, blur); Tabs keyboard | tester-b |
+| `ShadcnBridgePlates.tsx` | edit | Tooltip, Popover, Tabs, Toast states | preview-a |
+
+### 2g: Form-control plates
+| File | New / Edit | Responsibility | Owner |
+|---|---|---|---|
+| `src/components/ui/switch.tsx`, `checkbox.tsx`, `radio-group.tsx`, `slider.tsx`, `separator.tsx`, `scroll-area.tsx`, `avatar.tsx` | edit | Class strings only | implementer-b |
+| `src/components/ui/controls.test.tsx` | new | Checked/unchecked, keyboard, `role` unchanged | tester-b |
+| `ShadcnBridgePlates.tsx` | edit | Switch, Checkbox, Radio, Slider, Separator, ScrollArea, Avatar states | preview-a |
+
+### 2h: Close-out (no new source files)
+Full checks, e2e, ui-verify, migration-debt report in `progress.md` log, docs-sync (`docs/architecture/pixel-ui.md` new section "6.19 shadcn bridge" and updated PixelButton/Ribbon/PixelPanel text; `docs/README.md` index line if the section list is indexed there; `systems-and-visuals.md` §6.10 one sentence), lessons-learned review by architect-b.
+
+Move/rename/delete grep: nothing is moved, renamed or deleted. The only symbols whose type changes are `PixelButtonProps` (loses the `Omit`, widening), `PanelPadding` (widened), `RibbonProps.children` (widened to `ReactNode`). Existing importers (grep `from '@/modules/pixel-ui'`/relative imports inside the module) compile unchanged. `CLAUDE.md`: no edit needed. `eslint.config.mjs`: no edit.
+
+## P2 Contracts
+```ts
+// ---------- 2a: PixelButton.types.ts ----------
+export type PixelButtonVariant = 'primary' | 'danger' | 'neutral';
+export type HookedHandlers = 'onPointerEnter' | 'onPointerLeave' | 'onPointerDown' | 'onPointerUp' | 'onPointerCancel' | 'onKeyDown' | 'onKeyUp' | 'onBlur'; // unchanged
+export type ConsumerHandlers = Pick<ButtonHTMLAttributes<HTMLButtonElement>, HookedHandlers>;
+export interface PixelButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> { // no Omit any more
+  variant?: PixelButtonVariant; size?: PixelButtonSize; loading?: boolean;
+}
+// PixelButtonVisualState unchanged ({ visual; handlers: ConsumerHandlers }).
+
+// ---------- 2a: PixelButton.map.ts ----------
+const TONE: Record<PixelButtonVariant, 'Blue' | 'Red'> = { primary: 'Blue', danger: 'Red', neutral: 'Blue' }; // neutral only matters for icon sizes (D7)
+function toSliceFile(visual: PixelButtonVisual, variant: PixelButtonVariant, slides: '3Slides' | '9Slides'): string;
+//  variant 'neutral': visual 'disabled' -> `Button_Disable_${slides}.png`; every other visual -> `Button_Hover_${slides}.png`.
+//  other variants: unchanged (hover -> Hover, disabled -> Disable, regular -> Button_{Tone}_{slides}.png, pressed -> ..._Pressed.png).
+export function toButtonArt(variant: PixelButtonVariant, size: PixelButtonSize): PixelButtonArt; // signature unchanged; call toSliceFile(visual, variant, ...)
+
+// ---------- 2a: PixelButton.hook.ts ----------
+export function usePixelButtonVisual(isDisabled: boolean, consumer?: ConsumerHandlers): PixelButtonVisualState;
+// For each of onPointerEnter, onPointerLeave, onPointerDown, onPointerUp, onPointerCancel, onKeyDown, onBlur the returned handler is
+//   (event) => { consumer?.onX?.(event); ownX(event); }   // consumer first, always, then the hook's own
+// onKeyUp is not returned (the view's {...rest} already carries the consumer's). Visual rules unchanged.
+
+// ---------- 2a: PixelButton.styles.ts ----------
+//  styles.artTint(variant: PixelButtonVariant, visual: PixelButtonVisual): string
+//    'neutral' && 'hover' -> 'brightness-110'; 'neutral' && 'pressed' -> 'brightness-90'; else ''.
+//  styles.label base: 'relative inline-flex items-center gap-2 text-lg font-semibold text-ink'.
+//  styles.artStack(isPressed: boolean): unchanged; the view adds styles.artTint(...) with cn().
+
+// ---------- 2a: PixelButton.tsx ----------
+export const PixelButton: ForwardRefExoticComponent<PixelButtonProps & RefAttributes<HTMLButtonElement>>;
+// forwardRef<HTMLButtonElement, PixelButtonProps>(function PixelButton(...)); displayName 'PixelButton'.
+// const { visual, handlers } = usePixelButtonVisual(isDisabled, rest);
+// <button ref={ref} type="button" {...rest} {...handlers} disabled={isDisabled} aria-busy={loading || undefined}
+//         data-visual={visual} data-variant={variant} className={cn(styles.root({ size }), className)}>
+// artStack span: className={cn(styles.artStack(visual === 'pressed' && art.kind !== 'icon'), art.kind !== 'icon' && styles.artTint(variant, visual))}
+
+// ---------- 2b: Ribbon.types.ts ----------
+export interface RibbonProps extends Omit<ComponentPropsWithoutRef<'h2'>, 'color' | 'children' | 'className'> {
+  color?: RibbonColor; as?: RibbonHeading; icon?: ReactNode;
+  className?: string;          // still goes to the frame (ThreeSlice), not the text element
+  children: ReactNode;
+}
+// ---------- 2b: Ribbon.tsx ----------
+export const Ribbon: ForwardRefExoticComponent<RibbonProps & RefAttributes<HTMLHeadingElement>>;
+// forwardRef<HTMLHeadingElement, RibbonProps>. Use `const Text = as as ElementType;` to keep the JSX typed (div|h2|h3 share the ref/HTML props used here).
+// <Text ref={ref} {...rest} title={rest.title ?? (typeof children === 'string' ? children : undefined)} className={cn(styles.text, ribbonTextColor[color])}>{children}</Text>
+// `title` is destructured out of rest so an explicit title wins. Everything else unchanged.
+
+// ---------- 2b: PixelPanel ----------
+export type PanelPadding = 'none' | 'sm' | 'md';          // none -> '' (no padding class)
+export interface PixelPanelProps extends ComponentPropsWithoutRef<'div'> { /* existing fields */ rootClassName?: string }
+// PixelPanel.tsx: <div className={cn(styles.root(isTitled), rootClassName)}> ... (rest and className still go to NineSlice)
+// paddingClass: Record<PanelPadding, string> = { none: '', sm: 'p-2', md: 'p-4' }
+
+// ---------- 2c: src/components/ui/button.tsx ----------
+import { PixelButton, type PixelButtonVariant } from '@/modules/pixel-ui';   // both exported by the barrel (index.ts:20-25)
+export type ButtonVariant = 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+export type ButtonSize = 'default' | 'lg' | 'sm' | 'icon' | 'plate';
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant; size?: ButtonSize; asChild?: boolean;
+}
+export const buttonVariants: (props?: { variant?: ButtonVariant; size?: ButtonSize; className?: string }) => string; // cva, plate/plain classes only (used by calendar.tsx)
+export const Button: React.ForwardRefExoticComponent<ButtonProps & React.RefAttributes<HTMLButtonElement>>;
+
+const SPRITE_VARIANT: Partial<Record<ButtonVariant, PixelButtonVariant>> =
+  { default: 'primary', destructive: 'danger', outline: 'neutral', secondary: 'neutral' };   // ghost/link absent = never sprite
+const SPRITE_LOCK = '!h-16 !rounded-none !border-0 !bg-transparent !bg-none !shadow-none';
+const SPRITE_WIDTH: Record<'default' | 'lg', string> = { default: '!min-w-[128px]', lg: '!min-w-[192px] px-8' };
+
+// Render rule (exact):
+//   const spriteVariant = SPRITE_VARIANT[variant ?? 'default'];
+//   isSprite = !asChild && (size === 'default' || size === 'lg') && spriteVariant !== undefined      // size undefined counts as 'default'
+//   (destructure variant, size, asChild, className out of props first; asChild/size must never reach the DOM or PixelButton)
+//   isSprite -> <PixelButton ref variant={spriteVariant} className={cn(SPRITE_WIDTH[size], className, SPRITE_LOCK)} {...props} />   // size NOT forwarded to PixelButton (its size stays 'default')
+//   else     -> Comp = asChild ? Slot : 'button'; <Comp ref className={buttonVariants({ variant, size: asChild && isSpriteSize ? 'plate' : size, className })} {...props} />
+// plate size classes: sm 'h-9 px-3 text-sm'; icon 'h-10 w-10'; plate 'h-10 px-4 py-2'; default and lg (cva, reached only by ghost/link or asChild) 'h-10 px-4 py-2' (lg: 'h-10 px-8').
+// Plate base: 'inline-flex items-center justify-center whitespace-nowrap rounded-none font-pixel text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50'
+// Plate variants (cva):
+//   default     'border-2 border-ink bg-primary text-primary-foreground shadow-[0_2px_0_hsl(var(--ink))] hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_1px_0_hsl(var(--ink))]'
+//   destructive 'border-2 border-ink bg-destructive text-destructive-foreground shadow-[0_2px_0_hsl(var(--ink))] hover:bg-destructive/90 active:translate-y-[1px] active:shadow-[0_1px_0_hsl(var(--ink))]'
+//   outline     'border-2 border-muted-foreground bg-card text-foreground shadow-[0_2px_0_hsl(var(--ink))] hover:bg-accent hover:text-accent-foreground active:translate-y-[1px] active:shadow-[0_1px_0_hsl(var(--ink))]'
+//   secondary   'border-2 border-muted-foreground bg-secondary text-secondary-foreground shadow-[0_2px_0_hsl(var(--ink))] hover:bg-secondary/80 active:translate-y-[1px] active:shadow-[0_1px_0_hsl(var(--ink))]'
+//   ghost       'bg-transparent text-foreground hover:bg-accent/20 active:translate-y-[1px]'
+//   link        'text-accent underline underline-offset-4 hover:text-foreground active:translate-y-[1px]'
+// File comment states: asChild is always plate/plain; className colour/border/radius/height are ignored on the sprite tier by SPRITE_LOCK.
+
+// ---------- 2d: src/components/ui/dialog-frame.tsx ('use client') ----------
+import type { RibbonColor } from '@/modules/pixel-ui';
+export type DialogFrameKind = 'special' | 'paper';
+export const MOTION_REDUCE = 'motion-reduce:animate-none motion-reduce:duration-0';
+export const SHELL_TRANSPARENT = 'border-0 bg-transparent p-0 shadow-none backdrop-blur-none';   // appended AFTER caller className
+export const TITLE_RIBBON = 'mx-auto block max-w-[calc(100%-6rem)]';
+export const DESCRIPTION_CLASS = 'font-readable text-sm text-muted-foreground';
+export const FOOTER_CLASS = 'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end';
+export interface DialogFrameProps { frame: DialogFrameKind; children: React.ReactNode }
+export function DialogFrame(props: DialogFrameProps): JSX.Element;
+//   <PixelPanel variant={frame} padding="none"><div className={cn('grid max-h-[calc(100dvh-3rem)] gap-4 overflow-y-auto px-4 py-2', frame === 'special' && 'bg-black/50')}>{children}</div></PixelPanel>
+export function DialogCloseButton(props: { className?: string }): JSX.Element;
+//   <DialogPrimitive.Close asChild><PixelButton size="icon-round" className={cn('absolute right-4 top-6', className)}><X className="h-5 w-5 text-ink" /><span className="sr-only">Close</span></PixelButton></DialogPrimitive.Close>
+//   (DialogPrimitive from '@radix-ui/react-dialog'; used by dialog.tsx and sheet.tsx)
+
+// ---------- 2d: dialog.tsx ----------
+interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> { frame?: DialogFrameKind } // default 'special'
+// DialogContent: <DialogPortal><DialogOverlay/><DialogPrimitive.Content ref className={cn(SHELL, className, SHELL_TRANSPARENT)} {...props}><DialogFrame frame={frame}>{children}</DialogFrame><DialogCloseButton/></DialogPrimitive.Content></DialogPortal>
+// SHELL = 'fixed left-[50%] top-[50%] z-50 w-[calc(100vw-16px)] max-w-lg max-h-[calc(100dvh-16px)] translate-x-[-50%] translate-y-[-50%] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] ' + MOTION_REDUCE
+// Overlay: unchanged classes + MOTION_REDUCE.
+interface DialogTitleProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title> { ribbon?: RibbonColor; icon?: React.ReactNode } // ribbon default 'blue'
+// DialogTitle: const { className, ribbon = 'blue', icon, children, ...props }; <DialogPrimitive.Title ref={ref} asChild {...props}><Ribbon as="h2" color={ribbon} icon={icon} className={cn(TITLE_RIBBON, className)}>{children}</Ribbon></DialogPrimitive.Title>
+// DialogDescription: cn(DESCRIPTION_CLASS, className). DialogHeader unchanged. DialogFooter: cn(FOOTER_CLASS, className).
+// All existing exports keep their names: Dialog, DialogPortal, DialogOverlay, DialogClose, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription.
+
+// ---------- 2d: alert-dialog.tsx ----------
+// AlertDialogContent: same as DialogContent with AlertDialogPrimitive, prop `frame?: DialogFrameKind`, NO close button.
+// AlertDialogTitle: same props/behaviour as DialogTitle (AlertDialogPrimitive.Title asChild + Ribbon).
+interface AlertDialogActionProps extends React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action> { variant?: 'default' | 'destructive' }
+// AlertDialogAction: const { className, variant = 'default', children, ...props }; <AlertDialogPrimitive.Action ref={ref} asChild {...props}><Button variant={variant} className={className}>{children}</Button></AlertDialogPrimitive.Action>
+// AlertDialogCancel: same with <Button variant="outline" className={className}>; the old 'mt-2 sm:mt-0' is dropped.
+// Remove the import of buttonVariants; import { Button } from '@/components/ui/button'.
+// AlertDialogHeader unchanged; AlertDialogFooter: cn(FOOTER_CLASS, className); AlertDialogDescription: cn(DESCRIPTION_CLASS, className).
+
+// ---------- 2d: sheet.tsx ----------
+type SheetSide = 'top' | 'bottom' | 'left' | 'right';
+const SHEET_BLEED: Record<SheetSide, { frame: string; field: string }> = {
+  right:  { frame: '-inset-y-16 -right-16 left-0',  field: 'ml-4' },
+  left:   { frame: '-inset-y-16 -left-16 right-0',  field: 'mr-4' },
+  bottom: { frame: '-inset-x-16 -bottom-16 top-0',  field: 'mt-4' },
+  top:    { frame: '-inset-x-16 -top-16 bottom-0',  field: 'mb-4' },
+};
+// sheetVariants (cva) keeps the `side` variant: base 'fixed z-50 flex flex-col overflow-hidden transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500 ' + MOTION_REDUCE;
+//   top 'inset-x-0 top-0 max-h-[85dvh] data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top'
+//   bottom 'inset-x-0 bottom-0 max-h-[85dvh] data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom'
+//   left 'inset-y-0 left-0 h-full w-3/4 sm:max-w-sm data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left'
+//   right 'inset-y-0 right-0 h-full w-3/4 sm:max-w-sm data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right'
+// SheetContent: <SheetPrimitive.Content ref className={cn(sheetVariants({ side }), className, 'bg-transparent p-0 shadow-none')} {...props}>
+//     <PixelPanel aria-hidden variant="special" padding="none" rootClassName={cn('pointer-events-none absolute', SHEET_BLEED[side].frame)} className="h-full w-full" />
+//     <div className={cn('relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-black/50 p-4', SHEET_BLEED[side].field)}>{children}</div>
+//     <SheetCloseButton />   // = <DialogCloseButton className="right-6 top-6" /> (same Radix Close; className override wins via cn)
+//   </SheetPrimitive.Content>
+// SheetTitle: ribbon prop like DialogTitle (default 'blue'); SheetDescription: DESCRIPTION_CLASS; SheetFooter: FOOTER_CLASS; SheetHeader unchanged. Exports unchanged.
+// `bottom`/`top` sheets: ribbon centred by TITLE_RIBBON (mx-auto). left/right: same preset (simplification of "w-full", ui-verify may tune).
+
+// ---------- 2e: card.tsx ----------
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> { frame?: PanelVariant }   // import { PixelPanel, type PanelVariant } from '@/modules/pixel-ui' (both exported, index.ts:3,6-10)
+// Card: frame ? <PixelPanel variant={frame} padding="none" className={className} {...props} /> : <div ref className={cn('rounded-none border-2 border-border bg-card text-card-foreground shadow-[0_2px_0_hsl(var(--ink))]', className)} {...props} />
+// CardTitle: 'font-pixel text-2xl font-semibold leading-none'. CardDescription: 'font-readable text-sm text-muted-foreground'. CardHeader/CardContent/CardFooter padding unchanged.
+// ---------- 2e: input.tsx / textarea.tsx ----------
+// Input classes: 'flex h-10 w-full rounded-none border-2 border-muted-foreground bg-background px-3 py-2 font-readable text-base shadow-[inset_0_2px_0_hsl(var(--ink))] ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground hover:border-foreground/60 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 aria-[invalid=true]:border-destructive disabled:cursor-not-allowed disabled:opacity-50'
+// Textarea: same string without h-10, with 'min-h-[80px]'. Label: 'font-pixel text-sm font-semibold leading-none text-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70'.
+// ---------- 2e: badge.tsx ----------
+// base 'inline-flex min-h-6 items-center rounded-none border-2 px-2 py-0.5 font-pixel text-xs font-semibold shadow-[0_1px_0_hsl(var(--ink))] transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+//   default 'border-ink bg-primary text-primary-foreground'; secondary 'border-muted-foreground bg-secondary text-secondary-foreground'; destructive 'border-ink bg-destructive text-destructive-foreground'; outline 'border-border bg-background/60 text-foreground'
+//   hover shifts removed (Badge is a div; spec: hover only if interactive). `badgeVariants` and `BadgeProps` exports unchanged.
+// ---------- 2e: progress.tsx ----------
+// Root 'relative h-4 w-full overflow-hidden rounded-none border-2 border-border bg-secondary'; indicator 'h-full w-full flex-1 bg-accent transition-all motion-reduce:transition-none'; transform line unchanged.
+
+// ---------- 2f class strings (replace the matching substrings, keep every other class and all Radix props) ----------
+// tooltip content:  'z-50 overflow-hidden rounded-none border-2 border-border bg-popover px-3 py-1.5 font-readable text-sm text-popover-foreground shadow-[0_2px_0_hsl(var(--ink))] animate-in ...(animation classes unchanged)'
+// popover content:  'z-50 w-72 rounded-none border-2 border-border bg-popover p-4 font-readable text-popover-foreground shadow-[0_2px_0_hsl(var(--ink))] outline-none ...(animation classes unchanged)'
+// tabs list:        'inline-flex h-10 items-center justify-center rounded-none border-2 border-border bg-muted p-1 text-muted-foreground'
+// tabs trigger:     'inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-transparent px-3 py-1.5 font-pixel text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-accent data-[state=active]:bg-card data-[state=active]:text-accent'
+// toast base (toastVariants cva base): replace 'rounded-md border ... shadow-lg' by 'rounded-none border-2 ... shadow-[0_2px_0_hsl(var(--ink))]'; default variant 'border-border bg-card text-card-foreground'; destructive variant 'destructive group border-ink bg-destructive text-destructive-foreground'; ToastTitle 'font-pixel text-sm font-semibold'; ToastDescription 'font-readable text-sm opacity-90'; ToastAction/ToastClose: 'rounded-none' instead of 'rounded-md'/'rounded-md' (read the file; change only radius classes).
+// ---------- 2g class strings ----------
+// switch root: 'peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-none border-2 border-muted-foreground transition-colors focus-visible:... (unchanged ring classes) disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input'; thumb: 'pointer-events-none block h-4 w-4 rounded-none bg-foreground shadow-[0_1px_0_hsl(var(--ink))] ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0'   // h-4 w-4 so the 20px inner height (24 - 2x2 border) keeps 2 px margin; checked travel 20px as today
+// checkbox: 'peer h-4 w-4 shrink-0 rounded-none border-2 border-muted-foreground ring-offset-background ... data-[state=checked]:border-ink data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground'
+// radio item: 'aspect-square h-4 w-4 rounded-none border-2 border-muted-foreground text-primary ...'  (Indicator Circle -> keep lucide Circle; the box is square)
+// slider track 'relative h-2 w-full grow overflow-hidden rounded-none border-2 border-muted-foreground bg-secondary' -> use 'h-3'; range 'bg-primary'; thumb 'block h-5 w-5 rounded-none border-2 border-ink bg-foreground ...'
+// separator: 'shrink-0 bg-border' with thickness 2 px: horizontal 'h-[2px] w-full', vertical 'h-full w-[2px]' (replace 'h-[1px]'/'w-[1px]').
+// scroll-area thumb 'relative flex-1 rounded-none bg-border'; avatar root/fallback 'rounded-none border-2 border-border' (root) and 'rounded-none bg-muted' (fallback).
+```
+
+## P2 Phases
+Each sub-phase: implement, tests, previews, checks, ui-verify where stated, commit, stop for `continue`. Every sub-phase ends with `npm run typecheck`, `npm run lint`, `npm test`; quote the summary lines. Commit message: `feat(shadcn-bridge): <what> [phase 2<letter>/2h]`.
+
+### Phase 2a: PixelButton prerequisites (5 source files)
+1. `PixelButton.types.ts` per P2 Contracts. (implementer-a)
+2. `PixelButton.map.ts`: add `neutral` to `TONE`; change `toSliceFile` signature and the two call sites in `toButtonArt`. (implementer-a)
+3. `PixelButton.hook.ts`: add the `consumer` param; wrap each of the 7 handlers. Keep the cleanup effects as they are. Sonnet. (implementer-a)
+4. `PixelButton.styles.ts`: `artTint(variant, visual)`, label `inline-flex items-center gap-2`. (implementer-b)
+5. `PixelButton.tsx`: `forwardRef`, pass `rest` to the hook, add `data-variant`, add the tint class on the art stack for non-icon art. Sonnet. (implementer-b)
+6. Tests (tester-a then tester-b), preview states (preview-a), checks. ui-verify: `/testbed/pixel-ui-button` hover/press on the new neutral states at 1280 and 390; confirm the computed `filter` on the art stack is `brightness(1.1)` on hover and that `background-image` urls contain `Button_Hover_3Slides`.
+
+### Phase 2b: Ribbon and PixelPanel prerequisites (5 source files)
+1. `Ribbon.types.ts` (implementer-a); `Ribbon.tsx` forwardRef + rest + conditional title (implementer-b, sonnet).
+2. `PixelPanel.types.ts` (implementer-a); `PixelPanel.styles.ts`, `PixelPanel.tsx` (implementer-b).
+3. Tests, preview state, checks. ui-verify: `/testbed/pixel-ui-ribbon` "Node children" and `/testbed/pixel-ui-panel` unchanged (compare existing states, no visual change).
+
+### Phase 2c: Button bridge (3 source files + preview)
+1. `button.tsx` per Contracts. Sonnet. Keep `Button.displayName`, keep exporting `buttonVariants` with the same call shape. (implementer-b)
+2. HUD wiring: add `size="plate"` at `ActionButton.tsx:48`, `GameBoardHeader.tsx:83` and `:89`. Nothing else in those files. (implementer-b)
+3. `button.test.tsx` (tester-b). `ShadcnBridgeButtons.tsx`, `ShadcnBridge.preview.tsx`, registry (preview-a, sonnet).
+4. Run `npm test` and list every failing test with its cause in the report (expected: none; see P2 Test impact).
+5. ui-verify: `/testbed/shadcn-bridge` at 1280x720 and 390x844; Tooltip on `Button asChild` and on sprite Button (hover, keyboard focus, leave, blur); GameBoard HUD in `/testbed/hud-actions-panel` and `/testbed/hud-game-board-header` identical size to `git stash` baseline (compare `getBoundingClientRect` of the buttons before/after).
+
+### Phase 2d: Dialog family (5 source files + 1 one-line edit)
+1. `dialog-frame.tsx` (implementer-b, sonnet).
+2. `dialog.tsx`, then `alert-dialog.tsx`, then `sheet.tsx` (implementer-b, sonnet). Order matters: alert-dialog needs `Button` from 2c.
+3. `DeleteAccountButton.tsx`: add `variant="destructive"` (implementer-b).
+4. Tests (tester-b), preview `ShadcnBridgeDialogs.tsx` (preview-a, sonnet) with states listed under P2 Preview states.
+5. Run `npm test`; list every failing test with its cause (expected set in P2 Test impact); fix tests only when the change in behaviour is intended (DOM structure of dialogs) and say so in the report. Never weaken an assertion about behaviour.
+6. ui-verify: `/testbed/shadcn-bridge` dialog states plus `/testbed/combat-combat-dialog` (hybrid), `/testbed/hud-mobile-event-log-sheet`, `/testbed/session-victory-dialog` (slugs verified in the `*.preview.tsx` files this session) at 1280x720 and 390x844. Tune only the numbers marked `// tunable` in D2/D14 and report old/new values in the `progress.md` log. Measure: shell width 374, field text column 310 at 390 px, close button box inside the frame and not intersecting the ribbon, contrast samples on the dark field (Final spec item 2 / 11).
+
+### Phase 2e: Card, Input, Textarea, Label, Badge, Progress (6 source files)
+1. `card.tsx` (sonnet), `input.tsx`, `textarea.tsx`, `label.tsx`, `badge.tsx`, `progress.tsx`. (implementer-b)
+2. Tests, preview `ShadcnBridgePlates.tsx` (preview-a), checks. Record `text-primary-foreground` on `--primary` ratio (5.01 measured in review) and the `border-muted-foreground` boundary contrast on `bg-background` for Input (>= 3:1).
+3. ui-verify: lobby (`/testbed/lobby-main`), login (`/testbed/session-login`), `turn-countdown-timer` badge in `/testbed/hud-game-board-header`: no layout shift beyond +2 px borders.
+
+### Phase 2f: Tooltip, Popover, Tabs, Toast (4 source files)
+1. Class edits per Contracts. (implementer-b)
+2. `overlays.test.tsx`, preview states, checks. ui-verify: `TutorialBeacon` and `LobbyGameRow` popovers have the same width class behaviour (`w-72` default + caller classes) and no size change beyond the border.
+
+### Phase 2g: Switch, Checkbox, Radio, Slider, Separator, ScrollArea, Avatar (7 source files)
+1. Class edits per Contracts. (implementer-b)
+2. `controls.test.tsx`, preview states, checks. ui-verify: `CustomSettingsSheet` (`/testbed/lobby-settings-sheet`) shows switches/sliders/tabs readable on the dark field.
+
+### Phase 2h: Close-out
+1. Full `npm run typecheck`, `npm run lint`, `npm test`.
+2. `npm run test:e2e -- e2e/gameplay.spec.ts`, `e2e/auth-and-lobby.spec.ts`, `e2e/map-viewport.spec.ts`, `e2e/tutorial-beacons.spec.ts`, `e2e/bot-vs-bot-ui.spec.ts`, `e2e/reconnect-bot-takeover.spec.ts` (needs Java 21). Failures are reported with the selector that broke.
+3. ui-verify screenshots: `/` login, lobby, one in-game screen with a dialog open, the mobile bottom sheet (all at 1280x720 and 390x844), zero 404s for `/tiny-swords/*` in the console.
+4. Migration-debt report: re-run the scan commands in "P2 Migration debt", write the result as one log line per category in `progress.md`.
+5. docs-sync (mandatory), then architect-b final review.
+
+Model escalation: sonnet for `PixelButton.hook.ts`, `PixelButton.tsx`, `Ribbon.tsx`, `button.tsx`, `dialog-frame.tsx`, `dialog.tsx`, `alert-dialog.tsx`, `sheet.tsx`, `card.tsx`, all preview files, and all ui-verify steps. Everything else haiku.
+
+## P2 Test plan
+Existing tests keep passing unless listed under Test impact.
+- tester-a (logic, first):
+  - `PixelButton.map.test.ts`: `toButtonArt('neutral','default')` kind `three`: regular, hover, pressed urls end `Button_Hover_3Slides.png`; disabled ends `Button_Disable_3Slides.png`; same for `'large'` with `9Slides`; `neutral` + `icon-round`: regular `SmallBlueRoundButton_Regular.png`, pressed `..._Pressed.png`; primary/danger results unchanged (existing cases); every url exists on disk (`fs.existsSync(path.join('public', decodeURI(url)))`).
+  - `PixelButton.hook.test.ts`: with `consumer.onPointerEnter = jest.fn()` the consumer is called once with the event and `visual` becomes `'hover'`; call order consumer then own (assert with a shared `calls` array: consumer pushes `'consumer'`, own effect checked by state after); same for `onKeyDown` (Enter), `onBlur`, `onPointerLeave`; consumer undefined works (existing tests); handlers object has no `onKeyUp`.
+- tester-b (view):
+  - `PixelButton.test.tsx`: `ref` receives the `<button>` (`createRef`); consumer `onPointerEnter`, `onKeyDown`, `onBlur` are called AND `data-visual` changes (`hover`, `pressed`, `regular`); `data-variant="neutral"`; neutral hover: art stack has class `brightness-110`, pressed `brightness-90`, regular none; primary hover has no brightness class; icon sizes never get the tint; label has `inline-flex`.
+  - `Ribbon.test.tsx`: children `<><span>12</span> text</>` renders, no `title` attribute; string children keep `title`; `ref` is the heading element for `as="h2"`; `id="x"` and `data-testid` land on the text element, not on the frame; explicit `title="T"` wins.
+  - `PixelPanel.test.tsx`: `padding="none"` inner wrapper has neither `p-2` nor `p-4`; `rootClassName="absolute"` is on the outer div and `className` still on the frame; titled + none still adds `pt-8`.
+  - `src/components/ui/button.test.tsx` (`render`, `fireEvent`, no `user-event`):
+    - Tier: default/destructive/outline/secondary with no size -> `data-variant` `primary`/`danger`/`neutral`/`neutral` and `data-visual` present; `size="lg"` -> same plus class `px-8`; `sm`, `icon`, `plate`, `ghost`, `link`, `asChild` -> no `data-visual`, plate classes (`rounded-none`, `font-pixel`, `h-9` / `h-10 w-10` / `h-10 px-4`).
+    - `asChild` with `<a href>` renders an anchor with the plate classes and keeps `href`.
+    - Sprite lock: `className="bg-red-500 h-11 w-full"` -> class list contains `w-full`, `!h-16`, `!bg-transparent`, `!bg-none`.
+    - `ref` forwarded in both tiers; `disabled` sprite does not fire `onClick`; `onClick` fires on enabled; `type` defaults to `button` in sprite tier, `type="submit"` passes through.
+    - Name: `getByRole('button', { name: 'Save' })` works in both tiers.
+  - `src/components/ui/dialog.test.tsx` (Dialog + AlertDialog):
+    - Dialog open: `role="dialog"`; `aria-labelledby` resolves to the `h2` whose text is the title; accessible name equals the text; description linked by `aria-describedby`; a button named `Close` exists (sr-only), is a sprite icon button (`data-variant="primary"`); clicking it calls `onOpenChange(false)`; Esc closes (`fireEvent.keyDown(dialog, { key: 'Escape' })`).
+    - Content root (the element with role dialog) has classes `bg-transparent`, `border-0`, `shadow-none` even when the caller passes `bg-background/90 backdrop-blur-2xl border border-white/15`, and still has the caller's `max-w-md`; the frame art cells reference `SpecialPaper.png` (query a cell `style.backgroundImage`); `frame="paper"` references `RegularPaper.png` and has no `bg-black/50` field.
+    - Title with `ribbon="red"` -> ribbon art url contains `Ribbon_Red`; title with a React node child and `icon` renders both; long title has no `title` attribute when children is not a string.
+    - Footer has classes `flex-col-reverse` and `gap-2`.
+    - AlertDialog: `role="alertdialog"`, no button named `Close`, `AlertDialogCancel` has focus after open (`expect(cancel).toHaveFocus()`), Action default `data-variant="primary"`, `variant="destructive"` -> `danger`, Cancel -> `neutral`; Action `onClick` called; caller `onEscapeKeyDown` called on Esc and when it calls `preventDefault` the dialog stays open; `AlertDialogAction className="w-full"` keeps `w-full`.
+    - Focus return: open via `DialogTrigger asChild` wrapping `Button` (sprite) and `Button size="sm"`; after close, focus is on the trigger.
+  - `src/components/ui/sheet.test.tsx`: `side` right/left/bottom/top: shell has the matching slide class and `fixed`; frame layer (`[aria-hidden]` with `SpecialPaper.png`) has the matching bleed classes from `SHEET_BLEED` (e.g. right: `-right-16`, `left-0`); field has `ml-4` (right); title is an `h2` with `aria-labelledby` resolution; `Close` button present; caller classes `h-[75vh] max-h-[85vh] flex flex-col p-0` stay on the shell; children render inside the field.
+  - `src/components/ui/plates.test.tsx`: Card default classes `rounded-none border-2 bg-card`; `frame="paper"` renders RegularPaper cells and no `bg-card`; Card children render; Input: `type`, `placeholder`, `value` change via `fireEvent.change`, class contains `font-readable`, `aria-invalid="true"` present attribute is accepted (class string contains `aria-[invalid=true]:border-destructive`); Badge four variants have `rounded-none` and `border-2`; Badge `className` passes through; `data-testid` passes through; Progress `role="progressbar"` with `aria-valuenow` for `value={40}` and indicator transform `translateX(-60%)`.
+  - `src/components/ui/overlays.test.tsx`: `Tooltip` open on `fireEvent.focus` of a trigger that is `<TooltipTrigger asChild><Button size="sm">` and of `<TooltipTrigger asChild><Button>` (sprite); closes on `fireEvent.blur`; opens on `pointerMove`/`pointerEnter` per Radix (use `userEvent`-free `fireEvent.pointerMove`; if Radix needs a delay use `TooltipProvider delayDuration={0}`); content has `rounded-none border-2`. Tabs: `fireEvent.keyDown(tab, { key: 'ArrowRight' })` moves `aria-selected`. Popover opens on trigger click, content `rounded-none`. Toast: `Toast` default and destructive variants render title and description.
+  - `src/components/ui/controls.test.tsx`: Switch `role="switch"` toggles `aria-checked`; Checkbox `role="checkbox"` toggles; RadioGroup arrow keys change selection; Slider `role="slider"` exposes `aria-valuenow`; Separator has `role` per `decorative`; classes `rounded-none` on Switch, Checkbox, Radio item.
+- e2e: no new spec. Existing dialog flows are re-run in 2h.
+
+### P2 Test impact (existing tests; none verified failing, risk list from grep this session)
+Expected: no failures from Button (labels stay accessible names; `textContent` of a sprite button equals its label because the art spans are empty). Risk list, to be run first in 2c/2d and fixed only if the change in DOM structure is intended:
+- Dialog/sheet structure (2d): `src/modules/hud/components/ActionsPanel/MobileActionsSheet.test.tsx:236,273` (`container.querySelector('[role="dialog"]')`, `button[aria-label*="close"]`: the new Close button has no `aria-label`, only sr-only text, as before, so the second query keeps returning `null` as today; verify), `MobileEventLogSheet.test.tsx` (Esc, sr-only title: the title is now a Ribbon `h2` with `sr-only` on the frame), `src/modules/session/components/VictoryDialog/VictoryDialog.test.tsx:73` (`getAllByRole('button')` count, heading role), `VictoryDialog.preview.test.tsx`, `src/modules/game-board/components/ConnectionWarningDialog/ConnectionWarningDialog.test.tsx:62` (`getAllByRole('button')` length 1: AlertDialog has no Close, unchanged), `src/modules/combat/components/MonsterSelectionDialog/MonsterSelectionDialog.test.tsx:47,62` (button count and `textContent !== 'Cancel'`: label text only; unchanged), `src/modules/lobby/components/CreateGameDialog/CreateGameDialog.test.tsx` (`getAllByRole('button')` filters; `DialogContent` now has one extra Close button as before), `src/modules/avatars/components/AvatarPickerButton/AvatarPickerButton.test.tsx`, `src/modules/combat/components/CombatDialog/CombatDialog.test.tsx` and `MonsterCombatDialog.test.tsx`.
+- Heading queries on titles: `getByRole('heading', { name })` still matches (Ribbon `as="h2"`); a title whose children are not a plain string loses the `title` attribute only.
+- Duplicate text: none expected (`title` attribute is not text).
+- `src/testbed/components/CardPlaySandbox/CardPlaySandbox.test.tsx` renders Buttons and dialogs: re-run.
+- Tests mocking `@/components/ui/tooltip` (4 files above): unaffected.
+- Run `npm test` after 2c and after 2d, and read the full failure list before changing any test.
+
+## P2 Preview states
+Slug `shadcn-bridge`, title "shadcn bridge", group `Pixel UI`, file `src/testbed/components/ShadcnBridge/ShadcnBridge.preview.tsx` exporting `shadcnBridgePreview: ComponentPreview`; registered in `src/testbed/registry.ts` (import line after `pixelTypographyPreview`, array entry after `pixelTypographyPreview`). The preview file only assembles; states live in `ShadcnBridgeButtons.tsx`, `ShadcnBridgeDialogs.tsx`, `ShadcnBridgePlates.tsx` (each under 150 lines). Strings from the Final spec "Copy".
+- 2c "Buttons default": rows variant x size (`default`, `lg`, `sm`, `icon`, `plate`) with label "Confirm"/"Cancel"/"Leave"/"Stay"; ghost and link rows; "Buttons disabled" (same matrix disabled); "Buttons asChild" (`<Button asChild><a href="#">Open</a></Button>`); "Buttons on special frame" (a `PixelPanel variant="special"` holding sm and default buttons); "Button tooltip" (Tooltip "End turn" on a sprite Button and on a `Button asChild`); "Buttons mobile row" (310 px wide column, two `default` buttons side by side).
+- 2d "Dialog" (trigger button "Open dialog": title "Move army", description "Choose how many units to send.", actions "Confirm"/"Cancel"); "Dialog long content" (scrolls); "Dialog paper frame"; "Dialog with glass className" (caller passes `bg-background/90 backdrop-blur-2xl border border-white/15 max-w-md`); "Dialog hybrid" (CombatDialog-like: icon title, `sm` plate buttons, coloured texts `text-red-400`, `text-blue-400`, `text-gray-400`, `text-muted-foreground` on the dark field for the contrast samples); "AlertDialog" (title "Leave match?", description "Your army stays on the map.", actions "Leave" destructive, "Stay"); "Sheet right", "Sheet left", "Sheet bottom" (title "Event Log", description "Last 20 events.", long scrolling list).
+- 2e "Card plate", "Card frames" (paper, special, carved; never wood below 256 px), "Input" (label "Game name", placeholder "My island", value, disabled, invalid with message "Name is required"), "Badges" ("Bot", "3", "00:12" in the four variants; digits in `font-readable tabular-nums`), "Progress" (0, 40, 100).
+- 2f "Tooltip", "Popover", "Tabs", "Toast" (default and destructive, rendered statically with `Toast` inside a `ToastProvider` + `ToastViewport` positioned `static`).
+- 2g "Form controls" (Switch on/off/disabled, Checkbox, RadioGroup, Slider, Separator horizontal and vertical, ScrollArea, Avatar with fallback).
+State names are unique within the preview (registry test).
+
+## P2 Migration debt (re-run in 2h; scan script run this session over `src/**/*.tsx`, non-test, outside `src/components/ui`; 135 `<Button>`/`AlertDialogAction`/`AlertDialogCancel` tags, 51 with `bg-|border|rounded|h-N|shadow` classes in `className`, after resolving `styles.x` in the sibling `*.styles.ts`)
+A. Sprite tier (default size, variants default/destructive/outline/secondary) whose `className` sets gradient/colour/shadow/height. Phase 2 neutralises them with `SPRITE_LOCK`; the call sites must later drop those classes and choose a `variant` instead:
+  - `src/modules/combat/components/MonsterCombatDialog/MonsterAttackScreen.tsx:102` (`attackButton`, red-amber gradient, shadow)
+  - `src/modules/combat/components/MonsterCombatDialog/MonsterResultsScreen.tsx:122` (`AlertDialogAction` `continueButton`, amber gradient)
+  - `src/modules/combat/components/CombatDialog/CombatDialog.tsx:116,129` (`rollButton`, `confirmButton`)
+  - `src/modules/cards/components/ProductiveCardDialog/ProductiveCardDialog.tsx:69` (`confirmButton`)
+  - `src/modules/cards/components/SpecialIslandRollDialog/SpecialIslandRollDialog.tsx:86,91` (`rollButton`, `closeButton` `bg-white/10`)
+  - `src/modules/lobby/components/RejoinMatchPanel/RejoinMatchPanel.tsx:14` (`reclaimButton`)
+  - `src/modules/lobby/components/Lobby/Lobby.tsx:68` (`createButton`)
+  - `src/modules/lobby/components/CreateGameDialog/CreateGameDialog.tsx:104` and `CreateGameDialog.preview.tsx:110` (`createButton`)
+  - `src/modules/hud/components/GameBoardHeader/GameBoardHeader.tsx:89` (`startGameButton`; plate tier after D4, class still honoured)
+  - `src/modules/session/components/VictoryDialog/VictoryDialog.tsx:74` (`returnButton`, `h-11` forced to `!h-16`)
+  - `src/modules/session/components/Login/Login.tsx:64` (`googleButton`, `border-white/10 bg-black/40`) and `:101` (`submitButton`)
+  - `src/modules/session/components/DeleteAccountButton/DeleteAccountButton.tsx:71` (`AlertDialogAction` `confirmAction` `bg-destructive`; gets `variant="destructive"` in 2d, class becomes redundant)
+  - `src/modules/lobby/components/LobbyGameRow/LobbyGameRow.tsx:123` (`min-w-[80px]` loses to `!min-w-[128px]`; the row grows: check in ui-verify, Phase 4 owns it)
+B. Plate tier whose `className` overrides border colour/radius (the plate honours them, but `border-white/10` removes the `border-muted-foreground` boundary contrast of Final spec item 7): `border-white/10 text-xs` on `outline`+`sm` in `MonsterAttackScreen.tsx:99`, `MonsterSelectionDialog.tsx:71`, `PositionDialog.tsx:62`, `AttackSelectionDialog.tsx:77`, `ArmySelectionDialog.tsx:96`, `WealthyDialog.tsx:69`, `CardsDialog.tsx:84`, `SabotageDialog.tsx:57`, `AbilitiesDialog.tsx:75`, `ResourceSelectionStep.tsx:73`, `PlayerSelectionStep.tsx:49`, `CreateGameDialog.tsx:100`, `HostLeaveDialog.tsx:35`, `ConfirmExitDialog.tsx:34`, `LinkGoogleAccountButton.tsx:33,44`, `DeleteAccountButton.tsx:41`; `border border-white/5` on `ghost` in `Lobby.tsx:47`, `AvatarPickerButton.tsx:26`; gradient plates `CardsDialog.tsx:58` (`useButton`, `h-9`), `AbilitiesDialog.tsx:54` (`buyButton`, `h-7`), `ResourceSelectionStep.tsx:76` (`stealButton`); HUD `sm`/`icon` with heights `h-7`/`h-6`/`h-11` in `ActionsPanel.tsx:46,58,70`, `MobileActionsBar.tsx:59,71`, `MobileSheetTriggers.tsx:23,35`, `MapZoomControls.tsx:24,42,60`, `TutorialBeacon.tsx:43,58`.
+C. Dialog/Sheet content `className` with glass (`bg-background/90 backdrop-blur-2xl border border-white/15 shadow-[...] max-w-md overflow-hidden`): all `*.styles.ts` `content`/`dialogContent` keys (about 14). Neutralised by `SHELL_TRANSPARENT`; delete the glass classes in Phase 7.
+D. Titles: `VictoryDialog.styles.ts` `title` (gradient `bg-clip-text text-transparent`, lands on the ribbon frame: check in ui-verify; fix in Phase 6); `MobileActionsSheet.tsx:47` (title children = text + `infoBeacon` button; the ribbon `truncate` may clip the beacon: check; Phase 5/6); dialogs that nest the title inside a flex row beside an icon/description (`CombatDialog.tsx:34-37`, `ArmySelectionDialog.tsx:51`, and similar headers): the ribbon is laid out inside that row; restyled in Phase 6; `MobileEventLogSheet.tsx:43` sr-only title (frame gets `sr-only`; no visible title, as before).
+E. `AlertDialogCancel` loses `mt-2 sm:mt-0`; any caller relying on that margin: grep `AlertDialogCancel className` in 2d (none found in the scan: all 12 tags have no `className`).
+Phase 2h writes this list into `progress.md` after re-running the scan.
+
+## P2 Risks
+- R8: Tailwind `!`-important utilities in `SPRITE_LOCK` need Tailwind to see them as literal strings (they are, in `button.tsx`). Check in the preview that a caller `bg-gradient-to-r` row renders no rectangle.
+- R9: `DialogTitle` as `Primitive.Title asChild` + `Ribbon` needs `Ribbon` to accept Radix's injected `id` and forward the ref; covered by 2b tests and the 2d dialog test (`aria-labelledby` resolves).
+- R10: Dialog scroll height: `max-h-[calc(100dvh-3rem)]` assumes the frame inset 16 + shell margin 8 each side; a caller `max-w`/padding does not change it. If the frame overflows the viewport on a 390x844 screen, ui-verify tunes `3rem`.
+- R11: The dark field overlaps part of the `special` corner art (field starts 16 px inside the frame, corner art is 55 px wide). If the gold corners look cut, tune a field margin (`m-1`) in `DialogFrame`; report old/new.
+- R12: `Radix Content` `onOpenAutoFocus`, `onEscapeKeyDown`, `aria-describedby={undefined}` props are spread on the shell unchanged (verified by tests).
+- R13: `font-pixel` plate buttons are 36 px tall in HUD (`sm`): accepted by the Final spec.
+- R14: CPU/DOM: each sprite button renders 4 layers x 3 cells; a dialog with 6 buttons = 72 cell divs. Acceptable; measure only if the Combat dialog stutters.
+- R15: `TooltipTrigger asChild` -> sprite `Button` relies on `PixelButton` accepting Radix's `onPointerMove`, `onFocus`, `onBlur`: `onBlur` is composed (2a), `onPointerMove`/`onFocus`/`onClick` pass through `{...rest}`. Covered by `overlays.test.tsx`.
+
+## P2 Review (architect-b)
+VERDICT: APPROVED
+
+Verified this session:
+- Cites: `ActionButton.tsx:48`, `GameBoardHeader.tsx:83,89`, `DeleteAccountButton.tsx:71` are the `<Button>`/`AlertDialogAction` tags; `PixelButton.tsx`, `.types.ts`, `.hook.ts` (7 handlers, no `onKeyUp`), `.styles.ts`, `PixelPanel.tsx` (rest and className on `NineSlice`, outer div has no class hook) match the Verified context. No test file under `src/components/ui` (find empty). No test asserts Button/Badge/Card/Input classes (grep `toHaveClass` for old shadcn classes, src and e2e: none). `buttonVariants`/`badgeVariants`/`toastVariants` consumers are only in `src/components/ui`.
+- D2 accepted: `PixelPanel.map.ts:65-76` special cols `{9,55},{128,64},{256,55}` and rows `{20,44},..,{256,43}` are trimmed to the PIL bbox `(9,20,311,299)` I re-measured; the frame box has no transparent margin. 16 inset + `px-4` = 32 per side gives 310 at 374. No per-side inset option needed.
+- D3 accepted: `!` utilities are the only way to keep ~20 old gradient call sites from painting rectangles until Phases 3-6. Deviation from "not supported" is a superset. Condition: the Button contract must destructure `variant, size, asChild, className` before spreading (added as a comment in the render rule).
+- D4 accepted. All default-size `<Button>` in HUD/map are covered: `ActionsPanel.tsx`, `MobileActionsBar.tsx`, `MobileSheetTriggers.tsx`, `MapZoomControls.tsx`, `TutorialBeacon.tsx` already carry `size="sm"|"icon"`; only `ActionButton.tsx:48` and `GameBoardHeader.tsx:83,89` use the default. `ResourceCollectionFeedbackDemo.tsx` is a dev demo (becomes sprite; acceptable). One prop per tag leaves HUD structure unchanged, consistent with the user constraint. 2c must compare `getBoundingClientRect` before/after (already in the plan).
+- D8 accepted (additive; no PixelButton test asserts label classes: `PixelButton.test.tsx` greps show none).
+- D11 accepted: spec text is self-contradictory (remove the split, keep as is); keeping `text-center sm:text-left` is the behaviour-preserving reading. Footers stack below `sm`; the "two buttons fit" criterion is shown by the 310 px preview row.
+- `DeleteAccountButton` `variant="destructive"` and Popover/Progress staying plates: accepted (Final spec items 6, section 8).
+- PixelButton changes are safe: `usePixelButtonVisual(isDisabled)` call in `PixelButton.hook.test.ts:8` keeps working (optional second parameter); widening `PixelButtonProps` and `forwardRef` do not break existing importers; neutral is additive. Docs: `docs/architecture/pixel-ui.md:66` states "`PixelButtonProps` omits those and `onKeyUp`" and becomes false; 2h docs-sync must rewrite that sentence (plan already lists PixelButton text under 2h).
+- Sizing: 2a 5, 2b 5, 2c 3 + preview/registry, 2d 5 + 1 line, 2e 6, 2f 4, 2g 7 (class-only strings, no logic): acceptable.
+- Migration-debt A-E: HUD sites are covered; scan counts (135 tags / 51) not re-run by me. 2h re-runs it.
+- Risk to the 4800-test suite: low. Highest: dialog structure tests listed in P2 Test impact; read the full failure list before editing any test. E2E selectors are role/name based; the sprite button's `textContent` equals its label (art spans are aria-hidden and empty).
+
+Non-blocking notes:
+1. Sprite `lg` is not forwarded as PixelButton `large` (128 px tall): intended; the `lg` art is the 3-slice at width 192. State this in `button.tsx` file comment.
+2. `Ribbon` icon slot plus `Primitive.Title asChild`: the `id` lands on the text element only if `Ribbon` spreads rest there (R9); 2b/2d tests cover it.
+3. The close button `PixelButton` inside `DialogPrimitive.Close asChild` requires 2a `forwardRef`; keep sub-phase order 2a, 2b, 2c, 2d.
