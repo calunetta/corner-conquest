@@ -4,11 +4,11 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e (see plan.md)
 
 ## Phase 1a: theme and fonts (layout.tsx, tailwind.config.ts, globals.css, theme-tokens test)
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-b)
-- [ ] tests (tester-a)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify): `/`, `/testbed/session-login`, `/testbed/lobby-main`, body font Pixelify Sans
-- [ ] final review (architect-b)
+- [x] implementation (implementer-b)
+- [x] tests (tester-a)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify): `/`, `/testbed/session-login`, `/testbed/lobby-main`, body font Pixelify Sans
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 1b: slice engine (types, asset-url, slice.map, SliceFrame/NineSlice/ThreeSlice, barrel)

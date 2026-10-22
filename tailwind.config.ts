@@ -18,8 +18,10 @@ export default {
         'terrain-neutral': "url('/sprites/terrain-neutral.png')",
       },
       fontFamily: {
-        body: ['var(--font-outfit)', 'Outfit', 'sans-serif'],
-        headline: ['var(--font-outfit)', 'Outfit', 'sans-serif'],
+        body: ['var(--font-pixelify)', 'var(--font-outfit)', 'Outfit', 'sans-serif'],
+        headline: ['var(--font-pixelify)', 'var(--font-outfit)', 'Outfit', 'sans-serif'],
+        pixel: ['var(--font-pixelify)', 'var(--font-outfit)', 'Outfit', 'sans-serif'],
+        readable: ['var(--font-outfit)', 'Outfit', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -53,6 +55,8 @@ export default {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        ink: 'hsl(var(--ink))',
+        paper: 'hsl(var(--paper))',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
