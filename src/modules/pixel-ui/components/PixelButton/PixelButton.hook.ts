@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import type { PixelButtonVisual, PixelButtonVisualState } from './PixelButton.types';
+import type { ConsumerHandlers, PixelButtonVisual, PixelButtonVisualState } from './PixelButton.types';
 
 export const KEY_PRESS_MS = 100;
 
 const isActivationKey = (key: string): boolean => key === 'Enter' || key === ' ';
 
 /** Derives the art state (regular, hover, pressed, disabled) from pointer and keyboard events. */
-export function usePixelButtonVisual(isDisabled: boolean): PixelButtonVisualState {
+export function usePixelButtonVisual(
+  isDisabled: boolean,
+  consumer?: ConsumerHandlers,
+): PixelButtonVisualState {
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const releaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,13 +55,34 @@ export function usePixelButtonVisual(isDisabled: boolean): PixelButtonVisualStat
   return {
     visual: toVisual(isDisabled, isPressed, isHovered),
     handlers: {
-      onPointerEnter: () => setIsHovered(true),
-      onPointerLeave: handlePointerLeave,
-      onPointerDown: () => setIsPressed(true),
-      onPointerUp: () => setIsPressed(false),
-      onPointerCancel: handlePointerLeave,
-      onKeyDown: handleKeyDown,
-      onBlur: handleBlur,
+      onPointerEnter: (event) => {
+        consumer?.onPointerEnter?.(event);
+        setIsHovered(true);
+      },
+      onPointerLeave: (event) => {
+        consumer?.onPointerLeave?.(event);
+        handlePointerLeave();
+      },
+      onPointerDown: (event) => {
+        consumer?.onPointerDown?.(event);
+        setIsPressed(true);
+      },
+      onPointerUp: (event) => {
+        consumer?.onPointerUp?.(event);
+        setIsPressed(false);
+      },
+      onPointerCancel: (event) => {
+        consumer?.onPointerCancel?.(event);
+        handlePointerLeave();
+      },
+      onKeyDown: (event) => {
+        consumer?.onKeyDown?.(event);
+        handleKeyDown(event);
+      },
+      onBlur: (event) => {
+        consumer?.onBlur?.(event);
+        handleBlur();
+      },
     },
   };
 }

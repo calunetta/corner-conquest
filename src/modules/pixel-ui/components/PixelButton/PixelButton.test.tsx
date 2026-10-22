@@ -1,3 +1,4 @@
+import { createRef } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { PixelButton } from './PixelButton';
 import type { PixelButtonSize, PixelButtonVariant } from './PixelButton.types';
@@ -213,6 +214,151 @@ describe('PixelButton', () => {
       );
 
       expect(getDrawnSheetFiles(container)).toEqual([...expectedFiles].sort());
+    });
+  });
+
+  describe('forwarded ref', () => {
+    it('ref object points at the button element', () => {
+      const ref = createRef<HTMLButtonElement>();
+      render(<PixelButton ref={ref}>Move</PixelButton>);
+
+      expect(ref.current).toBe(screen.getByRole('button', { name: 'Move' }));
+    });
+
+    it('ref callback receives the button element on mount', () => {
+      const ref = jest.fn();
+      render(<PixelButton ref={ref}>Move</PixelButton>);
+
+      expect(ref).toHaveBeenCalledWith(screen.getByRole('button', { name: 'Move' }));
+    });
+  });
+
+  describe('variant attribute', () => {
+    it.each<PixelButtonVariant>(['primary', 'danger', 'neutral'])(
+      'exposes data-variant=%s on the button element',
+      (variant) => {
+        render(<PixelButton variant={variant}>Move</PixelButton>);
+
+        expect(screen.getByRole('button', { name: 'Move' })).toHaveAttribute('data-variant', variant);
+      },
+    );
+
+    it('defaults to primary', () => {
+      render(<PixelButton>Move</PixelButton>);
+
+      expect(screen.getByRole('button', { name: 'Move' })).toHaveAttribute('data-variant', 'primary');
+    });
+  });
+
+  describe('consumer handlers', () => {
+    it('calls the consumer onPointerEnter once and still shows hover', () => {
+      const onPointerEnter = jest.fn();
+      render(<PixelButton onPointerEnter={onPointerEnter}>Move</PixelButton>);
+      const button = screen.getByRole('button', { name: 'Move' });
+
+      fireEvent.pointerEnter(button);
+
+      expect(onPointerEnter).toHaveBeenCalledTimes(1);
+      expect(button).toHaveAttribute('data-visual', 'hover');
+    });
+
+    it('calls the consumer onPointerLeave and still returns to regular', () => {
+      const onPointerLeave = jest.fn();
+      render(<PixelButton onPointerLeave={onPointerLeave}>Move</PixelButton>);
+      const button = screen.getByRole('button', { name: 'Move' });
+
+      fireEvent.pointerEnter(button);
+      fireEvent.pointerLeave(button);
+
+      expect(onPointerLeave).toHaveBeenCalledTimes(1);
+      expect(button).toHaveAttribute('data-visual', 'regular');
+    });
+
+    it('calls the consumer onBlur and still clears hover', () => {
+      const onBlur = jest.fn();
+      render(<PixelButton onBlur={onBlur}>Move</PixelButton>);
+      const button = screen.getByRole('button', { name: 'Move' });
+
+      fireEvent.pointerEnter(button);
+      fireEvent.blur(button);
+
+      expect(onBlur).toHaveBeenCalledTimes(1);
+      expect(button).toHaveAttribute('data-visual', 'regular');
+    });
+
+    it('calls the consumer onKeyDown with the event and still shows pressed for Enter', () => {
+      const onKeyDown = jest.fn();
+      render(<PixelButton onKeyDown={onKeyDown}>Move</PixelButton>);
+      const button = screen.getByRole('button', { name: 'Move' });
+
+      fireEvent.keyDown(button, { key: 'Enter' });
+
+      expect(onKeyDown).toHaveBeenCalledTimes(1);
+      expect(onKeyDown).toHaveBeenCalledWith(expect.objectContaining({ key: 'Enter' }));
+      expect(button).toHaveAttribute('data-visual', 'pressed');
+    });
+
+    it('passes onKeyUp through to the DOM button', () => {
+      const onKeyUp = jest.fn();
+      render(<PixelButton onKeyUp={onKeyUp}>Move</PixelButton>);
+
+      fireEvent.keyUp(screen.getByRole('button', { name: 'Move' }), { key: 'Enter' });
+
+      expect(onKeyUp).toHaveBeenCalledTimes(1);
+      expect(onKeyUp).toHaveBeenCalledWith(expect.objectContaining({ key: 'Enter' }));
+    });
+
+    // React only suppresses mouse click and mouse down/up/enter on disabled elements; pointer, key and blur reach the consumer.
+    it('still calls the consumer onPointerEnter on a disabled button, and the visual stays disabled', () => {
+      const onPointerEnter = jest.fn();
+      render(<PixelButton disabled onPointerEnter={onPointerEnter}>Move</PixelButton>);
+      const button = screen.getByRole('button', { name: 'Move' });
+
+      fireEvent.pointerEnter(button);
+
+      expect(onPointerEnter).toHaveBeenCalledTimes(1);
+      expect(button).toHaveAttribute('data-visual', 'disabled');
+    });
+  });
+
+  describe('neutral variant', () => {
+    it('shows the neutral visual on hover like the other variants', () => {
+      render(<PixelButton variant="neutral">Move</PixelButton>);
+      const button = screen.getByRole('button', { name: 'Move' });
+
+      fireEvent.pointerEnter(button);
+
+      expect(button).toHaveAttribute('data-visual', 'hover');
+    });
+
+    it.each<[PixelButtonSize, string[]]>([
+      ['default', ['Button_Disable_3Slides.png', 'Button_Hover_3Slides.png']],
+      ['large', ['Button_Disable_9Slides.png', 'Button_Hover_9Slides.png']],
+    ])('%s size draws only the hover plate and the disable plate', (size, expectedFiles) => {
+      const { container } = render(<PixelButton variant="neutral" size={size}>Move</PixelButton>);
+
+      expect(getDrawnSheetFiles(container)).toEqual([...expectedFiles].sort());
+    });
+
+    it('draws the blue round icon files for a neutral round icon button', () => {
+      const { container } = render(<PixelButton variant="neutral" size="icon-round" aria-label="Close" />);
+
+      expect(getDrawnSheetFiles(container)).toEqual([
+        'SmallBlueRoundButton_Pressed.png',
+        'SmallBlueRoundButton_Regular.png',
+      ]);
+    });
+
+    it('is disabled and reports the disabled visual when disabled', () => {
+      const onClick = jest.fn();
+      render(<PixelButton variant="neutral" disabled onClick={onClick}>Move</PixelButton>);
+      const button = screen.getByRole('button', { name: 'Move' });
+
+      fireEvent.click(button);
+
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute('data-visual', 'disabled');
+      expect(onClick).not.toHaveBeenCalled();
     });
   });
 });

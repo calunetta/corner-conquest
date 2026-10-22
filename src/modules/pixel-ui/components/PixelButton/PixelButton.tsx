@@ -1,5 +1,6 @@
 'use client';
 
+import { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 import { NineSlice, ThreeSlice } from '../SliceFrame/SliceFrame';
 import { usePixelButtonVisual } from './PixelButton.hook';
@@ -11,30 +12,34 @@ const VISUALS: readonly PixelButtonVisual[] = ['regular', 'hover', 'pressed', 'd
 const ICON_SHEET_PX = 64;
 const LOADING_TEXT = '...';
 
-export function PixelButton({
-  variant = 'primary',
-  size = 'default',
-  loading = false,
-  disabled,
-  className,
-  children,
-  ...rest
-}: PixelButtonProps) {
+export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(function PixelButton(
+  { variant = 'primary', size = 'default', loading = false, disabled, className, children, ...rest },
+  ref,
+) {
   const isDisabled = Boolean(disabled) || loading;
-  const { visual, handlers } = usePixelButtonVisual(isDisabled);
+  const { visual, handlers } = usePixelButtonVisual(isDisabled, rest);
   const art = toButtonArt(variant, size);
+  const isIconArt = art.kind === 'icon';
 
   return (
     <button
+      ref={ref}
       type="button"
       {...rest}
       {...handlers}
       disabled={isDisabled}
       aria-busy={loading || undefined}
       data-visual={visual}
+      data-variant={variant}
       className={cn(styles.root({ size }), className)}
     >
-      <span aria-hidden className={styles.artStack(visual === 'pressed' && art.kind !== 'icon')}>
+      <span
+        aria-hidden
+        className={cn(
+          styles.artStack(visual === 'pressed' && !isIconArt),
+          !isIconArt && styles.artTint(variant, visual),
+        )}
+      >
         {VISUALS.map((layerVisual) => {
           const layerState = layerVisual === visual ? 'visible' : 'invisible';
           if (art.kind === 'icon') {
@@ -68,4 +73,4 @@ export function PixelButton({
       )}
     </button>
   );
-}
+});

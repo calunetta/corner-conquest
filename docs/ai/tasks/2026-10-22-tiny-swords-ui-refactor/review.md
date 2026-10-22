@@ -154,3 +154,34 @@ VERDICT: APPROVED
 - Phase 1 theme: warm dark tokens + Pixelify/Outfit pairing in place; typography rule recorded in `pixel-ui.md` §6.18.
 - Open items for later phases: small PixelBar with label overflows the 3 px track (use unlabelled or revisit in Phase 5); disabled label contrast 3.81 accepted (WCAG-exempt); light `:root` tokens stale (dark-only app).
 - Commit hashes for 1a-1e boxes are the coordinator's.
+
+---
+
+# Final review: Phase 2a (PixelButton prerequisites)
+
+VERDICT: APPROVED
+
+## Checks run
+- `npm run typecheck`: clean (tsc --noEmit, no output)
+- `npm run lint`: clean (eslint . --max-warnings 0, no output)
+- `npx jest src/modules/pixel-ui`: Test Suites: 15 passed, 15 total; Tests: 466 passed, 466 total
+- Coordinator full `npm test`: 328 suites / 4844 tests, one failure: `IconEditor.preview.test.tsx` (passes alone in 1.2 s here; Tests: 1 passed). Untouched code, load timeout.
+- Screenshots: not re-read; relied on preview-a probe (computed filters, data-visual, Disable art).
+
+## Plan adherence (P2 Contracts, 2a)
+- types: `PixelButtonVariant` has `neutral`; `PixelButtonProps` extends `ButtonHTMLAttributes` with no Omit; `ConsumerHandlers` as specified.
+- map: `TONE.neutral = 'Blue'` (icon fallback D7); `toSliceFile(visual, variant, slides)`: disabled -> Disable, hover or neutral -> Hover, else tone sheet. Matches contract.
+- hook: `consumer` param; consumer runs first for all 7 returned handlers; `onKeyUp` not returned. Cleanup effects unchanged.
+- styles: `artTint` (neutral hover 110, pressed 90), label `inline-flex items-center gap-2` (D8).
+- tsx: `forwardRef`, `usePixelButtonVisual(isDisabled, rest)`, `data-variant`, tint only on non-icon art, `{...rest}` before `{...handlers}`.
+- No contract change needed in plan.md.
+- Docs: `docs/architecture/pixel-ui.md` PixelButton section corrected (handlers no longer omitted, forwardRef, neutral variant, `data-variant`, label gap). Done here although docs-sync is formally 2h.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | src/testbed/components/IconEditor/IconEditor.preview.test.tsx | Passes alone in ~1 s, fails only in full parallel run (~7 s, over the 5 s default). Seen 3 times in Phases 1-2. Follow-up warranted: raise that test's timeout (e.g. third argument or `jest.setTimeout` in the file), do not weaken assertions | coordinator / tester | no |
+| 2 | PixelButton.tsx (`toButtonArt` calls in PixelButton.map.ts:84,90) | Long unformatted lines (carried from Phase 1 finding 3) | implementer | no |
+| 3 | PixelButton.types.ts:15 | `onKeyUp` stays in `HookedHandlers`/`ConsumerHandlers` though never returned by the hook; harmless, documented by test and docs | none | no |
+
+Hook tests asserting consumer handlers run while disabled (tester-b point) are correct: React suppresses only mouse events on disabled elements; pointer and key events still fire.

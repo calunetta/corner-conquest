@@ -2,7 +2,7 @@ import type { ComponentPreview } from '@/testbed';
 import { PixelButton } from './PixelButton';
 import type { PixelButtonSize, PixelButtonVariant } from './PixelButton.types';
 
-const VARIANTS: PixelButtonVariant[] = ['primary', 'danger'];
+const VARIANTS: PixelButtonVariant[] = ['primary', 'danger', 'neutral'];
 const SIZES: PixelButtonSize[] = ['default', 'large', 'icon-round', 'icon-square'];
 
 function labelFor(size: PixelButtonSize): string {
@@ -61,6 +61,7 @@ function MobileRow() {
         <PixelButton>Move</PixelButton>
         <PixelButton size="icon-round" variant="danger" aria-label="Attack" />
         <PixelButton size="icon-round" aria-label="Cards" />
+        <PixelButton size="icon-round" variant="neutral" aria-label="Menu" />
       </div>
       <p className="text-xs text-muted-foreground">
         Default buttons have a 128 px floor (two 64 px caps), so three text buttons do not fit 390 px. The

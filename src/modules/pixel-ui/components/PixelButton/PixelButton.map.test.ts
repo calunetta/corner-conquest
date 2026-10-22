@@ -148,8 +148,72 @@ describe('toButtonArt: icon sizes', () => {
 
 });
 
+describe('toButtonArt: neutral variant (3-slice and 9-slice)', () => {
+  it.each(['default', 'large'] as const)('%s size: regular, hover and pressed all use the hover plate', (size) => {
+    const art = toButtonArt('neutral', size);
+
+    if (art.kind === 'icon') throw new Error('expected a sliced button');
+    const suffix = size === 'default' ? '3Slides' : '9Slides';
+    const hoverPlate = `${SLICE_PREFIX}Button_Hover_${suffix}.png`;
+    expect(art.sheets.regular.url).toBe(hoverPlate);
+    expect(art.sheets.hover.url).toBe(hoverPlate);
+    expect(art.sheets.pressed.url).toBe(hoverPlate);
+  });
+
+  it.each(['default', 'large'] as const)('%s size: disabled uses the disable plate', (size) => {
+    const art = toButtonArt('neutral', size);
+
+    if (art.kind === 'icon') throw new Error('expected a sliced button');
+    const suffix = size === 'default' ? '3Slides' : '9Slides';
+    expect(art.sheets.disabled.url).toBe(`${SLICE_PREFIX}Button_Disable_${suffix}.png`);
+  });
+
+  it('neutral 3-slice keeps the 192x64 geometry', () => {
+    const art = toButtonArt('neutral', 'default');
+
+    if (art.kind !== 'three') throw new Error('expected a three-slice button');
+    for (const visual of VISUALS) {
+      expect(art.sheets[visual].width).toBe(192);
+      expect(art.sheets[visual].height).toBe(64);
+    }
+  });
+
+  it('neutral 9-slice keeps the 192x192 geometry', () => {
+    const art = toButtonArt('neutral', 'large');
+
+    if (art.kind !== 'nine') throw new Error('expected a nine-slice button');
+    for (const visual of VISUALS) {
+      expect(art.sheets[visual].width).toBe(192);
+      expect(art.sheets[visual].height).toBe(192);
+    }
+  });
+
+  it.each([
+    ['icon-round', 'SmallBlueRoundButton'],
+    ['icon-square', 'SmallBlueSquareButton'],
+  ] as const)('%s: regular, hover and disabled use the blue Regular file', (size, base) => {
+    const art = toButtonArt('neutral', size);
+
+    if (art.kind !== 'icon') throw new Error('expected an icon button');
+    const regular = `${ICON_PREFIX}${base}_Regular.png`;
+    expect(art.urls.regular).toBe(regular);
+    expect(art.urls.hover).toBe(regular);
+    expect(art.urls.disabled).toBe(regular);
+  });
+
+  it.each([
+    ['icon-round', 'SmallBlueRoundButton'],
+    ['icon-square', 'SmallBlueSquareButton'],
+  ] as const)('%s: pressed uses the blue Pressed file', (size, base) => {
+    const art = toButtonArt('neutral', size);
+
+    if (art.kind !== 'icon') throw new Error('expected an icon button');
+    expect(art.urls.pressed).toBe(`${ICON_PREFIX}${base}_Pressed.png`);
+  });
+});
+
 describe('toButtonArt: every produced url exists on disk', () => {
-  const VARIANTS: PixelButtonVariant[] = ['primary', 'danger'];
+  const VARIANTS: PixelButtonVariant[] = ['primary', 'danger', 'neutral'];
   const SIZES: PixelButtonSize[] = ['default', 'large', 'icon-round', 'icon-square'];
 
   it.each(
