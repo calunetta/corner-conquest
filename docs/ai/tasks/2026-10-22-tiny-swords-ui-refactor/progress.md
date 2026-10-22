@@ -57,7 +57,7 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e and Phase 2 i
 - [x] checks: typecheck, lint, unit tests (quote summary lines)
 - [x] UI verified (ui-verify): `/testbed/pixel-ui-button` neutral states, computed `filter` brightness(1.1) on hover, art url `Button_Hover_3Slides`
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [ ] committed: a6d4c2b
 
 ## Phase 2b: Ribbon ReactNode/forwardRef/rest props and PixelPanel `padding="none"` + `rootClassName`
 - [ ] implementation (implementer-a, implementer-b)
@@ -185,3 +185,4 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e and Phase 2 i
 2026-10-22 1e preview-a: Pixelify Sans not good enough at 14 px for logs/card text (l/I/1, 0/O ambiguous, parentheses read as angle brackets); use it for headings, buttons, labels; use Outfit (`font-readable`) for event log, card body, digits and ids.
 2026-10-23 coordinator: full npm test showed two unrelated load-sensitive flakes once (IconEditor.preview.test.tsx, MonsterSpriteUploader.catalogEdit.hook.test.ts); both pass in isolation 3/3 and on the next full run (328 suites, 4798 tests).
 2026-10-23 architect-a: Phase 2 plan appended to plan.md (DRAFT), split into 2a-2h; progress blocks created. Deviations needing architect-b sign-off: D3 SPRITE_LOCK `!` classes, D4 Button size `plate` + 3 HUD one-prop edits, D2 insets (engine trims transparent margins), D11 header alignment unchanged.
+2026-10-23 coordinator: IconEditor.preview.test.tsx failed again in a full run (3rd time, ~7s vs 5s default timeout; passes alone in ~1s). Follow-up: raise that test timeout, do not weaken assertions (untouched code, not part of this task).
