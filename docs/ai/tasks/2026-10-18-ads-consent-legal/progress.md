@@ -8,11 +8,11 @@ Tier: L (sub-phases of the Phase 0 and Phase 1 L-tier tasks, themselves part of 
 
 ## Phase 1: Legal pages (`/privacy`, `/terms`)
 - [x] plan approved (architect-b)
-- [ ] implementation (implementer-b)
-- [ ] tests (tester-b)
-- [ ] previews (none planned — see phase-0a-plan.md "Preview states")
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify)
+- [x] implementation (implementer-b)
+- [x] tests (tester-b)
+- [x] previews (none planned — see phase-0a-plan.md "Preview states")
+- [x] checks: typecheck, lint, unit tests (37 tests pass in privacy/terms; 2026-10-22)
+- [x] UI verified (ui-verify): desktop + mobile PASS, no horizontal scroll, DRAFT banner visible
 - [x] docs-sync: `docs/architecture/structure-and-state.md`, `docs/architecture/systems-and-visuals.md`
 - [ ] final review (architect-b)
 - [ ] committed: <hash>
