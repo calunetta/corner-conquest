@@ -47,7 +47,7 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e (see plan.md)
 - [x] typography verdict recorded in Log (Pixelify vs Outfit at 14 px)
 - [x] docs-sync
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [ ] committed: 689a301
 
 ## Phase 2: shadcn bridge (button, dialog, alert-dialog, sheet, card, input, badge, progress)
 - [ ] plan approved (architect-b)
