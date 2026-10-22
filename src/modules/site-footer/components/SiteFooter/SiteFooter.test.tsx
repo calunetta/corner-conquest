@@ -11,10 +11,11 @@ describe('SiteFooter', () => {
     });
   });
 
-  it('lists the privacy and terms pages', () => {
+  it('lists the privacy, terms and thanks pages', () => {
     render(<SiteFooter />);
 
     expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
     expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
+    expect(screen.getByRole('link', { name: 'Thanks' })).toHaveAttribute('href', '/thanks');
   });
 });

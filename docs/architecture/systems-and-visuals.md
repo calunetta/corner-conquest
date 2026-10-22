@@ -30,7 +30,7 @@ Part of the architecture & game-rules docs. Index and directives: [`docs/README.
 - **Sharing:** `useBoardBackground()` (`use-board-background.ts`) returns `{ isBackgroundOn, setBackgroundOn }`. The board and the header both call it and subscribe to the same store, so a toggle takes effect on the board immediately.
 
 #### **Site Footer**
-- `SiteFooter` (`src/modules/site-footer`) is a bottom strip of links to the public pages (Privacy Policy, Terms of Service). It shows on the login screen and the lobby and is hidden in-game, because `Home` (`src/app/page.tsx`) renders it only in those two branches. Add new public pages to `SiteFooter.links.ts`.
+- `SiteFooter` (`src/modules/site-footer`) is a bottom strip of links to the public pages (Privacy Policy, Terms of Service, Thanks). It shows on the login screen and the lobby and is hidden in-game, because `Home` (`src/app/page.tsx`) renders it only in those two branches. Add new public pages to `SiteFooter.links.ts`.
 
 #### **Legal Pages (`/privacy`, `/terms`)**
 - **Routes:** `src/app/privacy/page.tsx` and `src/app/terms/page.tsx` are static server components with no session or provider dependency. Both carry a DRAFT banner (pending lawyer review, not legal advice). They use the dark theme inherited from `RootLayout` and a shadcn `Card` (`@/components/ui/card`) for the content.
