@@ -83,3 +83,39 @@ Cause: the SliceFrame content wrapper is not stretched to the 61 px ribbon heigh
 
 ## Docs
 - `docs-sync` stays in 1e per plan. Lessons-learned entry appended (inline inset padding beats Tailwind classes on SliceFrame content).
+
+---
+
+# Final review: Phase 1d (PixelBar, PixelIcon)
+
+VERDICT: APPROVED
+
+## Checks run
+- `npm run typecheck`: clean (tsc --noEmit, no output)
+- `npm run lint`: clean (eslint . --max-warnings 0, no output)
+- `npm test`: Test Suites: 325 passed, 325 total; Tests: 4719 passed, 4719 total
+- Screenshots read: `test-results/ui-verify/testbed-pixel-ui-bar-state-big-20with-20label--desktop.png`, `.../testbed-pixel-ui-bar-state-small-20with-20label--desktop.png`.
+
+## Plan adherence
+- Files match the File plan; `index.ts` exports `PixelBar`, `PixelIcon` and their types; registry has `pixelBarPreview`, `pixelIconPreview`.
+- `PixelIcon` matches Contracts (`Object.hasOwn` in `toIconUrl` guards inherited keys such as `constructor`: OK).
+- Deviations accepted and recorded in plan.md (Contracts, Test plan, Previews): `BarArt = { sheet: ThreeSliceSheet, fillUrl, trackHeight }` (base sheets are 3-slice, a single background renders as fragments), view = `ThreeSlice` plus track box, fill drawn at `100% 64px` with a vertical offset, slugs `pixel-ui-bar` / `pixel-ui-icon`, bar preview states reorganised to size x label (0/50/100%).
+- Tuned values (in progress.md log): big inset 11/11/16/11 trackHeight 24; small inset 8/10/8/10 trackHeight 3.
+
+## Visual
+- Big bar: track continuous, fill aligned to the track at 0/50/100%, label legible.
+- Small bar: 3 px track reads as a thin red line inside the frame; acceptable as a compact meter. With a label, the 14 px text overflows the track and sits over the frame; legible but crowded. Use the small bar without a label, or revisit in Phase 5 if a labelled small bar is needed.
+
+## FILL_SHEET_HEIGHT decision
+Move it. 64 is a fact of the fill asset, like `BAR_SHEET_SIZE` in `PixelBar.map.ts`; the offset formula belongs with the data, not in the view. Fold in during 1e (implementer-a): add `fillOffsetY` (or compute it in `BAR_ART`) and drop the constant and the `Math.floor` from `PixelBar.tsx:8-15`. Non-blocking.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | src/modules/pixel-ui/components/PixelBar/PixelBar.tsx:9 | `FILL_SHEET_HEIGHT` and the offset calculation live in the view; move to `BAR_ART` data (see above) | implementer-a | no |
+| 2 | src/modules/pixel-ui/components/PixelBar/PixelBar.types.ts:15 | Doc comment says `inset` is where the track starts; it is the frame's inner padding around the track box. Reword | implementer-a | no |
+| 3 | one test failed once in the first full `npm test` | Unidentified, passed on three re-runs. Recorded in progress.md as unexplained flake | coordinator | no |
+
+## Docs
+- `docs-sync` stays in 1e. Lessons-learned entry appended (3-slice sheets with gaps; stale dev server).
+

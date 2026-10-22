@@ -61,6 +61,8 @@ import { iconEditorPreview } from '@/testbed/components/IconEditor/IconEditor.pr
 import { sliceFramePreview } from '@/modules/pixel-ui/components/SliceFrame/SliceFrame.preview';
 import { ribbonPreview } from '@/modules/pixel-ui/components/Ribbon/Ribbon.preview';
 import { pixelPanelPreview } from '@/modules/pixel-ui/components/PixelPanel/PixelPanel.preview';
+import { pixelBarPreview } from '@/modules/pixel-ui/components/PixelBar/PixelBar.preview';
+import { pixelIconPreview } from '@/modules/pixel-ui/components/PixelIcon/PixelIcon.preview';
 import type { ComponentPreview } from './testbed.types';
 
 /** Every preview shown in the testbed. Register new previews here (skill: testbed-preview). */
@@ -68,6 +70,8 @@ export const previews: ComponentPreview[] = [
   sliceFramePreview,
   ribbonPreview,
   pixelPanelPreview,
+  pixelBarPreview,
+  pixelIconPreview,
   mapZoomControlsPreview,
   animatedMonsterPreview,
   deathEffectPreview,

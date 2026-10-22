@@ -274,20 +274,21 @@ export interface PixelBarProps {
   'aria-label': string;       // required
   className?: string;
 }
-export interface BarArt { baseUrl: string; fillUrl: string; track: { left: number; width: number } } // px inside the 320x64 base
+export interface BarArt { sheet: ThreeSliceSheet; fillUrl: string; trackHeight: number } // built: the *_Base sheets are 3-slice sheets with transparent gaps, so the frame is a ThreeSlice and the track is a box inside its inset
 export const BAR_ART: Record<PixelBarSize, BarArt>;
-// big:   base 'UI Elements/UI Elements/Bars/BigBar_Base.png',   fill '.../BigBar_Fill.png',   track { left: 44, width: 232 } // tunable
-// small: base '.../SmallBar_Base.png', fill '.../SmallBar_Fill.png', track { left: 52, width: 216 } // tunable
+// big:   sheet BigBar_Base.png (320x64) cols [40/24, 128/64, 256/24] rows [9/51] inset { top: 11, right: 11, bottom: 16, left: 11 } trackHeight 24 // tunable (tuned in 1d)
+// small: sheet SmallBar_Base.png cols [49/15, 128/64, 256/15] rows [22/19] inset { top: 8, right: 10, bottom: 8, left: 10 } trackHeight 3 // tunable (tuned in 1d)
+// fill: BigBar_Fill.png / SmallBar_Fill.png, 64x64 sheets with the opaque band centred.
 export interface BarFill { fraction: number; valueNow: number; valueMax: number }
 /** fraction = clamp(value / max, 0, 1); non-finite value or max <= 0 gives fraction 0.
  *  valueNow = clamp(value, 0, valueMax) (0 when non-finite); valueMax = max(max, 0). */
 export function toBarFill(value: number, max: number): BarFill;
-// DOM: <div role="progressbar" aria-label aria-valuemin={0} aria-valuemax aria-valuenow className='relative h-16 w-80 max-w-full'>
-//        <span aria-hidden base layer: background-image base, background-size '320px 64px', pixelated />
-//        <span aria-hidden className='absolute top-0 h-16 overflow-hidden' style={{left: track.left, width: track.width}}>
-//          <span className='block h-full' style={{width: `${fraction*100}%`, backgroundImage: fill, backgroundSize: '100% 100%'}} /></span>
-//        {label && <span className='absolute inset-0 flex items-center justify-center text-sm font-semibold text-foreground [text-shadow:0_1px_0_hsl(var(--ink))]'>{label}</span>}</div>
-// Base box is 320x64 at 1x. Do not set `max-w-full` to anything that rescales the art; narrow screens clip nothing at 390 px (320 < 390).
+// DOM (built): <ThreeSlice sheet role="progressbar" aria-label aria-valuemin/max/now className='w-80 max-w-full'>
+//        <div className='relative w-full' style={{height: trackHeight}}>
+//          <div className='h-full w-full overflow-hidden'><span data-testid="pixel-bar-fill" className='block h-full bg-no-repeat pixelated'
+//             style={{width: `${fraction*100}%`, backgroundImage: fill, backgroundSize: '100% 64px', backgroundPosition: `0 -${floor((64 - trackHeight)/2)}px`}} /></div>
+//          {label && <span className='absolute inset-0 flex items-center justify-center text-sm font-semibold text-foreground [text-shadow:0_1px_0_hsl(var(--ink))]'>{label}</span>}</div></ThreeSlice>
+// The fill sheet is 64 px tall; only its centred band shows over the track (FILL_SHEET_HEIGHT in PixelBar.tsx, to move to BAR_ART data in 1e).
 
 // ---------- PixelIcon ----------
 export type PixelIconColorName = 'hammer' | 'wood' | 'gold' | 'food' | 'attack' | 'close' | 'settings' | 'info' | 'music';
@@ -398,7 +399,7 @@ Model escalation: sonnet for `slice.map.ts`, `SliceFrame.tsx`, `Ribbon.tsx`, `Pi
   - `slice.map.test.ts`: 9-slice WoodTable at scale 1 -> `columns '84px 1fr 84px'`, `rows '85px 1fr 103px'`, 9 cells row-major keys `r0c0..r2c2`, `minWidth 168`, `minHeight 188`, `fixedHeight null`; cell r0c0 `backgroundSize '533.33...% 527.06...%'` (448/84, 448/85) and `backgroundPosition` `44/(448-84)*100` and `43/(448-85)*100`; middle cell position `192/(448-64)*100 = 50`; scale 2 doubles px and mins but not percents; 3-slice ribbon: `rows '61px'`, `fixedHeight 61`, 3 cells, vertical position `0%`; `total === size` gives `0%` (no NaN/Infinity).
   - `Ribbon.map.test.ts`: color to url for 3 colours; geometry constants; spans inside sheet.
   - `PixelPanel.map.test.ts`: all 5 variants: spans ordered, non-overlapping, within sheet width/height; min sizes (256/256/128/128/126); textTone ink for banner, paper and carved; light for wood and special. Every `sheet.url` decodes to a file that exists under `public/` (`fs.existsSync(path.join('public', decodeURI(url)))`).
-  - `PixelBar.map.test.ts`: `toBarFill(7,10)` fraction 0.7; `(0,10)` 0; `(10,10)` 1; `(15,10)` fraction 1 and valueNow 10; `(-3,10)` 0; `(5,0)` fraction 0, valueNow 0, valueMax 0; `(NaN,10)` 0. BAR_ART urls exist on disk.
+  - `PixelBar.map.test.ts`: `toBarFill(7,10)` fraction 0.7; `(0,10)` 0; `(10,10)` 1; `(15,10)` fraction 1 and valueNow 10; `(-3,10)` 0; `(5,0)` fraction 0, valueNow 0, valueMax 0; `(NaN,10)` 0. BAR_ART sheet and fill urls exist on disk.
   - `PixelIcon.map.test.ts`: 9 colour names map to the listed Icon_NN; `size` gives px 32/64; grey names: regular/pressed/disabled gives `Regular_/Pressed_/Disable_`; colour name ignores state; unknown name (cast) returns null; every produced url exists on disk.
   - `PixelButton.map.test.ts`: 2 variants x 2 slice sizes: urls per visual as in Contracts (hover/disabled shared by tones); icon sizes: regular/hover/disabled -> Regular url, pressed -> Pressed url; every url exists on disk.
   - `PixelButton.hook.test.ts` (`renderHook`, fake timers): initial 'regular'; enter -> 'hover'; down -> 'pressed'; up -> 'hover'; leave -> 'regular'; disabled stays 'disabled' for every event; Enter keydown -> 'pressed', after `KEY_PRESS_MS` back to 'regular'; Space same; other keys ignored; blur clears; unmount during the timer does not throw or set state.
@@ -406,7 +407,7 @@ Model escalation: sonnet for `slice.map.ts`, `SliceFrame.tsx`, `Ribbon.tsx`, `Pi
   - `SliceFrame.test.tsx`: NineSlice renders 9 cells and ThreeSlice 3, art layer `aria-hidden`, children visible, content padding equals inset x scale, root forwards `className` and `data-testid`.
   - `Ribbon.test.tsx`: text rendered; `title` attribute equals text; `as="h2"` renders `heading` level 2; icon rendered before text; yellow uses `text-ink`.
   - `PixelPanel.test.tsx`: each variant renders children; with `title` a heading (level 2 default, 3 with `titleAs`) exists; without title no heading; `padding` classes sit on the inner wrapper that is the direct parent of the children (sm and md differ; md default; titled adds the extra top padding there).
-  - `PixelBar.test.tsx`: `role="progressbar"` with `aria-valuenow/min/max` for 7/10, 15/10 (valuenow 10), max 0; `aria-label` present; label text visible; fill width `70%`.
+  - `PixelBar.test.tsx`: `role="progressbar"` with `aria-valuenow/min/max` for 7/10, 15/10 (valuenow 10), max 0; `aria-label` present; label text visible; fill width `70%`; art cells carry the Big/Small base sheet.
   - `PixelIcon.test.tsx`: no `label` -> `aria-hidden`, no role; with label -> `role="img"` named; 32 and 64 px sizes in style; unknown name renders nothing (`container.firstChild` null).
   - `PixelButton.test.tsx`: renders `button` with label; click calls `onClick`; disabled click does not call it and keyboard Enter does not either (`fireEvent`; `@testing-library/user-event` is not installed); `loading` -> `disabled`, `aria-busy="true"`, label still in DOM; four state layers present; the current layer is `visible` and the others `invisible`; hover/pointer-down change which layer is visible; icon size renders no text sheet layer; focus-visible classes present on root.
   - e2e: none (no screen is wired; ui-verify covers the visual checks).
@@ -416,8 +417,8 @@ Group `Pixel UI`. Slugs (kebab, unique): `slice-frame`, `ribbon`, `pixel-panel`,
 - SliceFrame (`slice-frame`): "NineSlice small", "NineSlice medium", "NineSlice large" (WoodTable at 256x256, 480x320, 720x400 inside `max-w-full` wrappers; mobile shows the 256 one), "ThreeSlice ribbon width 192 / 320".
 - Ribbon (`ribbon`): "Blue", "Red", "Yellow" ("Turn 14 - Your move"), "With icon" (gold PixelIcon not available until 1d: use a plain `<span>12</span>` as the icon node), "Long text truncated" (container 220 px).
 - PixelPanel (`pixel-panel`): one state per variant ("Wood", "Banner", "Paper", "Special", "Carved") with title "Event Log" and lines "Mia moved to (3,2)", "Kai found a card"; "Paper untitled", "Paper sizes" (small 128, medium 240, large 360 px wide), "Focus ring on paper" and "Focus ring on wood" (a focusable `<button className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">` inside).
-- PixelBar (`pixel-bar`): "0/10", "7/10", "10/10", "Over max (15/10)", "Small bar 7/10".
-- PixelIcon (`pixel-icon`): "Colour 32 px" (9 icons), "Colour 64 px", "Grey regular", "Grey pressed", "Grey disabled" (all 10).
+- PixelBar (slug `pixel-ui-bar`, built): states "big with label", "big without label", "small with label", "small without label", each showing 0%, 50%, 100%. Over-max is covered by unit tests.
+- PixelIcon (slug `pixel-ui-icon`): "Colour 32 px" (9 icons), "Colour 64 px", "Grey regular", "Grey pressed", "Grey disabled" (all 10).
 - PixelButton (`pixel-button`): "Primary default", "Danger default", "Primary large", "Danger large", "Icon round blue/red", "Icon square blue/red", "Disabled", "Loading", "Mobile width 390" (a w-full flex row of three default buttons "Move", "Attack", "Cards"). Hover, Pressed and Focus-visible are checked by interaction in ui-verify (spec states them as real interaction states).
 - PixelTypography (`pixel-typography`): "Event log lines", "Card body" at 12, 14, 16 px, Pixelify (`font-body`) vs Outfit (`font-readable`), each on `bg-paper text-ink`, banner panel and `bg-card`.
 - Fixtures: the sample strings from ui-design.md "Copy". Put shared strings in `src/modules/pixel-ui/pixel-ui.fixtures.ts` only if two previews or tests need the same constant (implementer-a, optional). No invented asset paths: previews use only the components.

@@ -30,12 +30,12 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e (see plan.md)
 - [ ] committed: a414fb0
 
 ## Phase 1d: PixelBar and PixelIcon
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a, preview-b)
-- [ ] checks: typecheck, lint, unit tests
-- [ ] UI verified (ui-verify): bar track alignment (tune `BAR_ART`), icons at 32 and 64 px
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a, preview-b)
+- [x] checks: typecheck, lint, unit tests
+- [x] UI verified (ui-verify): bar track alignment (tune `BAR_ART`), icons at 32 and 64 px
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 1e: PixelButton, typography preview, docs, Phase 1 close-out
@@ -115,3 +115,4 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e (see plan.md)
 2026-10-22 architect-a: Phase 1 plan.md drafted (DRAFT), split into 1a-1e; progress blocks created for all phases.
 2026-10-22 coordinator: applied two non-blocking 1b review notes myself (slice.map.ts reuse isThreeSlice; preview contentClassName gets flex).
 2026-10-22 architect-b (1c final review): RIBBON_INSET tuned { top: 6, right: 56, bottom: 12, left: 56 } -> { top: 14, right: 56, bottom: 12, left: 56 } (text centred on ribbon face rows 3-44). Carved panel min 96 -> 126 and tone light -> ink, inline-padding inner div, Ribbon truncation classes accepted and recorded in plan.md.
+2026-10-23 architect-b (1d final review): BAR_ART tuned values: big inset { top: 11, right: 11, bottom: 16, left: 11 } trackHeight 24; small inset { top: 8, right: 10, bottom: 8, left: 10 } trackHeight 3. Deviation: BarArt is { sheet: ThreeSliceSheet, fillUrl, trackHeight } (base sheets are 3-slice with transparent gaps); plan.md Contracts updated. One unidentified test failed once in the first full `npm test` and passed on three re-runs: unexplained flake.

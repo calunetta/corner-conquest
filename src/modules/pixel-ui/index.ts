@@ -8,3 +8,12 @@ export type {
   PanelVariant,
   PixelPanelProps,
 } from './components/PixelPanel/PixelPanel.types';
+export { PixelBar } from './components/PixelBar/PixelBar';
+export { PixelIcon } from './components/PixelIcon/PixelIcon';
+export type { PixelBarProps, PixelBarSize } from './components/PixelBar/PixelBar.types';
+export type {
+  PixelIconName,
+  PixelIconProps,
+  PixelIconSize,
+  PixelIconState,
+} from './components/PixelIcon/PixelIcon.types';
