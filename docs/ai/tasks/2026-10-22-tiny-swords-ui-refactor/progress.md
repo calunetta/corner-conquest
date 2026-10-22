@@ -36,7 +36,7 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e (see plan.md)
 - [x] checks: typecheck, lint, unit tests
 - [x] UI verified (ui-verify): bar track alignment (tune `BAR_ART`), icons at 32 and 64 px
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [ ] committed: 888d457
 
 ## Phase 1e: PixelButton, typography preview, docs, Phase 1 close-out
 - [ ] implementation (implementer-a, implementer-b)
