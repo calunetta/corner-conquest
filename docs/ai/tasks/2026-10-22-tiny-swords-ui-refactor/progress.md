@@ -86,7 +86,7 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e and Phase 2 i
 - [x] full `npm test` run read; failing tests listed with cause; test edits justified in the log
 - [x] UI verified (ui-verify): shell 374 / text column 310 at 390 px, close button inside frame and clear of ribbon, contrast samples on dark field, sheet edge bleed, CombatDialog hybrid (`/testbed/combat-combat-dialog`), tunable values reported old/new in the log
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [ ] committed: 2266536
 
 ## Phase 2e: Card, Input, Textarea, Label, Badge, Progress (plates)
 - [ ] implementation (implementer-a, implementer-b)
