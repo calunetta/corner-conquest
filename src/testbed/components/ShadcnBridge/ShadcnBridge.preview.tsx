@@ -31,6 +31,15 @@ import {
   ToastLongText,
   TooltipOpen,
 } from './ShadcnBridgeNav';
+import {
+  AvatarStates,
+  CheckboxStates,
+  RadioGroupState,
+  ScrollAreaLong,
+  SeparatorStates,
+  SliderStates,
+  SwitchStates,
+} from './ShadcnBridgeControls';
 import { AlertDialogLeave, SheetState } from './ShadcnBridgeOverlays';
 
 export const shadcnBridgePreview: ComponentPreview = {
@@ -68,5 +77,12 @@ export const shadcnBridgePreview: ComponentPreview = {
     { name: 'Toast default', render: () => <ToastDefault /> },
     { name: 'Toast destructive', render: () => <ToastDestructive /> },
     { name: 'Toast long text', render: () => <ToastLongText /> },
+    { name: 'Switch', render: () => <SwitchStates /> },
+    { name: 'Checkbox', render: () => <CheckboxStates /> },
+    { name: 'Radio group', render: () => <RadioGroupState /> },
+    { name: 'Slider', render: () => <SliderStates /> },
+    { name: 'Separator', render: () => <SeparatorStates /> },
+    { name: 'ScrollArea long content', render: () => <ScrollAreaLong /> },
+    { name: 'Avatar', render: () => <AvatarStates /> },
   ],
 };

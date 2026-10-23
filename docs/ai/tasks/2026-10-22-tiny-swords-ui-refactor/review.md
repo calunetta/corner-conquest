@@ -352,3 +352,35 @@ VERDICT: APPROVED
 
 ## Lessons
 None added.
+
+---
+
+# Final review: Phase 2g (Switch, Checkbox, Radio, Slider, Separator, ScrollArea, Avatar)
+
+VERDICT: APPROVED
+
+## Checks run (by me)
+- `npm run typecheck`: clean. `npm run lint`: clean (eslint . --max-warnings 0).
+- `npm test`: Test Suites: 334 passed, 334 total; Tests: 5015 passed, 5015 total.
+- Radio keyboard probe (Playwright, `/testbed/shadcn-bridge?state=Radio group`, 800 ms waits): ArrowDown 0->1->2->wrap 0->1, ArrowUp wraps and moves back; `data-state=checked` follows focus every step, the disabled 4th radio is skipped. Mine and preview-a's earlier lag was a 300 ms wait against Radix's rAF-deferred click; no bug.
+- Screenshots and the 242-box measurement are implementer-reported, not re-taken.
+
+## Plan adherence
+- 7 `ui/*.tsx` class-only edits, `controls.test.tsx` (345 lines, test file), `ShadcnBridgeControls.tsx` (123 lines, keeps preview under the cap), appended preview states. No logic, no extra files. Deviations listed by the coordinator are justified (contrast numbers 1.98:1 vs 9.31:1); plan.md needs no change beyond them.
+
+## Judgments
+1. Slider thumb unnamed: stock Radix/shadcn behaviour, pre-existing. App usages (`CustomSettingsSheet.tsx:64`, `MonsterCombatCardSelector.tsx`) pass no `aria-label` today either, so Phase 2g does not regress it. Carry to Phase 7 (add a thumb label prop). KNOWN BUG test is correctly marked. Non-blocking.
+2. Radio ArrowDown: dismissed (above).
+3. Scrollbar thumb invisible at rest: Radix `type="hover"` is existing behaviour; thumb is visible on hover/scroll with 9.31:1 colour. Accepted.
+4. Space on Switch/Checkbox: Radix renders native `<button>`, Space activation is browser default; preview-a's real-browser check suffices. Accepted.
+5. Separator 2 px at ~1.98:1: decorative, spec-mandated. Accepted. Lobby settings sheet content 3 px taller: Phase 4 territory, not a Phase 2g regression.
+6. Disabled Slider dim on Root via `data-[disabled]`: correct (`slider.tsx` Root). The Thumb `disabled:` classes are inert for spans but harmless stock leftovers.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | src/components/ui/slider.tsx (Thumb) | No accessible name path; add a thumb label prop | implementer-b, Phase 7 | no |
+| 2 | src/components/ui/slider.tsx (Thumb) | Inert `disabled:` classes on a span | implementer-b, Phase 7 | no |
+
+## Lessons
+None added: the rAF-deferred Radix radio selection is a test-timing note, not a repeatable bug.
