@@ -95,7 +95,7 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e and Phase 2 i
 - [x] checks: typecheck, lint, unit tests (quote summary lines)
 - [x] UI verified (ui-verify): `/testbed/lobby-main`, `/testbed/session-login`, `/testbed/hud-game-board-header` (no Badge there); Input boundary contrast >= 3:1 and primary-foreground ratio recorded
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [ ] committed: d0656e1
 
 ## Phase 2f: Tooltip, Popover, Tabs, Toast (plates)
 - [ ] implementation (implementer-a, implementer-b)
