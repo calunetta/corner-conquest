@@ -113,7 +113,7 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e and Phase 2 i
 - [x] checks: typecheck, lint, unit tests (quote summary lines)
 - [x] UI verified (ui-verify): `/testbed/lobby-settings-sheet` controls readable on the dark field
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [ ] committed: c113aef
 
 ## Phase 2h: Close-out (no new source files)
 - [ ] full typecheck, lint, unit tests (quote summary lines)
