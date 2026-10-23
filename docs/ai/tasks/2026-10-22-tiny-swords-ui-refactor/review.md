@@ -384,3 +384,45 @@ VERDICT: APPROVED
 
 ## Lessons
 None added: the rAF-deferred Radix radio selection is a test-timing note, not a repeatable bug.
+
+# Final review: Phase 2h and Phase 2 as a unit
+
+VERDICT: APPROVED
+
+## Checks run (by me)
+- `npm run typecheck`: clean (`tsc --noEmit`, no output). `npm run lint`: clean (`eslint . --max-warnings 0`).
+- `npm test`: Test Suites: 334 passed, 334 total; Tests: 5015 passed, 5015 total.
+- E2E not run: no Java 21 runtime. The progress.md e2e box stays unticked; run the six specs before pushing Phase 2.
+- Screenshots and browser measurements in the Log are the coordinator's and preview-b's, not re-taken by me.
+
+## Docs vs code (read, not trusted)
+- `src/app/layout.tsx`: Patrick_Hand (`--font-patrick`), Lato (`--font-lato`), MedievalSharp (`--font-medieval`); `<body className="antialiased font-body">`. `tailwind.config.ts:20-26`: body/readable = patrick, lato; headline/pixel/medieval = medieval, patrick. `pixel-ui.md` §6.18 matches, including "plate and plain tiers use `font-readable`". The earlier "plates use font-pixel" wording is gone (grep: no Pixelify or Outfit left in `docs/architecture/` or `src/`).
+- `button.tsx:33` base class `font-readable`; sprite tier renders PixelButton (`PixelButton.styles.ts:62` `font-pixel`). `pixel-ui-bridge.md:19` says the same.
+- `Ribbon.map.ts:14` `RIBBON_INSET` 12/50/14/50 matches `pixel-ui.md:24,87`. `opticalPadding` (`PixelButton.styles.ts:11`) default `pb-4`, large `pt-2 pb-6`, icons `pb-1` matches.
+- `docs/README.md:33` indexes `pixel-ui-bridge.md`; `systems-and-visuals.md:91` points to §6.17-6.19. Docs consistent; no fix needed.
+- Badge digits are `font-pixel` (documented as the exception at `pixel-ui.md:86`).
+
+## Requested changes landed
+Fonts (Patrick Hand + Lato readable/body, MedievalSharp titles/buttons/labels), ribbon room (36 -> 50 side inset), optical centring: all present in code and tests (`theme-tokens.test.ts` updated).
+
+## Progress
+- Every sub-phase block 1a-1e and 2a-2g now has a commit hash that exists in `git log`; I ticked the "committed" boxes (they were unticked) and the 2h boxes except e2e. 2h hash is c68125f.
+
+## Findings
+| # | Where | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | commit 2266536 | Includes `src/modules/map/components/TileVariants/tile-variants.config.json` (60 lines), an unrelated tile-variant file swept into the dialog commit. Not harmful to checks; splits history badly. Do not rewrite pushed history; note it. | coordinator | no |
+| 2 | 525bffd | Left `tailwind.config.ts` out; fixed in c68125f. Intermediate commit not bisect-safe for fonts. Lesson added. | coordinator | no |
+| 3 | `Lobby.tsx:68` | "Create New Game" truncates (ellipsis) at narrow widths. Phase 4. | Phase 4 | no |
+| 4 | Monster dialog | Ribbon title "Monster Encounter: Bear (Lvl 2)" ellipsises at 390. Phase 6. | Phase 6 | no |
+| 5 | Ghost/link on paper | Unreadable text on paper frames (debt G). Phase 6. | Phase 6 | no |
+| 6 | `Badge` | Digits are MedievalSharp. Switch to `font-readable` if wanted. Phase 7. | Phase 7 | no |
+| 7 | Login Google button | Label placement unmeasured; autofocus ring loud. Phase 3. | Phase 3 | no |
+| 8 | Sandbox | Tile-decoration hydration mismatch in game-board position-race sandbox; not from Phase 2 (tile-variant work in tree). | separate task | no |
+| 9 | E2E | Six specs unrun (no Java 21). | coordinator | yes before push, not for commit |
+
+## Lessons
+Added to `docs/ai/lessons-learned.md`: single-weight fonts and faux bold; config files outside `src/` left out of a commit; explicit-path staging.
+
+## Plan updates
+`plan.md` end: "Phase 2 as built" (fonts, inset, optical padding) and "Carry-overs into Phase 3 (and later)".

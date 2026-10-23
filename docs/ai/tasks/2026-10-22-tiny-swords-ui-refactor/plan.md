@@ -927,3 +927,21 @@ Non-blocking notes:
 
 ## Review (architect-b) 2c
 VERDICT: APPROVED. See review.md (Phase 2c). Carry-overs for 2d/Phase 6 recorded in the 2c contract comment above; migration debt list A-D re-checked (no missing sprite-tier call site with colour classes; ConnectionWarningDialog.tsx:48 has layout classes only).
+
+## Phase 2 as built: deviations from the plan above (architect-b, 2h)
+- Fonts changed after 2g at the user's request: Patrick Hand + Lato (`font-body`, `font-readable`) and MedievalSharp (`font-pixel`, `font-headline`, `font-medieval`). Pixelify Sans and Outfit are gone (the Phase 1 text above that names them is superseded; `pixel-ui.md` §6.18 is current). Plate and plain `Button` tiers use `font-readable`; the sprite tier keeps `font-pixel`.
+- `RIBBON_INSET` is now `{ top: 12, right: 50, bottom: 14, left: 50 }`; button labels use the `opticalPadding` table in `PixelButton.styles.ts` (default `pb-4`, large `pt-2 pb-6`, icons `pb-1`).
+- Sprite default-size labels are nowrap with ellipsis.
+
+## Carry-overs into Phase 3 (and later)
+Phase 3 (Login and footer):
+- `Login.tsx:64` Google button (`googleButton` carries `border-white/10 bg-black/40`, neutralised by `SPRITE_LOCK`) and `:101` `submitButton`: drop the old colour classes; the Google label may wrap or sit off-centre inside the sprite (unmeasured: measure at 390 and 1280).
+- The autofocused Google button shows a loud two-tone focus ring on load; decide whether to keep autofocus or soften the ring on the sprite tier.
+- Fonts: confirm Login copy (`CardDescription` is now Patrick Hand, debt H: reflows at 390) reads well on the water background; confirm digits and ids are Patrick Hand (Badge digits are MedievalSharp).
+Phase 4 (Lobby):
+- `Lobby.tsx:68` "Create New Game" truncates with an ellipsis in a narrow column; relayout the column or shorten the label. `LobbyGameRow.tsx:123` `min-w-[80px]` loses to `!min-w-[128px]`. `RejoinMatchPanel.tsx:14`, `CreateGameDialog.tsx:104`.
+Phase 6 (Dialogs):
+- Monster dialog ribbon title "Monster Encounter: Bear (Lvl 2)" ellipsises at 390 (split title/subtitle). Ghost and link buttons are unreadable on paper frames (debt G). `VictoryDialog` gradient title (D). Remaining debt A-K as listed in `pixel-ui-bridge.md` and the 2h Log entry.
+Phase 7:
+- Badge digits: point Badge at `font-readable` if digits must be Patrick Hand. Slider thumb accessible name (2g). Raise the `IconEditor.preview.test.tsx` timeout (flaky under load, untouched code).
+Not Phase 2 / not this task: game-board position-race sandbox hydration mismatch in tile decorations (tile-variant work in the tree, `src` differs), and `src/modules/map/components/TileVariants/tile-variants.config.json`, which commit 2266536 swept in by accident (see review.md Phase 2h).
