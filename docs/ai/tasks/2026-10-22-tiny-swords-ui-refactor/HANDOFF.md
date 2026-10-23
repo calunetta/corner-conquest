@@ -4,7 +4,7 @@ Branch: `ui-refactor-to-be-decided` (origin). Parked on 2026-10-23 because the u
 
 ## Git facts
 - Base (last commit before the refactor, still on `main`): `552702e` (thanks page + site footer).
-- Refactor commits on this branch: `363589c` .. `b6b579e` (28 commits, phases 1a to 2h) plus the handoff commit on top.
+- Refactor commits on this branch: `363589c` .. `b6b579e` (31 commits, phases 1a to 2h) plus the handoff commit on top.
 - `main` was reverted with commit `45ffdf9` (one revert commit, tree identical to `552702e`). `origin/main` still contains refactor Phase 1 (up to `835704d`) unless the revert was pushed later: check `git log origin/main`.
 - To resume: `git checkout ui-refactor-to-be-decided` (or `git worktree add ../ui-refactor ui-refactor-to-be-decided`). To adopt it into main later: merge this branch into `main` AFTER reverting the revert (`git revert 45ffdf9`) or cherry-pick; expect conflicts in `src/app/layout.tsx`, `tailwind.config.ts`, `src/app/globals.css` if main moved.
 - Caution when merging: commit `2266536` also contains the user's own edits to `src/modules/icons/icon-overrides.config.json` and `src/modules/map/components/TileVariants/tile-variants.config.json` (they were uncommitted user work swept in by a broad `git add src`). On `main` those two files are uncommitted user modifications. Do not let this branch overwrite newer versions of them.
