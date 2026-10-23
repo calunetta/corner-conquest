@@ -188,3 +188,5 @@ Entry format: `- **<what went wrong>** → <the rule that prevents it>. (source:
 ## Dialog bridge sizing (pixel-ui)
 
 - **A percentage `max-width` (`max-w-[calc(100%-6rem)]`) on a title Ribbon collapsed it to its minimum width inside shrink-to-fit parents (CombatDialog header), truncating titles like "Move army" to "Move ar...".** Use fixed rem caps (`max-w-[16.5rem] sm:max-w-sm`) for dialog title ribbons. Likewise `RIBBON_INSET` left/right must be measured against the cap art: the tail and outline end near sheet x~36, so the original 56 wasted 20 px per side. Phase 2d of the Tiny Swords refactor, `src/components/ui/dialog-frame.tsx`, `Ribbon.map.ts`.
+
+- **An outline drawn with `ring-2 ring-inset` is a box-shadow painted under the element's children: an opaque child background (`bg-*`) covers it.** Found in Phase 2e of the Tiny Swords refactor (Card, Input, Badge, Progress). Keep full-bleed child backgrounds off ring-inset plates, or inset the child. Colour tokens fixed for contrast (e.g. `--destructive` at 3.70:1 with light `text-xs`) need a darker value, measured, not eyeballed.

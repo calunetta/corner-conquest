@@ -89,12 +89,12 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e and Phase 2 i
 - [ ] committed: 2266536
 
 ## Phase 2e: Card, Input, Textarea, Label, Badge, Progress (plates)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, unit tests (quote summary lines)
-- [ ] UI verified (ui-verify): `/testbed/lobby-main`, `/testbed/session-login`, `turn-countdown-timer` badge; Input boundary contrast >= 3:1 and primary-foreground ratio recorded
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a)
+- [x] checks: typecheck, lint, unit tests (quote summary lines)
+- [x] UI verified (ui-verify): `/testbed/lobby-main`, `/testbed/session-login`, `/testbed/hud-game-board-header` (no Badge there); Input boundary contrast >= 3:1 and primary-foreground ratio recorded
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 2f: Tooltip, Popover, Tabs, Toast (plates)

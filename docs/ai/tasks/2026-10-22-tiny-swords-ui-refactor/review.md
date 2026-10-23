@@ -286,3 +286,41 @@ VERDICT: APPROVED
 
 ## Lessons
 Appended to `docs/ai/lessons-learned.md`.
+
+---
+
+# Final review: Phase 2e (Card, Input, Textarea, Label, Badge, Progress, plates.test.tsx, ShadcnBridgePlates/Fields previews)
+
+VERDICT: APPROVED
+
+## Checks run
+- `npm run typecheck`: clean (tsc --noEmit, no output)
+- `npm run lint`: clean (eslint . --max-warnings 0, no output)
+- `npx jest src/components/ui src/testbed`: Test Suites: 39 passed, 39 total; Tests: 756 passed, 756 total (run by me). Full `npm test` 332 suites / 4971 tests green per coordinator; not re-run by me.
+- Screenshots not re-taken; layout baseline and contrast figures (Input boundary 9.27:1, default Badge 5.01:1, destructive Badge 5.00:1) are coordinator-reported, not re-measured by me. The Badge and Progress colour changes were read in the diff.
+
+## Plan adherence
+- File plan matched: six `ui/*.tsx` edits, `plates.test.tsx`, `ShadcnBridgePlates.tsx`, `ShadcnBridgeFields.tsx`, `ShadcnBridge.preview.tsx`. `ShadcnBridgeFields.tsx` is an extra file beyond the plan (keeps files under the 150-line cap); fine.
+- Tests cover behaviour (role, aria-valuenow, ref, clamping, label-click, frame art sheet). Class assertions limited to `className` passthrough, justified in comments.
+- plan.md corrected: `turn-countdown-timer` badge does not exist.
+
+## Judgments
+- Login reflow at 390 (`CardDescription` `font-readable`): accepted, Phase 3 redesigns Login (recorded as H).
+- Progress clamp passed to Radix Root: correct, `aria-valuenow` now 0 for undefined. Zero app uses, no risk.
+- Destructive Badge `bg-[hsl(5_70%_45%)]`: raw colour in a class string, against the "theme tokens" rule. Accepted because `--destructive` fails contrast (3.70:1); better fix is a token. Non-blocking, Phase 7.
+- Card `[data-card-description]` descendant selector: same coupling as debt G. Accepted for now, recorded as K.
+- `Card frame` drops `ref`: documented in a comment; recorded as J. Non-blocking, though `CardProps` still advertises a ref through `forwardRef`.
+- Sprite-button wrapping at `Lobby.tsx:68` and `Login.tsx:64`: already in debt A; symptom added with owners (Phase 4 and 3).
+- `ring-inset` beneath child backgrounds: recorded as caution I.
+- Firebase `auth/too-many-requests` flakiness in ui-verify: environmental, recorded.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | src/components/ui/progress.tsx:11-28 | Body of the new block `return (` is not re-indented (JSX at the old depth). Lint passes. | implementer-b | no |
+| 2 | src/components/ui/badge.tsx (destructive) | Raw `hsl(5 70% 45%)` instead of a token | implementer-b, Phase 7 | no |
+| 3 | src/components/ui/card.tsx | `frame` mode ignores `ref`; `[data-card-description]` coupling | implementer-b, Phase 6 | no |
+| 4 | docs/architecture/pixel-ui.md | Bridge section still pending, written in 2h by docs-sync | docs-sync (2h) | no |
+
+## Lessons
+Appended one entry to `docs/ai/lessons-learned.md` (inset ring hidden by child backgrounds).

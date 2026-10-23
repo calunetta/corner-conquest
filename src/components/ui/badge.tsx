@@ -3,18 +3,21 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+// Flat chip. The outline is an inset ring because the old badge had a 1px border and is
+// content-sized; no hover shifts since Badge is a non-interactive div.
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-none border border-transparent ring-2 ring-inset px-2.5 py-0.5 font-pixel text-xs font-semibold shadow-[0_1px_0_hsl(var(--ink))] transition-colors focus:outline-none focus:ring-ring",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+          "ring-ink bg-primary text-primary-foreground",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "ring-muted-foreground bg-secondary text-secondary-foreground",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
+          // Darker than --destructive (3.70:1 with the light text at text-xs): 5.0:1 here.
+          "ring-ink bg-[hsl(5_70%_45%)] text-destructive-foreground",
+        outline: "ring-border bg-background/60 text-foreground",
       },
     },
     defaultVariants: {

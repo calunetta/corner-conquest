@@ -15,6 +15,14 @@ import {
   DialogLongContent,
   DialogPaperFrame,
 } from './ShadcnBridgeDialogs';
+import { InputStates, LabelWithInput, TextareaStates } from './ShadcnBridgeFields';
+import {
+  Badges,
+  CardFrames,
+  CardPlate,
+  ProgressOnDark,
+  ProgressOnPaper,
+} from './ShadcnBridgePlates';
 import { AlertDialogLeave, SheetState } from './ShadcnBridgeOverlays';
 
 export const shadcnBridgePreview: ComponentPreview = {
@@ -38,5 +46,13 @@ export const shadcnBridgePreview: ComponentPreview = {
     { name: 'Sheet right', render: () => <SheetState side="right" /> },
     { name: 'Sheet left', render: () => <SheetState side="left" /> },
     { name: 'Sheet bottom', render: () => <SheetState side="bottom" /> },
+    { name: 'Card plate', render: () => <CardPlate /> },
+    { name: 'Card frames', render: () => <CardFrames /> },
+    { name: 'Input', render: () => <InputStates /> },
+    { name: 'Textarea', render: () => <TextareaStates /> },
+    { name: 'Label with input', render: () => <LabelWithInput /> },
+    { name: 'Badges', render: () => <Badges /> },
+    { name: 'Progress on dark', render: () => <ProgressOnDark /> },
+    { name: 'Progress on paper', render: () => <ProgressOnPaper /> },
   ],
 };
