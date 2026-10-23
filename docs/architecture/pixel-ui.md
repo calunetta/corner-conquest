@@ -72,16 +72,17 @@ Registered in `src/testbed/registry.ts`; each is at `/testbed/<slug>`: `slice-fr
 
 ## 6.18. Theme Tokens, Fonts & Typography
 
-- **Font variables (`src/app/layout.tsx`):** Pixelify Sans is loaded as `--font-pixelify` (weights 400–700) and Outfit as `--font-outfit` (weights 400–900). Both variables are set on `<html>`. `<body>` carries no next/font class.
-- **Font families (`tailwind.config.ts`):**
-  - `body`, `headline` and `pixel`: `var(--font-pixelify)`, then `var(--font-outfit)`, `Outfit`, `sans-serif`.
-  - `readable`: `var(--font-outfit)`, `Outfit`, `sans-serif`.
+- **Font variables (`src/app/layout.tsx`):** Patrick Hand is `--font-patrick` (weight 400), Lato is `--font-lato` (subsets latin and latin-ext, weights 400 and 700) and MedievalSharp is `--font-medieval` (weight 400). All three `.variable` classes are set on `<html>`. `<body>` carries no next/font class. Pixelify Sans and Outfit are no longer loaded.
+- **Font families (`tailwind.config.ts`):** two stacks, each role mapped on its own line so a role can be flipped in one edit.
+  - `body` and `readable`: `var(--font-patrick)`, `var(--font-lato)`, `sans-serif`.
+  - `headline`, `pixel` and `medieval`: `var(--font-medieval)`, `var(--font-patrick)`, `sans-serif`.
   - `code`: `monospace`.
 - **Base font:** `html, body` take `font-body` from the `@layer base` rule in `src/app/globals.css`. The old plain `body` font rule is removed.
 - **Typography rule:**
-  - Pixelify Sans (`font-body`, `font-headline`, `font-pixel`) for headings, buttons and labels.
-  - Outfit (`font-readable`) for dense text: event-log lines, card body text, and digits and ids.
-  - Screens use `font-readable` for those texts when they are rewired. Until then, untouched screens render their text in Pixelify because `body` is Pixelify.
+  - MedievalSharp (`font-pixel`, `font-headline`, `font-medieval`) for institutional text: game name, titles, ribbons, button labels, card titles, tabs, badges.
+  - Patrick Hand then Lato (`font-body`, `font-readable`) for text read at length: logs, card body, descriptions, inputs, tooltips, digits and ids. It is also the global default.
+  - Patrick Hand and MedievalSharp have one weight (400). Pixel-ui components and the `font-pixel` shadcn plates do not set `font-bold` or `font-semibold`: the browser would fake a bold and smear the glyphs.
+- **Optical centring:** the art has a thick lower lip, so labels sit above the box centre. Ribbon text uses `RIBBON_INSET` (`Ribbon.map.ts`: top 12, bottom 14, left and right 50, which keeps 12 px clear of the face outline). Button labels use the `opticalPadding` table in `PixelButton.styles.ts` (default `pb-4`, large `pt-2 pb-6`, icons `pb-1`); the loading dots use the same table.
 - **Typography preview:** `pixel-ui-typography` shows both families at 12, 14 and 16 px on paper (`bg-paper text-ink`), a banner panel, a carved panel and a dark card (`bg-card`).
 - **Colour tokens (`src/app/globals.css`, `.dark` block):** warm dark brown-slate values, for example `--background: 28 30% 9%`, `--foreground: 40 50% 94%`, `--primary: 195 55% 45%`, `--accent: 42 90% 60%`. The focus ring is `--ring: 42 90% 60%` (amber).
 - **Ink and paper:** `--ink: 28 45% 16%` and `--paper: 40 55% 86%` exist only in the `.dark` block, and are exposed as the Tailwind colours `ink` and `paper` (`tailwind.config.ts`). The `:root` block is unchanged.

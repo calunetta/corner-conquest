@@ -5,8 +5,13 @@ import type { RibbonColor } from './Ribbon.types';
 const SHEET_WIDTH = 192;
 const SHEET_HEIGHT = 64;
 
-/** Space between the ribbon edge and its text. */
-export const RIBBON_INSET: FrameInset = { top: 14, right: 36, bottom: 12, left: 36 }; // tunable
+/**
+ * Space between the ribbon edge and its text. Measured on the 3-slice sheets (PIL): the flat face
+ * spans x 38 px in from each end and rows 3..44, so the face centre is row ~23 of the 61 px band.
+ * Left/right keep 12 px clear of the face outline (38 + 12). Top/bottom put the centre of the
+ * 20 px text line at row 22: two px above the face centre, to offset the thick lower lip.
+ */
+export const RIBBON_INSET: FrameInset = { top: 12, right: 50, bottom: 14, left: 50 }; // tunable
 
 const RIBBON_FILE_COLOR: Record<RibbonColor, string> = {
   blue: 'Blue',

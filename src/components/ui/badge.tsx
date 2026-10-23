@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 // Flat chip. The outline is an inset ring because the old badge had a 1px border and is
 // content-sized; no hover shifts since Badge is a non-interactive div.
 const badgeVariants = cva(
-  "inline-flex items-center rounded-none border border-transparent ring-2 ring-inset px-2.5 py-0.5 font-pixel text-xs font-semibold shadow-[0_1px_0_hsl(var(--ink))] transition-colors focus:outline-none focus:ring-ring",
+  "inline-flex items-center rounded-none border border-transparent ring-2 ring-inset px-2.5 py-0.5 font-pixel text-xs shadow-[0_1px_0_hsl(var(--ink))] transition-colors focus:outline-none focus:ring-ring",
   {
     variants: {
       variant: {

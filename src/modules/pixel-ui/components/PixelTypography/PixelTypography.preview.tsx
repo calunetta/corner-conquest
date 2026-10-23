@@ -4,12 +4,12 @@ import type { PanelVariant } from '../PixelPanel/PixelPanel.types';
 
 type SurfaceKind = 'paper' | 'card' | PanelVariant;
 
-const LOG_LINES = ['Mia moved to (3,2)', 'Kai found a card'];
-const CARD_BODY = ['Draw two cards, then pay 1 gold. Illinois 10l 0O.'];
+const LOG_LINES = ['Mia moved to (3,2) 1l0O', 'Kai found a card (gold: 12)'];
+const CARD_BODY = ['Draw two cards, then pay 1 gold (3,2). Illinois 1l0O.'];
 const SIZES = [12, 14, 16];
 const FAMILIES = [
-  { label: 'Pixelify Sans (font-body)', className: 'font-body' },
-  { label: 'Outfit (font-readable)', className: 'font-readable' },
+  { label: 'Patrick Hand + Lato (font-readable, font-body)', className: 'font-readable' },
+  { label: 'MedievalSharp (font-pixel, font-headline, font-medieval)', className: 'font-medieval' },
 ];
 const SURFACES: { label: string; kind: SurfaceKind }[] = [
   { label: 'Paper (bg-paper text-ink)', kind: 'paper' },
@@ -55,8 +55,9 @@ function Section({ lines }: { lines: string[] }) {
   return (
     <div className="space-y-6">
       <p className="max-w-prose text-sm text-muted-foreground">
-        Rule: a dense text type uses font-readable if Pixelify Sans at 14 px shows ambiguous glyphs
-        (l/I/1, 0/O) or tight counters in the 390 px screenshot.
+        Rule: text read at length (logs, card body, descriptions, inputs, digits) uses font-readable;
+        institutional text (game name, titles, ribbons, buttons) uses font-pixel. Check l/I/1, 0/O and
+        parentheses at 12 px in the 390 px screenshot.
       </p>
       {SURFACES.map((surface) => (
         <div key={surface.label} className="space-y-1">

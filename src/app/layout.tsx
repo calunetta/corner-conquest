@@ -1,23 +1,32 @@
 import type { Metadata } from 'next';
-import { Outfit, Pixelify_Sans } from 'next/font/google';
+import { Lato, MedievalSharp, Patrick_Hand } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { PlayerProvider } from '@/modules/session';
 import { FundingChoicesLoader } from '@/modules/consent';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
-const outfit = Outfit({
+// Readable text (logs, card body, inputs, digits): Patrick Hand, then Lato (latin + latin-ext).
+const patrickHand = Patrick_Hand({
   subsets: ['latin'],
-  variable: '--font-outfit',
+  variable: '--font-patrick',
   display: 'swap',
-  weight: ['400', '500', '600', '700', '800', '900'],
+  weight: '400',
 });
 
-const pixelify = Pixelify_Sans({
-  subsets: ['latin'],
-  variable: '--font-pixelify',
+const lato = Lato({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-lato',
   display: 'swap',
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '700'],
+});
+
+// Institutional text (game name, titles, ribbons, buttons).
+const medievalSharp = MedievalSharp({
+  subsets: ['latin'],
+  variable: '--font-medieval',
+  display: 'swap',
+  weight: '400',
 });
 
 export const metadata: Metadata = {
@@ -31,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${pixelify.variable} ${outfit.variable}`}>
+    <html lang="en" className={`dark ${patrickHand.variable} ${lato.variable} ${medievalSharp.variable}`}>
       <body className="antialiased font-body">
         <PlayerProvider>
           <TooltipProvider delayDuration={300}>

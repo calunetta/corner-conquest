@@ -108,12 +108,15 @@ describe('tailwind font families and colors', () => {
   const fontFamily = tailwindConfig.theme.extend.fontFamily;
   const colors = tailwindConfig.theme.extend.colors;
 
-  it('readable starts with Outfit', () => {
-    expect(fontFamily.readable[0]).toBe('var(--font-outfit)');
+  it('readable and body start with Patrick Hand, then Lato', () => {
+    expect(fontFamily.readable.slice(0, 2)).toEqual(['var(--font-patrick)', 'var(--font-lato)']);
+    expect(fontFamily.body).toEqual(fontFamily.readable);
   });
 
-  it('body starts with Pixelify Sans', () => {
-    expect(fontFamily.body[0]).toBe('var(--font-pixelify)');
+  it('headline, pixel and medieval start with MedievalSharp', () => {
+    for (const family of [fontFamily.headline, fontFamily.pixel, fontFamily.medieval]) {
+      expect(family[0]).toBe('var(--font-medieval)');
+    }
   });
 
   it('exposes ink and paper colours backed by the CSS variables', () => {

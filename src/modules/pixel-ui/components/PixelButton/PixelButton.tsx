@@ -67,7 +67,7 @@ export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(funct
       </span>
       <span className={styles.label({ visual, loading })}>{children}</span>
       {loading && (
-        <span aria-hidden className={styles.loadingDots}>
+        <span aria-hidden className={styles.loadingDots(size)}>
           {LOADING_TEXT}
         </span>
       )}
