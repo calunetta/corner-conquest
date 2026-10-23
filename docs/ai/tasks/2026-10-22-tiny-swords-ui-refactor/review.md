@@ -185,3 +185,30 @@ VERDICT: APPROVED
 | 3 | PixelButton.types.ts:15 | `onKeyUp` stays in `HookedHandlers`/`ConsumerHandlers` though never returned by the hook; harmless, documented by test and docs | none | no |
 
 Hook tests asserting consumer handlers run while disabled (tester-b point) are correct: React suppresses only mouse events on disabled elements; pointer and key events still fire.
+
+---
+
+# Final review: Phase 2b (Ribbon ReactNode/forwardRef/rest, PixelPanel `padding="none"` + `rootClassName`)
+
+VERDICT: APPROVED
+
+## Checks run
+- `npm run typecheck`: clean (no output)
+- `npm run lint`: clean (eslint . --max-warnings 0, no output)
+- `npx jest src/modules/pixel-ui`: Test Suites: 15 passed, 15 total; Tests: 479 passed, 479 total (after my ref widening)
+- Coordinator full `npm test`: 328 suites / 4857 tests, one failure `MonsterSpriteUploader.catalogEdit.hook.test.ts` ('reports a failed load as an error'), passes alone 3/3.
+- Screenshots: not re-read; relied on preview-a (new states Node children, Node children long text, No padding; no regression).
+
+## Plan adherence (P2 Contracts, 2b)
+- Ribbon: `children: ReactNode`; `forwardRef`; `{...rest}` and ref on the text element; `className` on the frame; `title` = explicit `title`, else string children, else absent. Matches.
+- PixelPanel: `PanelPadding` has `'none'` (`paddingClass.none = ''`); `rootClassName` merged on the outer wrapper with `cn`; `className`/`rest` still on the frame; titled + none keeps `pt-8`. Matches.
+- Tests cover every item listed in P2 test plan for 2b (ref, id/data-*/aria on text element, explicit title wins, no title for node children, none vs sm/md, rootClassName on outer div).
+
+## Change made by me
+- `Ribbon.tsx`: `forwardRef<HTMLHeadingElement, ...>` -> `forwardRef<HTMLElement, ...>`. Default element is a div, so the heading type was wrong for the default; existing `createRef<HTMLHeadingElement>` in tests and Radix's heading ref still assign (RefObject is read-only covariant, RefCallback is bivariant). Typecheck and tests re-run clean. `plan.md` contract lines 643-644 updated to match.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | docs/architecture/pixel-ui.md:21,38 | Still says `children` is a string and padding is `sm`/`md`; no mention of ref, rest props, `rootClassName`. Planned for 2h docs-sync | docs-sync (2h) | no |
+| 2 | src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.catalogEdit.hook.test.ts | Async flake, passes alone; with `IconEditor.preview.test.tsx` this is the 4th and 5th unrelated sighting in Phases 1-2. Both fail only under full-suite parallel load. Follow-up warranted, outside this task: separate chore to raise timeouts / use `waitFor` with explicit timeout on both files, or cap Jest workers. Do not weaken assertions. | coordinator / tester | no |

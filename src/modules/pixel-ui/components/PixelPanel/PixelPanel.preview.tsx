@@ -33,6 +33,18 @@ function SizedPanel({ width, height }: { width: number; height: number }) {
   );
 }
 
+function PaddingPanels() {
+  return (
+    <div className="flex flex-wrap items-start gap-4">
+      {(['none', 'sm', 'md'] as const).map((padding) => (
+        <PixelPanel key={padding} variant="paper" padding={padding}>
+          <p>padding {padding}</p>
+        </PixelPanel>
+      ))}
+    </div>
+  );
+}
+
 export const pixelPanelPreview: ComponentPreview = {
   slug: 'pixel-ui-panel',
   title: 'Pixel panel',
@@ -44,6 +56,7 @@ export const pixelPanelPreview: ComponentPreview = {
     })),
     { name: 'Titled paper', render: () => <VariantPanel variant="paper" title="Titled panel" /> },
     { name: 'Titled wood', render: () => <VariantPanel variant="wood" title="Titled panel" /> },
+    { name: 'No padding', render: () => <PaddingPanels /> },
     { name: 'Size small', render: () => <SizedPanel width={160} height={126} /> },
     { name: 'Size medium', render: () => <SizedPanel width={320} height={200} /> },
     { name: 'Size large', render: () => <SizedPanel width={640} height={320} /> },

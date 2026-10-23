@@ -640,8 +640,8 @@ export interface RibbonProps extends Omit<ComponentPropsWithoutRef<'h2'>, 'color
   children: ReactNode;
 }
 // ---------- 2b: Ribbon.tsx ----------
-export const Ribbon: ForwardRefExoticComponent<RibbonProps & RefAttributes<HTMLHeadingElement>>;
-// forwardRef<HTMLHeadingElement, RibbonProps>. Use `const Text = as as ElementType;` to keep the JSX typed (div|h2|h3 share the ref/HTML props used here).
+export const Ribbon: ForwardRefExoticComponent<RibbonProps & RefAttributes<HTMLElement>>;
+// forwardRef<HTMLElement, RibbonProps> (widened at 2b review: the default element is a div). Use `const Text = as as ElementType;` to keep the JSX typed (div|h2|h3 share the ref/HTML props used here).
 // <Text ref={ref} {...rest} title={rest.title ?? (typeof children === 'string' ? children : undefined)} className={cn(styles.text, ribbonTextColor[color])}>{children}</Text>
 // `title` is destructured out of rest so an explicit title wins. Everything else unchanged.
 

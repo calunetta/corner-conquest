@@ -60,12 +60,12 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e and Phase 2 i
 - [ ] committed: a6d4c2b
 
 ## Phase 2b: Ribbon ReactNode/forwardRef/rest props and PixelPanel `padding="none"` + `rootClassName`
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, unit tests (quote summary lines)
-- [ ] UI verified (ui-verify): `/testbed/pixel-ui-ribbon` "Node children"; `/testbed/pixel-ui-panel` unchanged
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a)
+- [x] checks: typecheck, lint, unit tests (quote summary lines)
+- [x] UI verified (ui-verify): `/testbed/pixel-ui-ribbon` "Node children"; `/testbed/pixel-ui-panel` unchanged
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 2c: Button bridge (button.tsx, HUD `size="plate"` x3 tags, button.test.tsx, shadcn-bridge preview + registry)

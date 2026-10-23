@@ -1,3 +1,4 @@
+import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import { Ribbon } from './Ribbon';
 
@@ -82,5 +83,87 @@ describe('Ribbon', () => {
     const { container } = render(<Ribbon className="test-extra-class">Turn 14</Ribbon>);
 
     expect(container.firstChild).toHaveClass('test-extra-class');
+  });
+
+  it('renders ReactNode children as the text, after the icon', () => {
+    render(
+      <Ribbon icon={<span>12</span>}>
+        <strong>Gold</strong>
+      </Ribbon>,
+    );
+
+    const textElement = screen.getByText('Gold').parentElement;
+
+    expect(screen.getByText('12').nextElementSibling).toBe(textElement);
+  });
+
+  it('sets no title attribute when children is not a string', () => {
+    render(
+      <Ribbon>
+        <strong>Gold</strong>
+      </Ribbon>,
+    );
+
+    expect(screen.getByText('Gold').parentElement).not.toHaveAttribute('title');
+  });
+
+  it('sets the explicit title when children is not a string', () => {
+    render(
+      <Ribbon title="Gold income">
+        <strong>Gold</strong>
+      </Ribbon>,
+    );
+
+    expect(screen.getByText('Gold').parentElement).toHaveAttribute('title', 'Gold income');
+  });
+
+  it('uses the explicit title over the string children', () => {
+    render(<Ribbon title="Turn fourteen">Turn 14</Ribbon>);
+
+    expect(screen.getByText('Turn 14')).toHaveAttribute('title', 'Turn fourteen');
+  });
+
+  it('forwards the ref to the text element', () => {
+    const ref = createRef<HTMLHeadingElement>();
+    render(<Ribbon ref={ref}>Turn 14</Ribbon>);
+
+    expect(ref.current).toBe(screen.getByText('Turn 14'));
+  });
+
+  it('forwards the ref to the heading when as is h2', () => {
+    const ref = createRef<HTMLHeadingElement>();
+    render(
+      <Ribbon as="h2" ref={ref}>
+        Event Log
+      </Ribbon>,
+    );
+
+    expect(ref.current).toBe(screen.getByRole('heading', { level: 2, name: 'Event Log' }));
+  });
+
+  it('puts id, data-* and aria-* attributes on the text element, not the frame', () => {
+    const { container } = render(
+      <Ribbon id="turn-ribbon" data-testid="turn" aria-describedby="turn-hint">
+        Turn 14
+      </Ribbon>,
+    );
+
+    const textElement = screen.getByTestId('turn');
+
+    expect(textElement).toBe(screen.getByText('Turn 14'));
+    expect(textElement).toHaveAttribute('id', 'turn-ribbon');
+    expect(textElement).toHaveAttribute('aria-describedby', 'turn-hint');
+    expect(container.firstChild).not.toHaveAttribute('id');
+    expect(container.firstChild).not.toHaveAttribute('data-testid');
+  });
+
+  it('renders the text as a level 2 heading that keeps the given id', () => {
+    render(
+      <Ribbon as="h2" id="event-log-title">
+        Event Log
+      </Ribbon>,
+    );
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Event Log' })).toHaveAttribute('id', 'event-log-title');
   });
 });

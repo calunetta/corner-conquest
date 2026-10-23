@@ -12,6 +12,7 @@ export function PixelPanel({
   titleAs = 'h2',
   padding = 'md',
   className,
+  rootClassName,
   children,
   ...rest
 }: PixelPanelProps) {
@@ -19,7 +20,7 @@ export function PixelPanel({
   const isTitled = Boolean(title);
 
   return (
-    <div className={styles.root(isTitled)}>
+    <div className={cn(styles.root(isTitled), rootClassName)}>
       {title && (
         <div className={styles.titleSlot}>
           <Ribbon as={titleAs} color={titleColor}>

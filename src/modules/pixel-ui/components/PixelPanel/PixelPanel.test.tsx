@@ -197,4 +197,75 @@ describe('PixelPanel', () => {
 
     expect(screen.getByTestId('panel')).toHaveClass('test-extra-class');
   });
+
+  it('renders the children with padding none', () => {
+    render(
+      <PixelPanel data-testid="panel" padding="none">
+        <p>Bare</p>
+      </PixelPanel>,
+    );
+
+    expect(within(screen.getByTestId('panel')).getByText('Bare')).toBeVisible();
+  });
+
+  it('gives padding none a wrapper that differs from sm and md', () => {
+    render(
+      <>
+        <PixelPanel padding="none">
+          <p>Bare</p>
+        </PixelPanel>
+        <PixelPanel padding="sm">
+          <p>Small</p>
+        </PixelPanel>
+        <PixelPanel padding="md">
+          <p>Medium</p>
+        </PixelPanel>
+      </>,
+    );
+
+    const bareWrapperClass = getPaddingWrapper('Bare').className;
+
+    expect(bareWrapperClass).not.toBe(getPaddingWrapper('Small').className);
+    expect(bareWrapperClass).not.toBe(getPaddingWrapper('Medium').className);
+  });
+
+  it('puts rootClassName on the outer wrapper, not on the frame', () => {
+    render(
+      <PixelPanel data-testid="panel" rootClassName="test-root-class" className="test-frame-class">
+        <p>Body</p>
+      </PixelPanel>,
+    );
+
+    const frame = screen.getByTestId('panel');
+
+    expect(frame.parentElement).toHaveClass('test-root-class');
+    expect(frame).not.toHaveClass('test-root-class');
+    expect(frame).toHaveClass('test-frame-class');
+  });
+
+  it('keeps the title ribbon inside the outer wrapper that rootClassName targets', () => {
+    render(
+      <PixelPanel data-testid="panel" title="Event Log" rootClassName="test-root-class">
+        <p>Body</p>
+      </PixelPanel>,
+    );
+
+    expect(screen.getByTestId('panel').parentElement).toHaveClass('test-root-class');
+    expect(screen.getByTestId('panel').parentElement).toContainElement(
+      screen.getByRole('heading', { level: 2, name: 'Event Log' }),
+    );
+  });
+
+  it('keeps data-testid on the frame, so the frame holds the body and not the title ribbon', () => {
+    render(
+      <PixelPanel data-testid="panel" title="Event Log">
+        <p>Body</p>
+      </PixelPanel>,
+    );
+
+    const frame = screen.getByTestId('panel');
+
+    expect(within(frame).getByText('Body')).toBeVisible();
+    expect(frame).not.toContainElement(screen.getByRole('heading', { name: 'Event Log' }));
+  });
 });

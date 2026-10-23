@@ -1,3 +1,4 @@
+import { forwardRef, type ElementType } from 'react';
 import { cn } from '@/lib/utils';
 import { ThreeSlice } from '../SliceFrame/SliceFrame';
 import { toRibbonSheet } from './Ribbon.map';
@@ -6,7 +7,14 @@ import type { RibbonProps } from './Ribbon.types';
 
 const RIBBON_MIN_WIDTH = 192;
 
-export function Ribbon({ color = 'blue', as: Text = 'div', icon, className, children }: RibbonProps) {
+export const Ribbon = forwardRef<HTMLElement, RibbonProps>(function Ribbon(
+  { color = 'blue', as = 'div', icon, className, children, title, ...rest },
+  ref,
+) {
+  const Text = as as ElementType;
+  // Truncated text needs its full form on hover; only a string can serve as a tooltip.
+  const fullText = title ?? (typeof children === 'string' ? children : undefined);
+
   return (
     <ThreeSlice
       sheet={toRibbonSheet(color)}
@@ -15,9 +23,9 @@ export function Ribbon({ color = 'blue', as: Text = 'div', icon, className, chil
       contentClassName={styles.content}
     >
       {icon}
-      <Text title={children} className={cn(styles.text, ribbonTextColor[color])}>
+      <Text ref={ref} {...rest} title={fullText} className={cn(styles.text, ribbonTextColor[color])}>
         {children}
       </Text>
     </ThreeSlice>
   );
-}
+});

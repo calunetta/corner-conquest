@@ -13,6 +13,7 @@ export const textToneClass: Record<PanelSpec['textTone'], string> = {
 };
 
 export const paddingClass: Record<PanelPadding, string> = {
+  none: '',
   sm: 'p-2',
   md: 'p-4',
 };
