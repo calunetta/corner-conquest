@@ -1,13 +1,13 @@
 # Triage: Tiny Swords UI refactor
 
-Tier: XL · Status: PLAN AGREED 2026-10-22, not started.
+Tier: XL · Status: PARKED 2026-10-23 after Phase 2 (see HANDOFF.md). Next step: Phase 3.
 
 ## Goal
 Restyle the whole app with the Tiny Swords UI pack (`public/tiny-swords/UI`, `public/tiny-swords/UI Elements`). Credit page `/thanks` already exists.
 
 ## Decisions (user, 2026-10-22)
 - Scope: everywhere (login, lobby, HUD, dialogs). **The map itself stays as it is.** The HUD may change its look, but **its structure must not change** in game for now.
-- Font: Pixelify Sans (Google Font).
+- Font: Pixelify Sans (Google Font): SUPERSEDED 2026-10-23, see HANDOFF.md (Patrick Hand + Lato for text, MedievalSharp for titles).
 - Login/lobby background: Tiny Swords water and islands (`Terrain/Water`, foam, decorations).
 - Order: login, lobby, HUD, dialogs.
 

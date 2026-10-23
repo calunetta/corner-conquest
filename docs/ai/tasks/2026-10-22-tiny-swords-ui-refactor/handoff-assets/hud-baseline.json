@@ -1,0 +1,218 @@
+{
+ "hud-actions-panel@desktop": [
+  {
+   "testid": "actions-panel-end-turn",
+   "text": "End Turn(1:45)",
+   "w": 111.890625,
+   "h": 28,
+   "x": 1088.109375,
+   "y": 286
+  },
+  {
+   "testid": "action-button-local:position",
+   "text": "Position",
+   "w": 277.328125,
+   "h": 64,
+   "x": 358,
+   "y": 328
+  },
+  {
+   "testid": "action-button-local:attack",
+   "text": "Attack",
+   "w": 277.328125,
+   "h": 64,
+   "x": 641.328125,
+   "y": 328
+  },
+  {
+   "testid": "action-button-deploy",
+   "text": "Deploy (10 Food)",
+   "w": 277.34375,
+   "h": 64,
+   "x": 924.65625,
+   "y": 328
+  },
+  {
+   "testid": "action-button-upgrade",
+   "text": "Upgrade (5 Wood)",
+   "w": 419,
+   "h": 48,
+   "x": 358,
+   "y": 409
+  },
+  {
+   "testid": "action-button-buy-card",
+   "text": "Buy Card (10 Gold)",
+   "w": 419,
+   "h": 48,
+   "x": 783,
+   "y": 409
+  },
+  {
+   "testid": "action-button-local:show-cards",
+   "text": "Cards (2/7)",
+   "w": 419,
+   "h": 48,
+   "x": 358,
+   "y": 463
+  },
+  {
+   "testid": "action-button-local:open-abilities-shop",
+   "text": "Abilities",
+   "w": 419,
+   "h": 48,
+   "x": 783,
+   "y": 463
+  },
+  {
+   "testid": null,
+   "text": "",
+   "w": 32,
+   "h": 32,
+   "x": 22,
+   "y": 666
+  }
+ ],
+ "hud-game-board-header@desktop": [
+  {
+   "testid": "gameboard-exit-btn",
+   "text": "",
+   "w": 40,
+   "h": 40,
+   "x": 345,
+   "y": 317
+  },
+  {
+   "testid": null,
+   "text": "",
+   "w": 44,
+   "h": 24,
+   "x": 1011.3125,
+   "y": 325
+  },
+  {
+   "testid": null,
+   "text": "Start Game",
+   "w": 140.6875,
+   "h": 40,
+   "x": 1074.3125,
+   "y": 317
+  },
+  {
+   "testid": null,
+   "text": "",
+   "w": 32,
+   "h": 32,
+   "x": 22,
+   "y": 666
+  }
+ ],
+ "hud-actions-panel@mobile": [
+  {
+   "testid": "actions-panel-end-turn",
+   "text": "End Turn(1:45)",
+   "w": 111.890625,
+   "h": 28,
+   "x": 216.109375,
+   "y": 452
+  },
+  {
+   "testid": "action-button-local:position",
+   "text": "Position",
+   "w": 84.65625,
+   "h": 64,
+   "x": 62,
+   "y": 488
+  },
+  {
+   "testid": "action-button-local:attack",
+   "text": "Attack",
+   "w": 84.671875,
+   "h": 64,
+   "x": 152.65625,
+   "y": 488
+  },
+  {
+   "testid": "action-button-deploy",
+   "text": "Deploy (10 Food)",
+   "w": 84.65625,
+   "h": 64,
+   "x": 243.328125,
+   "y": 488
+  },
+  {
+   "testid": "action-button-upgrade",
+   "text": "Upgrade (5 Wood)",
+   "w": 130,
+   "h": 54,
+   "x": 62,
+   "y": 569
+  },
+  {
+   "testid": "action-button-buy-card",
+   "text": "Buy Card (10 Gold)",
+   "w": 130,
+   "h": 54,
+   "x": 198,
+   "y": 569
+  },
+  {
+   "testid": "action-button-local:show-cards",
+   "text": "Cards (2/7)",
+   "w": 130,
+   "h": 54,
+   "x": 62,
+   "y": 629
+  },
+  {
+   "testid": "action-button-local:open-abilities-shop",
+   "text": "Abilities",
+   "w": 130,
+   "h": 54,
+   "x": 198,
+   "y": 629
+  },
+  {
+   "testid": null,
+   "text": "",
+   "w": 32,
+   "h": 32,
+   "x": 22,
+   "y": 790
+  }
+ ],
+ "hud-game-board-header@mobile": [
+  {
+   "testid": "gameboard-exit-btn",
+   "text": "",
+   "w": 40,
+   "h": 40,
+   "x": 49,
+   "y": 605
+  },
+  {
+   "testid": null,
+   "text": "",
+   "w": 44,
+   "h": 24,
+   "x": 80,
+   "y": 661
+  },
+  {
+   "testid": null,
+   "text": "Start Game",
+   "w": 140.6875,
+   "h": 40,
+   "x": 143,
+   "y": 653
+  },
+  {
+   "testid": null,
+   "text": "",
+   "w": 32,
+   "h": 32,
+   "x": 22,
+   "y": 790
+  }
+ ]
+}

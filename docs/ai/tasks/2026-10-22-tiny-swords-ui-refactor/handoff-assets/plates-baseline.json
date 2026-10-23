@@ -1,0 +1,470 @@
+{
+ "1280|lobby-main|Loading": [
+  {
+   "k": "DIV:Host Match:",
+   "x": 524.765625,
+   "y": 444,
+   "w": 92.234375,
+   "h": 22
+  },
+  {
+   "k": "DIV:0 Open Rooms:",
+   "x": 853.84375,
+   "y": 423,
+   "w": 100.390625,
+   "h": 22
+  }
+ ],
+ "1280|lobby-main|Empty": [
+  {
+   "k": "DIV:Host Match:",
+   "x": 524.765625,
+   "y": 444,
+   "w": 92.234375,
+   "h": 22
+  },
+  {
+   "k": "DIV:0 Open Rooms:",
+   "x": 853.84375,
+   "y": 423,
+   "w": 100.390625,
+   "h": 22
+  }
+ ],
+ "1280|lobby-main|With open games": [
+  {
+   "k": "DIV:Host Match:",
+   "x": 524.765625,
+   "y": 444,
+   "w": 92.234375,
+   "h": 22
+  },
+  {
+   "k": "DIV:2 Open Rooms:",
+   "x": 853.84375,
+   "y": 423,
+   "w": 100.390625,
+   "h": 22
+  },
+  {
+   "k": "DIV:30 VP:",
+   "x": 1083.90625,
+   "y": 479,
+   "w": 53.09375,
+   "h": 22
+  },
+  {
+   "k": "DIV:30 VP:",
+   "x": 1083.90625,
+   "y": 629,
+   "w": 53.09375,
+   "h": 22
+  }
+ ],
+ "1280|lobby-main|Guest (can link)": [
+  {
+   "k": "DIV:Host Match:",
+   "x": 524.765625,
+   "y": 444,
+   "w": 92.234375,
+   "h": 22
+  },
+  {
+   "k": "DIV:2 Open Rooms:",
+   "x": 853.84375,
+   "y": 423,
+   "w": 100.390625,
+   "h": 22
+  },
+  {
+   "k": "DIV:30 VP:",
+   "x": 1083.90625,
+   "y": 479,
+   "w": 53.09375,
+   "h": 22
+  },
+  {
+   "k": "DIV:30 VP:",
+   "x": 1083.90625,
+   "y": 629,
+   "w": 53.09375,
+   "h": 22
+  }
+ ],
+ "1280|session-login|Loading": [],
+ "1280|session-login|Guest": [
+  {
+   "k": "LABEL:Commander Name:",
+   "x": 581,
+   "y": 672,
+   "w": 398,
+   "h": 16
+  },
+  {
+   "k": "INPUT::",
+   "x": 581,
+   "y": 694,
+   "w": 398,
+   "h": 40
+  }
+ ],
+ "1280|session-login|Account": [
+  {
+   "k": "LABEL:Commander Name:",
+   "x": 581,
+   "y": 616,
+   "w": 398,
+   "h": 16
+  },
+  {
+   "k": "INPUT::",
+   "x": 581,
+   "y": 638,
+   "w": 398,
+   "h": 40
+  }
+ ],
+ "1280|hud-game-board-header|Waiting – host, can start": [
+  {
+   "k": "DIV:Background:",
+   "x": 903.34375,
+   "y": 320,
+   "w": 162.96875,
+   "h": 34
+  }
+ ],
+ "1280|hud-game-board-header|Waiting – host, cannot start": [
+  {
+   "k": "DIV:Background:",
+   "x": 1052.03125,
+   "y": 320,
+   "w": 162.96875,
+   "h": 34
+  }
+ ],
+ "1280|hud-game-board-header|Waiting – not host": [
+  {
+   "k": "DIV:Background:",
+   "x": 1052.03125,
+   "y": 320,
+   "w": 162.96875,
+   "h": 34
+  }
+ ],
+ "1280|hud-game-board-header|Playing – opponent turn": [
+  {
+   "k": "DIV:Background:",
+   "x": 938.453125,
+   "y": 320,
+   "w": 162.96875,
+   "h": 34
+  },
+  {
+   "k": "DIV:Turn:Alice:",
+   "x": 1109.421875,
+   "y": 324,
+   "w": 105.578125,
+   "h": 26
+  }
+ ],
+ "1280|hud-game-board-header|Playing – my turn, expiring": [
+  {
+   "k": "DIV:Background:",
+   "x": 888.078125,
+   "y": 320,
+   "w": 162.96875,
+   "h": 34
+  },
+  {
+   "k": "DIV:Turn:You(00:05):",
+   "x": 1059.046875,
+   "y": 324,
+   "w": 155.953125,
+   "h": 26
+  }
+ ],
+ "1280|hud-game-board-header|Playing – my turn, not expiring": [
+  {
+   "k": "DIV:Background:",
+   "x": 888.078125,
+   "y": 320,
+   "w": 162.96875,
+   "h": 34
+  },
+  {
+   "k": "DIV:Turn:You(02:30):",
+   "x": 1059.046875,
+   "y": 324,
+   "w": 155.953125,
+   "h": 26
+  }
+ ],
+ "1280|hud-game-board-header|Exiting": [
+  {
+   "k": "DIV:Background:",
+   "x": 888.078125,
+   "y": 320,
+   "w": 162.96875,
+   "h": 34
+  },
+  {
+   "k": "DIV:Turn:You(02:30):",
+   "x": 1059.046875,
+   "y": 324,
+   "w": 155.953125,
+   "h": 26
+  }
+ ],
+ "1280|hud-game-board-header|Background on": [
+  {
+   "k": "DIV:Background:",
+   "x": 903.34375,
+   "y": 320,
+   "w": 162.96875,
+   "h": 34
+  }
+ ],
+ "1280|hud-game-board-header|Background off": [
+  {
+   "k": "DIV:Background:",
+   "x": 903.34375,
+   "y": 320,
+   "w": 162.96875,
+   "h": 34
+  }
+ ],
+ "390|lobby-main|Loading": [
+  {
+   "k": "DIV:Host Match:",
+   "x": 202.765625,
+   "y": 562,
+   "w": 92.234375,
+   "h": 22
+  },
+  {
+   "k": "DIV:0 Open Rooms:",
+   "x": 226.5,
+   "y": 862,
+   "w": 81.5,
+   "h": 38
+  }
+ ],
+ "390|lobby-main|Empty": [
+  {
+   "k": "DIV:Host Match:",
+   "x": 202.765625,
+   "y": 562,
+   "w": 92.234375,
+   "h": 22
+  },
+  {
+   "k": "DIV:0 Open Rooms:",
+   "x": 226.5,
+   "y": 862,
+   "w": 81.5,
+   "h": 38
+  }
+ ],
+ "390|lobby-main|With open games": [
+  {
+   "k": "DIV:Host Match:",
+   "x": 202.765625,
+   "y": 562,
+   "w": 92.234375,
+   "h": 22
+  },
+  {
+   "k": "DIV:2 Open Rooms:",
+   "x": 226.5,
+   "y": 862,
+   "w": 81.5,
+   "h": 38
+  },
+  {
+   "k": "DIV:30 VP:",
+   "x": 222.0625,
+   "y": 966,
+   "w": 53.09375,
+   "h": 22
+  },
+  {
+   "k": "DIV:30 VP:",
+   "x": 218.515625,
+   "y": 1138,
+   "w": 53.09375,
+   "h": 22
+  }
+ ],
+ "390|lobby-main|Guest (can link)": [
+  {
+   "k": "DIV:Host Match:",
+   "x": 202.765625,
+   "y": 562,
+   "w": 92.234375,
+   "h": 22
+  },
+  {
+   "k": "DIV:2 Open Rooms:",
+   "x": 226.5,
+   "y": 862,
+   "w": 81.5,
+   "h": 38
+  },
+  {
+   "k": "DIV:30 VP:",
+   "x": 222.0625,
+   "y": 966,
+   "w": 53.09375,
+   "h": 22
+  },
+  {
+   "k": "DIV:30 VP:",
+   "x": 218.515625,
+   "y": 1138,
+   "w": 53.09375,
+   "h": 22
+  }
+ ],
+ "390|session-login|Loading": [],
+ "390|session-login|Guest": [
+  {
+   "k": "LABEL:Commander Name:",
+   "x": 90,
+   "y": 762,
+   "w": 210,
+   "h": 16
+  },
+  {
+   "k": "INPUT::",
+   "x": 90,
+   "y": 784,
+   "w": 210,
+   "h": 40
+  }
+ ],
+ "390|session-login|Account": [
+  {
+   "k": "LABEL:Commander Name:",
+   "x": 90,
+   "y": 706,
+   "w": 210,
+   "h": 16
+  },
+  {
+   "k": "INPUT::",
+   "x": 90,
+   "y": 728,
+   "w": 210,
+   "h": 40
+  }
+ ],
+ "390|hud-game-board-header|Waiting – host, can start": [
+  {
+   "k": "DIV:Background:",
+   "x": 49,
+   "y": 656,
+   "w": 86,
+   "h": 34
+  }
+ ],
+ "390|hud-game-board-header|Waiting – host, cannot start": [
+  {
+   "k": "DIV:Background:",
+   "x": 255,
+   "y": 608,
+   "w": 86,
+   "h": 34
+  }
+ ],
+ "390|hud-game-board-header|Waiting – not host": [
+  {
+   "k": "DIV:Background:",
+   "x": 255,
+   "y": 608,
+   "w": 86,
+   "h": 34
+  }
+ ],
+ "390|hud-game-board-header|Playing – opponent turn": [
+  {
+   "k": "DIV:Background:",
+   "x": 49,
+   "y": 691,
+   "w": 86,
+   "h": 34
+  },
+  {
+   "k": "DIV:Turn:Alice:",
+   "x": 143,
+   "y": 695,
+   "w": 69.09375,
+   "h": 26
+  }
+ ],
+ "390|hud-game-board-header|Playing – my turn, expiring": [
+  {
+   "k": "DIV:Background:",
+   "x": 49,
+   "y": 691,
+   "w": 86,
+   "h": 34
+  },
+  {
+   "k": "DIV:Turn:You(00:05):",
+   "x": 143,
+   "y": 695,
+   "w": 119.46875,
+   "h": 26
+  }
+ ],
+ "390|hud-game-board-header|Playing – my turn, not expiring": [
+  {
+   "k": "DIV:Background:",
+   "x": 49,
+   "y": 691,
+   "w": 86,
+   "h": 34
+  },
+  {
+   "k": "DIV:Turn:You(02:30):",
+   "x": 143,
+   "y": 695,
+   "w": 119.46875,
+   "h": 26
+  }
+ ],
+ "390|hud-game-board-header|Exiting": [
+  {
+   "k": "DIV:Background:",
+   "x": 49,
+   "y": 691,
+   "w": 86,
+   "h": 34
+  },
+  {
+   "k": "DIV:Turn:You(02:30):",
+   "x": 143,
+   "y": 695,
+   "w": 119.46875,
+   "h": 26
+  }
+ ],
+ "390|hud-game-board-header|Background on": [
+  {
+   "k": "DIV:Background:",
+   "x": 49,
+   "y": 656,
+   "w": 86,
+   "h": 34
+  }
+ ],
+ "390|hud-game-board-header|Background off": [
+  {
+   "k": "DIV:Background:",
+   "x": 49,
+   "y": 656,
+   "w": 86,
+   "h": 34
+  }
+ ]
+}

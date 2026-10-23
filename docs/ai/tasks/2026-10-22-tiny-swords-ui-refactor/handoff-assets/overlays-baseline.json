@@ -1,0 +1,49 @@
+{
+  "beacon-popover-map-info": {
+    "w": 320,
+    "h": 214
+  },
+  "beacon-popover-player-info": {
+    "w": 320,
+    "h": 166
+  },
+  "lobby-popover": {
+    "w": 320,
+    "h": 418
+  },
+  "lobby-tooltip": {
+    "w": 51.61,
+    "h": 34
+  },
+  "tabs-list": {
+    "w": 219.86,
+    "h": 40
+  },
+  "tabs-triggers": [
+    {
+      "w": 76.95,
+      "h": 32
+    },
+    {
+      "w": 89.3,
+      "h": 32
+    },
+    {
+      "w": 45.61,
+      "h": 32
+    }
+  ],
+  "toast-default": {
+    "w": 388,
+    "h": 78
+  },
+  "toast-destructive": {
+    "w": 388,
+    "h": 78
+  },
+  "toast-action": {
+    "w": 58.58,
+    "h": 32
+  },
+  "_consoleErrors": []
+}
