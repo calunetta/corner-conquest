@@ -79,13 +79,13 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e and Phase 2 i
 - [ ] committed: 1cc75ac
 
 ## Phase 2d: Dialog family (dialog-frame.tsx, dialog.tsx, alert-dialog.tsx, sheet.tsx, DeleteAccountButton variant, tests, dialog previews)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, unit tests (quote summary lines)
-- [ ] full `npm test` run read; failing tests listed with cause; test edits justified in the log
-- [ ] UI verified (ui-verify): shell 374 / text column 310 at 390 px, close button inside frame and clear of ribbon, contrast samples on dark field, sheet edge bleed, CombatDialog hybrid (`/testbed/combat-combat-dialog`), tunable values reported old/new in the log
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a)
+- [x] checks: typecheck, lint, unit tests (quote summary lines)
+- [x] full `npm test` run read; failing tests listed with cause; test edits justified in the log
+- [x] UI verified (ui-verify): shell 374 / text column 310 at 390 px, close button inside frame and clear of ribbon, contrast samples on dark field, sheet edge bleed, CombatDialog hybrid (`/testbed/combat-combat-dialog`), tunable values reported old/new in the log
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 2e: Card, Input, Textarea, Label, Badge, Progress (plates)

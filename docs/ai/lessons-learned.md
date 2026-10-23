@@ -184,3 +184,7 @@ Entry format: `- **<what went wrong>** → <the rule that prevents it>. (source:
 ## Restyling buttons without changing layout
 
 - **A restyle that swaps `border-0`/none for `border-2` grows content-sized and `h-auto` elements by 2-4 px, silently changing the HUD layout.** Phase 2c of the Tiny Swords refactor hit this: the plate Button tier first used `border-2` and HUD button boxes were no longer identical to baseline. When sizes must not change, draw the outline with `ring-2 ring-inset` (box-shadow, takes no layout space) and keep an existing 1px border as `border border-transparent`. Verify with `getBoundingClientRect` before/after, not by eye.
+
+## Dialog bridge sizing (pixel-ui)
+
+- **A percentage `max-width` (`max-w-[calc(100%-6rem)]`) on a title Ribbon collapsed it to its minimum width inside shrink-to-fit parents (CombatDialog header), truncating titles like "Move army" to "Move ar...".** Use fixed rem caps (`max-w-[16.5rem] sm:max-w-sm`) for dialog title ribbons. Likewise `RIBBON_INSET` left/right must be measured against the cap art: the tail and outline end near sheet x~36, so the original 56 wasted 20 px per side. Phase 2d of the Tiny Swords refactor, `src/components/ui/dialog-frame.tsx`, `Ribbon.map.ts`.

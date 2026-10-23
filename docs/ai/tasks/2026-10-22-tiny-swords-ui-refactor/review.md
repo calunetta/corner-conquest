@@ -250,3 +250,39 @@ VERDICT: APPROVED
 
 ## Lessons
 Appended to `docs/ai/lessons-learned.md`: real borders change layout size, use inset ring.
+
+---
+
+# Final review: Phase 2d (Dialog family: dialog-frame, dialog, alert-dialog, sheet, tests, previews, RIBBON_INSET)
+
+VERDICT: APPROVED
+
+## Checks run
+- `npm run typecheck`: clean (tsc --noEmit, no output)
+- `npm run lint`: clean (eslint . --max-warnings 0, no output)
+- `npm test`: Test Suites: 331 passed, 331 total; Tests: 4926 passed, 4926 total
+- Screenshots re-taken by me (Playwright against :9002): ribbon Blue and Node children (desktop), PixelPanel Titled paper, Dialog and Dialog paper frame (390 wide), Sheet right (1280). Combat dialog preview needs a state click; not re-read, relied on preview-a.
+
+## Plan adherence
+- Contracts followed (shared `dialog-frame.tsx`, titles as `Primitive.Title asChild` + `Ribbon as="h2"`, Action/Cancel as `asChild` `Button`, `DeleteAccountButton` `variant="destructive"`). Deviations (title/close constants, close positions, inset 36) recorded in plan.md D16.
+- `MobileEventLogSheet.test.tsx` fix is justified: the old `:not(.sr-only)` selector no longer distinguishes the two headings; the new assertion checks the h2 ribbon and the h3 GameLogView header by role.
+- Unrelated tree changes (sprites, icon/tile-variant json, balance reports, png) ignored.
+
+## Judgments
+- (a) RIBBON_INSET 56 -> 36: Phase 1 ribbons (Blue, Node children with icons, PixelPanel titled paper) look right, text centred, tails intact, no clipping. Accepted. The value is shared by every Ribbon, so any later ribbon with long text now has 40 px more room; fine.
+- (b) Paper-field descendant selectors (`FIELD_PAPER`): acceptable for 2d because the screenshots show ghost and link legible on paper (13.78 and 10.81 reported). Not acceptable as the end state: it couples dialog-frame to button class names (`bg-transparent`, `text-foreground`, `text-accent`). Tracked as debt G in plan.md; fix in Phase 6 by letting `Button` read a paper-context or take a `tone` prop.
+- (c) 64 px sheet bleed and `special` default: accepted. Frame layer is `aria-hidden` and `pointer-events-none`; no hairline seen on the right sheet. The `frame` prop exists for `paper`; default `special` matches every current dialog.
+- (d) Combat card edge: recorded as debt F for Phase 6.
+- (e) Square yellow focus box around the 64 px sprite button (visible on Cancel in the Dialog mobile shot, and on the close button in the right sheet): acceptable. It is the 2c-approved focus ring and keyboard-only; a shaped ring is a Phase 7 polish item, not a blocker.
+- (f) plan.md updated: D16 added, `RIBBON_INSET` contract line, debt list status for A-E plus new F and G.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | src/components/ui/dialog-frame.tsx (FIELD_PAPER) | Fragile class-descendant selectors | implementer-b, Phase 6 | no |
+| 2 | src/components/ui/sheet.tsx (close position) | `side === "right" ? "right-2 top-6" : "right-6 top-6"` is an inline ternary; harmless, move into `SHEET_BLEED` if a fifth variant appears | none | no |
+| 3 | src/components/ui/sheet.tsx:SheetContent | `side ?? "right"` is redundant since `side` defaults to `"right"` | implementer-b | no |
+| 4 | docs/architecture/pixel-ui.md | Bridge/dialog section not written yet; planned for 2h docs-sync | docs-sync (2h) | no |
+
+## Lessons
+Appended to `docs/ai/lessons-learned.md`.

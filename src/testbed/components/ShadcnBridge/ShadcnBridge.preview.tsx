@@ -8,6 +8,14 @@ import {
   ButtonsOnSpecialFrame,
   ButtonTooltip,
 } from './ShadcnBridgeButtons';
+import {
+  DialogDefault,
+  DialogGlassClassName,
+  DialogHybrid,
+  DialogLongContent,
+  DialogPaperFrame,
+} from './ShadcnBridgeDialogs';
+import { AlertDialogLeave, SheetState } from './ShadcnBridgeOverlays';
 
 export const shadcnBridgePreview: ComponentPreview = {
   slug: 'shadcn-bridge',
@@ -21,5 +29,14 @@ export const shadcnBridgePreview: ComponentPreview = {
     { name: 'Buttons mobile row', render: () => <ButtonsMobileRow /> },
     { name: 'Button tooltip', render: () => <ButtonTooltip /> },
     { name: 'Button focus ring', render: () => <ButtonFocusRing /> },
+    { name: 'Dialog', render: () => <DialogDefault /> },
+    { name: 'Dialog long content', render: () => <DialogLongContent /> },
+    { name: 'Dialog paper frame', render: () => <DialogPaperFrame /> },
+    { name: 'Dialog with glass className', render: () => <DialogGlassClassName /> },
+    { name: 'Dialog hybrid', render: () => <DialogHybrid /> },
+    { name: 'AlertDialog', render: () => <AlertDialogLeave /> },
+    { name: 'Sheet right', render: () => <SheetState side="right" /> },
+    { name: 'Sheet left', render: () => <SheetState side="left" /> },
+    { name: 'Sheet bottom', render: () => <SheetState side="bottom" /> },
   ],
 };

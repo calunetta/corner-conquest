@@ -6,7 +6,7 @@ const SHEET_WIDTH = 192;
 const SHEET_HEIGHT = 64;
 
 /** Space between the ribbon edge and its text. */
-export const RIBBON_INSET: FrameInset = { top: 14, right: 56, bottom: 12, left: 56 }; // tunable
+export const RIBBON_INSET: FrameInset = { top: 14, right: 36, bottom: 12, left: 36 }; // tunable
 
 const RIBBON_FILE_COLOR: Record<RibbonColor, string> = {
   blue: 'Blue',

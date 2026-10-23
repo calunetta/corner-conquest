@@ -125,6 +125,66 @@
       "type": "base",
       "name": "yellow-tower",
       "image": "/sprites/tile-variants/generated/base/yellow-tower.png"
+    },
+    {
+      "id": "special-black-archer",
+      "type": "special",
+      "name": "black-archer",
+      "image": "/sprites/tile-variants/generated/special/black-archer.gif"
+    },
+    {
+      "id": "special-black-lancer",
+      "type": "special",
+      "name": "black-lancer",
+      "image": "/sprites/tile-variants/generated/special/black-lancer.gif"
+    },
+    {
+      "id": "special-black-monk",
+      "type": "special",
+      "name": "black-monk",
+      "image": "/sprites/tile-variants/generated/special/black-monk.gif"
+    },
+    {
+      "id": "special-black-pawn-axe",
+      "type": "special",
+      "name": "black-pawn-axe",
+      "image": "/sprites/tile-variants/generated/special/black-pawn-axe.gif"
+    },
+    {
+      "id": "special-black-pawn-hammer",
+      "type": "special",
+      "name": "black-pawn-hammer",
+      "image": "/sprites/tile-variants/generated/special/black-pawn-hammer.gif"
+    },
+    {
+      "id": "special-black-pawn-knife",
+      "type": "special",
+      "name": "black-pawn-knife",
+      "image": "/sprites/tile-variants/generated/special/black-pawn-knife.gif"
+    },
+    {
+      "id": "special-black-pawn-pickaxe",
+      "type": "special",
+      "name": "black-pawn-pickaxe",
+      "image": "/sprites/tile-variants/generated/special/black-pawn-pickaxe.gif"
+    },
+    {
+      "id": "special-black-warrior",
+      "type": "special",
+      "name": "black-warrior",
+      "image": "/sprites/tile-variants/generated/special/black-warrior.gif"
+    },
+    {
+      "id": "special-ruin-castle",
+      "type": "special",
+      "name": "ruin-castle",
+      "image": "/sprites/tile-variants/generated/special/ruin-castle.png"
+    },
+    {
+      "id": "special-ruin-tower",
+      "type": "special",
+      "name": "ruin-tower",
+      "image": "/sprites/tile-variants/generated/special/ruin-tower.png"
     }
   ],
   "variants": [
