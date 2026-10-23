@@ -58,26 +58,10 @@ import { monsterSpriteUploaderPreview } from '@/testbed/components/MonsterSprite
 import { tileVariantEditorPreview } from '@/testbed/components/TileVariantEditor/TileVariantEditor.preview';
 import { tileVariantGalleryPreview } from '@/testbed/components/TileVariantGallery/TileVariantGallery.preview';
 import { iconEditorPreview } from '@/testbed/components/IconEditor/IconEditor.preview';
-import { sliceFramePreview } from '@/modules/pixel-ui/components/SliceFrame/SliceFrame.preview';
-import { ribbonPreview } from '@/modules/pixel-ui/components/Ribbon/Ribbon.preview';
-import { pixelPanelPreview } from '@/modules/pixel-ui/components/PixelPanel/PixelPanel.preview';
-import { pixelBarPreview } from '@/modules/pixel-ui/components/PixelBar/PixelBar.preview';
-import { pixelIconPreview } from '@/modules/pixel-ui/components/PixelIcon/PixelIcon.preview';
-import { pixelButtonPreview } from '@/modules/pixel-ui/components/PixelButton/PixelButton.preview';
-import { pixelTypographyPreview } from '@/modules/pixel-ui/components/PixelTypography/PixelTypography.preview';
-import { shadcnBridgePreview } from '@/testbed/components/ShadcnBridge/ShadcnBridge.preview';
 import type { ComponentPreview } from './testbed.types';
 
 /** Every preview shown in the testbed. Register new previews here (skill: testbed-preview). */
 export const previews: ComponentPreview[] = [
-  sliceFramePreview,
-  ribbonPreview,
-  pixelPanelPreview,
-  pixelBarPreview,
-  pixelIconPreview,
-  pixelButtonPreview,
-  pixelTypographyPreview,
-  shadcnBridgePreview,
   mapZoomControlsPreview,
   animatedMonsterPreview,
   deathEffectPreview,

@@ -47,7 +47,6 @@ export function ActionButton({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            size="plate"
             variant={action.isPendingMatch ? 'default' : 'outline'}
             onClick={() => onActionClick(action.id)}
             disabled={action.disabled}

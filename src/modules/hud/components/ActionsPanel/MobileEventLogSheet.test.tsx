@@ -56,9 +56,8 @@ describe('MobileEventLogSheet', () => {
       render(<MobileEventLogSheet open onOpenChange={jest.fn()} />);
 
       const dialog = screen.getByRole('dialog', { name: 'Event Log' });
-      // The sheet title is the h2 Ribbon (its sr-only class sits on the frame); GameLogView's visible header is the h3.
-      expect(within(dialog).getByRole('heading', { level: 2, name: 'Event Log' })).toBeInTheDocument();
-      expect(within(dialog).getByRole('heading', { level: 3, name: 'Event Log' })).toBeInTheDocument();
+      // The sr-only SheetTitle shares the text; only GameLogView's header is visible.
+      expect(within(dialog).getByText('Event Log', { selector: ':not(.sr-only)' })).toBeInTheDocument();
       expect(within(dialog).getByRole('switch', { name: 'Show routine activity' })).toBeInTheDocument();
     });
 

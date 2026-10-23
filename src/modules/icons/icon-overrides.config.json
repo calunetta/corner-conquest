@@ -39,17 +39,5 @@
   },
   "settings": {
     "src": "/sprites/icon-overrides/settings-1792255201490.png"
-  },
-  "collector-blue": {
-    "size": 200
-  },
-  "collector-red": {
-    "size": 150
-  },
-  "collector-purple": {
-    "size": 150
-  },
-  "collector-yellow": {
-    "size": 150
   }
 }

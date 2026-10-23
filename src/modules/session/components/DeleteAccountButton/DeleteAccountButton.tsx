@@ -69,7 +69,6 @@ export function DeleteAccountButtonView({
               <AlertDialogFooter>
                 <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  variant="destructive"
                   className={styles.confirmAction}
                   disabled={isDeleting}
                   onClick={handleConfirmClick}

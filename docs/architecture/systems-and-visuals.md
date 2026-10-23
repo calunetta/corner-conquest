@@ -88,7 +88,6 @@ The AI behavior is defined in `src/modules/game-rules/bot-turn.reducer.ts` and `
 Bots are created at match setup only for a solo-vs-bot lobby game (`maxPlayers === 1`, `game-setup.reducer.ts`). A human seat can also become a bot mid-match when that player leaves a playing match: `handlePlayerExit` sets `isBot: true` and `isVacant: true` on the seat (see §6.12 Match Dismantling Rules), and the session driver's bot-turn effect (`game-board.engine.hook.ts`, see the session driver in §6.14) drives it from then on like any other bot seat.
 
 ## 6.10. UI Components and Mobile Responsiveness
-- **Shared Pixel UI frames:** the Tiny Swords panels, ribbons, bars, icons and buttons (`src/modules/pixel-ui/`), and the warm dark theme tokens and typography rule, are documented in §6.17 and §6.18 (`pixel-ui.md`), and the shadcn components restyled on them in §6.19 (`pixel-ui-bridge.md`).
 - **Map Rendering & Colonist.io Mobile Strategy:**
   - **Desktop Starting Zoom:** Initial zoom on desktop defaults to **85% (`0.85`)**, giving players an optimal tactical overview of the archipelago, centered with margin for the sidebars and HUD.
   - **Zoom Controls:** Zoom in/out operates in 15% intervals with a quick-reset button that returns to the 85% default zoom.
