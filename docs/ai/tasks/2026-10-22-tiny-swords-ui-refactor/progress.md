@@ -104,7 +104,7 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e and Phase 2 i
 - [x] checks: typecheck, lint, unit tests (quote summary lines)
 - [x] UI verified (ui-verify): TutorialBeacon and LobbyGameRow popovers same size class behaviour
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [ ] committed: 94ad62d
 
 ## Phase 2g: Switch, Checkbox, Radio, Slider, Separator, ScrollArea, Avatar (plates)
 - [ ] implementation (implementer-a, implementer-b)
