@@ -66,7 +66,7 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e and Phase 2 i
 - [x] checks: typecheck, lint, unit tests (quote summary lines)
 - [x] UI verified (ui-verify): `/testbed/pixel-ui-ribbon` "Node children"; `/testbed/pixel-ui-panel` unchanged
 - [x] final review (architect-b)
-- [ ] committed: <hash>
+- [ ] committed: dd6acb5
 
 ## Phase 2c: Button bridge (button.tsx, HUD `size="plate"` x3 tags, button.test.tsx, shadcn-bridge preview + registry)
 - [ ] implementation (implementer-a, implementer-b)
