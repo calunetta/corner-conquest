@@ -324,3 +324,31 @@ VERDICT: APPROVED
 
 ## Lessons
 Appended one entry to `docs/ai/lessons-learned.md` (inset ring hidden by child backgrounds).
+
+## Final review: Phase 2f (Tooltip, Popover, Tabs, Toast)
+VERDICT: APPROVED
+
+## Checks run (by me)
+- `npm run typecheck`: clean. `npm run lint`: clean (eslint . --max-warnings 0).
+- `npm test`: Test Suites: 333 passed, 333 total; Tests: 4990 passed, 4990 total.
+- Screenshots and Playwright size measurements are implementer-reported, not re-taken by me. Widths (popover 320 map-info, 320 lobby) unchanged per those figures.
+
+## Plan adherence
+- File plan matched: four `ui/*.tsx`, `overlays.test.tsx`, `ShadcnBridgeNav.tsx` (extra file, keeps preview under the 150-line cap), preview states. Deviations (transparent border + ring, inset-shadow active tab, solid destructive fill, sr-only Close) are justified by the 2e lesson and contrast; plan.md updated. `ring-ink` and `ink` token exist (`tailwind.config.ts:58`).
+
+## Judgments
+- (a) Beacon popover 166 -> 146 px: accepted. Cause is the font swap (box model verified identical), width and HUD structure unchanged; it is a readability gain.
+- (b) ToastClose opacity-0 until hover/focus: touch users cannot reveal it by hover. Pre-existing stock behaviour; record for Phase 7 (toasts auto-dismiss, swipe also closes). Non-blocking.
+- (c) Mobile popover touching the left edge at 390 px: Radix collision handling with no `collisionPadding`; pre-existing, not caused by 2f classes. Phase 7 candidate (`collisionPadding`).
+- (d) Tab focus: `focus-visible` ring shows only for keyboard focus; no ring at rest on the first tab after pointer/programmatic focus is correct behaviour. Inactive vs disabled: disabled has opacity-50 plus no pointer events; active has fill, accent text and underline. Acceptable.
+- (e) ResizeObserver stub and PointerEvent->MouseEvent fallback are guarded (`if (!window.X)`), standard for Radix in jsdom, and commented. Acceptable.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | src/components/ui/toast.tsx | Destructive fill is a raw `hsl(5_70%_45%)` (same as Badge); should become a token | implementer-b, Phase 7 | no |
+| 2 | src/components/ui/toast.tsx (ToastClose) | Hidden until hover on touch | implementer-b, Phase 7 | no |
+| 3 | src/components/ui/popover.tsx | No `collisionPadding` at 390 px | implementer-b, Phase 7 | no |
+
+## Lessons
+None added.

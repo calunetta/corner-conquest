@@ -98,12 +98,12 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e and Phase 2 i
 - [ ] committed: d0656e1
 
 ## Phase 2f: Tooltip, Popover, Tabs, Toast (plates)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, unit tests (quote summary lines)
-- [ ] UI verified (ui-verify): TutorialBeacon and LobbyGameRow popovers same size class behaviour
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a)
+- [x] checks: typecheck, lint, unit tests (quote summary lines)
+- [x] UI verified (ui-verify): TutorialBeacon and LobbyGameRow popovers same size class behaviour
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 2g: Switch, Checkbox, Radio, Slider, Separator, ScrollArea, Avatar (plates)

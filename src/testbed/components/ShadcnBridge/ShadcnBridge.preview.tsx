@@ -23,6 +23,14 @@ import {
   ProgressOnDark,
   ProgressOnPaper,
 } from './ShadcnBridgePlates';
+import {
+  PopoverOpen,
+  TabsStates,
+  ToastDefault,
+  ToastDestructive,
+  ToastLongText,
+  TooltipOpen,
+} from './ShadcnBridgeNav';
 import { AlertDialogLeave, SheetState } from './ShadcnBridgeOverlays';
 
 export const shadcnBridgePreview: ComponentPreview = {
@@ -54,5 +62,11 @@ export const shadcnBridgePreview: ComponentPreview = {
     { name: 'Badges', render: () => <Badges /> },
     { name: 'Progress on dark', render: () => <ProgressOnDark /> },
     { name: 'Progress on paper', render: () => <ProgressOnPaper /> },
+    { name: 'Tooltip open', render: () => <TooltipOpen /> },
+    { name: 'Popover open', render: () => <PopoverOpen /> },
+    { name: 'Tabs', render: () => <TabsStates /> },
+    { name: 'Toast default', render: () => <ToastDefault /> },
+    { name: 'Toast destructive', render: () => <ToastDestructive /> },
+    { name: 'Toast long text', render: () => <ToastLongText /> },
   ],
 };

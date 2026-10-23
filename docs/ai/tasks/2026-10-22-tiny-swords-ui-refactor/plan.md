@@ -808,6 +808,7 @@ Each sub-phase: implement, tests, previews, checks, ui-verify where stated, comm
 
 ### Phase 2f: Tooltip, Popover, Tabs, Toast (4 source files)
 1. Class edits per Contracts. (implementer-b)
+2a. Reality (2f, as built): tooltip, popover and toast keep a 1px transparent border plus `ring-2 ring-inset ring-muted-foreground` (boundary 9.27:1) instead of `border-border`; active tab uses `shadow-[inset_0_-2px_0_hsl(var(--accent))]` instead of `border-b-2`; destructive toast is `bg-[hsl(5_70%_45%)]` (like Badge); `ToastClose` gains an sr-only "Close" label; popover/tooltip text uses `font-readable` (tutorial-beacon popover 166 -> 146 px tall, widths unchanged).
 2. `overlays.test.tsx`, preview states, checks. ui-verify: `TutorialBeacon` and `LobbyGameRow` popovers have the same width class behaviour (`w-72` default + caller classes) and no size change beyond the border.
 
 ### Phase 2g: Switch, Checkbox, Radio, Slider, Separator, ScrollArea, Avatar (7 source files)
