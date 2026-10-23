@@ -18,10 +18,12 @@ export default {
         'terrain-neutral': "url('/sprites/terrain-neutral.png')",
       },
       fontFamily: {
-        body: ['var(--font-pixelify)', 'var(--font-outfit)', 'Outfit', 'sans-serif'],
-        headline: ['var(--font-pixelify)', 'var(--font-outfit)', 'Outfit', 'sans-serif'],
-        pixel: ['var(--font-pixelify)', 'var(--font-outfit)', 'Outfit', 'sans-serif'],
-        readable: ['var(--font-outfit)', 'Outfit', 'sans-serif'],
+        // Two stacks, mapped by role in one line each: swap a role by pointing it at the other stack.
+        body: ['var(--font-patrick)', 'var(--font-lato)', 'sans-serif'],
+        readable: ['var(--font-patrick)', 'var(--font-lato)', 'sans-serif'],
+        headline: ['var(--font-medieval)', 'var(--font-patrick)', 'sans-serif'],
+        pixel: ['var(--font-medieval)', 'var(--font-patrick)', 'sans-serif'],
+        medieval: ['var(--font-medieval)', 'var(--font-patrick)', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {

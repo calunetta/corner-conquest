@@ -4,7 +4,7 @@ Part of the architecture & game-rules docs. Index and directives: [`docs/README.
 
 ## 6.17. Pixel UI Components (`src/modules/pixel-ui/`)
 
-The shared Tiny Swords frame components. The barrel `src/modules/pixel-ui/index.ts` exports `NineSlice`, `ThreeSlice`, `Ribbon`, `PixelPanel`, `PixelBar`, `PixelIcon`, `PixelButton` and their prop types. No screen imports these components yet.
+The shared Tiny Swords frame components. The barrel `src/modules/pixel-ui/index.ts` exports `NineSlice`, `ThreeSlice`, `Ribbon`, `PixelPanel`, `PixelBar`, `PixelIcon`, `PixelButton` and their prop types. Screens reach them through the shadcn components in `src/components/ui/`, documented in §6.19 (`pixel-ui-bridge.md`).
 
 ### Slice engine (`NineSlice`, `ThreeSlice`)
 
@@ -18,9 +18,10 @@ The shared Tiny Swords frame components. The barrel `src/modules/pixel-ui/index.
 ### Ribbon (`components/Ribbon/`)
 
 - Three-slice frame on `UI/Ribbons/Ribbon_{Blue|Red|Yellow}_3Slides.png` (192 × 64 px sheet). At 1x the height is fixed at 61 px and the minimum width is 192 px.
-- Props: `color` (`blue` default, `red`, `yellow`), `as` (`div` default, `h2`, `h3`), `icon` (a ReactNode rendered before the text; Ribbon does not import `PixelIcon`), `children` (a string).
-- The text is one line and truncates with ellipsis. The same string is set as the `title` attribute of the text span, so the full text is still reachable.
-- The text inset is `RIBBON_INSET` in `Ribbon.map.ts` (tunable).
+- Props: `color` (`blue` default, `red`, `yellow`), `as` (`div` default, `h2`, `h3`), `icon` (a ReactNode rendered before the text; Ribbon does not import `PixelIcon`), `children` (a ReactNode, one line of text), `title`, `className` and the remaining element props.
+- `className` goes to the frame. Every other prop (`id`, `data-*`, aria) goes to the text element, which is the `as` element and the `forwardRef` target. Radix `asChild` titles rely on this.
+- The text is one line and truncates with ellipsis. When `children` is a string, it is also set as the `title` attribute of the text element, unless `title` is passed, so the full text is still reachable.
+- The text inset is `RIBBON_INSET` in `Ribbon.map.ts` (tunable): top 12, bottom 14, left and right 50 px. Left and right keep 12 px clear of the face outline; the bottom is larger than the top to offset the thick lower lip (optical centring, §6.18).
 
 ### PixelPanel (`components/PixelPanel/`)
 
@@ -35,7 +36,8 @@ The shared Tiny Swords frame components. The barrel `src/modules/pixel-ui/index.
 | `carved` | `UI/Banners/Carved_9Slides.png` (192 px) | ink | 125 × 126 | 126 × 126 |
 
 - The rendered minimum is the larger of the corner floor and the spec minimum. The spec minimums are set in `PixelPanel.map.ts`; for `carved` the spec minimum 126 × 126 is the corner-art floor rounded up to a square (corners 62 + 63 = 125 px wide, 63 + 63 = 126 px tall).
-- Props: `variant` (default `paper`), `title` (renders a `Ribbon` straddling the top edge), `titleColor` (default `blue`), `titleAs` (`h2` default, or `h3`), `padding` (`sm` = `p-2`, `md` = `p-4`, default `md`), plus div props.
+- Props: `variant` (default `paper`), `title` (renders a `Ribbon` straddling the top edge), `titleColor` (default `blue`), `titleAs` (`h2` default, or `h3`), `padding` (`none` = no padding, `sm` = `p-2`, `md` = `p-4`, default `md`), `rootClassName` (classes for the outer wrapper, which also holds the title slot). `className` and the other div props go to the frame. The title is a string only.
+- `padding="none"` is used by the shadcn Dialog and Card frames, which pad their own content (§6.19).
 - Insets are `// tunable` values in `PixelPanel.map.ts`.
 
 ### PixelBar (`components/PixelBar/`)
@@ -57,31 +59,31 @@ The shared Tiny Swords frame components. The barrel `src/modules/pixel-ui/index.
 ### PixelButton (`components/PixelButton/`)
 
 - **Variant:** `primary` (default, blue sheets), `danger` (red sheets) or `neutral`, chosen in `toButtonArt` (`PixelButton.map.ts`). `neutral` draws the shared `Button_Hover_*` plate for every state except disabled (`Button_Disable_*`), tinted `brightness-110` on hover and `brightness-90` when pressed (slice sizes only); its icon sizes fall back to the Blue sheets. The root carries `data-variant`. The label is `inline-flex items-center gap-2` so an icon can sit beside the text.
-- **Size:** `default` is a three-slice button (`UI/Buttons/Button_{Blue|Red}_3Slides`, 64 px tall, `min-w-[128px]`). `large` is a nine-slice button (`_9Slides`, at least 128 × 128 px). `icon-round` and `icon-square` use the `UI Elements/UI Elements/Buttons/Small{Blue|Red}{Round|Square}Button_{Regular|Pressed}.png` sheets, drawn at 64 px inside a 48 × 48 px box. Icon pressed uses the `Pressed` sheet with no offset; icon hover and disabled use the `Regular` sheet.
+- **Size:** `default` is a three-slice button (`UI/Buttons/Button_{Blue|Red}_3Slides`, 64 px tall, `min-w-[128px]`, `pb-4`). Its label is one line: the button grows to fit it, and in a forced narrow width the label truncates with an ellipsis inside the art. `large` is a nine-slice button (`_9Slides`, at least 128 × 128 px, `pt-2 pb-6`). `icon-round` and `icon-square` use the `UI Elements/UI Elements/Buttons/Small{Blue|Red}{Round|Square}Button_{Regular|Pressed}.png` sheets, drawn at 64 px inside a 48 × 48 px box. Icon pressed uses the `Pressed` sheet with no offset; icon hover and disabled use the `Regular` sheet.
 - **Visual states:** `regular`, `hover`, `pressed`, `disabled`. Hover and disabled slice art is shared by both variants (`Button_Hover_*`, `Button_Disable_*`). All four art layers are rendered and toggled with `visible`/`invisible`, so every sheet is loaded before the first hover. The root carries `data-visual`.
 - **Pressed:** the slice art moves 4 px down (`translate-y-1`) and the label 2 px down. Disabled labels are `opacity-70`; disabled icons are `opacity-50` over the regular art (there is no disabled icon art in the pack).
-- **Label:** `text-lg font-semibold text-ink`.
+- **Label:** `font-pixel text-lg text-ink` (MedievalSharp, one weight, no `font-semibold`). Icon sizes add `pb-1`; the optical padding table is described in §6.18.
 - **Focus:** `focus-visible:ring-2 ring-ring ring-offset-2 ring-offset-background`, so the ring has a background-coloured gap on both `paper` and wood.
 - **Loading:** `loading` sets native `disabled`, `aria-busy`, and the disabled art. The label stays in the DOM with `invisible` and `...` is centred over it, which holds the width.
-- **Hook (`usePixelButtonVisual`, `PixelButton.hook.ts`):** derives the visual from pointer enter/leave (hover), pointer down/up/cancel (pressed), and Enter or Space keydown (pressed for `KEY_PRESS_MS` = 100 ms). Blur clears all state, and disabling the button clears any press in progress. The hook returns seven handlers (pointer enter, leave, down, up, cancel, keydown, blur). `PixelButtonProps` extends the native button attributes, so consumers may pass any of them: the consumer's handler runs first, then the hook's own (also while disabled, as React only suppresses mouse events on a disabled element). `onKeyUp` is not wrapped; it reaches the `button` through `...rest`. `PixelButton` is a `forwardRef` component.
+- **Hook (`usePixelButtonVisual`, `PixelButton.hook.ts`):** derives the visual from pointer enter/leave (hover), pointer down/up/cancel (pressed), and Enter or Space keydown (pressed for `KEY_PRESS_MS` = 100 ms). Blur clears all state, and disabling the button clears any press in progress. The hook returns seven handlers (pointer enter, leave, down, up, cancel, keydown, blur). `PixelButtonProps` extends the native button attributes, so consumers may pass any of them: the consumer's handler runs first, then the hook's own (also while disabled, as React only suppresses mouse events on a disabled element). `onKeyUp` is not wrapped; it reaches the `button` through `...rest`. `PixelButton` is a `forwardRef` component: the ref is the `button` element, which Radix close and tooltip triggers need (§6.19).
 - **Shape:** there is no `asChild` prop. The art layers are siblings of the label, so the button cannot wrap a Radix `Slot`.
 
 ### Previews (testbed group `Pixel UI`)
 
-Registered in `src/testbed/registry.ts`; each is at `/testbed/<slug>`: `slice-frame`, `pixel-ui-ribbon`, `pixel-ui-panel`, `pixel-ui-bar`, `pixel-ui-icon`, `pixel-ui-button`, `pixel-ui-typography`. The typography preview is preview-only: it has no component of its own.
+Registered in `src/testbed/registry.ts`; each is at `/testbed/<slug>`: `slice-frame`, `pixel-ui-ribbon`, `pixel-ui-panel`, `pixel-ui-bar`, `pixel-ui-icon`, `pixel-ui-button`, `pixel-ui-typography`. The typography preview is preview-only: it has no component of its own. The `shadcn-bridge` preview is in §6.19.
 
 ## 6.18. Theme Tokens, Fonts & Typography
 
-- **Font variables (`src/app/layout.tsx`):** Patrick Hand is `--font-patrick` (weight 400), Lato is `--font-lato` (subsets latin and latin-ext, weights 400 and 700) and MedievalSharp is `--font-medieval` (weight 400). All three `.variable` classes are set on `<html>`. `<body>` carries no next/font class. Pixelify Sans and Outfit are no longer loaded.
+- **Font variables (`src/app/layout.tsx`):** Patrick Hand is `--font-patrick` (weight 400), Lato is `--font-lato` (subsets latin and latin-ext, weights 400 and 700) and MedievalSharp is `--font-medieval` (weight 400). All three `.variable` classes are set on `<html>`. `<body>` carries no next/font class. Only these three fonts are loaded.
 - **Font families (`tailwind.config.ts`):** two stacks, each role mapped on its own line so a role can be flipped in one edit.
   - `body` and `readable`: `var(--font-patrick)`, `var(--font-lato)`, `sans-serif`.
   - `headline`, `pixel` and `medieval`: `var(--font-medieval)`, `var(--font-patrick)`, `sans-serif`.
   - `code`: `monospace`.
 - **Base font:** `html, body` take `font-body` from the `@layer base` rule in `src/app/globals.css`. The old plain `body` font rule is removed.
 - **Typography rule:**
-  - MedievalSharp (`font-pixel`, `font-headline`, `font-medieval`) for institutional text: game name, titles, ribbons, button labels, card titles, tabs, badges.
+  - MedievalSharp (`font-pixel`, `font-headline`, `font-medieval`) for institutional text: game name, titles, ribbons, sprite button labels, card titles, tabs, badges. Plate and plain `Button` tiers use `font-readable`, because MedievalSharp is wider and clipped labels in fixed-size HUD buttons.
   - Patrick Hand then Lato (`font-body`, `font-readable`) for text read at length: logs, card body, descriptions, inputs, tooltips, digits and ids. It is also the global default.
-  - Patrick Hand and MedievalSharp have one weight (400). Pixel-ui components and the `font-pixel` shadcn plates do not set `font-bold` or `font-semibold`: the browser would fake a bold and smear the glyphs.
+  - Patrick Hand and MedievalSharp have one weight (400). Pixel-ui components and the restyled plates in `src/components/ui/` (§6.19) do not set `font-bold` or `font-semibold`: the browser would fake a bold and smear the glyphs. Badge is the exception to the digits rule: it uses `font-pixel`, so numeric badges are MedievalSharp.
 - **Optical centring:** the art has a thick lower lip, so labels sit above the box centre. Ribbon text uses `RIBBON_INSET` (`Ribbon.map.ts`: top 12, bottom 14, left and right 50, which keeps 12 px clear of the face outline). Button labels use the `opticalPadding` table in `PixelButton.styles.ts` (default `pb-4`, large `pt-2 pb-6`, icons `pb-1`); the loading dots use the same table.
 - **Typography preview:** `pixel-ui-typography` shows both families at 12, 14 and 16 px on paper (`bg-paper text-ink`), a banner panel, a carved panel and a dark card (`bg-card`).
 - **Colour tokens (`src/app/globals.css`, `.dark` block):** warm dark brown-slate values, for example `--background: 28 30% 9%`, `--foreground: 40 50% 94%`, `--primary: 195 55% 45%`, `--accent: 42 90% 60%`. The focus ring is `--ring: 42 90% 60%` (amber).
