@@ -65,6 +65,7 @@ import { pixelBarPreview } from '@/modules/pixel-ui/components/PixelBar/PixelBar
 import { pixelIconPreview } from '@/modules/pixel-ui/components/PixelIcon/PixelIcon.preview';
 import { pixelButtonPreview } from '@/modules/pixel-ui/components/PixelButton/PixelButton.preview';
 import { pixelTypographyPreview } from '@/modules/pixel-ui/components/PixelTypography/PixelTypography.preview';
+import { shadcnBridgePreview } from '@/testbed/components/ShadcnBridge/ShadcnBridge.preview';
 import type { ComponentPreview } from './testbed.types';
 
 /** Every preview shown in the testbed. Register new previews here (skill: testbed-preview). */
@@ -76,6 +77,7 @@ export const previews: ComponentPreview[] = [
   pixelIconPreview,
   pixelButtonPreview,
   pixelTypographyPreview,
+  shadcnBridgePreview,
   mapZoomControlsPreview,
   animatedMonsterPreview,
   deathEffectPreview,

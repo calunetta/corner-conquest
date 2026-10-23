@@ -69,13 +69,13 @@ Tier: XL · Phases: 7 (see triage.md). Phase 1 is split into 1a-1e and Phase 2 i
 - [ ] committed: dd6acb5
 
 ## Phase 2c: Button bridge (button.tsx, HUD `size="plate"` x3 tags, button.test.tsx, shadcn-bridge preview + registry)
-- [ ] implementation (implementer-a, implementer-b)
-- [ ] tests (tester-a, tester-b)
-- [ ] previews (preview-a)
-- [ ] checks: typecheck, lint, unit tests (quote summary lines)
-- [ ] full `npm test` run read; failing tests listed with cause (expected none)
-- [ ] UI verified (ui-verify): `/testbed/shadcn-bridge` buttons at 1280x720 and 390x844; tooltip on sprite and asChild triggers; HUD button boxes (`/testbed/hud-actions-panel`, `/testbed/hud-game-board-header`) same size as before
-- [ ] final review (architect-b)
+- [x] implementation (implementer-a, implementer-b)
+- [x] tests (tester-a, tester-b)
+- [x] previews (preview-a)
+- [x] checks: typecheck, lint, unit tests (quote summary lines)
+- [x] full `npm test` run read; failing tests listed with cause (expected none)
+- [x] UI verified (ui-verify): `/testbed/shadcn-bridge` buttons at 1280x720 and 390x844; tooltip on sprite and asChild triggers; HUD button boxes (`/testbed/hud-actions-panel`, `/testbed/hud-game-board-header`) same size as before
+- [x] final review (architect-b)
 - [ ] committed: <hash>
 
 ## Phase 2d: Dialog family (dialog-frame.tsx, dialog.tsx, alert-dialog.tsx, sheet.tsx, DeleteAccountButton variant, tests, dialog previews)

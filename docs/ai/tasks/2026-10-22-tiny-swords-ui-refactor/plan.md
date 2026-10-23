@@ -674,11 +674,13 @@ const SPRITE_WIDTH: Record<'default' | 'lg', string> = { default: '!min-w-[128px
 //   else     -> Comp = asChild ? Slot : 'button'; <Comp ref className={buttonVariants({ variant, size: asChild && isSpriteSize ? 'plate' : size, className })} {...props} />
 // plate size classes: sm 'h-9 px-3 text-sm'; icon 'h-10 w-10'; plate 'h-10 px-4 py-2'; default and lg (cva, reached only by ghost/link or asChild) 'h-10 px-4 py-2' (lg: 'h-10 px-8').
 // Plate base: 'inline-flex items-center justify-center whitespace-nowrap rounded-none font-pixel text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50'
-// Plate variants (cva):
-//   default     'border-2 border-ink bg-primary text-primary-foreground shadow-[0_2px_0_hsl(var(--ink))] hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_1px_0_hsl(var(--ink))]'
-//   destructive 'border-2 border-ink bg-destructive text-destructive-foreground shadow-[0_2px_0_hsl(var(--ink))] hover:bg-destructive/90 active:translate-y-[1px] active:shadow-[0_1px_0_hsl(var(--ink))]'
-//   outline     'border-2 border-muted-foreground bg-card text-foreground shadow-[0_2px_0_hsl(var(--ink))] hover:bg-accent hover:text-accent-foreground active:translate-y-[1px] active:shadow-[0_1px_0_hsl(var(--ink))]'
-//   secondary   'border-2 border-muted-foreground bg-secondary text-secondary-foreground shadow-[0_2px_0_hsl(var(--ink))] hover:bg-secondary/80 active:translate-y-[1px] active:shadow-[0_1px_0_hsl(var(--ink))]'
+// Plate variants (cva). 2c deviation (accepted): the 2px outline is an inset ring (box-shadow), not border-2, because a real border grew content-sized/h-auto HUD buttons by 2-4 px; outline keeps a 1px transparent border (old outline had border). Ring replaces nothing in focus: focus-visible ring-2 ring-ring takes over the box-shadow while focused (accepted).
+// lg deviation (accepted): lg does NOT use the 9-slice sheet; art stays the 'default' 3-slice, width comes from SPRITE_WIDTH.lg (!min-w-[192px] px-8).
+// Carry-over (2d / Phase 6): ghost/link use text-foreground (light), unreadable on paper dialog backgrounds; give them an ink text colour inside paper frames. Caller concern: icon size has no shrink-0, so in a flex row with 128px sprite buttons it shrinks (20px seen); callers add shrink-0. Sprite label wider than the 128px art overflows slightly (e.g. 'Confirm default'); caller content width.
+//   default     'ring-2 ring-inset ring-ink bg-primary text-primary-foreground shadow-[0_2px_0_hsl(var(--ink))] hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_1px_0_hsl(var(--ink))]'
+//   destructive 'ring-2 ring-inset ring-ink bg-destructive text-destructive-foreground shadow-[0_2px_0_hsl(var(--ink))] hover:bg-destructive/90 active:translate-y-[1px] active:shadow-[0_1px_0_hsl(var(--ink))]'
+//   outline     'border border-transparent ring-2 ring-inset ring-muted-foreground bg-card text-foreground shadow-[0_2px_0_hsl(var(--ink))] hover:bg-accent hover:text-accent-foreground active:translate-y-[1px] active:shadow-[0_1px_0_hsl(var(--ink))]'
+//   secondary   'ring-2 ring-inset ring-muted-foreground bg-secondary text-secondary-foreground shadow-[0_2px_0_hsl(var(--ink))] hover:bg-secondary/80 active:translate-y-[1px] active:shadow-[0_1px_0_hsl(var(--ink))]'
 //   ghost       'bg-transparent text-foreground hover:bg-accent/20 active:translate-y-[1px]'
 //   link        'text-accent underline underline-offset-4 hover:text-foreground active:translate-y-[1px]'
 // File comment states: asChild is always plate/plain; className colour/border/radius/height are ignored on the sprite tier by SPRITE_LOCK.
@@ -917,3 +919,7 @@ Non-blocking notes:
 1. Sprite `lg` is not forwarded as PixelButton `large` (128 px tall): intended; the `lg` art is the 3-slice at width 192. State this in `button.tsx` file comment.
 2. `Ribbon` icon slot plus `Primitive.Title asChild`: the `id` lands on the text element only if `Ribbon` spreads rest there (R9); 2b/2d tests cover it.
 3. The close button `PixelButton` inside `DialogPrimitive.Close asChild` requires 2a `forwardRef`; keep sub-phase order 2a, 2b, 2c, 2d.
+
+
+## Review (architect-b) 2c
+VERDICT: APPROVED. See review.md (Phase 2c). Carry-overs for 2d/Phase 6 recorded in the 2c contract comment above; migration debt list A-D re-checked (no missing sprite-tier call site with colour classes; ConnectionWarningDialog.tsx:48 has layout classes only).

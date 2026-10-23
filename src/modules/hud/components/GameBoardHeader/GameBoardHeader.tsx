@@ -80,13 +80,13 @@ export function GameBoardHeaderView({
         )}
 
         {canRegenerateTerrain && (
-          <Button variant="outline" onClick={onRegenerateTerrain} data-testid="gameboard-regenerate-terrain-btn">
+          <Button size="plate" variant="outline" onClick={onRegenerateTerrain} data-testid="gameboard-regenerate-terrain-btn">
             <RegistryIcon id="sparkles" className={styles.startGameIcon} /> Regenerate map
           </Button>
         )}
 
         {canStartGame && (
-          <Button onClick={onStartGame} className={styles.startGameButton}>
+          <Button size="plate" onClick={onStartGame} className={styles.startGameButton}>
             <RegistryIcon id="play" className={styles.startGameIcon} /> Start Game
           </Button>
         )}

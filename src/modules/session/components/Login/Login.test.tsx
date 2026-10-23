@@ -90,8 +90,12 @@ describe('LoginView', () => {
       const button = screen.getByRole('button', { name: 'Sign in with Google' });
       const icon = button.querySelector('svg');
       expect(icon).not.toBeNull();
-      expect(button.firstElementChild).toBe(icon);
-      expect(button).toHaveTextContent('Sign in with Google');
+      // The sprite PixelButton renders its art as aria-hidden layers before the label, so the
+      // icon and text are checked inside the label element (the icon's parent), not at the button level.
+      const label = icon?.parentElement;
+      expect(label).toHaveTextContent('Sign in with Google');
+      expect(label?.firstChild).toBe(icon);
+      expect(icon?.nextSibling?.textContent).toBe('Sign in with Google');
     });
 
     it('disables the Google button while isLoading is true', () => {

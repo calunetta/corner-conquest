@@ -212,3 +212,41 @@ VERDICT: APPROVED
 |---|---|---|---|---|
 | 1 | docs/architecture/pixel-ui.md:21,38 | Still says `children` is a string and padding is `sm`/`md`; no mention of ref, rest props, `rootClassName`. Planned for 2h docs-sync | docs-sync (2h) | no |
 | 2 | src/testbed/components/MonsterSpriteUploader/MonsterSpriteUploader.catalogEdit.hook.test.ts | Async flake, passes alone; with `IconEditor.preview.test.tsx` this is the 4th and 5th unrelated sighting in Phases 1-2. Both fail only under full-suite parallel load. Follow-up warranted, outside this task: separate chore to raise timeouts / use `waitFor` with explicit timeout on both files, or cap Jest workers. Do not weaken assertions. | coordinator / tester | no |
+
+---
+
+# Final review: Phase 2c (Button bridge, HUD `size="plate"`, preview)
+
+VERDICT: APPROVED
+
+## Checks run
+- `npm run typecheck`: clean (tsc --noEmit, no output)
+- `npm run lint`: clean (eslint . --max-warnings 0, no output)
+- `npx jest src/components src/modules/session src/modules/hud src/modules/pixel-ui src/testbed`: Test Suites: 91 passed, 91 total; Tests: 1879 passed, 1879 total
+- Coordinator full `npm test` (tester-b): 329 suites / 4891 tests green.
+- HUD baseline vs after: width/height/x/y identical for all measured buttons, desktop and mobile (coordinator). Screenshots not re-read.
+
+## Plan adherence
+- `button.tsx` follows the 2c contract; deviations accepted: plate outline is `ring-2 ring-inset` (not `border-2`) to keep HUD sizes; `outline` keeps `border border-transparent`; `lg` keeps default 3-slice art. plan.md updated.
+- HUD wiring: `ActionButton.tsx:49` (`size="plate"`; plan said line 48, tag starts one line lower after the edit), `GameBoardHeader.tsx:83,89`. One prop each, nothing else touched.
+- `Login.test.tsx:90-98` fix is justified: sprite art layers precede the label, assertion moved to the label element, still checks icon-first order and text.
+- Preview `shadcnBridgePreview` registered after `pixelTypographyPreview`; `button.test.tsx` present. Unrelated tree changes (sprites, icon/tile-variant configs, balance reports) ignored.
+
+## Judgments on known findings
+- (a) Focus ring replacing the inset ring while focused: accepted, a visible yellow focus ring is the point.
+- (b) `outline: solid` on all tiers: harmless; `focus-visible:outline-none` only applies when focused, resting buttons draw no outline. Accepted.
+- (c) icon shrink to 20px: leave as a documented caller concern (`shrink-0`); adding it to `button.tsx` could change HUD flex layouts. Recorded in plan.md.
+- (d) ghost/link `text-foreground` invisible on paper: carry-over to 2d/Phase 6, recorded in plan.md.
+- (e) label wider than art: caller content width, recorded.
+- (f) lg art: plan.md updated.
+- (g) debt list A-D re-checked by grep over non-test, non-testbed `<Button|AlertDialogAction|AlertDialogCancel>` tags: list complete; `ConnectionWarningDialog.tsx:48` has layout classes only; `ResourceCollectionFeedbackDemo.tsx` is a dev demo. 2h re-runs the scan.
+- Button `sm` inside sprite frames (2d): a flat 36 px plate with a 2 px ink ring and hard shadow on a carved/paper frame reads as a deliberate secondary control; acceptable, but verify contrast of `outline` plates (`bg-card`) on paper in 2d ui-verify.
+
+## Findings
+| # | File:line | Problem | Owner | Blocking? |
+|---|---|---|---|---|
+| 1 | src/components/ui/button.tsx:62-70 | `SPRITE_LOCK` hides caller `bg-/border-/rounded-/h-` classes; relies on `!` utilities | 2d-Phase 6 call-site migration | no |
+| 2 | src/components/ui/button.tsx (ghost/link) | Light text on paper | implementer-b in 2d | no (carry-over) |
+
+## Lessons
+Appended to `docs/ai/lessons-learned.md`: real borders change layout size, use inset ring.
